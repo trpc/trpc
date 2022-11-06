@@ -39,9 +39,9 @@ tRPC 10 includes:
 
 ## Massively Improved TypeScript Performance
 
-TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC are excessive on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows. In v10, we've improved this massively by:
+TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC are excessive on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows.
 
-Changing our API allows TypeScript to be much faster, especially during incremental compilation, allowing your IDE to remain snappy.
+In v10, we've improved this massively by changing our API allows TypeScript to be much faster, especially during incremental compilation, allowing your IDE to remain snappy.
 
 ## Improved DX
 
@@ -49,8 +49,9 @@ tRPC 10 embraces TypeScript to its fullest potential to give you an unparalleled
 
 You will notice the following in tRPC 10:
 
-- Jump to definition
-- Automatic procedure renaming across the server and client
+- Jump straight to your backend function from your frontend by just CMD+clicking the path
+- Right click and "Rename Symbol" to rename an input argument or a procedure name across your whole application.
+- [Easier to infer types](https://trpc.io/docs/v10/infer-types)
 
 ## Powerful Backend Framework
 
@@ -62,7 +63,6 @@ Other ways tRPC 10 provides a powerful backend framework:
 
 - CMD+clicking and refactoring from the frontend
 - [Reusable middlewares](https://trpc.io/docs/v10/middlewares)
-- [Easier to infer types]
 - [Reusable base procedures](https://trpc.io/docs/v10/procedures#reusable-base-publicprocedures) with [multiple input parsers](https://trpc.io/docs/v10/procedures#multiple-input-parsers)
 
 ## Growing tRPC Ecosystem
@@ -75,7 +75,7 @@ We're getting a rich ecosystem around tRPC. Some examples:
 - There are userland adapters so you can use tRPC easily in Vue/Svelte/Solid/etc
 - View more examples, plugins, & boilerplates in our [Awesome tRPC collection](https://trpc.io/docs/awesome-trpc)
 
-### Incremental Migration Path
+## Incremental Migration Path
 
 If you want to migrate incrementally, we've also put in a lot of work to make the experience as straightforward as possible for you, with almost full backward compatibility.
 
