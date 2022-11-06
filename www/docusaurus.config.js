@@ -28,10 +28,10 @@ module.exports = {
     announcementBar: {
       id: 'v10',
       content:
-        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-next-prisma-starter'>go here</a> to try out a real project using this version.",
+        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/v10/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
-      isCloseable: false,
+      isCloseable: true,
     },
     navbar: {
       title: 'tRPC',
@@ -170,14 +170,14 @@ module.exports = {
               path: 'v10',
               badge: true,
               className: 'v10',
-              banner: 'unreleased',
+              banner: 'none',
             },
             '9.x': {
               label: '9.x',
               path: 'v9',
               badge: true,
               className: 'v9',
-              banner: 'none',
+              banner: 'unmaintained',
             },
           },
           // includeCurrentVersion: false,
