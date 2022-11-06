@@ -79,16 +79,14 @@ yarn add superjson devalue
 ```ts title='utils/trpc.ts'
 import devalue from 'devalue';
 import superjson from 'superjson';
-import { withTransformer } from "@trpc/server" // type safed helper
-
 // [...]
 
 export const transformer = {
   input: superjson,
-  output: withTransformer({
+  output: {
     serialize: (object) => devalue(object),
     deserialize: (object) => eval(`(${object})`),
-  }),
+  },
 };
 ```
 
