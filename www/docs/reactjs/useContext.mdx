@@ -221,10 +221,10 @@ function MyComponent() {
     utils.post.invalidate();
   };
 
-  const invalidateAllPostQueriesWithMatchingInputs = () => {
+  const invalidatePostById = () => {
     // 3️⃣
     // All queries in the post router with input {id:1} invalidated 📭
-    utils.post.invalidate({ id: 1 });
+    utils.post.byId.invalidate({ id: 1 });
   };
 
   // Example queries
