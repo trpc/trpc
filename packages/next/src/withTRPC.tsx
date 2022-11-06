@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 /**
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
@@ -22,7 +24,12 @@ import {
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
 } from '@trpc/react-query/shared';
-import type { AnyRouter, Dict, Maybe } from '@trpc/server';
+import type {
+  AnyRouter,
+  ClientDataTransformerOptions,
+  Dict,
+  Maybe,
+} from '@trpc/server';
 import type { ResponseMeta } from '@trpc/server/http';
 import {
   AppContextType,
@@ -56,33 +63,48 @@ function transformQueryOrMutationCacheErrors<
   }
   return result;
 }
-export type WithTRPCConfig<TRouter extends AnyRouter> =
-  CreateTRPCClientOptions<TRouter> & {
-    abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig;
+export type WithTRPCConfig<
+  TRouter extends AnyRouter,
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> = CreateTRPCClientOptions<TRouter, Transformer> & {
+  abortOnUnmount?: boolean;
+} & CreateTRPCReactQueryClientConfig;
 
-interface WithTRPCOptions<TRouter extends AnyRouter>
-  extends CreateTRPCReactOptions<TRouter> {
-  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+interface WithTRPCOptions<
+  TRouter extends AnyRouter,
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> extends CreateTRPCReactOptions<TRouter> {
+  config: (info: {
+    ctx?: NextPageContext;
+  }) => WithTRPCConfig<TRouter, Transformer>;
 }
 
-export interface WithTRPCSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
+export interface WithTRPCSSROptions<
+  TRouter extends AnyRouter,
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> extends WithTRPCOptions<TRouter, Transformer> {
   ssr: true;
   responseMeta?: (opts: {
     ctx: NextPageContext;
     clientErrors: TRPCClientError<TRouter>[];
   }) => ResponseMeta;
 }
-export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
+export interface WithTRPCNoSSROptions<
+  TRouter extends AnyRouter,
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+> extends WithTRPCOptions<TRouter, Transformer> {
   ssr?: false;
 }
 
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
->(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
+  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+>(
+  opts:
+    | WithTRPCNoSSROptions<TRouter, Transformer>
+    | WithTRPCSSROptions<TRouter, Transformer>,
+) {
   const { config: getClientConfig } = opts;
 
   type TRPCPrepassProps = {
