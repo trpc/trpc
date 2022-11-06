@@ -46,6 +46,31 @@ tRPC defines a list of error codes that each represent a different type of error
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
 
+tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
+
+```ts twoslash
+import { TRPCError } from "@trpc/server";
+// ---cut---
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+
+// Example error you might get if your input valdidation fails
+const error: TRPCError = {
+  name: "TRPCError",
+  code: "BAD_REQUEST",
+  message: "\"password\" must be at least 4 characters"
+}
+
+if (error instanceof TRPCError) {
+  const httpCode = getHTTPStatusCodeFromError(error);
+  console.log(httpCode); // 400
+}
+```
+
+:::tip
+
+There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](server-side-calls).
+
+:::
 
 ## Throwing errors
 

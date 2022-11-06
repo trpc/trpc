@@ -1,6 +1,6 @@
 {
   "name": "@examples/interop-standalone-server",
-  "version": "10.0.0-proxy-beta.23",
+  "version": "10.0.0-rc.6",
   "private": true,
   "scripts": {
     "dev:server": "tsx watch src/server",
@@ -12,9 +12,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0-proxy-beta.23",
-    "@trpc/react-query": "^10.0.0-proxy-beta.23",
-    "@trpc/server": "^10.0.0-proxy-beta.23",
+    "@trpc/client": "^10.0.0-rc.6",
+    "@trpc/react-query": "^10.0.0-rc.6",
+    "@trpc/server": "^10.0.0-rc.6",
     "@types/node-fetch": "^2.5.11",
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.1",

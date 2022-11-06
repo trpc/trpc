@@ -5,8 +5,9 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
-import { TRPCError, resolveHTTPResponse } from '../..';
+import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
+import { resolveHTTPResponse } from '../../http';
 import { HTTPRequest } from '../../http/internals/types';
 import type { HTTPResponse } from '../../http/internals/types';
 import {
@@ -33,11 +34,18 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     }
   }
 
+  let body: string | null | undefined;
+  if (event.body && event.isBase64Encoded) {
+    body = Buffer.from(event.body, 'base64').toString('utf8');
+  } else {
+    body = event.body;
+  }
+
   return {
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,
-    body: event.body,
+    body: body,
   };
 }
 

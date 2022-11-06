@@ -161,28 +161,23 @@ type GreetingInput = InferQueryInput<'greeting'>;
 
 #### v10
 
-```ts
-// The same helper is shipped out of the box.
-type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
-```
-
-#### v10 inference helper
+#### Inference helpers
 
 ```ts twoslash
 // @module: esnext
 // @include: server
 // @filename: index.ts
 // ---cut---
-import type { GetInferenceHelpers } from '@trpc/server';
+// Inference helpers are now shipped out of the box.
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
+type RouterInput = inferRouterInputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>;
 
-type PostCreate = AppRouterTypes['post']['create'];
-
-type PostCreateInput = PostCreate['input'];
+type PostCreateInput = RouterInput['post']['create'];
 //   ^?
-type PostCreateOutput = PostCreate['output'];
+type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
@@ -420,9 +415,7 @@ See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-opti
 
 ### Custom Links
 
-See the [Links documentation](links#creating-a-custom-link).
-
-> 🚧 Feel free to contribute to improve this section
+In v10, the Links architecture has been completely revamped. Therefore, custom links made for v9 will not work for v10 or while on interop. If you want more information about how to create a custom link for v10, checkout [the Links documentation](links#creating-a-custom-link).
 
 ## Client Package Changes
 
@@ -478,7 +471,7 @@ trpc.post.byId.useQuery('1', {
 
 :::note
 If you only use the tRPC provided API's in your app you will have no problems in
-migrating 👍 However if you have been useing the tanstack query client directly
+migrating 👍 However if you have been using the tanstack query client directly
 to do things like update query data for multiple tRPC generated queries using
 [`queryClient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
 you may need to take note!
@@ -530,7 +523,7 @@ ac.abort();
 
 #### HTTP-specific options moved from `TRPCClient` to links
 
-Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to `httpLink` and `httpBatchLink`.
+Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to [`httpLink`](links/httpLink) and [`httpBatchLink`](links/httpBatchLink).
 
 ```ts
 // Before:
@@ -566,6 +559,8 @@ const client = createTRPCProxyClient({
 });
 ```
 
+This change is also reflected in the `@trpc/server` package, where `http` related exports were previously exported from the main entrypoint, but has now been moved to their own `@trpc/server/http` entrypoint.
+
 ## Extras
 
 ### Removal of the teardown option
@@ -583,7 +578,7 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### `queryClient` is no longer exposed through tRPC context
 
-tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to access it, import it from `@tanstack/react-query`:
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](useContext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
 
 ```tsx
 import { useQueryClient } from '@tanstack/react-query';

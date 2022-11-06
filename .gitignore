@@ -2,6 +2,8 @@
 .DS_Store
 dist
 .next
+.turbo
+.vercel
 
 node_modules
 package-lock.json
@@ -22,7 +24,8 @@ packages/*/*
 !packages/*/*.*
 ## Dont ignore src or test
 !packages/*/src
-!packages/*/test
+!packages/tests/*
+packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
 

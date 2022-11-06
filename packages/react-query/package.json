@@ -1,9 +1,12 @@
 {
   "name": "@trpc/react-query",
-  "version": "10.0.0-proxy-beta.23",
+  "version": "10.0.0-rc.6",
   "description": "tRPC React lib",
   "author": "KATT",
   "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -11,11 +14,11 @@
     "directory": "packages/react"
   },
   "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -58,14 +61,16 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-proxy-beta.23",
-    "@trpc/server": "^10.0.0-proxy-beta.23",
+    "@trpc/client": "^10.0.0-rc.6",
+    "@trpc/server": "^10.0.0-rc.6",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "express": "^4.17.1",
     "next": "^12.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.9.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {
