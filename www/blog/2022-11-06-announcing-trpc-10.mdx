@@ -37,13 +37,13 @@ tRPC 10 includes:
   - t3-app - https://github.com/t3-oss/create-t3-app
   - Vue/Svelte/Solid/etc - TBD
 
-### Massively Improved TypeScript Performance
+## Massively Improved TypeScript Performance
 
 TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC are excessive on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows. In v10, we've improved this massively by:
 
 Changing our API allows TypeScript to be much faster, especially during incremental compilation, allowing your IDE to remain snappy.
 
-### Improved DX
+## Improved DX
 
 tRPC 10 embraces TypeScript to its fullest potential to give you an unparalleled DX across the API.
 
@@ -52,7 +52,7 @@ You will notice the following in tRPC 10:
 - Jump to definition
 - Automatic procedure renaming across the server and client
 
-### Powerful Backend Framework
+## Powerful Backend Framework
 
 We've doubled down on the core philosophy of making cross-functional teams more effective and enabling more developers to jump into the backend.
 
@@ -60,19 +60,20 @@ tRPC 10 creates an integrated experience between the front and backend. This fur
 
 Other ways tRPC 10 provides a powerful backend framework:
 
-- Calling functions instead of invoking strings
 - CMD+clicking and refactoring from the frontend
-- Easier to infer types
-- Reusable middlewares
-- Reusable base procedures
+- [Reusable middlewares](https://trpc.io/docs/v10/middlewares)
+- [Easier to infer types]
+- [Reusable base procedures](https://trpc.io/docs/v10/procedures#reusable-base-publicprocedures) with [multiple input parsers](https://trpc.io/docs/v10/procedures#multiple-input-parsers)
 
-### Growing tRPC Ecosystem
+## Growing tRPC Ecosystem
 
-We're getting a rich ecosystem around tRPC
+We're getting a rich ecosystem around tRPC. Some examples:
 
-- Use [trpc-openapi](https://github.com/jlalmes/trpc-openapi) to easily create REST-compataible endpoints
-- Use [create-t3-app](https://github.com/t3-oss/create-t3-app) too botstrap a full-stack Next.js application with tRPC
-- There are adapters so you can use tRPC easily in Vue/[Svelte](https://github.com/icflorescu/trpc-sveltekit)/Solid/etc - TBD
+- [trpc-openapi](https://github.com/jlalmes/trpc-openapi) to easily create REST-compataible endpoints
+- [create-t3-app](https://github.com/t3-oss/create-t3-app) to botstrap a full-stack Next.js application with tRPC
+- [create-t3-turbo](https://github.com/t3-oss/create-t3-turbo) to kickstart your next React Native app with tRPC
+- There are userland adapters so you can use tRPC easily in Vue/Svelte/Solid/etc
+- View more examples, plugins, & boilerplates in our [Awesome tRPC collection](https://trpc.io/docs/awesome-trpc)
 
 ### Incremental Migration Path
 
@@ -81,3 +82,7 @@ If you want to migrate incrementally, we've also put in a lot of work to make th
 See the migration guide for a full breakdown: [https://trpc.io/docs/v10/migrate-from-v9-to-v10](https://trpc.io/docs/v10/migrate-from-v9-to-v10)
 
 [Sachin](https://twitter.com/s4chinraja) from the core team has also made [a codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) that will do much of the heavy lifting for yo.
+
+## Conclusion
+
+## Community
