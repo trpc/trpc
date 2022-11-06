@@ -1,4 +1,3 @@
-import NextError from 'next/error';
 import { useRouter } from 'next/router';
 import { NextPageWithLayout } from '~/pages/_app';
 import { RouterOutput, trpc } from '~/utils/trpc';
@@ -22,22 +21,10 @@ function PostItem(props: { post: PostByIdOutput }) {
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id });
+  const postQuery = trpc.post.byId.useQuery({ id }, { suspense: true });
 
-  if (postQuery.error) {
-    return (
-      <NextError
-        title={postQuery.error.message}
-        statusCode={postQuery.error.data?.httpStatus ?? 500}
-      />
-    );
-  }
-
-  if (postQuery.status !== 'success') {
-    return <>Loading...</>;
-  }
   const { data } = postQuery;
-  return <PostItem post={data} />;
+  return <PostItem post={data!} />;
 };
 
 export default PostViewPage;
