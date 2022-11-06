@@ -26,7 +26,6 @@ import {
 import type {
   AnyRouter,
   ClientDataTransformerOptions,
-  DataTransformerOptions,
   ProcedureRecord,
   inferHandlerInput,
   inferProcedureClientError,

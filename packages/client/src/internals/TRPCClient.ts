@@ -23,7 +23,10 @@ import {
 } from '../links/types';
 
 interface CreateTRPCClientBaseOptions<
-  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+  Transformer extends
+    | any
+    | ClientDataTransformerOptions
+    | undefined = undefined,
 > {
   /**
    * Data transformer
@@ -52,7 +55,10 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 /** @internal */
 export type CreateTRPCClientOptions<
   TRouter extends AnyRouter,
-  Transformer extends ClientDataTransformerOptions | undefined = undefined,
+  Transformer extends
+    | any
+    | ClientDataTransformerOptions
+    | undefined = undefined,
 > =
   | CreateTRPCClientBaseOptions<Transformer> & {
       links: TRPCLink<TRouter>[];

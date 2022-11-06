@@ -45,7 +45,7 @@ export type WithTransformerResult<T extends DataTransformer> = ReturnType<
  * @public
  */
 export type AsTransformer<
-  T extends ClientDataTransformerOptions | undefined = undefined,
+  T extends ClientDataTransformerOptions | undefined | any = undefined,
 > = T extends DataTransformer
   ? WithTransformerResult<T>
   : T extends CombinedDataTransformer
@@ -54,7 +54,7 @@ export type AsTransformer<
     : WithTransformerResult<T['output']> extends unknown
     ? unknown
     : WithTransformerResult<T['input']>
-  : undefined;
+  : any;
 
 /**
  * @public
