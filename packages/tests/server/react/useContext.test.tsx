@@ -47,7 +47,7 @@ const ctx = konn()
               cursor: z.string().optional(),
             }),
           )
-          .query(() => '__infResult' as const),
+          .query(() => posts),
         create: t.procedure
           .input(
             z.object({
@@ -327,14 +327,23 @@ test('setData', async () => {
     const utils = proxy.useContext();
 
     useEffect(() => {
-      utils.post.all.setData([{ id: 0, text: 'setData' }]);
-    }, [utils]);
+      if (!allPosts.data) {
+        utils.post.all.setData(undefined, [{ id: 0, text: 'setData1' }]);
+      }
+
+      if (allPosts.data) {
+        utils.post.all.setData(undefined, (prev) => [
+          ...(prev ?? []), //                ^?
+          { id: 1, text: 'setData2' },
+        ]);
+      }
+    }, [allPosts.data]);
 
     if (!allPosts.data) {
       return <>...</>;
     }
 
-    return <p>{allPosts.data[0]?.text}</p>;
+    return <>{JSON.stringify(allPosts.data, null, 4)}</>;
   }
 
   const utils = render(
@@ -343,8 +352,112 @@ test('setData', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('setData');
+    expect(utils.container).toHaveTextContent('setData1');
+    expect(utils.container).toHaveTextContent('setData2');
   });
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      [
+        {
+            "id": 0,
+            "text": "setData1"
+        },
+        {
+            "id": 1,
+            "text": "setData2"
+        }
+    ]
+    </div>
+  `);
+});
+
+test('setInfiniteData', async () => {
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const listPosts = proxy.post.list.useQuery({}, { enabled: false });
+
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      if (!listPosts.data) {
+        utils.post.list.setInfiniteData(
+          {},
+          {
+            pageParams: [{}],
+            pages: [[{ id: 0, text: 'setInfiniteData1' }]],
+          },
+        );
+      }
+
+      if (listPosts.data) {
+        utils.post.list.setInfiniteData({}, (prev) => {
+          const data = prev ?? {
+            pageParams: [],
+            pages: [],
+          };
+          return {
+            pageParams: [
+              ...data.pageParams,
+              {
+                cursor: 1,
+              },
+            ],
+            pages: [
+              ...data.pages,
+              [
+                {
+                  id: 1,
+                  text: 'setInfiniteData2',
+                },
+              ],
+            ],
+          };
+        });
+      }
+    }, [listPosts.data]);
+
+    if (!listPosts.data) {
+      return <>...</>;
+    }
+
+    return <>{JSON.stringify(listPosts.data, null, 4)}</>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('setInfiniteData1');
+    expect(utils.container).toHaveTextContent('setInfiniteData2');
+  });
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      {
+        "pageParams": [
+            {},
+            {
+                "cursor": 1
+            }
+        ],
+        "pages": [
+            [
+                {
+                    "id": 0,
+                    "text": "setInfiniteData1"
+                }
+            ],
+            [
+                {
+                    "id": 1,
+                    "text": "setInfiniteData2"
+                }
+            ]
+        ]
+    }
+    </div>
+  `);
 });
 
 test('getData', async () => {
