@@ -110,11 +110,14 @@ type DecorateProcedure<
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
   setData(
+    /**
+     * The input of the procedure
+     */
+    input: inferProcedureInput<TProcedure>,
     updater: Updater<
       inferProcedureOutput<TProcedure> | undefined,
       inferProcedureOutput<TProcedure> | undefined
     >,
-    input?: inferProcedureInput<TProcedure>,
     options?: SetDataOptions,
   ): void;
 
@@ -122,11 +125,11 @@ type DecorateProcedure<
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
   setInfiniteData(
+    input: inferProcedureInput<TProcedure>,
     updater: Updater<
       InfiniteData<inferProcedureOutput<TProcedure>> | undefined,
       InfiniteData<inferProcedureOutput<TProcedure>> | undefined
     >,
-    input?: inferProcedureInput<TProcedure>,
     options?: SetDataOptions,
   ): void;
 
@@ -212,7 +215,7 @@ export function createReactQueryUtilsProxy<
 
       const getOpts = (name: typeof utilName) => {
         if (['setData', 'setInfiniteData'].includes(name)) {
-          const [updater, input, ...rest] = args as Parameters<
+          const [input, updater, ...rest] = args as Parameters<
             AnyDecoratedProcedure[typeof utilName]
           >;
           const queryKey = getQueryKey(fullPath, input);

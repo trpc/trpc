@@ -327,14 +327,23 @@ test('setData', async () => {
     const utils = proxy.useContext();
 
     useEffect(() => {
-      utils.post.all.setData([{ id: 0, text: 'setData' }]);
-    }, [utils]);
+      if (!allPosts.data) {
+        utils.post.all.setData(undefined, [{ id: 0, text: 'setData1' }]);
+      }
+
+      if (allPosts.data) {
+        utils.post.all.setData(undefined, (prev) => [
+          ...(prev ?? []), //                ^?
+          { id: 1, text: 'setData2' },
+        ]);
+      }
+    }, [allPosts.data]);
 
     if (!allPosts.data) {
       return <>...</>;
     }
 
-    return <p>{allPosts.data[0]?.text}</p>;
+    return <pre>{JSON.stringify(allPosts.data)}</pre>;
   }
 
   const utils = render(
@@ -343,7 +352,8 @@ test('setData', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('setData');
+    expect(utils.container).toHaveTextContent('setData1');
+    expect(utils.container).toHaveTextContent('setData2');
   });
 });
 
