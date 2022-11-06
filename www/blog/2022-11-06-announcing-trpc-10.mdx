@@ -9,11 +9,11 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 ## Introduction
 
-tRPC's mission from day one has been to provide you with an easy way of TODO
+tRPC's mission from day one has been to provide you with an easy way of moving fast and not breaking nothing whilst building full-stack applications.
 
-Since we released our last major version in August 2021, we've gotten over 13,500+ more stars on GitHub, thousands more applications using tRPC, a growing ecosystem, and countless community members contributing and providing valuable feedback.
+Since we released our last major version in August 2021, we've: gotten over 13,500+ more stars on GitHub, a [Discord-community](https://trpc.io/discord) with over two thousand members, thousands more applications using tRPC, a growing ecosystem, and countless community members contributing and providing valuable feedback.
 
-Today, **we're launching tRPC 10**. It is ready for production and can safely be used for in your next our current TypeScript project.
+Today, **we're launching tRPC 10**. It is already used in production and can safely be used for in your next, or current, TypeScript project.
 
 Get up and running with the [example applications](https://trpc.io/docs/v10/awesome-trpc#-starting-points-example-projects-etc) to get a feel of tRPC 10, or see the [guide for migrating from tRPC 9 to tRPC 10](https://trpc.io/docs/v10/migrate-from-v9-to-v10).
 
@@ -24,7 +24,6 @@ tRPC 10 is our biggest release ever. This is the first time we have made any fun
 tRPC 10 includes:
 
 - **Massively Improved TypeScript Performance:**
-  - High-performance gains for large codebases
 - **Improved API Experience**
   - Calling functions instead of invoking strings
   - CMD+clicking and refactoring from the frontend
@@ -32,57 +31,54 @@ tRPC 10 includes:
 - **Powerful Backend Framework**
   - Reusable middlewares
   - Reusable base procedures
-- **Growing tRPC Ecosystem**
-  - trpc-openapi - https://github.com/jlalmes/trpc-openapi
-  - t3-app - https://github.com/t3-oss/create-t3-app
-  - Vue/Svelte/Solid/etc - TBD
 
-## Massively Improved TypeScript Performance
+### Massively Improved TypeScript Performance
 
 TypeScript enables us to do very cool things, but it comes at a cost. Many of the things that we (ab)use in tRPC are excessive on the compiler, and as a result, you might have experienced your IDE slowing down as your application grows.
 
 In v10, we've improved this massively by changing our API allows TypeScript to be much faster, especially during incremental compilation, allowing your IDE to remain snappy.
 
-## Improved DX
+### Improved DX
 
 tRPC 10 embraces TypeScript to its fullest potential to give you an unparalleled DX across the API.
 
 You will notice the following in tRPC 10:
 
 - Jump straight to your backend function from your frontend by just CMD+clicking the path
-- Right click and "Rename Symbol" to rename an input argument or a procedure name across your whole application.
+- Right click and _"Rename Symbol"_ to rename an input argument or a procedure name across your whole application.
 - [Easier to infer types](https://trpc.io/docs/v10/infer-types)
 
-## Powerful Backend Framework
+### Powerful Backend Framework
 
 We've doubled down on the core philosophy of making cross-functional teams more effective and enabling more developers to jump into the backend.
 
-tRPC 10 creates an integrated experience between the front and backend. This further blurs the line between the front and the back end.
+tRPC 10 creates an seamless experience between the front- and backend that further blurs the line between them
 
 Other ways tRPC 10 provides a powerful backend framework:
 
-- CMD+clicking and refactoring from the frontend
-- [Reusable middlewares](https://trpc.io/docs/v10/middlewares)
+- [Reusable middlewares](https://trpc.io/docs/v10/middlewares) with [Context Swapping](https://trpc.io/docs/v10/middlewares#context-swapping)
 - [Reusable base procedures](https://trpc.io/docs/v10/procedures#reusable-base-publicprocedures) with [multiple input parsers](https://trpc.io/docs/v10/procedures#multiple-input-parsers)
+- Flexible [error handling](https://trpc.io/docs/v10/error-handling) with custom [error formatting](https://trpc.io/docs/v10/error-formatting)
+- [Procedure metadata](https://trpc.io/docs/v10/metadata) to decorate your procedures with more information
 
-## Growing tRPC Ecosystem
+### Growing tRPC Ecosystem
 
-We're getting a rich ecosystem around tRPC. Some examples:
+A rich ecosystem is starting to take form around tRPC. Here are a few examples:
 
 - [trpc-openapi](https://github.com/jlalmes/trpc-openapi) to easily create REST-compataible endpoints
 - [create-t3-app](https://github.com/t3-oss/create-t3-app) to botstrap a full-stack Next.js application with tRPC
 - [create-t3-turbo](https://github.com/t3-oss/create-t3-turbo) to kickstart your next React Native app with tRPC
-- There are userland adapters so you can use tRPC easily in Vue/Svelte/Solid/etc
+- There are adapters so you can use tRPC easily in Solid, Svelte, or Vue
 - View more examples, plugins, & boilerplates in our [Awesome tRPC collection](https://trpc.io/docs/awesome-trpc)
 
-## Incremental Migration Path
+### Incremental Migration Path
 
-If you want to migrate incrementally, we've also put in a lot of work to make the experience as straightforward as possible for you, with almost full backward compatibility.
+If you want to migrate incrementally, we've also put in a lot of work to make the experience as straightforward as possible for you, with almost full backward compatibility. See the [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) for a full breakdown.
 
-See the migration guide for a full breakdown: [https://trpc.io/docs/v10/migrate-from-v9-to-v10](https://trpc.io/docs/v10/migrate-from-v9-to-v10)
-
-[Sachin](https://twitter.com/s4chinraja) from the core team has also made [a codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) that will do much of the heavy lifting for yo.
+[Sachin](https://twitter.com/s4chinraja) from the tRPC team has also made [a codemod](https://github.com/sachinraja/trpc-v10-migrate-codemod) that will do much of the heavy lifting for you.
 
 ## Conclusion
 
 ## Community
+
+We couldn't do this without the help of the community. A special shoutout goes out to [Sachin](https://twitter.com/s4chinraja), [Julius](https://twitter.com/jullerino), [Ahmed](https://twitter.com/ixahmedxii), [Chris](https://twitter.com/trashh_dev), [Theo](https://twitter.com/t3dotgg),
