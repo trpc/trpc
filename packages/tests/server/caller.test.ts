@@ -1,6 +1,8 @@
 import { waitError } from './___testHelpers';
+import { observable } from '@trpc/server/observable';
 import { TRPCError, initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
+import { EventEmitter } from 'stream';
 import { z } from 'zod';
 
 const t = initTRPC
@@ -50,6 +52,18 @@ test('input mutation', async () => {
   await caller.post.delete(0);
 
   expect(posts).toStrictEqual(['Two', 'Three']);
+});
+
+test('input subscription', async () => {
+  const onDelete = jest.fn();
+  const router = t.router({
+    onDelete: t.procedure.subscription(onDelete),
+  });
+
+  const caller = router.createCaller({});
+  await caller.onDelete();
+
+  expect(onDelete).toHaveBeenCalledTimes(1);
 });
 
 test('context with middleware', async () => {
