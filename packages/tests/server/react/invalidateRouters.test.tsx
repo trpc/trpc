@@ -1,3 +1,4 @@
+import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { useIsFetching } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -299,96 +300,6 @@ test('Check invalidating at router root invalidates all', async () => {
 
 //---------------------------------------------------------------------------------------------------
 
-test('Check invalidation when filtering by input', async () => {
-  const { proxy, App, resolvers } = ctx;
-  function MyComponent() {
-    useSetupAllTestHooks(ctx.proxy);
-    const isFetching = useIsFetching();
-
-    const utils = proxy.useContext();
-
-    return (
-      <div>
-        {isFetching ? (
-          <p>{`Still fetching ${isFetching} queries`}</p>
-        ) : (
-          <p>All queries finished fetching!</p>
-        )}
-        <button
-          data-testid="invalidate-queries-with-userid-1-from-user-router"
-          onClick={() => {
-            utils.user.invalidate({ userId: '1' });
-          }}
-        />
-        <button
-          data-testid="invalidate-queries-with-userid-1-from-router-root"
-          onClick={() => {
-            utils.invalidate({ userId: '1' });
-          }}
-        />
-      </div>
-    );
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
-  });
-
-  await userEvent.click(
-    utils.getByTestId('invalidate-queries-with-userid-1-from-user-router'),
-  );
-
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
-  });
-
-  // Invalidated!
-  expect(resolvers.user.byId[1]).toHaveBeenCalledTimes(2);
-  expect(resolvers.user.details.getByUserId['1']).toHaveBeenCalledTimes(2);
-
-  // Untouched!
-  expect(resolvers.user.byId[2]).toHaveBeenCalledTimes(1);
-  expect(resolvers.user.details.getByUserId['2']).toHaveBeenCalledTimes(1);
-  expect(resolvers.user.listAll).toHaveBeenCalledTimes(1);
-  expect(resolvers['user.current.email.getMain']).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts.byId[1]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts.byId[2]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts['comments.getById'][1]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts['comments.getById'][2]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts.getAll).toHaveBeenCalledTimes(1);
-
-  await userEvent.click(
-    utils.getByTestId('invalidate-queries-with-userid-1-from-router-root'),
-  );
-
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
-  });
-
-  // Invalidated!
-  expect(resolvers.user.byId[1]).toHaveBeenCalledTimes(3);
-  expect(resolvers.user.details.getByUserId['1']).toHaveBeenCalledTimes(3);
-
-  // Untouched!
-  expect(resolvers.user.byId[2]).toHaveBeenCalledTimes(1);
-  expect(resolvers.user.details.getByUserId['2']).toHaveBeenCalledTimes(1);
-  expect(resolvers.user.listAll).toHaveBeenCalledTimes(1);
-  expect(resolvers['user.current.email.getMain']).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts.byId[1]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts.byId[2]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts['comments.getById'][1]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts['comments.getById'][2]).toHaveBeenCalledTimes(1);
-  expect(resolvers.posts.getAll).toHaveBeenCalledTimes(1);
-});
-
-//---------------------------------------------------------------------------------------------------
-
 test('test TS types of the input variable', async () => {
   const { proxy, App, resolvers } = ctx;
   function MyComponent() {
@@ -397,33 +308,10 @@ test('test TS types of the input variable', async () => {
 
     const utils = proxy.useContext();
 
-    const tsInputTypeTests = () => {
-      // @ts-expect-error UserID should be string type
-      utils.invalidate({ userId: 1 });
-
-      // @ts-expect-error UserID should not allow "3" as it's not in union
-      utils.invalidate({ userId: '3' });
-
+    ignoreErrors(() => {
       // @ts-expect-error from user.details should not see id from `posts.byid`
-      utils.user.details.invalidate({ id: '2' });
-
-      // ID should accept string and number as it is used twice posts.byId & posts.[comments.getById]
-      utils.invalidate({ id: 1 });
-      utils.invalidate({ id: '1' });
-
-      //TODO: FIX ME!!!! Currently our types for `input` cannot look up the tree
-      //for any procedures that have been defined using `.`'s in the procedure
-      //name and so faux appear in the current router being invalidated... here
-      //['user.current.email.getMain'] would be invalidated as it will have a
-      //key of `[['user','current','email','getMain'], {getExtraDetails:true}] but it's input
-      //`getExtraDetails:boolean` is not available in the types for input
-      // See: https://github.com/trpc/trpc/issues/2759
-      // @ts-expect-error REMOVE AND FIX TYPE INFERENCE EDGE CASE ... 🤯
-      utils.user.invalidate({ getExtraDetails: true });
-
-      //It will however be available at root.
-      utils.invalidate({ getExtraDetails: false });
-    };
+      utils.user.details.getByUserId.invalidate({ id: '2' });
+    });
 
     return (
       <div>
@@ -432,12 +320,6 @@ test('test TS types of the input variable', async () => {
         ) : (
           <p>All queries finished fetching!</p>
         )}
-        <button
-          data-testid="invalidate-queries-with-userid-1"
-          onClick={() => {
-            utils.user.invalidate({ userId: '1' });
-          }}
-        />
       </div>
     );
   }
