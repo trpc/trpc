@@ -201,3 +201,74 @@ test('deprecated routers', async () => {
     </App>,
   );
 });
+
+test('useSuspenseInfiniteQuery()', async () => {
+  const { App, proxy } = ctx;
+  function MyComponent() {
+    const query1 = proxy.post.list.useSuspenseInfiniteQuery(
+      {},
+      {
+        getNextPageParam(lastPage) {
+          return lastPage.next;
+        },
+      },
+    );
+    expect(query1.trpc.path).toBe('post.list');
+
+    expect(query1.data).not.toBeFalsy();
+
+    type TData = typeof query1['data'];
+    expectTypeOf<TData>().toMatchTypeOf<
+      InfiniteData<{
+        items: typeof fixtureData;
+        next: number | undefined;
+      }>
+    >();
+
+    return (
+      <>
+        <button
+          data-testid="fetchMore"
+          onClick={() => {
+            query1.fetchNextPage();
+          }}
+        >
+          Fetch more
+        </button>
+        <pre>{JSON.stringify(query1.data, null, 4)}</pre>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`[ "1" ]`);
+  });
+  utils.getByTestId('fetchMore').click();
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`[ "1" ]`);
+    expect(utils.container).toHaveTextContent(`[ "2" ]`);
+  });
+});
+
+test('deprecated routers', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    // FIXME this should have strike-through
+    proxy.deprecatedRouter.deprecatedProcedure.useQuery();
+
+    return null;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+});

@@ -28,9 +28,11 @@ export function createReactProxyDecoration<
     const [input, ...rest] = args;
 
     const queryKey = getQueryKey(path, input);
-    if (lastArg === 'useSuspenseQuery') {
+    if (lastArg.startsWith('useSuspense')) {
       const opts = rest[0] || {};
-      return (hooks as any).useQuery(queryKey, {
+      const fn =
+        lastArg === 'useSuspenseQuery' ? 'useQuery' : 'useInfiniteQuery';
+      return (hooks as any)[fn](queryKey, {
         ...opts,
         suspense: true,
         enabled: true,

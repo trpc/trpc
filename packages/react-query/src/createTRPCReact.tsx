@@ -24,6 +24,7 @@ import {
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
+  UseTRPCInfiniteQuerySuccessResult,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
   UseTRPCQueryOptions,
@@ -73,7 +74,28 @@ export type DecorateProcedure<
             TData,
             TRPCClientErrorLike<TProcedure>
           >;
-        }
+        } & (TFlags extends 'ExperimentalSuspense'
+          ? {
+              useSuspenseInfiniteQuery: <
+                _TQueryFnData = inferProcedureOutput<TProcedure>,
+                TData = inferProcedureOutput<TProcedure>,
+              >(
+                input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+                opts?: Omit<
+                  UseTRPCInfiniteQueryOptions<
+                    TPath,
+                    inferProcedureInput<TProcedure>,
+                    TData,
+                    TRPCClientErrorLike<TProcedure>
+                  >,
+                  'enabled' | 'suspense'
+                >,
+              ) => UseTRPCInfiniteQuerySuccessResult<
+                TData,
+                TRPCClientErrorLike<TProcedure>
+              >;
+            }
+          : {})
       : {}) &
       (TFlags extends 'ExperimentalSuspense'
         ? {
