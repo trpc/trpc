@@ -36,5 +36,3 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
    */
   reactQueryContext?: React.Context<QueryClient | undefined>;
 }
-
-export type ExperimentalFlags = 'ExperimentalSuspense';

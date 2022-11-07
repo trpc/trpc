@@ -1,7 +1,6 @@
 import {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
-  ExperimentalFlags,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
@@ -15,7 +14,7 @@ import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
 export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
-  TFlags extends ExperimentalFlags = never,
+  TFlags = null,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const hooks = createHooksInternal<TRouter, TSSRContext>({
     unstable_overrides: opts.unstable_overrides,

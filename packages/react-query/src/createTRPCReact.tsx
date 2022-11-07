@@ -32,14 +32,14 @@ import {
   UseTRPCSubscriptionOptions,
   createHooksInternal,
 } from './shared/hooks/createHooksInternal';
-import { CreateTRPCReactOptions, ExperimentalFlags } from './shared/types';
+import { CreateTRPCReactOptions } from './shared/types';
 
 /**
  * @internal
  */
 export type DecorateProcedure<
   TProcedure extends AnyProcedure,
-  TFlags extends ExperimentalFlags,
+  TFlags,
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
@@ -131,7 +131,7 @@ export type DecorateProcedure<
  */
 export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
-  TFlags extends ExperimentalFlags,
+  TFlags,
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
@@ -145,11 +145,7 @@ export type DecoratedProcedureRecord<
     : never;
 };
 
-export type CreateTRPCReact<
-  TRouter extends AnyRouter,
-  TSSRContext,
-  TFlags extends ExperimentalFlags,
-> = {
+export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
@@ -162,7 +158,7 @@ export type CreateTRPCReact<
 export function createHooksInternalProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
-  TFlags extends ExperimentalFlags = never,
+  TFlags = null,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 
@@ -188,7 +184,7 @@ export function createHooksInternalProxy<
 export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
-  TFlags extends ExperimentalFlags = never,
+  TFlags = null,
 >(opts?: CreateTRPCReactOptions<TRouter>) {
   const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
