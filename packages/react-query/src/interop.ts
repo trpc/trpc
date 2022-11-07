@@ -16,7 +16,7 @@ export function createReactQueryHooks<
 >(
   opts?: CreateTRPCReactOptions<TRouter>,
 ): CreateReactQueryHooks<TRouter, TSSRContext> & {
-  proxy: CreateTRPCReact<TRouter, TSSRContext>;
+  proxy: CreateTRPCReact<TRouter, TSSRContext, never>;
 } {
   const trpc = createHooksInternal<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext>(trpc);

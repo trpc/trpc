@@ -36,7 +36,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   });
 
   const queryClient = createQueryClient();
-  const proxy = createTRPCReact<typeof appRouter>();
+  const proxy = createTRPCReact<typeof appRouter, unknown, 'Suspense'>();
   const client = opts.client;
 
   function App(props: { children: ReactNode }) {

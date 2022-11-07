@@ -28,6 +28,14 @@ export function createReactProxyDecoration<
     const [input, ...rest] = args;
 
     const queryKey = getQueryKey(path, input);
+    if (lastArg === 'useSuspenseQuery') {
+      const opts = rest[0] || {};
+      return (hooks as any).useQuery(queryKey, {
+        ...opts,
+        suspense: true,
+        enabled: true,
+      });
+    }
     return (hooks as any)[lastArg](queryKey, ...rest);
   });
 }

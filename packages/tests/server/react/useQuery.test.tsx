@@ -104,6 +104,30 @@ test('useQuery()', async () => {
   });
 });
 
+test('useSuspenseQuery()', async () => {
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const query1 = proxy.post.byId.useSuspenseQuery({
+      id: '1',
+    });
+    expectTypeOf(query1.data).toEqualTypeOf<'__result'>();
+
+    type TData = typeof query1['data'];
+    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+
+    return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`__result`);
+  });
+});
+
 test('useInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {

@@ -2,6 +2,7 @@
 import {
   DehydratedState,
   QueryClient,
+  QueryObserverSuccessResult,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -157,6 +158,11 @@ interface TRPCHookResult {
 export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
   TRPCHookResult;
 
+/**
+ * @internal
+ */
+export type UseTRPCQuerySuccessResult<TData, TError> =
+  QueryObserverSuccessResult<TData, TError> & TRPCHookResult;
 /**
  * @internal
  */

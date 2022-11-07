@@ -28,16 +28,18 @@ import {
   UseTRPCMutationResult,
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
+  UseTRPCQuerySuccessResult,
   UseTRPCSubscriptionOptions,
   createHooksInternal,
 } from './shared/hooks/createHooksInternal';
-import { CreateTRPCReactOptions } from './shared/types';
+import { CreateTRPCReactOptions, ExperimentalFlags } from './shared/types';
 
 /**
  * @internal
  */
 export type DecorateProcedure<
   TProcedure extends AnyProcedure,
+  TFlags extends ExperimentalFlags,
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
@@ -72,7 +74,30 @@ export type DecorateProcedure<
             TRPCClientErrorLike<TProcedure>
           >;
         }
-      : {})
+      : {}) &
+      (TFlags extends 'Suspense'
+        ? {
+            useSuspenseQuery: <
+              TQueryFnData = inferProcedureOutput<TProcedure>,
+              TData = inferProcedureOutput<TProcedure>,
+            >(
+              input: inferProcedureInput<TProcedure>,
+              opts?: Omit<
+                UseTRPCQueryOptions<
+                  TPath,
+                  inferProcedureInput<TProcedure>,
+                  TQueryFnData,
+                  TData,
+                  TRPCClientErrorLike<TProcedure>
+                >,
+                'enabled' | 'suspense'
+              >,
+            ) => UseTRPCQuerySuccessResult<
+              TData,
+              TRPCClientErrorLike<TProcedure>
+            >;
+          }
+        : {})
   : TProcedure extends AnyMutationProcedure
   ? {
       useMutation: <TContext = unknown>(
@@ -106,24 +131,30 @@ export type DecorateProcedure<
  */
 export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
+  TFlags extends ExperimentalFlags,
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
+        TFlags,
         `${TPath}${TKey & string}.`
       >
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey], `${TPath}${TKey & string}`>
+    ? DecorateProcedure<TProcedures[TKey], TFlags, `${TPath}${TKey & string}`>
     : never;
 };
 
-export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
+export type CreateTRPCReact<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TFlags extends ExperimentalFlags,
+> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
-} & DecoratedProcedureRecord<TRouter['_def']['record']>;
+} & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
 
 /**
  * @internal
@@ -131,8 +162,9 @@ export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext> = {
 export function createHooksInternalProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
+  TFlags extends ExperimentalFlags = never,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext>;
+  type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 
   return createFlatProxy<CreateHooksInternalProxy>((key) => {
     if (key === 'useContext') {
@@ -156,9 +188,10 @@ export function createHooksInternalProxy<
 export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
+  TFlags extends ExperimentalFlags = never,
 >(opts?: CreateTRPCReactOptions<TRouter>) {
   const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
-  const proxy = createHooksInternalProxy<TRouter, TSSRContext>(hooks);
+  const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
 
   return proxy;
 }
