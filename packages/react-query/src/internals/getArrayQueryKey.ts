@@ -1,8 +1,7 @@
 import { GetQueryKeyReturnType, QueryType } from './getQueryKey';
 
 export type GetArrayQueryKeyReturnType =
-  | [QueryType, string[]]
-  | [QueryType, string[], unknown]
+  | [QueryType, string[], unknown?]
   | [QueryType];
 /**
  * To allow easy interactions with groups of related queries, such as

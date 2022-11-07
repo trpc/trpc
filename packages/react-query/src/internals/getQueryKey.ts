@@ -1,7 +1,5 @@
 export type QueryType = 'infinite' | 'query';
-export type GetQueryKeyReturnType =
-  | [QueryType, string]
-  | [QueryType, string, unknown];
+export type GetQueryKeyReturnType = [QueryType, string, unknown?];
 
 /**
  * We treat `undefined` as an input the same as omitting an `input`
