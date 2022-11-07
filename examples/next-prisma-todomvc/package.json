@@ -33,7 +33,7 @@
     "@trpc/react-query": "^10.0.0-rc.6",
     "@trpc/server": "^10.0.0-rc.6",
     "clsx": "^1.1.1",
-    "next": "^12.3.1",
+    "next": "^13.0.0",
     "prisma": "^4.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
