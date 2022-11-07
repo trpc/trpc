@@ -52,6 +52,18 @@ test('input mutation', async () => {
   expect(posts).toStrictEqual(['Two', 'Three']);
 });
 
+test('input subscription', async () => {
+  const onDelete = jest.fn();
+  const router = t.router({
+    onDelete: t.procedure.subscription(onDelete),
+  });
+
+  const caller = router.createCaller({});
+  await caller.onDelete();
+
+  expect(onDelete).toHaveBeenCalledTimes(1);
+});
+
 test('context with middleware', async () => {
   const isAuthed = t.middleware(({ next, ctx }) => {
     if (!ctx.foo) {
