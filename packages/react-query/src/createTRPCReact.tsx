@@ -75,7 +75,7 @@ export type DecorateProcedure<
           >;
         }
       : {}) &
-      (TFlags extends 'Suspense'
+      (TFlags extends 'ExperimentalSuspense'
         ? {
             useSuspenseQuery: <
               TQueryFnData = inferProcedureOutput<TProcedure>,
