@@ -114,8 +114,9 @@ test('useSuspenseQuery()', async () => {
 
     type TData = typeof query1['data'];
     expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+    expect(query1.data).toBe('__result');
 
-    return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    return <>{query1.data}</>;
   }
 
   const utils = render(
