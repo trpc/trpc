@@ -35,9 +35,7 @@ const IndexPage: NextPageWithLayout = () => {
       {postsQuery.data?.map((item) => (
         <article key={item.id}>
           <h3>{item.title}</h3>
-          <Link href={`/post/${item.id}`}>
-            <a>View more</a>
-          </Link>
+          <Link href={`/post/${item.id}`}>View more</Link>
         </article>
       ))}
 
