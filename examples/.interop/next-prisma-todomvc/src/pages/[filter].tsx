@@ -286,10 +286,11 @@ export default function TodosPage({
               </Link>
             </li>
             <li>
-              <Link href="/active">
-                <a className={clsx(filter === 'active' && 'selected')}>
-                  Active
-                </a>
+              <Link
+                href="/active"
+                className={clsx(filter === 'active' && 'selected')}
+              >
+                Active
               </Link>
             </li>
             <li>
