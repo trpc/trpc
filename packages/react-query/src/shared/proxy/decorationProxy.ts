@@ -27,7 +27,15 @@ export function createReactProxyDecoration<
     }
     const [input, ...rest] = args;
 
-    const queryKey = getQueryKey(path, input);
+    const queryKey = getQueryKey(
+      lastArg === 'useInfiniteQuery'
+        ? 'infinite'
+        : lastArg === 'useQuery'
+        ? 'query'
+        : 'any',
+      path,
+      input,
+    );
     return (hooks as any)[lastArg](queryKey, ...rest);
   });
 }

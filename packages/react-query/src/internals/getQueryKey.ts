@@ -1,4 +1,5 @@
-export type QueryType = 'infinite' | 'query';
+export const queryTypes = ['infinite', 'query', 'any'] as const;
+export type QueryType = typeof queryTypes[number];
 export type GetQueryKeyReturnType = [QueryType, string, unknown?];
 
 /**

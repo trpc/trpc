@@ -24,6 +24,7 @@ import type {
   inferProcedureOutput,
 } from '@trpc/server';
 import { createContext } from 'react';
+import { QueryType } from './getQueryKey';
 
 export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
@@ -98,7 +99,11 @@ export interface TRPCContextState<
     TOutput extends inferProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
-    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    pathAndInput: [
+      type: QueryType,
+      path: TPath,
+      ...args: inferHandlerInput<TProcedure>,
+    ],
     opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
   ): Promise<TOutput>;
   /**

@@ -218,7 +218,11 @@ export function createReactQueryUtilsProxy<
           const [input, updater, ...rest] = args as Parameters<
             AnyDecoratedProcedure[typeof utilName]
           >;
-          const queryKey = getQueryKey(fullPath, input);
+          const queryKey = getQueryKey(
+            name === 'setData' ? 'query' : 'infinite',
+            fullPath,
+            input,
+          );
           return {
             queryKey,
             updater,
@@ -229,7 +233,11 @@ export function createReactQueryUtilsProxy<
         const [input, ...rest] = args as Parameters<
           AnyDecoratedProcedure[typeof utilName]
         >;
-        const queryKey = getQueryKey(fullPath, input);
+        const queryKey = getQueryKey(
+          name.toLowerCase().includes('infinite') ? 'infinite' : 'query',
+          fullPath,
+          input,
+        );
         return {
           queryKey,
           rest,
@@ -239,6 +247,11 @@ export function createReactQueryUtilsProxy<
       const { queryKey, rest, updater } = getOpts(utilName);
 
       const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+        // I've only changed this one to show the impact ... We would need to
+        // push the setting of the query type down to all react / next
+        // implementations as This is the only point we know if we are looking
+        // to act on a query or an infinite query or any.... Need to see if
+        // there is a smarter way.
         fetch: () => context.fetchQuery(queryKey, ...rest),
         fetchInfinite: () => context.fetchInfiniteQuery(queryKey, ...rest),
         prefetch: () => context.prefetchQuery(queryKey, ...rest),
