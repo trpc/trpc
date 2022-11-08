@@ -1,3 +1,4 @@
+import { InfiniteData } from '@tanstack/react-query';
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyMutationProcedure,
@@ -90,10 +91,13 @@ export type DecorateProcedure<
                   >,
                   'enabled' | 'suspense'
                 >,
-              ) => UseTRPCInfiniteQuerySuccessResult<
-                TData,
-                TRPCClientErrorLike<TProcedure>
-              >;
+              ) => [
+                InfiniteData<TData>,
+                UseTRPCInfiniteQuerySuccessResult<
+                  TData,
+                  TRPCClientErrorLike<TProcedure>
+                >,
+              ];
             }
           : {})
       : {}) &
@@ -114,10 +118,10 @@ export type DecorateProcedure<
                 >,
                 'enabled' | 'suspense'
               >,
-            ) => UseTRPCQuerySuccessResult<
+            ) => [
               TData,
-              TRPCClientErrorLike<TProcedure>
-            >;
+              UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
+            ];
           }
         : {})
   : TProcedure extends AnyMutationProcedure

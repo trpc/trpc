@@ -32,11 +32,12 @@ export function createReactProxyDecoration<
       const opts = rest[0] || {};
       const fn =
         lastArg === 'useSuspenseQuery' ? 'useQuery' : 'useInfiniteQuery';
-      return (hooks as any)[fn](queryKey, {
+      const result = (hooks as any)[fn](queryKey, {
         ...opts,
         suspense: true,
         enabled: true,
       });
+      return [result.data, result];
     }
     return (hooks as any)[lastArg](queryKey, ...rest);
   });
