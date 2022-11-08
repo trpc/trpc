@@ -289,6 +289,60 @@ test('invalidate', async () => {
   expect(stableProxySpy).toHaveBeenCalledTimes(1);
 });
 
+test('reset', async () => {
+  const { proxy, App } = ctx;
+  const stableProxySpy = jest.fn();
+
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery();
+    const createPostMutation = proxy.post.create.useMutation();
+
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      stableProxySpy(proxy);
+    }, []);
+
+    if (!allPosts.data) {
+      return <>...</>;
+    }
+    return (
+      <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate(
+              { text: 'reset' },
+              {
+                onSuccess() {
+                  utils.post.all.reset();
+                },
+              },
+            );
+          }}
+        />
+        {allPosts.data.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  const addPostButton = await utils.findByTestId('add-post');
+
+  await userEvent.click(addPostButton);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('reset');
+  });
+  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+});
+
 test('refetch', async () => {
   const { proxy, App } = ctx;
   const querySuccessSpy = jest.fn();

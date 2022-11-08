@@ -287,7 +287,19 @@ export function createHooksInternal<
           invalidateQueries: useCallback(
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
+
               return queryClient.invalidateQueries(
+                getArrayQueryKey(queryKey),
+                ...rest,
+              );
+            },
+            [queryClient],
+          ),
+          resetQueries: useCallback(
+            (...args: any[]) => {
+              const [queryKey, ...rest] = args;
+
+              return queryClient.resetQueries(
                 getArrayQueryKey(queryKey),
                 ...rest,
               );
