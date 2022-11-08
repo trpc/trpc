@@ -7,7 +7,7 @@ import type { AppRouter } from '~/server/routers/_app';
 
 const IndexPage: NextPageWithLayout = () => {
   const utils = trpc.useContext();
-  const postsQuery = trpc.post.list.useInfiniteQuery(
+  const [data, postsQuery] = trpc.post.list.useSuspenseInfiniteQuery(
     {
       limit: 5,
     },
@@ -46,10 +46,7 @@ const IndexPage: NextPageWithLayout = () => {
         .
       </p>
 
-      <h2>
-        Latest Posts
-        {postsQuery.status === 'loading' && '(loading)'}
-      </h2>
+      <h2>Latest Posts</h2>
 
       <button
         onClick={() => postsQuery.fetchPreviousPage()}
@@ -64,7 +61,7 @@ const IndexPage: NextPageWithLayout = () => {
           : 'Nothing more to load'}
       </button>
 
-      {postsQuery.data?.pages.map((page, index) => (
+      {data.pages.map((page, index) => (
         <Fragment key={page.items[0]?.id || index}>
           {page.items.map((item) => (
             <article key={item.id}>

@@ -75,6 +75,7 @@ export const postRouter = router({
     )
     .query(async ({ input }) => {
       const { id } = input;
+      console.log('--------------- getting', id);
       const post = await prisma.post.findUnique({
         where: { id },
         select: defaultPostSelect,

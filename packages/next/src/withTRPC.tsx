@@ -193,6 +193,11 @@ export function withTRPC<
 
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
         // multiple prepass ensures that we can do batching on the server
+
+        console.log('----------prepasss', trpcProp.ssrContext.req?.url, {
+          AppTree,
+          prepassProps,
+        });
         while (true) {
           // render full tree
           await ssrPrepass(createElement(AppTree, prepassProps as any));
@@ -211,12 +216,14 @@ export function withTRPC<
             });
           });
         }
+        console.log('----------------done');
         const dehydratedCache = dehydrate(queryClient, {
-          shouldDehydrateQuery() {
+          shouldDehydrateQuery(opts) {
             // makes sure errors are also dehydrated
             return true;
           },
         });
+
         // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects
         const dehydratedCacheWithErrors = {
           ...dehydratedCache,
@@ -231,6 +238,10 @@ export function withTRPC<
         // dehydrate query client's state and add it to the props
         pageProps.trpcState = trpcClient.runtime.transformer.serialize(
           dehydratedCacheWithErrors,
+        );
+        console.log(
+          '---------cache size',
+          dehydratedCacheWithErrors.queries.length,
         );
 
         const appTreeProps = getAppTreeProps(pageProps);

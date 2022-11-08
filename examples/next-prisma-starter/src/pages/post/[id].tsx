@@ -1,12 +1,12 @@
-import NextError from 'next/error';
 import { useRouter } from 'next/router';
 import { NextPageWithLayout } from '~/pages/_app';
-import { RouterOutput, trpc } from '~/utils/trpc';
-
-type PostByIdOutput = RouterOutput['post']['byId'];
-
-function PostItem(props: { post: PostByIdOutput }) {
-  const { post } = props;
+import { RouterInput, trpc } from '~/utils/trpc';
+import { ErrorBoundary } from '~/components/ErrorBoundary';
+function PostItem(props: { id: string }) {
+  const [post] = trpc.post.byId.useSuspenseQuery(props, {
+    refetchOnMount: false,
+    cacheTime: Infinity,
+  });
   return (
     <>
       <h1>{post.title}</h1>
@@ -22,22 +22,12 @@ function PostItem(props: { post: PostByIdOutput }) {
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id });
 
-  if (postQuery.error) {
-    return (
-      <NextError
-        title={postQuery.error.message}
-        statusCode={postQuery.error.data?.httpStatus ?? 500}
-      />
-    );
-  }
-
-  if (postQuery.status !== 'success') {
-    return <>Loading...</>;
-  }
-  const { data } = postQuery;
-  return <PostItem post={data} />;
+  return (
+    <ErrorBoundary>
+      <PostItem id={id} />
+    </ErrorBoundary>
+  );
 };
 
 export default PostViewPage;
