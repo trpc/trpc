@@ -13,7 +13,7 @@ jobs:
       matrix:
         dir: [.interop/next-prisma-starter]
         # start example with:
-        node-start: ['14.x']
+        node-start: ['16.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
