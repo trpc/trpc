@@ -15,5 +15,8 @@
   "editor.stickyScroll.enabled": true,
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  "cSpell.words": [
+    "واقرأ"
   ]
 }
