@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
+  InfiniteQueryObserverSuccessResult,
   QueryClient,
+  QueryObserverSuccessResult,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -160,11 +162,22 @@ export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
 /**
  * @internal
  */
+export type UseTRPCQuerySuccessResult<TData, TError> =
+  QueryObserverSuccessResult<TData, TError> & TRPCHookResult;
+/**
+ * @internal
+ */
 export type UseTRPCInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
   TData,
   TError
 > &
   TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
+  InfiniteQueryObserverSuccessResult<TData, TError> & TRPCHookResult;
 
 /**
  * @internal
