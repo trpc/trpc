@@ -15,7 +15,7 @@ slug: /suspense
 :::
 
 
-## Example
+## Usage
 
 :::tip
 
@@ -72,7 +72,27 @@ const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
+
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+
+export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
+
 ```
+
+### Enabling Suspense
+
+
+```ts
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+
+export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
+```
+
 ### `useSuspenseQuery()`
 
 
@@ -83,11 +103,6 @@ export type AppRouter = typeof appRouter;
 
 // ---cut---
 
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
 
 // @filename: pages/index.tsx
 import { trpc } from '../utils/trpc';
