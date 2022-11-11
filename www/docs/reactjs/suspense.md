@@ -8,7 +8,7 @@ slug: /suspense
 
 :::caution
 - `useSuspense` & `useSuspenseInfiniteQuery` are *experimental* features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
-- Ensure you're on on React 18.2.0 in order for this to work in SSR
+- Ensure you're on the latest version of React
 - When initializing `createTRPCReact` or `createTRPCNext`  you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
 - If you use suspense with [tRPC's _automatic_ SSR in Next.js](ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
