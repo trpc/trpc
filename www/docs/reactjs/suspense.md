@@ -19,7 +19,7 @@ slug: /suspense
 
 :::tip
 
-- `useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-*tuple*, to make it easier to directly use your data anywhere
+`useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-*tuple*, to make it easier to directly use your data anywhere
 
 :::
 
