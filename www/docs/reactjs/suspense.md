@@ -105,8 +105,8 @@ export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>(
 
 
 // @filename: pages/index.tsx
-import { trpc } from '../utils/trpc';
 import React from 'react';
+import { trpc } from '../utils/trpc';
 
 function PostView() {
   const [post, postQuery] = trpc.post.byId.useSuspenseQuery({ id: "1" });
@@ -121,24 +121,16 @@ function PostView() {
 
 
 
-```tsx twoslash
-// @target: esnext
-// @include: server
-
-// ---cut---
-
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
-
+```tsx
 // @filename: pages/index.tsx
-import { trpc } from '../utils/trpc';
 import React from 'react';
+import { trpc } from '../utils/trpc';
 
 function PostView() {
-  const [postPages, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery({}, {
+  const [pages, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery({}, {
+    getNextPageParam(lastPage) {
+      return lastPage.nextCursor;
+    },
   });
 
   const { isFetching, isFetchingNextPage, fetchNextPage, hasNextPage } = allPostsQuery;
