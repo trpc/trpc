@@ -36,12 +36,12 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
     </a>
   </p>
   {/* Commented out as code in video is out-of-date */}
-  {/* 
+  {/*
   <h2>Watch Video</h2>
   <figure>
     <iframe src="https://www.youtube.com/embed/-_GZJ3xwYOw" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{maxWidth: '100%', width: '560px', height: '315px'}}></iframe>
     <figcaption style={{ fontSize: '0.7rem' }} className="pt-2"><a href="https://twitter.com/alexdotjs">Alex / KATT</a> and Prisma's Mahmoud Abdelwahab doing a deep dive into tRPC.</figcaption>
-  </figure> 
+  </figure>
   */}
 </div>
 
@@ -49,31 +49,30 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 <p>
   <abbr title="TypeScript Remote Procedure Call">tRPC</abbr> allows you to
-  easily build & consume fully typesafe APIs, without schemas or code
-  generation.
+  easily build & consume fully typesafe APIs without schemas or code generation.
 </p>
 
-As TypeScript and static typing increasingly becomes a best practice in web programming, the API presents a major pain point. We need better ways to **statically type** our API endpoints and **share those types** between our client and server (or server-to-server). We set out to build a simple library for building typesafe APIs that leverages the full power of modern TypeScript.
+As TypeScript and static typing increasingly becomes a best practice in web development, API contracts present a major pain point. We need better ways to **statically type** our API endpoints and **share those types** between our client and server (or server-to-server). We set out to build a simple library for building typesafe APIs that leverages the full power of modern TypeScript.
 
 ### An alternative to traditional REST or GraphQL
 
-Currently GraphQL is the dominant way to implement typesafe APIs in TypeScript (and it's amazing!). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript - [further reading](../further/further-reading.md#relationship-to-graphql).
+Currently, GraphQL is the dominant way to implement typesafe APIs in TypeScript ([and it's amazing!](../further/further-reading.md#relationship-to-graphql)). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript.
 
 If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on code generation.
 
 <!--
 ### tRPC explained from a REST API background
 
-tRPC can co-exist with a REST API, as it uses a single endpoint. On this specific endpoint tRPC will itself function as a router, meaning tRPC will redirect internally to the right handler on every incoming request. 
+tRPC can co-exist with a REST API, as it uses a single endpoint. On this specific endpoint tRPC will itself function as a router, meaning tRPC will redirect internally to the right handler on every incoming request.
 
 Like an Express router, tRPC also supports middleware and registering handlers. Unlike Express, tRPC embraces TypeScript to its fullest, providing built-in input and output validation.
 
 On the frontend, `@trpc/client` provides developers typesafety and autocompletion for the available endpoints. It shows what input is required and infers the output type of the endpoint. This ensures that in the case you make breaking changes to an endpoint on the server, TypeScript will warn you in the frontend.
 -->
 
-### Who is this for?
+### Who is tRPC for?
 
-tRPC is for full-stack TypeScript developers. It makes it easy to write endpoints which you safely use in your app.
+tRPC is for full-stack TypeScript developers. It makes it easy to write endpoints that you can safely use in both the front and backend of your app. Type errors with your API contracts will be caught at build time, reducing the surface for bugs in your application at runtime.
 
 ## Features
 
@@ -81,8 +80,8 @@ tRPC is for full-stack TypeScript developers. It makes it easy to write endpoint
 - 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs and errors.
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
-- 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React and there are many [community adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for other libraries)_
-- 🥃&nbsp; Subscriptions support.
-- ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one.
-- 👀&nbsp; Quite a few [examples](example-apps.md) that you can use for reference or as a starting point.
+- 🐻&nbsp; For new and old projects - Easy to start with or add to your existing brownfield project.
+- 🔋&nbsp; Framework agnostic - The tRPC community has built [adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for all of the most popular frameworks.
+- 🥃&nbsp; Subscriptions support (beta) - Add typesafe observability to your application.
+- ⚡️&nbsp; Request batching - Requests made at the same time can be automatically combined into one.
+- 👀&nbsp; Examples - Check out an [example](example-apps.md) to learn with or use as a starting point.
