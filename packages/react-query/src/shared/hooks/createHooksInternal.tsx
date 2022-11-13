@@ -430,7 +430,7 @@ export function createHooksInternal<
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery(
-      getArrayQueryKey(pathAndInput, 'any') as any,
+      getArrayQueryKey(pathAndInput, 'query') as any,
       (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
