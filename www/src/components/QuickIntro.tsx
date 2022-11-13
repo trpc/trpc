@@ -45,18 +45,19 @@ const steps: Omit<StepProps, 'num'>[] = [
     description: (
       <>
         The first step to creating a tRPC API is to define your procedures.
-        Procedures are <i>composable</i> and can be queries, mutations, or
+        <br /> <br />
+        Procedures are the functions we will use to build your backend.
+        They&apos;re <i>composable</i> and can be queries, mutations, or
         subscriptions. Routers contain multiple procedures.
         <br /> <br />
-        Here, we add a <Link href="https://github.com/colinhacks/zod">
-          Zod
-        </Link>{' '}
-        validator to ensure the input from the client is exactly what we expect
-        it to be.
+        In this procedure, we use a{' '}
+        <Link href="https://github.com/colinhacks/zod">Zod</Link> validator to
+        ensure the input from the client has exactly the shape that our
+        procedure expects. We will also return a simple text string from the
+        query.
         <br /> <br />
-        At the end, we export the type of our router so that we can use it to
-        provide a fully-typed experience on the client without importing any
-        server code.
+        At the end of the file, we export the type of the router so we can use
+        it in our frontend code in just a few moments.
       </>
     ),
     code: <Step1 />,
@@ -65,13 +66,12 @@ const steps: Omit<StepProps, 'num'>[] = [
     title: 'Create your HTTP server',
     description: (
       <>
-        Next, we create our HTTP server using our <code>appRouter</code> . We
-        now have a tRPC server running!
+        Next, we create our HTTP server using our <code>appRouter</code>. We now
+        have a tRPC server running!
         <br /> <br />
-        tRPC comes with many adapters, allowing you to create a server using
-        your favorite framework like Next.js, the Fetch API (Astro, Remix,
-        SvelteKit, Cloudflare Workers, etc.), Express, Fastify, AWS Lambda, or a
-        vanilla Node HTTP server.
+        tRPC has many adapters so it can meet you where you are. Next.js,
+        Express, the Fetch API (Astro, Remix, SvelteKit, Cloudflare Workers,
+        etc.), Fastify, AWS Lambda, or a vanilla Node HTTP server.
       </>
     ),
     code: <Step2 />,
@@ -85,7 +85,7 @@ const steps: Omit<StepProps, 'num'>[] = [
         querying data.
         <br /> <br />
         We pass the <code>AppRouter</code> type when creating the client to give
-        us TypeScript autocompletion and intellisense that matches the backend
+        us TypeScript autocompletion and Intellisense that matches the backend
         API without requiring any code generation!
       </>
     ),
@@ -103,7 +103,7 @@ export const QuickIntro: FC = () => {
             Simple to use with <br /> unmatched developer experience
           </>
         }
-        description="It's quick and easy to get started using tRPC and build a type safe API."
+        description="It's quick and easy to get started with tRPC to build a typesafe API."
       />
       <div className="flex flex-col gap-12 mt-6">
         {steps.map((step, index) => (
