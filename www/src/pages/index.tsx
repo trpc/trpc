@@ -71,7 +71,7 @@ const HomeContent: React.FC = () => {
           <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
             TypeScript
           </span>{' '}
-          inference and boost productivity while building your next full-stack
+          inference to boost productivity <br /> for your full-stack
           application.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6">
@@ -112,8 +112,8 @@ const HomeContent: React.FC = () => {
           title={<>Try it out for yourself!</>}
           description={
             <>
-              This is a minimal full-stack React-application using tRPC &amp;
-              Next.js
+              This is a minimal full-stack React application using tRPC and
+              Next.js.
             </>
           }
         />
@@ -223,7 +223,7 @@ const HomeContent: React.FC = () => {
               >
                 sponsors
               </a>
-              , who help make sure tRPC is here to stay.
+              &nbsp;who help make sure tRPC is here to stay.
             </>
           }
         />
