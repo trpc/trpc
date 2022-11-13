@@ -22,13 +22,13 @@ Full documentation for `@trpc/server` can be found [here](https://trpc.io/docs/r
 
 ```bash
 # npm
-npm install @trpc/server@next
+npm install @trpc/server
 
 # Yarn
-yarn add @trpc/server@next
+yarn add @trpc/server
 
 # pnpm
-pnpm add @trpc/server@next
+pnpm add @trpc/server
 ```
 
 We also recommend installing `zod` to validate procedure inputs.

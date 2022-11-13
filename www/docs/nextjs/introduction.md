@@ -47,19 +47,19 @@ Recommended but not enforced file structure. This is what you get when starting 
 **npm**
 
 ```bash
-npm install @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
+npm install @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query zod
 ```
 
 **yarn**
 
 ```bash
-yarn add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
+yarn add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query zod
 ```
 
 **pnpm**
 
 ```bash
-pnpm add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
+pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query zod
 ```
 
 #### Why @tanstack/react-query?
