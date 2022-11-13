@@ -7,12 +7,22 @@
  */
 export function getArrayQueryKey(
   queryKey: string | [string] | [string, ...unknown[]] | unknown[],
-): [string[]] | [string[], ...unknown[]] | [] {
+  type: 'query' | 'infinite' | 'any',
+): [{ path: string[]; input?: unknown; type?: 'query' | 'infinite' }] {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
   const [path, ...input] = queryKeyArrayed;
 
   const arrayPath =
     typeof path !== 'string' || path === '' ? [] : path.split('.');
 
-  return [arrayPath, ...input];
+  // Construct a query key that is easy to destructure and flexible for
+  // partial selecting etc.
+  // https://github.com/trpc/trpc/issues/3128
+  return [
+    {
+      path: arrayPath,
+      ...(input && { input: input }),
+      ...(type && type !== 'any' && { type: type }),
+    },
+  ];
 }
