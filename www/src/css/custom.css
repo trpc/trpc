@@ -80,11 +80,6 @@ div[class^='announcementBar_'] {
   background-color: var(--ifm-toc-border-color);
 }
 
-.manual-nord {
-  background-color: rgb(46, 52, 64);
-  color: rgb(216, 222, 233);
-}
-
 .docusaurus-highlight-code-line {
   background-color: rgb(72, 77, 91);
   display: block;
