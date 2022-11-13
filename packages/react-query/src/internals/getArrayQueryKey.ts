@@ -10,7 +10,7 @@ export type QueryType = 'query' | 'infinite' | 'any';
 export function getArrayQueryKey(
   queryKey: string | [string] | [string, ...unknown[]] | unknown[],
   type: QueryType,
-): [{ arrayPath: string[]; input?: unknown; type?: Omit<QueryType, 'any'> }] {
+): [string[], { input?: unknown; type?: Exclude<QueryType, 'any'> }] {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
   const [path, input] = queryKeyArrayed;
 
@@ -21,8 +21,8 @@ export function getArrayQueryKey(
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
   return [
+    arrayPath,
     {
-      arrayPath,
       ...(input && { input: input }),
       ...(type && type !== 'any' && { type: type }),
     },
