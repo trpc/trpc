@@ -29,6 +29,9 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm install
 
+      - name: Install playwright
+        run: pnpm playwright install chromium
+
       - name: Next.js cache
         uses: actions/cache@v3
         with:
