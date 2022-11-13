@@ -47,7 +47,7 @@ import {
   TRPCContextProps,
   TRPCContextState,
 } from '../../internals/context';
-import { getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
 export type OutputWithCursor<TData, TCursor = any> = {
@@ -386,11 +386,15 @@ export function createHooksInternal<
    */
   function useSSRQueryOptionsIfNeeded<
     TOptions extends { retryOnMount?: boolean } | undefined,
-  >(pathAndInput: unknown[], opts: TOptions): TOptions {
+  >(
+    pathAndInput: unknown[],
+    type: Exclude<QueryType, 'any'>,
+    opts: TOptions,
+  ): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, 'any'))
+      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, type))
         ?.state.status === 'error'
       ? {
           retryOnMount: false,
@@ -425,7 +429,7 @@ export function createHooksInternal<
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
@@ -597,7 +601,7 @@ export function createHooksInternal<
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', opts);
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
