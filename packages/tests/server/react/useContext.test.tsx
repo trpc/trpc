@@ -611,7 +611,14 @@ describe('query keys are stored separtely', () => {
       expect(data.query).not.toBe(unset);
     });
 
-    expect(data.query).toMatchInlineSnapshot();
+    expect(data.query).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 0,
+          "text": "new post",
+        },
+      ]
+    `);
     expect(data.infinite).toBeUndefined();
   });
 });
