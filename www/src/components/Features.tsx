@@ -14,7 +14,7 @@ const features = [
   {
     title: 'Snappy DX',
     description:
-      'tRPC has no build or compile steps, meaning no code generation, runtime bloat or build pipeline.',
+      'tRPC has no build or compile steps, meaning no code generation, runtime bloat or build step.',
     icon: <FiZap size={20} />,
     color:
       'dark:bg-amber-900/50 bg-amber-200 dark:text-amber-300 text-amber-600',
@@ -29,7 +29,7 @@ const features = [
   {
     title: 'Autocompletion',
     description:
-      "Using tRPC is like using a SDK for your API's server code giving you confidence in your endpoints.",
+      "Using tRPC is like using an SDK for your API's server code, giving you confidence in your endpoints.",
     icon: <FiTerminal size={20} />,
     color:
       'dark:bg-orange-900/50 bg-orange-200 dark:text-orange-300 text-orange-600',
@@ -44,7 +44,7 @@ const features = [
   {
     title: 'Batteries included',
     description:
-      'We provide adapters for React, Next.js, Express, Fastify, Lambda.',
+      'We provide adapters for React, Next.js, Express, Fastify, AWS Lambda, Solid, Svelte, and more.',
     icon: <FaBatteryFull size={20} />,
     color: 'dark:bg-sky-900/50 bg-sky-200 dark:lime-sky-300 text-sky-600',
   },
