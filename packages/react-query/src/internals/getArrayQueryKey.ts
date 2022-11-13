@@ -10,7 +10,7 @@ export function getArrayQueryKey(
   type: 'query' | 'infinite' | 'any',
 ): [{ path: string[]; input?: unknown; type?: 'query' | 'infinite' }] {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
-  const [path, ...input] = queryKeyArrayed;
+  const [path, input] = queryKeyArrayed;
 
   const arrayPath =
     typeof path !== 'string' || path === '' ? [] : path.split('.');
