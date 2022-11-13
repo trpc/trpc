@@ -73,6 +73,18 @@ div[class^='announcementBar_'] {
   @apply text-primary hover:text-primary-dark;
 }
 
+.markdown hr {
+  height: var(--ifm-hr-height);
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--ifm-toc-border-color);
+}
+
+.manual-nord {
+  background-color: rgb(46, 52, 64);
+  color: rgb(216, 222, 233);
+}
+
 .docusaurus-highlight-code-line {
   background-color: rgb(72, 77, 91);
   display: block;
