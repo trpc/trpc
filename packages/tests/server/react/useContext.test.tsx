@@ -574,3 +574,43 @@ describe('cancel', () => {
     });
   });
 });
+
+describe('query keys are stored separtely', () => {
+  test('getInfiniteData() does not data from useQuery()', async () => {
+    const { proxy, App } = ctx;
+
+    const unset = '__unset' as const;
+    const data = {
+      infinite: unset as unknown,
+      query: unset as unknown,
+    };
+    function MyComponent() {
+      const utils = proxy.useContext();
+      const { data: posts } = proxy.post.all.useQuery(undefined, {
+        onSuccess() {
+          data.infinite = utils.post.all.getInfiniteData();
+          data.query = utils.post.all.getData();
+        },
+      });
+
+      return (
+        <div>
+          <p data-testid="initial-post">{posts?.[0]?.text}</p>
+        </div>
+      );
+    }
+
+    render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(data.infinite).not.toBe(unset);
+      expect(data.query).not.toBe(unset);
+    });
+
+    expect(data.query).toMatchInlineSnapshot();
+    expect(data.infinite).toBeUndefined();
+  });
+});
