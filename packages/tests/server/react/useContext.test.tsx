@@ -375,7 +375,7 @@ test('setData', async () => {
 test('setInfiniteData', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const listPosts = proxy.post.list.useQuery({}, { enabled: false });
+    const listPosts = proxy.post.list.useInfiniteQuery({}, { enabled: false });
 
     const utils = proxy.useContext();
 
