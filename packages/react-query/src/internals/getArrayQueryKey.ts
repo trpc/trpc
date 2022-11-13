@@ -10,7 +10,7 @@ export type QueryType = 'query' | 'infinite' | 'any';
 export function getArrayQueryKey(
   queryKey: string | [string] | [string, ...unknown[]] | unknown[],
   type: QueryType,
-): [{ path: string[]; input?: unknown; type?: Omit<QueryType, 'any'> }] {
+): [{ arrayPath: string[]; input?: unknown; type?: Omit<QueryType, 'any'> }] {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
   const [path, input] = queryKeyArrayed;
 
@@ -22,7 +22,7 @@ export function getArrayQueryKey(
   // https://github.com/trpc/trpc/issues/3128
   return [
     {
-      path: arrayPath,
+      arrayPath,
       ...(input && { input: input }),
       ...(type && type !== 'any' && { type: type }),
     },
