@@ -60,7 +60,7 @@ module.exports = {
           label: 'Links',
           collapsed: true,
           items: [
-            'client/links/index',
+            'client/links/links',
             'client/links/httpLink',
             'client/links/httpBatchLink',
             'client/links/wsLink',
