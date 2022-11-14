@@ -41,23 +41,20 @@ module.exports = {
       },
       items: [
         {
-          type: 'doc',
-          docId: 'main/introduction',
+          to: 'docs',
           label: 'Docs',
+          activeBaseRegex: 'docs(/?)$',
         },
         {
-          type: 'doc',
-          docId: 'main/quickstart',
+          to: 'docs/quickstart',
           label: 'Quickstart',
         },
         {
-          type: 'doc',
-          docId: 'main/awesome-trpc',
+          to: 'docs/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
-          type: 'doc',
-          docId: 'nextjs/introduction',
+          to: 'docs/nextjs',
           label: 'Usage with Next.js',
         },
         {
@@ -92,11 +89,11 @@ module.exports = {
           items: [
             {
               label: 'Docs',
-              to: 'docs/v10',
+              to: 'docs',
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/v10/nextjs',
+              to: 'docs/nextjs',
             },
           ],
         },
@@ -167,7 +164,7 @@ module.exports = {
           versions: {
             current: {
               label: '10.x',
-              path: 'v10',
+              // path: 'v10',
               badge: true,
               className: 'v10',
               banner: 'none',
