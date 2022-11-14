@@ -28,7 +28,7 @@ module.exports = {
     announcementBar: {
       id: 'v10',
       content:
-        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/v10/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
+        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
