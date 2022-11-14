@@ -59,6 +59,11 @@
       "source": "/docs/v10/query-invalidation",
       "destination": "/docs/v10/useContext#query-invalidation",
       "permanent": true
+    },
+    {
+      "source": "/awesome",
+      "destination": "/docs/awesome-trpc",
+      "permanent": false
     }
   ]
 }
