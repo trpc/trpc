@@ -81,7 +81,7 @@ const HomeContent: React.FC = () => {
           <div className="flex justify-start flex-1">
             <Button
               variant="primary"
-              href={`/docs/${isV10 ? 'v10' : 'v9'}/quickstart`}
+              href={`/docs/${isV10 ? '' : 'v9/'}quickstart`}
               className="lg:text-lg"
             >
               Quickstart
