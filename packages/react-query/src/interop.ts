@@ -13,13 +13,14 @@ import {
 export function createReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
+  TFlags = null,
 >(
   opts?: CreateTRPCReactOptions<TRouter>,
 ): CreateReactQueryHooks<TRouter, TSSRContext> & {
-  proxy: CreateTRPCReact<TRouter, TSSRContext>;
+  proxy: CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 } {
   const trpc = createHooksInternal<TRouter, TSSRContext>(opts);
-  const proxy = createHooksInternalProxy<TRouter, TSSRContext>(trpc);
+  const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(trpc);
 
   return {
     ...trpc,

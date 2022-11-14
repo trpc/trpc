@@ -10,6 +10,7 @@ We use [pnpm](https://pnpm.io) as our package manager, so make sure to [install]
 git clone git@github.com:trpc/trpc.git
 cd trpc
 pnpm install
+pnpm build
 ```
 
 ### Get it running
