@@ -31,14 +31,9 @@
       "permanent": false
     },
     {
-      "source": "/docs",
-      "destination": "/docs/v10",
-      "permanent": false
-    },
-    {
-      "source": "/docs/:path((?!v[0-9]).*)",
-      "destination": "/docs/v10/:path*",
-      "permanent": false
+      "source": "/docs/v10/:path*",
+      "destination": "/docs/:path*",
+      "permanent": true
     },
     {
       "source": "/blog/hello-trpc",
@@ -47,18 +42,23 @@
     },
     {
       "source": "/docs/v10/invalidateQueries",
-      "destination": "/docs/v10/query-invalidation",
+      "destination": "/docs/query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/v10/publicProcedures",
-      "destination": "/docs/v10/procedures",
+      "destination": "/docs/procedures",
       "permanent": true
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/v10/useContext#query-invalidation",
+      "destination": "/docs/useContext#query-invalidation",
       "permanent": true
+    },
+    {
+      "source": "/awesome",
+      "destination": "/docs/awesome-trpc",
+      "permanent": false
     }
   ]
 }
