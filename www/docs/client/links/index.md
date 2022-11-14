@@ -1,5 +1,5 @@
 ---
-id: index
+id: links
 title: Links Overview
 sidebar_label: Overview
 slug: /links
