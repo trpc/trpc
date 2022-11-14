@@ -37,7 +37,7 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/server@next
+yarn add @trpc/server
 ```
 
 ### 2. Create a tRPC router
