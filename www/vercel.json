@@ -33,7 +33,7 @@
     {
       "source": "/docs/v10/:path*",
       "destination": "/docs/:path*",
-      "permanent": false
+      "permanent": true
     },
     {
       "source": "/blog/hello-trpc",
