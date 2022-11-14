@@ -4,6 +4,7 @@
 >
 > See our [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
 > There is also [the `next-prisma-starter` project](https://github.com/trpc/examples-next-prisma-starter) to try out a real project using this version.
+
 ---
 
 [![tRPC](https://assets.trpc.io/www/trpc-readme.png)](https://trpc.io/)
