@@ -1,41 +1,76 @@
 import { getArrayQueryKey } from './getArrayQueryKey';
 
 test('getArrayQueryKey', () => {
-  expect(getArrayQueryKey('foo')).toMatchInlineSnapshot(`
+  expect(getArrayQueryKey('foo', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
       ],
+      Object {
+        "type": "query",
+      },
     ]
   `);
-  expect(getArrayQueryKey(['foo'])).toMatchInlineSnapshot(`
+  expect(getArrayQueryKey(['foo'], 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
       ],
+      Object {
+        "type": "query",
+      },
     ]
   `);
-  expect(getArrayQueryKey(['foo', 'bar'])).toMatchInlineSnapshot(`
+  expect(getArrayQueryKey('foo', 'infinite')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
       ],
-      "bar",
+      Object {
+        "type": "infinite",
+      },
     ]
   `);
-  expect(getArrayQueryKey([undefined, 'bar'])).toMatchInlineSnapshot(`
+  expect(getArrayQueryKey(['foo'], 'infinite')).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "foo",
+      ],
+      Object {
+        "type": "infinite",
+      },
+    ]
+  `);
+  expect(getArrayQueryKey(['foo', 'bar'], 'query')).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "foo",
+      ],
+      Object {
+        "input": "bar",
+        "type": "query",
+      },
+    ]
+  `);
+  expect(getArrayQueryKey([undefined, 'bar'], 'query')).toMatchInlineSnapshot(`
     Array [
       Array [],
-      "bar",
+      Object {
+        "input": "bar",
+        "type": "query",
+      },
     ]
   `);
-  expect(getArrayQueryKey(['post.byId', '1'])).toMatchInlineSnapshot(`
+  expect(getArrayQueryKey(['post.byId', '1'], 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "post",
         "byId",
       ],
-      "1",
+      Object {
+        "input": "1",
+        "type": "query",
+      },
     ]
   `);
 });

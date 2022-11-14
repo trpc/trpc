@@ -473,7 +473,7 @@ trpc.post.byId.useQuery('1', {
 If you only use the tRPC provided API's in your app you will have no problems in
 migrating 👍 However if you have been using the tanstack query client directly
 to do things like update query data for multiple tRPC generated queries using
-[`queryClient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
+[`queryClient.setQueriesData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
 you may need to take note!
 :::
 
@@ -482,7 +482,10 @@ whole routers](useContext#invalidating-across-whole-routers) we needed to change
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
-procedure path to a sub array of elements.
+procedure path to a sub array of elements. We have also added a distinction
+between `query`'s and `infinite` queries when they are placed in the cache. We
+have also moved both this query `type` and the input into an object with named
+properties.
 
 given the simple router below:
 
@@ -499,7 +502,7 @@ export const appRouter = router({
 The query key used for `trpc.user.byId.useQuery({ id: 10 })` would change:
 
 - Key in V9: `["user.byId", { id: 10 }]`
-- Key in v10:`[["user", "byId"],{ id:10 }]`
+- Key in v10:`[["user", "byId"],{ input: { id:10 }, type: 'query' }]`
 
 The majority of developers won't even notice this change, but for the small
 minority that are using the tanstack `queryClient` directly to manipulate tRPC
