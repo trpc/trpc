@@ -3,7 +3,7 @@ import { initTRPC } from '@trpc/server/src/core';
 
 const t = initTRPC.create<{}>();
 
-describe('`then`', () => {
+describe('router', () => {
   test('is a reserved word', async () => {
     expect(() => {
       return t.router({
@@ -20,5 +20,18 @@ describe('`then`', () => {
     const asyncFnThatReturnsCaller = async () => appRouter.createCaller({});
 
     await asyncFnThatReturnsCaller();
+  });
+
+  test('should not duplicate key', async () => {
+    expect(() =>
+      t.router({
+        foo: t.router({
+          '.bar': t.procedure.query(() => 'bar' as const),
+        }),
+        'foo.': t.router({
+          bar: t.procedure.query(() => 'bar' as const),
+        }),
+      }),
+    ).toThrow('Duplicate key: foo..bar');
   });
 });

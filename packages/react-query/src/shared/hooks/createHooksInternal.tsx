@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
+  InfiniteQueryObserverSuccessResult,
   QueryClient,
+  QueryObserverSuccessResult,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -45,7 +47,7 @@ import {
   TRPCContextProps,
   TRPCContextState,
 } from '../../internals/context';
-import { getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
 export type OutputWithCursor<TData, TCursor = any> = {
@@ -160,11 +162,22 @@ export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
 /**
  * @internal
  */
+export type UseTRPCQuerySuccessResult<TData, TError> =
+  QueryObserverSuccessResult<TData, TError> & TRPCHookResult;
+/**
+ * @internal
+ */
 export type UseTRPCInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
   TData,
   TError
 > &
   TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
+  InfiniteQueryObserverSuccessResult<TData, TError> & TRPCHookResult;
 
 /**
  * @internal
@@ -233,7 +246,7 @@ export function createHooksInternal<
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery(
-                getArrayQueryKey(pathAndInput),
+                getArrayQueryKey(pathAndInput, 'query'),
                 () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
@@ -244,7 +257,7 @@ export function createHooksInternal<
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchInfiniteQuery(
-                getArrayQueryKey(pathAndInput),
+                getArrayQueryKey(pathAndInput, 'infinite'),
                 ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
@@ -260,7 +273,7 @@ export function createHooksInternal<
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.prefetchQuery(
-                getArrayQueryKey(pathAndInput),
+                getArrayQueryKey(pathAndInput, 'query'),
                 () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
                 opts,
@@ -271,7 +284,7 @@ export function createHooksInternal<
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.prefetchInfiniteQuery(
-                getArrayQueryKey(pathAndInput),
+                getArrayQueryKey(pathAndInput, 'infinite'),
                 ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
@@ -288,7 +301,7 @@ export function createHooksInternal<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
               return queryClient.invalidateQueries(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'any'),
                 ...rest,
               );
             },
@@ -299,7 +312,7 @@ export function createHooksInternal<
               const [queryKey, ...rest] = args;
 
               return queryClient.refetchQueries(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'any'),
                 ...rest,
               );
             },
@@ -307,7 +320,9 @@ export function createHooksInternal<
           ),
           cancelQuery: useCallback(
             (pathAndInput) => {
-              return queryClient.cancelQueries(getArrayQueryKey(pathAndInput));
+              return queryClient.cancelQueries(
+                getArrayQueryKey(pathAndInput, 'any'),
+              );
             },
             [queryClient],
           ),
@@ -315,7 +330,7 @@ export function createHooksInternal<
             (...args) => {
               const [queryKey, ...rest] = args;
               return queryClient.setQueryData(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'query'),
                 ...rest,
               );
             },
@@ -326,7 +341,7 @@ export function createHooksInternal<
               const [queryKey, ...rest] = args;
 
               return queryClient.getQueryData(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'query'),
                 ...rest,
               );
             },
@@ -337,7 +352,7 @@ export function createHooksInternal<
               const [queryKey, ...rest] = args;
 
               return queryClient.setQueryData(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'infinite'),
                 ...rest,
               );
             },
@@ -348,7 +363,7 @@ export function createHooksInternal<
               const [queryKey, ...rest] = args;
 
               return queryClient.getQueryData(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'infinite'),
                 ...rest,
               );
             },
@@ -371,12 +386,16 @@ export function createHooksInternal<
    */
   function useSSRQueryOptionsIfNeeded<
     TOptions extends { retryOnMount?: boolean } | undefined,
-  >(pathAndInput: unknown[], opts: TOptions): TOptions {
+  >(
+    pathAndInput: unknown[],
+    type: Exclude<QueryType, 'any'>,
+    opts: TOptions,
+  ): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))?.state
-        .status === 'error'
+      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, type))
+        ?.state.status === 'error'
       ? {
           retryOnMount: false,
           ...opts,
@@ -406,16 +425,16 @@ export function createHooksInternal<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))
+      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, 'query'))
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery(
-      getArrayQueryKey(pathAndInput) as any,
+      getArrayQueryKey(pathAndInput, 'query') as any,
       (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -575,18 +594,20 @@ export function createHooksInternal<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput))
+      !queryClient
+        .getQueryCache()
+        .find(getArrayQueryKey(pathAndInput, 'infinite'))
     ) {
       void prefetchInfiniteQuery(pathAndInput as any, opts as any);
     }
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', opts);
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useInfiniteQuery(
-      getArrayQueryKey(pathAndInput) as any,
+      getArrayQueryKey(pathAndInput, 'infinite') as any,
       (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,

@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=d565eac29d8eaf63fe5df4c19cf46c3824e5cea5&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=39e3ca30e890dd4e1b20780f732432e591c3f8b0&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -257,7 +257,7 @@ export const sponsors = [
   {
     "name": "Jökull Sólberg Auðunsson",
     "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
-    "monthlyPriceInDollars": 10,
+    "monthlyPriceInDollars": 50,
     "link": "https://solberg.is",
     "privacyLevel": "PUBLIC",
     "login": "jokull",
@@ -418,9 +418,9 @@ export const sponsors = [
   },
   {
     "name": "Malcolm Still",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=77d13b33c5d1bd4c9085abee5faddf42e6d5d5dc&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://blog.mstill.dev",
+    "link": "https://mstill.dev/blog",
     "privacyLevel": "PUBLIC",
     "login": "malcolmstill",
     "createdAt": 1662115384000

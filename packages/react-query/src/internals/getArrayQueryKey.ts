@@ -1,3 +1,5 @@
+export type QueryType = 'query' | 'infinite' | 'any';
+
 /**
  * To allow easy interactions with groups of related queries, such as
  * invalidating all queries of a router, we use an array as the path when
@@ -7,12 +9,22 @@
  */
 export function getArrayQueryKey(
   queryKey: string | [string] | [string, ...unknown[]] | unknown[],
-): [string[]] | [string[], ...unknown[]] | [] {
+  type: QueryType,
+): [string[], { input?: unknown; type?: Exclude<QueryType, 'any'> }] {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
-  const [path, ...input] = queryKeyArrayed;
+  const [path, input] = queryKeyArrayed;
 
   const arrayPath =
     typeof path !== 'string' || path === '' ? [] : path.split('.');
 
-  return [arrayPath, ...input];
+  // Construct a query key that is easy to destructure and flexible for
+  // partial selecting etc.
+  // https://github.com/trpc/trpc/issues/3128
+  return [
+    arrayPath,
+    {
+      ...(input && { input: input }),
+      ...(type && type !== 'any' && { type: type }),
+    },
+  ];
 }

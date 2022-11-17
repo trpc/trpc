@@ -39,7 +39,7 @@ The best way to start with the Fastify adapter is to take a look at the example 
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server@next fastify zod
+yarn add @trpc/server fastify zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
