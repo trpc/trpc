@@ -38,7 +38,7 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: pnpm lint
+        run: pnpm turbo lint
 
       - name: Run Manypkg
         run: pnpm manypkg check
