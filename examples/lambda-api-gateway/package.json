@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
+    "eslint": "^7.32.0",
     "serverless": "^3.18.1",
     "serverless-offline": "^8.8.0",
     "serverless-plugin-typescript": "^2.1.2",
@@ -19,6 +20,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"

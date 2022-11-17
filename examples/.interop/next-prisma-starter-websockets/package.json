@@ -26,7 +26,7 @@
     "migrate": "prisma migrate deploy",
     "start": "cross-env NODE_ENV=production node dist/server/prodServer.js",
     "studio": "prisma studio",
-    "lint": "eslint src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
     "lint-fix": "pnpm lint --fix",
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev-sqlite 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",

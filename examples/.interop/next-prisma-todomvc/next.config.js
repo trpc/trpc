@@ -1,3 +1,4 @@
+/** @type {import("next").NextConfig} */
 module.exports = {
   async redirects() {
     return [
@@ -7,5 +8,9 @@ module.exports = {
         permanent: false,
       },
     ];
+  },
+  eslint: {
+    // We run lint as a separate task in CI
+    ignoreDuringBuilds: !!process.env.CI,
   },
 };

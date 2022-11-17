@@ -34,7 +34,12 @@
       "cache": false
     },
     "lint": {
-      "cache": false
+      "outputs": [".eslintcache"],
+      "cache": true
+    },
+    "lint-fix": {
+      "outputs": [".eslintcache"],
+      "cache": true
     },
     "test": {
       "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],

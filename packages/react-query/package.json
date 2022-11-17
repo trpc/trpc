@@ -17,6 +17,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen:entrypoints": "tsx entrypoints.script.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --cache --cache-strategy content src",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "exports": {
@@ -65,6 +66,7 @@
     "@trpc/server": "^10.0.0-rc.8",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
+    "eslint": "^7.32.0",
     "express": "^4.17.1",
     "next": "^13.0.0",
     "react": "^18.2.0",

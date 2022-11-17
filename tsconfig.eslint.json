@@ -1,4 +1,0 @@
-{
-  "include": [".eslintrc", "**/*"],
-  "exclude": ["node_modules"],
-}
