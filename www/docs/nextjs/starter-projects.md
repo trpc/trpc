@@ -18,7 +18,7 @@ Get started quickly with one of the sample projects! Copy the snippet from _Quic
   <tbody>
     <tr>
       <td>
-        Next.js starter with Prisma, E2E testing, &amp; ESLint.
+        Next.js starter with Prisma, E2Ess testing, &amp; ESLint.
         <br/><br/>
         <details>
           <summary>Quick start with <code>create-next-app</code></summary>
