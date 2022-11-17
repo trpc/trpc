@@ -782,13 +782,11 @@ importers:
   examples/minimal-react:
     specifiers:
       '@playwright/test': ^1.26.1
-      eslint: ^7.32.0
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       wait-port: ^1.0.1
     devDependencies:
       '@playwright/test': 1.26.1
-      eslint: 7.32.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       wait-port: 1.0.1
@@ -843,23 +841,19 @@ importers:
     specifiers:
       '@trpc/client': ^10.0.0-rc.8
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
     dependencies:
       '@trpc/client': link:../../../packages/client
     devDependencies:
       '@types/node': 18.7.20
-      eslint: 7.32.0
 
   examples/minimal/server:
     specifiers:
       '@trpc/server': ^10.0.0-rc.8
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
     dependencies:
       '@trpc/server': link:../../../packages/server
     devDependencies:
       '@types/node': 18.7.20
-      eslint: 7.32.0
 
   examples/next-big-router:
     specifiers:
@@ -7926,7 +7920,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2_debug@4.3.2
+      follow-redirects: 1.15.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -11654,18 +11648,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-
-  /follow-redirects/1.15.2_debug@4.3.2:
-    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.2
-    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
