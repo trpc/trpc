@@ -351,6 +351,7 @@ test('invalidate procedure for both query and infinite', async () => {
   // infinite query is successful and data is on the component it still shows
   // no calls to the proxy passed to "onSuccess" unless i do this wait ... even
   // await new Promise(process.nextTick); doesn't work 🤷🤯
+  // https://github.com/trpc/trpc/pull/3195#discussion_r1026952381
   await waitMs(1);
 
   expect(invalidateQuerySpy).toHaveBeenCalledTimes(1);
