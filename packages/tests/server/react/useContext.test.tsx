@@ -539,6 +539,55 @@ describe('cancel', () => {
     });
   });
 
+  test('abort query and infinite with utils', async () => {
+    const { proxy, App } = ctx;
+    function MyComponent() {
+      const allList = proxy.post.list.useQuery({ cursor: '0' });
+      const allListInfinite = proxy.post.list.useInfiniteQuery({ cursor: '0' });
+      const utils = proxy.useContext();
+
+      useEffect(() => {
+        utils.post.list.cancel();
+      });
+
+      return (
+        <div>
+          <p data-testid="data">{allList.data ? 'data loaded' : 'undefined'}</p>
+          <p data-testid="isFetching">
+            {allList.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPaused">
+            {allList.isPaused ? 'paused' : 'not paused'}
+          </p>
+          <p data-testid="dataInfinite">
+            {allListInfinite.data ? 'data loaded' : 'undefined'}
+          </p>
+          <p data-testid="isFetchingInfinite">
+            {allListInfinite.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPausedInfinite">
+            {allListInfinite.isPaused ? 'paused' : 'not paused'}
+          </p>
+        </div>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('data')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
+      expect(utils.getByTestId('dataInfinite')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetchingInfinite')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPausedInfinite')).toHaveTextContent('paused');
+    });
+  });
+
   test('typeerrors and continues with signal', async () => {
     const { proxy, App } = ctx;
 
