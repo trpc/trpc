@@ -352,6 +352,11 @@ details p {
   margin-bottom: var(--ifm-leading);
 }
 
+#from-github {
+  /* to keep equal space here as the twitter title */
+  margin-top: 50px;
+}
+
 .markdown .github-comment {
   margin-bottom: 2rem;
 }
