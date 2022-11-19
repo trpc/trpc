@@ -42,13 +42,13 @@ div[class^='announcementBar_'] {
 }
 
 /* FIXME: Revert later. Blocked by https://github.com/facebook/docusaurus/pull/8079 */
-/* 
+/*
 .navbar__link--active,
 .menu__list:not(.theme-doc-sidebar-menu)
   li:not(.theme-doc-sidebar-item-link):not(.theme-doc-sidebar-item-category)
   .menu__link--active {
   color: var(--ifm-navbar-link-color);
-} 
+}
 */
 
 .homepage .navbar__inner {
@@ -350,4 +350,8 @@ html.v9 .trpcgif--v9 {
 
 details p {
   margin-bottom: var(--ifm-leading);
+}
+
+.markdown .github-comment {
+  margin-bottom: 2rem;
 }
