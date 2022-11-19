@@ -5,39 +5,42 @@ sidebar_label: Define Routers
 slug: /router
 ---
 
+To begin building your tRPC-based API, you'll first need to define your router. You can [customize your routers](#advanced-usage) for more advanced use cases once you've learned the basics.
+
 ## Initialize tRPC
 
-
-:::tip
-- If you don't like the variable name `t`, you can call it whatever you want
-- You should create your root `t`-variable **exactly once** per application
-- You can also create the `t`-variable with a [context](context), [metadata](metadata), a [error formatter](error-formatting), or a [data transformer](data-transformers).
-- It's good to limit the methods you export from the `t` object in order to constrain your team to use only a few base procedures
-
-:::
+You should initialize tRPC **exactly once** per application. Multiple instances of tRPC will cause issues.
 
 ```ts twoslash title='server/trpc.ts'
 // @filename: trpc.ts
 // ---cut---
 import { initTRPC } from '@trpc/server';
 
+// You can use any variable name you like.
+// We use t to keep things simple.
 const t = initTRPC.create();
 
-// We explicitly export the methods we use here
-// This allows us to create reusable & protected base procedures
-export const middleware = t.middleware;
 export const router = t.router;
+export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
+export const protectedProcedure = t.middleware(({ next }) => {
+  // Do some authentication logic
+  return next();
+});
 ```
 
+You'll notice we are exporting certain methods of the `t` variable here rather than `t` itself. This is to establish a certain set of procedures that we will use idiomatically in our codebase.
+
 ## Defining a router
+
+Next, let's define a router with a procedure to use in our application. We are now exposing an API "endpoint."
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
- 
+
 export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const router = t.router;
@@ -51,59 +54,59 @@ const appRouter = router({
   greeting: publicProcedure.query(() => 'hello tRPC v10!'),
 });
 
-// Export only the **type** of a router to avoid importing server code on the client
+// Export only the type of a router!
+// This prevents us from importing server code on the client.
 export type AppRouter = typeof appRouter;
 ```
 
-## `initTRPC` options
+## Advanced usage
 
-Use chaining to setup your `t`-object, example:
+When initializing your router, tRPC allows you to:
+
+- setup [request contexts](/docs/context)
+- assign [metadata](/docs/metadata) to procedures
+- [format](/docs/error-formatting) and [handle](/docs/error-handling) errors
+- [transform data](/docs/data-transformers) as needed
+- customize the [runtime configuration](#runtime-configuration)
+
+You can use method chaining to customize your `t`-object on initialization. For example:
 
 ```ts
-initTRPC()
-  .context<Context>()
-  .meta<Meta>()
-  .create({ /* [...] */})
+const t = initTRPC().context<Context>().meta<Meta>().create({
+  /* [...] */
+});
 ```
-### `.context<Context>()`
 
-Setup a [request context](context).
-
-### `.meta<Meta>()`
-
-Setup [metadata](metadata) for your procedures.
-
-
-### `.create(opts: Partial<RuntimeConfig>)`
-
-
-`RuntimeConfig` reference:
+### Runtime Configuration
 
 ```ts
-
 export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
    * Use a data transformer
    * @link https://trpc.io/docs/data-transformers
    */
   transformer: TTypes['transformer'];
+
   /**
    * Use custom error formatting
    * @link https://trpc.io/docs/error-formatting
    */
   errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
+
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.
    * @default false
    */
   allowOutsideOfServer: boolean;
+
   /**
    * Is this a server environment?
    * @warning **Use with caution**, this should likely mainly be used within testing.
    * @default typeof window === 'undefined' || 'Deno' in window || process.env.NODE_ENV === 'test'
    */
   isServer: boolean;
+
   /**
    * Is this development?
    * Will be used to decide if the API should return stack traces
