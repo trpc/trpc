@@ -53,7 +53,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://t3.gg",
     "privacyLevel": "PUBLIC",
-    "login": "TheoBr",
+    "login": "t3dotgg",
     "createdAt": 1631688228000
   },
   {
@@ -496,5 +496,32 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "andrew-werdna",
     "createdAt": 1666979682000
+  },
+  {
+    "name": "_PabloDev",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=e0018ad71c678db14693c4dfee580a8982c882cf&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://pablorosales.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "PabloRosales",
+    "createdAt": 1668701929000
+  },
+  {
+    "name": "Jonas Strassel",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://jonas-strassel.de/",
+    "privacyLevel": "PUBLIC",
+    "login": "boredland",
+    "createdAt": 1668778944000
+  },
+  {
+    "name": "Interval",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://interval.com",
+    "privacyLevel": "PUBLIC",
+    "login": "interval",
+    "createdAt": 1668779128000
   }
 ] as const
