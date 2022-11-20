@@ -52,11 +52,11 @@ const PressContent = () => {
       <div className="sm:flex sm:space-x-4">
         <div className="sm:w-1/3 lg:w-1/4 -space-y-8">
           <InfoCard
-            className="bg-black z-10"
-            title="Font"
-            value="SF Pro Display"
+            className="bg-primary z-10"
+            title="Primary"
+            value="#398ccb"
           />
-          <InfoCard className="bg-primary" title="Primary" value="#398ccb" />
+          <InfoCard className="bg-black " title="Font" value="SF Pro Display" />
         </div>
 
         <div className="grid grid-cols-3 gap-4 my-4 sm:mt-0 sm:w-2/3 lg:w-3/4">
