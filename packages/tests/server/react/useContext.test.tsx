@@ -238,14 +238,14 @@ test('invalidate', async () => {
   const stableProxySpy = jest.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      onSuccess: () => {
+        stableProxySpy();
+      },
+    });
     const createPostMutation = proxy.post.create.useMutation();
 
     const utils = proxy.useContext();
-
-    useEffect(() => {
-      stableProxySpy(proxy);
-    }, []);
 
     if (!allPosts.data) {
       return <>...</>;
@@ -268,6 +268,7 @@ test('invalidate', async () => {
             );
           }}
         />
+        {allPosts.isFetching ? 'fetching' : 'done'}
         {allPosts.data.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
@@ -281,13 +282,19 @@ test('invalidate', async () => {
     </App>,
   );
 
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+  });
+
+  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+
   const addPostButton = await utils.findByTestId('add-post');
 
   await userEvent.click(addPostButton);
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('invalidate');
   });
-  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+  expect(stableProxySpy).toHaveBeenCalledTimes(2);
 });
 
 test('invalidate procedure for both query and infinite', async () => {
