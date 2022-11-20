@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" src",
     "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'tsx src/client.ts'"
   },
   "dependencies": {

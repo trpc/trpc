@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" src",
     "start": "vite preview"
   },
   "dependencies": {

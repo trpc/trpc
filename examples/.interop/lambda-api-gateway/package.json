@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" src",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"

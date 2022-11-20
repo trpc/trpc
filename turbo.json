@@ -34,11 +34,11 @@
       "cache": false
     },
     "lint": {
-      "outputs": [".eslintcache"],
+      "outputs": [],
       "cache": true
     },
     "lint-fix": {
-      "outputs": [".eslintcache"],
+      "outputs": [],
       "cache": true
     },
     "test": {

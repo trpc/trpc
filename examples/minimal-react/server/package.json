@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch index.ts",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content index.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\"  index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {

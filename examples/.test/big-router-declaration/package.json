@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "rm -rf build && tsc",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" src",
     "postinstall": "tsx scripts/codegen"
   },
   "dependencies": {

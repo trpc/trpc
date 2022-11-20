@@ -4,7 +4,7 @@
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen:bigLegacyRouter": "tsx ../../scripts/generateBigLegacyRouter.ts",
-    "lint": "eslint --ext .ts,.tsx --ignore-path ../../.gitignore --cache --cache-strategy content .",
+    "lint": "eslint --ext .ts,.tsx --ignore-path ../../.gitignore  .",
     "test": "jest",
     "test-watch": "jest --watch",
     "test-ci": "jest --ci --maxWorkers=2 --coverage"

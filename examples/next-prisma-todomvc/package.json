@@ -16,7 +16,7 @@
     "build-sqlite": "run-s generate-sqlite migrate-sqlite && next build",
     "build-postgres": "run-s generate-postgres migrate && next build",
     "build": "pnpm build-postgres",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" src",
     "start": "next start",
     "studio": "prisma studio",
     "migrate-dev": "prisma migrate dev",

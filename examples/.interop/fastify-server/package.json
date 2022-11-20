@@ -7,7 +7,7 @@
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --cache --cache-strategy content src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" src",
     "start:server": "node dist/server/index.js",
     "start:client": "wait-port 2022 && node dist/client/index.js",
     "start": "run-p start:* --print-label",
