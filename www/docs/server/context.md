@@ -67,4 +67,13 @@ export const publicProcedure = t.procedure;
  * Protected procedure
  **/
 export const protectedProcedure = t.procedure.use(isAuthed);
+
+// -------------------------------------------------
+// @filename: [trpc].ts
+// -------------------------------------------------
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext: createContext,
+});
+
 ```
