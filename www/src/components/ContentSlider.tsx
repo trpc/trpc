@@ -21,9 +21,9 @@ export const ContentSlider = ({ cards }: Props) => {
             key={card.title}
             className="p-6 flex flex-none justify-between flex-col snap-center snap-always border-2 rounded"
           >
-            <p className="text-lg font-bold text-white">{card.title}</p>
+            <p className="text-lg font-bold dark:text-white">{card.title}</p>
             <div>
-              <p className="mt-4 mb-4 text-white">{card.people.join(', ')}</p>
+              <p className="mt-4 mb-4 dark:text-white">{card.people.join(', ')}</p>
               <p className="text-gray-400">{card.time}</p>
             </div>
           </a>
