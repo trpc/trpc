@@ -31,6 +31,7 @@ const sections: Def = {
     'snaplet',
     'flylance-apps',
     'echobind',
+    'interval',
   ],
 };
 

@@ -4,10 +4,10 @@ overrides:
   '@tanstack/react-query': 4.6.0
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
   '@examples/next-starter-sqlite>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
-  '@examples/next-starter-websockets>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
+  '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter
   '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
   '@examples/legacy-next-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
-  '@examples/interop-next-starter-websockets>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
+  '@examples/interop-next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter
   '@examples/interop-todo-web>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
 
 importers:
@@ -343,89 +343,6 @@ importers:
       vite: 3.1.3
       vitest: 0.23.4
 
-  examples/.interop/next-prisma-starter-websockets:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
-      '@types/node': ^18.7.20
-      '@types/node-fetch': ^2.5.11
-      '@types/react': ^18.0.9
-      '@types/ws': ^8.2.0
-      '@typescript-eslint/eslint-plugin': ^5.37.0
-      '@typescript-eslint/parser': ^5.37.0
-      autoprefixer: ^10.4.7
-      clsx: ^1.1.1
-      cross-env: ^7.0.3
-      eslint: ^7.32.0
-      eslint-config-next: ^13.0.0
-      eslint-config-prettier: ^8.5.0
-      eslint-plugin-prettier: ^4.0.0
-      eslint-plugin-react: ^7.25.1
-      eslint-plugin-react-hooks: ^4.2.0
-      next: ^13.0.0
-      next-auth: ^4.14.0
-      node-fetch: ^2.6.1
-      npm-run-all: ^4.1.5
-      postcss: ^8.4.14
-      prettier: ^2.7.1
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      tailwindcss: ^3.1.6
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      ws: ^8.0.0
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-starter-websockets_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      clsx: 1.2.1
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
-      node-fetch: 2.6.7
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      tsx: 3.9.0
-      ws: 8.9.0
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/node-fetch': 2.6.2
-      '@types/react': 18.0.21
-      '@types/ws': 8.5.3
-      '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
-      '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
-      autoprefixer: 10.4.12_postcss@8.4.16
-      cross-env: 7.0.3
-      eslint: 7.32.0
-      eslint-config-next: 13.0.2_dyxdave6dwjbccc5dgiifcmuza
-      eslint-config-prettier: 8.5.0_eslint@7.32.0
-      eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
-      eslint-plugin-react: 7.31.8_eslint@7.32.0
-      eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      npm-run-all: 4.1.5
-      postcss: 8.4.16
-      prettier: 2.7.1
-      prisma: 4.3.1
-      start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8_postcss@8.4.16
-      typescript: 4.8.3
-
   examples/.interop/next-prisma-todomvc:
     specifiers:
       '@playwright/test': ^1.26.1
@@ -475,6 +392,89 @@ importers:
       eslint: 7.32.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
+      typescript: 4.8.3
+
+  examples/.interop/next-prisma-websockets-starter:
+    specifiers:
+      '@playwright/test': ^1.26.1
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter
+      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query-devtools': ^4.3.8
+      '@trpc/client': ^10.0.0-rc.8
+      '@trpc/next': ^10.0.0-rc.8
+      '@trpc/react-query': ^10.0.0-rc.8
+      '@trpc/server': ^10.0.0-rc.8
+      '@types/node': ^18.7.20
+      '@types/node-fetch': ^2.5.11
+      '@types/react': ^18.0.9
+      '@types/ws': ^8.2.0
+      '@typescript-eslint/eslint-plugin': ^5.37.0
+      '@typescript-eslint/parser': ^5.37.0
+      autoprefixer: ^10.4.7
+      clsx: ^1.1.1
+      cross-env: ^7.0.3
+      eslint: ^7.32.0
+      eslint-config-next: ^13.0.0
+      eslint-config-prettier: ^8.5.0
+      eslint-plugin-prettier: ^4.0.0
+      eslint-plugin-react: ^7.25.1
+      eslint-plugin-react-hooks: ^4.2.0
+      next: ^13.0.0
+      next-auth: ^4.14.0
+      node-fetch: ^2.6.1
+      npm-run-all: ^4.1.5
+      postcss: ^8.4.14
+      prettier: ^2.7.1
+      prisma: ^4.3.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
+      tailwindcss: ^3.1.6
+      tsx: ^3.9.0
+      typescript: ^4.8.3
+      ws: ^8.0.0
+      zod: ^3.0.0
+    dependencies:
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter_prisma@4.3.1'
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
+      clsx: 1.2.1
+      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
+      next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
+      node-fetch: 2.6.7
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      superjson: 1.10.0
+      tsx: 3.9.0
+      ws: 8.9.0
+      zod: 3.19.1
+    devDependencies:
+      '@playwright/test': 1.26.1
+      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
+      '@types/node': 18.7.20
+      '@types/node-fetch': 2.6.2
+      '@types/react': 18.0.21
+      '@types/ws': 8.5.3
+      '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
+      '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
+      autoprefixer: 10.4.12_postcss@8.4.16
+      cross-env: 7.0.3
+      eslint: 7.32.0
+      eslint-config-next: 13.0.2_dyxdave6dwjbccc5dgiifcmuza
+      eslint-config-prettier: 8.5.0_eslint@7.32.0
+      eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
+      eslint-plugin-react: 7.31.8_eslint@7.32.0
+      eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
+      npm-run-all: 4.1.5
+      postcss: 8.4.16
+      prettier: 2.7.1
+      prisma: 4.3.1
+      start-server-and-test: 1.14.0
+      tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
   examples/.interop/standalone-server:
@@ -990,89 +990,6 @@ importers:
       vite: 3.1.3
       vitest: 0.23.4
 
-  examples/next-prisma-starter-websockets:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
-      '@types/node': ^18.7.20
-      '@types/node-fetch': ^2.5.11
-      '@types/react': ^18.0.9
-      '@types/ws': ^8.2.0
-      '@typescript-eslint/eslint-plugin': ^5.37.0
-      '@typescript-eslint/parser': ^5.37.0
-      autoprefixer: ^10.4.7
-      clsx: ^1.1.1
-      cross-env: ^7.0.3
-      eslint: ^7.32.0
-      eslint-config-next: ^13.0.0
-      eslint-config-prettier: ^8.5.0
-      eslint-plugin-prettier: ^4.0.0
-      eslint-plugin-react: ^7.25.1
-      eslint-plugin-react-hooks: ^4.2.0
-      next: ^13.0.0
-      next-auth: ^4.14.0
-      node-fetch: ^2.6.1
-      npm-run-all: ^4.1.5
-      postcss: ^8.4.14
-      prettier: ^2.7.1
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      tailwindcss: ^3.1.6
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      ws: ^8.0.0
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
-      clsx: 1.2.1
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
-      node-fetch: 2.6.7
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      tsx: 3.9.0
-      ws: 8.9.0
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/node-fetch': 2.6.2
-      '@types/react': 18.0.21
-      '@types/ws': 8.5.3
-      '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
-      '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
-      autoprefixer: 10.4.12_postcss@8.4.16
-      cross-env: 7.0.3
-      eslint: 7.32.0
-      eslint-config-next: 13.0.2_dyxdave6dwjbccc5dgiifcmuza
-      eslint-config-prettier: 8.5.0_eslint@7.32.0
-      eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
-      eslint-plugin-react: 7.31.8_eslint@7.32.0
-      eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      npm-run-all: 4.1.5
-      postcss: 8.4.16
-      prettier: 2.7.1
-      prisma: 4.3.1
-      start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8_postcss@8.4.16
-      typescript: 4.8.3
-
   examples/next-prisma-todomvc:
     specifiers:
       '@playwright/test': ^1.26.1
@@ -1122,6 +1039,89 @@ importers:
       eslint: 7.32.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
+      typescript: 4.8.3
+
+  examples/next-prisma-websockets-starter:
+    specifiers:
+      '@playwright/test': ^1.26.1
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter
+      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query-devtools': ^4.3.8
+      '@trpc/client': ^10.0.0-rc.8
+      '@trpc/next': ^10.0.0-rc.8
+      '@trpc/react-query': ^10.0.0-rc.8
+      '@trpc/server': ^10.0.0-rc.8
+      '@types/node': ^18.7.20
+      '@types/node-fetch': ^2.5.11
+      '@types/react': ^18.0.9
+      '@types/ws': ^8.2.0
+      '@typescript-eslint/eslint-plugin': ^5.37.0
+      '@typescript-eslint/parser': ^5.37.0
+      autoprefixer: ^10.4.7
+      clsx: ^1.1.1
+      cross-env: ^7.0.3
+      eslint: ^7.32.0
+      eslint-config-next: ^13.0.0
+      eslint-config-prettier: ^8.5.0
+      eslint-plugin-prettier: ^4.0.0
+      eslint-plugin-react: ^7.25.1
+      eslint-plugin-react-hooks: ^4.2.0
+      next: ^13.0.0
+      next-auth: ^4.14.0
+      node-fetch: ^2.6.1
+      npm-run-all: ^4.1.5
+      postcss: ^8.4.14
+      prettier: ^2.7.1
+      prisma: ^4.3.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
+      tailwindcss: ^3.1.6
+      tsx: ^3.9.0
+      typescript: ^4.8.3
+      ws: ^8.0.0
+      zod: ^3.0.0
+    dependencies:
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.3.1'
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
+      clsx: 1.2.1
+      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
+      next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
+      node-fetch: 2.6.7
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      superjson: 1.10.0
+      tsx: 3.9.0
+      ws: 8.9.0
+      zod: 3.19.1
+    devDependencies:
+      '@playwright/test': 1.26.1
+      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
+      '@types/node': 18.7.20
+      '@types/node-fetch': 2.6.2
+      '@types/react': 18.0.21
+      '@types/ws': 8.5.3
+      '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
+      '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
+      autoprefixer: 10.4.12_postcss@8.4.16
+      cross-env: 7.0.3
+      eslint: 7.32.0
+      eslint-config-next: 13.0.2_dyxdave6dwjbccc5dgiifcmuza
+      eslint-config-prettier: 8.5.0_eslint@7.32.0
+      eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
+      eslint-plugin-react: 7.31.8_eslint@7.32.0
+      eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
+      npm-run-all: 4.1.5
+      postcss: 8.4.16
+      prettier: 2.7.1
+      prisma: 4.3.1
+      start-server-and-test: 1.14.0
+      tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
   examples/standalone-server:
@@ -20909,9 +20909,9 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-starter-websockets_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-starter-websockets'
+  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter_prisma@4.3.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter'
     name: '@prisma/client'
     version: 4.3.1
     engines: {node: '>=14.17'}
@@ -20960,9 +20960,9 @@ packages:
       prisma: 4.3.1
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets'
+  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.3.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter'
     name: '@prisma/client'
     version: 4.3.1
     engines: {node: '>=14.17'}
