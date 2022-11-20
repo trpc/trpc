@@ -23,10 +23,6 @@ const t = initTRPC.create();
 export const router = t.router;
 export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
-export const protectedProcedure = t.middleware(({ next }) => {
-  // Do some authentication logic
-  return next();
-});
 ```
 
 You'll notice we are exporting certain methods of the `t` variable here rather than `t` itself. This is to establish a certain set of procedures that we will use idiomatically in our codebase.
