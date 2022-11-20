@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -348,21 +347,10 @@ test('invalidate procedure for both query and infinite', async () => {
 
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('done');
-  });
-
-  await waitFor(() => {
     expect(utils.container).toHaveTextContent('new post');
+    expect(invalidateQuerySpy).toHaveBeenCalledTimes(1);
+    expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(1);
   });
-
-  // I've tried everything to avoid this but for some reason, even though
-  // infinite query is successful and data is on the component it still shows
-  // no calls to the proxy passed to "onSuccess" unless i do this wait ... even
-  // await new Promise(process.nextTick); doesn't work 🤷🤯
-  // https://github.com/trpc/trpc/pull/3195#discussion_r1026952381
-  await waitMs(1);
-
-  expect(invalidateQuerySpy).toHaveBeenCalledTimes(1);
-  expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(1);
 
   const invalidateButton = await utils.findByTestId('invalidate-button');
 
@@ -370,13 +358,9 @@ test('invalidate procedure for both query and infinite', async () => {
 
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('done');
+    expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
+    expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
   });
-
-  // See Above!
-  await waitMs(1);
-
-  expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
-  expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
 });
 
 test('refetch', async () => {
