@@ -5,40 +5,51 @@ sidebar_label: Usage with React
 slug: /react
 ---
 
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
 :::info
 
 - If you're using Next.js, read the [Usage with Next.js](nextjs) guide instead.
-- In order to infer types from your Node.js backend you should have the frontend & backend in the same monorepo.
+- In order to infer types from your Node.js backend, you should have the frontend and backend in the same monorepo.
 
 :::
 
-## Add tRPC to existing React project
+## Add tRPC to an existing React project
 
 ### Server Side
 
 #### 1. Install dependencies
 
-**npm**
+<Tabs>
+  <TabItem value="npm" label="npm" default>
 
 ```bash
 npm install @trpc/server zod
 ```
 
-**yarn**
+  </TabItem>
+
+  <TabItem value="yarn" label="yarn">
 
 ```bash
 yarn add @trpc/server zod
 ```
 
-**pnpm**
+  </TabItem>
+
+  <TabItem value="pnpm" label="pnpm">
 
 ```bash
 pnpm add @trpc/server zod
 ```
 
+  </TabItem>
+</Tabs>
+
 ##### Why Zod?
 
-Most examples use [Zod](https://github.com/colinhacks/zod) for input validation and we highly recommended it, though it isn't required. You can use a validation library of your choice ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts), etc). In fact, any object containing a `parse`, `create` or `validateSync` method will work.
+[Zod](https://github.com/colinhacks/zod) is an input validator to ensure that our backend only processes requests that fit our API. You can use other validation libraries like [Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts) if you prefer. In fact, any object containing a `parse`, `create` or `validateSync` method will work.
 
 #### 2. Enable strict mode
 
@@ -50,7 +61,7 @@ If you want to use Zod for input validation, make sure you have enabled strict m
   }
 ```
 
-If strict mode is too much, at least enable `strictNullChecks`:
+If strict mode is too harsh, at least enable `strictNullChecks`:
 
 ```diff title="tsconfig.json"
   "compilerOptions": {
@@ -60,35 +71,43 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 #### 3. Implement your `appRouter`
 
-Follow the [Quickstart](quickstart) and read the [`@trpc/server` docs](router) for guidance on this. Once you have your API implemented and listening via HTTP, continue to the next step.
+Follow the [Quickstart](/docs/quickstart#create-a-router-instance) to build your "hello world" router. Once you have your API implemented and listening via HTTP, you're ready to set up your React client.
 
 ### Client Side
 
-> tRPC works fine with Create React App!
+> tRPC works great with Create React App!
 
 #### 1. Install dependencies
 
-**npm**
+<Tabs>
+  <TabItem value="npm" label="npm" default>
 
 ```bash
 npm install @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
 ```
 
-**yarn**
+  </TabItem>
+
+  <TabItem value="yarn" label="yarn">
 
 ```bash
 yarn add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
 ```
 
-**pnpm**
+  </TabItem>
+
+  <TabItem value="pnpm" label="pnpm">
 
 ```bash
 pnpm add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
 ```
 
+  </TabItem>
+</Tabs>
+
 ##### Why `@trpc/server`?
 
-This is a peer dependency of `@trpc/client` so you have to install it again!
+`@trpc/server` is a peer dependency of `@trpc/client` so you will need to make sure that it is available on your client!
 
 ##### Why `@tanstack/react-query`?
 
