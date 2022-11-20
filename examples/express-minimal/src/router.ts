@@ -10,7 +10,7 @@ const helloRouter = router({
   greeting: publicProcedure
     .input(z.object({ name: z.string() }).nullish())
     .query(({ input }) => {
-      return `Hello ${input?.name ?? 'World'}`;
+      return `Hellooo ${input?.name ?? 'World'}`;
     }),
 });
 
