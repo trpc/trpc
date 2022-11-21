@@ -5,164 +5,179 @@ sidebar_label: Example Apps
 slug: /example-apps
 ---
 
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
 :::info
-Some of the examples on this page are out-of-date since V10. We'll update this soon.
+Some of the examples on this page need to be upgraded to V10. Please feel free to help us update!
 :::
 
-You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
+---
 
-Here's some example apps:
+### Next.js starter with Prisma, E2E testing, and ESLint (Recommended)
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th>Description</th>
-      <th>URL</th>
-      <th>Links</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>Recommended:</strong><br/>Next.js starter with Prisma, E2E testing, &amp; ESLint
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter</code>
-        </details>
-      </td>
-      <td><a href="https://nextjs.trpc.io">nextjs.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/examples-next-prisma-starter">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <em>zART-stack</em> example (<b>z</b>ero-<b>A</b>PI, <b>T</b>ypeScript, <b>R</b>eact).
-        <br />
-        Monorepo setup with <strong>React Native</strong>, Next.js, &amp; Prisma
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>git clone</code></summary>
-          <code>git clone git@github.com:KATT/zart.git</code>
-        </details>
-      </td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/KATT/zART">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Next.js starter with Prisma, E2E testing, ESLint, Auth using next-auth, WebSockets, &amp; Subscription support
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter</code>
-        </details>
-      </td>
-      <td><a href="http://websockets.trpc.io">websockets.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/examples-next-prisma-starter-websockets">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Next.js TodoMVC-example with SSG & Prisma.
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-next-app</code></summary>
-          <code>yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo</code>
-        </details>
-      </td>
-      <td><a href="https://todomvc.trpc.io">todomvc.trpc.io</a></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/examples-next-prisma-todomvc">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Minimal (Hello world) server and client in node.js</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/next/examples/minimal">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Vanilla standalone server &amp; procedure calls with node.js</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/standalone-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/standalone-server">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Express server &amp; procedure calls with node.js.</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Fastify server with WebSocket &amp; procedure calls with node.js.</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/fastify-server">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>SvelteKit Example Application with Prisma.</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example">CodeSandbox</a></li>
-          <li><a href="https://github.com/icflorescu/trpc-sveltekit-example">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>Cloudflare Workers example</td>
-      <td><em>n/a</em></td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/next/examples/cloudflare-workers">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Express server with tRPC Shield + Prisma
-        <br/><br/>
-        <details>
-          <summary>Quick start with <code>create-trpc-appx</code></summary>
-          <code>npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example</code>
-        </details>
-      </td>
-      <td><em>n/a</em></td>      
-      <td>
-        <ul>
-          <li><a href="https://github.com/omar-dulaimi/trpc-shield/tree/master/example">Source</a></li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+```
+
+  </TabItem>
+</Tabs>
+
+- Example deploy: [nextjs.trpc.io](https://nextjs.trpc.io)
+- [Source code](https://github.com/trpc/examples-next-prisma-starter)
+
+---
+
+### create-t3-turbo - T3 Stack with Expo and Turborepo
+
+<Tabs>
+  <TabItem value="git" label="git">
+
+```bash
+git clone git@github.com:t3-oss/create-t3-turbo.git
+```
+
+  </TabItem>
+</Tabs>
+
+- [Source code](https://github.com/t3-oss/create-t3-turbo)
+
+---
+
+### Next.js starter with Prisma, E2E testing, ESLint, next-auth, WebSockets, and subscriptions
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+```
+
+  </TabItem>
+</Tabs>
+
+- Example deploy: [websockets.trpc.io](https://websockets.trpc.io)
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx)
+- [Source code](https://github.com/trpc/examples-next-prisma-starter-websockets)
+
+---
+
+### Next.js Todo MVC example with SSG and Prisma
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-todomvc trpc-todo
+
+```
+
+  </TabItem>
+</Tabs>
+
+- Example deploy: [todomvc.trpc.io](https://todomvc.trpc.io)
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-todomvc?file=/pages/%5Bfilter%5D.tsx)
+- [Source code](https://github.com/trpc/examples-next-prisma-todomvc)
+
+---
+
+### Express server with tRPC Shield and Prisma
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example
+```
+
+  </TabItem>
+</Tabs>
+
+- [Source code](https://github.com/omar-dulaimi/trpc-shield/tree/master/example)
+
+---
+
+### Minimal (Hello world) server and client in Node.js
+
+- [Source code](https://github.com/trpc/trpc/tree/next/examples/minimal)
+
+---
+
+### Vanilla standalone server and Node.js procedure calls
+
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/standalone-server)
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/standalone-server)
+
+---
+
+### Express server and Node.js procedure calls
+
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/express-server)
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/express-server)
+
+---
+
+### Fastify server with WebSockets and Node.js procedure calls
+
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server)
+- [Source code](https://github.com/trpc/trpc/tree/main/examples/fastify-server)
+
+---
+
+### SvelteKit with Prisma
+
+- [CodeSandbox](https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example)
+- [Source code](https://github.com/icflorescu/trpc-sveltekit-example)
+
+---
+
+### Cloudflare Workers example
+
+- [Source code](https://github.com/trpc/trpc/tree/next/examples/cloudflare-workers)
+
+---
