@@ -6,7 +6,12 @@ export default function LogoWrapper(props) {
   const history = useHistory();
 
   return (
-    <div onContextMenu={() => history.push({ pathname: '/media' })}>
+    <div
+      onContextMenu={(e) => {
+        e.preventDefault();
+        history.push({ pathname: '/media' });
+      }}
+    >
       <Logo {...props} />
     </div>
   );
