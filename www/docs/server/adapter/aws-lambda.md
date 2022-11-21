@@ -91,7 +91,7 @@ Build & deploy your code, now use your API Gateway URL to call your function.
 
 #### A word about payload format version
 
-API Gateway has two different event data formats when it invokes a Lambda. For REST APIs they should be version "1.0"(`APIGatewayProxyEvent`), but you can chose which for HTTP APIs by stating either version "1.0" or "2.0".
+API Gateway has two different event data formats when it invokes a Lambda. For REST APIs they should be version "1.0"(`APIGatewayProxyEvent`), but you can choose which for HTTP APIs by stating either version "1.0" or "2.0".
 
 - Version 1.0: `APIGatewayProxyEvent`
 - Version 2.0: `APIGatewayProxyEventV2`
