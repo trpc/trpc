@@ -232,7 +232,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Reusable base publicProcedures
+## Reusable base procedures
 
 You can create reusable base procedures to have a set of procedures that are i.e. login protected.
 
