@@ -72,8 +72,8 @@ export const protectedProcedure = t.procedure.use(isAuthed);
 // @filename: [trpc].ts
 // -------------------------------------------------
 import * as trpcNext from '@trpc/server/adapters/next';
-import { appRouter } from '../../../server/routers/_app';
-import { createContext } from '../../../server/context';
+import { appRouter } from './_app';
+import { createContext } from './context';
 
 export default trpcNext.createNextApiHandler({
   router: appRouter,
