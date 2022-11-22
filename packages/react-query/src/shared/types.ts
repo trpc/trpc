@@ -11,6 +11,7 @@ export interface UseMutationOverride {
      */
     originalFn: () => MaybePromise<unknown>;
     queryClient: QueryClient;
+    meta: Record<string, unknown>;
   }) => MaybePromise<unknown>;
 }
 
