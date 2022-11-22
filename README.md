@@ -72,7 +72,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ## Core Team
 
-> Do you want to contribute? First, read the <a href="https://github.com/trpc/trpc/blob/next/CONTRIBUTING.md">Contributing Guidelines</a> before opening an issue or PR so you understand the branching strategy and local development environment. If you need any more guidance or want to ask more questions, feel free to write to us on <a href="https://trpc.io/discord">Discord</a>!
+> Do you want to contribute? First, read the <a href="https://github.com/trpc/trpc/blob/main/CONTRIBUTING.md">Contributing Guidelines</a> before opening an issue or PR so you understand the branching strategy and local development environment. If you need any more guidance or want to ask more questions, feel free to write to us on <a href="https://trpc.io/discord">Discord</a>!
 
 <table>
   <tr>
