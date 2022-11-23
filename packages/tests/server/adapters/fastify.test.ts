@@ -8,8 +8,7 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client/src';
-import { inferAsyncReturnType } from '@trpc/server/src';
-import { initTRPC } from '@trpc/server/src';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
