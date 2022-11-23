@@ -4,10 +4,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-} from '@trpc/client/src';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
 import * as trpcFetch from '@trpc/server/src/adapters/fetch';
 import { Miniflare } from 'miniflare';
