@@ -3,6 +3,7 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import '@testing-library/jest-dom';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
+import myzod from 'myzod';
 import * as st from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
@@ -173,6 +174,27 @@ test('yup', async () => {
   // @ts-expect-error this only accepts a `number`
   await expect(proxy.num.query('asd')).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
+  );
+  expect(res.input).toBe(123);
+  close();
+});
+
+test('myzod', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(myzod.number()).query(({ input }) => {
+      expectTypeOf(input).toMatchTypeOf<number>();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(123);
+  await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: expected type to be number but got string]`,
   );
   expect(res.input).toBe(123);
   close();
