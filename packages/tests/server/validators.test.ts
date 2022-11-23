@@ -199,3 +199,58 @@ test('myzod', async () => {
   expect(res.input).toBe(123);
   close();
 });
+
+test('validator fn', async () => {
+  const t = initTRPC.create();
+
+  const numParser = (input: unknown) => {
+    if (typeof input !== 'number') {
+      throw new Error('Not a number');
+    }
+    return input;
+  };
+
+  const router = t.router({
+    num: t.procedure.input(numParser).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(123);
+  await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Not a number]`,
+  );
+  expect(res.input).toBe(123);
+  close();
+});
+
+test('async validator fn', async () => {
+  const t = initTRPC.create();
+  async function numParser(input: unknown) {
+    if (typeof input !== 'number') {
+      throw new Error('Not a number');
+    }
+    return input;
+  }
+
+  const router = t.router({
+    num: t.procedure.input(numParser).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(123);
+  await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Not a number]`,
+  );
+  expect(res.input).toBe(123);
+  close();
+});
