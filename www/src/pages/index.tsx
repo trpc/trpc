@@ -125,7 +125,7 @@ const HomeContent: React.FC = () => {
           <Iframe
             src={
               `https://stackblitz.com/github/trpc/trpc/tree/${
-                isV10 ? 'next' : 'main'
+                isV10 ? 'main' : 'v9.x'
               }/examples/next-minimal-starter?` +
               searchParams({
                 embed: '1',
