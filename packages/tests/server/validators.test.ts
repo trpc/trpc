@@ -3,6 +3,7 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import '@testing-library/jest-dom';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
+import * as st from 'superstruct';
 import { z } from 'zod';
 
 test('no validator', async () => {
@@ -127,5 +128,28 @@ test('zod transform mixed input/output', async () => {
             ]]
           `);
 
+  close();
+});
+
+test('superstruct', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(st.number()).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(123);
+
+  // @ts-expect-error this only accepts a `number`
+  await expect(proxy.num.query('123')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Expected a number, but received: "123"]`,
+  );
+  expect(res.input).toBe(123);
   close();
 });
