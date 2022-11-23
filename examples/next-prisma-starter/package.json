@@ -26,8 +26,8 @@
     "test": "run-s test:*",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "test-dev": "start-server-and-test 'next dev' 3000 test",
-    "test-start": "start-server-and-test start 3000 test",
+    "test-dev": "start-server-and-test 'next dev' http://127.0.0.1:3000 test",
+    "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
     "postinstall": "prisma generate"
   },
   "prisma": {

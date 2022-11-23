@@ -43,7 +43,7 @@ jobs:
             .test/big-router-declaration,
             soa,
           ]
-        node-start: ['16.x']
+        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -54,7 +54,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
