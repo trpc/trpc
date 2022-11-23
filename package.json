@@ -6,11 +6,11 @@
   },
   "packageManager": "pnpm@7.17.0",
   "scripts": {
-    "build": "turbo --filter=\"@trpc/*\" build",
+    "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",
-    "test": "turbo --filter tests test",
+    "test": "turbo --filter \"@trpc/tests\" test",
     "test-watch": "cd packages/tests && pnpm test-watch",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "pnpm lint --fix && manypkg fix",

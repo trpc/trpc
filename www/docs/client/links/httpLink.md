@@ -51,4 +51,4 @@ export interface HTTPLinkOptions {
 
 ## Reference
 
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/next/packages/client/src/links/httpLink.ts)
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpLink.ts)

@@ -14,6 +14,7 @@ describe('mutation override', () => {
       interface Post {
         title: string;
       }
+      const onSuccessSpy = jest.fn();
 
       const posts: Post[] = [];
 
@@ -30,8 +31,11 @@ describe('mutation override', () => {
         unstable_overrides: {
           useMutation: {
             async onSuccess(opts) {
-              await opts.originalFn();
-              await opts.queryClient.invalidateQueries();
+              if (!opts.meta.skipInvalidate) {
+                await opts.originalFn();
+                await opts.queryClient.invalidateQueries();
+              }
+              onSuccessSpy(opts);
             },
           },
         },
@@ -52,6 +56,7 @@ describe('mutation override', () => {
         ...opts,
         App,
         trpc,
+        onSuccessSpy,
       };
     })
     .afterEach(async (opts) => {
@@ -86,6 +91,50 @@ describe('mutation override', () => {
 
     await waitFor(() => {
       expect($.container).toHaveTextContent(nonce);
+    });
+  });
+
+  test('skip invalidate', async () => {
+    const { trpc } = ctx;
+    const nonce = `nonce-${Math.random()}`;
+    function MyComp() {
+      const listQuery = trpc.list.useQuery();
+      const mutation = trpc.add.useMutation({
+        meta: {
+          skipInvalidate: true,
+        } as any,
+      });
+
+      return (
+        <>
+          <button onClick={() => mutation.mutate(nonce)} data-testid="add">
+            add
+          </button>
+          <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>
+        </>
+      );
+    }
+
+    const $ = render(
+      <ctx.App>
+        <MyComp />
+      </ctx.App>,
+    );
+
+    $.getByTestId('add').click();
+
+    await waitFor(() => {
+      expect(ctx.onSuccessSpy).toHaveBeenCalledTimes(1);
+    });
+
+    expect(ctx.onSuccessSpy.mock.calls[0][0].meta).toMatchInlineSnapshot(`
+      Object {
+        "skipInvalidate": true,
+      }
+    `);
+
+    await waitFor(() => {
+      expect($.container).not.toHaveTextContent(nonce);
     });
   });
 });

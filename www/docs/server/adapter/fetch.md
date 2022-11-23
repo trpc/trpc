@@ -24,7 +24,7 @@ slug: /fetch
       </td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/next/examples/cloudflare-workers">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers">Source</a></li>
         </ul>
       </td>
     </tr>
