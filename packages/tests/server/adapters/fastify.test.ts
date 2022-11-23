@@ -2,13 +2,14 @@ import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import {
   HTTPHeaders,
-  createTRPCClient,
+  createTRPCProxyClient,
   createWSClient,
   httpLink,
   splitLink,
   wsLink,
 } from '@trpc/client/src';
-import { inferAsyncReturnType, router } from '@trpc/server/src';
+import { inferAsyncReturnType } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
@@ -39,62 +40,63 @@ interface Message {
   id: string;
 }
 
+const t = initTRPC.context<Context>().create();
+
 function createAppRouter() {
   const ee = new EventEmitter();
   const onNewMessageSubscription = jest.fn();
   const onSubscriptionEnded = jest.fn();
-  const appRouter = router<Context>()
-    .query('ping', {
-      resolve() {
-        return 'pong';
-      },
-    })
-    .query('hello', {
-      input: z
-        .object({
-          username: z.string().nullish(),
-        })
-        .nullish(),
-      resolve({ input, ctx }) {
-        return {
-          text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
-        };
-      },
-    })
-    .mutation('post.edit', {
-      input: z.object({
-        id: z.string(),
-        data: z.object({
-          title: z.string(),
-          text: z.string(),
+
+  const router = t.router;
+  const publicProcedure = t.procedure;
+  const appRouter = router({
+    ping: publicProcedure.query(() => {
+      return 'pong';
+    }),
+    hello: publicProcedure
+      .input(
+        z
+          .object({
+            username: z.string().nullish(),
+          })
+          .nullish(),
+      )
+      .query(({ input, ctx }) => ({
+        text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
+      })),
+    ['post.edit']: publicProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          data: z.object({
+            title: z.string(),
+            text: z.string(),
+          }),
         }),
-      }),
-      async resolve({ input, ctx }) {
+      )
+      .mutation(async ({ input, ctx }) => {
         if (ctx.user.name === 'anonymous') {
           return { error: 'Unauthorized user' };
         }
         const { id, data } = input;
         return { id, ...data };
-      },
-    })
-    .subscription('onMessage', {
-      resolve() {
-        const sub = observable<Message>((emit) => {
-          const onMessage = (data: Message) => {
-            emit.next(data);
-          };
-          ee.on('server:msg', onMessage);
-          return () => {
-            onSubscriptionEnded();
-            ee.off('server:msg', onMessage);
-          };
-        });
-        ee.emit('subscription:created');
-        onNewMessageSubscription();
-        return sub;
-      },
-    })
-    .interop();
+      }),
+    onMessage: publicProcedure.input(z.string()).subscription(() => {
+      const sub = observable<Message>((emit) => {
+        const onMessage = (data: Message) => {
+          emit.next(data);
+        };
+        ee.on('server:msg', onMessage);
+        return () => {
+          onSubscriptionEnded();
+          ee.off('server:msg', onMessage);
+        };
+      });
+      ee.emit('subscription:created');
+      onNewMessageSubscription();
+      return sub;
+    }),
+  });
 
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
 }
@@ -116,11 +118,13 @@ function createServer(opts: ServerOptions) {
     ? fp(fastifyTRPCPlugin)
     : fastifyTRPCPlugin;
 
+  const router = opts.appRouter;
+
   instance.register(ws);
   instance.register(plugin, {
     useWSS: true,
     prefix: config.prefix,
-    trpcOptions: { router: opts.appRouter, createContext },
+    trpcOptions: { router, createContext },
   });
 
   instance.get('/hello', async () => {
@@ -152,7 +156,7 @@ interface ClientOptions {
 function createClient(opts: ClientOptions = {}) {
   const host = `localhost:${config.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
-  const client = createTRPCClient<AppRouter>({
+  const client = createTRPCProxyClient<AppRouter>({
     links: [
       splitLink({
         condition(op) {
@@ -197,7 +201,7 @@ describe('anonymous user', () => {
   });
 
   afterEach(async () => {
-    await app.stop();
+    app.stop();
   });
 
   test('fetch POST', async () => {
@@ -223,14 +227,14 @@ describe('anonymous user', () => {
   });
 
   test('query', async () => {
-    expect(await app.client.query('ping')).toMatchInlineSnapshot(`"pong"`);
-    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
+    expect(await app.client.hello.query()).toMatchInlineSnapshot(`
           Object {
             "text": "hello anonymous",
           }
       `);
     expect(
-      await app.client.query('hello', {
+      await app.client.hello.query({
         username: 'test',
       }),
     ).toMatchInlineSnapshot(`
@@ -242,7 +246,7 @@ describe('anonymous user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client.mutation('post.edit', {
+      await app.client['post.edit'].mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -267,7 +271,7 @@ describe('anonymous user', () => {
 
     const onStartedMock = jest.fn();
     const onDataMock = jest.fn();
-    const sub = app.client.subscription('onMessage', undefined, {
+    const sub = app.client.onMessage.subscribe('onMessage', {
       onStarted: onStartedMock,
       onData(data) {
         expectTypeOf(data).not.toBeAny();
@@ -325,11 +329,11 @@ describe('authorized user', () => {
   });
 
   afterEach(async () => {
-    await app.stop();
+    void app.stop();
   });
 
   test('query', async () => {
-    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+    expect(await app.client.hello.query()).toMatchInlineSnapshot(`
       Object {
         "text": "hello nyan",
       }
@@ -338,7 +342,7 @@ describe('authorized user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client.mutation('post.edit', {
+      await app.client['post.edit'].mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -359,7 +363,7 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   afterEach(async () => {
-    await app.stop();
+    void app.stop();
   });
 
   test('fetch GET', async () => {
@@ -387,14 +391,14 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   test('query', async () => {
-    expect(await app.client.query('ping')).toMatchInlineSnapshot(`"pong"`);
-    expect(await app.client.query('hello')).toMatchInlineSnapshot(`
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
+    expect(await app.client.hello.query()).toMatchInlineSnapshot(`
           Object {
             "text": "hello anonymous",
           }
       `);
     expect(
-      await app.client.query('hello', {
+      await app.client.hello.query({
         username: 'test',
       }),
     ).toMatchInlineSnapshot(`
