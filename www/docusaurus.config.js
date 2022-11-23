@@ -28,7 +28,7 @@ module.exports = {
     announcementBar: {
       id: 'v10',
       content:
-        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/docs/v10/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
+        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
@@ -102,7 +102,7 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -126,7 +126,7 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
           ],
@@ -180,12 +180,12 @@ module.exports = {
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/blog/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/blog/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

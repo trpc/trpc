@@ -1,12 +1,3 @@
-> **🚀 You are looking at a pre-release of tRPC v10!**
->
-> You might be looking for the [`main`](https://github.com/trpc/trpc/tree/main)-branch which is the stable v9-version.
->
-> See our [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) for a summary of what is changing or take a look at [the **v10 docs website**](https://alpha.trpc.io/).
-> There is also [the `next-prisma-starter` project](https://github.com/trpc/examples-next-prisma-starter) to try out a real project using this version.
-
----
-
 [![tRPC](https://assets.trpc.io/www/trpc-readme.png)](https://trpc.io/)
 
 <div align="center">
@@ -81,7 +72,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ## Core Team
 
-> Do you want to contribute? First, read the <a href="https://github.com/trpc/trpc/blob/next/CONTRIBUTING.md">Contributing Guidelines</a> before opening an issue or PR so you understand the branching strategy and local development environment. If you need any more guidance or want to ask more questions, feel free to write to us on <a href="https://trpc.io/discord">Discord</a>!
+> Do you want to contribute? First, read the <a href="https://github.com/trpc/trpc/blob/main/CONTRIBUTING.md">Contributing Guidelines</a> before opening an issue or PR so you understand the branching strategy and local development environment. If you need any more guidance or want to ask more questions, feel free to write to us on <a href="https://trpc.io/discord">Discord</a>!
 
 <table>
   <tr>
