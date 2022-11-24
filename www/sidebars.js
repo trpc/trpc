@@ -4,6 +4,11 @@ module.exports = {
       type: 'category',
       label: 'tRPC',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'tRPC guides',
+        slug: '/trpc',
+      },
       items: [
         'main/introduction',
         'main/quickstart',
@@ -20,6 +25,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/server',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: '@trpc/server guides',
+        slug: '/server',
+      },
       items: [
         'server/router',
         'server/procedures',
@@ -52,6 +62,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: '@trpc/client guides',
+        slug: '/client',
+      },
       items: [
         'client/vanilla',
         'client/aborting-procedures',
@@ -59,6 +74,11 @@ module.exports = {
           type: 'category',
           label: 'Links',
           collapsed: true,
+          link: {
+            type: 'generated-index',
+            title: '@trpc/client links guides',
+            slug: '/links',
+          },
           items: [
             'client/links/links',
             'client/links/httpLink',
@@ -76,6 +96,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/react-query',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: '@trpc/react-query guides',
+        slug: '/react-query',
+      },
       items: [
         'reactjs/queries',
         'reactjs/mutations',
@@ -87,6 +112,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/next',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: '@trpc/next guides',
+        slug: '/next',
+      },
       items: [
         'nextjs/ssr',
         'nextjs/ssg',
@@ -98,6 +128,11 @@ module.exports = {
       type: 'category',
       label: 'Extra information',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'Extra information',
+        slug: '/extra',
+      },
       items: [
         'further/rpc',
         'further/subscriptions',

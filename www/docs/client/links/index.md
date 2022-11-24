@@ -2,7 +2,7 @@
 id: links
 title: Links Overview
 sidebar_label: Overview
-slug: /links
+slug: /links/overview
 ---
 
 Links enable you to customize the flow of data between the tRPC Client and Server. A link should do only one thing, which can be either a self-contained modification to a tRPC operation (query, mutation, or subscription) or a side-effect based on the operation (such as logging).
