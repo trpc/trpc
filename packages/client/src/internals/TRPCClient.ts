@@ -2,6 +2,7 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
+  DefaultDataTransformer,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
@@ -12,6 +13,8 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
+import { Dto } from '@trpc/server/shared';
+import { RouterDto } from 'packages/server/src/shared';
 import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
@@ -110,22 +113,24 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
     signal?: AbortSignal;
-  }): Promise<TOutput> {
+  }): Promise<RouterDto<TRouter, TOutput>> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
     const { promise, abort } = observableToPromise<TValue>(req$);
 
-    const abortablePromise = new Promise<TOutput>((resolve, reject) => {
-      opts.signal?.addEventListener('abort', abort);
+    const abortablePromise = new Promise<RouterDto<TRouter, TOutput>>(
+      (resolve, reject) => {
+        opts.signal?.addEventListener('abort', abort);
 
-      promise
-        .then((envelope) => {
-          resolve((envelope.result as any).data);
-        })
-        .catch((err) => {
-          reject(TRPCClientError.from(err));
-        });
-    });
+        promise
+          .then((envelope) => {
+            resolve((envelope.result as any).data);
+          })
+          .catch((err) => {
+            reject(TRPCClientError.from(err));
+          });
+      },
+    );
 
     return abortablePromise;
   }

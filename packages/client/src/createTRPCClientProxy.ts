@@ -17,6 +17,7 @@ import type {
   inferObservableValue,
 } from '@trpc/server/observable';
 import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import { ProcedureDto } from 'packages/server/src/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
 import { TRPCClient, TRPCSubscriptionObserver } from './internals/TRPCClient';
@@ -26,7 +27,7 @@ export type inferRouterProxyClient<TRouter extends AnyRouter> =
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferProcedureOutput<TProcedure>>;
+) => Promise<ProcedureDto<TProcedure>>;
 
 type SubscriptionResolver<
   TProcedure extends AnyProcedure,

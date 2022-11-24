@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+
 /**
  * @link https://raw.githubusercontent.com/tamj0rd2/dto/master/src/dto.ts
  */
+import { AnyProcedure, AnyRouter } from '../core';
+import { DefaultDataTransformer } from '../transformer';
 
 type IsOptional<T> = Extract<T, undefined> extends never ? false : true;
 type Func = (...args: any[]) => any;
@@ -21,14 +24,17 @@ type IsValueType<T> = T extends
   : false;
 
 type ReplaceDate<T> = T extends Date ? string : T;
-type ReplaceSet<T> = T extends Set<infer X> ? X[] : T;
-type ReplaceMap<T> = T extends Map<infer K, infer I>
-  ? Record<
-      K extends string | number | symbol ? K : string,
-      IsValueType<I> extends true
-        ? I
-        : { [K in keyof ExcludeFuncsFromObj<I>]: Dto<I[K]> }
-    >
+
+const errorSymbol = Symbol('ERROR');
+
+type ErrorBranded<T, TMessage extends string> = T & { [errorSymbol]: TMessage };
+
+type ReplaceSet<T> = T extends Set<any>
+  ? ErrorBranded<{}, 'Set is not JSON serializable`'>
+  : T;
+
+type ReplaceMap<T> = T extends Map<any, any>
+  ? ErrorBranded<{}, 'Map is not JSON serializable'>
   : T;
 type ReplaceArray<T> = T extends Array<infer X> ? Dto<X>[] : T;
 
@@ -48,3 +54,15 @@ export type Dto<T> = IsFunction<T> extends true
   : Dtoified<T>;
 
 // export type Serializable<T> = T & { serialize(): Dto<T> };
+
+export type RouterDto<
+  TRouter extends AnyRouter,
+  TData,
+> = TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+  ? Dto<TData>
+  : TData;
+
+export type ProcedureDto<TProcedure extends AnyProcedure> =
+  TProcedure['_def']['_config']['transformer'] extends DefaultDataTransformer
+    ? Dto<TProcedure['_def']['_output_out']>
+    : TProcedure['_def']['_output_out'];
