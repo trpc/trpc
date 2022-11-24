@@ -39,8 +39,6 @@ interface Message {
   id: string;
 }
 
-
-
 function createAppRouter() {
   const ee = new EventEmitter();
   const onNewMessageSubscription = jest.fn();
