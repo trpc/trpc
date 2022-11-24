@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node: ['16.x']
+        node: ['18.x']
         os: [ubuntu-latest]
 
     steps:
@@ -44,7 +44,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-trpc-main-
 
       - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root --filter tests install
+        run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Build
         run: pnpm turbo --filter "@trpc/*" build

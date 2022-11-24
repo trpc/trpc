@@ -1,15 +1,15 @@
 {
   "name": "@examples/cloudflare-workers",
-  "version": "10.0.0",
+  "version": "10.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "test-dev": "start-server-and-test 'wrangler dev --local' 8787 'tsx src/client.ts'"
+    "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.0.0",
-    "@trpc/server": "^10.0.0",
+    "@trpc/client": "^10.1.0",
+    "@trpc/server": "^10.1.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {

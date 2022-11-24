@@ -102,7 +102,7 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -126,7 +126,7 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
           ],
@@ -180,12 +180,12 @@ module.exports = {
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/blog/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/blog/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

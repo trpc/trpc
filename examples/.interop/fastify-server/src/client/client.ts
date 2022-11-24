@@ -22,7 +22,7 @@ export function createClient(
 ) {
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? '/trpc';
-  const host = `127.0.0.1:${port}${prefix}`;
+  const host = `localhost:${port}${prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
   const client = createTRPCClient<AppRouter>({
     links: [

@@ -492,7 +492,12 @@ export function createHooksInternal<
         ...opts,
         onSuccess(...args) {
           const originalFn = () => opts?.onSuccess?.(...args);
-          return mutationSuccessOverride({ originalFn, queryClient });
+
+          return mutationSuccessOverride({
+            originalFn,
+            queryClient,
+            meta: opts?.meta ?? {},
+          });
         },
       },
     ) as UseTRPCMutationResult<
