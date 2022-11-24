@@ -26,7 +26,7 @@ test('route meta types', async () => {
 
   type TMeta = inferRouterMeta<typeof router>;
   expectTypeOf<TMeta>().toMatchTypeOf(testMeta);
-  expect(router._def.procedures).not.toEqual({});
+  expect(router._def.procedures.query).not.toEqual({});
   expect(router._def.procedures.query).toMatchInlineSnapshot(`[Function]`);
 
   const queryMeta = router['_def']['procedures']['query']['_def']['meta'];
