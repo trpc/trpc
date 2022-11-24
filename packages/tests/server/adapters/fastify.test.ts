@@ -200,7 +200,7 @@ describe('anonymous user', () => {
   });
 
   afterEach(async () => {
-    app.stop();
+    void app.stop();
   });
 
   test('fetch POST', async () => {
