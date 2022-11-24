@@ -12,7 +12,7 @@ import { Miniflare } from 'miniflare';
 // miniflare does an instanceof check
 globalThis.Response = MiniflareResponse as any;
 
-const port = 8787;
+const port = 8788;
 const url = `http://localhost:${port}`;
 
 const createContext = ({
