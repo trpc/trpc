@@ -23,7 +23,7 @@ import fetch from 'node-fetch';
 import { z } from 'zod';
 
 const config = {
-  port: 2022,
+  port: 2023,
   logger: false,
   prefix: '/trpc',
 };
@@ -39,15 +39,15 @@ interface Message {
   id: string;
 }
 
-const t = initTRPC.context<Context>().create();
-
 function createAppRouter() {
   const ee = new EventEmitter();
   const onNewMessageSubscription = jest.fn();
   const onSubscriptionEnded = jest.fn();
 
+  const t = initTRPC.context<Context>().create();
   const router = t.router;
   const publicProcedure = t.procedure;
+
   const appRouter = router({
     ping: publicProcedure.query(() => {
       return 'pong';
@@ -200,7 +200,7 @@ describe('anonymous user', () => {
   });
 
   afterEach(async () => {
-    app.stop();
+    await app.stop();
   });
 
   test('fetch POST', async () => {
@@ -328,7 +328,7 @@ describe('authorized user', () => {
   });
 
   afterEach(async () => {
-    void app.stop();
+    await app.stop();
   });
 
   test('query', async () => {
@@ -362,7 +362,7 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   afterEach(async () => {
-    void app.stop();
+    await app.stop();
   });
 
   test('fetch GET', async () => {
