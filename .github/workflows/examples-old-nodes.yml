@@ -13,7 +13,7 @@ jobs:
       matrix:
         dir: [.interop/next-prisma-starter]
         # start example with:
-        node-start: ['14.x']
+        node-start: ['14.x', '16.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -22,12 +22,12 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -39,7 +39,7 @@ jobs:
 
       - run: node -v
       - name: Install deps (with cache)
-        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
+        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Install playwright???
         run: |

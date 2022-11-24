@@ -4,10 +4,10 @@ overrides:
   '@tanstack/react-query': 4.6.0
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
   '@examples/next-starter-sqlite>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite
-  '@examples/next-starter-websockets>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
+  '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter
   '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
   '@examples/legacy-next-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
-  '@examples/interop-next-starter-websockets>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
+  '@examples/interop-next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter
   '@examples/interop-todo-web>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
 
 importers:
@@ -79,8 +79,8 @@ importers:
   examples/.interop/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       start-server-and-test: ^1.12.0
@@ -103,9 +103,9 @@ importers:
 
   examples/.interop/express-server:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -141,8 +141,8 @@ importers:
   examples/.interop/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -179,8 +179,8 @@ importers:
 
   examples/.interop/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -203,10 +203,10 @@ importers:
   examples/.interop/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -234,10 +234,10 @@ importers:
   examples/.interop/next-minimal-starter-migration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -268,10 +268,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -331,16 +331,65 @@ importers:
       vite: 3.1.3
       vitest: 0.23.4
 
-  examples/.interop/next-prisma-starter-websockets:
+  examples/.interop/next-prisma-todomvc:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      clsx: ^1.1.1
+      next: ^13.0.0
+      npm-run-all: ^4.1.5
+      prisma: ^4.3.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
+      todomvc-app-css: ^2.3.0
+      todomvc-common: ^1.0.5
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-todo-web_prisma@4.3.1'
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
+      clsx: 1.2.1
+      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
+      prisma: 4.3.1
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      superjson: 1.10.0
+      todomvc-app-css: 2.4.2
+      todomvc-common: 1.0.5
+      zod: 3.19.1
+    devDependencies:
+      '@playwright/test': 1.26.1
+      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
+      '@types/node': 18.7.20
+      '@types/react': 18.0.21
+      npm-run-all: 4.1.5
+      start-server-and-test: 1.14.0
+      typescript: 4.8.3
+
+  examples/.interop/next-prisma-websockets-starter:
+    specifiers:
+      '@playwright/test': ^1.26.1
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter
+      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query-devtools': ^4.3.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -373,7 +422,7 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-starter-websockets_prisma@4.3.1'
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
@@ -414,60 +463,11 @@ importers:
       tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
-  examples/.interop/next-prisma-todomvc:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      clsx: ^1.1.1
-      next: ^13.0.0
-      npm-run-all: ^4.1.5
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      todomvc-app-css: ^2.3.0
-      todomvc-common: ^1.0.5
-      typescript: ^4.8.3
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-todo-web_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      clsx: 1.2.1
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      prisma: 4.3.1
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      todomvc-app-css: 2.4.2
-      todomvc-common: 1.0.5
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      npm-run-all: 4.1.5
-      start-server-and-test: 1.14.0
-      typescript: 4.8.3
-
   examples/.interop/standalone-server:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -501,10 +501,10 @@ importers:
   examples/.test/big-router-declaration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -535,10 +535,10 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -571,8 +571,8 @@ importers:
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       node-fetch: ^2.6.1
@@ -597,9 +597,9 @@ importers:
 
   examples/express-minimal:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -632,9 +632,9 @@ importers:
 
   examples/express-server:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -670,8 +670,8 @@ importers:
   examples/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -710,8 +710,8 @@ importers:
 
   examples/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -762,9 +762,9 @@ importers:
   examples/minimal-react/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
@@ -788,7 +788,7 @@ importers:
 
   examples/minimal-react/server:
     specifiers:
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -803,7 +803,7 @@ importers:
 
   examples/minimal/client:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/client': link:../../../packages/client
@@ -812,7 +812,7 @@ importers:
 
   examples/minimal/server:
     specifiers:
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/server': link:../../../packages/server
@@ -822,10 +822,10 @@ importers:
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -855,10 +855,10 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -888,10 +888,10 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -950,16 +950,65 @@ importers:
       vite: 3.1.3
       vitest: 0.23.4
 
-  examples/next-prisma-starter-websockets:
+  examples/next-prisma-todomvc:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      clsx: ^1.1.1
+      next: ^13.0.0
+      npm-run-all: ^4.1.5
+      prisma: ^4.3.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
+      todomvc-app-css: ^2.3.0
+      todomvc-common: ^1.0.5
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.3.1'
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
+      clsx: 1.2.1
+      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
+      prisma: 4.3.1
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      superjson: 1.10.0
+      todomvc-app-css: 2.4.2
+      todomvc-common: 1.0.5
+      zod: 3.19.1
+    devDependencies:
+      '@playwright/test': 1.26.1
+      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
+      '@types/node': 18.7.20
+      '@types/react': 18.0.21
+      npm-run-all: 4.1.5
+      start-server-and-test: 1.14.0
+      typescript: 4.8.3
+
+  examples/next-prisma-websockets-starter:
+    specifiers:
+      '@playwright/test': ^1.26.1
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter
+      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query-devtools': ^4.3.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -992,7 +1041,7 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets_prisma@4.3.1'
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -1033,60 +1082,11 @@ importers:
       tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
-  examples/next-prisma-todomvc:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      clsx: ^1.1.1
-      next: ^13.0.0
-      npm-run-all: ^4.1.5
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      todomvc-app-css: ^2.3.0
-      todomvc-common: ^1.0.5
-      typescript: ^4.8.3
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
-      clsx: 1.2.1
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      prisma: 4.3.1
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      todomvc-app-css: 2.4.2
-      todomvc-common: 1.0.5
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      npm-run-all: 4.1.5
-      start-server-and-test: 1.14.0
-      typescript: 4.8.3
-
   examples/standalone-server:
     specifiers:
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -1120,7 +1120,7 @@ importers:
   packages/client:
     specifiers:
       '@testing-library/dom': ^8.18.1
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/server': ^10.1.0
       '@types/node': ^18.7.20
       rollup: ^2.79.1
       tsx: ^3.9.0
@@ -1134,9 +1134,9 @@ importers:
   packages/next:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1167,8 +1167,8 @@ importers:
   packages/react-query:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1272,10 +1272,10 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.0.0-rc.2
-      '@trpc/next': ^10.0.0-rc.2
-      '@trpc/react-query': ^10.0.0-rc.2
-      '@trpc/server': ^10.0.0-rc.2
+      '@trpc/client': ^10.0.0-rc.8
+      '@trpc/next': ^10.0.0-rc.8
+      '@trpc/react-query': ^10.0.0-rc.8
+      '@trpc/server': ^10.0.0-rc.8
       '@types/jest': ^27.0.1
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -1355,10 +1355,10 @@ importers:
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^10.74.2
       '@tailwindcss/line-clamp': ^0.4.2
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.1.0
+      '@trpc/next': ^10.1.0
+      '@trpc/react-query': ^10.1.0
+      '@trpc/server': ^10.1.0
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
@@ -20855,9 +20855,9 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-starter-websockets_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-starter-websockets}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-starter-websockets'
+  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter_prisma@4.3.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter'
     name: '@prisma/client'
     version: 4.3.1
     engines: {node: '>=14.17'}
@@ -20906,9 +20906,9 @@ packages:
       prisma: 4.3.1
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-websockets}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-starter-websockets'
+  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.3.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter'
     name: '@prisma/client'
     version: 4.3.1
     engines: {node: '>=14.17'}

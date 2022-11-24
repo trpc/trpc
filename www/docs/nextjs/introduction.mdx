@@ -16,7 +16,7 @@ Next.js makes it easy for you to build your client and server together in one co
 
 ## Recommended file structure
 
-We recommend a file structure like this one but it is not enforced by tRPC. This is what you'll get when starting from [the examples](/main/example-apps.md).
+We recommend a file structure like this one but it is not enforced by tRPC. This is what you'll get when starting from [the examples](/main/example-apps.mdx).
 
 ```graphql
 .
@@ -74,7 +74,7 @@ pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-
 Two packages of note:
 
 - [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query): `@trpc/react-query` provides a thin wrapper around react-query. It is required as a peer dependency as an idiomatic way to handle client-side caching in React applications.
-- [Zod](https://github.com/colinhacks/zod): We will use Zod for input validation to ensure that our backend only processes requess that fit our API. You can use other validation libraries like ([Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts) if you prefer.
+- [Zod](https://github.com/colinhacks/zod): We will use Zod for input validation to ensure that our backend only processes requests that fit our API. You can use other validation libraries like [Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts) if you prefer.
 
 ### 2. Enable strict mode
 
@@ -154,7 +154,7 @@ export default trpcNext.createNextApiHandler({
 </details>
 
 :::note
-The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/next/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
+The backend above is using the [recommended file structure](#recommended-file-structure), but you can keep it simple and put everything in [an API handler directly](https://github.com/trpc/trpc/blob/main/examples/next-minimal-starter/src/pages/api/trpc/%5Btrpc%5D.ts) if you prefer.
 :::
 
 ### 4. Create tRPC hooks
