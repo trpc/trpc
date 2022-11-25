@@ -73,6 +73,7 @@ describe('double input validator', () => {
 
   test('happy path', async () => {
     type Input = inferProcedureInput<AppRouter['sendMessage']>;
+
     const data: Input = {
       roomId: '123',
       text: 'hello',

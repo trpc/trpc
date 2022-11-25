@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+
 /**
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
  */
@@ -36,12 +37,9 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
 };
 
-type FilterNonJsonPrimitiveKeys<TObj extends object> = {
-  [TKey in keyof TObj]: TObj[TKey] extends NonJsonPrimitive ? never : TKey;
-}[keyof TObj];
 /** JSON serialize objects (not including arrays) and classes */
 type SerializeObject<T extends object> = {
-  [k in keyof Pick<T, FilterNonJsonPrimitiveKeys<T>>]: Serialize<T[k]>;
+  [k in keyof T]: T[k] extends NonJsonPrimitive ? never : Serialize<T[k]>;
 };
 
 /*
@@ -55,14 +53,10 @@ type FilterDefinedKeys<TObj extends object> = {
   [TKey in keyof TObj]: undefined extends TObj[TKey] ? never : TKey;
 }[keyof TObj];
 
-type FilterUndefinedKeys<TObj extends object> = {
-  [TKey in keyof TObj]: undefined extends TObj[TKey] ? TKey : never;
-}[keyof TObj];
-
 type UndefinedToOptional<T extends object> = {
   // Property is not a union with `undefined`, keep as-is
   [k in keyof Pick<T, FilterDefinedKeys<T>>]: T[k];
 } & {
   // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
-  [k in keyof Pick<T, FilterUndefinedKeys<T>>]?: Exclude<T[k], undefined>;
+  [k in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[k], undefined>;
 };
