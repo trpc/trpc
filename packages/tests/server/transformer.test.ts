@@ -406,16 +406,6 @@ describe('transformer on router', () => {
     close();
   });
 
-  // test('duplicate transformers', () => {
-  //   const t = initTRPC.create({ transformer: superjson });
-
-  //   const router = t.router({});
-
-  //   expect(() => router).toThrowErrorMatchingInlineSnapshot(
-  //     `"You seem to have double \`transformer()\`-calls in your router tree"`,
-  //   );
-  // });
-
   test('superjson up and devalue down: transform errors correctly', async () => {
     const transformer: CombinedDataTransformer = {
       input: superjson,
