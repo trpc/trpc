@@ -8,7 +8,7 @@ author_url: https://twitter.com/s4chinraja
 author_image_url: https://avatars1.githubusercontent.com/u/58836760?s=460&v=4
 ---
 
-As library authors, we seek to provide the best possible developer experience for our users. Reducing time-to-error, narrowing down exactly what can be passed and accessed where, and providing intuitive APIs at every step all contribute to this. TypeScript has become a major tool in enabling us to ship such DX.
+As library authors, we seek to provide the best possible developer experience (DX) for our users. Reducing time-to-error, narrowing down exactly what can be passed and accessed where, and providing intuitive APIs at every step all contribute to this. TypeScript has become a major tool in enabling us to ship such DX.
 
 However, as TypeScript usage becomes more widespread and libraries like tRPC and, more recently, [TanStack Router](https://tanstack.com/router/v1) are built entirely around it, we must understand the implications on type-checking and language server performance.
 
@@ -22,18 +22,17 @@ For tRPC, we ensure this by [generating](https://github.com/trpc/trpc/blob/9fc2d
 
 All of these are indicators that you need to optimize your types:
 
-- Your library is slow to type-check (pretty straightforward)
-- Your library is slow to start up
-- Your library is slow to edit e.g. when you're typing in a file
-  - this is the most important one as it has the greatest effect on DX, you **never** want to make your users to wait for their editor to respond to a change
+- Your library is slow to type-check (using `tsc`)
+- Your library has a huge initial load time
+- The TypeScript language server takes a long time to respond to changes e.g. when you're making edits in a file. This is the most important one as it has the greatest effect on DX. You **never** want to your users to wait for the language server to update after a change.
 
 ## How to optimize?
 
 First, cut down as much as possible. Do you need the best possible TypeScript types everywhere? Is there anywhere you can cut down on the complexity of your types? Not every type needs to be perfect. The more complex your types are, the more work TypeScript has to do.
 
-example:
+Example:
 
-do you really need this:
+Do you really need this?
 
 ```ts
 export const colorHexMap = {
@@ -46,7 +45,7 @@ export const colorHexMap = {
 const blueHex = colorHexMap.blue;
 ```
 
-maybe this will work just as well:
+Maybe this will work just as well?
 
 ```ts
 export const colorHexMap: Record<string, string> = {
@@ -65,29 +64,30 @@ If you absolutely need your complex types, more work is required.
 
 ## A real-world example from tRPC
 
-> PR in question: https://.....
+> PR in question: https://github.com/trpc/trpc/pull/2716
 
-> Warning: The next sections may require some knowledge of tRPC APIs and terminology.
+> Warning: The next sections require some knowledge of tRPC APIs and terminology.
 
 TypeScript has a built-in [tracing tool](https://github.com/microsoft/TypeScript/wiki/Performance-Tracing) that can help you find the bottleneck in your types. It's not perfect, but it's the best tool available.
 
-You'll need an example app that uses your library to test with. For tRPC, I created a basic [T3 app](https://create.t3.gg/) which resembles what users work with in a real-world app.
+It's ideal to test your library on an example app. For tRPC, I created a basic [T3 app](https://create.t3.gg/) which resembles what users work with in a real-world app.
 
 Here's the steps I followed to trace tRPC:
 
-1. Locally link library to the example app
+1. [Locally link library](https://docs.npmjs.com/cli/commands/npm-link) to the example app
+
 2. Run this command in the example app:
 
 ```sh
 tsc --generateTrace ./trace --incremental false
 ```
 
-3. Open `trace/trace.json` in your preferred trace analysis app (I use [Perfetto](https://ui.perfetto.dev/) but you can also use chrome://tracing).
+3. Open `trace/trace.json` in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/) but you can also use chrome://tracing).
 
-Now that you've got everything set up, this is where it gets interesting. Look for long bars that indicate a source file took a long time to type-check. Here's what it looked like for tRPC:
+This is where it gets interesting. I looked for for long bars that indicate a source file took a long time to type-check. Here's what it looked like:
 ![trace bar showing that src/pages/index.ts took 332ms to type-check](https://user-images.githubusercontent.com/58836760/190300723-5366674f-2fe0-48e9-8a00-7a8bc85b5c91.png)
 
-This tells me that `src/pages/index.ts` is the bottleneck. Under the `Duration` field, you'll see that it took 332ms. That is an enormous amount of time to spend type-checking! In this case, that `checkVariableDeclaration` bar tells us it spent most of that time on one variable, our React Query `utiils = trpc.useContext()`.
+This tells me that `src/pages/index.ts` is the bottleneck. Under the `Duration` field, you'll see that it took 332ms. That is an enormous amount of time to spend type-checking! That `checkVariableDeclaration` bar tells us it spent most of that time on one variable, our React Query `utiils = trpc.useContext()`.
 
 But how could this be? We're just using a simple hook! Let's look at the code:
 
@@ -109,7 +109,7 @@ export default Home;
 
 > Note: The router and procedure paths look like that because they were generated for this example. Remember what I said about pushing your library to the max?
 
-Ok, not much to see here. We're just using a hook and a context. Nothing that _should be_ TypeScript heavy. We'll have to dive in further. Let's look at the types behind this:
+Ok, not much to see here. It's just a single `useContext` and a query invalidation. Nothing that _should be_ TypeScript heavy. We'll have to dive in further. Let's look at the types behind this:
 
 ```ts
 type DecorateProcedure<
@@ -140,7 +140,7 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
   }>;
 ```
 
-This is a lot to take in, so I'll walk through it first. It's a recursive type that walks through all the procedures in the router and "decorates" (adds methods to) them with the React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation). Since in tRPC v10 we still support v9 procedures, we do a check to make sure those don't work on our v10 API. It's all a lot of work for TypeScript to do, **if it's not lazily evaluated**.
+Ok wow, that's a lot, let's walk through this first. It's a recursive type that walks through all the procedures in the router and "decorates" (adds methods to) them with the React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation). Since tRPC v10 we still support v9 procedures, we do a check to make sure they don't work on our v10 API. It's all a lot of work for TypeScript to do, **if it's not lazily evaluated**.
 
 ### Lazy evaluation
 
@@ -150,15 +150,15 @@ But this created a huge issue. We forced TypeScript to evaluate the values of _a
 
 ### Do less
 
-Why must our v10 methods adapt to v9 requirements? Newer projects suffer from the reduced TypeScript performance of our interop mode.
+Why must our v10 API adapt to v9 requirements? New tRPC projects should not suffer from the reduced TypeScript performance of our interop mode.
 
-We need to re-arrange the core types themselves. v9 procedures are different entities and thus should not share a space with our v10 procedures. On the tRPC server side, this means we need to store the types on different fields in the router instead of one `record` field (see `DecoratedProcedureUtilsRecord` above).
+We had to re-arrange the core types themselves. v9 procedures are different entities and thus should not share a space with our v10 procedures. On the tRPC server side, this means we had to store the types on different fields in the router instead of one `record` field (see `DecoratedProcedureUtilsRecord` above).
 
 We changed it so v9 routers inject their procedures into the `legacy` field when they are converted to v10 routers.
 
-Here's an extremely simplified version of change:
+Here's an extremely simplified version of the change:
 
-old types:
+Old types:
 
 ```ts
 export type V10Router<TProcedures> = {
@@ -171,7 +171,7 @@ export type MigrateV9Router<TV9Router extends V9Router> = V10Router<{
 }>;
 ```
 
-new types:
+New types:
 
 ```ts
 export type V10Router<TProcedures> = {
@@ -185,7 +185,7 @@ export type MigrateV9Router<TV9Router extends V9Router> = V10Router<{}> & {
 };
 ```
 
-Now, we can remove `OmitNeverKeys` and stop forcing TypeScript to evaluate the huge `LegacyV9ProcedureTag` type. We can remove the filtering for v9 procedures entirely. This is a huge win for performance.
+Now, we can remove `OmitNeverKeys` and stop forcing TypeScript to evaluate the huge `LegacyV9ProcedureTag` type. We can remove the filtering for v9 procedures entirely.
 
 ## Conclusion
 
@@ -196,4 +196,4 @@ This shows a substantial improvement! Type-checking time went from 332ms to 136m
 
 Type-checking performance can be the difference between a large project/company deciding to use your project or not. For tRPC, we proved that we can push the limits of TypeScript and deliver a great DX for both small and large projects.
 
-<!-- feels like I need another line to wrap it up here -->
+Did you like this post? @ me on [Twitter](https://twitter.com/s4chinraja) if you have any questions and I'd love to help!
