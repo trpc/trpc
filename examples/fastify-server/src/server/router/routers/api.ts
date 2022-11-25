@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { t } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
-export const apiRouter = t.router({
-  version: t.procedure.query(() => {
+export const apiRouter = router({
+  version: publicProcedure.query(() => {
     return { version: '0.42.0' };
   }),
-  hello: t.procedure
+  hello: publicProcedure
     .input(z.object({ username: z.string().nullish() }).nullish())
     .query(({ input, ctx }) => {
       return {

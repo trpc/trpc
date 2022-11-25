@@ -1,25 +1,44 @@
 name: Lint
+
 on: [push]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v1
+      - uses: pnpm/action-setup@v2.2.4
+
+      - uses: actions/setup-node@v3
         with:
-          version: 16.x
+          node-version: 18.x
 
-      - name: Install deps and build (with cache)
-        uses: bahmutov/npm-install@v1
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Lint
-        run: yarn lint
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-all-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-all-
 
-      - run: yarn manypkg check
+      - name: Install deps (with cache)
+        run: pnpm install --child-concurrency 3
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Run Manypkg
+        run: pnpm manypkg check

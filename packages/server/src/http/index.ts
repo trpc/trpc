@@ -1,6 +1,3 @@
-import { assertNotBrowser } from '../assertNotBrowser';
-
+export * from './getHTTPStatusCode';
 export * from './resolveHTTPResponse';
 export * from './types';
-
-assertNotBrowser();

@@ -42,8 +42,35 @@ tRPC defines a list of error codes that each represent a different type of error
 | PRECONDITION_FAILED   | Access to the target resource has been denied.                                                                          | 412       |
 | PAYLOAD_TOO_LARGE     | Request entity is larger than limits defined by server.                                                                 | 413       |
 | METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
+| TOO_MANY_REQUESTS     | The rate limit has been exceeded or too many requests are being sent to the server.                                     | 429       |
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
+
+tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
+
+```ts twoslash
+import { TRPCError } from "@trpc/server";
+// ---cut---
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+
+// Example error you might get if your input valdidation fails
+const error: TRPCError = {
+  name: "TRPCError",
+  code: "BAD_REQUEST",
+  message: "\"password\" must be at least 4 characters"
+}
+
+if (error instanceof TRPCError) {
+  const httpCode = getHTTPStatusCodeFromError(error);
+  console.log(httpCode); // 400
+}
+```
+
+:::tip
+
+There's a full example of how this could be used in a Next.js API endpoint in the [Server Side Calls docs](server-side-calls).
+
+:::
 
 ## Throwing errors
 
@@ -52,20 +79,20 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 For example, throwing this error:
 
 ```ts title='server.ts'
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
 
 const appRouter = t.router({
   hello: t.procedure.query(() => {
-    throw new trpc.TRPCError({
+    throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'An unexpected error occurred, please try again later.',
       // optional: pass the original error to retain stack trace
       cause: theError,
     });
-  })
-})
+  }),
+});
 
 // [...]
 ```

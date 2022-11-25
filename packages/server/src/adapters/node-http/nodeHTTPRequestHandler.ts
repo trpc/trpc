@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { assertNotBrowser } from '../../assertNotBrowser';
 import { AnyRouter } from '../../core';
-import { inferRouterDef } from '../../core/types';
+import { inferRouterContext } from '../../core/types';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { getPostBody } from './internals/getPostBody';
@@ -10,8 +9,6 @@ import {
   NodeHTTPRequest,
   NodeHTTPResponse,
 } from './types';
-
-assertNotBrowser();
 
 type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
@@ -29,7 +26,7 @@ export async function nodeHTTPRequestHandler<
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
   const createContext = async function _createContext(): Promise<
-    inferRouterDef<TRouter>['_ctx']
+    inferRouterContext<TRouter>
   > {
     return await opts.createContext?.(opts);
   };

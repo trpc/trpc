@@ -2,22 +2,6 @@
 // eslint-disable
 export const tweets = [
   {
-    "id": "1565990394176978948",
-    "name": "chronark",
-    "handle": "chronarkdotdev",
-    "date": "Sep 03",
-    "avatar": "https://pbs.twimg.com/profile_images/1437670380957835264/gu8S0olw_normal.jpg",
-    "content": "For years I was basically writing my own custom typed rpc utility for every new typescript project, now I finally t… "
-  },
-  {
-    "id": "1565067124577652737",
-    "name": "David Dunn",
-    "handle": "DunnCoding",
-    "date": "Aug 31",
-    "avatar": "https://pbs.twimg.com/profile_images/1564271651235168257/VDXhiAx__normal.jpg",
-    "content": "The speed in which you get feedback from tRPC is incredible. It uses the power of TypeScript so if you change somet… "
-  },
-  {
     "id": "1569341560646402051",
     "name": "Anders Bech Mellson",
     "handle": "andersmellson",
@@ -38,7 +22,7 @@ export const tweets = [
     "name": "Theo - ping.gg",
     "handle": "t3dotgg",
     "date": "Sep 19",
-    "avatar": "https://pbs.twimg.com/profile_images/1570205891001192448/wtV7Iek2_normal.jpg",
+    "avatar": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
     "content": "The amount that tRPC has improved the quality of our code, the speed of our delivery, and the happiness of our devs… "
   },
   {
@@ -50,28 +34,12 @@ export const tweets = [
     "content": "@andrewingram @trpcio FTW 😊"
   },
   {
-    "id": "1567131716367556608",
-    "name": "Brian Jordan",
-    "handle": "bcjordan",
-    "date": "Sep 06",
-    "avatar": "https://pbs.twimg.com/profile_images/628603529465212928/JjZxF1L8_normal.jpg",
-    "content": "@kviglucci Recently did a project with @trpcio for the API transport (spun up with the "
-  },
-  {
     "id": "1568983102931832835",
     "name": "Cory House",
     "handle": "housecor",
     "date": "Sep 11",
     "avatar": "https://pbs.twimg.com/profile_images/1525874017630035970/veQQouGw_normal.jpg",
     "content": "@trpcio Love it. \n\nSimple, strong types. \n\nFeels like a more elegant choice than plain REST or GraphQL when using TS in a monorepo."
-  },
-  {
-    "id": "1564929802368425984",
-    "name": "Dominik 🇺🇦",
-    "handle": "TkDodo",
-    "date": "Aug 31",
-    "avatar": "https://pbs.twimg.com/profile_images/1538855291604942848/STbt4nxl_normal.jpg",
-    "content": "Having some fun with @trpcio v10 and @nextjs today. Really amazing stuff @alexdotjs 🙌\n\n"
   },
   {
     "id": "1563224903892971520",
@@ -88,6 +56,22 @@ export const tweets = [
     "date": "Aug 23",
     "avatar": "https://pbs.twimg.com/profile_images/1562019463893241857/7e5r3Yfu_normal.jpg",
     "content": "💖 I'm sponsoring @alexdotjs because tRPC has helped to build apps faster. "
+  },
+  {
+    "id": "1571988844152786946",
+    "name": "Mike | grabbou.eth 🚀",
+    "handle": "grabbou",
+    "date": "Sep 20",
+    "avatar": "https://pbs.twimg.com/profile_images/1585984423379587074/hAOlKGNS_normal.jpg",
+    "content": "@t3dotgg @trpcio Totally. I am literally smiling every time I write a procedure, because it reminds of how hard it… "
+  },
+  {
+    "id": "1573284779419930624",
+    "name": "R. Alex Anderson 🚀",
+    "handle": "ralex1993",
+    "date": "Sep 23",
+    "avatar": "https://pbs.twimg.com/profile_images/1529879227918561292/8ujpSdLe_normal.jpg",
+    "content": "🤯 tRPC 10 enables VS Code's \"Change All Occurrences\" feature to work _across the client/server boundary_!\n\nIn this… "
   },
   {
     "id": "1559973266076434434",
@@ -122,12 +106,28 @@ export const tweets = [
     "content": "@trpcio just feels right. Playing around with this is just magical. Big shoutout to @alexdotjs for this. Absolutely… "
   },
   {
+    "id": "1573391189373751297",
+    "name": "Dominik 🇺🇦",
+    "handle": "TkDodo",
+    "date": "Sep 23",
+    "avatar": "https://pbs.twimg.com/profile_images/1538855291604942848/STbt4nxl_normal.jpg",
+    "content": "That being said, we _are_ starting a production project right now, and we're using @nextjs with @trpcio . It's so g… "
+  },
+  {
     "id": "1571649466805125121",
     "name": "Theo - ping.gg",
     "handle": "t3dotgg",
     "date": "Sep 19",
-    "avatar": "https://pbs.twimg.com/profile_images/1570205891001192448/wtV7Iek2_normal.jpg",
+    "avatar": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
     "content": "@Swizec @iambenwis Thankfully lots of other articles that showcase the magic of tRPC - I'll let @ajcwebdev share mo… "
+  },
+  {
+    "id": "1572304619468099584",
+    "name": "Kent C. Dodds 🌌",
+    "handle": "kentcdodds",
+    "date": "Sep 20",
+    "avatar": "https://pbs.twimg.com/profile_images/1567269493608714241/6ACZo99k_normal.jpg",
+    "content": "If I didn't already get end-to-end type safety from @remix_run, I would 100% be investigating @trpcio very seriousl… "
   },
   {
     "id": "1564249370085957632",
@@ -147,7 +147,7 @@ export const tweets = [
   },
   {
     "id": "1569588272392990720",
-    "name": "Sock, the dev",
+    "name": "Sock, the dev 🧦",
     "handle": "sockthedev",
     "date": "Sep 13",
     "avatar": "https://pbs.twimg.com/profile_images/1569584517161324544/po3hKnjN_normal.jpg",

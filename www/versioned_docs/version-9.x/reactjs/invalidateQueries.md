@@ -1,5 +1,5 @@
 ---
-id: invalidateQueries
+id: query-invalidation
 title: invalidateQueries
 sidebar_label: invalidateQueries()
 slug: /invalidateQueries

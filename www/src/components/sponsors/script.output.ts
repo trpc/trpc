@@ -3,15 +3,6 @@
 
 export const sponsors = [
   {
-    "name": "Anthony Short",
-    "imgSrc": "https://avatars.githubusercontent.com/u/36125?u=a3d7f3e18939c0b2d362af8704349d851ee5c325&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://anthonyshort.me",
-    "privacyLevel": "PUBLIC",
-    "login": "anthonyshort",
-    "createdAt": 1623340473000
-  },
-  {
     "name": "Hampus Kraft",
     "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=ca9876f3b8e32cc2f624a5957d5814ee7ef3fee0&v=4",
     "monthlyPriceInDollars": 3,
@@ -31,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=fd301b43d02a6892be0ae749c14dd485d7a34835&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=39e3ca30e890dd4e1b20780f732432e591c3f8b0&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -62,7 +53,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://t3.gg",
     "privacyLevel": "PUBLIC",
-    "login": "TheoBr",
+    "login": "t3dotgg",
     "createdAt": 1631688228000
   },
   {
@@ -93,7 +84,7 @@ export const sponsors = [
     "createdAt": 1633354466000
   },
   {
-    "name": "Bill",
+    "name": "Beier (Bill)",
     "imgSrc": "https://avatars.githubusercontent.com/u/10513364?u=a129aade5f9a7a92cf06172b47d67ccefc736933&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://react-hook-form.com",
@@ -148,7 +139,7 @@ export const sponsors = [
   },
   {
     "name": "Michał Kowieski",
-    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=500ad30b9581936882ffedb62c15f4d98cfccfc7&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
     "monthlyPriceInDollars": 5,
     "link": "https://github.com/utevo",
     "privacyLevel": "PUBLIC",
@@ -201,15 +192,6 @@ export const sponsors = [
     "createdAt": 1645479378000
   },
   {
-    "name": "Ping.gg",
-    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "monthlyPriceInDollars": 250,
-    "link": "https://ping.gg/",
-    "privacyLevel": "PUBLIC",
-    "login": "pingdotgg",
-    "createdAt": 1645488994000
-  },
-  {
     "name": "Jared Wyce",
     "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
     "monthlyPriceInDollars": 5,
@@ -235,15 +217,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "FarazPatankar",
     "createdAt": 1647861577000
-  },
-  {
-    "name": "okaforcj",
-    "imgSrc": "https://avatars.githubusercontent.com/u/34102565?v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/okaforcj",
-    "privacyLevel": "PUBLIC",
-    "login": "okaforcj",
-    "createdAt": 1648159482000
   },
   {
     "name": "Flylance",
@@ -275,7 +248,7 @@ export const sponsors = [
   {
     "name": "Jökull Sólberg Auðunsson",
     "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
-    "monthlyPriceInDollars": 10,
+    "monthlyPriceInDollars": 50,
     "link": "https://solberg.is",
     "privacyLevel": "PUBLIC",
     "login": "jokull",
@@ -372,7 +345,7 @@ export const sponsors = [
     "createdAt": 1658023715000
   },
   {
-    "name": "Prisma",
+    "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
     "monthlyPriceInDollars": 250,
     "link": "https://www.prisma.io",
@@ -388,15 +361,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "LoriKarikari",
     "createdAt": 1658573921000
-  },
-  {
-    "name": "Zac Ong",
-    "imgSrc": "https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/zzacong",
-    "privacyLevel": "PUBLIC",
-    "login": "zzacong",
-    "createdAt": 1659057378000
   },
   {
     "name": "Francis Provost",
@@ -435,19 +399,10 @@ export const sponsors = [
     "createdAt": 1661242015000
   },
   {
-    "name": "Miguel Ángel Durán",
-    "imgSrc": "https://avatars.githubusercontent.com/u/1561955?u=9ebfec769d2505d88ee746b7389353c23312bca1&v=4",
-    "monthlyPriceInDollars": 50,
-    "link": "https://midu.dev",
-    "privacyLevel": "PUBLIC",
-    "login": "midudev",
-    "createdAt": 1661889789000
-  },
-  {
     "name": "Malcolm Still",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=77d13b33c5d1bd4c9085abee5faddf42e6d5d5dc&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://blog.mstill.dev",
+    "link": "https://mstill.dev/blog",
     "privacyLevel": "PUBLIC",
     "login": "malcolmstill",
     "createdAt": 1662115384000
@@ -462,15 +417,6 @@ export const sponsors = [
     "createdAt": 1662563270000
   },
   {
-    "name": "Oliver Dixon",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6940726?u=8a48c9f7acb576505efbb87a8093552ce3f0d1e5&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://polydelic.com",
-    "privacyLevel": "PUBLIC",
-    "login": "ollydixon",
-    "createdAt": 1662645977000
-  },
-  {
     "name": "Lars Karbo",
     "imgSrc": "https://avatars.githubusercontent.com/u/10865165?v=4",
     "monthlyPriceInDollars": 10,
@@ -480,12 +426,93 @@ export const sponsors = [
     "createdAt": 1662896773000
   },
   {
-    "name": "Habib Kadiri",
-    "imgSrc": "https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/changwo",
+    "name": "Wyatt Schulte",
+    "imgSrc": "https://avatars.githubusercontent.com/u/42128929?u=15dfd6d0ab827079a400ce33f0f78408637cb5ec&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://wyatt.dev",
     "privacyLevel": "PUBLIC",
-    "login": "changwo",
-    "createdAt": 1663581418000
+    "login": "Wyatt-SG",
+    "createdAt": 1663779120000
+  },
+  {
+    "name": "Simon Flack",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4867329?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/simonflk",
+    "privacyLevel": "PUBLIC",
+    "login": "simonflk",
+    "createdAt": 1664470616000
+  },
+  {
+    "name": "Echobind",
+    "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "http://echobind.com",
+    "privacyLevel": "PUBLIC",
+    "login": "echobind",
+    "createdAt": 1665438965000
+  },
+  {
+    "name": "Ron Mizrahi",
+    "imgSrc": "https://avatars.githubusercontent.com/u/50079487?u=a5c77b3b68319a8447e6a5a3d4d0f944d2b66c05&v=4",
+    "monthlyPriceInDollars": 50,
+    "link": "https://github.com/sronmiz",
+    "privacyLevel": "PUBLIC",
+    "login": "sronmiz",
+    "createdAt": 1666029744000
+  },
+  {
+    "name": "Andrew Brown",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8261769?u=ef025d7679533700957db0df9f74bd5d7d8c4a2a&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/andrew-werdna",
+    "privacyLevel": "PUBLIC",
+    "login": "andrew-werdna",
+    "createdAt": 1666979682000
+  },
+  {
+    "name": "_P",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://pablorosales.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "PabloRosales",
+    "createdAt": 1668701929000
+  },
+  {
+    "name": "Jonas Strassel",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://jonas-strassel.de/",
+    "privacyLevel": "PUBLIC",
+    "login": "boredland",
+    "createdAt": 1668778944000
+  },
+  {
+    "name": "Interval",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://interval.com",
+    "privacyLevel": "PUBLIC",
+    "login": "interval",
+    "createdAt": 1668779128000
+  },
+  {
+    "name": "Joseph Lozano",
+    "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://josephlozano.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "joseph-lozano",
+    "createdAt": 1669229945000
+  },
+  {
+    "name": "Ping.gg",
+    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://ping.gg/",
+    "privacyLevel": "PUBLIC",
+    "login": "pingdotgg",
+    "createdAt": 1645488994000
   }
 ] as const

@@ -1,0 +1,79 @@
+{
+  "name": "@trpc/react-query",
+  "version": "10.1.0",
+  "description": "tRPC React lib",
+  "author": "KATT",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/react"
+  },
+  "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
+    "ts-watch": "tsc --project tsconfig.watch.json"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ssg": {
+      "import": "./dist/ssg/index.mjs",
+      "require": "./dist/ssg/index.js",
+      "default": "./dist/ssg/index.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "ssg",
+    "shared"
+  ],
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/react-query"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^4.3.8",
+    "@trpc/client": "^10.0.0-proxy-beta.21",
+    "@trpc/server": "^10.0.0-proxy-beta.21",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^4.3.8",
+    "@trpc/client": "^10.1.0",
+    "@trpc/server": "^10.1.0",
+    "@types/express": "^4.17.12",
+    "@types/node": "^18.7.20",
+    "express": "^4.17.1",
+    "next": "^13.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.9.0",
+    "zod": "^3.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

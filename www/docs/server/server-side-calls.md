@@ -5,21 +5,23 @@ sidebar_label: Server Side Calls
 slug: /server-side-calls
 ---
 
-You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute query(ies) and mutation(s).
+You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
 
 ## Create caller
 
-In every examples, after tRPC initialization, we generate the router.<br/>
-Then with `router.createCaller({})` function (param of this Context) we retrieve an instance of `RouterCaller`.
+With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
 
 ### Input query example
 
 We create the router with a input query and then we call the asynchronous `greeting` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const t = initTRPC.create();
+
 const router = t.router({
   // Create procedure at path 'greeting'
   greeting: t.procedure
@@ -29,29 +31,33 @@ const router = t.router({
 
 const caller = router.createCaller({});
 const result = await caller.greeting({ name: 'tRPC' });
+//     ^?
 ```
 
 ### Mutation example
 
 We create the router with a mutation and then we call the asynchronous `post` procedure to get the result.
 
-```ts
-import { z } from 'zod';
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const posts = ['One', 'Two', 'Three'];
 
 const t = initTRPC.create();
 const router = t.router({
   post: t.router({
-    delete: t.procedure.input(z.number()).mutation(({ input }) => {
-      posts.splice(input, 1);
+    add: t.procedure.input(z.string()).mutation(({ input }) => {
+      posts.push(input);
+      return posts;
     }),
   }),
 });
 
 const caller = router.createCaller({});
-await caller.post.delete(0);
+const result = await caller.post.add('Four');
+//     ^?
 ```
 
 ### Context with middleware example
@@ -63,39 +69,118 @@ Below two examples, the former fails because the context doesn't fit the middlew
 
 :::info
 
-- Middleware(s) are performed before any procedure(s).
+Middlewares are performed before any procedure(s) are called.
 
 :::
 
 <br/>
 
-```ts
+```ts twoslash
+// @target: esnext
 import { TRPCError, initTRPC } from '@trpc/server';
 
-const t = initTRPC.create();
+type Context = {
+  user?: {
+    id: string;
+  };
+};
+const t = initTRPC.context<Context>().create();
 
 const isAuthed = t.middleware(({ next, ctx }) => {
-  if (!ctx.foo) {
+  if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'You are not authorized',
     });
   }
 
-  return next();
+  return next({
+    ctx: {
+      // Infers that the `user` is non-nullable
+      user: ctx.user,
+    },
+  });
 });
 
 const protectedProcedure = t.procedure.use(isAuthed);
 
 const router = t.router({
-  secret: protectedProcedure.query(({ ctx }) => ctx.foo),
+  secret: protectedProcedure.query(({ ctx }) => ctx.user),
 });
 
-// it returns an error because there isn't the right context param
-const caller = router.createCaller({});
-const result = await caller.secret();
+{
+  // ❌ this will return an error because there isn't the right context param
+  const caller = router.createCaller({});
 
-// it works because foo property is present inside context param
-const authorizedCaller = router.createCaller({ foo: 'bar' });
-result = await authorizedCaller.secret();
+  const result = await caller.secret();
+}
+
+{
+  // ✅ this will work because user property is present inside context param
+  const authorizedCaller = router.createCaller({
+    user: {
+      id: 'KATT',
+    },
+  });
+  const result = await authorizedCaller.secret();
+  //     ^?
+}
+```
+
+### Example for a Next.js API endpoint
+
+:::tip
+
+This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
+how to call a procedure from another, custom endpoint.
+
+:::
+
+```ts twoslash
+// @noErrors
+// ---cut---
+import { TRPCError } from '@trpc/server';
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { appRouter } from '~/server/routers/_app';
+
+type ResponseData = {
+  data?: {
+    postTitle: string;
+  };
+  error?: {
+    message: string;
+  };
+};
+
+export default async (
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>,
+) => {
+  /** We want to simulate an error, so we pick a post ID that does not exist in the database. */
+  const postId = `this-id-does-not-exist-${Math.random()}`;
+
+  const caller = appRouter.createCaller({});
+
+  try {
+    // the server-side call
+    const postResult = await caller.post.byId({ id: postId });
+
+    res.status(200).json({ data: { postTitle: postResult.title } });
+  } catch (cause) {
+    // If this a tRPC error, we can extract additional information.
+    if (cause instanceof TRPCError) {
+      // We can get the specific HTTP status code coming from tRPC (e.g. 404 for `NOT_FOUND`).
+      const httpStatusCode = getHTTPStatusCodeFromError(cause);
+
+      res.status(httpStatusCode).json({ error: { message: cause.message } });
+      return;
+    } 
+
+    // This is not a tRPC error, so we don't have specific information.
+    res.status(500).json({
+      error: { message: `Error while accessing post with ID ${postId}` },
+    });
+  }
+};
 ```

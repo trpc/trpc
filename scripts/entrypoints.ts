@@ -1,13 +1,16 @@
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
-import { INPUTS, PACKAGES } from '../rollup.config';
-
-const packagesDir = path.resolve(__dirname, '..', 'packages');
+import prettier from 'prettier';
 
 // minimal version of PackageJson type necessary
-type PackageJson = {
+export type PackageJson = {
+  name: string;
   exports: Record<string, { import: string; require: string; default: string }>;
   files: string[];
+  dependencies: Record<string, string>;
+  pnpm: {
+    overrides: Record<string, string>;
+  };
 };
 
 // create directories on the way if they dont exist
@@ -16,19 +19,15 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(filePath, content);
+  fs.writeFileSync(filePath, content, 'utf8');
 }
 
-// ACTUAL SCRIPT
-
-for (const pkg of PACKAGES) {
-  const pkgRoot = path.resolve(packagesDir, pkg);
-  const inputs = INPUTS[pkg];
-
+export function generateEntrypoints(inputs: string[]) {
   // set some defaults for the package.json
-  const pkgJson = fs.readJsonSync(
-    path.resolve(pkgRoot, 'package.json'),
-  ) as PackageJson;
+  const pkgJson: PackageJson = JSON.parse(
+    fs.readFileSync(path.resolve('package.json'), 'utf8'),
+  );
+
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
     '.': {
@@ -77,12 +76,12 @@ for (const pkg of PACKAGES) {
         importPath,
       );
       // index.js
-      const indexFile = path.resolve(pkgRoot, importPath, 'index.js');
+      const indexFile = path.resolve(importPath, 'index.js');
       const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
       writeFileSyncRecursive(indexFile, indexFileContent);
 
       // index.d.ts
-      const typeFile = path.resolve(pkgRoot, importPath, 'index.d.ts');
+      const typeFile = path.resolve(importPath, 'index.d.ts');
       const typeFileContent = `export * from '${resolvedImport}';\n`;
       writeFileSyncRecursive(typeFile, typeFileContent);
     });
@@ -98,5 +97,10 @@ for (const pkg of PACKAGES) {
   });
 
   // write package.json
-  fs.writeJsonSync(path.resolve(pkgRoot, 'package.json'), pkgJson);
+  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
+    parser: 'json-stringify',
+    printWidth: 80,
+    endOfLine: 'auto',
+  });
+  fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
 }

@@ -22,13 +22,13 @@ Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/nex
 
 ```bash
 # npm
-npm install @trpc/next@next @trpc/react@next @tanstack/react-query
+npm install @trpc/next @trpc/react-query @tanstack/react-query
 
 # Yarn
-yarn add @trpc/next@next @trpc/react@next @tanstack-react-query
+yarn add @trpc/next @trpc/react-query @tanstack-react-query
 
 # pnpm
-pnpm add @trpc/next@next @trpc/react@next @tanstack/react-query
+pnpm add @trpc/next @trpc/react-query @tanstack/react-query
 ```
 
 ## Basic Example

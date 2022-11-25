@@ -27,7 +27,7 @@ export const appRouter = t.router({
     .input(z.object({
       limit: z.number().min(1).max(100).nullish(),
       cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
-    })),
+    }))
     .query(({ input }) => {
       const limit = input.limit ?? 50;
       const { cursor } = input;
@@ -112,6 +112,7 @@ export function MyComponent() {
       await utils.infinitePosts.cancel();
 
       utils.infinitePosts.setInfiniteData(
+        { limit: 10 },
         (data) => {
           if (!data) {
             return {
@@ -128,7 +129,6 @@ export function MyComponent() {
             })),
           };
         },
-        { limit: 10 },
       );
     },
   });

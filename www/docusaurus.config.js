@@ -1,5 +1,4 @@
 // @ts-check
-
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
@@ -29,10 +28,10 @@ module.exports = {
     announcementBar: {
       id: 'v10',
       content:
-        "🚀 You are looking at a pre-release of tRPC v10! See <a href='https://trpc.io/docs/v10/migrate-from-v9-to-v10'>the migration guide</a> for a summary of what is changing &amp; <a href='https://github.com/trpc/examples-next-prisma-starter'>go here</a> to try out a real project using this version.",
+        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
-      isCloseable: false,
+      isCloseable: true,
     },
     navbar: {
       title: 'tRPC',
@@ -42,42 +41,39 @@ module.exports = {
       },
       items: [
         {
-          type: 'doc',
-          docId: 'main/introduction',
+          to: 'docs',
           label: 'Docs',
+          activeBaseRegex: 'docs(/?)$',
         },
         {
-          type: 'doc',
-          docId: 'main/quickstart',
+          to: 'docs/quickstart',
           label: 'Quickstart',
         },
         {
-          type: 'doc',
-          docId: 'main/awesome-trpc',
+          to: 'docs/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
-          type: 'doc',
-          docId: 'nextjs/introduction',
+          to: 'docs/nextjs',
           label: 'Usage with Next.js',
         },
         {
           href: 'https://github.com/trpc/trpc',
-          label: 'GitHub',
           position: 'right',
-          className: 'navbar-external-link',
+          className: 'header-social-link header-github-link',
+          'aria-label': 'GitHub',
         },
         {
           href: 'https://twitter.com/trpcio',
-          label: 'Twitter',
           position: 'right',
-          className: 'navbar-external-link',
+          className: 'header-social-link header-twitter-link',
+          'aria-label': 'Twitter',
         },
         {
           href: 'https://trpc.io/discord',
-          label: 'Discord',
           position: 'right',
-          className: 'navbar-external-link',
+          className: 'header-social-link header-discord-link',
+          'aria-label': 'Discord',
         },
         {
           type: 'docsVersionDropdown',
@@ -93,11 +89,11 @@ module.exports = {
           items: [
             {
               label: 'Docs',
-              to: 'docs/v9',
+              to: 'docs',
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/v9/nextjs',
+              to: 'docs/nextjs',
             },
           ],
         },
@@ -106,7 +102,7 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -124,13 +120,13 @@ module.exports = {
         {
           title: 'More',
           items: [
-            // {
-            //   label: 'Blog',
-            //   to: 'blog',
-            // },
+            {
+              label: 'Blog',
+              to: 'blog',
+            },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
           ],
@@ -168,28 +164,28 @@ module.exports = {
           versions: {
             current: {
               label: '10.x',
-              path: 'v10',
+              // path: 'v10',
               badge: true,
               className: 'v10',
-              banner: 'unreleased',
+              banner: 'none',
             },
             '9.x': {
               label: '9.x',
               path: 'v9',
               badge: true,
               className: 'v9',
-              banner: 'none',
+              banner: 'unmaintained',
             },
           },
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/blog/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/blog/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -206,7 +202,7 @@ module.exports = {
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../www/min-light-with-diff', 'nord'],
+        themes: ['../../../../../../www/min-light-with-diff', 'nord'],
       },
     ],
   ],

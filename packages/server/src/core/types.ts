@@ -11,11 +11,11 @@ export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   : never;
 
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_ctx'];
+  inferRouterDef<TRouter>['_config']['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_errorShape'];
+  inferRouterDef<TRouter>['_config']['$types']['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_meta'];
+  inferRouterDef<TRouter>['_config']['$types']['meta'];
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -45,3 +45,28 @@ export type inferSubscriptionOutput<
 
 export type inferProcedureClientError<TProcedure extends AnyProcedure> =
   inferProcedureParams<TProcedure>['_config']['errorShape'];
+
+type GetInferenceHelpers<
+  TType extends 'input' | 'output',
+  TRouter extends AnyRouter,
+> = {
+  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
+    ? TRouterOrProcedure extends AnyRouter
+      ? GetInferenceHelpers<TType, TRouterOrProcedure>
+      : TRouterOrProcedure extends AnyProcedure
+      ? TType extends 'input'
+        ? inferProcedureInput<TRouterOrProcedure>
+        : inferProcedureOutput<TRouterOrProcedure>
+      : never
+    : never;
+};
+
+export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
+  'input',
+  TRouter
+>;
+
+export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
+  'output',
+  TRouter
+>;

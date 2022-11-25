@@ -1,10 +1,10 @@
 {
-  "version": "10.0.0-proxy-beta.3",
+  "version": "10.1.0",
   "registry": "https://registry.npmjs.org/",
   "publishConfig": {
     "access": "public"
   },
-  "npmClient": "yarn",
+  "npmClient": "pnpm",
   "useWorkspaces": true,
   "packages": [
     "packages/*",

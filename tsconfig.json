@@ -7,16 +7,10 @@
     "typeRoots": ["./node_modules/@types", "./types"],
     "paths": {
       "@trpc/server": ["packages/server/src"],
-      "@trpc/react": ["packages/react/src"],
+      "@trpc/react-query": ["packages/react-query/src"],
       "@trpc/client": ["packages/client/src"],
       "@trpc/next": ["packages/next/src"],
       "$test/*": ["test/*"]
-    }
-  },
-  "ts-node": {
-    "swc": true,
-    "compilerOptions": {
-      "module": "commonjs"
     }
   }
 }

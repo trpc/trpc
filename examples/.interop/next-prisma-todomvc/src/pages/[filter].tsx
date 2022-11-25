@@ -1,6 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createSSGHelpers } from '@trpc/react-query/ssg';
 import clsx from 'clsx';
 import {
   GetStaticPaths,
@@ -275,29 +275,30 @@ export default function TodosPage({
           {/* Remove this if you don't implement routing */}
           <ul className="filters">
             <li>
-              <Link href="/all">
-                <a
-                  className={clsx(
-                    !['active', 'completed'].includes(filter as string) &&
-                      'selected',
-                  )}
-                >
-                  All
-                </a>
+              <Link
+                href="/all"
+                className={clsx(
+                  !['active', 'completed'].includes(filter as string) &&
+                    'selected',
+                )}
+              >
+                All
               </Link>
             </li>
             <li>
-              <Link href="/active">
-                <a className={clsx(filter === 'active' && 'selected')}>
-                  Active
-                </a>
+              <Link
+                href="/active"
+                className={clsx(filter === 'active' && 'selected')}
+              >
+                Active
               </Link>
             </li>
             <li>
-              <Link href="/completed">
-                <a className={clsx(filter === 'completed' && 'selected')}>
-                  Completed
-                </a>
+              <Link
+                href="/completed"
+                className={clsx(filter === 'completed' && 'selected')}
+              >
+                Completed
               </Link>
             </li>
           </ul>

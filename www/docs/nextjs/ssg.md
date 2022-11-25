@@ -14,7 +14,7 @@ Static site generation requires executing tRPC queries inside `getStaticProps` o
 ## Fetch data in `getStaticProps`
 
 ```tsx title='pages/posts/[id].tsx'
-import { createSSGHelpers } from '@trpc/react/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import {
   GetStaticPaths,
   GetStaticPropsContext,
@@ -36,7 +36,7 @@ export async function getStaticProps(
   const id = context.params?.id as string;
 
   // prefetch `post.byId`
-  await ssg.post.byId.fetch({ id });
+  await ssg.post.byId.prefetch({ id });
 
   return {
     props: {
@@ -90,4 +90,4 @@ export default function PostViewPage(
 }
 ```
 
-Check out [here](ssg-helpers) to learn more about `createSSGHelpers`.
+Check out [here](ssg-helpers) to learn more about `createProxySSGHelpers`.

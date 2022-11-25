@@ -1,16 +1,18 @@
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { loggerLink } from '@trpc/client/links/loggerLink';
 import { withTRPC } from '@trpc/next';
-import { NextPage } from 'next';
-import { AppProps } from 'next/app';
-import { AppType } from 'next/dist/shared/lib/utils';
-import { ReactElement, ReactNode } from 'react';
+import type { NextPage } from 'next';
+import type { AppType, AppProps } from 'next/app';
+import type { ReactElement, ReactNode } from 'react';
 import superjson from 'superjson';
 import { DefaultLayout } from '~/components/DefaultLayout';
 import type { AppRouter } from '~/server/routers/_app';
-import { SSRContext } from '~/utils/trpc';
+import type { SSRContext } from '~/utils/trpc';
 
-export type NextPageWithLayout = NextPage & {
+export type NextPageWithLayout<
+  TProps = Record<string, unknown>,
+  TInitialProps = TProps,
+> = NextPage<TProps, TInitialProps> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
 
@@ -40,7 +42,7 @@ function getBaseUrl() {
   }
 
   // assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  return `http://127.0.0.1:${process.env.PORT ?? 3000}`;
 }
 
 export default withTRPC<AppRouter>({

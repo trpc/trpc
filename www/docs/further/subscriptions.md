@@ -5,7 +5,6 @@ sidebar_label: Subscriptions / WebSockets
 slug: /subscriptions
 ---
 
-
 :::info
 Subscriptions & WebSockets are in beta & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc)
 :::
@@ -13,6 +12,7 @@ Subscriptions & WebSockets are in beta & might change without a major version bu
 ## Using Subscriptions
 
 :::tip
+
 - For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 - For a bare-minumum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/main/examples/standalone-server).
 
@@ -102,12 +102,12 @@ process.on('SIGTERM', () => {
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can [use Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can [use Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
 ```tsx title='client.ts'
-import { createWSClient, wsLink } from '@trpc/client';
-import { httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
+import type { AppRouter } from '../path/to/server/trpc';
 
 // create persistent WebSocket connection
 const wsClient = createWSClient({
@@ -115,16 +115,13 @@ const wsClient = createWSClient({
 });
 
 // configure TRPCClient to use WebSockets transport
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCProxyClient<AppRouter>({
   links: [
     wsLink({
       client: wsClient,
     }),
   ],
 });
-
-// create a proxy function for ease of use
-const proxy = createTRPCClientProxy(client);
 ```
 
 ### Using React

@@ -8,12 +8,12 @@ import fetch from 'node-fetch';
 import type { AppRouter } from './router';
 
 // polyfill
-global.fetch = fetch as any;
+globalThis.fetch = fetch as any;
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const url = 'http://localhost:8787';
+  const url = 'http://127.0.0.1:8787';
 
   const client = createTRPCClient<AppRouter>({
     links: [loggerLink(), httpBatchLink({ url })],

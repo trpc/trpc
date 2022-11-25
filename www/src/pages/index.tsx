@@ -11,9 +11,9 @@ import { GithubStarsButton } from '../components/GithubStarsButton';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
-import { TopSponsors } from '../components/TopSponsors';
 import { TwitterWall } from '../components/TwitterWall';
-import { Sponsors } from '../components/sponsors';
+import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
+import { TopSponsors } from '../components/sponsors/TopSponsors';
 import { useVersion } from '../components/useVersion';
 
 function searchParams(obj: Record<string, string | string[]>): string {
@@ -71,7 +71,7 @@ const HomeContent: React.FC = () => {
           <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
             TypeScript
           </span>{' '}
-          inference and boost productivity while building your next full-stack
+          inference to boost productivity <br /> for your full-stack
           application.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6">
@@ -81,7 +81,7 @@ const HomeContent: React.FC = () => {
           <div className="flex justify-start flex-1">
             <Button
               variant="primary"
-              href={`/docs/${isV10 ? 'v10' : 'v9'}/quickstart`}
+              href={`/docs/${isV10 ? '' : 'v9/'}quickstart`}
               className="lg:text-lg"
             >
               Quickstart
@@ -112,8 +112,8 @@ const HomeContent: React.FC = () => {
           title={<>Try it out for yourself!</>}
           description={
             <>
-              This is a minimal full-stack React-application using tRPC &amp;
-              Next.js
+              This is a minimal full-stack React application using tRPC and
+              Next.js.
             </>
           }
         />
@@ -125,7 +125,7 @@ const HomeContent: React.FC = () => {
           <Iframe
             src={
               `https://stackblitz.com/github/trpc/trpc/tree/${
-                isV10 ? 'next' : 'main'
+                isV10 ? 'main' : 'v9.x'
               }/examples/next-minimal-starter?` +
               searchParams({
                 embed: '1',
@@ -223,13 +223,13 @@ const HomeContent: React.FC = () => {
               >
                 sponsors
               </a>
-              , who help make sure tRPC is here to stay.
+              &nbsp;who help make sure tRPC is here to stay.
             </>
           }
         />
         <div className="max-w-screen-md mx-auto">
           <div className="my-3 aspect-square">
-            <Sponsors />
+            <SponsorBubbles />
           </div>
           <div className="flex justify-center">
             <GithubSponsorButton />
