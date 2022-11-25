@@ -214,12 +214,14 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
 
         if (state === 'closed') {
+          delete pendingRequests[key];
           req.callbacks.complete?.();
           continue;
         }
         if (req.type === 'subscription') {
           resumeSubscriptionOnReconnect(req);
         } else {
+          delete pendingRequests[key];
           req.callbacks.error?.(
             TRPCClientError.from(
               new TRPCWebSocketClosedError('WebSocket closed prematurely'),
