@@ -63,7 +63,9 @@ The second example is much simpler and faster to type-check.
 
 If you absolutely need your complex types, more work is required.
 
-### Tracing
+## A real-world example from tRPC
+
+> PR in question: https://.....
 
 > Warning: The next sections may require some knowledge of tRPC APIs and terminology.
 
