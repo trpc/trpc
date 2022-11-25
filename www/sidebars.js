@@ -25,7 +25,7 @@ module.exports = {
       collapsed: false,
       link: {
         type: 'generated-index',
-        title: '@trpc/server guides',
+        title: 'tRPC server documentation',
         slug: '/server',
       },
       items: [
@@ -47,6 +47,11 @@ module.exports = {
           type: 'category',
           label: 'Adapters',
           collapsed: true,
+          link: {
+            type: 'generated-index',
+            title: 'Official tRPC adapters',
+            slug: '/adapters',
+          },
           items: [
             'server/adapter/aws-lambda',
             'server/adapter/express',
@@ -62,7 +67,7 @@ module.exports = {
       collapsed: false,
       link: {
         type: 'generated-index',
-        title: '@trpc/client guides',
+        title: 'tRPC client documentation',
         slug: '/client',
       },
       items: [
@@ -94,7 +99,7 @@ module.exports = {
       collapsed: false,
       link: {
         type: 'generated-index',
-        title: '@trpc/react-query guides',
+        title: 'tRPC React Query documentation',
         slug: '/react-query',
       },
       items: [
@@ -110,7 +115,7 @@ module.exports = {
       collapsed: false,
       link: {
         type: 'generated-index',
-        title: '@trpc/next guides',
+        title: 'tRPC Next.js documentation',
         slug: '/next',
       },
       items: [
@@ -126,7 +131,7 @@ module.exports = {
       collapsed: false,
       link: {
         type: 'generated-index',
-        title: 'Extra information',
+        title: 'Extra Information',
         slug: '/extra',
       },
       items: [
