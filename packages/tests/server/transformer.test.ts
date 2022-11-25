@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { routerToServerAndClientNew } from './___testHelpers';
-import { httpBatchLink } from '@trpc/client';
+import { createWSClient, httpBatchLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -61,42 +61,34 @@ test('empty superjson up and down', async () => {
   close();
 });
 
-// test('wsLink: empty superjson up and down', async () => {
-//   const transformer = superjson;
-//   let ws: any = null;
-//   const { client, close } = legacyRouterToServerAndClient(
-//     trpc
-//       .router()
-//       .transformer(transformer)
-//       .query('empty-up', {
-//         resolve() {
-//           return 'hello world';
-//         },
-//       })
-//       .query('empty-down', {
-//         input: z.string(),
-//         resolve() {
-//           return 'hello world';
-//         },
-//       }),
-//     {
-//       client({ wssUrl }) {
-//         ws = createWSClient({ url: wssUrl });
-//         return {
-//           transformer,
-//           links: [wsLink({ client: ws })],
-//         };
-//       },
-//     },
-//   );
-//   const res1 = await client.query('empty-up');
-//   expect(res1).toBe('hello world');
-//   const res2 = await client.query('empty-down', '');
-//   expect(res2).toBe('hello world');
+test('wsLink: empty superjson up and down', async () => {
+  const transformer = superjson;
+  let ws: any = null;
 
-//   close();
-//   ws.close();
-// });
+  const t = initTRPC.create({ transformer });
+
+  const router = t.router({
+    emptyUp: t.procedure.query(() => 'hello world'),
+    emptyDown: t.procedure.input(z.string()).query(() => 'hello world'),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client({ wssUrl }) {
+      ws = createWSClient({ url: wssUrl });
+      return {
+        transformer,
+        links: [wsLink({ client: ws })],
+      };
+    },
+  });
+  const res1 = await proxy.emptyUp.query();
+  expect(res1).toBe('hello world');
+  const res2 = await proxy.emptyDown.query('');
+  expect(res2).toBe('hello world');
+
+  close();
+  ws.close();
+});
 
 // test('devalue up and down', async () => {
 //   const transformer: trpc.DataTransformer = {
