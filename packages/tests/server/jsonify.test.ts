@@ -22,7 +22,6 @@ describe('no transformer specified', () => {
               return 'hello';
             },
             arrayWithUndefined: [1, undefined, 2],
-            b: 4 as number | undefined,
           };
         }),
       });
