@@ -10,9 +10,12 @@ import {
   AnyRouter,
   Filter,
   inferHandlerInput,
-  inferProcedureOutput,
 } from '@trpc/server';
-import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import {
+  createFlatProxy,
+  createRecursiveProxy,
+  inferTransformedProcedureOutput,
+} from '@trpc/server/shared';
 import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
@@ -21,14 +24,14 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
    */
   fetch(
     ...args: inferHandlerInput<TProcedure>
-  ): Promise<inferProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
    */
   fetchInfinite(
     ...args: inferHandlerInput<TProcedure>
-  ): Promise<InfiniteData<inferProcedureOutput<TProcedure>>>;
+  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
