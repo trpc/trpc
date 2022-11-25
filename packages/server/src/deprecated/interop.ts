@@ -1,4 +1,4 @@
-import { DefaultDataTransformer, ProcedureParams, ProcedureType } from '..';
+import { ProcedureParams, ProcedureType } from '..';
 import { AnyRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
