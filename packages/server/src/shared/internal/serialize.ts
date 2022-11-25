@@ -20,25 +20,28 @@ type IsAny<T> = 0 extends 1 & T ? true : false;
 
 // prettier-ignore
 export type Serialize<T> =
-  IsAny<T> extends true ? any :
-  T extends JsonPrimitive ? T :
-  T extends Map<any,any> | Set<any> ? {} : 
-  T extends NonJsonPrimitive ? never :
-  T extends { toJSON(): infer U } ? U :
-  T extends [] ? [] :
-  T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
-  T extends ReadonlyArray<infer U> ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
-  T extends object ? SerializeObject<UndefinedToOptional<T>> :
-  never;
+ IsAny<T> extends true ? any :
+ T extends JsonPrimitive ? T :
+ T extends Map<any,any> | Set<any> ? {} : 
+ T extends NonJsonPrimitive ? never :
+ T extends { toJSON(): infer U } ? U :
+ T extends [] ? [] :
+ T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
+ T extends ReadonlyArray<infer U> ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
+ T extends object ? SerializeObject<UndefinedToOptional<T>> :
+ never;
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
 };
 
+type FilterNonJsonPrimitiveKeys<TObj extends object> = {
+  [TKey in keyof TObj]: TObj[TKey] extends NonJsonPrimitive ? never : TKey;
+}[keyof TObj];
 /** JSON serialize objects (not including arrays) and classes */
 type SerializeObject<T extends object> = {
-  [k in keyof T as T[k] extends NonJsonPrimitive ? never : k]: Serialize<T[k]>;
+  [k in keyof Pick<T, FilterNonJsonPrimitiveKeys<T>>]: Serialize<T[k]>;
 };
 
 /*
@@ -58,8 +61,8 @@ type FilterUndefinedKeys<TObj extends object> = {
 
 type UndefinedToOptional<T extends object> = {
   // Property is not a union with `undefined`, keep as-is
-  [k in FilterDefinedKeys<T>]: T[k];
+  [k in keyof Pick<T, FilterDefinedKeys<T>>]: T[k];
 } & {
   // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
-  [k in FilterUndefinedKeys<T>]?: Exclude<T[k], undefined>;
+  [k in keyof Pick<T, FilterUndefinedKeys<T>>]?: Exclude<T[k], undefined>;
 };
