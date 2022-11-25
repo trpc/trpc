@@ -214,13 +214,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
 
         if (state === 'closed') {
+          // If the connection was closed, we just call `complete()` on the request
           delete pendingRequests[key];
           req.callbacks.complete?.();
           continue;
         }
+        // The connection was closed either unexpectedly or because of a reconnect
         if (req.type === 'subscription') {
+          // Subscriptions will resume after we've reconnected
           resumeSubscriptionOnReconnect(req);
         } else {
+          // Queries and mutations will error if interrupted
           delete pendingRequests[key];
           req.callbacks.error?.(
             TRPCClientError.from(
