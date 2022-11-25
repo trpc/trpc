@@ -214,19 +214,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
 
         if (state === 'closed') {
+          req.callbacks.complete?.();
+          continue;
+        }
+        if (req.type === 'subscription') {
+          resumeSubscriptionOnReconnect(req);
+        } else {
           req.callbacks.error?.(
             TRPCClientError.from(
               new TRPCWebSocketClosedError('WebSocket closed prematurely'),
             ),
           );
-        }
-
-        if (req.type !== 'subscription') {
-          delete pendingRequests[key];
-          req.callbacks.complete?.();
-        } else if (state !== 'closed') {
-          // request restart of sub with next connection
-          resumeSubscriptionOnReconnect(req);
         }
       }
     });
