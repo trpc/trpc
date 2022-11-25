@@ -5,12 +5,10 @@ module.exports = {
       label: 'tRPC',
       collapsed: false,
       link: {
-        type: 'generated-index',
-        title: 'tRPC guides',
-        slug: '/trpc',
+        type: 'doc',
+        id: 'main/introduction',
       },
       items: [
-        'main/introduction',
         'main/quickstart',
         'main/example-apps',
         'nextjs/introduction',
@@ -75,12 +73,10 @@ module.exports = {
           label: 'Links',
           collapsed: true,
           link: {
-            type: 'generated-index',
-            title: '@trpc/client links guides',
-            slug: '/links',
+            type: 'doc',
+            id: 'client/links/links'
           },
           items: [
-            'client/links/links',
             'client/links/httpLink',
             'client/links/httpBatchLink',
             'client/links/wsLink',
