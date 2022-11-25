@@ -47,13 +47,19 @@ type SerializeObject<T extends object> = {
  *
  * Example: { a: string | undefined} --> { a?: string}
  */
+
+type FilterDefinedKeys<TObj extends object> = {
+  [TKey in keyof TObj]: undefined extends TObj[TKey] ? never : TKey;
+}[keyof TObj];
+
+type FilterUndefinedKeys<TObj extends object> = {
+  [TKey in keyof TObj]: undefined extends TObj[TKey] ? TKey : never;
+}[keyof TObj];
+
 type UndefinedToOptional<T extends object> = {
   // Property is not a union with `undefined`, keep as-is
-  [k in keyof T as undefined extends T[k] ? never : k]: T[k];
+  [k in FilterDefinedKeys<T>]: T[k];
 } & {
   // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
-  [k in keyof T as undefined extends T[k] ? k : never]?: Exclude<
-    T[k],
-    undefined
-  >;
+  [k in FilterUndefinedKeys<T>]?: Exclude<T[k], undefined>;
 };
