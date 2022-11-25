@@ -99,7 +99,7 @@ module.exports = {
       collapsed: false,
       link: {
         type: 'generated-index',
-        title: 'tRPC React documentation',
+        title: 'tRPC React Query documentation',
         slug: '/react-query',
       },
       items: [
