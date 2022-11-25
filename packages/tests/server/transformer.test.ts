@@ -35,40 +35,31 @@ test('superjson up and down', async () => {
   close();
 });
 
-// test('empty superjson up and down', async () => {
-//   const transformer = superjson;
+test('empty superjson up and down', async () => {
+  const transformer = superjson;
 
-//   const { client, close } = legacyRouterToServerAndClient(
-//     trpc
-//       .router()
-//       .transformer(transformer)
-//       .query('empty-up', {
-//         resolve() {
-//           return 'hello world';
-//         },
-//       })
-//       .query('empty-down', {
-//         input: z.string(),
-//         resolve() {
-//           return 'hello world';
-//         },
-//       }),
-//     {
-//       client({ httpUrl }) {
-//         return {
-//           transformer,
-//           links: [httpBatchLink({ url: httpUrl })],
-//         };
-//       },
-//     },
-//   );
-//   const res1 = await client.query('empty-up');
-//   expect(res1).toBe('hello world');
-//   const res2 = await client.query('empty-down', '');
-//   expect(res2).toBe('hello world');
+  const t = initTRPC.create({ transformer });
 
-//   close();
-// });
+  const router = t.router({
+    emptyUp: t.procedure.query(() => 'hello world'),
+    emptyDown: t.procedure.input(z.string()).query(() => 'hello world'),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client({ httpUrl }) {
+      return {
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
+      };
+    },
+  });
+  const res1 = await proxy.emptyUp.query();
+  expect(res1).toBe('hello world');
+  const res2 = await proxy.emptyDown.query('');
+  expect(res2).toBe('hello world');
+
+  close();
+});
 
 // test('wsLink: empty superjson up and down', async () => {
 //   const transformer = superjson;
