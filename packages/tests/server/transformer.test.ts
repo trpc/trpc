@@ -469,41 +469,39 @@ describe('transformer on router', () => {
   });
 });
 
-// test('superjson - no input', async () => {
-//   const transformer = superjson;
+test('superjson - no input', async () => {
+  const transformer = superjson;
+  const fn = jest.fn();
 
-//   const fn = jest.fn();
-//   const { close, httpUrl } = legacyRouterToServerAndClient(
-//     trpc
-//       .router()
-//       .transformer(transformer)
-//       .query('hello', {
-//         async resolve({ input }) {
-//           fn(input);
-//           return 'world';
-//         },
-//       }),
-//     {
-//       client({ httpUrl }) {
-//         return {
-//           transformer,
-//           links: [httpBatchLink({ url: httpUrl })],
-//         };
-//       },
-//     },
-//   );
-//   const json = await (await fetch(`${httpUrl}/hello`)).json();
+  const t = initTRPC.create({ transformer });
 
-//   expect(json).not.toHaveProperty('error');
-//   expect(json).toMatchInlineSnapshot(`
-// Object {
-//   "result": Object {
-//     "data": Object {
-//       "json": "world",
-//     },
-//   },
-// }
-// `);
+  const router = t.router({
+    hello: t.procedure.query(({ input }) => {
+      fn(input);
+      return 'world';
+    }),
+  });
 
-//   close();
-// });
+  const { close, httpUrl } = routerToServerAndClientNew(router, {
+    client({ httpUrl }) {
+      return {
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
+      };
+    },
+  });
+  const json = await (await fetch(`${httpUrl}/hello`)).json();
+
+  expect(json).not.toHaveProperty('error');
+  expect(json).toMatchInlineSnapshot(`
+Object {
+  "result": Object {
+    "data": Object {
+      "json": "world",
+    },
+  },
+}
+`);
+
+  close();
+});
