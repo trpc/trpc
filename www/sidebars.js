@@ -74,7 +74,7 @@ module.exports = {
           collapsed: true,
           link: {
             type: 'doc',
-            id: 'client/links/links'
+            id: 'client/links/links',
           },
           items: [
             'client/links/httpLink',
