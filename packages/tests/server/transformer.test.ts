@@ -230,63 +230,60 @@ test('batching: superjson up and f down', async () => {
   close();
 });
 
-// test('all transformers running in correct order', async () => {
-//   const world = 'foo';
-//   const fn = jest.fn();
+test('all transformers running in correct order', async () => {
+  const world = 'foo';
+  const fn = jest.fn();
 
-//   const transformer: trpc.CombinedDataTransformer = {
-//     input: {
-//       serialize: (object) => {
-//         fn('client:serialized');
-//         return object;
-//       },
-//       deserialize: (object) => {
-//         fn('server:deserialized');
-//         return object;
-//       },
-//     },
-//     output: {
-//       serialize: (object) => {
-//         fn('server:serialized');
-//         return object;
-//       },
-//       deserialize: (object) => {
-//         fn('client:deserialized');
-//         return object;
-//       },
-//     },
-//   };
+  const transformer: CombinedDataTransformer = {
+    input: {
+      serialize: (object) => {
+        fn('client:serialized');
+        return object;
+      },
+      deserialize: (object) => {
+        fn('server:deserialized');
+        return object;
+      },
+    },
+    output: {
+      serialize: (object) => {
+        fn('server:serialized');
+        return object;
+      },
+      deserialize: (object) => {
+        fn('client:deserialized');
+        return object;
+      },
+    },
+  };
 
-//   const { client, close } = legacyRouterToServerAndClient(
-//     trpc
-//       .router()
-//       .transformer(transformer)
-//       .query('hello', {
-//         input: z.string(),
-//         resolve({ input }) {
-//           fn(input);
-//           return input;
-//         },
-//       }),
-//     {
-//       client({ httpUrl }) {
-//         return {
-//           transformer,
-//           links: [httpBatchLink({ url: httpUrl })],
-//         };
-//       },
-//     },
-//   );
-//   const res = await client.query('hello', world);
-//   expect(res).toBe(world);
-//   expect(fn.mock.calls[0]![0]!).toBe('client:serialized');
-//   expect(fn.mock.calls[1]![0]!).toBe('server:deserialized');
-//   expect(fn.mock.calls[2]![0]!).toBe(world);
-//   expect(fn.mock.calls[3][0]).toBe('server:serialized');
-//   expect(fn.mock.calls[4][0]).toBe('client:deserialized');
+  const t = initTRPC.create({ transformer });
 
-//   close();
-// });
+  const router = t.router({
+    hello: t.procedure.input(z.string()).query(({ input }) => {
+      fn(input);
+      return input;
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client({ httpUrl }) {
+      return {
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
+      };
+    },
+  });
+  const res = await proxy.hello.query(world);
+  expect(res).toBe(world);
+  expect(fn.mock.calls[0]![0]!).toBe('client:serialized');
+  expect(fn.mock.calls[1]![0]!).toBe('server:deserialized');
+  expect(fn.mock.calls[2]![0]!).toBe(world);
+  expect(fn.mock.calls[3][0]).toBe('server:serialized');
+  expect(fn.mock.calls[4][0]).toBe('client:deserialized');
+
+  close();
+});
 
 // describe('transformer on router', () => {
 //   test('http', async () => {
