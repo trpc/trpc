@@ -197,41 +197,38 @@ test('batching: superjson up and devalue down', async () => {
   close();
 });
 
-// test('batching: superjson up and f down', async () => {
-//   const transformer: trpc.CombinedDataTransformer = {
-//     input: superjson,
-//     output: {
-//       serialize: (object) => devalue(object),
-//       deserialize: (object) => eval(`(${object})`),
-//     },
-//   };
+test('batching: superjson up and f down', async () => {
+  const transformer: CombinedDataTransformer = {
+    input: superjson,
+    output: {
+      serialize: (object) => devalue(object),
+      deserialize: (object) => eval(`(${object})`),
+    },
+  };
+  const date = new Date();
+  const fn = jest.fn();
 
-//   const date = new Date();
-//   const fn = jest.fn();
-//   const { client, close } = legacyRouterToServerAndClient(
-//     trpc
-//       .router()
-//       .transformer(transformer)
-//       .query('hello', {
-//         input: z.date(),
-//         resolve({ input }) {
-//           fn(input);
-//           return input;
-//         },
-//       }),
-//     {
-//       client: ({ httpUrl }) => ({
-//         transformer,
-//         links: [httpBatchLink({ url: httpUrl })],
-//       }),
-//     },
-//   );
-//   const res = await client.query('hello', date);
-//   expect(res.getTime()).toBe(date.getTime());
-//   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+  const t = initTRPC.create({ transformer });
 
-//   close();
-// });
+  const router = t.router({
+    hello: t.procedure.input(z.date()).query(({ input }) => {
+      fn(input);
+      return input;
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client: ({ httpUrl }) => ({
+      transformer,
+      links: [httpBatchLink({ url: httpUrl })],
+    }),
+  });
+  const res = await proxy.hello.query(date);
+  expect(res.getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+
+  close();
+});
 
 // test('all transformers running in correct order', async () => {
 //   const world = 'foo';
