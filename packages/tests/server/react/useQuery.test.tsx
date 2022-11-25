@@ -151,7 +151,7 @@ test('useInfiniteQuery()', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
@@ -223,7 +223,7 @@ test('useSuspenseInfiniteQuery()', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
