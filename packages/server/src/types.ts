@@ -73,7 +73,7 @@ export type InferLast<TType> = TType & {
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
-type FilterKeys<TObj extends object, TFilter> = {
+export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
 
