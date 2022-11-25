@@ -9,10 +9,10 @@ import {
   ProcedureRouterRecord,
   inferProcedureInput,
 } from '@trpc/server';
-import { inferObservableValue } from '@trpc/server/observable';
 import {
   createFlatProxy,
   inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
@@ -147,7 +147,7 @@ export type DecorateProcedure<
       useSubscription: (
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSubscriptionOptions<
-          inferObservableValue<inferTransformedProcedureOutput<TProcedure>>,
+          inferTransformedSubscriptionOutput<TProcedure>,
           TRPCClientErrorLike<TProcedure>
         >,
       ) => void;
