@@ -1194,7 +1194,7 @@ importers:
 
   packages/server:
     specifiers:
-      '@cloudflare/workers-types': ^3.14.1
+      '@cloudflare/workers-types': ^4.0.0
       '@fastify/websocket': ^5.0.0
       '@miniflare/core': ^2.9.0
       '@tanstack/react-query': 4.6.0
@@ -1228,7 +1228,7 @@ importers:
       yup: ^0.32.8
       zod: ^3.0.0
     devDependencies:
-      '@cloudflare/workers-types': 3.16.0
+      '@cloudflare/workers-types': 4.20221111.1
       '@fastify/websocket': 5.0.0
       '@miniflare/core': 2.9.0
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
@@ -3147,6 +3147,10 @@ packages:
 
   /@cloudflare/workers-types/3.16.0:
     resolution: {integrity: sha512-gaBUSaKS65mN3iKZEgichbXYEmAa/pXkc5Gbt+1BptYphdGkj09ggdsiE4w8g0F/uI1g36QaTKrzVnBAWMipvQ==}
+
+  /@cloudflare/workers-types/4.20221111.1:
+    resolution: {integrity: sha512-BNV2wN8V6Zduvo7UzxcdjBbLQ906D2KhS804PDufLgx/sanGJCHVJMOIaLvS/b61JKtot1U7P/l1fjrjZ7/E3A==}
+    dev: true
 
   /@colors/colors/1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
