@@ -36,6 +36,9 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
 
+/**
+ * @deprecated will be removed in next major as it's v9 stuff
+ */
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'] & string,
