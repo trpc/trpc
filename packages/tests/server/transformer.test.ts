@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { routerToServerAndClientNew } from './___testHelpers';
 import { createWSClient, httpBatchLink, wsLink } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { DataTransformer, initTRPC } from '@trpc/server';
+import devalue from 'devalue';
 import superjson from 'superjson';
 import { z } from 'zod';
 
@@ -90,40 +91,37 @@ test('wsLink: empty superjson up and down', async () => {
   ws.close();
 });
 
-// test('devalue up and down', async () => {
-//   const transformer: trpc.DataTransformer = {
-//     serialize: (object) => devalue(object),
-//     deserialize: (object) => eval(`(${object})`),
-//   };
+test('devalue up and down', async () => {
+  const transformer: DataTransformer = {
+    serialize: (object) => devalue(object),
+    deserialize: (object) => eval(`(${object})`),
+  };
+  const date = new Date();
+  const fn = jest.fn();
 
-//   const date = new Date();
-//   const fn = jest.fn();
-//   const { client, close } = legacyRouterToServerAndClient(
-//     trpc
-//       .router()
-//       .transformer(transformer)
-//       .query('hello', {
-//         input: z.date(),
-//         resolve({ input }) {
-//           fn(input);
-//           return input;
-//         },
-//       }),
-//     {
-//       client({ httpUrl }) {
-//         return {
-//           transformer,
-//           links: [httpBatchLink({ url: httpUrl })],
-//         };
-//       },
-//     },
-//   );
-//   const res = await client.query('hello', date);
-//   expect(res.getTime()).toBe(date.getTime());
-//   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+  const t = initTRPC.create({ transformer });
 
-//   close();
-// });
+  const router = t.router({
+    hello: t.procedure.input(z.date()).query(({ input }) => {
+      fn(input);
+      return input;
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client({ httpUrl }) {
+      return {
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
+      };
+    },
+  });
+  const res = await proxy.hello.query(date);
+  expect(res.getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+
+  close();
+});
 
 // test('not batching: superjson up and devalue down', async () => {
 //   const transformer: trpc.CombinedDataTransformer = {
