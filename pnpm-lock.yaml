@@ -1223,10 +1223,13 @@ importers:
       superjson: ^1.7.4
       superstruct: ^0.16.0
       tsx: ^3.9.0
+      type-fest: ^3.2.0
       typescript: ^4.8.3
       ws: ^8.0.0
       yup: ^0.32.8
       zod: ^3.0.0
+    dependencies:
+      type-fest: 3.2.0
     devDependencies:
       '@cloudflare/workers-types': 3.16.0
       '@fastify/websocket': 5.0.0
@@ -19629,6 +19632,11 @@ packages:
   /type-fest/2.19.0:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
+    dev: false
+
+  /type-fest/3.2.0:
+    resolution: {integrity: sha512-Il3wdLRzWvbAEtocgxGQA9YOoRVeVUGOMBtel5LdEpNeEAol6GJTLw8GbX6Z8EIMfvfhoOXs2bwOijtAZdK5og==}
+    engines: {node: '>=14.16'}
     dev: false
 
   /type-is/1.6.18:
