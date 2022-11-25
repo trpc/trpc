@@ -192,15 +192,6 @@ export const sponsors = [
     "createdAt": 1645479378000
   },
   {
-    "name": "Ping.gg",
-    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "monthlyPriceInDollars": 250,
-    "link": "https://ping.gg/",
-    "privacyLevel": "PUBLIC",
-    "login": "pingdotgg",
-    "createdAt": 1645488994000
-  },
-  {
     "name": "Jared Wyce",
     "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
     "monthlyPriceInDollars": 5,
@@ -354,7 +345,7 @@ export const sponsors = [
     "createdAt": 1658023715000
   },
   {
-    "name": "Prisma",
+    "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
     "monthlyPriceInDollars": 250,
     "link": "https://www.prisma.io",
@@ -370,15 +361,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "LoriKarikari",
     "createdAt": 1658573921000
-  },
-  {
-    "name": "Zac Ong",
-    "imgSrc": "https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/zzacong",
-    "privacyLevel": "PUBLIC",
-    "login": "zzacong",
-    "createdAt": 1659057378000
   },
   {
     "name": "Francis Provost",
@@ -480,15 +462,6 @@ export const sponsors = [
     "createdAt": 1666029744000
   },
   {
-    "name": "Daniel Madrid",
-    "imgSrc": "https://avatars.githubusercontent.com/u/31113489?u=d5101c1da2911205e2b347653af38f35004de5c5&v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://www.linkedin.com/in/danimydev",
-    "privacyLevel": "PUBLIC",
-    "login": "danimydev",
-    "createdAt": 1666704624000
-  },
-  {
     "name": "Andrew Brown",
     "imgSrc": "https://avatars.githubusercontent.com/u/8261769?u=ef025d7679533700957db0df9f74bd5d7d8c4a2a&v=4",
     "monthlyPriceInDollars": 10,
@@ -498,8 +471,8 @@ export const sponsors = [
     "createdAt": 1666979682000
   },
   {
-    "name": "_PabloDev",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=e0018ad71c678db14693c4dfee580a8982c882cf&v=4",
+    "name": "_P",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://pablorosales.dev",
     "privacyLevel": "PUBLIC",
@@ -523,5 +496,23 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "interval",
     "createdAt": 1668779128000
+  },
+  {
+    "name": "Joseph Lozano",
+    "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://josephlozano.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "joseph-lozano",
+    "createdAt": 1669229945000
+  },
+  {
+    "name": "Ping.gg",
+    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://ping.gg/",
+    "privacyLevel": "PUBLIC",
+    "login": "pingdotgg",
+    "createdAt": 1645488994000
   }
 ] as const
