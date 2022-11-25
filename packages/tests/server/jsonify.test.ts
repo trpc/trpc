@@ -13,15 +13,17 @@ describe('no transformer specified', () => {
       const t = initTRPC.create();
 
       const appRouter = t.router({
-        happy: t.procedure.query(() => ({
-          map: new Map<string, string>([['foo', 'bar']]),
-          set: new Set<string>(['foo', 'bar']),
-          date: new Date(0),
-          fn: () => {
-            return 'hello';
-          },
-          arrayWithUndefined: [1, undefined, 2],
-        })),
+        happy: t.procedure.query(() => {
+          return {
+            map: new Map<string, string>([['foo', 'bar']]),
+            set: new Set<string>(['foo', 'bar']),
+            date: new Date(0),
+            fn: () => {
+              return 'hello';
+            },
+            arrayWithUndefined: [1, undefined, 2],
+          };
+        }),
       });
       const opts = routerToServerAndClientNew(appRouter);
 
@@ -33,6 +35,8 @@ describe('no transformer specified', () => {
     .done();
   test('it works', async () => {
     const result = await ctx.proxy.happy.query();
+
+    expectTypeOf(result).not.toBeAny();
 
     expectTypeOf(result.date).toBeString();
     result.set;
