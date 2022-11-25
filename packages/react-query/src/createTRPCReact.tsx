@@ -8,10 +8,12 @@ import {
   AnySubscriptionProcedure,
   ProcedureRouterRecord,
   inferProcedureInput,
-  inferProcedureOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
-import { createFlatProxy } from '@trpc/server/shared';
+import {
+  createFlatProxy,
+  inferTransformedProcedureOutput,
+} from '@trpc/server/shared';
 import { useMemo } from 'react';
 import {
   CreateReactUtilsProxy,
@@ -46,8 +48,8 @@ export type DecorateProcedure<
 > = TProcedure extends AnyQueryProcedure
   ? {
       useQuery: <
-        TQueryFnData = inferProcedureOutput<TProcedure>,
-        TData = inferProcedureOutput<TProcedure>,
+        TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
+        TData = inferTransformedProcedureOutput<TProcedure>,
       >(
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCQueryOptions<
@@ -61,8 +63,8 @@ export type DecorateProcedure<
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
           useInfiniteQuery: <
-            _TQueryFnData = inferProcedureOutput<TProcedure>,
-            TData = inferProcedureOutput<TProcedure>,
+            _TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
+            TData = inferTransformedProcedureOutput<TProcedure>,
           >(
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
             opts?: UseTRPCInfiniteQueryOptions<
@@ -78,8 +80,8 @@ export type DecorateProcedure<
         } & (TFlags extends 'ExperimentalSuspense'
           ? {
               useSuspenseInfiniteQuery: <
-                _TQueryFnData = inferProcedureOutput<TProcedure>,
-                TData = inferProcedureOutput<TProcedure>,
+                _TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
+                TData = inferTransformedProcedureOutput<TProcedure>,
               >(
                 input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
                 opts?: Omit<
@@ -104,8 +106,8 @@ export type DecorateProcedure<
       (TFlags extends 'ExperimentalSuspense'
         ? {
             useSuspenseQuery: <
-              TQueryFnData = inferProcedureOutput<TProcedure>,
-              TData = inferProcedureOutput<TProcedure>,
+              TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
+              TData = inferTransformedProcedureOutput<TProcedure>,
             >(
               input: inferProcedureInput<TProcedure>,
               opts?: Omit<
@@ -130,11 +132,11 @@ export type DecorateProcedure<
         opts?: UseTRPCMutationOptions<
           inferProcedureInput<TProcedure>,
           TRPCClientErrorLike<TProcedure>,
-          inferProcedureOutput<TProcedure>,
+          inferTransformedProcedureOutput<TProcedure>,
           TContext
         >,
       ) => UseTRPCMutationResult<
-        inferProcedureOutput<TProcedure>,
+        inferTransformedProcedureOutput<TProcedure>,
         TRPCClientErrorLike<TProcedure>,
         inferProcedureInput<TProcedure>,
         TContext
@@ -145,7 +147,7 @@ export type DecorateProcedure<
       useSubscription: (
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSubscriptionOptions<
-          inferObservableValue<inferProcedureOutput<TProcedure>>,
+          inferObservableValue<inferTransformedProcedureOutput<TProcedure>>,
           TRPCClientErrorLike<TProcedure>
         >,
       ) => void;

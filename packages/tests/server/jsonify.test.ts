@@ -49,6 +49,11 @@ describe('no transformer specified', () => {
 
     expect(result).toMatchInlineSnapshot(`
       Object {
+        "arrayWithUndefined": Array [
+          1,
+          null,
+          2,
+        ],
         "date": "1970-01-01T00:00:00.000Z",
         "map": Object {},
         "set": Object {},

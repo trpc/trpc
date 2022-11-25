@@ -12,9 +12,9 @@ import {
   inferHandlerInput,
 } from '@trpc/server';
 import {
-  TransformedProcedureOutput,
   createFlatProxy,
   createRecursiveProxy,
+  inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
 
@@ -24,14 +24,14 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
    */
   fetch(
     ...args: inferHandlerInput<TProcedure>
-  ): Promise<TransformedProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
    */
   fetchInfinite(
     ...args: inferHandlerInput<TProcedure>
-  ): Promise<InfiniteData<TransformedProcedureOutput<TProcedure>>>;
+  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching

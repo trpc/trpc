@@ -10,13 +10,16 @@ import type {
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
-  inferProcedureOutput,
 } from '@trpc/server';
 import type {
   Unsubscribable,
   inferObservableValue,
 } from '@trpc/server/observable';
-import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import {
+  createFlatProxy,
+  createRecursiveProxy,
+  inferTransformedProcedureOutput,
+} from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
 import { TRPCClient, TRPCSubscriptionObserver } from './internals/TRPCClient';
@@ -26,7 +29,7 @@ export type inferRouterProxyClient<TRouter extends AnyRouter> =
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferProcedureOutput<TProcedure>>;
+) => Promise<inferTransformedProcedureOutput<TProcedure>>;
 
 type SubscriptionResolver<
   TProcedure extends AnyProcedure,
@@ -37,7 +40,7 @@ type SubscriptionResolver<
     opts: ProcedureArgs<TProcedure['_def']>[1] &
       Partial<
         TRPCSubscriptionObserver<
-          inferObservableValue<inferProcedureOutput<TProcedure>>,
+          inferObservableValue<inferTransformedProcedureOutput<TProcedure>>,
           TRPCClientError<TRouter>
         >
       >,

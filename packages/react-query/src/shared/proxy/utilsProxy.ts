@@ -15,9 +15,12 @@ import {
   Filter,
   ProcedureOptions,
   inferProcedureInput,
-  inferProcedureOutput,
 } from '@trpc/server';
-import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import {
+  createFlatProxy,
+  createRecursiveProxy,
+  inferTransformedProcedureOutput,
+} from '@trpc/server/shared';
 import {
   DecoratedProxyTRPCContextProps,
   TRPCContextState,
@@ -39,9 +42,9 @@ type DecorateProcedure<
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
       TRPCClientError<TRouter>,
-      inferProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>
     >,
-  ): Promise<inferProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
@@ -51,9 +54,9 @@ type DecorateProcedure<
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       TRPCClientError<TRouter>,
-      inferProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>
     >,
-  ): Promise<InfiniteData<inferProcedureOutput<TProcedure>>>;
+  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
@@ -63,7 +66,7 @@ type DecorateProcedure<
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
       TRPCClientError<TRouter>,
-      inferProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<void>;
 
@@ -76,7 +79,7 @@ type DecorateProcedure<
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       TRPCClientError<TRouter>,
-      inferProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<void>;
 
@@ -115,8 +118,8 @@ type DecorateProcedure<
      */
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      inferProcedureOutput<TProcedure> | undefined,
-      inferProcedureOutput<TProcedure> | undefined
+      inferTransformedProcedureOutput<TProcedure> | undefined,
+      inferTransformedProcedureOutput<TProcedure> | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -127,8 +130,8 @@ type DecorateProcedure<
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      InfiniteData<inferProcedureOutput<TProcedure>> | undefined,
-      InfiniteData<inferProcedureOutput<TProcedure>> | undefined
+      InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined,
+      InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -138,14 +141,14 @@ type DecorateProcedure<
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
-  ): inferProcedureOutput<TProcedure> | undefined;
+  ): inferTransformedProcedureOutput<TProcedure> | undefined;
 
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
-  ): InfiniteData<inferProcedureOutput<TProcedure>> | undefined;
+  ): InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined;
 };
 
 /**
