@@ -6,7 +6,7 @@
 
 ### Overview
 
-- `server-a` and `server-b` are two different note instances
+- `server-a` and `server-b` are two different node instances
 - `server-lib` is glue code - making sure they have the same context & error formatters
 - `faux-gateway` is stitches together `server-a` & `server-b` **but is never actually run** in Node
 - `client/index`:
