@@ -217,7 +217,7 @@ const HomeContent: React.FC = () => {
             <>
               We really love all of our amazing{' '}
               <a
-                href="https://github.com/sponsors/KATT"
+                href="https://trpc.io/sponsor"
                 target="_blank"
                 rel="noreferrer noopener"
               >
