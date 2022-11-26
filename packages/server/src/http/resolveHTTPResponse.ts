@@ -11,7 +11,7 @@ import { getCauseFromUnknown, getTRPCErrorFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
-import { getHTTPStatusCode } from './internals/getHTTPStatusCode';
+import { getHTTPStatusCode } from './getHTTPStatusCode';
 import {
   HTTPBaseHandlerOptions,
   HTTPHeaders,

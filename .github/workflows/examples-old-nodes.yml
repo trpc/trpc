@@ -1,14 +1,20 @@
 name: Examples E2E (old nodes)
-on: [push]
+
+on:
+  pull_request:
+
 jobs:
   e2e-old-nodes:
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       matrix:
         dir: [.interop/next-prisma-starter]
         # start example with:
-        node-start: ['14.x']
+        node-start: ['14.x', '16.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -17,12 +23,12 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -33,8 +39,18 @@ jobs:
             ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
       - run: node -v
-      - name: Install deps and build (with cache)
-        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter root install
+      - name: Install deps (with cache)
+        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Install playwright???
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Next.js cache
         uses: actions/cache@v3
@@ -52,11 +68,11 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"build-sqlite"'; 
-            then pnpm --filter ./examples/${{ matrix.dir }} build-sqlite; 
-            else pnpm --filter ./examples/${{ matrix.dir }} build;
+            then pnpm turbo --filter ./examples/${{ matrix.dir }} build-sqlite; 
+            else pnpm turbo --filter ./examples/${{ matrix.dir }} build;
           fi
 
       - name: if exists, run test-start
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
       - name: if exists, run test-dev
-        run: pnpm --filter ./examples/${{ matrix.dir }} --if-present test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev

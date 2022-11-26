@@ -7,17 +7,19 @@ slug: /caching
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
-## :warning: A word of caution :warning:
-
+:::caution
 Always be careful with caching - especially if you handle personal information.
 
-Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth headers or cookie.
+&nbsp;  
+Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth header or cookie.
 
-You can also use a [`splitLink`](../client/links/splitLink.mdx) to split your requests that are public and those that should be private and uncached.
+&nbsp;  
+You can also use a [`splitLink`](../client/links/splitLink.mdx) to split your public requests and those that should be private and uncached.
+:::
 
 ## App Caching
 
-If you turn on SSR in your app you might discover that your app loads slow on for instance Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
+If you turn on SSR in your app, you might discover that your app loads slowly on, for instance, Vercel, but you can actually statically render your whole app without using SSG; [read this Twitter thread](https://twitter.com/alexdotjs/status/1386274093041950722) for more insights.
 
 ### Example code
 
@@ -72,7 +74,7 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## API Response caching
 
-Since all queries are normal HTTP `GET`s we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easier scale your API to gazillions of users.
+Since all queries are normal HTTP `GET`s, we can use normal HTTP headers to cache responses, make the responses snappy, give your database a rest, and easily scale your API to gazillions of users.
 
 ### Using `responseMeta` to cache responses
 

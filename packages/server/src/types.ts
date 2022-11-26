@@ -5,21 +5,14 @@
  */
 export type identity<TType> = TType;
 
-type InferOptional<TType, TKeys extends keyof TType> = Partial<
+export type InferOptional<TType, TKeys extends keyof TType> = Partial<
   Pick<TType, TKeys>
 > &
   Omit<TType, TKeys>;
 
-type OmitNever<TType> = Pick<
-  TType,
-  {
-    [K in keyof TType]: TType[K] extends never ? never : K;
-  }[keyof TType]
->;
-
-type UndefinedKeys<TType> = keyof OmitNever<{
-  [K in keyof TType]: TType[K] extends undefined ? TType : never;
-}>;
+export type UndefinedKeys<TType> = {
+  [K in keyof TType]: undefined extends TType[K] ? K : never;
+}[keyof TType];
 
 /**
  * @internal
@@ -80,7 +73,7 @@ export type InferLast<TType> = TType & {
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
-type FilterKeys<TObj extends object, TFilter> = {
+export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
 

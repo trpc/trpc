@@ -24,7 +24,7 @@ slug: /fetch
       </td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/next/examples/cloudflare-workers">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -36,7 +36,7 @@ slug: /fetch
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server@next wrangler@beta zod
+yarn add @trpc/server wrangler@beta zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.

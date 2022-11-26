@@ -5,8 +5,9 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
-import { TRPCError, resolveHTTPResponse } from '../..';
+import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
+import { resolveHTTPResponse } from '../../http';
 import { HTTPRequest } from '../../http/internals/types';
 import type { HTTPResponse } from '../../http/internals/types';
 import {

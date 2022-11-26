@@ -9,7 +9,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 
 ## Authorization
 
-In the example below any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
+In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
 ```ts
 import { initTRPC } from '@trpc/server';
@@ -83,34 +83,46 @@ export const appRouter = t.router({
 
 A middleware can change properties of the context, and procedures will receive the new context value:
 
-```ts
-import { initTRPC } from '@trpc/server';
+```ts twoslash
+// @target: esnext
+import { initTRPC, TRPCError } from '@trpc/server';
 
-interface Context {
+
+const t = initTRPC.context<Context>().create();
+const publicProcedure = t.procedure;
+const router = t.router;
+const middleware = t.middleware;
+
+// ---cut---
+
+type Context = {
   // user is nullable
   user?: {
     id: string;
   };
 }
 
-export const t = initTRPC.context<Context>().create();
-
-const isAuthed = t.middleware(({ ctx, next }) => {
+const isAuthed = middleware(({ ctx, next }) => {
+  // `ctx.user` is nullable
   if (!ctx.user) {
+    //     ^?
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
   return next({
     ctx: {
-      user: ctx.user, // user value is known to be non-null now
+      // ✅ user value is known to be non-null now
+      user: ctx.user,
+      // ^?
     },
   });
 });
 
-const protectedProcedure = t.procedure.use(isAuthed);
+const protectedProcedure = publicProcedure.use(isAuthed);
 
-export const appRouter = t.router({
+export const appRouter = router({
   userId: protectedProcedure.query(({ ctx }) => ctx.user.id),
+  //                                                 ^?
 });
 ```
 

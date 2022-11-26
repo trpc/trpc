@@ -35,14 +35,6 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-:::info Is v10 ready for production?
-
-- tRPC v10 is **ready for production** and can safely be used today.
-- v10 is still a beta and might be changing as we continue to work through community feedback.
-- This doc is written for migrating from v9 to v10. If you start using v10 now, you will need to find your own path for migrating from v10-beta to v10.
-
-:::
-
 Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
 
 Under the hood of version 10, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
@@ -161,28 +153,23 @@ type GreetingInput = InferQueryInput<'greeting'>;
 
 #### v10
 
-```ts
-// The same helper is shipped out of the box.
-type GreetingInput = inferProcedureInput<AppRouter['greeting']>;
-```
-
-#### v10 inference helper
+#### Inference helpers
 
 ```ts twoslash
 // @module: esnext
 // @include: server
 // @filename: index.ts
 // ---cut---
-import type { GetInferenceHelpers } from '@trpc/server';
+// Inference helpers are now shipped out of the box.
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-export type AppRouterTypes = GetInferenceHelpers<AppRouter>;
+type RouterInput = inferRouterInputs<AppRouter>;
+type RouterOutput = inferRouterOutputs<AppRouter>;
 
-type PostCreate = AppRouterTypes['post']['create'];
-
-type PostCreateInput = PostCreate['input'];
+type PostCreateInput = RouterInput['post']['create'];
 //   ^?
-type PostCreateOutput = PostCreate['output'];
+type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
@@ -420,9 +407,7 @@ See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-opti
 
 ### Custom Links
 
-See the [Links documentation](links#creating-a-custom-link).
-
-> 🚧 Feel free to contribute to improve this section
+In v10, the Links architecture has been completely revamped. Therefore, custom links made for v9 will not work for v10 or while on interop. If you want more information about how to create a custom link for v10, checkout [the Links documentation](links#creating-a-custom-link).
 
 ## Client Package Changes
 
@@ -478,9 +463,9 @@ trpc.post.byId.useQuery('1', {
 
 :::note
 If you only use the tRPC provided API's in your app you will have no problems in
-migrating 👍 However if you have been useing the tanstack query client directly
+migrating 👍 However if you have been using the tanstack query client directly
 to do things like update query data for multiple tRPC generated queries using
-[`queryClient.setQueriesData](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
+[`queryClient.setQueriesData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
 you may need to take note!
 :::
 
@@ -489,7 +474,10 @@ whole routers](useContext#invalidating-across-whole-routers) we needed to change
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
-procedure path to a sub array of elements.
+procedure path to a sub array of elements. We have also added a distinction
+between `query`'s and `infinite` queries when they are placed in the cache. We
+have also moved both this query `type` and the input into an object with named
+properties.
 
 given the simple router below:
 
@@ -506,7 +494,7 @@ export const appRouter = router({
 The query key used for `trpc.user.byId.useQuery({ id: 10 })` would change:
 
 - Key in V9: `["user.byId", { id: 10 }]`
-- Key in v10:`[["user", "byId"],{ id:10 }]`
+- Key in v10:`[["user", "byId"],{ input: { id:10 }, type: 'query' }]`
 
 The majority of developers won't even notice this change, but for the small
 minority that are using the tanstack `queryClient` directly to manipulate tRPC
@@ -530,7 +518,7 @@ ac.abort();
 
 #### HTTP-specific options moved from `TRPCClient` to links
 
-Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to `httpLink` and `httpBatchLink`.
+Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to [`httpLink`](links/httpLink) and [`httpBatchLink`](links/httpBatchLink).
 
 ```ts
 // Before:
@@ -565,6 +553,8 @@ const client = createTRPCProxyClient({
   ]
 });
 ```
+
+This change is also reflected in the `@trpc/server` package, where `http` related exports were previously exported from the main entrypoint, but has now been moved to their own `@trpc/server/http` entrypoint.
 
 ## Extras
 

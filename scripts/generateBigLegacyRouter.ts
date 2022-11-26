@@ -3,8 +3,8 @@ import path from 'path';
 
 const NUM_PROCEDURES_TO_GENERATE = 200;
 
-const SERVER_DIR =
-  __dirname + '/../packages/server/test/__generated__/bigLegacyRouter';
+const TEST_DIR =
+  __dirname + '/../packages/tests/server/__generated__/bigLegacyRouter';
 
 // Big F̶u̶c̶ Fantastic Router
 function getBFR() {
@@ -25,5 +25,5 @@ export const bigRouter = ${getBFR()}
   .flat();
 `.trim();
 
-fs.mkdirSync(SERVER_DIR, { recursive: true });
-fs.writeFileSync(path.join(SERVER_DIR, 'bigRouter.ts'), contents);
+fs.mkdirSync(TEST_DIR, { recursive: true });
+fs.writeFileSync(path.join(TEST_DIR, 'bigRouter.ts'), contents);

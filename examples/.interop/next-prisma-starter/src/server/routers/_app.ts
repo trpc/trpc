@@ -23,9 +23,9 @@ export const appRouter = createRouter()
    */
   // .formatError(({ shape, error }) => { })
   /**
-   * Add a health check endpoint to be called with `/api/trpc/healthz`
+   * Add a health check endpoint to be called with `/api/trpc/healthcheck`
    */
-  .query('healthz', {
+  .query('healthcheck', {
     async resolve() {
       return 'yay!';
     },

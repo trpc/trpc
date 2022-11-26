@@ -36,7 +36,7 @@ export async function getStaticProps(
   const id = context.params?.id as string;
 
   // prefetch `post.byId`
-  await ssg.post.byId.fetch({ id });
+  await ssg.post.byId.prefetch({ id });
 
   return {
     props: {

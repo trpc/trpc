@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=8df307ee90b848585585b07209b8a51253e55fa2&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=39e3ca30e890dd4e1b20780f732432e591c3f8b0&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -53,7 +53,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://t3.gg",
     "privacyLevel": "PUBLIC",
-    "login": "TheoBr",
+    "login": "t3dotgg",
     "createdAt": 1631688228000
   },
   {
@@ -139,7 +139,7 @@ export const sponsors = [
   },
   {
     "name": "Michał Kowieski",
-    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=500ad30b9581936882ffedb62c15f4d98cfccfc7&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
     "monthlyPriceInDollars": 5,
     "link": "https://github.com/utevo",
     "privacyLevel": "PUBLIC",
@@ -192,15 +192,6 @@ export const sponsors = [
     "createdAt": 1645479378000
   },
   {
-    "name": "Ping.gg",
-    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "monthlyPriceInDollars": 250,
-    "link": "https://ping.gg/",
-    "privacyLevel": "PUBLIC",
-    "login": "pingdotgg",
-    "createdAt": 1645488994000
-  },
-  {
     "name": "Jared Wyce",
     "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
     "monthlyPriceInDollars": 5,
@@ -226,15 +217,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "FarazPatankar",
     "createdAt": 1647861577000
-  },
-  {
-    "name": "okaforcj",
-    "imgSrc": "https://avatars.githubusercontent.com/u/34102565?v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/okaforcj",
-    "privacyLevel": "PUBLIC",
-    "login": "okaforcj",
-    "createdAt": 1648159482000
   },
   {
     "name": "Flylance",
@@ -266,7 +248,7 @@ export const sponsors = [
   {
     "name": "Jökull Sólberg Auðunsson",
     "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
-    "monthlyPriceInDollars": 10,
+    "monthlyPriceInDollars": 50,
     "link": "https://solberg.is",
     "privacyLevel": "PUBLIC",
     "login": "jokull",
@@ -363,7 +345,7 @@ export const sponsors = [
     "createdAt": 1658023715000
   },
   {
-    "name": "Prisma",
+    "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
     "monthlyPriceInDollars": 250,
     "link": "https://www.prisma.io",
@@ -379,15 +361,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "LoriKarikari",
     "createdAt": 1658573921000
-  },
-  {
-    "name": "Zac Ong",
-    "imgSrc": "https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/zzacong",
-    "privacyLevel": "PUBLIC",
-    "login": "zzacong",
-    "createdAt": 1659057378000
   },
   {
     "name": "Francis Provost",
@@ -427,9 +400,9 @@ export const sponsors = [
   },
   {
     "name": "Malcolm Still",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=9d4667a85a4e56457786b9028b3a551574e07120&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=77d13b33c5d1bd4c9085abee5faddf42e6d5d5dc&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://blog.mstill.dev",
+    "link": "https://mstill.dev/blog",
     "privacyLevel": "PUBLIC",
     "login": "malcolmstill",
     "createdAt": 1662115384000
@@ -451,15 +424,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "larskarbo",
     "createdAt": 1662896773000
-  },
-  {
-    "name": "Habib Kadiri",
-    "imgSrc": "https://avatars.githubusercontent.com/u/60525087?u=272c35c9792f781e536fd14c7e48c1052d54ddb5&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/habibKadiri",
-    "privacyLevel": "PUBLIC",
-    "login": "habibKadiri",
-    "createdAt": 1663581418000
   },
   {
     "name": "Wyatt Schulte",
@@ -496,5 +460,59 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "sronmiz",
     "createdAt": 1666029744000
+  },
+  {
+    "name": "Andrew Brown",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8261769?u=ef025d7679533700957db0df9f74bd5d7d8c4a2a&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/andrew-werdna",
+    "privacyLevel": "PUBLIC",
+    "login": "andrew-werdna",
+    "createdAt": 1666979682000
+  },
+  {
+    "name": "_P",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://pablorosales.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "PabloRosales",
+    "createdAt": 1668701929000
+  },
+  {
+    "name": "Jonas Strassel",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://jonas-strassel.de/",
+    "privacyLevel": "PUBLIC",
+    "login": "boredland",
+    "createdAt": 1668778944000
+  },
+  {
+    "name": "Interval",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://interval.com",
+    "privacyLevel": "PUBLIC",
+    "login": "interval",
+    "createdAt": 1668779128000
+  },
+  {
+    "name": "Joseph Lozano",
+    "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://josephlozano.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "joseph-lozano",
+    "createdAt": 1669229945000
+  },
+  {
+    "name": "Ping.gg",
+    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://ping.gg/",
+    "privacyLevel": "PUBLIC",
+    "login": "pingdotgg",
+    "createdAt": 1645488994000
   }
 ] as const

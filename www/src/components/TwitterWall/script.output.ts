@@ -22,7 +22,7 @@ export const tweets = [
     "name": "Theo - ping.gg",
     "handle": "t3dotgg",
     "date": "Sep 19",
-    "avatar": "https://pbs.twimg.com/profile_images/1576014123824840704/-yDbdXwt_normal.jpg",
+    "avatar": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
     "content": "The amount that tRPC has improved the quality of our code, the speed of our delivery, and the happiness of our devs… "
   },
   {
@@ -62,7 +62,7 @@ export const tweets = [
     "name": "Mike | grabbou.eth 🚀",
     "handle": "grabbou",
     "date": "Sep 20",
-    "avatar": "https://pbs.twimg.com/profile_images/1040718130459435008/gijjkeln_normal.jpg",
+    "avatar": "https://pbs.twimg.com/profile_images/1585984423379587074/hAOlKGNS_normal.jpg",
     "content": "@t3dotgg @trpcio Totally. I am literally smiling every time I write a procedure, because it reminds of how hard it… "
   },
   {
@@ -118,7 +118,7 @@ export const tweets = [
     "name": "Theo - ping.gg",
     "handle": "t3dotgg",
     "date": "Sep 19",
-    "avatar": "https://pbs.twimg.com/profile_images/1576014123824840704/-yDbdXwt_normal.jpg",
+    "avatar": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
     "content": "@Swizec @iambenwis Thankfully lots of other articles that showcase the magic of tRPC - I'll let @ajcwebdev share mo… "
   },
   {
@@ -147,7 +147,7 @@ export const tweets = [
   },
   {
     "id": "1569588272392990720",
-    "name": "Sock, the dev",
+    "name": "Sock, the dev 🧦",
     "handle": "sockthedev",
     "date": "Sep 13",
     "avatar": "https://pbs.twimg.com/profile_images/1569584517161324544/po3hKnjN_normal.jpg",

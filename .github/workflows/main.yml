@@ -1,14 +1,23 @@
 name: Build & Test
-on: [push]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
 jobs:
   test:
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
     name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        node: ['16.x']
+        node: ['18.x']
         os: [ubuntu-latest]
 
     steps:
@@ -27,7 +36,7 @@ jobs:
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -37,13 +46,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-trpc-main-
 
-      - name: Install deps and build (with cache)
+      - name: Install deps (with cache)
         run: pnpm --filter "@trpc/*" --filter root install
 
+      - name: Build
+        run: pnpm turbo --filter "@trpc/*" build
+
       - name: Test
-        run: pnpm test -- --ci --coverage --maxWorkers=2
+        run: pnpm turbo --filter tests test-ci
 
       - uses: codecov/codecov-action@v1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages

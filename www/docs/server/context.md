@@ -5,7 +5,7 @@ sidebar_label: Request Context
 slug: /context
 ---
 
-The `createContext()` function is called for each request and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.
+The `createContext()` function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.
 
 ## Example code
 

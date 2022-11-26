@@ -1,8 +1,12 @@
 name: Lint
-on: [push]
+
+on:
+  pull_request:
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -16,12 +20,12 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          version: '16.x'
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -31,10 +35,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-all-
 
-      - name: Install deps and build (with cache)
+      - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-      - name: Lint
+      - name: Run ESLint
         run: pnpm lint
 
-      - run: pnpm manypkg check
+      - name: Run Manypkg
+        run: pnpm manypkg check

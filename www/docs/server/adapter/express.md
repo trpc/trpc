@@ -34,7 +34,7 @@ slug: /express
 ### 1. Install deps
 
 ```bash
-yarn add @trpc/server@next zod
+yarn add @trpc/server zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.

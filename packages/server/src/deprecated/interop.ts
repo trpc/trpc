@@ -1,4 +1,4 @@
-import { DefaultDataTransformer, ProcedureParams, ProcedureType } from '..';
+import { ProcedureParams, ProcedureType } from '..';
 import { AnyRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';
 import { mergeWithoutOverrides } from '../core/internals/mergeWithoutOverrides';
@@ -19,6 +19,7 @@ import {
   Router as OldRouter,
 } from '../deprecated/router';
 import { TRPCErrorShape } from '../rpc';
+import { CombinedDataTransformer } from '../transformer';
 import { Procedure as OldProcedure } from './internals/procedure';
 import { ProcedureRecord } from './router';
 
@@ -98,13 +99,14 @@ export type MigrateRouter<
     unknown
   >,
   TErrorShape extends TRPCErrorShape<any>,
+  TTransformer extends CombinedDataTransformer,
 > = NewRouter<
   RouterDef<
     RootConfig<{
       ctx: TInputContext;
       errorShape: TErrorShape;
       meta: TMeta;
-      transformer: DefaultDataTransformer;
+      transformer: TTransformer;
     }>,
     {},
     {
@@ -113,8 +115,7 @@ export type MigrateRouter<
           ctx: TInputContext;
           errorShape: TErrorShape;
           meta: TMeta;
-
-          transformer: DefaultDataTransformer;
+          transformer: TTransformer;
         }>,
         TQueries,
         'query'
@@ -124,7 +125,7 @@ export type MigrateRouter<
           ctx: TInputContext;
           errorShape: TErrorShape;
           meta: TMeta;
-          transformer: DefaultDataTransformer;
+          transformer: TTransformer;
         }>,
         TMutations,
         'mutation'
@@ -134,7 +135,7 @@ export type MigrateRouter<
           ctx: TInputContext;
           errorShape: TErrorShape;
           meta: TMeta;
-          transformer: DefaultDataTransformer;
+          transformer: TTransformer;
         }>,
         TSubscriptions,
         'subscription'
@@ -151,7 +152,8 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
     infer TQueries,
     infer TMutations,
     infer TSubscriptions,
-    infer TErrorShape
+    infer TErrorShape,
+    infer Transformer
   >
     ? MigrateRouter<
         TInputContext,
@@ -160,7 +162,8 @@ export type MigrateOldRouter<TRouter extends AnyOldRouter> =
         TQueries,
         TMutations,
         TSubscriptions,
-        TErrorShape
+        TErrorShape,
+        Transformer
       >
     : never;
 

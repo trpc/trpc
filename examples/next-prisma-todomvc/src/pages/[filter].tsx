@@ -77,6 +77,7 @@ function ListItem({ task }: { task: Task }) {
         return;
       }
       utils.todo.all.setData(
+        undefined,
         allTasks.map((t) =>
           t.id === id
             ? {
@@ -95,7 +96,10 @@ function ListItem({ task }: { task: Task }) {
       if (!allTasks) {
         return;
       }
-      utils.todo.all.setData(allTasks.filter((t) => t.id != task.id));
+      utils.todo.all.setData(
+        undefined,
+        allTasks.filter((t) => t.id != task.id),
+      );
     },
   });
 
@@ -179,7 +183,7 @@ export default function TodosPage({
     async onMutate({ text }) {
       await utils.todo.all.cancel();
       const tasks = allTasks.data ?? [];
-      utils.todo.all.setData([
+      utils.todo.all.setData(undefined, [
         ...tasks,
         {
           id: `${Math.random()}`,
@@ -195,7 +199,10 @@ export default function TodosPage({
     async onMutate() {
       await utils.todo.all.cancel();
       const tasks = allTasks.data ?? [];
-      utils.todo.all.setData(tasks.filter((t) => !t.completed));
+      utils.todo.all.setData(
+        undefined,
+        tasks.filter((t) => !t.completed),
+      );
     },
   });
 
@@ -268,29 +275,30 @@ export default function TodosPage({
           {/* Remove this if you don't implement routing */}
           <ul className="filters">
             <li>
-              <Link href="/all">
-                <a
-                  className={clsx(
-                    !['active', 'completed'].includes(filter as string) &&
-                      'selected',
-                  )}
-                >
-                  All
-                </a>
+              <Link
+                href="/all"
+                className={clsx(
+                  !['active', 'completed'].includes(filter as string) &&
+                    'selected',
+                )}
+              >
+                All
               </Link>
             </li>
             <li>
-              <Link href="/active">
-                <a className={clsx(filter === 'active' && 'selected')}>
-                  Active
-                </a>
+              <Link
+                href="/active"
+                className={clsx(filter === 'active' && 'selected')}
+              >
+                Active
               </Link>
             </li>
             <li>
-              <Link href="/completed">
-                <a className={clsx(filter === 'completed' && 'selected')}>
-                  Completed
-                </a>
+              <Link
+                href="/completed"
+                className={clsx(filter === 'completed' && 'selected')}
+              >
+                Completed
               </Link>
             </li>
           </ul>
