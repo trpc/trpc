@@ -13,8 +13,6 @@ import {
 } from '@trpc/server/src/rpc';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import { expectType } from 'ts-expect';
-import TypedEmitter from 'typed-emitter';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 
@@ -24,14 +22,8 @@ type Message = {
   id: string;
 };
 
-type MessageEvents = {
-  ['server:msg']: (data: any) => void;
-  ['subscription:created']: () => void;
-  ['server:error']: () => void;
-};
-
 function factory(config?: { createContext: () => Promise<any> }) {
-  const ee = new EventEmitter() as TypedEmitter<MessageEvents>;
+  const ee = new EventEmitter();
 
   const subRef: {
     current: Observer<Message, unknown>;
@@ -92,7 +84,8 @@ function factory(config?: { createContext: () => Promise<any> }) {
   const onCloseMock = jest.fn();
 
   expectTypeOf(appRouter).toMatchTypeOf<AnyRouter>();
-  expectType<AnyRouter>(appRouter);
+  // TODO: Uncomment when the expect-type library gets fixed
+  // expectTypeOf<AnyRouter>().toMatchTypeOf<typeof appRouter>();
 
   const opts = routerToServerAndClientNew(appRouter, {
     wsClient: {
