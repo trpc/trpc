@@ -5,12 +5,5 @@
     "strict": true,
     "outDir": "dist"
   },
-  "include": [
-    //
-    "server-a",
-    "server-b",
-    "server-lib",
-    "faux-gateway",
-    "client"
-  ]
+  "include": ["**/*.ts"]
 }
