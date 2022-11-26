@@ -42,6 +42,7 @@ jobs:
             next-prisma-todomvc,
             standalone-server,
             .test/big-router-declaration,
+            soa,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
