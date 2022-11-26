@@ -17924,6 +17924,7 @@ packages:
 
   /rxjs/7.5.6:
     resolution: {integrity: sha512-dnyv2/YsXhnm461G+R/Pe5bWP41Nm6LBXEYWI6eiFP4fiwx6WRI/CD0zbdVAudd9xwLEF2IDcKXLHit0FYjUzw==}
+    requiresBuild: true
     dependencies:
       tslib: 2.4.0
 
