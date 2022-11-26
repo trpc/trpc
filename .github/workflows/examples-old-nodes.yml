@@ -1,6 +1,7 @@
 name: Examples E2E (old nodes)
 
-on: [push]
+on:
+  pull_request:
 
 jobs:
   e2e-old-nodes:
