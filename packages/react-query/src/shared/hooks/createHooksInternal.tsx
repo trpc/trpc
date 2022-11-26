@@ -33,6 +33,7 @@ import type {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, {
   ReactNode,
   useCallback,
@@ -125,7 +126,7 @@ type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
 type inferProcedures<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: {
     input: inferProcedureInput<TObj[TPath]>;
-    output: inferProcedureOutput<TObj[TPath]>;
+    output: inferTransformedProcedureOutput<TObj[TPath]>;
   };
 };
 
