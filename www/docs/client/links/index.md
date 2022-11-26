@@ -7,7 +7,7 @@ slug: /links
 
 Links enable you to customize the flow of data between the tRPC Client and Server. A link should do only one thing, which can be either a self-contained modification to a tRPC operation (query, mutation, or subscription) or a side-effect based on the operation (such as logging).
 
-You can compose links together into an array that you can provide to the tRPC client configuration via the `links` property, which represents a link chain. This means that the tRPC client will execute the links in the order they are added in the `links` array when doing a request, and will execute them again in reverse when it's handling a response. Here's a visual representation of the link chain:
+You can compose links together into an array that you can provide to the tRPC client configuration via the `links` property, which represents a link chain. This means that the tRPC client will execute the links in the order they are added to the `links` array when doing a request and will execute them again in reverse when it's handling a response. Here's a visual representation of the link chain:
 
 <div align="center" style={{marginBottom: '12px'}}>
   <img src="/img/links-diagram.svg" style={{background: 'white'}} alt="tRPC Link Diagram"/>
@@ -42,8 +42,8 @@ export default createTRPCNext<AppRouter>({
 
 A link is a function that follows the `TRPCLink` type. Each link is composed of three parts:
 
-1. The link returns a function that has a parameter with the `TRPCClientRuntime` type. This argument is passed by tRPC and it is used when creating a [**terminating link**](#the-terminating-link). If you're not creating a terminating link, you can just create function that has no parameters.
-2. The function in step 1 returns another function that receives an object with two properties: `op` which is the `Operation` that is being executed by the client, and `next` which is the function we use to call then next link down the chain.
+1. The link returns a function that has a parameter with the `TRPCClientRuntime` type. This argument is passed by tRPC and it is used when creating a [**terminating link**](#the-terminating-link). If you're not creating a terminating link, you can just create a function that has no parameters.
+2. The function in step 1 returns another function that receives an object with two properties: `op` which is the `Operation` that is being executed by the client, and `next` which is the function we use to call the next link down the chain.
 3. The function in step 2 returns a final function that returns the `observable` function provided by `@trpc/server`. The `observable` accepts a function that receives an `observer` which helps our link notify the next link up the chain how they should handle the operation result. In this function, we can just return `next(op)` and leave it as is, or we can subscribe to `next`, which enables our link to handle the operation result.
 
 ### Example
@@ -90,7 +90,7 @@ If you need a more real reference for creating your custom link, you can check o
 
 The **terminating link** is the last link in a link chain. Instead of calling the `next` function, the terminating link is responsible for sending your composed tRPC operation to the tRPC server and returning an `OperationResultEnvelope`.
 
-The `links` array that you add to the tRPC client config should have at least one link, and that link should be a terminating link. If `links` doesn't have a terminating link at the end of it, the tRPC operation will not be sent to the tRPC server.
+The `links` array that you add to the tRPC client config should have at least one link, and that link should be a terminating link. If `links` don't have a terminating link at the end of them, the tRPC operation will not be sent to the tRPC server.
 
 [`httpBatchLink`](./httpBatchLink.md) is the recommended terminating link by tRPC.
 

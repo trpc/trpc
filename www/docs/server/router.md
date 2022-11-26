@@ -5,7 +5,7 @@ sidebar_label: Define Routers
 slug: /router
 ---
 
-To begin building your tRPC-based API, you'll first need to define your router. You can [customize your routers](#advanced-usage) for more advanced use cases once you've learned the basics.
+To begin building your tRPC-based API, you'll first need to define your router. Once you've mastered the fundamentals, you can [customize your routers](#advanced-usage) for more advanced use cases.
 
 ## Initialize tRPC
 

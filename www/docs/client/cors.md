@@ -5,7 +5,7 @@ sidebar_label: CORS & Cookies
 slug: /cors
 ---
 
-If your API reside on a different origin than your front-end and wish to send cookies to it, you will need to enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your server and send cookies with your requests by providing the option `{credentials: "include"}` to fetch.
+If your API resides on a different origin than your front-end and you wish to send cookies to it, you will need to enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) on your server and send cookies with your requests by providing the option `{credentials: "include"}` to fetch.
 
 The arguments provided to the fetch function used by tRPC can be modified as follow.
 
@@ -29,7 +29,7 @@ const client = createTRPCProxyClient<AppRouter>({
 
 ## Enabling on the server
 
-The tRPC handler is essentially just a function that takes a [request](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [response](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects, you can wrap the handler in another handler that modifies the response object to enable CORS, before passing it to the tRPC handler.
+The tRPC handler is essentially just a function that takes a [request](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [response](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects. You can wrap the handler in another handler that modifies the response object to enable CORS, before passing it to the tRPC handler.
 
 ```ts twoslash title='server.ts'
 //@filename router.ts
