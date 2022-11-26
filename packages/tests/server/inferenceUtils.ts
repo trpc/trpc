@@ -1,6 +1,7 @@
-/* 
-expect-type from unpublished branch `dx-generics` that fixes `MISMATCH error` for v10 routers
+/**
+ * `expect-type` from unpublished branch `dx-generics` that fixes `MISMATCH error` for v10 routers
 https://raw.githubusercontent.com/mmkal/expect-type/dx-generics/src/index.ts
+ * @link https://github.com/mmkal/expect-type/pull/16
  */
 export type Not<T extends boolean> = T extends true ? false : true;
 export type Or<Types extends boolean[]> = Types[number] extends false
