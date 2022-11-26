@@ -1082,6 +1082,22 @@ importers:
       tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
+  examples/soa:
+    specifiers:
+      '@types/node': ^18.7.20
+      npm-run-all: ^4.1.5
+      start-server-and-test: ^1.12.0
+      tsx: ^3.9.0
+      typescript: ^4.8.3
+      wait-port: ^1.0.1
+    devDependencies:
+      '@types/node': 18.7.20
+      npm-run-all: 4.1.5
+      start-server-and-test: 1.14.0
+      tsx: 3.9.0
+      typescript: 4.8.3
+      wait-port: 1.0.1
+
   examples/standalone-server:
     specifiers:
       '@trpc/client': ^10.2.0

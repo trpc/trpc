@@ -1,6 +1,6 @@
-import { createTRPCProxyClient, httpBatchLink, splitLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import fetch from 'node-fetch';
-import type { AppRouter } from '../server-gateway/index';
+import type { AppRouter } from '../faux-gateway/index';
 
 if (!global.fetch) {
   (global as any).fetch = fetch;
@@ -26,7 +26,7 @@ const client = createTRPCProxyClient<AppRouter>({
         // combine the rest of the parts of the paths
         // -- this is what we're actually calling the target server with
         const path = pathParts.join('.');
-        console.log(`calling ${serverName} on path ${path}`, {
+        console.log(`> calling ${serverName} on path ${path}`, {
           input: op.input,
         });
 

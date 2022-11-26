@@ -10,7 +10,7 @@
     "server-a",
     "server-b",
     "server-lib",
-    "server-gateway",
+    "faux-gateway",
     "client"
   ]
 }
