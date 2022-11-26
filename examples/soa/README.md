@@ -12,3 +12,8 @@
 - `client`:
   - is initialized with the types from `faux-gateway`
   - contains a custom ending [Link](https://trpc.io/docs/links) which allows you to call each server without caring where the call actually ends up
+
+
+---
+
+If you're using this in production, I bet you're in a large organization & using tRPC for business-critical applications. Please consider [sponsoring tRPC](https://trpc.io/sponsor).
