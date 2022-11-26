@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: ['16.x']
+        node: ['18.x']
         os: [ubuntu-latest]
     steps:
       - name: Checkout repo
@@ -28,6 +28,9 @@ jobs:
 
       - name: Install deps (with cache)
         run: pnpm install
+
+      - name: Install playwright
+        run: pnpm playwright install chromium
 
       - name: Next.js cache
         uses: actions/cache@v3

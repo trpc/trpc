@@ -1,6 +1,7 @@
 name: Examples E2E
 
-on: [push]
+on:
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,7 +27,7 @@ jobs:
             express-minimal,
             .interop/next-prisma-starter,
             .interop/next-minimal-starter-migration,
-            .interop/next-prisma-starter-websockets,
+            .interop/next-prisma-websockets-starter,
             .interop/next-prisma-todomvc,
             next-minimal-starter,
             minimal-react,
@@ -37,12 +38,12 @@ jobs:
             cloudflare-workers,
             .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-websockets,
+            next-prisma-websockets-starter,
             next-prisma-todomvc,
             standalone-server,
             .test/big-router-declaration,
           ]
-        node-start: ['16.x']
+        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -53,12 +54,12 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -70,7 +71,7 @@ jobs:
 
       - run: node -v
       - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter root install
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed

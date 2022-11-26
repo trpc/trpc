@@ -39,7 +39,7 @@ The best way to start with the Fastify adapter is to take a look at the example 
 ### Install dependencies
 
 ```bash
-yarn add @trpc/server@next fastify zod
+yarn add @trpc/server fastify zod
 ```
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -120,7 +120,7 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 ### Create Fastify server
 
-tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into an [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
+tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into a [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
 ```ts title='server.ts'
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';

@@ -106,7 +106,30 @@ async function getGithubSponsors() {
 }
 
 async function main() {
-  const sponsors = await getGithubSponsors();
+  const _sponsors = await getGithubSponsors();
+
+  // overrides
+  const sponsors = _sponsors.map((sponsor) => {
+    switch (sponsor.login) {
+      case 't3dotgg':
+        return {
+          ...sponsor,
+          monthlyPriceInDollars: 5,
+        };
+    }
+    return sponsor;
+  });
+
+  sponsors.push({
+    name: 'Ping.gg',
+    imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
+    monthlyPriceInDollars: 250,
+    link: 'https://ping.gg/',
+    privacyLevel: 'PUBLIC',
+    login: 'pingdotgg',
+    createdAt: 1645488994000,
+  });
+
   const json = JSON.stringify(sponsors, null, 2);
 
   const text = [

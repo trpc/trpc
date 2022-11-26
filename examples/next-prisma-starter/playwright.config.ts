@@ -10,6 +10,7 @@ const opts = {
 };
 const config: PlaywrightTestConfig = {
   testDir: './playwright',
+  timeout: 35e3,
   outputDir: './playwright/test-results',
   // 'github' for GitHub Actions CI to generate annotations, plus a concise 'dot'
   // default 'list' when running locally

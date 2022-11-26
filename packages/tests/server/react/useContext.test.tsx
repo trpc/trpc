@@ -237,14 +237,14 @@ test('invalidate', async () => {
   const stableProxySpy = jest.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      onSuccess: () => {
+        stableProxySpy();
+      },
+    });
     const createPostMutation = proxy.post.create.useMutation();
 
     const utils = proxy.useContext();
-
-    useEffect(() => {
-      stableProxySpy(proxy);
-    }, []);
 
     if (!allPosts.data) {
       return <>...</>;
@@ -267,6 +267,7 @@ test('invalidate', async () => {
             );
           }}
         />
+        {allPosts.isFetching ? 'fetching' : 'done'}
         {allPosts.data.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
@@ -280,13 +281,86 @@ test('invalidate', async () => {
     </App>,
   );
 
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+  });
+
+  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+
   const addPostButton = await utils.findByTestId('add-post');
 
   await userEvent.click(addPostButton);
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('invalidate');
   });
-  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+  expect(stableProxySpy).toHaveBeenCalledTimes(2);
+});
+
+test('invalidate procedure for both query and infinite', async () => {
+  const { proxy, App } = ctx;
+  const invalidateQuerySpy = jest.fn();
+  const invalidateInfiniteSpy = jest.fn();
+
+  function MyComponent() {
+    const allPostsList = proxy.post.list.useQuery(
+      { cursor: undefined },
+      {
+        onSuccess: invalidateQuerySpy,
+      },
+    );
+    const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
+      { cursor: undefined },
+      { onSuccess: invalidateInfiniteSpy },
+    );
+
+    const utils = proxy.useContext();
+
+    return (
+      <>
+        <button
+          data-testid="invalidate-button"
+          onClick={() => {
+            utils.post.list.invalidate();
+          }}
+        />
+        <div data-testid="list-status">
+          {allPostsList.isFetching || allPostsListInfinite.isFetching
+            ? 'fetching'
+            : 'done'}
+        </div>
+        <div>
+          {allPostsListInfinite.data?.pages.map((page) => {
+            return page.map((post) => {
+              return <div key={post.id}>{post.text}</div>;
+            });
+          })}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+    expect(utils.container).toHaveTextContent('new post');
+    expect(invalidateQuerySpy).toHaveBeenCalledTimes(1);
+    expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  const invalidateButton = await utils.findByTestId('invalidate-button');
+
+  await userEvent.click(invalidateButton);
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+    expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
+    expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
+  });
 });
 
 test('reset', async () => {
@@ -429,7 +503,7 @@ test('setData', async () => {
 test('setInfiniteData', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const listPosts = proxy.post.list.useQuery({}, { enabled: false });
+    const listPosts = proxy.post.list.useInfiniteQuery({}, { enabled: false });
 
     const utils = proxy.useContext();
 
@@ -593,6 +667,55 @@ describe('cancel', () => {
     });
   });
 
+  test('abort query and infinite with utils', async () => {
+    const { proxy, App } = ctx;
+    function MyComponent() {
+      const allList = proxy.post.list.useQuery({ cursor: '0' });
+      const allListInfinite = proxy.post.list.useInfiniteQuery({ cursor: '0' });
+      const utils = proxy.useContext();
+
+      useEffect(() => {
+        utils.post.list.cancel();
+      });
+
+      return (
+        <div>
+          <p data-testid="data">{allList.data ? 'data loaded' : 'undefined'}</p>
+          <p data-testid="isFetching">
+            {allList.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPaused">
+            {allList.isPaused ? 'paused' : 'not paused'}
+          </p>
+          <p data-testid="dataInfinite">
+            {allListInfinite.data ? 'data loaded' : 'undefined'}
+          </p>
+          <p data-testid="isFetchingInfinite">
+            {allListInfinite.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPausedInfinite">
+            {allListInfinite.isPaused ? 'paused' : 'not paused'}
+          </p>
+        </div>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('data')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
+      expect(utils.getByTestId('dataInfinite')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetchingInfinite')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPausedInfinite')).toHaveTextContent('paused');
+    });
+  });
+
   test('typeerrors and continues with signal', async () => {
     const { proxy, App } = ctx;
 
@@ -627,5 +750,52 @@ describe('cancel', () => {
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('new post');
     });
+  });
+});
+
+describe('query keys are stored separtely', () => {
+  test('getInfiniteData() does not data from useQuery()', async () => {
+    const { proxy, App } = ctx;
+
+    const unset = '__unset' as const;
+    const data = {
+      infinite: unset as unknown,
+      query: unset as unknown,
+    };
+    function MyComponent() {
+      const utils = proxy.useContext();
+      const { data: posts } = proxy.post.all.useQuery(undefined, {
+        onSuccess() {
+          data.infinite = utils.post.all.getInfiniteData();
+          data.query = utils.post.all.getData();
+        },
+      });
+
+      return (
+        <div>
+          <p data-testid="initial-post">{posts?.[0]?.text}</p>
+        </div>
+      );
+    }
+
+    render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(data.infinite).not.toBe(unset);
+      expect(data.query).not.toBe(unset);
+    });
+
+    expect(data.query).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "id": 0,
+          "text": "new post",
+        },
+      ]
+    `);
+    expect(data.infinite).toBeUndefined();
   });
 });

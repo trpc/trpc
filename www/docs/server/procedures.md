@@ -148,7 +148,7 @@ export type AppRouter = typeof appRouter;
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
 
 
-```ts twoslash title='server.ts'
+```ts twoslash
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -158,23 +158,35 @@ const t = initTRPC.create();
 export const middleware = t.middleware;
 export const router = t.router;
 
+
 /**
  * Public, unprotected publicProcedure
  **/
 export const publicProcedure = t.procedure;
 
 
+// ---cut---
+
+// ------------------------------
+// @filename: roomProcedure.ts
+// ------------------------------
+import { publicProcedure } from './trpc';
+import { z } from 'zod';
+
 /**
  * Create reusable publicProcedure for a chat room
  */
-export const roomProcedure = t.procedure.input(
+export const roomProcedure = publicProcedure.input(
   z.object({
     roomId: z.string(),
   }),
 );
 
+// ------------------------------
 // @filename: _app.ts
-import { roomProcedure, router } from './trpc';
+// ------------------------------
+import { router } from './trpc';
+import { roomProcedure } from './roomProcedure';
 import { z } from 'zod';
 
 
@@ -220,9 +232,9 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Reusable base publicProcedures
+## Reusable base procedures
 
-You can create reusable base procedures to have a set of procedures that are i.e. login protected.
+You can create reusable base procedures to have a set of login-protected procedures.
 
 :::tip
 This can be combined with [multiple input parsers](#multiple-input-parsers) & [metadata](metadata.md) to create powerful reusable authorization and authentication patterns.

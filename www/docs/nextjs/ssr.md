@@ -36,15 +36,12 @@ export const trpc = createTRPCNext<AppRouter>({
         ],
       };
     }
-    // The server needs to know your app's full url
-    const url = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/api/trpc`
-      : 'http://localhost:3000/api/trpc';
 
     return {
       transformer: superjson, // optional - adds superjson serialization
       links: [
         httpBatchLink({
+          // The server needs to know your app's full url
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC

@@ -13,7 +13,7 @@ With the `router.createCaller({})` function (first argument is `Context`) we ret
 
 ### Input query example
 
-We create the router with a input query and then we call the asynchronous `greeting` procedure to get the result.
+We create the router with an input query, and then we call the asynchronous `greeting` procedure to get the result.
 
 ```ts twoslash
 // @target: esnext
@@ -36,7 +36,7 @@ const result = await caller.greeting({ name: 'tRPC' });
 
 ### Mutation example
 
-We create the router with a mutation and then we call the asynchronous `post` procedure to get the result.
+We create the router with a mutation, and then we call the asynchronous `post` procedure to get the result.
 
 ```ts twoslash
 // @target: esnext
@@ -62,8 +62,7 @@ const result = await caller.post.add('Four');
 
 ### Context with middleware example
 
-We create a middleware to check the context before execute `secret` procedure.
-Below two examples, the former fails because the context doesn't fit the middleware logic the latter works correctly.
+We create a middleware to check the context before executing the `secret` procedure. Below are two examples: the former fails because the context doesn't fit the middleware logic, and the latter works correctly.
 
 <br/>
 

@@ -5,9 +5,9 @@ sidebar_label: Create Custom Header
 slug: /header
 ---
 
-The headers option can be customize in config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.md).
+The headers option can be customized in the config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.md).
 
-`headers` can be both an object or a function. If it's a function it will gets called dynamically every HTTP request.
+`headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 
 ```ts title='utils/trpc.ts'
 // Import the router type from your server file

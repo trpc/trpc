@@ -1,21 +1,21 @@
 {
   "name": "@examples/test-ssg",
-  "version": "10.0.0-rc.6",
+  "version": "10.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "test:e2e": "playwright test",
-    "test-dev": "start-server-and-test dev 3000 test:e2e",
-    "test-start": "start-server-and-test start 3000 test:e2e"
+    "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test:e2e",
+    "test-start": "start-server-and-test start http://127.0.0.1:3000 test:e2e"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-rc.6",
-    "@trpc/next": "^10.0.0-rc.6",
-    "@trpc/react-query": "^10.0.0-rc.6",
-    "@trpc/server": "^10.0.0-rc.6",
+    "@trpc/client": "^10.2.0",
+    "@trpc/next": "^10.2.0",
+    "@trpc/react-query": "^10.2.0",
+    "@trpc/server": "^10.2.0",
     "next": "^13.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
