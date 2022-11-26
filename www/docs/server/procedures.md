@@ -234,7 +234,7 @@ export type AppRouter = typeof appRouter;
 
 ## Reusable base procedures
 
-You can create reusable base procedures to have a set of procedures that are i.e. login protected.
+You can create reusable base procedures to have a set of login-protected procedures.
 
 :::tip
 This can be combined with [multiple input parsers](#multiple-input-parsers) & [metadata](metadata.md) to create powerful reusable authorization and authentication patterns.
