@@ -4,8 +4,11 @@ module.exports = {
       type: 'category',
       label: 'tRPC',
       collapsed: false,
+      link: {
+        type: 'doc',
+        id: 'main/introduction',
+      },
       items: [
-        'main/introduction',
         'main/quickstart',
         'main/example-apps',
         'nextjs/introduction',
@@ -20,6 +23,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/server',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'tRPC server documentation',
+        slug: '/server',
+      },
       items: [
         'server/router',
         'server/procedures',
@@ -39,6 +47,11 @@ module.exports = {
           type: 'category',
           label: 'Adapters',
           collapsed: true,
+          link: {
+            type: 'generated-index',
+            title: 'Official tRPC adapters',
+            slug: '/adapters',
+          },
           items: [
             'server/adapter/aws-lambda',
             'server/adapter/express',
@@ -52,6 +65,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/client',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'tRPC client documentation',
+        slug: '/client',
+      },
       items: [
         'client/vanilla',
         'client/aborting-procedures',
@@ -59,8 +77,11 @@ module.exports = {
           type: 'category',
           label: 'Links',
           collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/links/links',
+          },
           items: [
-            'client/links/links',
             'client/links/httpLink',
             'client/links/httpBatchLink',
             'client/links/wsLink',
@@ -76,6 +97,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/react-query',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'tRPC React Query documentation',
+        slug: '/react-query',
+      },
       items: [
         'reactjs/queries',
         'reactjs/mutations',
@@ -87,6 +113,11 @@ module.exports = {
       type: 'category',
       label: '@trpc/next',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'tRPC Next.js documentation',
+        slug: '/next',
+      },
       items: [
         'nextjs/ssr',
         'nextjs/ssg',
@@ -98,6 +129,11 @@ module.exports = {
       type: 'category',
       label: 'Extra information',
       collapsed: false,
+      link: {
+        type: 'generated-index',
+        title: 'Extra Information',
+        slug: '/extra',
+      },
       items: [
         'further/rpc',
         'further/subscriptions',

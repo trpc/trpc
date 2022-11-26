@@ -9,7 +9,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 
 ## Authorization
 
-In the example below any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
+In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
 ```ts
 import { initTRPC } from '@trpc/server';

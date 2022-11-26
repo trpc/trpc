@@ -212,17 +212,25 @@ export function createWSClient(opts: WebSocketClientOptions) {
         if (req.ws !== conn) {
           continue;
         }
-        req.callbacks.error?.(
-          TRPCClientError.from(
-            new TRPCWebSocketClosedError('WebSocket closed prematurely'),
-          ),
-        );
-        if (req.type !== 'subscription') {
+
+        if (state === 'closed') {
+          // If the connection was closed, we just call `complete()` on the request
           delete pendingRequests[key];
           req.callbacks.complete?.();
-        } else if (state !== 'closed') {
-          // request restart of sub with next connection
+          continue;
+        }
+        // The connection was closed either unexpectedly or because of a reconnect
+        if (req.type === 'subscription') {
+          // Subscriptions will resume after we've reconnected
           resumeSubscriptionOnReconnect(req);
+        } else {
+          // Queries and mutations will error if interrupted
+          delete pendingRequests[key];
+          req.callbacks.error?.(
+            TRPCClientError.from(
+              new TRPCWebSocketClosedError('WebSocket closed prematurely'),
+            ),
+          );
         }
       }
     });
@@ -256,7 +264,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
       outgoing = outgoing.filter((msg) => msg.id !== id);
 
       callbacks?.complete?.();
-      if (op.type === 'subscription') {
+      if (
+        activeConnection.readyState === WebSocket.OPEN &&
+        op.type === 'subscription'
+      ) {
         outgoing.push({
           id,
           method: 'subscription.stop',
