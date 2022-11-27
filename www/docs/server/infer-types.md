@@ -115,3 +115,22 @@ async function main() {
 
 main();
 ```
+
+## Infer React Query options/inputs based on your router
+
+```ts twoslash title="client.ts"
+// @module: esnext
+// @include: server
+// ---cut---
+// @filename: client.ts
+import type { InferReactQueryProcedureOptions } from '@trpc/react-query';
+import type { AppRouter } from './server';
+
+type ReactQueryProcedure = InferReactQueryProcedureOptions<AppRouter>;
+// Infers the mutation options for `post.create.useMutation`
+type PostCreateOptions = ReactQueryProcedure['post']['create']['options'];
+// Infers the query options for `post.byId.useQuery`
+type PostByIdOptions = ReactQueryProcedure['post']['byId']['options'];
+// Infers the query input for `post.byId.useQuery`
+type PostByIdInput = ReactQueryProcedure['post']['byId']['input'];
+```
