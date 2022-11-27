@@ -125,7 +125,7 @@ function MyComponent() {
   // Use multiple queries
   const post1Key = utils.post.byId.getQueryKey({ id: 1 }, 'query');
   const post2Key = utils.post.byId.getQueryKey({ id: 2 }, 'query');
-  const isFetching = qc.useQueries([post1Key, post2Key]);
+  const [post1, post2] = qc.useQueries([post1Key, post2Key]);
 
   // See if a query is fetching
   const postListKey = utils.post.list.getQueryKey(undefined, 'infinite');
