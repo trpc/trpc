@@ -5,10 +5,10 @@ export async function getPostBody(opts: {
   req: NodeHTTPRequest;
   maxBodySize?: number;
 }) {
+  const { req, maxBodySize = Infinity } = opts;
   return new Promise<
     { ok: true; data: unknown } | { ok: false; error: TRPCError }
   >((resolve) => {
-    const { req, maxBodySize = Infinity } = opts;
     if ('body' in req) {
       resolve({ ok: true, data: req.body });
       return;
