@@ -9,9 +9,12 @@ import {
 } from '@trpc/server';
 import { UseTRPCMutationOptions, UseTRPCQueryOptions } from '../shared';
 
-type InferQueryOptions<TProcedure extends AnyProcedure> = Omit<
+type InferQueryOptions<
+  TProcedure extends AnyProcedure,
+  TPath extends string,
+> = Omit<
   UseTRPCQueryOptions<
-    '',
+    TPath,
     inferProcedureInput<TProcedure>,
     inferProcedureOutput<TProcedure>,
     inferProcedureOutput<TProcedure>,
@@ -27,10 +30,16 @@ type InferMutationOptions<TProcedure extends AnyProcedure> =
     inferProcedureOutput<TProcedure>
   >;
 
-type InferReactQueryProcedureOptions<TRouter extends AnyRouter> = {
+type InferReactQueryProcedureOptions<
+  TRouter extends AnyRouter,
+  TPath extends string = '',
+> = {
   [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
     ? TRouterOrProcedure extends AnyRouter
-      ? InferReactQueryProcedureOptions<TRouterOrProcedure>
+      ? InferReactQueryProcedureOptions<
+          TRouterOrProcedure,
+          `${TPath}${TKey & string}.`
+        >
       : TRouterOrProcedure extends AnyProcedure
       ? TRouterOrProcedure extends AnyMutationProcedure
         ? {
@@ -38,7 +47,10 @@ type InferReactQueryProcedureOptions<TRouter extends AnyRouter> = {
           }
         : TRouterOrProcedure extends AnyQueryProcedure
         ? {
-            options: InferQueryOptions<TRouterOrProcedure>;
+            options: InferQueryOptions<
+              TRouterOrProcedure,
+              `${TPath}${TKey & string}`
+            >;
             input: inferProcedureInput<TRouterOrProcedure>;
           }
         : never
