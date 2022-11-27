@@ -13,27 +13,18 @@ const publicProcedure = t.procedure;
 const router = t.router;
 
 const appRouter = router({
-  l1: router({
-    l2: router({
-      proc: publicProcedure.query(() => 'hello world'),
-      inputProc: publicProcedure
-        .input(z.string())
-        .query(({ input }) => `hello ${input}`),
-    }),
-  }),
   greeting: publicProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away
     .input(
       z
         .object({
-          name: z.string(),
+          name: z.string().nullish(),
         })
         .nullish(),
     )
-    .query(async ({ input }) => {
+    .query(({ input }) => {
       // This is what you're returning to your client
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       return {
         text: `hello ${input?.name ?? 'world'}`,
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
