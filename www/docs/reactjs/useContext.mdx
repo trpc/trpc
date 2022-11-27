@@ -108,9 +108,9 @@ function getQueryKey(
 )
 
 type QueryType = "query" | "infinite" | "any";
-// for useQuery --^         |            |
-// for useInfinitQuery -----^            |
-// for router ---------------------------^
+// for useQuery ──┘         │            │
+// for useInfinitQuery ─────┘            │
+// for router ───────────────────────────┘
 ```
 
 ```tsx title="MyComponent.tsx"
