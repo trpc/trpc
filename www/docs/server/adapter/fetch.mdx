@@ -29,6 +29,14 @@ tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.or
       </td>
     </tr>
     <tr>
+      <td>Deno Deploy example</td>
+      <td>
+        <a href="https://github.com/trpc/trpc/tree/main/examples/deno-deploy">
+          Source
+        </a>
+      </td>
+    </tr>
+    <tr>
       <td>Vercel Edge Runtime example</td>
       <td>
         <a href="https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime">
@@ -42,6 +50,10 @@ tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.or
 ## Common setup
 
 ### Install dependencies
+
+:::tip
+You can skip this step if you use Deno Deploy.
+:::
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -199,6 +211,69 @@ Run `wrangler dev server.ts` and your endpoints will be available via HTTP!
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:8787/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:8787/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+
+### Deno Deploy
+
+#### Install dependencies
+
+<Tabs>
+  <TabItem value="macOS / Linux" label="macOS / Linux" default>
+
+```sh
+curl -fsSL https://deno.land/x/install/install.sh | sh
+```
+
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+
+```sh
+irm https://deno.land/install.ps1 | iex
+```
+
+  </TabItem>
+</Tabs>
+
+#### Update the imports in `router.ts`
+
+```ts title='router.ts'
+import { initTRPC } from 'npm:@trpc/server';
+import { z } from 'npm:zod';
+import { Context } from './context.ts';
+```
+
+#### Update the imports in `context.ts`
+
+```ts title='context.ts'
+import { inferAsyncReturnType } from 'npm:@trpc/server';
+import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
+```
+
+#### Create Deno Deploy Function
+
+```ts title='server.ts'
+import { serve } from 'https://deno.land/std@0.140.0/http/server.ts';
+import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
+import { createContext } from './context.ts';
+import { appRouter } from './router.ts';
+
+function handler(request) {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: request,
+    router: appRouter,
+    createContext,
+  });
+}
+
+serve(handler);
+```
+
+Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will be available via HTTP!
+
+| Endpoint     | HTTP URI                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `getUser`    | `GET http://localhost:8000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:8000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
 ### Vercel Edge Runtime
 

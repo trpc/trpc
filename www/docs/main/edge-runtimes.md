@@ -11,7 +11,6 @@ Some of these runtimes includes, but not limited to:
 
 - Cloudflare Workers
 - Deno Deploy
-- Supabase Edge Functions
 - Vercel Edge Runtime
 
 ## How to use tRPC server with an edge runtime
