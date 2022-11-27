@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { getServerAndReactClient } from './__reactHelpers';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsFetching } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src/core';
@@ -806,7 +806,7 @@ describe('query keys are stored separtely', () => {
 
       function MyComponent() {
         const utils = proxy.useContext();
-        const happy = utils.post.all.getQueryKey();
+        const happy = utils.post.all.getQueryKey(undefined, 'query');
 
         // @ts-expect-error - post.all has no input
         const sad = utils.post.all.getQueryKey('foo');
@@ -832,12 +832,12 @@ describe('query keys are stored separtely', () => {
 
       function MyComponent() {
         const utils = proxy.useContext();
-        const happy = utils.post.byId.getQueryKey({ id: 1 });
+        const happy = utils.post.byId.getQueryKey({ id: 1 }, 'query');
 
         // @ts-expect-error - post.byId has required input
-        const sad1 = utils.post.byId.getQueryKey();
-        // @ts-expect-error - id should be a number
-        const sad2 = utils.post.byId.getQueryKey({ id: '1' });
+        const sad1 = utils.post.byId.getQueryKey(undefined, 'query');
+        // @ts-expect-error - need to specify type
+        const sad2 = utils.post.byId.getQueryKey();
 
         return <pre data-testid="qKey">{JSON.stringify(happy)}</pre>;
       }
@@ -863,10 +863,10 @@ describe('query keys are stored separtely', () => {
 
       function MyComponent() {
         const utils = proxy.useContext();
-        const happy = utils.post.getQueryKey();
+        const happy = utils.post.getQueryKey(undefined, 'any');
 
         // @ts-expect-error - router has no input
-        const sad = utils.post.getQueryKey('foo');
+        const sad = utils.post.getQueryKey('foo', 'any');
 
         return (
           <div>
@@ -883,7 +883,7 @@ describe('query keys are stored separtely', () => {
 
       await waitFor(() => {
         expect(utils.getByTestId('qKey')).toHaveTextContent(
-          JSON.stringify([['post']]),
+          JSON.stringify([['post'], {}]),
         );
       });
     });
@@ -893,12 +893,11 @@ describe('query keys are stored separtely', () => {
 
       function MyComponent() {
         const utils = proxy.useContext();
-        const qc = useQueryClient();
+        proxy.post.all.useQuery();
+        const qKey = utils.post.all.getQueryKey(undefined, 'query');
+        const isFetching = useIsFetching(qKey);
 
-        const key = utils.post.all.getQueryKey();
-        const isFetching = qc.isFetching({ queryKey: key });
-
-        return <pre data-testid="isFetching">{isFetching}</pre>;
+        return <div>{isFetching}</div>;
       }
 
       const utils = render(

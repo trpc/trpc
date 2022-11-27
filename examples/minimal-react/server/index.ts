@@ -13,6 +13,14 @@ const publicProcedure = t.procedure;
 const router = t.router;
 
 const appRouter = router({
+  l1: router({
+    l2: router({
+      proc: publicProcedure.query(() => 'hello world'),
+      inputProc: publicProcedure
+        .input(z.string())
+        .query(({ input }) => `hello ${input}`),
+    }),
+  }),
   greeting: publicProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away
