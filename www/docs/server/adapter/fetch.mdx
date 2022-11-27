@@ -5,7 +5,12 @@ sidebar_label: Fetch
 slug: /fetch
 ---
 
-## Example app
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) out of the box. This adapter lets you convert your tRPC router into a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) handler that returns [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects.
+
+## Example apps
 
 <table>
   <thead>
@@ -16,28 +21,43 @@ slug: /fetch
   </thead>
   <tbody>
     <tr>
+      <td>Cloudflare Workers example</td>
       <td>
-        <ul>
-          <li>Cloudflare Workers example</li>
-          <li>Simple TRPC client in node</li>
-        </ul>
-      </td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers">Source</a></li>
-        </ul>
+        <a href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers">
+          Source
+        </a>
       </td>
     </tr>
   </tbody>
 </table>
 
-## How to use tRPC in a Cloudflare Worker
+## Common setup
 
 ### Install dependencies
 
-```bash
-yarn add @trpc/server wrangler@beta zod
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```sh
+npm install @trpc/server zod
 ```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn add @trpc/server zod
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpm add @trpc/server zod
+```
+
+  </TabItem>
+</Tabs>
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
@@ -116,14 +136,42 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 </details>
 
-### Create Cloudflare Worker
+## Runtimes-specific setup
 
-tRPC includes an adapter for the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) out of the box. This adapter lets you convert your tRPC router into a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) handler that returns [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects.
+### Cloudflare Worker
+
+#### Install dependencies
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```sh
+npm install -g wrangler
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn global add wrangler
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpm add -g wrangler
+```
+
+  </TabItem>
+</Tabs>
+
+#### Create Cloudflare Worker
 
 ```ts title='server.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 export default {
   async fetch(request: Request): Promise<Response> {
