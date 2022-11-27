@@ -1,5 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
+import { InferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -78,4 +79,31 @@ test('useMutation', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__mutationResult`);
   });
+});
+
+test('useMutation inference', () => {
+  const { appRouter, proxy, App } = ctx;
+
+  type ReactQueryProcedure = InferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['create']['options'];
+  type OptionsRequired = Required<Options>;
+
+  type OnSuccessData = Parameters<OptionsRequired['onSuccess']>[0];
+  expectTypeOf<OnSuccessData>().toMatchTypeOf<'__mutationResult'>();
+
+  type OnSuccessVariables = Parameters<OptionsRequired['onSuccess']>[1];
+  expectTypeOf<OnSuccessVariables>().toMatchTypeOf<{ text: string }>();
+
+  function MyComponent() {
+    const options: Options = {};
+    proxy.post.create.useMutation(options);
+
+    return <></>;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
 });
