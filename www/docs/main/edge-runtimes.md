@@ -11,7 +11,7 @@ Some of these runtimes includes, but not limited to:
 
 - Cloudflare Workers
 - Deno Deploy
-- Vercel Edge Runtime
+- Vercel Edge Runtime (& Next.js Edge Runtime)
 
 ## How to use tRPC server with an edge runtime
 

@@ -37,6 +37,14 @@ tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.or
       </td>
     </tr>
     <tr>
+      <td>Next.js Edge Runtime example</td>
+      <td>
+        <a href="https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime">
+          Source
+        </a>
+      </td>
+    </tr>
+    <tr>
       <td>Vercel Edge Runtime example</td>
       <td>
         <a href="https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime">
@@ -275,6 +283,10 @@ Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will
 | `getUser`    | `GET http://localhost:8000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:8000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
+### Next.js Edge Runtime
+
+See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime).
+
 ### Vercel Edge Runtime
 
 #### Install dependencies
@@ -326,5 +338,5 @@ Run `edge-runtime --listen server.ts` and your endpoints will be available via H
 
 | Endpoint     | HTTP URI                                                                                                       |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `getUser`    | `GET http://localhost:8787/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
-| `createUser` | `POST http://localhost:8787/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+| `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |

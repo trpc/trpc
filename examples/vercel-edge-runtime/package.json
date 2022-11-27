@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "esbuild --bundle --outdir=dist src/index.ts",
-    "dev": "pnpm build && edge-runtime --listen ./dist/index.js --port 8787",
-    "test-dev": "start-server-and-test 'pnpm dev' http://127.0.0.1:8787 'tsx src/client.ts'"
+    "dev": "pnpm build && edge-runtime --listen ./dist/index.js",
+    "test-dev": "start-server-and-test 'pnpm dev' http://127.0.0.1:3000 'tsx src/client.ts'"
   },
   "dependencies": {
     "@trpc/client": "^10.3.0",
