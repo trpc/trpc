@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { httpBatchLink } from '@trpc/client';
 import { useState } from 'react';
 import { Greeting } from './Greeting';
@@ -19,6 +20,7 @@ export function App() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <Greeting />
+        <ReactQueryDevtools />
       </QueryClientProvider>
     </trpc.Provider>
   );

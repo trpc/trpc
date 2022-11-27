@@ -113,10 +113,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -163,10 +163,10 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -198,10 +198,10 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -229,8 +229,8 @@ importers:
       wrangler: ^2.0.17
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': link:../../packages/client
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
       zod: 3.19.1
     devDependencies:
       '@cloudflare/workers-types': 3.16.0
@@ -260,9 +260,9 @@ importers:
       wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': link:../../packages/client
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu
+      '@trpc/server': 10.4.0
       '@types/node-fetch': 2.6.2
       express: 4.18.1
       node-fetch: 2.6.7
@@ -296,9 +296,9 @@ importers:
       wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': link:../../packages/client
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu
+      '@trpc/server': 10.4.0
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
       express: 4.18.1
@@ -336,8 +336,8 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@fastify/websocket': 5.0.0
-      '@trpc/client': link:../../packages/client
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
       abort-controller: 3.0.0
       fastify: 3.29.2
       node-fetch: 2.6.7
@@ -367,8 +367,8 @@ importers:
       tsx: ^3.9.0
       typescript: ^4.8.3
     dependencies:
-      '@trpc/client': link:../../packages/client
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
       node-fetch: 2.6.7
       tsx: 3.9.0
     devDependencies:
@@ -409,6 +409,7 @@ importers:
   examples/minimal-react/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.3.0
       '@trpc/react-query': ^10.3.0
       '@trpc/server': ^10.3.0
@@ -421,9 +422,10 @@ importers:
       vite: ^3.1.3
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
+      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
     devDependencies:
@@ -441,7 +443,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@trpc/server': link:../../../packages/server
+      '@trpc/server': 10.4.0
       zod: 3.19.1
     devDependencies:
       '@types/node': 18.7.20
@@ -453,7 +455,7 @@ importers:
       '@trpc/client': ^10.3.0
       '@types/node': ^18.7.20
     dependencies:
-      '@trpc/client': link:../../../packages/client
+      '@trpc/client': 10.4.0
     devDependencies:
       '@types/node': 18.7.20
 
@@ -462,7 +464,7 @@ importers:
       '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
     dependencies:
-      '@trpc/server': link:../../../packages/server
+      '@trpc/server': 10.4.0
     devDependencies:
       '@types/node': 18.7.20
 
@@ -484,10 +486,10 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -502,6 +504,7 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.3.0
       '@trpc/next': ^10.3.0
       '@trpc/react-query': ^10.3.0
@@ -516,10 +519,11 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -566,10 +570,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -624,10 +628,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       prisma: 4.3.1
@@ -690,10 +694,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
@@ -741,8 +745,8 @@ importers:
       typescript: ^4.8.3
       wait-port: ^1.0.1
     devDependencies:
-      '@trpc/client': link:../../packages/client
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
       '@types/node': 18.7.20
       node-fetch: 2.6.7
       npm-run-all: 4.1.5
@@ -769,9 +773,9 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': link:../../packages/client
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu
+      '@trpc/server': 10.4.0
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
       node-fetch: 2.6.7
@@ -795,7 +799,7 @@ importers:
       tsx: ^3.9.0
     devDependencies:
       '@testing-library/dom': 8.18.1
-      '@trpc/server': link:../server
+      '@trpc/server': 10.4.0
       '@types/node': 18.7.20
       rollup: 2.79.1
       tsx: 3.9.0
@@ -820,9 +824,9 @@ importers:
       react-ssr-prepass: 1.5.0_react@18.2.0
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../client
-      '@trpc/react-query': link:../react-query
-      '@trpc/server': link:../server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       express: 4.18.1
@@ -849,8 +853,8 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../client
-      '@trpc/server': link:../server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       express: 4.18.1
@@ -979,10 +983,10 @@ importers:
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_znccgeejomvff3jrsk3ljovfpu
-      '@trpc/client': link:../client
-      '@trpc/next': link:../next
-      '@trpc/react-query': link:../react-query
-      '@trpc/server': link:../server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
       '@types/jest': 27.5.2
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
@@ -1061,10 +1065,10 @@ importers:
       '@docusaurus/types': 2.2.0_biqbaboplfbrettd7655fr4n2y
       '@mdx-js/react': 1.6.22_react@18.2.0
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.1.8
-      '@trpc/client': link:../packages/client
-      '@trpc/next': link:../packages/next
-      '@trpc/react-query': link:../packages/react-query
-      '@trpc/server': link:../packages/server
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/next': 10.4.0_wxojamrw2f4jkypxcprqc64l54
+      '@trpc/react-query': 10.4.0_jxax7vu2gdlfuqio3hy3lx2gje
+      '@trpc/server': 10.4.0
       '@visx/hierarchy': 2.10.0_react@18.2.0
       '@visx/responsive': 2.10.0_react@18.2.0
       clsx: 1.2.1
@@ -6180,7 +6184,6 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       remove-accents: 0.4.2
-    dev: true
 
   /@tanstack/query-core/4.6.0:
     resolution: {integrity: sha512-8b+vwooh8b4z1bIT3Ca7OVSyARM5JNbXi6F+g5VLYiflRd0AtJ+koqhin7UGhR11bbypmzVRKllWHwexWjKjDg==}
@@ -6197,7 +6200,6 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
-    dev: true
 
   /@tanstack/react-query/4.6.0_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-ZIx8EfRBGagxw+3onFb//Fnv0hhXDj/UHIYovPGwHdancAG9ZL4D0ymUan4cXJib/L0rGPzYFvET/yTEIPPXAw==}
@@ -6298,6 +6300,106 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: false
+
+  /@trpc/client/10.4.0:
+    resolution: {integrity: sha512-f8kREiVv2l7WgT2NrqDiyPPO6xz9o4LG2zrH/Q3aetx1GApZEBCjdBY3b9fb9/5ZhrbjjSzUmkUviBBF5FZoSw==}
+    peerDependencies:
+      '@trpc/server': 10.4.0
+    dev: false
+
+  /@trpc/client/10.4.0_@trpc+server@10.4.0:
+    resolution: {integrity: sha512-f8kREiVv2l7WgT2NrqDiyPPO6xz9o4LG2zrH/Q3aetx1GApZEBCjdBY3b9fb9/5ZhrbjjSzUmkUviBBF5FZoSw==}
+    peerDependencies:
+      '@trpc/server': 10.4.0
+    dependencies:
+      '@trpc/server': 10.4.0
+
+  /@trpc/next/10.4.0_47q4vejpndwl4xzrzavmbxanhq:
+    resolution: {integrity: sha512-d1kG/OLpKLGrjsvj6IiZ5vRiU0tr/yNU8uWamb2t4oELttzk+DbvrSfyTaoG7czkC91buICVxSOL4slLqSwMFA==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.0
+      '@trpc/react-query': ^10.0.0-proxy-beta.21
+      '@trpc/server': 10.4.0
+      next: '*'
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
+      '@trpc/server': 10.4.0
+      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-ssr-prepass: 1.5.0_react@18.2.0
+    dev: false
+
+  /@trpc/next/10.4.0_wxojamrw2f4jkypxcprqc64l54:
+    resolution: {integrity: sha512-d1kG/OLpKLGrjsvj6IiZ5vRiU0tr/yNU8uWamb2t4oELttzk+DbvrSfyTaoG7czkC91buICVxSOL4slLqSwMFA==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.0
+      '@trpc/react-query': ^10.0.0-proxy-beta.21
+      '@trpc/server': 10.4.0
+      next: '*'
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/react-query': 10.4.0_jxax7vu2gdlfuqio3hy3lx2gje
+      '@trpc/server': 10.4.0
+      next: 13.0.2_ir3quccc6i62x6qn6jjhyjjiey
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-ssr-prepass: 1.5.0_react@18.2.0
+    dev: false
+
+  /@trpc/react-query/10.4.0_ihvat6oi32xjot6aan57yrdqoi:
+    resolution: {integrity: sha512-YoJG7oaGNaxtR1DZwhKQRkWWGJ1NSVSAOCxNkQJ7FNIoStcAZ55dkNKlGt8FUvuTImsU0FRsSYvb+414V7kW8w==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.0
+      '@trpc/server': 10.4.0
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+
+  /@trpc/react-query/10.4.0_jxax7vu2gdlfuqio3hy3lx2gje:
+    resolution: {integrity: sha512-YoJG7oaGNaxtR1DZwhKQRkWWGJ1NSVSAOCxNkQJ7FNIoStcAZ55dkNKlGt8FUvuTImsU0FRsSYvb+414V7kW8w==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.0
+      '@trpc/server': 10.4.0
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
+
+  /@trpc/react-query/10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu:
+    resolution: {integrity: sha512-YoJG7oaGNaxtR1DZwhKQRkWWGJ1NSVSAOCxNkQJ7FNIoStcAZ55dkNKlGt8FUvuTImsU0FRsSYvb+414V7kW8w==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.0
+      '@trpc/server': 10.4.0
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@trpc/client': 10.4.0_@trpc+server@10.4.0
+      '@trpc/server': 10.4.0
+    dev: false
+
+  /@trpc/server/10.4.0:
+    resolution: {integrity: sha512-QtNSyDuA+gKpRwXBgemf8BlIRdE4xfLJBSg6tKFDvMYc0kbaiwrI7bPlldZMLwhAoJFnt0TmcaAiGCO/ymI+pg==}
 
   /@trysound/sax/0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
@@ -14925,7 +15027,6 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
-    dev: true
 
   /nice-try/1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -17323,7 +17424,6 @@ packages:
 
   /remove-accents/0.4.2:
     resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
-    dev: true
 
   /renderkid/3.0.0:
     resolution: {integrity: sha512-q/7VIQA8lmM1hF+jn+sFSPWGlMkSAeNYcPLmDQx2zzuiDfaLrOmumR8iaUKlenFgh0XRPIUeSPlH3A+AW3Z5pg==}
@@ -18623,7 +18723,6 @@ packages:
       '@babel/core': 7.19.1
       client-only: 0.0.1
       react: 18.2.0
-    dev: true
 
   /styled-jsx/5.1.0_react@18.2.0:
     resolution: {integrity: sha512-/iHaRJt9U7T+5tp6TRelLnqBqiaIT0HsO0+vgyj8hK2KUk7aejFqRrumqPUlAqDwAj8IbS/1hk3IhBAAK/FCUQ==}

@@ -1,5 +1,9 @@
 export type QueryType = 'query' | 'infinite' | 'any';
 
+export type QueryKey = [
+  string[],
+  { input?: unknown; type?: Exclude<QueryType, 'any'> },
+];
 /**
  * To allow easy interactions with groups of related queries, such as
  * invalidating all queries of a router, we use an array as the path when
@@ -10,7 +14,7 @@ export type QueryType = 'query' | 'infinite' | 'any';
 export function getArrayQueryKey(
   queryKey: string | [string] | [string, ...unknown[]] | unknown[],
   type: QueryType,
-): [string[], { input?: unknown; type?: Exclude<QueryType, 'any'> }] {
+): QueryKey {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];
   const [path, input] = queryKeyArrayed;
 
