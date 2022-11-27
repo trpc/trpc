@@ -19,6 +19,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
           next$?.unsubscribe();
           next$ = next(op).subscribe({
             error(error) {
+              /* istanbul ignore if  */
               if (attempts >= opts.attempts) {
                 observer.error(error);
                 return;
@@ -26,17 +27,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
               attempt();
             },
             next(result) {
-              if ('result' in result.result) {
-                isDone = true;
-                observer.next(result);
-                return;
-              }
-              if (attempts >= opts.attempts) {
-                isDone = true;
-                observer.next(result);
-                return;
-              }
-              attempt();
+              observer.next(result);
             },
             complete() {
               if (isDone) {
