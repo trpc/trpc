@@ -1,0 +1,27 @@
+{
+  "name": "@examples/next-edge-runtime",
+  "version": "10.4.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^4.3.8",
+    "@trpc/client": "^10.4.0",
+    "@trpc/next": "^10.4.0",
+    "@trpc/react-query": "^10.4.0",
+    "@trpc/server": "^10.4.0",
+    "next": "^13.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.20",
+    "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.5",
+    "typescript": "^4.8.3"
+  }
+}
