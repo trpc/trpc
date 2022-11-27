@@ -1,7 +1,9 @@
 import {
   AnyRouter,
   ClientDataTransformerOptions,
+  CombinedDataTransformer,
   DataTransformer,
+  DefaultDataTransformer,
   inferProcedureInput,
   inferProcedureOutput,
   inferSubscriptionOutput,
@@ -22,13 +24,30 @@ import {
   TRPCLink,
 } from '../links/types';
 
-interface CreateTRPCClientBaseOptions {
-  /**
-   * Data transformer
-   * @link https://trpc.io/docs/data-transformers
-   **/
-  transformer?: ClientDataTransformerOptions;
-}
+// interface CreateTRPCClientBaseOptions {
+//   transformer?: ClientDataTransformerOptions;
+// }
+
+type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
+  TRouter['_def']['_config']['transformer'] extends
+    | DataTransformer
+    | CombinedDataTransformer
+    ? {
+        /**
+         * Data transformer
+         *
+         * You should use the same transformer on the server and client
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer: TRouter['_def']['_config']['transformer'];
+      }
+    : {
+        /**
+         * Data transformer
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer?: ClientDataTransformerOptions;
+      };
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
@@ -49,7 +68,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 
 /** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions & {
+  | CreateTRPCClientBaseOptions<TRouter> & {
       links: TRPCLink<TRouter>[];
     };
 
