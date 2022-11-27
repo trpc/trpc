@@ -503,6 +503,7 @@ importers:
     specifiers:
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
       '@trpc/react-query': ^10.4.0
       '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
@@ -516,6 +517,7 @@ importers:
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y

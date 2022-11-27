@@ -33,6 +33,11 @@ const appRouter = router({
 // None of the actual implementation is exposed to the client
 export type AppRouter = typeof appRouter;
 
+// We're using the edge-runtime
+export const config = {
+  runtime: 'experimental-edge',
+};
+
 // export API handler
 export default async function handler(req: NextRequest) {
   return fetchRequestHandler({
