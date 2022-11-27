@@ -1,8 +1,8 @@
 import {
   AnyRouter,
   ClientDataTransformerOptions,
-  CombinedDataTransformer,
   DataTransformer,
+  DataTransformerOptions,
   DefaultDataTransformer,
   inferProcedureInput,
   inferProcedureOutput,
@@ -24,14 +24,12 @@ import {
   TRPCLink,
 } from '../links/types';
 
-// interface CreateTRPCClientBaseOptions {
-//   transformer?: ClientDataTransformerOptions;
-// }
-
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['transformer'] extends
-    | DataTransformer
-    | CombinedDataTransformer
+  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+    ? {
+        transformer?: 'You must specify a transformer in your backend router';
+      }
+    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
     ? {
         /**
          * Data transformer
@@ -81,16 +79,22 @@ export class TRPCClient<TRouter extends AnyRouter> {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {
-      if (!opts.transformer)
+      if (!opts.transformer || typeof opts.transformer === 'string')
         return {
           serialize: (data) => data,
           deserialize: (data) => data,
         };
-      if ('input' in opts.transformer)
-        return {
-          serialize: opts.transformer.input.serialize,
-          deserialize: opts.transformer.output.deserialize,
-        };
+      // Type guard for `opts.transformer` because it can be `any`
+      function isTransformer(obj: any): obj is ClientDataTransformerOptions {
+        return true;
+      }
+      if (isTransformer(opts.transformer)) {
+        if ('input' in opts.transformer)
+          return {
+            serialize: opts.transformer.input.serialize,
+            deserialize: opts.transformer.output.deserialize,
+          };
+      }
       return opts.transformer;
     }
 
