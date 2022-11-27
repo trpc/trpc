@@ -894,8 +894,9 @@ describe('query keys are stored separtely', () => {
       const { proxy, App } = ctx;
 
       function MyComponent() {
-        const utils = proxy.useContext();
         proxy.post.all.useQuery();
+
+        const utils = proxy.useContext();
         const qKey = utils.post.all.getQueryKey(undefined, 'query');
         const isFetching = useIsFetching(qKey);
 
