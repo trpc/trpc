@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { getServerAndReactClient } from './__reactHelpers';
+import { useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src/core';
@@ -854,6 +855,64 @@ describe('query keys are stored separtely', () => {
             { input: { id: 1 }, type: 'query' },
           ]),
         );
+      });
+    });
+
+    test('on router', async () => {
+      const { proxy, App } = ctx;
+
+      function MyComponent() {
+        const utils = proxy.useContext();
+        const happy = utils.post.getQueryKey();
+
+        // @ts-expect-error - router has no input
+        const sad = utils.post.getQueryKey('foo');
+
+        return (
+          <div>
+            <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
+          </div>
+        );
+      }
+
+      const utils = render(
+        <App>
+          <MyComponent />
+        </App>,
+      );
+
+      await waitFor(() => {
+        expect(utils.getByTestId('qKey')).toHaveTextContent(
+          JSON.stringify([['post']]),
+        );
+      });
+    });
+
+    test('forwarded to a real method', async () => {
+      const { proxy, App } = ctx;
+
+      function MyComponent() {
+        const utils = proxy.useContext();
+        const qc = useQueryClient();
+
+        const key = utils.post.all.getQueryKey();
+        const isFetching = qc.isFetching({ queryKey: key });
+
+        return <pre data-testid="isFetching">{isFetching}</pre>;
+      }
+
+      const utils = render(
+        <App>
+          <MyComponent />
+        </App>,
+      );
+
+      const testElem = utils.getByTestId('isFetching');
+
+      // should be fetching initially, and then not
+      expect(testElem).toHaveTextContent('1');
+      await waitFor(() => {
+        expect(testElem).toHaveTextContent('0');
       });
     });
   });

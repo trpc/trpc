@@ -23,8 +23,9 @@ const appRouter = router({
         })
         .nullish(),
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
       // This is what you're returning to your client
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return {
         text: `hello ${input?.name ?? 'world'}`,
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
