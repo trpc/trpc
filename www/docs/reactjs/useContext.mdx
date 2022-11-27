@@ -114,14 +114,21 @@ type QueryType = "query" | "infinite" | "any";
 ```
 
 ```tsx title="MyComponent.tsx"
-import { useIsFetching } from '@tanstack/react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 
 function MyComponent() {
+  const qc = useQueryClient();
   const utils = trpc.useContext();
+
   const posts = trpc.post.list.useQuery();
 
-  const queryKey = utils.post.list.getQueryKey(undefined, 'query');
-  const isFetching = useIsFetching(queryKey);
+  // See if a query is fetching
+  const postListKey = utils.post.list.getQueryKey(undefined, 'query');
+  const isFetching = useIsFetching(postListKey);
+
+  // Set some query defaults for an entire router
+  const postKey = utils.post.getQueryKey(undefined, 'any');
+  qc.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
 
   // ...
 }
