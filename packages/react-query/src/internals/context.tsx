@@ -26,7 +26,6 @@ import type {
 } from '@trpc/server';
 import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { createContext } from 'react';
-import { QueryKey, QueryType } from './getArrayQueryKey';
 
 export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
@@ -273,17 +272,6 @@ export interface TRPCContextState<
   >(
     pathAndInput: [TPath, TInput?],
   ): InfiniteData<TOutput> | undefined;
-
-  /**
-   * Get the query key
-   */
-  getQueryKey<
-    TPath extends keyof TRouter['_def']['queries'] & string,
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-  >(
-    pathAndInput: [TPath, TInput?],
-    type: QueryType,
-  ): QueryKey;
 }
 
 export const TRPCContext = createContext(null as any);

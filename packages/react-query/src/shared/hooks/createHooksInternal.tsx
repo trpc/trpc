@@ -382,9 +382,6 @@ export function createHooksInternal<
             },
             [queryClient],
           ),
-          getQueryKey: useCallback((pathAndInput, type) => {
-            return getArrayQueryKey(pathAndInput, type);
-          }, []),
         }}
       >
         {props.children}
