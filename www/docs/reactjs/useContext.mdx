@@ -113,8 +113,9 @@ type QueryType = "query" | "infinite" | "any";
 // for router ───────────────────────────┘
 ```
 
-```tsx title="MyComponent.tsx"
+```tsx
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   const qc = useQueryClient();
