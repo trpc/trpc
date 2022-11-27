@@ -24,7 +24,7 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: Desribe alternate solutions
+      label: Describe alternate solutions
       description: |
         Please describe alternate solutions you have considered. What makes your suggested feature better?
         If you currently have a workaround to get a similar experience, add that here.

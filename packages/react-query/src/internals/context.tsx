@@ -8,6 +8,8 @@ import {
   QueryClient,
   RefetchOptions,
   RefetchQueryFilters,
+  ResetOptions,
+  ResetQueryFilters,
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
@@ -165,6 +167,26 @@ export interface TRPCContextState<
   invalidateQueries(
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
+  ): Promise<void>;
+
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
+   */
+  resetQueries<
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndInput?: [TPath, TInput?] | TPath,
+    filters?: ResetQueryFilters,
+    options?: ResetOptions,
+  ): Promise<void>;
+
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
+   */
+  resetQueries(
+    filters?: ResetQueryFilters,
+    options?: ResetOptions,
   ): Promise<void>;
 
   /**

@@ -82,10 +82,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -113,10 +113,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -148,10 +148,10 @@ importers:
   examples/.test/big-router-declaration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -163,10 +163,10 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -182,10 +182,10 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -198,10 +198,10 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -218,8 +218,8 @@ importers:
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       node-fetch: ^2.6.1
@@ -229,8 +229,8 @@ importers:
       wrangler: ^2.0.17
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
       zod: 3.19.1
     devDependencies:
       '@cloudflare/workers-types': 3.16.0
@@ -244,9 +244,9 @@ importers:
 
   examples/express-minimal:
     specifiers:
-      '@trpc/client': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -260,9 +260,9 @@ importers:
       wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       '@types/node-fetch': 2.6.2
       express: 4.18.1
       node-fetch: 2.6.7
@@ -279,9 +279,9 @@ importers:
 
   examples/express-server:
     specifiers:
-      '@trpc/client': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -296,9 +296,9 @@ importers:
       wait-port: ^1.0.1
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
       express: 4.18.1
@@ -317,8 +317,8 @@ importers:
   examples/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -336,8 +336,8 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@fastify/websocket': 5.0.0
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
       abort-controller: 3.0.0
       fastify: 3.29.2
       node-fetch: 2.6.7
@@ -357,8 +357,8 @@ importers:
 
   examples/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -367,8 +367,8 @@ importers:
       tsx: ^3.9.0
       typescript: ^4.8.3
     dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
       node-fetch: 2.6.7
       tsx: 3.9.0
     devDependencies:
@@ -410,9 +410,9 @@ importers:
     specifiers:
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
@@ -423,9 +423,9 @@ importers:
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../../packages/client
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
     devDependencies:
@@ -437,13 +437,13 @@ importers:
 
   examples/minimal-react/server:
     specifiers:
-      '@trpc/server': ^10.3.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       tsx: ^3.9.0
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@trpc/server': 10.4.0
+      '@trpc/server': link:../../../packages/server
       zod: 3.19.1
     devDependencies:
       '@types/node': 18.7.20
@@ -452,29 +452,29 @@ importers:
 
   examples/minimal/client:
     specifiers:
-      '@trpc/client': ^10.3.0
+      '@trpc/client': ^10.4.0
       '@types/node': ^18.7.20
     dependencies:
-      '@trpc/client': 10.4.0
+      '@trpc/client': link:../../../packages/client
     devDependencies:
       '@types/node': 18.7.20
 
   examples/minimal/server:
     specifiers:
-      '@trpc/server': ^10.3.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
     dependencies:
-      '@trpc/server': 10.4.0
+      '@trpc/server': link:../../../packages/server
     devDependencies:
       '@types/node': 18.7.20
 
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -486,10 +486,10 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -501,14 +501,13 @@ importers:
       tsx: 3.9.0
       typescript: 4.8.3
 
-  examples/next-minimal-starter:
+  examples/next-edge-runtime:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -519,11 +518,41 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
+      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      zod: 3.19.1
+    devDependencies:
+      '@types/node': 18.7.20
+      '@types/react': 18.0.21
+      '@types/react-dom': 18.0.6
+      typescript: 4.8.3
+
+  examples/next-minimal-starter:
+    specifiers:
+      '@tanstack/react-query': 4.6.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      '@types/react-dom': ^18.0.5
+      next: ^13.0.0
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -539,10 +568,10 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -570,10 +599,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -607,10 +636,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -628,10 +657,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       prisma: 4.3.1
@@ -656,10 +685,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -694,10 +723,10 @@ importers:
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.3.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/next': link:../../packages/next
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       clsx: 1.2.1
       next: 13.0.2_biqbaboplfbrettd7655fr4n2y
       next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
@@ -735,8 +764,8 @@ importers:
 
   examples/soa:
     specifiers:
-      '@trpc/client': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       npm-run-all: ^4.1.5
@@ -745,8 +774,8 @@ importers:
       typescript: ^4.8.3
       wait-port: ^1.0.1
     devDependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
       '@types/node': 18.7.20
       node-fetch: 2.6.7
       npm-run-all: 4.1.5
@@ -757,9 +786,9 @@ importers:
 
   examples/standalone-server:
     specifiers:
-      '@trpc/client': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -773,9 +802,9 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/react-query': link:../../packages/react-query
+      '@trpc/server': link:../../packages/server
       '@types/node-fetch': 2.6.2
       abort-controller: 3.0.0
       node-fetch: 2.6.7
@@ -790,16 +819,45 @@ importers:
       typescript: 4.8.3
       wait-port: 1.0.1
 
+  examples/vercel-edge-runtime:
+    specifiers:
+      '@edge-runtime/types': ^2.0.2
+      '@trpc/client': ^10.4.0
+      '@trpc/server': ^10.4.0
+      '@types/node': ^18.7.20
+      '@types/node-fetch': ^2.5.11
+      edge-runtime: ^2.0.2
+      esbuild: ^0.15.15
+      node-fetch: ^2.6.1
+      start-server-and-test: ^1.12.0
+      tsx: ^3.9.0
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
+      zod: 3.19.1
+    devDependencies:
+      '@edge-runtime/types': 2.0.2
+      '@types/node': 18.7.20
+      '@types/node-fetch': 2.6.2
+      edge-runtime: 2.0.2
+      esbuild: 0.15.16
+      node-fetch: 2.6.7
+      start-server-and-test: 1.14.0
+      tsx: 3.9.0
+      typescript: 4.8.3
+
   packages/client:
     specifiers:
       '@testing-library/dom': ^8.18.1
-      '@trpc/server': ^10.3.0
+      '@trpc/server': ^10.4.0
       '@types/node': ^18.7.20
       rollup: ^2.79.1
       tsx: ^3.9.0
     devDependencies:
       '@testing-library/dom': 8.18.1
-      '@trpc/server': 10.4.0
+      '@trpc/server': link:../server
       '@types/node': 18.7.20
       rollup: 2.79.1
       tsx: 3.9.0
@@ -807,9 +865,9 @@ importers:
   packages/next:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -824,9 +882,9 @@ importers:
       react-ssr-prepass: 1.5.0_react@18.2.0
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../client
+      '@trpc/react-query': link:../react-query
+      '@trpc/server': link:../server
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       express: 4.18.1
@@ -840,8 +898,8 @@ importers:
   packages/react-query:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -853,8 +911,8 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../client
+      '@trpc/server': link:../server
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       express: 4.18.1
@@ -945,10 +1003,10 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@types/jest': ^27.0.1
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -983,10 +1041,10 @@ importers:
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_znccgeejomvff3jrsk3ljovfpu
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_47q4vejpndwl4xzrzavmbxanhq
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../client
+      '@trpc/next': link:../next
+      '@trpc/react-query': link:../react-query
+      '@trpc/server': link:../server
       '@types/jest': 27.5.2
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
@@ -1028,10 +1086,10 @@ importers:
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^10.74.2
       '@tailwindcss/line-clamp': ^0.4.2
-      '@trpc/client': ^10.3.0
-      '@trpc/next': ^10.3.0
-      '@trpc/react-query': ^10.3.0
-      '@trpc/server': ^10.3.0
+      '@trpc/client': ^10.4.0
+      '@trpc/next': ^10.4.0
+      '@trpc/react-query': ^10.4.0
+      '@trpc/server': ^10.4.0
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
@@ -1065,10 +1123,10 @@ importers:
       '@docusaurus/types': 2.2.0_biqbaboplfbrettd7655fr4n2y
       '@mdx-js/react': 1.6.22_react@18.2.0
       '@tailwindcss/line-clamp': 0.4.2_tailwindcss@3.1.8
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/next': 10.4.0_wxojamrw2f4jkypxcprqc64l54
-      '@trpc/react-query': 10.4.0_jxax7vu2gdlfuqio3hy3lx2gje
-      '@trpc/server': 10.4.0
+      '@trpc/client': link:../packages/client
+      '@trpc/next': link:../packages/next
+      '@trpc/react-query': link:../packages/react-query
+      '@trpc/server': link:../packages/server
       '@visx/hierarchy': 2.10.0_react@18.2.0
       '@visx/responsive': 2.10.0_react@18.2.0
       clsx: 1.2.1
@@ -3558,6 +3616,26 @@ packages:
       - webpack-cli
     dev: false
 
+  /@edge-runtime/format/1.1.0:
+    resolution: {integrity: sha512-MkLDDtPhXZIMx83NykdFmOpF7gVWIdd6GBHYb8V/E+PKWvD2pK/qWx9B30oN1iDJ2XBm0SGDjz02S8nDHI9lMQ==}
+    dev: true
+
+  /@edge-runtime/primitives/2.0.2:
+    resolution: {integrity: sha512-pE/VlEMzF2+WOdQUR8vgecd0b5kY4/d2Z5rA8tdq2uANQvqallJQ6tJvLmWxResq75kMFln4NDXrtzNBw3mgXA==}
+    dev: true
+
+  /@edge-runtime/types/2.0.2:
+    resolution: {integrity: sha512-dy1Rs+d9K6pqAt/BBM2jKb4FzCXfxvQ/7hDyvEQHgzE1GyOsVB6Lm0Da0a9LTx902oSSwOcqMrErd1QnDQoWGQ==}
+    dependencies:
+      '@edge-runtime/primitives': 2.0.2
+    dev: true
+
+  /@edge-runtime/vm/2.0.2:
+    resolution: {integrity: sha512-yQFE4H5R7jy98xRMnH3dOt3PQkORVtKTT2gn0U86JBHWMvoSZxvd1hw8UXxJtyp+bqW3yV7N1oTwDdX71It+Gg==}
+    dependencies:
+      '@edge-runtime/primitives': 2.0.2
+    dev: true
+
   /@esbuild-kit/cjs-loader/2.3.3:
     resolution: {integrity: sha512-Rt4O1mXlPEDVxvjsHLgbtHVdUXYK9C1/6ThpQnt7FaXIjUOsI6qhHYMgALhNnlIMZffag44lXd6Dqgx3xALbpQ==}
     dependencies:
@@ -3567,7 +3645,7 @@ packages:
   /@esbuild-kit/core-utils/2.3.2:
     resolution: {integrity: sha512-aQwy1Hdd02ymjyMyyrhtyuZGv5W+mVZmj3DTKFV0TnB1AUgMBV40tXySpsGySe8vLvSe0c0TaqTc2FUo8/YlNQ==}
     dependencies:
-      esbuild: 0.15.9
+      esbuild: 0.15.16
       source-map-support: 0.5.21
 
   /@esbuild-kit/esm-loader/2.4.2:
@@ -3594,11 +3672,28 @@ packages:
       rollup-plugin-node-polyfills: 0.2.1
     dev: true
 
+  /@esbuild/android-arm/0.15.16:
+    resolution: {integrity: sha512-nyB6CH++2mSgx3GbnrJsZSxzne5K0HMyNIWafDHqYy7IwxFc4fd/CgHVZXr8Eh+Q3KbIAcAe3vGyqIPhGblvMQ==}
+    engines: {node: '>=12'}
+    cpu: [arm]
+    os: [android]
+    requiresBuild: true
+    optional: true
+
   /@esbuild/android-arm/0.15.9:
     resolution: {integrity: sha512-VZPy/ETF3fBG5PiinIkA0W/tlsvlEgJccyN2DzWZEl0DlVKRbu91PvY2D6Lxgluj4w9QtYHjOWjAT44C+oQ+EQ==}
     engines: {node: '>=12'}
     cpu: [arm]
     os: [android]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@esbuild/linux-loong64/0.15.16:
+    resolution: {integrity: sha512-SDLfP1uoB0HZ14CdVYgagllgrG7Mdxhkt4jDJOKl/MldKrkQ6vDJMZKl2+5XsEY/Lzz37fjgLQoJBGuAw/x8kQ==}
+    engines: {node: '>=12'}
+    cpu: [loong64]
+    os: [linux]
     requiresBuild: true
     optional: true
 
@@ -3608,6 +3703,7 @@ packages:
     cpu: [loong64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@eslint/eslintrc/0.4.3:
@@ -6301,106 +6397,6 @@ packages:
       - supports-color
     dev: false
 
-  /@trpc/client/10.4.0:
-    resolution: {integrity: sha512-f8kREiVv2l7WgT2NrqDiyPPO6xz9o4LG2zrH/Q3aetx1GApZEBCjdBY3b9fb9/5ZhrbjjSzUmkUviBBF5FZoSw==}
-    peerDependencies:
-      '@trpc/server': 10.4.0
-    dev: false
-
-  /@trpc/client/10.4.0_@trpc+server@10.4.0:
-    resolution: {integrity: sha512-f8kREiVv2l7WgT2NrqDiyPPO6xz9o4LG2zrH/Q3aetx1GApZEBCjdBY3b9fb9/5ZhrbjjSzUmkUviBBF5FZoSw==}
-    peerDependencies:
-      '@trpc/server': 10.4.0
-    dependencies:
-      '@trpc/server': 10.4.0
-
-  /@trpc/next/10.4.0_47q4vejpndwl4xzrzavmbxanhq:
-    resolution: {integrity: sha512-d1kG/OLpKLGrjsvj6IiZ5vRiU0tr/yNU8uWamb2t4oELttzk+DbvrSfyTaoG7czkC91buICVxSOL4slLqSwMFA==}
-    peerDependencies:
-      '@tanstack/react-query': ^4.3.8
-      '@trpc/client': 10.4.0
-      '@trpc/react-query': ^10.0.0-proxy-beta.21
-      '@trpc/server': 10.4.0
-      next: '*'
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_ihvat6oi32xjot6aan57yrdqoi
-      '@trpc/server': 10.4.0
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      react-ssr-prepass: 1.5.0_react@18.2.0
-    dev: false
-
-  /@trpc/next/10.4.0_wxojamrw2f4jkypxcprqc64l54:
-    resolution: {integrity: sha512-d1kG/OLpKLGrjsvj6IiZ5vRiU0tr/yNU8uWamb2t4oELttzk+DbvrSfyTaoG7czkC91buICVxSOL4slLqSwMFA==}
-    peerDependencies:
-      '@tanstack/react-query': ^4.3.8
-      '@trpc/client': 10.4.0
-      '@trpc/react-query': ^10.0.0-proxy-beta.21
-      '@trpc/server': 10.4.0
-      next: '*'
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/react-query': 10.4.0_jxax7vu2gdlfuqio3hy3lx2gje
-      '@trpc/server': 10.4.0
-      next: 13.0.2_ir3quccc6i62x6qn6jjhyjjiey
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      react-ssr-prepass: 1.5.0_react@18.2.0
-    dev: false
-
-  /@trpc/react-query/10.4.0_ihvat6oi32xjot6aan57yrdqoi:
-    resolution: {integrity: sha512-YoJG7oaGNaxtR1DZwhKQRkWWGJ1NSVSAOCxNkQJ7FNIoStcAZ55dkNKlGt8FUvuTImsU0FRsSYvb+414V7kW8w==}
-    peerDependencies:
-      '@tanstack/react-query': ^4.3.8
-      '@trpc/client': 10.4.0
-      '@trpc/server': 10.4.0
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-
-  /@trpc/react-query/10.4.0_jxax7vu2gdlfuqio3hy3lx2gje:
-    resolution: {integrity: sha512-YoJG7oaGNaxtR1DZwhKQRkWWGJ1NSVSAOCxNkQJ7FNIoStcAZ55dkNKlGt8FUvuTImsU0FRsSYvb+414V7kW8w==}
-    peerDependencies:
-      '@tanstack/react-query': ^4.3.8
-      '@trpc/client': 10.4.0
-      '@trpc/server': 10.4.0
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-    dev: false
-
-  /@trpc/react-query/10.4.0_kt5adj3vgoxdv7yd5pmw4qgcqu:
-    resolution: {integrity: sha512-YoJG7oaGNaxtR1DZwhKQRkWWGJ1NSVSAOCxNkQJ7FNIoStcAZ55dkNKlGt8FUvuTImsU0FRsSYvb+414V7kW8w==}
-    peerDependencies:
-      '@tanstack/react-query': ^4.3.8
-      '@trpc/client': 10.4.0
-      '@trpc/server': 10.4.0
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-    dependencies:
-      '@trpc/client': 10.4.0_@trpc+server@10.4.0
-      '@trpc/server': 10.4.0
-    dev: false
-
-  /@trpc/server/10.4.0:
-    resolution: {integrity: sha512-QtNSyDuA+gKpRwXBgemf8BlIRdE4xfLJBSg6tKFDvMYc0kbaiwrI7bPlldZMLwhAoJFnt0TmcaAiGCO/ymI+pg==}
-
   /@trysound/sax/0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
@@ -8810,6 +8806,11 @@ packages:
       q: 1.5.1
     dev: false
 
+  /convert-hrtime/3.0.0:
+    resolution: {integrity: sha512-7V+KqSvMiHp8yWDuwfww06XleMWVVB9b9tURBx+G7UTADuo5hYPuowKloz4OzOqbPezxgo+fdQ1522WzPG4OeA==}
+    engines: {node: '>=8'}
+    dev: true
+
   /convert-source-map/1.8.0:
     resolution: {integrity: sha512-+OQdjP49zViI/6i7nIJpA8rAl4sV/JdPfU9nZs3VqOwGIgizICvuN2ru6fMd+4llL0tar18UYJXfZ/TWtmhUjA==}
     dependencies:
@@ -9789,6 +9790,21 @@ packages:
       safe-buffer: 5.2.1
     dev: true
 
+  /edge-runtime/2.0.2:
+    resolution: {integrity: sha512-pM4EYn+cyXthPmjAzxVF3mQRNh2ejLI2QUbVH093sPVdTKJ8Lp76jk6Hb68dRD7i6JtpLnQLGuWK01HUkv1G2A==}
+    hasBin: true
+    dependencies:
+      '@edge-runtime/format': 1.1.0
+      '@edge-runtime/vm': 2.0.2
+      exit-hook: 2.2.1
+      http-status: 1.5.3
+      mri: 1.2.0
+      picocolors: 1.0.0
+      pretty-bytes: 5.6.0
+      pretty-ms: 7.0.1
+      time-span: 4.0.0
+    dev: true
+
   /ee-first/1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
@@ -9982,12 +9998,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-android-64/0.15.16:
+    resolution: {integrity: sha512-Vwkv/sT0zMSgPSVO3Jlt1pUbnZuOgtOQJkJkyyJFAlLe7BiT8e9ESzo0zQSx4c3wW4T6kGChmKDPMbWTgtliQA==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [android]
+    requiresBuild: true
+    optional: true
+
   /esbuild-android-64/0.15.9:
     resolution: {integrity: sha512-HQCX7FJn9T4kxZQkhPjNZC7tBWZqJvhlLHPU2SFzrQB/7nDXjmTIFpFTjt7Bd1uFpeXmuwf5h5fZm+x/hLnhbw==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [android]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-android-arm64/0.14.51:
@@ -9999,12 +10024,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-android-arm64/0.15.16:
+    resolution: {integrity: sha512-lqfKuofMExL5niNV3gnhMUYacSXfsvzTa/58sDlBET/hCOG99Zmeh+lz6kvdgvGOsImeo6J9SW21rFCogNPLxg==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [android]
+    requiresBuild: true
+    optional: true
+
   /esbuild-android-arm64/0.15.9:
     resolution: {integrity: sha512-E6zbLfqbFVCNEKircSHnPiSTsm3fCRxeIMPfrkS33tFjIAoXtwegQfVZqMGR0FlsvVxp2NEDOUz+WW48COCjSg==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [android]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-darwin-64/0.14.51:
@@ -10016,12 +10050,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-darwin-64/0.15.16:
+    resolution: {integrity: sha512-wo2VWk/n/9V2TmqUZ/KpzRjCEcr00n7yahEdmtzlrfQ3lfMCf3Wa+0sqHAbjk3C6CKkR3WKK/whkMq5Gj4Da9g==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    optional: true
+
   /esbuild-darwin-64/0.15.9:
     resolution: {integrity: sha512-gI7dClcDN/HHVacZhTmGjl0/TWZcGuKJ0I7/xDGJwRQQn7aafZGtvagOFNmuOq+OBFPhlPv1T6JElOXb0unkSQ==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-darwin-arm64/0.14.51:
@@ -10033,12 +10076,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-darwin-arm64/0.15.16:
+    resolution: {integrity: sha512-fMXaUr5ou0M4WnewBKsspMtX++C1yIa3nJ5R2LSbLCfJT3uFdcRoU/NZjoM4kOMKyOD9Sa/2vlgN8G07K3SJnw==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    optional: true
+
   /esbuild-darwin-arm64/0.15.9:
     resolution: {integrity: sha512-VZIMlcRN29yg/sv7DsDwN+OeufCcoTNaTl3Vnav7dL/nvsApD7uvhVRbgyMzv0zU/PP0xRhhIpTyc7lxEzHGSw==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-freebsd-64/0.14.51:
@@ -10050,12 +10102,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-freebsd-64/0.15.16:
+    resolution: {integrity: sha512-UzIc0xlRx5x9kRuMr+E3+hlSOxa/aRqfuMfiYBXu2jJ8Mzej4lGL7+o6F5hzhLqWfWm1GWHNakIdlqg1ayaTNQ==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [freebsd]
+    requiresBuild: true
+    optional: true
+
   /esbuild-freebsd-64/0.15.9:
     resolution: {integrity: sha512-uM4z5bTvuAXqPxrI204txhlsPIolQPWRMLenvGuCPZTnnGlCMF2QLs0Plcm26gcskhxewYo9LkkmYSS5Czrb5A==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-freebsd-arm64/0.14.51:
@@ -10067,12 +10128,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-freebsd-arm64/0.15.16:
+    resolution: {integrity: sha512-8xyiYuGc0DLZphFQIiYaLHlfoP+hAN9RHbE+Ibh8EUcDNHAqbQgUrQg7pE7Bo00rXmQ5Ap6KFgcR0b4ALZls1g==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [freebsd]
+    requiresBuild: true
+    optional: true
+
   /esbuild-freebsd-arm64/0.15.9:
     resolution: {integrity: sha512-HHDjT3O5gWzicGdgJ5yokZVN9K9KG05SnERwl9nBYZaCjcCgj/sX8Ps1jvoFSfNCO04JSsHSOWo4qvxFuj8FoA==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [freebsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-32/0.14.51:
@@ -10084,12 +10154,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-32/0.15.16:
+    resolution: {integrity: sha512-iGijUTV+0kIMyUVoynK0v+32Oi8yyp0xwMzX69GX+5+AniNy/C/AL1MjFTsozRp/3xQPl7jVux/PLe2ds10/2w==}
+    engines: {node: '>=12'}
+    cpu: [ia32]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-32/0.15.9:
     resolution: {integrity: sha512-AQIdE8FugGt1DkcekKi5ycI46QZpGJ/wqcMr7w6YUmOmp2ohQ8eO4sKUsOxNOvYL7hGEVwkndSyszR6HpVHLFg==}
     engines: {node: '>=12'}
     cpu: [ia32]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-64/0.14.51:
@@ -10101,12 +10180,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-64/0.15.16:
+    resolution: {integrity: sha512-tuSOjXdLw7VzaUj89fIdAaQT7zFGbKBcz4YxbWrOiXkwscYgE7HtTxUavreBbnRkGxKwr9iT/gmeJWNm4djy/g==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-64/0.15.9:
     resolution: {integrity: sha512-4RXjae7g6Qs7StZyiYyXTZXBlfODhb1aBVAjd+ANuPmMhWthQilWo7rFHwJwL7DQu1Fjej2sODAVwLbcIVsAYQ==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-arm/0.14.51:
@@ -10118,12 +10206,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-arm/0.15.16:
+    resolution: {integrity: sha512-XKcrxCEXDTOuoRj5l12tJnkvuxXBMKwEC5j0JISw3ziLf0j4zIwXbKbTmUrKFWbo6ZgvNpa7Y5dnbsjVvH39bQ==}
+    engines: {node: '>=12'}
+    cpu: [arm]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-arm/0.15.9:
     resolution: {integrity: sha512-3Zf2GVGUOI7XwChH3qrnTOSqfV1V4CAc/7zLVm4lO6JT6wbJrTgEYCCiNSzziSju+J9Jhf9YGWk/26quWPC6yQ==}
     engines: {node: '>=12'}
     cpu: [arm]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-arm64/0.14.51:
@@ -10135,12 +10232,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-arm64/0.15.16:
+    resolution: {integrity: sha512-mPYksnfHnemNrvjrDhZyixL/AfbJN0Xn9S34ZOHYdh6/jJcNd8iTsv3JwJoEvTJqjMggjMhGUPJAdjnFBHoH8A==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-arm64/0.15.9:
     resolution: {integrity: sha512-a+bTtxJmYmk9d+s2W4/R1SYKDDAldOKmWjWP0BnrWtDbvUBNOm++du0ysPju4mZVoEFgS1yLNW+VXnG/4FNwdQ==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-mips64le/0.14.51:
@@ -10152,12 +10258,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-mips64le/0.15.16:
+    resolution: {integrity: sha512-kSJO2PXaxfm0pWY39+YX+QtpFqyyrcp0ZeI8QPTrcFVQoWEPiPVtOfTZeS3ZKedfH+Ga38c4DSzmKMQJocQv6A==}
+    engines: {node: '>=12'}
+    cpu: [mips64el]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-mips64le/0.15.9:
     resolution: {integrity: sha512-Zn9HSylDp89y+TRREMDoGrc3Z4Hs5u56ozZLQCiZAUx2+HdbbXbWdjmw3FdTJ/i7t5Cew6/Q+6kfO3KCcFGlyw==}
     engines: {node: '>=12'}
     cpu: [mips64el]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-ppc64le/0.14.51:
@@ -10169,12 +10284,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-ppc64le/0.15.16:
+    resolution: {integrity: sha512-NimPikwkBY0yGABw6SlhKrtT35sU4O23xkhlrTT/O6lSxv3Pm5iSc6OYaqVAHWkLdVf31bF4UDVFO+D990WpAA==}
+    engines: {node: '>=12'}
+    cpu: [ppc64]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-ppc64le/0.15.9:
     resolution: {integrity: sha512-OEiOxNAMH9ENFYqRsWUj3CWyN3V8P3ZXyfNAtX5rlCEC/ERXrCEFCJji/1F6POzsXAzxvUJrTSTCy7G6BhA6Fw==}
     engines: {node: '>=12'}
     cpu: [ppc64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-riscv64/0.14.51:
@@ -10186,12 +10310,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-riscv64/0.15.16:
+    resolution: {integrity: sha512-ty2YUHZlwFOwp7pR+J87M4CVrXJIf5ZZtU/umpxgVJBXvWjhziSLEQxvl30SYfUPq0nzeWKBGw5i/DieiHeKfw==}
+    engines: {node: '>=12'}
+    cpu: [riscv64]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-riscv64/0.15.9:
     resolution: {integrity: sha512-ukm4KsC3QRausEFjzTsOZ/qqazw0YvJsKmfoZZm9QW27OHjk2XKSQGGvx8gIEswft/Sadp03/VZvAaqv5AIwNA==}
     engines: {node: '>=12'}
     cpu: [riscv64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-linux-s390x/0.14.51:
@@ -10203,12 +10336,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-linux-s390x/0.15.16:
+    resolution: {integrity: sha512-VkZaGssvPDQtx4fvVdZ9czezmyWyzpQhEbSNsHZZN0BHvxRLOYAQ7sjay8nMQwYswP6O2KlZluRMNPYefFRs+w==}
+    engines: {node: '>=12'}
+    cpu: [s390x]
+    os: [linux]
+    requiresBuild: true
+    optional: true
+
   /esbuild-linux-s390x/0.15.9:
     resolution: {integrity: sha512-uDOQEH55wQ6ahcIKzQr3VyjGc6Po/xblLGLoUk3fVL1qjlZAibtQr6XRfy5wPJLu/M2o0vQKLq4lyJ2r1tWKcw==}
     engines: {node: '>=12'}
     cpu: [s390x]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-netbsd-64/0.14.51:
@@ -10220,12 +10362,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-netbsd-64/0.15.16:
+    resolution: {integrity: sha512-ElQ9rhdY51et6MJTWrCPbqOd/YuPowD7Cxx3ee8wlmXQQVW7UvQI6nSprJ9uVFQISqSF5e5EWpwWqXZsECLvXg==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [netbsd]
+    requiresBuild: true
+    optional: true
+
   /esbuild-netbsd-64/0.15.9:
     resolution: {integrity: sha512-yWgxaYTQz+TqX80wXRq6xAtb7GSBAp6gqLKfOdANg9qEmAI1Bxn04IrQr0Mzm4AhxvGKoHzjHjMgXbCCSSDxcw==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [netbsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-openbsd-64/0.14.51:
@@ -10237,12 +10388,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-openbsd-64/0.15.16:
+    resolution: {integrity: sha512-KgxMHyxMCT+NdLQE1zVJEsLSt2QQBAvJfmUGDmgEq8Fvjrf6vSKB00dVHUEDKcJwMID6CdgCpvYNt999tIYhqA==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [openbsd]
+    requiresBuild: true
+    optional: true
+
   /esbuild-openbsd-64/0.15.9:
     resolution: {integrity: sha512-JmS18acQl4iSAjrEha1MfEmUMN4FcnnrtTaJ7Qg0tDCOcgpPPQRLGsZqhes0vmx8VA6IqRyScqXvaL7+Q0Uf3A==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [openbsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-sunos-64/0.14.51:
@@ -10254,12 +10414,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-sunos-64/0.15.16:
+    resolution: {integrity: sha512-exSAx8Phj7QylXHlMfIyEfNrmqnLxFqLxdQF6MBHPdHAjT7fsKaX6XIJn+aQEFiOcE4X8e7VvdMCJ+WDZxjSRQ==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [sunos]
+    requiresBuild: true
+    optional: true
+
   /esbuild-sunos-64/0.15.9:
     resolution: {integrity: sha512-UKynGSWpzkPmXW3D2UMOD9BZPIuRaSqphxSCwScfEE05Be3KAmvjsBhht1fLzKpiFVJb0BYMd4jEbWMyJ/z1hQ==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [sunos]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-windows-32/0.14.51:
@@ -10271,12 +10440,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-windows-32/0.15.16:
+    resolution: {integrity: sha512-zQgWpY5pUCSTOwqKQ6/vOCJfRssTvxFuEkpB4f2VUGPBpdddZfdj8hbZuFRdZRPIVHvN7juGcpgCA/XCF37mAQ==}
+    engines: {node: '>=12'}
+    cpu: [ia32]
+    os: [win32]
+    requiresBuild: true
+    optional: true
+
   /esbuild-windows-32/0.15.9:
     resolution: {integrity: sha512-aqXvu4/W9XyTVqO/hw3rNxKE1TcZiEYHPsXM9LwYmKSX9/hjvfIJzXwQBlPcJ/QOxedfoMVH0YnhhQ9Ffb0RGA==}
     engines: {node: '>=12'}
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-windows-64/0.14.51:
@@ -10288,12 +10466,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-windows-64/0.15.16:
+    resolution: {integrity: sha512-HjW1hHRLSncnM3MBCP7iquatHVJq9l0S2xxsHHj4yzf4nm9TU4Z7k4NkeMlD/dHQ4jPlQQhwcMvwbJiOefSuZw==}
+    engines: {node: '>=12'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    optional: true
+
   /esbuild-windows-64/0.15.9:
     resolution: {integrity: sha512-zm7h91WUmlS4idMtjvCrEeNhlH7+TNOmqw5dJPJZrgFaxoFyqYG6CKDpdFCQXdyKpD5yvzaQBOMVTCBVKGZDEg==}
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild-windows-arm64/0.14.51:
@@ -10305,12 +10492,21 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-windows-arm64/0.15.16:
+    resolution: {integrity: sha512-oCcUKrJaMn04Vxy9Ekd8x23O8LoU01+4NOkQ2iBToKgnGj5eo1vU9i27NQZ9qC8NFZgnQQZg5oZWAejmbsppNA==}
+    engines: {node: '>=12'}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    optional: true
+
   /esbuild-windows-arm64/0.15.9:
     resolution: {integrity: sha512-yQEVIv27oauAtvtuhJVfSNMztJJX47ismRS6Sv2QMVV9RM+6xjbMWuuwM2nxr5A2/gj/mu2z9YlQxiwoFRCfZA==}
     engines: {node: '>=12'}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
+    dev: true
     optional: true
 
   /esbuild/0.14.51:
@@ -10341,6 +10537,35 @@ packages:
       esbuild-windows-arm64: 0.14.51
     dev: true
 
+  /esbuild/0.15.16:
+    resolution: {integrity: sha512-o6iS9zxdHrrojjlj6pNGC2NAg86ECZqIETswTM5KmJitq+R1YmahhWtMumeQp9lHqJaROGnsBi2RLawGnfo5ZQ==}
+    engines: {node: '>=12'}
+    hasBin: true
+    requiresBuild: true
+    optionalDependencies:
+      '@esbuild/android-arm': 0.15.16
+      '@esbuild/linux-loong64': 0.15.16
+      esbuild-android-64: 0.15.16
+      esbuild-android-arm64: 0.15.16
+      esbuild-darwin-64: 0.15.16
+      esbuild-darwin-arm64: 0.15.16
+      esbuild-freebsd-64: 0.15.16
+      esbuild-freebsd-arm64: 0.15.16
+      esbuild-linux-32: 0.15.16
+      esbuild-linux-64: 0.15.16
+      esbuild-linux-arm: 0.15.16
+      esbuild-linux-arm64: 0.15.16
+      esbuild-linux-mips64le: 0.15.16
+      esbuild-linux-ppc64le: 0.15.16
+      esbuild-linux-riscv64: 0.15.16
+      esbuild-linux-s390x: 0.15.16
+      esbuild-netbsd-64: 0.15.16
+      esbuild-openbsd-64: 0.15.16
+      esbuild-sunos-64: 0.15.16
+      esbuild-windows-32: 0.15.16
+      esbuild-windows-64: 0.15.16
+      esbuild-windows-arm64: 0.15.16
+
   /esbuild/0.15.9:
     resolution: {integrity: sha512-OnYr1rkMVxtmMHIAKZLMcEUlJmqcbxBz9QoBU8G9v455na0fuzlT/GLu6l+SRghrk0Mm2fSSciMmzV43Q8e0Gg==}
     engines: {node: '>=12'}
@@ -10369,6 +10594,7 @@ packages:
       esbuild-windows-32: 0.15.9
       esbuild-windows-64: 0.15.9
       esbuild-windows-arm64: 0.15.9
+    dev: true
 
   /escalade/3.1.1:
     resolution: {integrity: sha512-k0er2gUkLf8O0zKJiAhmkTnJlTvINGv7ygDNPbeIsX/TJjGJZHuh9B2UxbsaEkmlEo9MfhrSzmhIlhRlI2GXnw==}
@@ -10852,6 +11078,11 @@ packages:
       onetime: 6.0.0
       signal-exit: 3.0.7
       strip-final-newline: 3.0.0
+
+  /exit-hook/2.2.1:
+    resolution: {integrity: sha512-eNTPlAD67BmP31LDINZ3U7HSF8l57TxOY2PmBJ1shpCvpnxBF93mWCE8YHBnXs8qiUZJc9WDcWIeC3a2HIAMfw==}
+    engines: {node: '>=6'}
+    dev: true
 
   /exit/0.1.2:
     resolution: {integrity: sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ==}
@@ -12339,6 +12570,11 @@ packages:
     transitivePeerDependencies:
       - debug
     dev: false
+
+  /http-status/1.5.3:
+    resolution: {integrity: sha512-jCClqdnnwigYslmtfb28vPplOgoiZ0siP2Z8C5Ua+3UKbx410v+c+jT+jh1bbI4TvcEySuX0vd/CfFZFbDkJeQ==}
+    engines: {node: '>= 0.4.0'}
+    dev: true
 
   /http2-wrapper/1.0.3:
     resolution: {integrity: sha512-V+23sDMr12Wnz7iTcDeJr3O6AIxlnvT/bmaAAAP/Xda35C90p9599p0F1eHR/N1KILWSoWVAiOMFjBBXaXSMxg==}
@@ -14814,6 +15050,11 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: false
 
+  /mri/1.2.0:
+    resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
+    engines: {node: '>=4'}
+    dev: true
+
   /mrmime/1.0.1:
     resolution: {integrity: sha512-hzzEagAgDyoU1Q6yg5uI+AorQgdvMCur3FcKf7NhMKWsaYg+RnbTyHRa/9IlLF9rf455MOCtcqqrQQ83pPP7Uw==}
     engines: {node: '>=10'}
@@ -15027,6 +15268,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
+    dev: true
 
   /nice-try/1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -15851,6 +16093,11 @@ packages:
       lines-and-columns: 1.2.4
     dev: false
 
+  /parse-ms/2.1.0:
+    resolution: {integrity: sha512-kHt7kzLoS9VBZfUsiKjv43mr91ea+U05EyKkEtqp7vNbHxmaVuEqN7XxeEVnGrMtYOAxGrDElSi96K7EgO1zCA==}
+    engines: {node: '>=6'}
+    dev: true
+
   /parse-numeric-range/1.3.0:
     resolution: {integrity: sha512-twN+njEipszzlMJd4ONUYgSfZPDxgHhT9Ahed5uTigpQn90FggW4SA/AIPq/6a149fTbE9qBEcSwE3FAEp6wQQ==}
     dev: false
@@ -16603,6 +16850,11 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
+  /pretty-bytes/5.6.0:
+    resolution: {integrity: sha512-FFw039TmrBqFK8ma/7OL3sDz/VytdtJr044/QUJtH0wK9lb9jLq9tJyIxUwtQJHwar2BqtiA4iCWSwo9JLkzFg==}
+    engines: {node: '>=6'}
+    dev: true
+
   /pretty-error/4.0.0:
     resolution: {integrity: sha512-AoJ5YMAcXKYxKhuJGdcvse+Voc6v1RgnsR3nWcYU7q4t6z0Q6T86sv5Zq8VIRbOWWFpvdGE83LtdSMNd+6Y0xw==}
     dependencies:
@@ -16629,6 +16881,13 @@ packages:
 
   /pretty-format/3.8.0:
     resolution: {integrity: sha512-WuxUnVtlWL1OfZFQFuqvnvs6MiAGk9UNsBostyBOB0Is9wb5uRESevA6rnl/rkksXaGX3GzZhPup5d6Vp1nFew==}
+
+  /pretty-ms/7.0.1:
+    resolution: {integrity: sha512-973driJZvxiGOQ5ONsFhOF/DtzPMOMtgC11kCpUrPGMTgqp2q/1gwzCquocrN33is0VZ5GFHXZYMM9l6h67v2Q==}
+    engines: {node: '>=10'}
+    dependencies:
+      parse-ms: 2.1.0
+    dev: true
 
   /pretty-time/1.1.0:
     resolution: {integrity: sha512-28iF6xPQrP8Oa6uxE6a1biz+lWeTOAPKggvjB8HAs6nVMKZwf5bG++632Dx614hIWgUPkgivRfG+a8uAXGTIbA==}
@@ -18723,6 +18982,7 @@ packages:
       '@babel/core': 7.19.1
       client-only: 0.0.1
       react: 18.2.0
+    dev: true
 
   /styled-jsx/5.1.0_react@18.2.0:
     resolution: {integrity: sha512-/iHaRJt9U7T+5tp6TRelLnqBqiaIT0HsO0+vgyj8hK2KUk7aejFqRrumqPUlAqDwAj8IbS/1hk3IhBAAK/FCUQ==}
@@ -19024,6 +19284,13 @@ packages:
   /thunky/1.1.0:
     resolution: {integrity: sha512-eHY7nBftgThBqOyHGVN+l8gF0BucP09fMo0oO/Lb0w1OF80dJv+lDVpXG60WMQvkcxAkNybKsrEIE3ZtKGmPrA==}
     dev: false
+
+  /time-span/4.0.0:
+    resolution: {integrity: sha512-MyqZCTGLDZ77u4k+jqg4UlrzPTPZ49NDlaekU6uuFaJLzPIN1woaRXCbGeqOfxwc3Y37ZROGAJ614Rdv7Olt+g==}
+    engines: {node: '>=10'}
+    dependencies:
+      convert-hrtime: 3.0.0
+    dev: true
 
   /timers-ext/0.1.7:
     resolution: {integrity: sha512-b85NUNzTSdodShTIbky6ZF02e8STtVVfD+fu4aXXShEELpozH+bCpJLYMPZbsABN2wDH7fJpqIoXxJpzbf0NqQ==}
