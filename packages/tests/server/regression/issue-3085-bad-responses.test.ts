@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { routerToServerAndClientNew } from '../___testHelpers';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import superjson from 'superjson';
