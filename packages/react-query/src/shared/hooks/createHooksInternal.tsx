@@ -314,7 +314,7 @@ export function createHooksInternal<
               const [queryKey, ...rest] = args;
 
               return queryClient.resetQueries(
-                getArrayQueryKey(queryKey),
+                getArrayQueryKey(queryKey, 'any'),
                 ...rest,
               );
             },
