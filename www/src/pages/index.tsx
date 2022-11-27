@@ -124,9 +124,7 @@ const HomeContent: React.FC = () => {
         >
           <Iframe
             src={
-              `https://stackblitz.com/github/trpc/trpc/tree/${
-                isV10 ? 'main' : 'v9.x'
-              }/examples/next-minimal-starter?` +
+              `https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?` +
               searchParams({
                 embed: '1',
                 file: [
@@ -141,7 +139,6 @@ const HomeContent: React.FC = () => {
               })
             }
             frameBorder="0"
-            key={isV10 ? 'v10' : 'v9'}
           />
         </div>
         <div className="flex justify-center">
