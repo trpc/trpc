@@ -129,6 +129,11 @@ module.exports = {
               href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
+            {
+              label: '❤️ Sponsor tRPC',
+              href: 'https://trpc.io/sponsor',
+              className: 'flex items-center',
+            },
           ],
         },
       ],

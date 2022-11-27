@@ -23,25 +23,19 @@ jobs:
           [
             .test/ssg,
             express-server,
-            .interop/express-server,
             express-minimal,
             .interop/next-prisma-starter,
-            .interop/next-minimal-starter-migration,
             .interop/next-prisma-websockets-starter,
-            .interop/next-prisma-todomvc,
             next-minimal-starter,
             minimal-react,
-            .interop/next-minimal-starter,
-            .interop/standalone-server,
             fastify-server,
-            .interop/fastify-server,
             cloudflare-workers,
-            .interop/cloudflare-workers,
             next-prisma-starter,
             next-prisma-websockets-starter,
             next-prisma-todomvc,
             standalone-server,
             .test/big-router-declaration,
+            soa,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]

@@ -76,202 +76,16 @@ importers:
       turbo: 1.6.1
       typescript: 4.8.3
 
-  examples/.interop/cloudflare-workers:
-    specifiers:
-      '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      node-fetch: ^2.6.1
-      start-server-and-test: ^1.12.0
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      wrangler: ^2.0.17
-      zod: ^3.0.0
-    dependencies:
-      '@trpc/client': link:../../../packages/client
-      '@trpc/server': link:../../../packages/server
-      zod: 3.19.1
-    devDependencies:
-      '@cloudflare/workers-types': 3.16.0
-      '@types/node': 18.7.20
-      node-fetch: 2.6.7
-      start-server-and-test: 1.14.0
-      tsx: 3.9.0
-      typescript: 4.8.3
-      wrangler: 2.1.6
-
-  examples/.interop/express-server:
-    specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/express': ^4.17.12
-      '@types/node': ^18.7.20
-      '@types/node-fetch': ^2.5.11
-      '@types/react': ^18.0.9
-      abort-controller: ^3.0.0
-      express: ^4.17.1
-      node-fetch: ^2.6.1
-      npm-run-all: ^4.1.5
-      start-server-and-test: ^1.12.0
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      wait-port: ^1.0.1
-      zod: ^3.0.0
-    dependencies:
-      '@trpc/client': link:../../../packages/client
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      '@types/node-fetch': 2.6.2
-      abort-controller: 3.0.0
-      express: 4.18.1
-      node-fetch: 2.6.7
-      zod: 3.19.1
-    devDependencies:
-      '@types/express': 4.17.14
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      npm-run-all: 4.1.5
-      start-server-and-test: 1.14.0
-      tsx: 3.9.0
-      typescript: 4.8.3
-      wait-port: 1.0.1
-
-  examples/.interop/fastify-server:
-    specifiers:
-      '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      '@types/node-fetch': ^2.5.11
-      '@types/ws': ^8.2.0
-      abort-controller: ^3.0.0
-      fastify: ^3.27.1
-      node-fetch: ^2.6.1
-      npm-run-all: ^4.1.5
-      start-server-and-test: ^1.12.0
-      tslib: ^2.1.0
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      wait-port: ^1.0.1
-      ws: ^8.0.0
-      zod: ^3.0.0
-    dependencies:
-      '@fastify/websocket': 5.0.0
-      '@trpc/client': link:../../../packages/client
-      '@trpc/server': link:../../../packages/server
-      abort-controller: 3.0.0
-      fastify: 3.29.2
-      node-fetch: 2.6.7
-      tslib: 2.4.0
-      ws: 8.9.0
-      zod: 3.19.1
-    devDependencies:
-      '@types/node': 18.7.20
-      '@types/node-fetch': 2.6.2
-      '@types/ws': 8.5.3
-      npm-run-all: 4.1.5
-      start-server-and-test: 1.14.0
-      tsx: 3.9.0
-      typescript: 4.8.3
-      wait-port: 1.0.1
-
-  examples/.interop/lambda-api-gateway:
-    specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      node-fetch: ^2.6.1
-      serverless: ^3.18.1
-      serverless-offline: ^8.8.0
-      serverless-plugin-typescript: ^2.1.2
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-    dependencies:
-      '@trpc/client': link:../../../packages/client
-      '@trpc/server': link:../../../packages/server
-      node-fetch: 2.6.7
-      tsx: 3.9.0
-    devDependencies:
-      '@types/node': 18.7.20
-      serverless: 3.22.0
-      serverless-offline: 8.8.1_serverless@3.22.0
-      serverless-plugin-typescript: 2.1.2_tsenko2hjma6tkxyb5eli2i3ra
-      typescript: 4.8.3
-
-  examples/.interop/next-minimal-starter:
-    specifiers:
-      '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      '@types/react-dom': ^18.0.5
-      next: ^13.0.0
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      typescript: ^4.8.3
-      zod: ^3.0.0
-    dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
-    devDependencies:
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      '@types/react-dom': 18.0.6
-      typescript: 4.8.3
-
-  examples/.interop/next-minimal-starter-migration:
-    specifiers:
-      '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      '@types/react-dom': ^18.0.5
-      next: ^13.0.0
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      typescript: ^4.8.3
-      zod: ^3.0.0
-    dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
-    devDependencies:
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      '@types/react-dom': 18.0.6
-      typescript: 4.8.3
-
   examples/.interop/next-prisma-starter:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -331,180 +145,13 @@ importers:
       vite: 3.1.3
       vitest: 0.23.4
 
-  examples/.interop/next-prisma-todomvc:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      clsx: ^1.1.1
-      next: ^13.0.0
-      npm-run-all: ^4.1.5
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      todomvc-app-css: ^2.3.0
-      todomvc-common: ^1.0.5
-      typescript: ^4.8.3
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-todo-web_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      clsx: 1.2.1
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      prisma: 4.3.1
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      todomvc-app-css: 2.4.2
-      todomvc-common: 1.0.5
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/react': 18.0.21
-      npm-run-all: 4.1.5
-      start-server-and-test: 1.14.0
-      typescript: 4.8.3
-
-  examples/.interop/next-prisma-websockets-starter:
-    specifiers:
-      '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter
-      '@tanstack/react-query': 4.6.0
-      '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      '@types/node-fetch': ^2.5.11
-      '@types/react': ^18.0.9
-      '@types/ws': ^8.2.0
-      '@typescript-eslint/eslint-plugin': ^5.37.0
-      '@typescript-eslint/parser': ^5.37.0
-      autoprefixer: ^10.4.7
-      clsx: ^1.1.1
-      cross-env: ^7.0.3
-      eslint: ^7.32.0
-      eslint-config-next: ^13.0.0
-      eslint-config-prettier: ^8.5.0
-      eslint-plugin-prettier: ^4.0.0
-      eslint-plugin-react: ^7.25.1
-      eslint-plugin-react-hooks: ^4.2.0
-      next: ^13.0.0
-      next-auth: ^4.14.0
-      node-fetch: ^2.6.1
-      npm-run-all: ^4.1.5
-      postcss: ^8.4.14
-      prettier: ^2.7.1
-      prisma: ^4.3.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      start-server-and-test: ^1.12.0
-      superjson: ^1.7.4
-      tailwindcss: ^3.1.6
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      ws: ^8.0.0
-      zod: ^3.0.0
-    dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter_prisma@4.3.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../../packages/client
-      '@trpc/next': link:../../../packages/next
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      clsx: 1.2.1
-      next: 13.0.2_biqbaboplfbrettd7655fr4n2y
-      next-auth: 4.14.0_pknogjuzx4bv7zxtatcb2ahtsq
-      node-fetch: 2.6.7
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      superjson: 1.10.0
-      tsx: 3.9.0
-      ws: 8.9.0
-      zod: 3.19.1
-    devDependencies:
-      '@playwright/test': 1.26.1
-      '@tanstack/react-query-devtools': 4.6.0_35w334xqtbzboqulr5pz522esm
-      '@types/node': 18.7.20
-      '@types/node-fetch': 2.6.2
-      '@types/react': 18.0.21
-      '@types/ws': 8.5.3
-      '@typescript-eslint/eslint-plugin': 5.38.0_5dm4t5r4qe2xupwlo3y6omrvba
-      '@typescript-eslint/parser': 5.38.0_dyxdave6dwjbccc5dgiifcmuza
-      autoprefixer: 10.4.12_postcss@8.4.16
-      cross-env: 7.0.3
-      eslint: 7.32.0
-      eslint-config-next: 13.0.2_dyxdave6dwjbccc5dgiifcmuza
-      eslint-config-prettier: 8.5.0_eslint@7.32.0
-      eslint-plugin-prettier: 4.2.1_7gsvg5lgwpfdww3i7smtqxamuy
-      eslint-plugin-react: 7.31.8_eslint@7.32.0
-      eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      npm-run-all: 4.1.5
-      postcss: 8.4.16
-      prettier: 2.7.1
-      prisma: 4.3.1
-      start-server-and-test: 1.14.0
-      tailwindcss: 3.1.8_postcss@8.4.16
-      typescript: 4.8.3
-
-  examples/.interop/standalone-server:
-    specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
-      '@types/node': ^18.7.20
-      '@types/node-fetch': ^2.5.11
-      '@types/ws': ^8.2.0
-      abort-controller: ^3.0.0
-      node-fetch: ^2.6.1
-      npm-run-all: ^4.1.5
-      start-server-and-test: ^1.12.0
-      tsx: ^3.9.0
-      typescript: ^4.8.3
-      wait-port: ^1.0.1
-      ws: ^8.0.0
-      zod: ^3.0.0
-    dependencies:
-      '@trpc/client': link:../../../packages/client
-      '@trpc/react-query': link:../../../packages/react-query
-      '@trpc/server': link:../../../packages/server
-      '@types/node-fetch': 2.6.2
-      abort-controller: 3.0.0
-      node-fetch: 2.6.7
-      typescript: 4.8.3
-      ws: 8.9.0
-      zod: 3.19.1
-    devDependencies:
-      '@types/node': 18.7.20
-      '@types/ws': 8.5.3
-      npm-run-all: 4.1.5
-      start-server-and-test: 1.14.0
-      tsx: 3.9.0
-      wait-port: 1.0.1
-
   examples/.test/big-router-declaration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -535,10 +182,10 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -571,8 +218,8 @@ importers:
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       node-fetch: ^2.6.1
@@ -597,9 +244,9 @@ importers:
 
   examples/express-minimal:
     specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -632,9 +279,9 @@ importers:
 
   examples/express-server:
     specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -670,8 +317,8 @@ importers:
   examples/fastify-server:
     specifiers:
       '@fastify/websocket': ^5.0.0
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -710,8 +357,8 @@ importers:
 
   examples/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       node-fetch: ^2.6.1
       serverless: ^3.18.1
@@ -762,9 +409,9 @@ importers:
   examples/minimal-react/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
@@ -788,7 +435,7 @@ importers:
 
   examples/minimal-react/server:
     specifiers:
-      '@trpc/server': ^10.2.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       tsx: ^3.9.0
       typescript: ^4.8.3
@@ -803,7 +450,7 @@ importers:
 
   examples/minimal/client:
     specifiers:
-      '@trpc/client': ^10.2.0
+      '@trpc/client': ^10.3.0
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/client': link:../../../packages/client
@@ -812,7 +459,7 @@ importers:
 
   examples/minimal/server:
     specifiers:
-      '@trpc/server': ^10.2.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/server': link:../../../packages/server
@@ -822,10 +469,10 @@ importers:
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -855,10 +502,10 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -888,10 +535,10 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.37.0
@@ -956,10 +603,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -1005,10 +652,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
@@ -1082,11 +729,33 @@ importers:
       tailwindcss: 3.1.8_postcss@8.4.16
       typescript: 4.8.3
 
+  examples/soa:
+    specifiers:
+      '@trpc/client': ^10.3.0
+      '@trpc/server': ^10.3.0
+      '@types/node': ^18.7.20
+      node-fetch: ^2.6.1
+      npm-run-all: ^4.1.5
+      start-server-and-test: ^1.12.0
+      tsx: ^3.9.0
+      typescript: ^4.8.3
+      wait-port: ^1.0.1
+    devDependencies:
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
+      '@types/node': 18.7.20
+      node-fetch: 2.6.7
+      npm-run-all: 4.1.5
+      start-server-and-test: 1.14.0
+      tsx: 3.9.0
+      typescript: 4.8.3
+      wait-port: 1.0.1
+
   examples/standalone-server:
     specifiers:
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
@@ -1120,7 +789,7 @@ importers:
   packages/client:
     specifiers:
       '@testing-library/dom': ^8.18.1
-      '@trpc/server': ^10.2.0
+      '@trpc/server': ^10.3.0
       '@types/node': ^18.7.20
       rollup: ^2.79.1
       tsx: ^3.9.0
@@ -1134,9 +803,9 @@ importers:
   packages/next:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1167,8 +836,8 @@ importers:
   packages/react-query:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       express: ^4.17.1
@@ -1272,10 +941,10 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.0.0-rc.8
-      '@trpc/next': ^10.0.0-rc.8
-      '@trpc/react-query': ^10.0.0-rc.8
-      '@trpc/server': ^10.0.0-rc.8
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@types/jest': ^27.0.1
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
@@ -1355,10 +1024,10 @@ importers:
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^10.74.2
       '@tailwindcss/line-clamp': ^0.4.2
-      '@trpc/client': ^10.2.0
-      '@trpc/next': ^10.2.0
-      '@trpc/react-query': ^10.2.0
-      '@trpc/server': ^10.2.0
+      '@trpc/client': ^10.3.0
+      '@trpc/next': ^10.3.0
+      '@trpc/react-query': ^10.3.0
+      '@trpc/server': ^10.3.0
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
@@ -20856,40 +20525,6 @@ packages:
 
   /zwitch/1.0.5:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
-    dev: false
-
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-next-websockets-starter'
-    name: '@prisma/client'
-    version: 4.3.1
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.3.0-32.c875e43600dfe042452e0b868f7a48b817b9640b
-      prisma: 4.3.1
-    dev: false
-
-  '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-todo-web_prisma@4.3.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Finterop-todo-web'
-    name: '@prisma/client'
-    version: 4.3.1
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.3.0-32.c875e43600dfe042452e0b868f7a48b817b9640b
-      prisma: 4.3.1
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.3.1':
