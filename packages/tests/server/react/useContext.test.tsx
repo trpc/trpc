@@ -839,7 +839,7 @@ describe('query keys are stored separtely', () => {
         // @ts-expect-error - post.byId has required input
         const sad1 = utils.post.byId.getQueryKey(undefined, 'query');
         // @ts-expect-error - need to specify type
-        const sad2 = utils.post.byId.getQueryKey();
+        const sad2 = utils.post.byId.getQueryKey({ id: 1 });
 
         return <pre data-testid="qKey">{JSON.stringify(happy)}</pre>;
       }
