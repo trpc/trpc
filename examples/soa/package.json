@@ -8,7 +8,8 @@
     "start:server-a": "tsx server-a",
     "start:server-b": "tsx server-b",
     "start:client": "tsx client",
-    "test-dev": "start-test 'start:server-a' '2021' 'start:server-b' '2022' 'start:client'"
+    "test-dev": "start-test 'start:server-a' '2021' 'start:server-b' '2022' 'start:client'",
+    "start": "pnpm test-dev"
   },
   "devDependencies": {
     "@trpc/client": "^10.2.0",
