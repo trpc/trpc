@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - next
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -17,7 +16,7 @@ jobs:
         path: [
             #
             next-prisma-starter,
-            next-prisma-starter-websockets,
+            next-prisma-websockets-starter,
             next-prisma-todomvc,
             next-minimal-starter,
             next-big-router,

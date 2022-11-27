@@ -5,7 +5,7 @@ sidebar_label: WebSocket Link
 slug: /links/wsLink
 ---
 
-`wsLink` is a [**terminating link**](./index.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more [here.](../subscriptions)
+`wsLink` is a [**terminating link**](./index.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../subscriptions).
 
 ## Usage
 
@@ -46,4 +46,4 @@ export interface WebSocketClientOptions {
 
 ## Reference
 
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/next/packages/client/src/links/wsLink.ts)
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/wsLink.ts)

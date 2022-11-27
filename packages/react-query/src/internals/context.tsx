@@ -8,6 +8,8 @@ import {
   QueryClient,
   RefetchOptions,
   RefetchQueryFilters,
+  ResetOptions,
+  ResetQueryFilters,
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
@@ -21,8 +23,8 @@ import type {
   AnyRouter,
   inferHandlerInput,
   inferProcedureInput,
-  inferProcedureOutput,
 } from '@trpc/server';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { createContext } from 'react';
 
 export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
@@ -95,7 +97,7 @@ export interface TRPCContextState<
   fetchQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
+    TOutput extends inferTransformedProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
@@ -107,7 +109,7 @@ export interface TRPCContextState<
   fetchInfiniteQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
+    TOutput extends inferTransformedProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
@@ -123,7 +125,7 @@ export interface TRPCContextState<
   prefetchQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
+    TOutput extends inferTransformedProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
@@ -136,7 +138,7 @@ export interface TRPCContextState<
   prefetchInfiniteQuery<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TProcedure extends TRouter['_def']['queries'][TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
+    TOutput extends inferTransformedProcedureOutput<TProcedure>,
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
@@ -164,6 +166,26 @@ export interface TRPCContextState<
   invalidateQueries(
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
+  ): Promise<void>;
+
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
+   */
+  resetQueries<
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+  >(
+    pathAndInput?: [TPath, TInput?] | TPath,
+    filters?: ResetQueryFilters,
+    options?: ResetOptions,
+  ): Promise<void>;
+
+  /**
+   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
+   */
+  resetQueries(
+    filters?: ResetQueryFilters,
+    options?: ResetOptions,
   ): Promise<void>;
 
   /**
@@ -201,7 +223,9 @@ export interface TRPCContextState<
   setQueryData<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferTransformedProcedureOutput<
+      TRouter['_def']['queries'][TPath]
+    >,
   >(
     pathAndInput: [TPath, TInput?],
     updater: Updater<TOutput | undefined, TOutput | undefined>,
@@ -213,7 +237,9 @@ export interface TRPCContextState<
   getQueryData<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferTransformedProcedureOutput<
+      TRouter['_def']['queries'][TPath]
+    >,
   >(
     pathAndInput: [TPath, TInput?],
   ): TOutput | undefined;
@@ -223,7 +249,9 @@ export interface TRPCContextState<
   setInfiniteQueryData<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferTransformedProcedureOutput<
+      TRouter['_def']['queries'][TPath]
+    >,
   >(
     pathAndInput: [TPath, TInput?],
     updater: Updater<
@@ -238,7 +266,9 @@ export interface TRPCContextState<
   getInfiniteQueryData<
     TPath extends keyof TRouter['_def']['queries'] & string,
     TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-    TOutput extends inferProcedureOutput<TRouter['_def']['queries'][TPath]>,
+    TOutput extends inferTransformedProcedureOutput<
+      TRouter['_def']['queries'][TPath]
+    >,
   >(
     pathAndInput: [TPath, TInput?],
   ): InfiniteData<TOutput> | undefined;

@@ -8,6 +8,12 @@ import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
+export type Post = {
+  id: string;
+  title: string;
+  createdAt: number;
+};
+
 const ctx = konn()
   .beforeEach(() => {
     /**
@@ -31,6 +37,7 @@ const ctx = konn()
       'user.current.email.getMain': jest.fn(),
       posts: {
         getAll: jest.fn(),
+        getAllInfinite: jest.fn(),
         byId: {
           '1': jest.fn(),
           '2': jest.fn(),
@@ -40,6 +47,15 @@ const ctx = konn()
           2: jest.fn(),
         },
       },
+    };
+
+    const db: {
+      posts: Post[];
+    } = {
+      posts: [
+        { id: '1', title: 'first post', createdAt: 0 },
+        { id: '2', title: 'second post', createdAt: 1 },
+      ],
     };
 
     const t = initTRPC.create({
@@ -104,6 +120,40 @@ const ctx = konn()
           return `posts.getAll` as const;
         }),
 
+        getAllInfinite: t.procedure
+          .input(
+            z.object({
+              limit: z.number().min(1).max(100).nullish(),
+              cursor: z.number().nullish(),
+            }),
+          )
+          .query(({ input }) => {
+            resolvers.posts.getAllInfinite();
+            const items: typeof db.posts = [];
+            const limit = input.limit ?? 50;
+            const { cursor } = input;
+            let nextCursor: typeof cursor = null;
+            for (let index = 0; index < db.posts.length; index++) {
+              const element = db.posts[index]!;
+              if (cursor != null && element!.createdAt < cursor) {
+                continue;
+              }
+              items.push(element);
+              if (items.length >= limit) {
+                break;
+              }
+            }
+            const last = items[items.length - 1];
+            const nextIndex = db.posts.findIndex((item) => item === last) + 1;
+            if (db.posts[nextIndex]) {
+              nextCursor = db.posts[nextIndex]!.createdAt;
+            }
+            return {
+              items,
+              nextCursor,
+            };
+          }),
+
         // Define two procedures that have the same property but different
         // types.
         byId: t.procedure
@@ -161,6 +211,9 @@ const useSetupAllTestHooks = (proxy: typeof ctx['proxy']) => {
     }), // Really not a fan of allowing `.` in property names...
     posts: {
       getAll: proxy.posts.getAll.useQuery(),
+      getAllInfinite: proxy.posts.getAllInfinite.useInfiniteQuery({
+        limit: 1,
+      }),
       byId: {
         '1': proxy.posts.byId.useQuery({ id: '1' }),
         '2': proxy.posts.byId.useQuery({ id: '2' }),
@@ -239,6 +292,7 @@ test('Check invalidation of Whole router', async () => {
   expect(resolvers.posts['comments.getById'][1]).toHaveBeenCalledTimes(1);
   expect(resolvers.posts['comments.getById'][2]).toHaveBeenCalledTimes(1);
   expect(resolvers.posts.getAll).toHaveBeenCalledTimes(1);
+  expect(resolvers.posts.getAllInfinite).toHaveBeenCalledTimes(1);
 });
 
 //---------------------------------------------------------------------------------------------------
@@ -296,6 +350,8 @@ test('Check invalidating at router root invalidates all', async () => {
   expect(resolvers.posts['comments.getById'][1]).toHaveBeenCalledTimes(2);
   expect(resolvers.posts['comments.getById'][2]).toHaveBeenCalledTimes(2);
   expect(resolvers.posts.getAll).toHaveBeenCalledTimes(2);
+  // Invalidate should invalidate infinite queries as well as normal queries
+  expect(resolvers.posts.getAllInfinite).toHaveBeenCalledTimes(2);
 });
 
 //---------------------------------------------------------------------------------------------------

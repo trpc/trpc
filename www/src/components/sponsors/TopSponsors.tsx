@@ -40,7 +40,7 @@ export const TopSponsors = () => {
           );
         })}
         <Link
-          href="https://github.com/sponsors/KATT"
+          href="https://trpc.io/sponsor"
           target="_blank"
           rel="noopener"
           title="tRPC Sponsors"

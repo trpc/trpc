@@ -1,6 +1,6 @@
 {
   "name": "@examples/minimal-react-server",
-  "version": "10.0.0-rc.8",
+  "version": "10.4.0",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -8,7 +8,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@trpc/server": "^10.0.0-rc.8",
+    "@trpc/server": "^10.4.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
