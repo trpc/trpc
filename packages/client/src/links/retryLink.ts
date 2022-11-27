@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+// We're not actually exporting this link
 import { AnyRouter } from '@trpc/server';
 import { Unsubscribable, observable } from '@trpc/server/observable';
 import { TRPCLink } from './types';
