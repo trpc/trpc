@@ -165,8 +165,8 @@ type DecorateProcedure<
   ): InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined;
 
   /**
-   * Method to extract the query key for a given procedure
-   * @link https://trpc.io/docs/queries#query-key
+   * Method to extract the query key for a procedure
+   * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
    */
   getQueryKey(
     input: inferProcedureInput<TProcedure>,
@@ -190,8 +190,8 @@ type DecorateRouter = {
   ): Promise<void>;
 
   /**
-   * Method to extract the query key for a given procedure
-   * @link https://trpc.io/docs/queries#query-key
+   * Method to extract the query key for a router
+   * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
    */
   getQueryKey(input: undefined, type: 'any'): QueryKey;
 };
