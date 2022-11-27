@@ -19,7 +19,7 @@ const appRouter = router({
     .input(
       z
         .object({
-          name: z.string().nullish(),
+          name: z.string(),
         })
         .nullish(),
     )

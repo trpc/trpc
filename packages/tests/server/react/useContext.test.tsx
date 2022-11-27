@@ -798,4 +798,63 @@ describe('query keys are stored separtely', () => {
     `);
     expect(data.infinite).toBeUndefined();
   });
+
+  describe('getQueryKeys', () => {
+    test('no input', async () => {
+      const { proxy, App } = ctx;
+
+      function MyComponent() {
+        const utils = proxy.useContext();
+        const happy = utils.post.all.getQueryKey();
+
+        // @ts-expect-error - post.all has no input
+        const sad = utils.post.all.getQueryKey('foo');
+
+        return <pre data-testid="qKey">{JSON.stringify(happy)}</pre>;
+      }
+
+      const utils = render(
+        <App>
+          <MyComponent />
+        </App>,
+      );
+
+      await waitFor(() => {
+        expect(utils.getByTestId('qKey')).toHaveTextContent(
+          JSON.stringify([['post', 'all'], { type: 'query' }]),
+        );
+      });
+    });
+
+    test('with input', async () => {
+      const { proxy, App } = ctx;
+
+      function MyComponent() {
+        const utils = proxy.useContext();
+        const happy = utils.post.byId.getQueryKey({ id: 1 });
+
+        // @ts-expect-error - post.byId has required input
+        const sad1 = utils.post.byId.getQueryKey();
+        // @ts-expect-error - id should be a number
+        const sad2 = utils.post.byId.getQueryKey({ id: '1' });
+
+        return <pre data-testid="qKey">{JSON.stringify(happy)}</pre>;
+      }
+
+      const utils = render(
+        <App>
+          <MyComponent />
+        </App>,
+      );
+
+      await waitFor(() => {
+        expect(utils.getByTestId('qKey')).toHaveTextContent(
+          JSON.stringify([
+            ['post', 'byId'],
+            { input: { id: 1 }, type: 'query' },
+          ]),
+        );
+      });
+    });
+  });
 });

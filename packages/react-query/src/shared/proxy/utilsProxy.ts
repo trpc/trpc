@@ -164,13 +164,13 @@ type DecorateProcedure<
    * Method to extract the query key for a given procedure
    * @link https://trpc.io/docs/queries#query-key
    */
-  getQueryKey(input?: inferProcedureInput<TProcedure>): QueryKey;
+  getQueryKey(input: inferProcedureInput<TProcedure>): QueryKey;
 
   /**
    * Method to extract the query key for a given procedure
    * @link https://trpc.io/docs/queries#query-key
    */
-  getInfiniteQueryKey(input?: inferProcedureInput<TProcedure>): QueryKey;
+  getInfiniteQueryKey(input: inferProcedureInput<TProcedure>): QueryKey;
 };
 
 /**
