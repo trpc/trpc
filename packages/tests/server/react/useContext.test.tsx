@@ -907,12 +907,10 @@ describe('query keys are stored separtely', () => {
         </App>,
       );
 
-      const testElem = utils.getByTestId('isFetching');
-
       // should be fetching initially, and then not
-      expect(testElem).toHaveTextContent('1');
+      expect(utils.container).toHaveTextContent('1');
       await waitFor(() => {
-        expect(testElem).toHaveTextContent('0');
+        expect(utils.container).toHaveTextContent('0');
       });
     });
   });
