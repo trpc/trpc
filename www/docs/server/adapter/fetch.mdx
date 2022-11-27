@@ -28,6 +28,14 @@ tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.or
         </a>
       </td>
     </tr>
+    <tr>
+      <td>Vercel Edge Runtime example</td>
+      <td>
+        <a href="https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime">
+          Source
+        </a>
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -186,6 +194,60 @@ export default {
 ```
 
 Run `wrangler dev server.ts` and your endpoints will be available via HTTP!
+
+| Endpoint     | HTTP URI                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `getUser`    | `GET http://localhost:8787/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
+| `createUser` | `POST http://localhost:8787/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+
+### Vercel Edge Runtime
+
+#### Install dependencies
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```sh
+npm install -g edge-runtime
+```
+
+  </TabItem>
+  <TabItem value="yarn" label="yarn">
+
+```sh
+yarn global add edge-runtime
+```
+
+  </TabItem>
+  <TabItem value="pnpm" label="pnpm">
+
+```sh
+pnpm add -g edge-runtime
+```
+
+  </TabItem>
+</Tabs>
+
+#### Create Edge Runtime Function
+
+```ts title='server.ts'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+addEventListener('fetch', (event) => {
+  return event.respondWith(
+    fetchRequestHandler({
+      endpoint: '/trpc',
+      req: event.request,
+      router: appRouter,
+      createContext,
+    }),
+  );
+});
+```
+
+Run `edge-runtime --listen server.ts` and your endpoints will be available via HTTP!
 
 | Endpoint     | HTTP URI                                                                                                       |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
