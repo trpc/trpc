@@ -1,18 +1,14 @@
 import { client } from './client';
 
-async function main() {
-  {
-    const result = await client.serverA.greet.query('tRPC');
+{
+  const result = await client.serverA.greet.query('tRPC');
 
-    console.log(result.greeting);
-    //                  ^?
-  }
-  {
-    const result = await client.serverB.foo.query();
-
-    console.log({ result });
-    //             ^?
-  }
+  console.log(result.greeting);
+  //                  ^?
 }
+{
+  const result = await client.serverB.foo.query();
 
-main();
+  console.log({ result });
+  //             ^?
+}

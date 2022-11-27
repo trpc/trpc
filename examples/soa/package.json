@@ -2,6 +2,7 @@
   "name": "@examples/soa",
   "private": true,
   "version": "10.2.0",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start:server-a": "tsx server-a",
