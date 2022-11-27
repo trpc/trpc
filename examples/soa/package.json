@@ -2,17 +2,20 @@
   "name": "@examples/soa",
   "private": true,
   "version": "10.2.0",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start:server-a": "tsx server-a",
     "start:server-b": "tsx server-b",
     "start:client": "tsx client",
-    "test-dev": "start-test 'start:server-a' '2021' 'start:server-b' '2022' 'start:client'"
+    "test-dev": "start-test 'start:server-a' '2021' 'start:server-b' '2022' 'start:client'",
+    "start": "pnpm test-dev"
   },
   "devDependencies": {
     "@trpc/client": "^10.2.0",
     "@trpc/server": "^10.2.0",
     "@types/node": "^18.7.20",
+    "node-fetch": "^2.6.1",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",
