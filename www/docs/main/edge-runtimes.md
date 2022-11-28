@@ -15,7 +15,7 @@ Some of these runtimes includes, but not limited to:
 
 ## How to use tRPC server with an edge runtime
 
-tRPC provides a [fetch adapter](/docs/fetch) that uses the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) APIs as input and output. The tRPC-specific code is the same accross all runtimes, the only difference being how the response is returned.
+tRPC provides a [fetch adapter](/docs/fetch) that uses the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) APIs as input and output. The tRPC-specific code is the same across all runtimes, the only difference being how the response is returned.
 
 Follow the [fetch adapter](/docs/fetch) documentation to learn more.
 
