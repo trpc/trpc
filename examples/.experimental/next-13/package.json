@@ -1,5 +1,5 @@
 {
-  "name": "next-13",
+  "name": "@examples/next-13",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@trpc/client": "10.2.1",
+    "@trpc/server": "10.2.1",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
@@ -17,6 +19,7 @@
     "next": "^13.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^4.8.3"
+    "typescript": "^4.8.3",
+    "@myapp/trpc": "file:trpc"
   }
 }

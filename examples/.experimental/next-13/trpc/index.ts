@@ -1,0 +1,1 @@
+export { trpc } from './client';

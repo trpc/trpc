@@ -11,6 +11,7 @@ async function main() {
       'examples/*',
       'examples/.interop/*',
       'examples/.test/*',
+      'examples/.experimental/*',
     ],
     {
       onlyDirectories: true,

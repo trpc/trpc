@@ -3,6 +3,7 @@ packages:
   - 'examples/*'
   - 'examples/.interop/*'
   - 'examples/.test/*'
+  - 'examples/.experimental/*'
   - 'examples/minimal/*'
   - 'examples/minimal-react/*'
   - 'www'
