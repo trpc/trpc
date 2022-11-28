@@ -84,6 +84,13 @@ export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
+export interface TRPCQueryOptions<TPath, TInput, TData, TError>
+  extends QueryOptions<TData, TError, TData, [TPath, TInput]> {
+  trpc?: {
+    ssr?: boolean;
+  };
+}
+
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
       TOutput,
@@ -646,21 +653,19 @@ export function createHooksInternal<
   }
 
   const useQueries: typeof __useQueries = ({ queries, context }) => {
-    const { abortOnUnmount, ssrState, queryClient, prefetchQuery } =
-      useContext();
+    const { ssrState, queryClient, prefetchQuery } = useContext();
 
     for (const query of queries) {
-      const queryOptions: QueryOptions = query;
+      const queryOptions: TRPCQueryOptions<any, any, any, any> = query;
       if (
         typeof window === 'undefined' &&
         ssrState === 'prepass' &&
         queryOptions.trpc?.ssr !== false &&
         !queryClient.getQueryCache().find(queryOptions.queryKey!)
       ) {
-        void prefetchQuery(queryOptions.queryKey as any, opts as any);
+        void prefetchQuery(queryOptions.queryKey as any, queryOptions as any);
       }
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
 
     return __useQueries({ queries, context });
   };
