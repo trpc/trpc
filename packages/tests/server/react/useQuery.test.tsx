@@ -293,7 +293,7 @@ test('useQuery inference', () => {
     const options: Options = {};
     proxy.post.byId.useQuery({ id: '1' }, options);
 
-    return <></>
+    return <></>;
   }
 
   render(
