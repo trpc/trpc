@@ -197,7 +197,7 @@ export function createHooksInternalProxy<
         const context = trpc.useContext();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtilsProxy as any)(context as any);
+          return (createReactQueryUtilsProxy as any)(context);
         }, [context]);
       };
     }

@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 // We're testing this through E2E-testing
+import { useQueries } from '@tanstack/react-query';
 import {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
@@ -27,6 +28,7 @@ export function createTRPCNext<
 
   type CreateTRPCNext = {
     useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+    useQueries: typeof useQueries;
     withTRPC: typeof _withTRPC;
   } & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
 
@@ -39,6 +41,10 @@ export function createTRPCNext<
           return (createReactQueryUtilsProxy as any)(context);
         }, [context]);
       };
+    }
+
+    if (key === 'useQueries') {
+      return hooks.useQueries;
     }
 
     if (key === 'withTRPC') {
