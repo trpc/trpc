@@ -3,6 +3,7 @@ import {
   ClientDataTransformerOptions,
   DataTransformer,
   inferProcedureInput,
+  inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
 import {
@@ -134,7 +135,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TQueries,
     TInput extends inferProcedureInput<TQueries[TPath]>,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
-    type TOutput = inferTransformedProcedureOutput<TQueries[TPath]>;
+    type TOutput = inferProcedureOutput<TQueries[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
       type: 'query',
       path,

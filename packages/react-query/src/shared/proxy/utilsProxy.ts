@@ -6,6 +6,7 @@ import {
   QueryOptions,
   RefetchOptions,
   RefetchQueryFilters,
+  ResetOptions,
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
@@ -111,6 +112,14 @@ type DecorateProcedure<
   cancel(
     input?: inferProcedureInput<TProcedure>,
     options?: CancelOptions,
+  ): Promise<void>;
+
+  /**
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientresetqueries
+   */
+  reset(
+    input?: inferProcedureInput<TProcedure>,
+    options?: ResetOptions,
   ): Promise<void>;
 
   /**
@@ -275,6 +284,7 @@ export function createReactQueryUtilsProxy<
         prefetchInfinite: () =>
           context.prefetchInfiniteQuery(queryKey, ...rest),
         invalidate: () => context.invalidateQueries(queryKey, ...rest),
+        reset: () => context.resetQueries(queryKey, ...rest),
         refetch: () => context.refetchQueries(queryKey, ...rest),
         cancel: () => context.cancelQuery(queryKey, ...rest),
         setData: () => context.setQueryData(queryKey, updater, ...rest),
