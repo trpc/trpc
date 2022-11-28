@@ -206,6 +206,11 @@ test('deprecated routers', async () => {
 test('useSuspenseInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
+    const utils = proxy.useContext();
+    const result = proxy.useQueries({
+      queries: [utils.post.byId.getQueryOptions({ id: '1' })],
+    });
+
     const [data, query1] = proxy.post.list.useSuspenseInfiniteQuery(
       {},
       {

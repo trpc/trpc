@@ -3,6 +3,7 @@ import {
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
+  QueryOptions,
   RefetchOptions,
   RefetchQueryFilters,
   SetDataOptions,
@@ -28,14 +29,17 @@ import {
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
+import { QueryType } from '../../internals/getArrayQueryKey';
 import { getQueryKey } from '../../internals/getQueryKey';
+import { getClientArgs } from '../hooks/createHooksInternal';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
   TProcedure extends AnyQueryProcedure,
+  TPath extends string,
 > = {
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -47,7 +51,7 @@ type DecorateProcedure<
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -59,7 +63,7 @@ type DecorateProcedure<
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchquery
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -71,7 +75,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -84,7 +88,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
     input?: inferProcedureInput<TProcedure>,
@@ -93,7 +97,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientrefetchqueries
    */
   refetch(
     input?: inferProcedureInput<TProcedure>,
@@ -102,7 +106,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-cancellation
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientcancelqueries
    */
   cancel(
     input?: inferProcedureInput<TProcedure>,
@@ -110,7 +114,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata
    */
   setData(
     /**
@@ -125,7 +129,7 @@ type DecorateProcedure<
   ): void;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
@@ -137,18 +141,31 @@ type DecorateProcedure<
   ): void;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
   ): inferTransformedProcedureOutput<TProcedure> | undefined;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
   ): InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined;
+
+  /**
+   *
+   * @link https://tanstack.com/query/v4/docs/reference/useQueries
+   */
+  getQueryOptions(
+    input: inferProcedureInput<TProcedure>,
+  ): QueryOptions<
+    inferTransformedProcedureOutput<TProcedure>,
+    unknown,
+    inferTransformedProcedureOutput<TProcedure>,
+    [TPath, { type: QueryType }]
+  >;
 };
 
 /**
@@ -170,18 +187,28 @@ type DecorateRouter = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
+export type DecoratedProcedureUtilsRecord<
+  TRouter extends AnyRouter,
+  TPath extends string = '',
+> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
     AnyRouter | AnyQueryProcedure
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
+    ? DecoratedProcedureUtilsRecord<
+        TRouter['_def']['record'][TKey],
+        `${TPath}${TKey & string}.`
+      > &
         DecorateRouter
     : // utils only apply to queries
-      DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
+      DecorateProcedure<
+        TRouter,
+        TRouter['_def']['record'][TKey],
+        `${TPath}${TKey & string}`
+      >;
 } & DecorateRouter; // Add functions that should be available at utils root
 
-type AnyDecoratedProcedure = DecorateProcedure<any, any>;
+type AnyDecoratedProcedure = DecorateProcedure<any, any, any>;
 
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
@@ -255,6 +282,18 @@ export function createReactQueryUtilsProxy<
           context.setInfiniteQueryData(queryKey, updater, ...rest),
         getData: () => context.getQueryData(queryKey),
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+        getQueryOptions: () => {
+          const options: QueryOptions = {
+            queryKey,
+            queryFn: () =>
+              (context.client as any).query(
+                ...getClientArgs(queryKey, rest[0]),
+              ),
+            ...(rest[0] as any),
+          };
+
+          return options;
+        },
       };
 
       return contextMap[utilName]();

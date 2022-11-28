@@ -4,6 +4,7 @@ import {
   InfiniteQueryObserverSuccessResult,
   QueryClient,
   QueryObserverSuccessResult,
+  QueryOptions,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -12,6 +13,7 @@ import {
   UseQueryResult,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
+  useQueries as __useQueries,
   useQuery as __useQuery,
   hashQueryKey,
   useQueryClient,
@@ -107,7 +109,7 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onError?: (err: TError) => void;
 }
 
-function getClientArgs<TPathAndInput extends unknown[], TOptions>(
+export function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   pathAndInput: TPathAndInput,
   opts: TOptions,
 ) {
@@ -642,6 +644,27 @@ export function createHooksInternal<
     });
     return hook;
   }
+
+  const useQueries: typeof __useQueries = ({ queries, context }) => {
+    const { abortOnUnmount, ssrState, queryClient, prefetchQuery } =
+      useContext();
+
+    for (const query of queries) {
+      const queryOptions: QueryOptions = query;
+      if (
+        typeof window === 'undefined' &&
+        ssrState === 'prepass' &&
+        queryOptions.trpc?.ssr !== false &&
+        !queryClient.getQueryCache().find(queryOptions.queryKey!)
+      ) {
+        void prefetchQuery(queryOptions.queryKey as any, opts as any);
+      }
+    }
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
+
+    return __useQueries({ queries, context });
+  };
+
   const useDehydratedState: UseDehydratedState<TRouter> = (
     client,
     trpcState,
@@ -661,6 +684,7 @@ export function createHooksInternal<
     createClient,
     useContext,
     useQuery,
+    useQueries,
     useMutation,
     useSubscription,
     useDehydratedState,

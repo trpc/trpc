@@ -1,4 +1,4 @@
-import { InfiniteData } from '@tanstack/react-query';
+import { InfiniteData, useQueries } from '@tanstack/react-query';
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyMutationProcedure,
@@ -177,6 +177,7 @@ export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
+  useQueries: typeof useQueries;
   useDehydratedState: UseDehydratedState<TRouter>;
 } & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
 
@@ -199,6 +200,10 @@ export function createHooksInternalProxy<
           return (createReactQueryUtilsProxy as any)(context as any);
         }, [context]);
       };
+    }
+
+    if (key === 'useQueries') {
+      return trpc.useQueries;
     }
 
     if ((key as string) in trpc) {
