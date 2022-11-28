@@ -22,7 +22,14 @@ describe('transformer on legacy router', () => {
       const legacyRouter = interop
         .router<Context>()
         .transformer(superjson)
-        .query('oldProcedure', {
+        .query('oldQuery', {
+          resolve() {
+            return {
+              date: new Date(),
+            };
+          },
+        })
+        .mutation('oldMutation', {
           resolve() {
             return {
               date: new Date(),
@@ -68,7 +75,13 @@ describe('transformer on legacy router', () => {
     .done();
 
   test('call old', async () => {
-    const res = await ctx.client.query('oldProcedure');
-    expectTypeOf(res.date).toEqualTypeOf<string>();
+    {
+      const res = await ctx.client.query('oldQuery');
+      expectTypeOf(res.date).toEqualTypeOf<Date>();
+    }
+    {
+      const res = await ctx.client.mutation('oldMutation');
+      expectTypeOf(res.date).toEqualTypeOf<Date>();
+    }
   });
 });
