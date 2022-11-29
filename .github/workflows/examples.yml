@@ -153,22 +153,9 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
-      - name: Install playwright ???
-        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
-        run: |
-          cat ./examples/${{ matrix.dir }}/package.json | 
-          if grep --silent '"@playwright/test"';
-            then pnpm playwright install chromium;
-          fi
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
-
-      - name: Next.js cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
       - uses: actions/setup-node@v3
         with:
