@@ -141,11 +141,14 @@ describe('integration tests', () => {
   test('passing input to input w/o input', async () => {
     const t = initTRPC.create();
 
+    const snap = jest.fn();
     const router = t.router({
-      q: t.procedure.query(() => {
+      q: t.procedure.query(({ input }) => {
+        snap(input);
         return { text: 'hello' };
       }),
-      m: t.procedure.mutation(() => {
+      m: t.procedure.mutation(({ input }) => {
+        snap(input);
         return { text: 'hello' };
       }),
     });
@@ -155,19 +158,16 @@ describe('integration tests', () => {
     await proxy.q.query();
     await proxy.q.query(undefined);
     await proxy.q.query(null as any); // treat null as undefined
-    // ! This tests doesn't work
-    // ! await expect(
-    // !  proxy.q.query('not-nullish' as any),
-    // ! ).rejects.toMatchInlineSnapshot(`[TRPCClientError: No input expected]`);
+
+    await proxy.q.query('not-nullish' as any);
 
     await proxy.m.mutate();
     await proxy.m.mutate(undefined);
     await proxy.m.mutate(null as any); // treat null as undefined
-    // ! This tests doesn't work
-    // ! await expect(
-    // !  proxy.m.mutate('not-nullish' as any),
-    // ! ).rejects.toMatchInlineSnapshot(`[TRPCClientError: No input expected]`);
 
+    await proxy.m.mutate('not-nullish' as any);
+
+    expect(snap.mock.calls.every((call) => call[0] === undefined)).toBe(true);
     close();
   });
 
@@ -588,10 +588,10 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
   });
 
   expect(await proxy.q.query('foo')).toMatchInlineSnapshot(`
-Object {
-  "input": "foo",
-}
-`);
+    Object {
+      "input": "foo",
+    }
+  `);
   expect(await proxy.q.query()).toMatchInlineSnapshot(`Object {}`);
   close();
 });
