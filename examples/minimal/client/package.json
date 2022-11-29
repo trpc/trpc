@@ -1,9 +1,9 @@
 {
   "name": "@examples/minimal-client",
-  "version": "10.4.1",
+  "version": "10.4.2",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.4.1"
+    "@trpc/client": "^10.4.2"
   },
   "devDependencies": {
     "@types/node": "^18.7.20"

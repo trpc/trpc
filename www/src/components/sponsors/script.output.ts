@@ -4,7 +4,7 @@
 export const sponsors = [
   {
     "name": "Hampus Kraft",
-    "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=ca9876f3b8e32cc2f624a5957d5814ee7ef3fee0&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=87f4c5cd23ae2c8b66cfca5f2ac393795b9fbf13&v=4",
     "monthlyPriceInDollars": 3,
     "link": "https://hampuskraft.com",
     "privacyLevel": "PUBLIC",
@@ -474,7 +474,7 @@ export const sponsors = [
     "name": "_P",
     "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://pablorosales.dev",
+    "link": "https://github.com/PabloRosales",
     "privacyLevel": "PUBLIC",
     "login": "PabloRosales",
     "createdAt": 1668701929000
@@ -505,6 +505,24 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "joseph-lozano",
     "createdAt": 1669229945000
+  },
+  {
+    "name": "Michal Malota",
+    "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=8b491a7379fce3ab4f9b7f261a32974a86a63442&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://jobsinjs.com",
+    "privacyLevel": "PUBLIC",
+    "login": "michalmalota",
+    "createdAt": 1669641880000
+  },
+  {
+    "name": "Ascent Factory",
+    "imgSrc": "https://avatars.githubusercontent.com/u/33631274?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/AscentFactory",
+    "privacyLevel": "PUBLIC",
+    "login": "AscentFactory",
+    "createdAt": 1669694752000
   },
   {
     "name": "Ping.gg",
