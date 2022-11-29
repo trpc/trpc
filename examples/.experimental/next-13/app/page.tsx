@@ -1,4 +1,4 @@
-import { trpc } from '~/trpc';
+import { trpc } from 'trpc';
 import { ClientComponent } from './ClientComponent';
 
 export default async function Home() {

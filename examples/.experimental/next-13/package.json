@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "imports": {
+    "#trpc": "./trpc"
+  },
   "dependencies": {
     "@trpc/client": "10.2.1",
     "@trpc/server": "10.2.1",

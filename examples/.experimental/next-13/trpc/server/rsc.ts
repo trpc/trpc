@@ -40,6 +40,7 @@ const links = clientOptions.links
         for (const [key, value] of headers()) {
           h[key] = value;
         }
+        delete h.connection;
         return h;
       },
     }),
