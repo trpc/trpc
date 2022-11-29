@@ -318,19 +318,19 @@ test('make sure object is ignoring prototype', async () => {
   close();
 });
 
-// test('allow using built-in Object-properties', async () => {
-//   const t = initTRPC.create();
-//   const router = t.router({
-//     toString: t.procedure.query(() => 'toStringValue'),
-//     hasOwnProperty: t.procedure.query(() => 'hasOwnPropertyValue'),
-//   });
+test('allow using built-in Object-properties', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    toString: t.procedure.query(() => 'toStringValue'),
+    hasOwnProperty: t.procedure.query(() => 'hasOwnPropertyValue'),
+  });
 
-//   const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, proxy } = routerToServerAndClientNew(router);
 
-//   expect(await proxy.toString.query()).toBe('toStringValue');
-//   expect(await proxy.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
-//   close();
-// });
+  expect(await proxy.toString.query()).toBe('toStringValue');
+  expect(await proxy.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
+  close();
+});
 
 test('retain stack trace', async () => {
   class CustomError extends Error {
