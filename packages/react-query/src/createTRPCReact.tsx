@@ -201,7 +201,7 @@ export function createHooksInternalProxy<
       };
     }
 
-    if ((key as string) in trpc) {
+    if (trpc.hasOwnProperty(key)) {
       return (trpc as any)[key];
     }
 
