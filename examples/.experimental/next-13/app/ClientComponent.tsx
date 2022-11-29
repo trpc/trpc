@@ -5,5 +5,9 @@ import { trpc } from 'trpc';
 
 export function ClientComponent() {
   const data = use(trpc.hello.query());
-  return <p>In client: {data}</p>;
+  return (
+    <p>
+      In client: {data.text} {data.rsc ? 'RSC!' : 'CLIENT'}
+    </p>
+  );
 }

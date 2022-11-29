@@ -5,7 +5,7 @@ export default async function Home() {
   const data = await trpc.hello.query();
   return (
     <>
-      <p>RSC data: {data}</p>
+      <p>RSC data: {data.rsc ? 'RSC!' : 'CLIENT'}</p>
 
       <ClientComponent />
     </>

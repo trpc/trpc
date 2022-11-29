@@ -31,7 +31,9 @@ const links = clientOptions.links
     httpBatchLink({
       url: `${getBaseUrl()}/api/trpc`,
       headers() {
-        const h: HTTPHeaders = {};
+        const h: HTTPHeaders = {
+          rsc: '1',
+        };
         for (const [key, value] of headers()) {
           h[key] = value;
         }
