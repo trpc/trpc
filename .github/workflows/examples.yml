@@ -37,7 +37,6 @@ jobs:
             .test/big-router-declaration,
             soa,
             vercel-edge-runtime,
-            deno-deploy,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
@@ -105,12 +104,80 @@ jobs:
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
       - name: if exists, run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: install deno if necessary
-        if: ${{ matrix.dir === 'deno-deploy' }}
-        uses: denoland/setup-deno@v1
+  deno:
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      # TURBO_REMOTE_ONLY: true
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir:
+          [
+            deno-deploy,
+          ]
+        node-start: ['18.x']
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2.2.4
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - name: run test-dev for deno-deploy
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Install playwright ???
+        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - name: Next.js cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
+          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
+
+      - run: deno --version
+
+      - name: run test-dev
         if: ${{ matrix.dir == 'deno-deploy' }}
         run: |
           cd ./examples/${{ matrix.dir }}
