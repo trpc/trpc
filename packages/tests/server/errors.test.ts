@@ -290,30 +290,33 @@ Object {
   });
 });
 
-// test('make sure object is ignoring prototype', async () => {
-//   const onError = jest.fn();
-//   const t = initTRPC.create();
+test('make sure object is ignoring prototype', async () => {
+  const onError = jest.fn();
+  const t = initTRPC.create();
 
-//   const router = t.router({
-//     hello: t.procedure.query(() => 'there'),
-//   });
+  const router = t.router({
+    hello: t.procedure.query(() => 'there'),
+  });
 
-//   const { close, proxy } = routerToServerAndClientNew(router, {
-//     server: {
-//       onError,
-//     },
-//   });
-//   const clientError = await waitError(proxy.toString.query(), TRPCClientError);
-//   expect(clientError.shape.message).toMatchInlineSnapshot(
-//     `"No \\"query\\"-procedure on path \\"toString\\""`,
-//   );
-//   expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
-//   expect(onError).toHaveBeenCalledTimes(1);
-//   const serverError = onError.mock.calls[0]![0]!.error;
-//   expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    server: {
+      onError,
+    },
+  });
+  const clientError = await waitError(
+    (proxy as any).toString.query(),
+    TRPCClientError,
+  );
+  expect(clientError.shape.message).toMatchInlineSnapshot(
+    `"No \\"query\\"-procedure on path \\"toString\\""`,
+  );
+  expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0]![0]!.error;
+  expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
-//   close();
-// });
+  close();
+});
 
 // test('allow using built-in Object-properties', async () => {
 //   const t = initTRPC.create();
