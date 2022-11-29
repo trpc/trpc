@@ -35,23 +35,23 @@
 
 ## Intro
 
-tRPC allows you to easily build & consume fully typesafe APIs, without schemas or code generation.
+tRPC allows you to easily build & consume fully typesafe APIs without schemas or code generation.
 
 ### Features
 
 - ✅&nbsp; Well-tested and production ready.
-- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs and errors.
+- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs, and errors.
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React and there are many [community adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for other libraries)_
+- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React, and there are many [community adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for other libraries)_
 - 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
 ## Quickstart
 
-There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a next.js app, you can use the full-stack next.js example:
+There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a Next.js app, you can use the full-stack Next.js example:
 
 **Quick start with a full-stack Next.js example:**
 
@@ -180,28 +180,28 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://blog.lucasviana.dev"><img src="https://avatars.githubusercontent.com/u/13911440?u=7ef3b7a25610a3f8fc0f18a4af76a7c0999f33d3&v=4&s=100" width="100" alt="Lucas%20Viana"/><br />Lucas Viana</a></td>
    <td align="center"><a href="https://farazpatankar.com/"><img src="https://avatars.githubusercontent.com/u/10681116?u=694385b48756c6be01f289f8c419e95b3103fa84&v=4&s=100" width="100" alt="Faraz%20Patankar"/><br />Faraz Patankar</a></td>
    <td align="center"><a href="https://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4&s=100" width="100" alt="Theo%20Browne"/><br />Theo Browne</a></td>
-   <td align="center"><a href="https://patrickjs.com"><img src="https://avatars.githubusercontent.com/u/1016365?u=47d964a94849ae3bd59cc1a66e5f4aad0c43d2a2&v=4&s=100" width="100" alt="PatrickJS"/><br />PatrickJS</a></td>
-  </tr>
-  <tr>
    <td align="center"><a href="https://github.com/sronmiz"><img src="https://avatars.githubusercontent.com/u/50079487?u=a5c77b3b68319a8447e6a5a3d4d0f944d2b66c05&v=4&s=100" width="100" alt="Ron%20Mizrahi"/><br />Ron Mizrahi</a></td>
-   <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?u=f6f510f226382df2ebcea4a1935aaa94eacfcda4&v=4&s=100" width="100" alt="Illarion%20Koperski"/><br />Illarion Koperski</a></td>
-   <td align="center"><a href="https://github.com/aslaker"><img src="https://avatars.githubusercontent.com/u/51129804?u=72424dea624e663c5df731ad9852636f5c4471e5&v=4&s=100" width="100" alt="aslaker"/><br />aslaker</a></td>
-   <td align="center"><a href="https://hampuskraft.com"><img src="https://avatars.githubusercontent.com/u/24176136?u=ca9876f3b8e32cc2f624a5957d5814ee7ef3fee0&v=4&s=100" width="100" alt="Hampus%20Kraft"/><br />Hampus Kraft</a></td>
-   <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?u=8fa6072cc4524bdfedde3f80f0bb7fc96b2ff1a6&v=4&s=100" width="100" alt="Luis%20Matheus"/><br />Luis Matheus</a></td>
-   <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4&s=100" width="100" alt="Micha%C5%82%20Kowieski"/><br />Michał Kowieski</a></td>
   </tr>
   <tr>
-   <td align="center"><a href="https://github.com/danielyogel"><img src="https://avatars.githubusercontent.com/u/2037064?u=625c1b7bf16f83a378545126927aebed2db86bac&v=4&s=100" width="100" alt="Daniel%20Yogel"/><br />Daniel Yogel</a></td>
+   <td align="center"><a href="https://patrickjs.com"><img src="https://avatars.githubusercontent.com/u/1016365?u=47d964a94849ae3bd59cc1a66e5f4aad0c43d2a2&v=4&s=100" width="100" alt="PatrickJS"/><br />PatrickJS</a></td>
+   <td align="center"><a href="https://github.com/aslaker"><img src="https://avatars.githubusercontent.com/u/51129804?u=72424dea624e663c5df731ad9852636f5c4471e5&v=4&s=100" width="100" alt="aslaker"/><br />aslaker</a></td>
+   <td align="center"><a href="https://www.illarionvk.com"><img src="https://avatars.githubusercontent.com/u/5012724?u=f6f510f226382df2ebcea4a1935aaa94eacfcda4&v=4&s=100" width="100" alt="Illarion%20Koperski"/><br />Illarion Koperski</a></td>
+   <td align="center"><a href="https://hampuskraft.com"><img src="https://avatars.githubusercontent.com/u/24176136?u=87f4c5cd23ae2c8b66cfca5f2ac393795b9fbf13&v=4&s=100" width="100" alt="Hampus%20Kraft"/><br />Hampus Kraft</a></td>
+   <td align="center"><a href="https://github.com/lmatheus"><img src="https://avatars.githubusercontent.com/u/8514703?u=8fa6072cc4524bdfedde3f80f0bb7fc96b2ff1a6&v=4&s=100" width="100" alt="Luis%20Matheus"/><br />Luis Matheus</a></td>
    <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4&s=100" width="100" alt="Dmitry%20Maykov"/><br />Dmitry Maykov</a></td>
+  </tr>
+  <tr>
+   <td align="center"><a href="https://github.com/utevo"><img src="https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4&s=100" width="100" alt="Micha%C5%82%20Kowieski"/><br />Michał Kowieski</a></td>
+   <td align="center"><a href="https://github.com/danielyogel"><img src="https://avatars.githubusercontent.com/u/2037064?u=625c1b7bf16f83a378545126927aebed2db86bac&v=4&s=100" width="100" alt="Daniel%20Yogel"/><br />Daniel Yogel</a></td>
    <td align="center"><a href="https://iamkhan.io"><img src="https://avatars.githubusercontent.com/u/6490268?v=4&s=100" width="100" alt="SchlagerKhan"/><br />SchlagerKhan</a></td>
-   <td align="center"><a href="https://lindeneg.org/"><img src="https://avatars.githubusercontent.com/u/30244485?u=70f85b684ede25d672974d81a42049b718fd33af&v=4&s=100" width="100" alt="Christian"/><br />Christian</a></td>
    <td align="center"><a href="https://chrisbradley.dev"><img src="https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4&s=100" width="100" alt="Chris%20Bradley"/><br />Chris Bradley</a></td>
+   <td align="center"><a href="https://lindeneg.org/"><img src="https://avatars.githubusercontent.com/u/30244485?u=70f85b684ede25d672974d81a42049b718fd33af&v=4&s=100" width="100" alt="Christian"/><br />Christian</a></td>
    <td align="center"><a href="https://github.com/jzimmek"><img src="https://avatars.githubusercontent.com/u/40382?v=4&s=100" width="100" alt="Jan%20Zimmek"/><br />Jan Zimmek</a></td>
   </tr>
   <tr>
-   <td align="center"><a href="https://jwyce.gg"><img src="https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4&s=100" width="100" alt="Jared%20Wyce"/><br />Jared Wyce</a></td>
    <td align="center"><a href="https://tryhackme.com/p/zast99"><img src="https://avatars.githubusercontent.com/u/29718978?u=b9dd3b8f5f77bffb47e98ad0084bd94198d266c0&v=4&s=100" width="100" alt="Mateo%20Carriqu%C3%AD"/><br />Mateo Carriquí</a></td>
    <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br />Ahmed Elsakaan</a></td>
+   <td align="center"><a href="https://jwyce.gg"><img src="https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4&s=100" width="100" alt="Jared%20Wyce"/><br />Jared Wyce</a></td>
    <td align="center"><a href="https://github.com/Sven1106"><img src="https://avatars.githubusercontent.com/u/28002895?v=4&s=100" width="100" alt="Svend%20Aage%20Roperos%20Nielsen"/><br />Svend Aage Roperos Nielsen</a></td>
    <td align="center"><a href="https://github.com/iway1"><img src="https://avatars.githubusercontent.com/u/12774588?u=e664ed8bd364b3e9103d080d72087e25904c6cab&v=4&s=100" width="100" alt="Isaac%20Way"/><br />Isaac Way</a></td>
    <td align="center"><a href="https://github.com/LoriKarikari"><img src="https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4&s=100" width="100" alt="Lori%20Karikari"/><br />Lori Karikari</a></td>
@@ -223,8 +223,10 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://github.com/andrew-werdna"><img src="https://avatars.githubusercontent.com/u/8261769?u=ef025d7679533700957db0df9f74bd5d7d8c4a2a&v=4&s=100" width="100" alt="Andrew%20Brown"/><br />Andrew Brown</a></td>
   </tr>
   <tr>
-   <td align="center"><a href="https://pablorosales.dev"><img src="https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4&s=100" width="100" alt="_P"/><br />_P</a></td>
+   <td align="center"><a href="https://github.com/PabloRosales"><img src="https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4&s=100" width="100" alt="_P"/><br />_P</a></td>
    <td align="center"><a href="https://josephlozano.dev"><img src="https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4&s=100" width="100" alt="Joseph%20Lozano"/><br />Joseph Lozano</a></td>
+   <td align="center"><a href="https://jobsinjs.com"><img src="https://avatars.githubusercontent.com/u/141704?u=8b491a7379fce3ab4f9b7f261a32974a86a63442&v=4&s=100" width="100" alt="Michal%20Malota"/><br />Michal Malota</a></td>
+   <td align="center"><a href="https://github.com/AscentFactory"><img src="https://avatars.githubusercontent.com/u/33631274?v=4&s=100" width="100" alt="Ascent%20Factory"/><br />Ascent Factory</a></td>
    <td align="center"><a href="https://jonas-strassel.de/"><img src="https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4&s=100" width="100" alt="Jonas%20Strassel"/><br />Jonas Strassel</a></td>
   </tr>
 </table>

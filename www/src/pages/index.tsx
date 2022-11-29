@@ -244,11 +244,7 @@ const HomeHead: React.FC = () => {
     <Head>
       <body className="homepage" />
       <html className={isV10 ? 'v10' : 'v9'} />
-      <script
-        async
-        src="https://platform.twitter.com/widgets.js"
-        charSet="utf-8"
-      />
+      <script async src="https://platform.twitter.com/widgets.js" />
     </Head>
   );
 };
