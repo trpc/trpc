@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "esbuild --bundle --outdir=dist src/index.ts",
-    "dev": "pnpm build && edge-runtime --listen ./dist/index.js",
+    "dev": "pnpm build && edge-runtime --listen ./dist/index.js --port 3000",
     "test-dev": "start-server-and-test 'pnpm dev' http://127.0.0.1:3000 'tsx src/client.ts'"
   },
   "dependencies": {
