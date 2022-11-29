@@ -1,0 +1,30 @@
+{
+  "name": "@examples/vercel-edge-runtime",
+  "version": "10.4.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild --bundle --outdir=dist src/index.ts",
+    "dev": "pnpm build && edge-runtime --listen ./dist/index.js",
+    "test-dev": "start-server-and-test 'pnpm dev' http://127.0.0.1:3000 'tsx src/client.ts'"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.4.1",
+    "@trpc/server": "^10.4.1",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@edge-runtime/types": "^2.0.2",
+    "@types/node": "^18.7.20",
+    "@types/node-fetch": "^2.5.11",
+    "edge-runtime": "^2.0.2",
+    "esbuild": "^0.15.15",
+    "node-fetch": "^2.6.1",
+    "start-server-and-test": "^1.12.0",
+    "tsx": "^3.9.0",
+    "typescript": "^4.8.3"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
