@@ -6,15 +6,10 @@ import {
 import { headers } from 'next/headers';
 import { clientOptions } from '../client';
 
-console.log('-----------------rsc');
-console.log('-----------------rsc');
-console.log('-----------------rsc');
-console.log('-----------------rsc');
-console.log('-----------------rsc');
-console.log('-----------------rsc');
-console.log('-----------------rsc');
-console.log('-----------------rsc');
 function getBaseUrl() {
+  if (typeof window !== 'undefined') {
+    return '';
+  }
   // reference for vercel.com
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
@@ -34,7 +29,7 @@ const links = clientOptions.links
   .slice(0, clientOptions.links.length - 2)
   .concat([
     httpBatchLink({
-      url: getBaseUrl(),
+      url: `${getBaseUrl()}/api/trpc`,
       headers() {
         const h: HTTPHeaders = {};
         for (const [key, value] of headers()) {
