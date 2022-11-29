@@ -36,6 +36,8 @@ jobs:
             standalone-server,
             .test/big-router-declaration,
             soa,
+            vercel-edge-runtime,
+            deno-deploy,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
@@ -103,3 +105,13 @@ jobs:
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
       - name: if exists, run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: install deno if necessary
+        if: ${{ matrix.dir === 'deno-deploy' }}
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: run test-dev for deno-deploy
+        if: ${{ matrix.dir == 'deno-deploy' }}
+        run: |
+          cd ./examples/${{ matrix.dir }}
+          pnpm start-server-and-test 'deno run --allow-net=:8000 --allow-env ./src/index.ts' http://127.0.0.1:8000 'deno run --allow-net ./src/client.ts'
