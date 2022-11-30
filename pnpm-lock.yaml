@@ -89,6 +89,7 @@ importers:
       react: ^18.2.0
       react-dom: ^18.2.0
       typescript: ^4.8.3
+      zod: ^3.0.0
     dependencies:
       '@trpc/client': link:../../../packages/client
       '@trpc/server': link:../../../packages/server
@@ -101,6 +102,7 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       typescript: 4.8.3
+      zod: 3.19.1
 
   examples/.interop/next-prisma-starter:
     specifiers:
