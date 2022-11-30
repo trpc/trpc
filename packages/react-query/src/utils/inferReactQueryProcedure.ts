@@ -30,32 +30,24 @@ type InferMutationOptions<TProcedure extends AnyProcedure> =
     inferProcedureOutput<TProcedure>
   >;
 
-type InferReactQueryProcedureOptions<
+type inferReactQueryProcedureOptions<
   TRouter extends AnyRouter,
   TPath extends string = '',
 > = {
   [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
     ? TRouterOrProcedure extends AnyRouter
-      ? InferReactQueryProcedureOptions<
+      ? inferReactQueryProcedureOptions<
           TRouterOrProcedure,
           `${TPath}${TKey & string}.`
         >
       : TRouterOrProcedure extends AnyProcedure
       ? TRouterOrProcedure extends AnyMutationProcedure
-        ? {
-            options: InferMutationOptions<TRouterOrProcedure>;
-          }
+        ? InferMutationOptions<TRouterOrProcedure>
         : TRouterOrProcedure extends AnyQueryProcedure
-        ? {
-            options: InferQueryOptions<
-              TRouterOrProcedure,
-              `${TPath}${TKey & string}`
-            >;
-            input: inferProcedureInput<TRouterOrProcedure>;
-          }
+        ? InferQueryOptions<TRouterOrProcedure, `${TPath}${TKey & string}`>
         : never
       : never
     : never;
 };
 
-export type { InferReactQueryProcedureOptions };
+export type { inferReactQueryProcedureOptions };

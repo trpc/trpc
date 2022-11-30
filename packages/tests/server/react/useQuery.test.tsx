@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { InferReactQueryProcedureOptions } from '@trpc/react-query';
+import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -276,18 +276,15 @@ test('deprecated routers', async () => {
   );
 });
 
-test('useQuery inference', () => {
+test('useQuery options inference', () => {
   const { appRouter, proxy, App } = ctx;
 
-  type ReactQueryProcedure = InferReactQueryProcedureOptions<typeof appRouter>;
-  type Options = ReactQueryProcedure['post']['byId']['options'];
+  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['byId'];
   type OptionsRequired = Required<Options>;
 
   type OnSuccessData = Parameters<OptionsRequired['onSuccess']>[0];
   expectTypeOf<OnSuccessData>().toMatchTypeOf<'__result'>();
-
-  type PostByIdInput = ReactQueryProcedure['post']['byId']['input'];
-  expectTypeOf<PostByIdInput>().toMatchTypeOf<{ id: string }>();
 
   function MyComponent() {
     const options: Options = {};

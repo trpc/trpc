@@ -116,21 +116,26 @@ async function main() {
 main();
 ```
 
-## Infer React Query options/inputs based on your router
+## Infer React Query options based on your router
 
 ```ts twoslash title="client.ts"
 // @module: esnext
 // @include: server
 // ---cut---
 // @filename: client.ts
-import type { InferReactQueryProcedureOptions } from '@trpc/react-query';
+import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
+import type { inferRouterInputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-type ReactQueryProcedure = InferReactQueryProcedureOptions<AppRouter>;
-// Infers the mutation options for `post.create.useMutation`
-type PostCreateOptions = ReactQueryProcedure['post']['create']['options'];
-// Infers the query options for `post.byId.useQuery`
-type PostByIdOptions = ReactQueryProcedure['post']['byId']['options'];
-// Infers the query input for `post.byId.useQuery`
-type PostByIdInput = ReactQueryProcedure['post']['byId']['input'];
+// utils file
+type ReactQueryOptions = inferReactQueryProcedureOptions<AppRouter>;
+type RouterInputs = inferRouterInputs<AppRouter>;
+
+// usage file (ex. your custom useCreatePost hook)
+type PostCreateOptions = ReactQueryOptions['post']['create'];
+type PostCreateInput = RouterInputs['post']['create'];
+
+function useCreatePost(input: PostCreateInput, options?: PostCreateOptions) {
+  // ...  
+}
 ```

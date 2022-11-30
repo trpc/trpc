@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { InferReactQueryProcedureOptions } from '@trpc/react-query';
+import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -81,11 +81,11 @@ test('useMutation', async () => {
   });
 });
 
-test('useMutation inference', () => {
+test('useMutation options inference', () => {
   const { appRouter, proxy, App } = ctx;
 
-  type ReactQueryProcedure = InferReactQueryProcedureOptions<typeof appRouter>;
-  type Options = ReactQueryProcedure['post']['create']['options'];
+  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['create'];
   type OptionsRequired = Required<Options>;
 
   type OnSuccessData = Parameters<OptionsRequired['onSuccess']>[0];
