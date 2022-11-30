@@ -3,9 +3,9 @@
 import { Suspense, cache, use, useState } from 'react';
 import { trpc } from 'trpc';
 
-const helloQuery = cache((v: string) =>
+const helloQuery = cache((name: string) =>
   trpc.hello.query({
-    name: v,
+    name,
   }),
 );
 
