@@ -23,9 +23,6 @@ describe('without transformer', () => {
             links: [
               httpLink({
                 url: httpUrl,
-                headers() {
-                  throw new Error('Bad headers fn');
-                },
               }),
             ],
           };
@@ -77,9 +74,6 @@ describe('with transformer', () => {
             links: [
               httpLink({
                 url: httpUrl,
-                headers() {
-                  throw new Error('Bad headers fn');
-                },
               }),
             ],
           };
