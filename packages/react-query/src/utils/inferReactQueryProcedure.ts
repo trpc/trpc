@@ -40,12 +40,10 @@ type inferReactQueryProcedureOptions<
           TRouterOrProcedure,
           `${TPath}${TKey & string}.`
         >
-      : TRouterOrProcedure extends AnyProcedure
-      ? TRouterOrProcedure extends AnyMutationProcedure
-        ? InferMutationOptions<TRouterOrProcedure>
-        : TRouterOrProcedure extends AnyQueryProcedure
-        ? InferQueryOptions<TRouterOrProcedure, `${TPath}${TKey & string}`>
-        : never
+      : TRouterOrProcedure extends AnyMutationProcedure
+      ? InferMutationOptions<TRouterOrProcedure>
+      : TRouterOrProcedure extends AnyQueryProcedure
+      ? InferQueryOptions<TRouterOrProcedure, `${TPath}${TKey & string}`>
       : never
     : never;
 };
