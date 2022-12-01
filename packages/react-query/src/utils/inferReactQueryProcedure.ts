@@ -30,7 +30,7 @@ type InferMutationOptions<TProcedure extends AnyProcedure> =
     inferTransformedProcedureOutput<TProcedure>
   >;
 
-type inferReactQueryProcedureOptions<
+export type inferReactQueryProcedureOptions<
   TRouter extends AnyRouter,
   TPath extends string = '',
 > = {
@@ -47,5 +47,3 @@ type inferReactQueryProcedureOptions<
       : never
     : never;
 };
-
-export type { inferReactQueryProcedureOptions };
