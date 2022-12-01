@@ -30,6 +30,17 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return parser.create.bind(parser);
   }
 
+  if (typeof parser.decode === 'function') {
+    // ProcedureParserIoTsEsque
+    return (value) => {
+      const decoded = parser.decode.bind(parser)(value);
+      if (decoded.left) {
+        throw decoded.left;
+      }
+      return decoded.right;
+    };
+  }
+
   throw new Error('Could not find a validator fn');
 }
 
