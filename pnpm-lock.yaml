@@ -29,7 +29,7 @@ importers:
       eslint-plugin-prettier: ^4.0.0
       eslint-plugin-react: ^7.25.1
       eslint-plugin-react-hooks: ^4.2.0
-      eslint-plugin-turbo: ^0.0.6
+      eslint-plugin-turbo: ^0.0.7
       eslint-plugin-unicorn: 40.1.0
       fast-glob: ^3.2.12
       lerna: ^5.5.1
@@ -60,7 +60,7 @@ importers:
       eslint-plugin-prettier: 4.2.1_uxd3uwca74b5prxme7kige3a7y
       eslint-plugin-react: 7.31.11_eslint@7.32.0
       eslint-plugin-react-hooks: 4.6.0_eslint@7.32.0
-      eslint-plugin-turbo: 0.0.6_eslint@7.32.0
+      eslint-plugin-turbo: 0.0.7_eslint@7.32.0
       eslint-plugin-unicorn: 40.1.0_eslint@7.32.0
       fast-glob: 3.2.12
       lerna: 5.6.2_@swc+core@1.3.20
@@ -10786,10 +10786,10 @@ packages:
       semver: 6.3.0
       string.prototype.matchall: 4.0.8
 
-  /eslint-plugin-turbo/0.0.6_eslint@7.32.0:
-    resolution: {integrity: sha512-GgisxIg4saIUlwUbiXPec00dkp2D8iar717g8TuIgCzStO4P24Ob2920CVFNftC5Rm4NFx19E9dLa4P1SwCniA==}
+  /eslint-plugin-turbo/0.0.7_eslint@7.32.0:
+    resolution: {integrity: sha512-iajOH8eD4jha3duztGVBD1BEmvNrQBaA/y3HFHf91vMDRYRwH7BpHSDFtxydDpk5ghlhRxG299SFxz7D6z4MBQ==}
     peerDependencies:
-      eslint: ^6.6.0 || ^8.0.0
+      eslint: '>6.6.0'
     dependencies:
       eslint: 7.32.0
     dev: false
