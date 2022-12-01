@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=39e3ca30e890dd4e1b20780f732432e591c3f8b0&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=6dac9b517b1246cb525de89ff8819d16cf0a2f83&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -508,7 +508,7 @@ export const sponsors = [
   },
   {
     "name": "Michal Malota",
-    "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=8b491a7379fce3ab4f9b7f261a32974a86a63442&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=3eba1b12a74987d406a98dbcb7f1d4fc2efe0390&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://jobsinjs.com",
     "privacyLevel": "PUBLIC",
@@ -523,6 +523,15 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "AscentFactory",
     "createdAt": 1669694752000
+  },
+  {
+    "name": "Austin S.",
+    "imgSrc": "https://avatars.githubusercontent.com/u/1623983?u=3054cfbee08ca58eda4105c886cba6c472256534&v=4",
+    "monthlyPriceInDollars": 20,
+    "link": "https://austinsdev.com/portfolio",
+    "privacyLevel": "PUBLIC",
+    "login": "austins",
+    "createdAt": 1669799276000
   },
   {
     "name": "Ping.gg",
