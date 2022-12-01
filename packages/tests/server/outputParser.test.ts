@@ -2,6 +2,7 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import '@testing-library/jest-dom';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
+import * as iots from 'io-ts';
 import myzod from 'myzod';
 import * as t from 'superstruct';
 import * as yup from 'yup';
@@ -257,6 +258,38 @@ test('async validator fn', async () => {
       })
       .query(({ input }) => {
         return { input: input as string };
+      }),
+  });
+
+  const { proxy, close } = routerToServerAndClientNew(router);
+
+  const output = await proxy.q.query('foobar');
+  expectTypeOf(output.input).toBeString();
+  expect(output).toMatchInlineSnapshot(`
+    Object {
+      "input": "foobar",
+    }
+  `);
+
+  await expect(proxy.q.query(1234)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Output validation failed]`,
+  );
+
+  close();
+});
+
+test('iots', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .input(iots.union([iots.string, iots.number]))
+      .output(
+        iots.type({
+          input: iots.string,
+        }),
+      )
+      .query(({ input }) => {
+        return { input: input };
       }),
   });
 
