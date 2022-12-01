@@ -15,20 +15,37 @@ import {
 import { getArrayQueryKey } from '../internals/getArrayQueryKey';
 import { CreateTRPCReactQueryClientConfig, getQueryClient } from '../shared';
 
-interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
+/**
+ * Works like TypeScript's `Omit`, but allows safe usage of the omitted keys.
+ * If you use a key that does not exist on the type, there will be a type error.
+ */
+type OmitStrict<TType, TKey extends keyof TType> = TType extends unknown
+  ? Pick<TType, Exclude<keyof TType, TKey>>
+  : never;
+
+interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter, TContext> {
   router: TRouter;
-  ctx: inferRouterContext<TRouter>;
+  ctx: inferRouterContext<TRouter> extends TContext // Checking the `extend` this way makes sure that the given context is either a direct match or a subset of the router's context.
+    ? TContext
+    : // Helpful message shown to the user if his given context is not matching/a subset.
+      "The context you have given is either not a direct match or not a subset of the router's context.";
   transformer?: ClientDataTransformerOptions;
 }
-export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
-  CreateSSGHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
+export type CreateSSGHelpersOptions<
+  TRouter extends AnyRouter,
+  TContext,
+> = CreateSSGHelpersOptionsBase<TRouter, TContext> &
+  CreateTRPCReactQueryClientConfig;
 
 /**
  * Create functions you can use for server-side rendering / static generation
  * @deprecated use `createProxySSGHelpers` instead
  */
-export function createSSGHelpers<TRouter extends AnyRouter>(
-  opts: CreateSSGHelpersOptions<TRouter>,
+export function createSSGHelpers<TRouter extends AnyRouter, TContext>(
+  // Omit the context so we can infer its given type.
+  opts: OmitStrict<CreateSSGHelpersOptions<TRouter, TContext>, 'ctx'> & {
+    ctx: TContext;
+  },
 ) {
   const { router, transformer, ctx } = opts;
   type TQueries = TRouter['_def']['queries'];
