@@ -48,7 +48,7 @@ const appRouter = router({
 
 ## Input validation
 
-tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
+tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/tests/server/validators.test.ts)
 
 
 ### With [Zod](https://github.com/colinhacks/zod)
