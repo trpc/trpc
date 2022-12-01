@@ -118,24 +118,36 @@ main();
 
 ## Infer React Query options based on your router
 
-```ts twoslash title="client.ts"
+```ts twoslash filename='trpc.ts'
 // @module: esnext
 // @include: server
 // ---cut---
-// @filename: client.ts
-import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
-import type { inferRouterInputs } from '@trpc/server';
+// @filename: trpc.ts
+import { inferReactQueryProcedureOptions, createTRPCReact } from '@trpc/react-query';
+import { inferRouterInputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
-// utils file
-type ReactQueryOptions = inferReactQueryProcedureOptions<AppRouter>;
-type RouterInputs = inferRouterInputs<AppRouter>;
+export type ReactQueryOptions = inferReactQueryProcedureOptions<AppRouter>;
+export type RouterInputs = inferRouterInputs<AppRouter>;
 
-// usage file (ex. your custom useCreatePost hook)
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: usePostCreate.ts
+import { ReactQueryOptions, trpc } from './trpc';
+
 type PostCreateOptions = ReactQueryOptions['post']['create'];
-type PostCreateInput = RouterInputs['post']['create'];
 
-function useCreatePost(input: PostCreateInput, options?: PostCreateOptions) {
-  // ...  
+function usePostCreate(options?: PostCreateOptions) {
+  return trpc.post.create.useMutation(options);
+}
+
+// @filename: usePostById.ts
+import { ReactQueryOptions, RouterInputs, trpc } from './trpc';
+
+type PostByIdOptions = ReactQueryOptions['post']['byId'];
+type PostByIdInput = RouterInputs['post']['byId'];
+
+function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
+  return trpc.post.byId.useQuery(input, options);
 }
 ```
