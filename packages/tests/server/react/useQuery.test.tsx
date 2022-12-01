@@ -32,6 +32,16 @@ const ctx = konn()
             }),
           )
           .query(() => '__result' as const),
+        byIdWithSerializable: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
+            }),
+          )
+          .query(() => ({
+            id: 1,
+            date: new Date(),
+          })),
         list: t.procedure
           .input(
             z.object({
@@ -280,15 +290,22 @@ test('useQuery options inference', () => {
   const { appRouter, proxy, App } = ctx;
 
   type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
-  type Options = ReactQueryProcedure['post']['byId'];
-  type OptionsRequired = Required<Options>;
-
-  type OnSuccessData = Parameters<OptionsRequired['onSuccess']>[0];
-  expectTypeOf<OnSuccessData>().toMatchTypeOf<'__result'>();
+  type Options = ReactQueryProcedure['post']['byIdWithSerializable'];
 
   function MyComponent() {
     const options: Options = {};
-    proxy.post.byId.useQuery({ id: '1' }, options);
+    proxy.post.byIdWithSerializable.useQuery(
+      { id: '1' },
+      {
+        ...options,
+        onSuccess: (data) => {
+          expectTypeOf(data).toMatchTypeOf<{
+            id: number;
+            date: string;
+          }>();
+        },
+      },
+    );
 
     return <></>;
   }

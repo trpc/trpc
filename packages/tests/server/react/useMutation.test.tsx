@@ -29,6 +29,17 @@ const ctx = konn()
             }),
           )
           .mutation(() => `__mutationResult` as const),
+        createWithSerializable: t.procedure
+          .input(
+            z.object({
+              text: z.string(),
+            }),
+          )
+          .mutation(({ input }) => ({
+            id: 1,
+            text: input.text,
+            date: new Date(),
+          })),
       }),
       /**
        * @deprecated
@@ -85,18 +96,24 @@ test('useMutation options inference', () => {
   const { appRouter, proxy, App } = ctx;
 
   type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
-  type Options = ReactQueryProcedure['post']['create'];
+  type Options = ReactQueryProcedure['post']['createWithSerializable'];
   type OptionsRequired = Required<Options>;
-
-  type OnSuccessData = Parameters<OptionsRequired['onSuccess']>[0];
-  expectTypeOf<OnSuccessData>().toMatchTypeOf<'__mutationResult'>();
 
   type OnSuccessVariables = Parameters<OptionsRequired['onSuccess']>[1];
   expectTypeOf<OnSuccessVariables>().toMatchTypeOf<{ text: string }>();
 
   function MyComponent() {
     const options: Options = {};
-    proxy.post.create.useMutation(options);
+    proxy.post.createWithSerializable.useMutation({
+      ...options,
+      onSuccess: (data) => {
+        expectTypeOf(data).toMatchTypeOf<{
+          id: number;
+          text: string;
+          date: string;
+        }>();
+      },
+    });
 
     return <></>;
   }

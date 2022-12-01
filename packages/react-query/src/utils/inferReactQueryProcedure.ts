@@ -5,8 +5,8 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   inferProcedureInput,
-  inferProcedureOutput,
 } from '@trpc/server';
+import { inferTransformedProcedureOutput } from '@trpc/server/dist/shared';
 import { UseTRPCMutationOptions, UseTRPCQueryOptions } from '../shared';
 
 type InferQueryOptions<
@@ -16,8 +16,8 @@ type InferQueryOptions<
   UseTRPCQueryOptions<
     TPath,
     inferProcedureInput<TProcedure>,
-    inferProcedureOutput<TProcedure>,
-    inferProcedureOutput<TProcedure>,
+    inferTransformedProcedureOutput<TProcedure>,
+    inferTransformedProcedureOutput<TProcedure>,
     TRPCClientErrorLike<TProcedure>
   >,
   'select'
@@ -27,7 +27,7 @@ type InferMutationOptions<TProcedure extends AnyProcedure> =
   UseTRPCMutationOptions<
     inferProcedureInput<TProcedure>,
     TRPCClientErrorLike<TProcedure>,
-    inferProcedureOutput<TProcedure>
+    inferTransformedProcedureOutput<TProcedure>
   >;
 
 type inferReactQueryProcedureOptions<
