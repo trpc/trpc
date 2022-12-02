@@ -17,8 +17,8 @@ The result is propagated to all resolvers.
 // -------------------------------------------------
 // @filename: context.ts
 // -------------------------------------------------
-import type { inferAsyncReturnType } from '@trpc/server'
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
+import type { inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
 /**
@@ -82,8 +82,8 @@ In some scenarios it could make sense to split up your context into "inner" and 
 ### Example for inner & outer context
 
 ```ts
-import type { inferAsyncReturnType } from '@trpc/server'
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
+import type { inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 
 /** 
  * Defines your inner context shape.
@@ -107,7 +107,7 @@ export async function createContextInner(opts?: CreateInnerContextOptions) {
     ...opts,
     prisma,
   }
-}
+};
 
 /** 
  * Outer context. Will e.g. bring `req` & `res` to the context as "not `undefined`".
@@ -115,16 +115,16 @@ export async function createContextInner(opts?: CreateInnerContextOptions) {
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export async function createContext(opts: CreateNextContextOptions) {
-  const contextInner = await createContextInner()
+  const contextInner = await createContextInner();
 
   return {
     ...contextInner,
     req: opts.req,
     res: opts.res,
   }
-}
+};
 
-export type Context = inferAsyncReturnType<typeof createContextInner>
+export type Context = inferAsyncReturnType<typeof createContextInner>;
 
 // The usage in your router is the same as the example above.
 ```
