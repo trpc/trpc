@@ -86,6 +86,14 @@ import { initTRPC, type inferAsyncReturnType } from '@trpc/server'
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
 
 /** 
+ * Defines your inner context shape.
+ * Add fields here that the inner context brings.
+ */
+interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
+  prisma: typeof prisma
+}
+
+/** 
  * Inner context. Will always be available in your procedures, in contrast to the outer context.
  * 
  * Also useful for:
@@ -95,8 +103,9 @@ import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
  * @see https://trpc.io/docs/context#inner-and-outer-context
  * 
  */
-export async function createContextInner() {
+export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
+    ...opts,
     prisma,
   }
 }
