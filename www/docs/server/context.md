@@ -5,7 +5,7 @@ sidebar_label: Context
 slug: /context
 ---
 
-Context is data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
+Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
 
 The `createContext()` function is called for each call to a procedure, which either comes via HTTP or from a [server-side call](server-side-calls)/[SSG helper](ssg-helpers).
 
