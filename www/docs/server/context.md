@@ -103,6 +103,11 @@ export async function createContextInner() {
   }
 }
 
+/** 
+ * Outer context. Will bring `req` & `res` to the context.
+ * 
+ * @see https://trpc.io/docs/context
+ **/
 export async function createContext(opts: CreateNextContextOptions) {
   const contextInner = await createContextInner()
 
@@ -118,7 +123,7 @@ export type Context = inferAsyncReturnType<typeof createContextInner>
 // The usage in your router is the same as the example above.
 ```
 
-It is important to infer your `Context` from the **inner** `context, as only what is defined there is really always available in your procedures.
+It is important to infer your `Context` from the **inner** context, as only what is defined there is really always available in your procedures.
 
 If you don't want to check `req` or `res` for `undefined` in your procedures all the time, you could build a small reusable procedure for that:
 
