@@ -4,7 +4,7 @@
 export const sponsors = [
   {
     "name": "Hampus Kraft",
-    "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=ca9876f3b8e32cc2f624a5957d5814ee7ef3fee0&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=87f4c5cd23ae2c8b66cfca5f2ac393795b9fbf13&v=4",
     "monthlyPriceInDollars": 3,
     "link": "https://hampuskraft.com",
     "privacyLevel": "PUBLIC",
@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=39e3ca30e890dd4e1b20780f732432e591c3f8b0&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=6dac9b517b1246cb525de89ff8819d16cf0a2f83&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -53,7 +53,7 @@ export const sponsors = [
     "monthlyPriceInDollars": 5,
     "link": "https://t3.gg",
     "privacyLevel": "PUBLIC",
-    "login": "TheoBr",
+    "login": "t3dotgg",
     "createdAt": 1631688228000
   },
   {
@@ -190,15 +190,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "JasonDocton",
     "createdAt": 1645479378000
-  },
-  {
-    "name": "Ping.gg",
-    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "monthlyPriceInDollars": 250,
-    "link": "https://ping.gg/",
-    "privacyLevel": "PUBLIC",
-    "login": "pingdotgg",
-    "createdAt": 1645488994000
   },
   {
     "name": "Jared Wyce",
@@ -354,7 +345,7 @@ export const sponsors = [
     "createdAt": 1658023715000
   },
   {
-    "name": "Prisma",
+    "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
     "monthlyPriceInDollars": 250,
     "link": "https://www.prisma.io",
@@ -370,15 +361,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "LoriKarikari",
     "createdAt": 1658573921000
-  },
-  {
-    "name": "Zac Ong",
-    "imgSrc": "https://avatars.githubusercontent.com/u/61817066?u=2b8d6fe70742b39a8bee1475ceea3105716168cf&v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/zzacong",
-    "privacyLevel": "PUBLIC",
-    "login": "zzacong",
-    "createdAt": 1659057378000
   },
   {
     "name": "Francis Provost",
@@ -480,15 +462,6 @@ export const sponsors = [
     "createdAt": 1666029744000
   },
   {
-    "name": "Daniel Madrid",
-    "imgSrc": "https://avatars.githubusercontent.com/u/31113489?u=d5101c1da2911205e2b347653af38f35004de5c5&v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://www.linkedin.com/in/danimydev",
-    "privacyLevel": "PUBLIC",
-    "login": "danimydev",
-    "createdAt": 1666704624000
-  },
-  {
     "name": "Andrew Brown",
     "imgSrc": "https://avatars.githubusercontent.com/u/8261769?u=ef025d7679533700957db0df9f74bd5d7d8c4a2a&v=4",
     "monthlyPriceInDollars": 10,
@@ -496,5 +469,77 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "andrew-werdna",
     "createdAt": 1666979682000
+  },
+  {
+    "name": "_P",
+    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/PabloRosales",
+    "privacyLevel": "PUBLIC",
+    "login": "PabloRosales",
+    "createdAt": 1668701929000
+  },
+  {
+    "name": "Jonas Strassel",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://jonas-strassel.de/",
+    "privacyLevel": "PUBLIC",
+    "login": "boredland",
+    "createdAt": 1668778944000
+  },
+  {
+    "name": "Interval",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://interval.com",
+    "privacyLevel": "PUBLIC",
+    "login": "interval",
+    "createdAt": 1668779128000
+  },
+  {
+    "name": "Joseph Lozano",
+    "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://josephlozano.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "joseph-lozano",
+    "createdAt": 1669229945000
+  },
+  {
+    "name": "Michal Malota",
+    "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=3eba1b12a74987d406a98dbcb7f1d4fc2efe0390&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://jobsinjs.com",
+    "privacyLevel": "PUBLIC",
+    "login": "michalmalota",
+    "createdAt": 1669641880000
+  },
+  {
+    "name": "Ascent Factory",
+    "imgSrc": "https://avatars.githubusercontent.com/u/33631274?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/AscentFactory",
+    "privacyLevel": "PUBLIC",
+    "login": "AscentFactory",
+    "createdAt": 1669694752000
+  },
+  {
+    "name": "Austin S.",
+    "imgSrc": "https://avatars.githubusercontent.com/u/1623983?u=3054cfbee08ca58eda4105c886cba6c472256534&v=4",
+    "monthlyPriceInDollars": 20,
+    "link": "https://austinsdev.com/portfolio",
+    "privacyLevel": "PUBLIC",
+    "login": "austins",
+    "createdAt": 1669799276000
+  },
+  {
+    "name": "Ping.gg",
+    "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
+    "monthlyPriceInDollars": 250,
+    "link": "https://ping.gg/",
+    "privacyLevel": "PUBLIC",
+    "login": "pingdotgg",
+    "createdAt": 1645488994000
   }
 ] as const

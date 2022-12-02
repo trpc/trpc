@@ -1,6 +1,7 @@
 name: Examples E2E
 
-on: [push]
+on:
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,27 +23,22 @@ jobs:
           [
             .test/ssg,
             express-server,
-            .interop/express-server,
             express-minimal,
             .interop/next-prisma-starter,
-            .interop/next-minimal-starter-migration,
-            .interop/next-prisma-starter-websockets,
-            .interop/next-prisma-todomvc,
+            .interop/next-prisma-websockets-starter,
             next-minimal-starter,
             minimal-react,
-            .interop/next-minimal-starter,
-            .interop/standalone-server,
             fastify-server,
-            .interop/fastify-server,
             cloudflare-workers,
-            .interop/cloudflare-workers,
             next-prisma-starter,
-            next-prisma-starter-websockets,
+            next-prisma-websockets-starter,
             next-prisma-todomvc,
             standalone-server,
             .test/big-router-declaration,
+            soa,
+            vercel-edge-runtime,
           ]
-        node-start: ['16.x']
+        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -53,12 +49,12 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
-          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -70,7 +66,7 @@ jobs:
 
       - run: node -v
       - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter root install
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -108,3 +104,68 @@ jobs:
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
       - name: if exists, run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+  e2e-deno:
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      # TURBO_REMOTE_ONLY: true
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir:
+          [
+            deno-deploy,
+          ]
+        node-start: ['18.x']
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2.2.4
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
+
+      - run: deno --version
+
+      - name: run test
+        if: ${{ matrix.dir == 'deno-deploy' }}
+        run: |
+          cd ./examples/${{ matrix.dir }}
+          pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net ./src/client.ts"

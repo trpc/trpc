@@ -6,11 +6,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/procedures",
-      "destination": "/docs/router",
-      "permanent": true
-    },
-    {
       "source": "/docs/create-react-app",
       "destination": "/docs/react",
       "permanent": true
@@ -58,6 +53,11 @@
     {
       "source": "/awesome",
       "destination": "/docs/awesome-trpc",
+      "permanent": false
+    },
+    {
+      "source": "/sponsor",
+      "destination": "https://github.com/sponsors/KATT",
       "permanent": false
     }
   ]

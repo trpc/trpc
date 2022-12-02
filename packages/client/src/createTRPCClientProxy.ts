@@ -10,13 +10,14 @@ import type {
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
-  inferProcedureOutput,
 } from '@trpc/server';
-import type {
-  Unsubscribable,
-  inferObservableValue,
-} from '@trpc/server/observable';
-import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import type { Unsubscribable } from '@trpc/server/observable';
+import {
+  createFlatProxy,
+  createRecursiveProxy,
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+} from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import { CreateTRPCClientOptions } from './createTRPCClient';
 import { TRPCClient, TRPCSubscriptionObserver } from './internals/TRPCClient';
@@ -26,7 +27,7 @@ export type inferRouterProxyClient<TRouter extends AnyRouter> =
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferProcedureOutput<TProcedure>>;
+) => Promise<inferTransformedProcedureOutput<TProcedure>>;
 
 type SubscriptionResolver<
   TProcedure extends AnyProcedure,
@@ -37,7 +38,7 @@ type SubscriptionResolver<
     opts: ProcedureArgs<TProcedure['_def']>[1] &
       Partial<
         TRPCSubscriptionObserver<
-          inferObservableValue<inferProcedureOutput<TProcedure>>,
+          inferTransformedSubscriptionOutput<TProcedure>,
           TRPCClientError<TRouter>
         >
       >,
@@ -98,7 +99,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCClient<TRouter>,
 ) {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
-    if (key in client) {
+    if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
     }
     return createRecursiveProxy(({ path, args }) => {

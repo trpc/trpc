@@ -33,6 +33,7 @@ import type {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, {
   ReactNode,
   useCallback,
@@ -125,7 +126,7 @@ type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
 type inferProcedures<TObj extends ProcedureRecord> = {
   [TPath in keyof TObj]: {
     input: inferProcedureInput<TObj[TPath]>;
-    output: inferProcedureOutput<TObj[TPath]>;
+    output: inferTransformedProcedureOutput<TObj[TPath]>;
   };
 };
 
@@ -300,7 +301,19 @@ export function createHooksInternal<
           invalidateQueries: useCallback(
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
+
               return queryClient.invalidateQueries(
+                getArrayQueryKey(queryKey, 'any'),
+                ...rest,
+              );
+            },
+            [queryClient],
+          ),
+          resetQueries: useCallback(
+            (...args: any[]) => {
+              const [queryKey, ...rest] = args;
+
+              return queryClient.resetQueries(
                 getArrayQueryKey(queryKey, 'any'),
                 ...rest,
               );
@@ -492,7 +505,12 @@ export function createHooksInternal<
         ...opts,
         onSuccess(...args) {
           const originalFn = () => opts?.onSuccess?.(...args);
-          return mutationSuccessOverride({ originalFn, queryClient });
+
+          return mutationSuccessOverride({
+            originalFn,
+            queryClient,
+            meta: opts?.meta ?? {},
+          });
         },
       },
     ) as UseTRPCMutationResult<

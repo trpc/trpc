@@ -12,6 +12,7 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
@@ -148,7 +149,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     TPath extends string & keyof TMutations,
     TInput extends inferProcedureInput<TMutations[TPath]>,
   >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
-    type TOutput = inferProcedureOutput<TMutations[TPath]>;
+    type TOutput = inferTransformedProcedureOutput<TMutations[TPath]>;
     return this.requestAsPromise<TInput, TOutput>({
       type: 'mutation',
       path,
@@ -160,6 +161,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
   public subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
+    // TODO - this should probably be updated to use inferTransformedProcedureOutput but this is only hit for legacy clients
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(

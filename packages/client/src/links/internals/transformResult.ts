@@ -28,6 +28,9 @@ export function transformResult<TRouter extends AnyRouter, TOutput>(
       },
     } as const;
   }
+  if (!('result' in response)) {
+    throw new Error('Badly formatted response from server');
+  }
 
   const result = {
     ...response.result,

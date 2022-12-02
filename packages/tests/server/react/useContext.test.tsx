@@ -237,14 +237,14 @@ test('invalidate', async () => {
   const stableProxySpy = jest.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      onSuccess: () => {
+        stableProxySpy();
+      },
+    });
     const createPostMutation = proxy.post.create.useMutation();
 
     const utils = proxy.useContext();
-
-    useEffect(() => {
-      stableProxySpy(proxy);
-    }, []);
 
     if (!allPosts.data) {
       return <>...</>;
@@ -267,6 +267,134 @@ test('invalidate', async () => {
             );
           }}
         />
+        {allPosts.isFetching ? 'fetching' : 'done'}
+        {allPosts.data.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+  });
+
+  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+
+  const addPostButton = await utils.findByTestId('add-post');
+
+  await userEvent.click(addPostButton);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('invalidate');
+  });
+  expect(stableProxySpy).toHaveBeenCalledTimes(2);
+});
+
+test('invalidate procedure for both query and infinite', async () => {
+  const { proxy, App } = ctx;
+  const invalidateQuerySpy = jest.fn();
+  const invalidateInfiniteSpy = jest.fn();
+
+  function MyComponent() {
+    const allPostsList = proxy.post.list.useQuery(
+      { cursor: undefined },
+      {
+        onSuccess: invalidateQuerySpy,
+      },
+    );
+    const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
+      { cursor: undefined },
+      { onSuccess: invalidateInfiniteSpy },
+    );
+
+    const utils = proxy.useContext();
+
+    return (
+      <>
+        <button
+          data-testid="invalidate-button"
+          onClick={() => {
+            utils.post.list.invalidate();
+          }}
+        />
+        <div data-testid="list-status">
+          {allPostsList.isFetching || allPostsListInfinite.isFetching
+            ? 'fetching'
+            : 'done'}
+        </div>
+        <div>
+          {allPostsListInfinite.data?.pages.map((page) => {
+            return page.map((post) => {
+              return <div key={post.id}>{post.text}</div>;
+            });
+          })}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+    expect(utils.container).toHaveTextContent('new post');
+    expect(invalidateQuerySpy).toHaveBeenCalledTimes(1);
+    expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  const invalidateButton = await utils.findByTestId('invalidate-button');
+
+  await userEvent.click(invalidateButton);
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('done');
+    expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
+    expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+test('reset', async () => {
+  const { proxy, App } = ctx;
+  const stableProxySpy = jest.fn();
+
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery();
+    const createPostMutation = proxy.post.create.useMutation();
+
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      stableProxySpy(proxy);
+    }, []);
+
+    if (!allPosts.data) {
+      return <>...</>;
+    }
+    return (
+      <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate(
+              { text: 'reset' },
+              {
+                onSuccess() {
+                  utils.post.all.reset();
+                },
+              },
+            );
+          }}
+        />
         {allPosts.data.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
@@ -284,7 +412,7 @@ test('invalidate', async () => {
 
   await userEvent.click(addPostButton);
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('invalidate');
+    expect(utils.container).toHaveTextContent('reset');
   });
   expect(stableProxySpy).toHaveBeenCalledTimes(1);
 });
@@ -536,6 +664,55 @@ describe('cancel', () => {
       expect(utils.getByTestId('data')).toHaveTextContent('undefined');
       expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
       expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
+    });
+  });
+
+  test('abort query and infinite with utils', async () => {
+    const { proxy, App } = ctx;
+    function MyComponent() {
+      const allList = proxy.post.list.useQuery({ cursor: '0' });
+      const allListInfinite = proxy.post.list.useInfiniteQuery({ cursor: '0' });
+      const utils = proxy.useContext();
+
+      useEffect(() => {
+        utils.post.list.cancel();
+      });
+
+      return (
+        <div>
+          <p data-testid="data">{allList.data ? 'data loaded' : 'undefined'}</p>
+          <p data-testid="isFetching">
+            {allList.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPaused">
+            {allList.isPaused ? 'paused' : 'not paused'}
+          </p>
+          <p data-testid="dataInfinite">
+            {allListInfinite.data ? 'data loaded' : 'undefined'}
+          </p>
+          <p data-testid="isFetchingInfinite">
+            {allListInfinite.isFetching ? 'fetching' : 'idle'}
+          </p>
+          <p data-testid="isPausedInfinite">
+            {allListInfinite.isPaused ? 'paused' : 'not paused'}
+          </p>
+        </div>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('data')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
+      expect(utils.getByTestId('dataInfinite')).toHaveTextContent('undefined');
+      expect(utils.getByTestId('isFetchingInfinite')).toHaveTextContent('idle');
+      expect(utils.getByTestId('isPausedInfinite')).toHaveTextContent('paused');
     });
   });
 

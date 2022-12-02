@@ -124,9 +124,7 @@ const HomeContent: React.FC = () => {
         >
           <Iframe
             src={
-              `https://stackblitz.com/github/trpc/trpc/tree/${
-                isV10 ? 'next' : 'main'
-              }/examples/next-minimal-starter?` +
+              `https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?` +
               searchParams({
                 embed: '1',
                 file: [
@@ -141,7 +139,6 @@ const HomeContent: React.FC = () => {
               })
             }
             frameBorder="0"
-            key={isV10 ? 'v10' : 'v9'}
           />
         </div>
         <div className="flex justify-center">
@@ -217,7 +214,7 @@ const HomeContent: React.FC = () => {
             <>
               We really love all of our amazing{' '}
               <a
-                href="https://github.com/sponsors/KATT"
+                href="https://trpc.io/sponsor"
                 target="_blank"
                 rel="noreferrer noopener"
               >
@@ -247,11 +244,7 @@ const HomeHead: React.FC = () => {
     <Head>
       <body className="homepage" />
       <html className={isV10 ? 'v10' : 'v9'} />
-      <script
-        async
-        src="https://platform.twitter.com/widgets.js"
-        charSet="utf-8"
-      />
+      <script async src="https://platform.twitter.com/widgets.js" />
     </Head>
   );
 };

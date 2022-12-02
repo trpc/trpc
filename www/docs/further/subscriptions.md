@@ -6,7 +6,7 @@ slug: /subscriptions
 ---
 
 :::info
-Subscriptions & WebSockets are in beta & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc)
+Subscriptions & WebSockets are in beta & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc).
 :::
 
 ## Using Subscriptions
@@ -102,7 +102,7 @@ process.on('SIGTERM', () => {
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can [use Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can use [Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
 ```tsx title='client.ts'
@@ -132,8 +132,8 @@ See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-
 
 > You can read more details by drilling into the TypeScript definitions:
 >
-> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/envelopes.ts)
-> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/codes.ts).
+> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
+> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
 
 ### `query` / `mutation`
 
@@ -223,4 +223,4 @@ See https://www.jsonrpc.org/specification#error_object or [Error Formatting](../
 
 ### `{ id: null, type: 'reconnect' }`
 
-Tells clients to reconnect before shutting down server. Invoked by `wssHandler.broadcastReconnectNotification()`.
+Tells clients to reconnect before shutting down the server. Invoked by `wssHandler.broadcastReconnectNotification()`.

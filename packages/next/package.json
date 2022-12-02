@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.0.0-rc.7",
+  "version": "10.4.2",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -53,9 +53,9 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.0.0-rc.7",
-    "@trpc/react-query": "^10.0.0-rc.7",
-    "@trpc/server": "^10.0.0-rc.7",
+    "@trpc/client": "^10.4.2",
+    "@trpc/react-query": "^10.4.2",
+    "@trpc/server": "^10.4.2",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "express": "^4.17.1",
