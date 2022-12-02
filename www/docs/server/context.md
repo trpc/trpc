@@ -5,7 +5,7 @@ sidebar_label: Context
 slug: /context
 ---
 
-Context is data that all of your tRPC procedures will have access to, and is a great place to put things like database connections, authentication information, etc.
+Context is data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
 
 The `createContext()` function is called for each call to a procedure, which either comes via HTTP or from a [server-side call](server-side-calls)/[SSG helper](ssg-helpers).
 
@@ -17,8 +17,8 @@ The result is propagated to all resolvers.
 // -------------------------------------------------
 // @filename: context.ts
 // -------------------------------------------------
-import { inferAsyncReturnType } from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
+import type { inferAsyncReturnType } from '@trpc/server'
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
 import { getSession } from 'next-auth/react';
 
 /**
@@ -82,7 +82,7 @@ In some scenarios it could make sense to split up your context into "inner" and 
 ### Example for inner & outer context
 
 ```ts
-import { initTRPC, type inferAsyncReturnType } from '@trpc/server'
+import type { inferAsyncReturnType } from '@trpc/server'
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
 
 /** 
@@ -101,7 +101,6 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
  * 
  * @see https://trpc.io/docs/context#inner-and-outer-context
- * 
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
