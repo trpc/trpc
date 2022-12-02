@@ -22,7 +22,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
 /**
- * Creates context for an incoming call to the procedure
+ * Creates context for an incoming call to the procedure.
  * @link https://trpc.io/docs/context
  */
 export async function createContext(opts: trpcNext.CreateNextContextOptions) {
@@ -62,12 +62,12 @@ export const router = t.router;
 
 /**
  * Unprotected procedure
- **/
+ */
 export const publicProcedure = t.procedure;
 
 /**
  * Protected procedure
- **/
+ */
 export const protectedProcedure = t.procedure.use(isAuthed);
 ```
 
@@ -93,7 +93,8 @@ import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
  * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
  * 
  * @see https://trpc.io/docs/context#inner-and-outer-context
- **/
+ * 
+ */
 export async function createContextInner() {
   return {
     prisma,
@@ -104,7 +105,7 @@ export async function createContextInner() {
  * Outer context. Will e.g. bring `req` & `res` to the context as "not `undefined`".
  * 
  * @see https://trpc.io/docs/context#inner-and-outer-context
- **/
+ */
 export async function createContext(opts: CreateNextContextOptions) {
   const contextInner = await createContextInner()
 
