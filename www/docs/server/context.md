@@ -22,7 +22,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
 /**
- * Creates context for an incoming request
+ * Creates context for an incoming call to the procedure
  * @link https://trpc.io/docs/context
  */
 export async function createContext(opts: trpcNext.CreateNextContextOptions) {
@@ -75,9 +75,9 @@ export const protectedProcedure = t.procedure.use(isAuthed);
 
 In some scenarios it could make sense to split up your context into "inner" and "outer" functions.
 
-- **Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [SSG helpers](ssg-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
+**Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [SSG helpers](ssg-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
 
-- **Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is not available in all procedures, but only for procedures that are called via HTTP.
+**Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is not available in all procedures, but only for procedures that are called via HTTP.
 
 ### Example for inner & outer context
 
@@ -89,7 +89,7 @@ import type { CreateNextContextOptions } from '@trpc/server/adapters/next'
  * Inner context. Will always be available in your procedures, in contrast to the outer context.
  * 
  * Also useful for:
- * - testing, so you don't have to mock Next.js' req/res
+ * - testing, so you don't have to mock Next.js' `req`/`res`
  * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
  * 
  * @see https://trpc.io/docs/context#inner-and-outer-context
@@ -101,7 +101,7 @@ export async function createContextInner() {
 }
 
 /** 
- * Outer context. Will e.g. bring `req` & `res` to the context.
+ * Outer context. Will e.g. bring `req` & `res` to the context as "not `undefined`".
  * 
  * @see https://trpc.io/docs/context#inner-and-outer-context
  **/
