@@ -1,7 +1,7 @@
 import { Maybe } from '@trpc/server';
 
 export function getWindow() {
-  if (typeof window !== 'undefined') {
+  if (typeof document !== 'undefined') {
     return window;
   }
   return globalThis;

@@ -3,7 +3,7 @@ import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '~/server/routers/_app';
 
 function getBaseUrl() {
-  if (typeof window !== 'undefined') {
+  if (typeof document !== 'undefined') {
     // In the browser, we return a relative URL
     return '';
   }

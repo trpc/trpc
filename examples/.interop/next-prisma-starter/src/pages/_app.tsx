@@ -28,7 +28,7 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
 }) as AppType;
 
 function getBaseUrl() {
-  if (typeof window !== 'undefined') {
+  if (typeof document !== 'undefined') {
     return '';
   }
   // reference for vercel.com

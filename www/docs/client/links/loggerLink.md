@@ -24,7 +24,7 @@ const client = createTRPCProxyClient<AppRouter>({
     loggerLink({
       enabled: (opts) =>
         (process.env.NODE_ENV === 'development' &&
-          typeof window !== 'undefined') ||
+          typeof document !== 'undefined') ||
         (opts.direction === 'down' && opts.result instanceof Error),
     }),
     httpBatchLink({

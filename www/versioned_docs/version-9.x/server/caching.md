@@ -26,7 +26,7 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 ```tsx title='pages/_app.tsx'
 export default withTRPC({
   config({ ctx }) {
-    if (typeof window !== 'undefined') {
+    if (typeof document !== 'undefined') {
       return {
         url: '/api/trpc',
       };

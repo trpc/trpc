@@ -22,7 +22,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 export default withTRPC<AppRouter>({
   config({ ctx }) {
-    if (typeof window !== 'undefined') {
+    if (typeof document !== 'undefined') {
       // during client requests
       return {
         transformer: superjson, // optional - adds superjson serialization

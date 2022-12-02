@@ -434,7 +434,7 @@ export function createHooksInternal<
       useContext();
 
     if (
-      typeof window === 'undefined' &&
+      typeof document === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
@@ -608,7 +608,7 @@ export function createHooksInternal<
     } = useContext();
 
     if (
-      typeof window === 'undefined' &&
+      typeof document === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&

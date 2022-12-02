@@ -25,7 +25,7 @@ import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
-    if (typeof window !== 'undefined') {
+    if (typeof document !== 'undefined') {
       // during client requests
       return {
         transformer: superjson, // optional - adds superjson serialization

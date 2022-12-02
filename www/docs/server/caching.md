@@ -30,7 +30,7 @@ import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
-    if (typeof window !== 'undefined') {
+    if (typeof document !== 'undefined') {
       return {
         links: [
           httpBatchLink({

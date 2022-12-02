@@ -171,7 +171,7 @@ export function withTRPC<
         const getAppTreeProps = (props: Record<string, unknown>) =>
           isApp ? { pageProps: props } : props;
 
-        if (typeof window !== 'undefined' || !opts.ssr) {
+        if (typeof document !== 'undefined' || !opts.ssr) {
           return getAppTreeProps(pageProps);
         }
 

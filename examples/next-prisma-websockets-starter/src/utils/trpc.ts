@@ -16,7 +16,7 @@ const { publicRuntimeConfig } = getConfig();
 const { APP_URL, WS_URL } = publicRuntimeConfig;
 
 function getEndingLink(ctx: NextPageContext | undefined) {
-  if (typeof window === 'undefined') {
+  if (typeof document === 'undefined') {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
       headers() {
@@ -59,7 +59,7 @@ export const trpc = createTRPCNext<AppRouter>({
         loggerLink({
           enabled: (opts) =>
             (process.env.NODE_ENV === 'development' &&
-              typeof window !== 'undefined') ||
+              typeof document !== 'undefined') ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
         getEndingLink(ctx),

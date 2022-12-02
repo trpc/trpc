@@ -99,7 +99,7 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
    * Is this a server environment?
    * @warning **Use with caution**, this should likely mainly be used within testing.
-   * @default typeof window === 'undefined' || 'Deno' in window || process.env.NODE_ENV === 'test'
+   * @default typeof document === 'undefined' || process.env.NODE_ENV === 'test'
    */
   isServer: boolean;
 
