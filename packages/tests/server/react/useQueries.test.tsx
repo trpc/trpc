@@ -1,5 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
+import { GetOptions } from '@tanstack/react-query/build/lib/useQueries';
 import { render, waitFor } from '@testing-library/react';
+import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React from 'react';
@@ -40,10 +42,7 @@ const ctx = konn()
 test('useQueries()', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const utils = proxy.useContext();
-    const results = proxy.useQueries({
-      queries: [utils.post.byId.getQueryOptions({ id: '1' })],
-    });
+    const results = proxy.useQueries((t) => [t.post.byId({ id: '1' })]);
 
     return <pre>{JSON.stringify(results[0].data ?? 'n/a', null, 4)}</pre>;
   }

@@ -2,6 +2,8 @@
 import {
   DehydratedState,
   InfiniteQueryObserverSuccessResult,
+  QueriesOptions,
+  QueriesResults,
   QueryClient,
   QueryObserverSuccessResult,
   QueryOptions,
@@ -51,6 +53,10 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import {
+  UseQueriesProcedureRecord,
+  createUseQueriesProxy,
+} from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
 export type OutputWithCursor<TData, TCursor = any> = {
@@ -83,6 +89,13 @@ export type { TRPCContext, TRPCContextState } from '../../internals/context';
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
+
+export type UseQueries<TRouter extends AnyRouter> = <TQueryData extends any[]>(
+  queriesCallback: (
+    t: UseQueriesProcedureRecord<TRouter>,
+  ) => readonly [...QueriesOptions<TQueryData>],
+  context?: UseQueryOptions['context'],
+) => QueriesResults<TQueryData>;
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>
   extends QueryOptions<TData, TError, TData, [TPath, TInput]> {
@@ -664,22 +677,25 @@ export function createHooksInternal<
     return hook;
   }
 
-  const useQueries: typeof __useQueries = ({ queries, context }) => {
-    const { ssrState, queryClient, prefetchQuery } = useContext();
+  const useQueries: UseQueries<TRouter> = (queriesCallback, context) => {
+    const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
+    const proxy = createUseQueriesProxy(client);
+
+    const queries = queriesCallback(proxy);
     for (const query of queries) {
-      const queryOptions: TRPCQueryOptions<any, any, any, any> = query;
+      const queryOption = query as TRPCQueryOptions<any, any, any, any>;
       if (
         typeof window === 'undefined' &&
         ssrState === 'prepass' &&
-        queryOptions.trpc?.ssr !== false &&
-        !queryClient.getQueryCache().find(queryOptions.queryKey!)
+        queryOption.trpc?.ssr !== false &&
+        !queryClient.getQueryCache().find(queryOption.queryKey!)
       ) {
-        void prefetchQuery(queryOptions.queryKey as any, queryOptions as any);
+        void prefetchQuery(queryOption.queryKey as any, queries as any);
       }
     }
 
-    return __useQueries({ queries, context });
+    return __useQueries({ queries: queries, context }) as any;
   };
 
   const useDehydratedState: UseDehydratedState<TRouter> = (
