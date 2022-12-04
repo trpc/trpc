@@ -90,4 +90,4 @@ export default function PostViewPage(
 }
 ```
 
-Check out [here](ssg-helpers) to learn more about `createProxySSGHelpers`.
+Check [this](ssg-helpers) out to learn more about `createProxySSGHelpers`.
