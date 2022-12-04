@@ -1,7 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import { GetOptions } from '@tanstack/react-query/build/lib/useQueries';
 import { render, waitFor } from '@testing-library/react';
-import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React from 'react';
@@ -39,10 +37,20 @@ const ctx = konn()
   })
   .done();
 
-test('useQueries()', async () => {
+test('useQueries() single query', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [t.post.byId({ id: '1' })]);
+    const results = proxy.useQueries((t) => [
+      t.post.byId({ id: '1' }),
+      t.post.byId(
+        { id: '1' },
+        {
+          select(data) {
+            return data as Uppercase<typeof data>;
+          },
+        },
+      ),
+    ]);
 
     return <pre>{JSON.stringify(results[0].data ?? 'n/a', null, 4)}</pre>;
   }

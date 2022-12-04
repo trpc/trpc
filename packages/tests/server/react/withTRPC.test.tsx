@@ -4,16 +4,14 @@
 import { createAppRouter } from './__testHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { withTRPC } from '@trpc/next/src';
+import { konn } from 'konn';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(() => {
-  factory.close();
-});
+const ctx = konn()
+  .beforeEach(() => createAppRouter())
+  .afterEach((ctx) => ctx?.close?.())
+  .done();
 
 describe('withTRPC()', () => {
   test('useQuery', async () => {
@@ -22,10 +20,42 @@ describe('withTRPC()', () => {
 
     // @ts-ignore
     delete global.window;
-    const { trpc, trpcClientOptions } = factory;
+    const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const query = trpc.allPosts.useQuery();
       return <>{JSON.stringify(query.data)}</>;
+    };
+
+    const Wrapped = withTRPC({
+      config: () => trpcClientOptions,
+      ssr: true,
+    })(App);
+
+    const props = await Wrapped.getInitialProps!({
+      AppTree: Wrapped,
+      Component: <div />,
+    } as any);
+
+    // @ts-ignore
+    global.window = window;
+
+    const utils = render(<Wrapped {...props} />);
+    expect(utils.container).toHaveTextContent('first post');
+  });
+
+  test('useQueries', async () => {
+    // @ts-ignore
+    const { window } = global;
+
+    // @ts-ignore
+    delete global.window;
+    const { trpc, trpcClientOptions } = ctx;
+    const App: AppType = () => {
+      const results = trpc.useQueries((t) => {
+        return [t.allPosts()];
+      });
+
+      return <>{JSON.stringify(results[0].data)}</>;
     };
 
     const Wrapped = withTRPC({
@@ -50,7 +80,7 @@ describe('withTRPC()', () => {
 
     // @ts-ignore
     delete global.window;
-    const { trpc, trpcClientOptions } = factory;
+    const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const query = trpc.paginatedPosts.useInfiniteQuery(
         {
@@ -80,7 +110,7 @@ describe('withTRPC()', () => {
   });
 
   test('browser render', async () => {
-    const { trpc, trpcClientOptions } = factory;
+    const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const query = trpc.allPosts.useQuery();
       return <>{JSON.stringify(query.data)}</>;
@@ -109,7 +139,7 @@ describe('withTRPC()', () => {
 
       // @ts-ignore
       delete global.window;
-      const { trpc, trpcClientOptions } = factory;
+      const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery(undefined, {
           trpc: { ssr: false },
@@ -143,7 +173,7 @@ describe('withTRPC()', () => {
 
       // @ts-ignore
       delete global.window;
-      const { trpc, trpcClientOptions } = factory;
+      const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.paginatedPosts.useInfiniteQuery(
           {
@@ -187,7 +217,7 @@ describe('withTRPC()', () => {
 
     // @ts-ignore
     delete global.window;
-    const { trpc, trpcClientOptions, createContext } = factory;
+    const { trpc, trpcClientOptions, createContext } = ctx;
     const App: AppType = () => {
       const query1 = trpc.postById.useQuery('1');
       const query2 = trpc.postById.useQuery('2');
@@ -223,7 +253,7 @@ describe('withTRPC()', () => {
 
         // @ts-ignore
         delete global.window;
-        const { trpc, trpcClientOptions } = factory;
+        const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.postById.useQuery('1');
           // query2 depends only on query1 status
@@ -267,7 +297,7 @@ describe('withTRPC()', () => {
 
         // @ts-ignore
         delete global.window;
-        const { trpc, trpcClientOptions } = factory;
+        const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.postById.useQuery('1');
           // query2 depends on data fetched by query1
@@ -319,7 +349,7 @@ describe('withTRPC()', () => {
 
         // @ts-ignore
         delete global.window;
-        const { trpc, trpcClientOptions } = factory;
+        const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.paginatedPosts.useInfiniteQuery(
             { limit: 1 },
@@ -372,7 +402,7 @@ describe('withTRPC()', () => {
 
         // @ts-ignore
         delete global.window;
-        const { trpc, trpcClientOptions } = factory;
+        const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.paginatedPosts.useInfiniteQuery(
             { limit: 1 },

@@ -15,6 +15,7 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
+import { UseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,
   createReactProxyDecoration,
@@ -25,7 +26,6 @@ import {
   CreateReactQueryHooks,
   TRPCProvider,
   UseDehydratedState,
-  UseQueries,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCInfiniteQuerySuccessResult,

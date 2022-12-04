@@ -12,16 +12,13 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import { getQueryKey } from '../../internals/getQueryKey';
-import { UseTRPCQueryOptions } from '../hooks/createHooksInternal';
-
-type TrpcQueryOptionsForUseQueries<TPath, TInput, TOutput, TData, TError> =
-  Omit<UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>, 'context'>;
+import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
 
 type GetQueryOptions<
   TRouter extends AnyRouter,
   TProcedure extends AnyProcedure,
   TPath extends string,
-> = <TData>(
+> = <TData = inferTransformedProcedureOutput<TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
     TPath,
