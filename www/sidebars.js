@@ -34,6 +34,7 @@ module.exports = {
         'server/procedures',
         'server/merging-routers',
         'server/context',
+        'server/api-handler',
         'server/middlewares',
         'server/server-side-calls',
         'server/authorization',
