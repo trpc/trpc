@@ -29,11 +29,6 @@ import {
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
-import {
-  QueryKey,
-  QueryType,
-  getArrayQueryKey,
-} from '../../internals/getArrayQueryKey';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
@@ -163,15 +158,6 @@ type DecorateProcedure<
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
   ): InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined;
-
-  /**
-   * Method to extract the query key for a procedure
-   * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
-   */
-  getQueryKey(
-    input: inferProcedureInput<TProcedure>,
-    type: QueryType,
-  ): QueryKey;
 };
 
 /**
@@ -188,12 +174,6 @@ type DecorateRouter = {
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
-
-  /**
-   * Method to extract the query key for a router
-   * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
-   */
-  getQueryKey(input: undefined, type: 'any'): QueryKey;
 };
 
 /**
@@ -285,7 +265,6 @@ export function createReactQueryUtilsProxy<
           context.setInfiniteQueryData(queryKey, updater, ...rest),
         getData: () => context.getQueryData(queryKey),
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
-        getQueryKey: () => getArrayQueryKey(queryKey, rest[0]),
       };
 
       return contextMap[utilName]();
