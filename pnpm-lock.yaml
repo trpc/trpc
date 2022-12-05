@@ -826,7 +826,7 @@ importers:
   examples/tanstack-router/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@tanstack/react-router': 0.0.1-beta.28
+      '@tanstack/react-router': 0.0.1-beta.29
       '@trpc/client': ^10.4.3
       '@trpc/react-query': ^10.4.3
       '@trpc/server': ^10.4.3
@@ -839,7 +839,7 @@ importers:
       vite: ^3.1.3
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@tanstack/react-router': 0.0.1-beta.28_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-router': 0.0.1-beta.29_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
@@ -6514,22 +6514,22 @@ packages:
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
 
-  /@tanstack/react-router/0.0.1-beta.28_biqbaboplfbrettd7655fr4n2y:
-    resolution: {integrity: sha512-csaOSKWKHWdE4b/zTefE4dgskQZLoLvkAMaVU1XHki+o5brZyaAx4m5W7DPgxyXS7+wW9GWd/o7anWtD/H1IDQ==}
+  /@tanstack/react-router/0.0.1-beta.29_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-rYPJucNes55D/CLZ558C4ZbMJpBIHAtfJjIHhmZ3g0fsVzMngKC6PS4qPJmcgmDUS25oGArdApKA1GciC+uMGg==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16'
       react-dom: '>=16'
     dependencies:
       '@babel/runtime': 7.20.1
-      '@tanstack/router-core': 0.0.1-beta.26_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/router-core': 0.0.1-beta.29_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
     dev: false
 
-  /@tanstack/router-core/0.0.1-beta.26_biqbaboplfbrettd7655fr4n2y:
-    resolution: {integrity: sha512-hVU/qmBtbYChG0kJyjG25aQnnihl5bATYPHs05pWTo8KuvSqK4WerooMBthVTGltg9koGX8dz6a7QNG1kwSJnw==}
+  /@tanstack/router-core/0.0.1-beta.29_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-o4dzWQUT7ZAlHd0pVFW6XKVcidNOnfxkVFzB+5YEyto8krftz4bbtfxrTdQOuO3lDywd2oswrmOhTDOOCICjSQ==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=16'
