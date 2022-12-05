@@ -162,4 +162,17 @@ describe('getQueryKeys', () => {
       expect(utils.container).toHaveTextContent('0');
     });
   });
+
+  test('outside of the react context', () => {
+    const { proxy } = ctx;
+
+    const all = proxy.post.all.getQueryKey(undefined, 'query');
+    const byId = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+
+    expect(all).toEqual([['post', 'all'], { type: 'query' }]);
+    expect(byId).toEqual([
+      ['post', 'byId'],
+      { input: { id: 1 }, type: 'query' },
+    ]);
+  });
 });
