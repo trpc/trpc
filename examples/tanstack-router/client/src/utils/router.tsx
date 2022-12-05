@@ -53,7 +53,7 @@ const postsRoute = rootRoute.createRoute({
   loaderMaxAge: 0,
   errorComponent: () => 'Oh crap!',
   loader: async () => {
-    const postKey = trpc.post.all.getQueryKey();
+    const postKey = trpc.post.all.getQueryKey(undefined, 'query');
 
     queryClient.getQueryData(postKey) ??
       (await queryClient.prefetchQuery(postKey, getPosts));
@@ -105,7 +105,7 @@ const postsIndexRoute = postsRoute.createRoute({
 const postRoute = postsRoute.createRoute({
   path: '$postId',
   loader: async ({ params }) => {
-    const postKey = trpc.post.byId.getQueryKey({ id: params.postId });
+    const postKey = trpc.post.byId.getQueryKey({ id: params.postId }, 'query');
 
     queryClient.getQueryData(postKey) ??
       (await queryClient.prefetchQuery(postKey, () =>
