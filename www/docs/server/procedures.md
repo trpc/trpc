@@ -142,6 +142,42 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [io-ts](https://github.com/gcanti/io-ts/blob/master/index.md)
+
+```ts twoslash
+
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+export const middleware = t.middleware;
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// @filename: _app.ts
+// ---cut---
+import { publicProcedure, router } from './trpc';
+import * as t from 'io-ts';
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(
+      t
+        .partial({
+          text: t.string,
+        }),
+    )
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input?.text ?? 'world'}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
 
 ## Multiple input parsers
 
