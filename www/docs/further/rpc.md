@@ -67,7 +67,7 @@ export function MyComponent() {
 
 | Location property | Value                                                           |
 | ----------------- | --------------------------------------------------------------- |
-| `pathname`        | `/api/trpc/postById,relatedPosts`                               |
+| `pathname`        | `/api/trpc/postById.relatedPosts`                               |
 | `search`          | `?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%221%22%7D` \* |
 
 **\*) `input` in the above is the result of:**
