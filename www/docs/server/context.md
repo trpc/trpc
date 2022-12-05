@@ -77,20 +77,21 @@ In some scenarios it could make sense to split up your context into "inner" and 
 
 **Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [SSG helpers](ssg-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
 
-**Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is not available in all procedures, but only for procedures that are called via HTTP.
+**Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is only available for procedures that are called via HTTP.
 
 ### Example for inner & outer context
 
 ```ts
 import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getSessionFromCookie, type Session } from "./auth"
 
 /** 
  * Defines your inner context shape.
  * Add fields here that the inner context brings.
  */
 interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
-  prisma: typeof prisma
+  session: Session | null
 }
 
 /** 
@@ -104,18 +105,20 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
-    ...opts,
     prisma,
+    session: opts.session,
   }
 };
 
 /** 
- * Outer context. Will e.g. bring `req` & `res` to the context as "not `undefined`".
+ * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
  * 
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export async function createContext(opts: CreateNextContextOptions) {
-  const contextInner = await createContextInner();
+  const session = getSessionFromCookie(req)
+
+  const contextInner = await createContextInner({ session });
 
   return {
     ...contextInner,
