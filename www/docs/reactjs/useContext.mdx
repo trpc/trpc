@@ -119,21 +119,15 @@ import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
   const qc = useQueryClient();
-  const utils = trpc.useContext();
 
   const posts = trpc.post.list.useQuery();
 
-  // Use multiple queries
-  const post1Key = utils.post.byId.getQueryKey({ id: 1 }, 'query');
-  const post2Key = utils.post.byId.getQueryKey({ id: 2 }, 'query');
-  const [post1, post2] = qc.useQueries([post1Key, post2Key]);
-
   // See if a query is fetching
-  const postListKey = utils.post.list.getQueryKey(undefined, 'infinite');
+  const postListKey = trpc.post.list.getQueryKey(undefined, 'infinite');
   const isFetching = useIsFetching(postListKey);
 
   // Set some query defaults for an entire router
-  const postKey = utils.post.getQueryKey(undefined, 'any');
+  const postKey = trpc.post.getQueryKey(undefined, 'any');
   qc.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
 
   // ...
