@@ -1014,6 +1014,8 @@ importers:
       expect-type: ^0.15.0
       fastify: ^3.27.1
       fastify-plugin: ^3.0.1
+      fp-ts: ^2.13.1
+      io-ts: ^2.2.20
       jest: ^27.1.0
       jest-environment-miniflare: ^2.4.0
       konn: ^0.7.0
@@ -1039,10 +1041,10 @@ importers:
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/user-event': 14.4.3_aaq3sbffpfe3jnxzm2zngsddei
-      '@trpc/client': link:../client
-      '@trpc/next': link:../next
-      '@trpc/react-query': link:../react-query
-      '@trpc/server': link:../server
+      '@trpc/client': 10.4.3_@trpc+server@10.4.3
+      '@trpc/next': 10.4.3_kfr6f76m7eqqqkqas2pk3brsze
+      '@trpc/react-query': 10.4.3_w2ft2lxoopodjplcmv7ig5wfhy
+      '@trpc/server': 10.4.3
       '@types/jest': 27.5.2
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
@@ -1052,6 +1054,8 @@ importers:
       expect-type: 0.15.0
       fastify: 3.29.4
       fastify-plugin: 3.0.1
+      fp-ts: 2.13.1
+      io-ts: 2.2.20_fp-ts@2.13.1
       jest: 27.5.1
       jest-environment-miniflare: 2.11.0_jest@27.5.1
       konn: 0.7.0
@@ -6547,6 +6551,55 @@ packages:
       - supports-color
     dev: false
 
+  /@trpc/client/10.4.3_@trpc+server@10.4.3:
+    resolution: {integrity: sha512-VMdyLHr6PG2FlMxnbPt/6jniDBxv3Ys1hFhk0AriFDD9h4Lg9fznwGn5RI1eV5RCOAoCQ/+ZwPMSKOMBhiycTw==}
+    peerDependencies:
+      '@trpc/server': 10.4.3
+    dependencies:
+      '@trpc/server': 10.4.3
+    dev: false
+
+  /@trpc/next/10.4.3_kfr6f76m7eqqqkqas2pk3brsze:
+    resolution: {integrity: sha512-H4sM3lrtA2seFFkgXcW3ZQLCqGS7YqJNYDQx8FOlvcoH+klmQ+UNNgurdP2R/i50nGFwc4aN9kENrsvq0xfH5A==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.3
+      '@trpc/react-query': ^10.0.0-proxy-beta.21
+      '@trpc/server': 10.4.3
+      next: '*'
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': 10.4.3_@trpc+server@10.4.3
+      '@trpc/react-query': 10.4.3_w2ft2lxoopodjplcmv7ig5wfhy
+      '@trpc/server': 10.4.3
+      next: 13.0.5_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-ssr-prepass: 1.5.0_react@18.2.0
+    dev: false
+
+  /@trpc/react-query/10.4.3_w2ft2lxoopodjplcmv7ig5wfhy:
+    resolution: {integrity: sha512-gm8hnV8Q7RPc0am0paSuu30+jk9cQoJhKByAdrTRoLUEkuDb7r78sebN6RM3OYMPfWfSBGutIoWHkjJzP2kdtw==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.3.8
+      '@trpc/client': 10.4.3
+      '@trpc/server': 10.4.3
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': 10.4.3_@trpc+server@10.4.3
+      '@trpc/server': 10.4.3
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
+
+  /@trpc/server/10.4.3:
+    resolution: {integrity: sha512-U+TVFtMUnySUfKHXjdpdZdFS268naGafbjQiG/H7t0OKpiLnbJ4IhgyYzj82Hvghb6Ow9E+UTNt6ALP7KoN4/g==}
+    dev: false
+
   /@trysound/sax/0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
@@ -11573,6 +11626,10 @@ packages:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
 
+  /fp-ts/2.13.1:
+    resolution: {integrity: sha512-0eu5ULPS2c/jsa1lGFneEFFEdTbembJv8e4QKXeVJ3lm/5hyve06dlKZrpxmMwJt6rYen7sxmHHK2CLaXvWuWQ==}
+    dev: false
+
   /fraction.js/4.2.0:
     resolution: {integrity: sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==}
 
@@ -12630,6 +12687,14 @@ packages:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
     dependencies:
       loose-envify: 1.4.0
+
+  /io-ts/2.2.20_fp-ts@2.13.1:
+    resolution: {integrity: sha512-Rq2BsYmtwS5vVttie4rqrOCIfHCS9TgpRLFpKQCM1wZBBRY9nWVGmEvm2FnDbSE2un1UE39DvFpTR5UL47YDcA==}
+    peerDependencies:
+      fp-ts: ^2.5.0
+    dependencies:
+      fp-ts: 2.13.1
+    dev: false
 
   /ip/2.0.0:
     resolution: {integrity: sha512-WKa+XuLG1A1R0UWhl2+1XQSi+fZWMsYKffMZTTYsiZaUD8k2yDAj5atimTUD2TZkyCkNEeYE5NhFZmupOGtjYQ==}

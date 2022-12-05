@@ -31,6 +31,8 @@
     "expect-type": "^0.15.0",
     "fastify": "^3.27.1",
     "fastify-plugin": "^3.0.1",
+    "fp-ts": "^2.13.1",
+    "io-ts": "^2.2.20",
     "jest": "^27.1.0",
     "jest-environment-miniflare": "^2.4.0",
     "konn": "^0.7.0",
