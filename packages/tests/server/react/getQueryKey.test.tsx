@@ -43,14 +43,18 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy = proxy.post.all.getQueryKey(undefined, 'query');
+      const happy1 = proxy.post.all.getQueryKey(undefined, 'query');
+      const happy2 = proxy.post.all.getQueryKey();
 
       // @ts-expect-error - post.all has no input
-      const sad1 = proxy.post.all.getQueryKey('foo');
-      // @ts-expect-error - need to specify type
-      const sad2 = proxy.post.all.getQueryKey(undefined);
+      const sad = proxy.post.all.getQueryKey('foo');
 
-      return <pre data-testid="qKey">{JSON.stringify(happy)}</pre>;
+      return (
+        <>
+          <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
+          <pre data-testid="qKey2">{JSON.stringify(happy2)}</pre>
+        </>
+      );
     }
 
     const utils = render(
@@ -60,8 +64,11 @@ describe('getQueryKeys', () => {
     );
 
     await waitFor(() => {
-      expect(utils.getByTestId('qKey')).toHaveTextContent(
+      expect(utils.getByTestId('qKey1')).toHaveTextContent(
         JSON.stringify([['post', 'all'], { type: 'query' }]),
+      );
+      expect(utils.getByTestId('qKey2')).toHaveTextContent(
+        JSON.stringify([['post', 'all'], {}]),
       );
     });
   });
@@ -70,14 +77,20 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+      const happy1 = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+
+      // doesn't really make sense but should still work
+      const happyIsh = proxy.post.byId.getQueryKey({ id: 1 });
 
       // @ts-expect-error - post.byId has required input
-      const sad1 = proxy.post.byId.getQueryKey(undefined, 'query');
-      // @ts-expect-error - need to specify type
-      const sad2 = proxy.post.byId.getQueryKey({ id: 1 });
+      const sad = proxy.post.byId.getQueryKey(undefined, 'query');
 
-      return <pre data-testid="qKey">{JSON.stringify(happy)}</pre>;
+      return (
+        <>
+          <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
+          <pre data-testid="qKey2">{JSON.stringify(happyIsh)}</pre>
+        </>
+      );
     }
 
     const utils = render(
@@ -87,8 +100,11 @@ describe('getQueryKeys', () => {
     );
 
     await waitFor(() => {
-      expect(utils.getByTestId('qKey')).toHaveTextContent(
+      expect(utils.getByTestId('qKey1')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { input: { id: 1 }, type: 'query' }]),
+      );
+      expect(utils.getByTestId('qKey2')).toHaveTextContent(
+        JSON.stringify([['post', 'byId'], { input: { id: 1 } }]),
       );
     });
   });
@@ -97,10 +113,10 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy = proxy.post.getQueryKey(undefined, 'any');
+      const happy = proxy.post.getQueryKey();
 
       // @ts-expect-error - router has no input
-      const sad = proxy.post.getQueryKey('foo', 'any');
+      const sad = proxy.post.getQueryKey('foo');
 
       return (
         <div>

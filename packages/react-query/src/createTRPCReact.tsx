@@ -50,11 +50,12 @@ export type DecorateProcedure<
   ? {
       /**
        * Method to extract the query key for a procedure
+       * @param type - defaults to `any`
        * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
        */
       getQueryKey: (
         input: inferProcedureInput<TProcedure>,
-        type: QueryType,
+        type?: QueryType,
       ) => QueryKey;
       useQuery: <
         TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
@@ -173,7 +174,7 @@ export type DecoratedProcedureRecord<
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? {
-        getQueryKey: (input?: undefined, type?: 'any') => QueryKey;
+        getQueryKey: () => QueryKey;
       } & DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TFlags,

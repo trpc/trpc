@@ -32,7 +32,7 @@ export function createReactProxyDecoration<
 
     // Expose queryKey helper
     if (lastArg === 'getQueryKey') {
-      return getArrayQueryKey(queryKey, rest[0] as any);
+      return getArrayQueryKey(queryKey, (rest[0] as any) ?? 'any');
     }
 
     if (lastArg.startsWith('useSuspense')) {

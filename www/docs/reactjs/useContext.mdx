@@ -104,13 +104,15 @@ In the meantime, you can import and use the function directly from `@tanstack/re
 ```tsx
 function getQueryKey(
   input: TInput,
-  type: QueryType;
+  type?: QueryType;
 )
 
 type QueryType = "query" | "infinite" | "any";
 // for useQuery ──┘         │            │
 // for useInfinitQuery ─────┘            │
-// for router ───────────────────────────┘
+// will match any ───────────────────────┘
+
+// @note: signature on router doesn't take any parameters
 ```
 
 ```tsx
