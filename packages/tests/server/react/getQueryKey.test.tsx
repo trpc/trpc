@@ -14,17 +14,7 @@ type Post = {
 const defaultPost = { id: 0, text: 'new post' };
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
+    const t = initTRPC.create();
 
     const posts: Post[] = [defaultPost];
 
@@ -38,24 +28,6 @@ const ctx = konn()
           )
           .query(({ input }) => posts.find((post) => post.id === input.id)),
         all: t.procedure.query(() => posts),
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.string().optional(),
-            }),
-          )
-          .query(() => posts),
-        create: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(({ input }) => {
-            const newPost: Post = { id: posts.length, text: input.text };
-            posts.push(newPost);
-            return newPost;
-          }),
       }),
     });
 
