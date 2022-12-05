@@ -817,6 +817,56 @@ importers:
       typescript: 4.8.3
       wait-port: 1.0.4
 
+  examples/tanstack-router:
+    specifiers:
+      npm-run-all: ^4.1.5
+    devDependencies:
+      npm-run-all: 4.1.5
+
+  examples/tanstack-router/client:
+    specifiers:
+      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-router': 0.0.1-beta.28
+      '@trpc/client': ^10.4.3
+      '@trpc/react-query': ^10.4.3
+      '@trpc/server': ^10.4.3
+      '@types/react': ^18.0.9
+      '@types/react-dom': ^18.0.5
+      '@vitejs/plugin-react': ^2.1.0
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      typescript: ^4.8.3
+      vite: ^3.1.3
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-router': 0.0.1-beta.28_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../../packages/client
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    devDependencies:
+      '@types/react': 18.0.25
+      '@types/react-dom': 18.0.9
+      '@vitejs/plugin-react': 2.2.0_vite@3.2.4
+      typescript: 4.8.3
+      vite: 3.2.4
+
+  examples/tanstack-router/server:
+    specifiers:
+      '@trpc/server': ^10.4.3
+      '@types/node': ^18.7.20
+      tsx: ^3.9.0
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@trpc/server': link:../../../packages/server
+      zod: 3.19.1
+    devDependencies:
+      '@types/node': 18.7.20
+      tsx: 3.12.1
+      typescript: 4.8.3
+
   examples/vercel-edge-runtime:
     specifiers:
       '@edge-runtime/types': ^2.0.2
@@ -6463,6 +6513,34 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
+
+  /@tanstack/react-router/0.0.1-beta.28_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-csaOSKWKHWdE4b/zTefE4dgskQZLoLvkAMaVU1XHki+o5brZyaAx4m5W7DPgxyXS7+wW9GWd/o7anWtD/H1IDQ==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: '>=16'
+      react-dom: '>=16'
+    dependencies:
+      '@babel/runtime': 7.20.1
+      '@tanstack/router-core': 0.0.1-beta.26_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      use-sync-external-store: 1.2.0_react@18.2.0
+    dev: false
+
+  /@tanstack/router-core/0.0.1-beta.26_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-hVU/qmBtbYChG0kJyjG25aQnnihl5bATYPHs05pWTo8KuvSqK4WerooMBthVTGltg9koGX8dz6a7QNG1kwSJnw==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: '>=16'
+      react-dom: '>=16'
+    dependencies:
+      '@babel/runtime': 7.20.1
+      history: 5.3.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      tiny-invariant: 1.3.1
+    dev: false
 
   /@testing-library/dom/8.19.0:
     resolution: {integrity: sha512-6YWYPPpxG3e/xOo6HIWwB/58HukkwIVTOaZ0VwdMVjhRUX/01E4FtQbck9GazOOj7MXHc5RBzMrU86iBJHbI+A==}
@@ -12205,6 +12283,12 @@ packages:
       tiny-invariant: 1.3.1
       tiny-warning: 1.0.3
       value-equal: 1.0.1
+    dev: false
+
+  /history/5.3.0:
+    resolution: {integrity: sha512-ZqaKwjjrAYUYfLG+htGaIIZ4nioX2L70ZUMIFysS3xvBsSG4x/n1V6TXV3N8ZYNuFGlDirFg32T7B6WOUPDYcQ==}
+    dependencies:
+      '@babel/runtime': 7.20.1
     dev: false
 
   /hoist-non-react-statics/3.3.2:
@@ -18511,6 +18595,7 @@ packages:
 
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
+    deprecated: Please use @jridgewell/sourcemap-codec instead
     dev: true
 
   /space-separated-tokens/1.1.5:
