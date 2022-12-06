@@ -4,9 +4,9 @@ title: API Handler
 sidebar_label: API Handler
 slug: /api-handler
 ---
-tRPC is not a backend of its own, but rather lives inside of other backends such as Next.js or Express. Despite that, most of tRPC's features and syntax are the same no matter which backend you are using. The API handler, also called Adapter in some cases, enables this by acting as the glue between HTTP requests to your backend and tRPC.
+tRPC is not a backend of its own, but rather lives inside of other backends such as Next.js or Express. Despite that, most of tRPC's features and syntax are the same no matter which backend you are using. The API handler, also called [adapter](https://trpc.io/docs/adapters), enables this by acting as the glue between HTTP requests to your backend and tRPC.
 
-The API Handler receives a request from the server, uses the `createContext` function to generate [Context](./context), and then sends the request and context to the [Router](./router). 
+The API Handler receives a request from the server, uses the `createContext` function to generate [context](./context), and then sends the request and context to the [router](./router). 
 
 It can also take some optional arguments such as `onError`, a callback function that runs whenever an error is thrown inside of a procedure.
 
