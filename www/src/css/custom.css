@@ -192,8 +192,23 @@ article {
   @apply h-8;
 }
 
+@media only screen and (max-width: 1086px) and (min-width: 996px) {
+  .DocSearch-Button-Keys {
+    display: none !important;
+  }
+}
+
+@media only screen and (max-width: 1086px) {
+  .navbar__logo {
+    margin-right: 0;
+  }
+  .navbar__title {
+    display: none;
+  }
+}
+
 .container {
-  @apply w-full max-w-[var(--ifm-container-width-xl)] mx-auto;
+  @apply !w-full !max-w-[var(--ifm-container-width-xl)] !mx-auto;
 }
 
 .markdown h1,
