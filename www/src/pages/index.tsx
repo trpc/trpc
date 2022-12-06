@@ -139,6 +139,7 @@ const HomeContent: React.FC = () => {
               })
             }
             frameBorder="0"
+            loading="lazy"
           />
         </div>
         <div className="flex justify-center">
@@ -245,18 +246,6 @@ const HomeHead: React.FC = () => {
       <body className="homepage" />
       <html className={isV10 ? 'v10' : 'v9'} />
       <script async src="https://platform.twitter.com/widgets.js" />
-      <link
-        rel="preload"
-        href="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
-        as="video"
-        type="video/mp4"
-      />
-      <link
-        rel="preload"
-        href="https://assets.trpc.io/www/v10/preview-dark.mp4"
-        as="video"
-        type="video/mp4"
-      />
       <link
         rel="preload"
         href="https://assets.trpc.io/www/v10/v10-dark-landscape.png"
