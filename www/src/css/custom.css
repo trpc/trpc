@@ -192,13 +192,13 @@ article {
   @apply h-8;
 }
 
-@media only screen and (max-width: 1087px) and (min-width: 996px) {
+@media only screen and (max-width: 1094px) and (min-width: 996px) {
   .DocSearch-Button-Keys {
     display: none !important;
   }
 }
 
-@media only screen and (max-width: 1087px) {
+@media only screen and (max-width: 1094px) {
   .navbar__logo {
     margin-right: 0;
   }
