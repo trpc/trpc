@@ -2,14 +2,37 @@ import { Pack, hierarchy } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { sponsors } from './script.output';
+import { sponsors as _sponsors } from './script.output';
 import { getMultiplier } from './utils';
 
-const pack = {
-  children: sponsors.map((sponsor) => ({
+const sponsors = _sponsors
+  .map((sponsor) => ({
     ...sponsor,
     value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
-  })),
+  }))
+  .sort((a, b) => a.value - b.value);
+
+const min = Math.min(...sponsors.map((sponsors) => sponsors.value));
+const max = Math.max(...sponsors.map((sponsors) => sponsors.value));
+
+const nGroups = 100;
+
+const groupDiff = (max - min) / nGroups;
+
+const groups = [];
+for (let index = 0; index < sponsors.length; index++) {
+  let pos = 0;
+  const sponsor = sponsors[index];
+  while (sponsor.value > min + groupDiff * pos) {
+    pos++;
+  }
+  groups[pos] ||= [];
+  groups[pos].push({ ...sponsor, value: pos + 1 });
+}
+
+console.log('groups', groups);
+const pack = {
+  children: groups.flat(),
   name: 'root',
   radius: 0,
   distance: 0,
