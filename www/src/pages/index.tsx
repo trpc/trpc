@@ -32,6 +32,7 @@ const Iframe = (
   const [loaded, setLoaded] = useState(false);
   return (
     <iframe
+      loading="lazy"
       {...props}
       onLoad={() => {
         setLoaded(true);
@@ -245,6 +246,16 @@ const HomeHead: React.FC = () => {
       <body className="homepage" />
       <html className={isV10 ? 'v10' : 'v9'} />
       <script async src="https://platform.twitter.com/widgets.js" />
+      <link
+        rel="preload"
+        href="https://assets.trpc.io/www/v10/v10-dark-landscape.png"
+        as="image"
+      />
+      <link
+        rel="preload"
+        href="https://assets.trpc.io/www/v10/preview-dark.png"
+        as="image"
+      />
     </Head>
   );
 };
