@@ -2,6 +2,7 @@
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from './__testHelpers';
+import { DehydratedState } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { withTRPC } from '@trpc/next/src';
 import { konn } from 'konn';
@@ -67,6 +68,49 @@ describe('withTRPC()', () => {
       AppTree: Wrapped,
       Component: <div />,
     } as any);
+
+    const propsTyped = props as {
+      pageProps: {
+        trpcState: DehydratedState;
+      };
+    };
+    const allData = propsTyped.pageProps.trpcState.queries.map((v) => [
+      v.queryKey,
+      v.state.data,
+    ]);
+    expect(allData).toHaveLength(1);
+    expect(allData).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Array [
+            Array [
+              "allPosts",
+            ],
+            Object {
+              "type": "query",
+            },
+          ],
+          Array [
+            Object {
+              "createdAt": 0,
+              "id": "1",
+              "title": "first post",
+            },
+            Object {
+              "createdAt": 1,
+              "id": "2",
+              "title": "second post",
+            },
+          ],
+        ],
+        Array [
+          Array [
+            "allPosts",
+          ],
+          undefined,
+        ],
+      ]
+    `);
 
     // @ts-ignore
     global.window = window;
