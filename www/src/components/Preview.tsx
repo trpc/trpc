@@ -11,6 +11,7 @@ export const Preview = () => {
           playsInline
           width="1200px"
           className="border-6 shadow-xl rounded-lg bg-[#111111] border-[#111111] trpcgif trpcgif--v10 trpcgif--portrait"
+          poster="https://assets.trpc.io/www/v10/preview-dark.png"
         >
           <source
             src="https://assets.trpc.io/www/v10/preview-dark.mp4"
@@ -25,6 +26,7 @@ export const Preview = () => {
           playsInline
           width="1200px"
           className="border-[20px] shadow-xl rounded-lg bg-[#111111] border-[#111111] trpcgif trpcgif--v10 trpcgif--landscape"
+          poster="https://assets.trpc.io/www/v10/v10-dark-landscape.png"
         >
           <source
             src="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
