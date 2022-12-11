@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server/src';
+import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
@@ -28,6 +29,8 @@ const ctx = konn()
           )
           .query(() => '__result' as const),
       }),
+      foo: t.procedure.query(() => 'foo' as const),
+      bar: t.procedure.query(() => 'bar' as const),
     });
 
     return getServerAndReactClient(appRouter);
@@ -37,7 +40,7 @@ const ctx = konn()
   })
   .done();
 
-test('useQueries() single query', async () => {
+test('single query', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
     const results = proxy.useQueries((t) => [
@@ -62,5 +65,33 @@ test('useQueries() single query', async () => {
   );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
+  });
+});
+
+test('different queries', async () => {
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const results = proxy.useQueries((t) => [t.foo(), t.bar()]);
+
+    const foo = results[0].data;
+    const bar = results[1].data;
+    if (foo && bar) {
+      expectTypeOf(results[0].data).toEqualTypeOf<'foo'>();
+      expectTypeOf(results[1].data).toEqualTypeOf<'bar'>();
+    }
+
+    return (
+      <pre>{JSON.stringify(results.map((v) => v.data) ?? 'n/a', null, 4)}</pre>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`foo`);
+    expect(utils.container).toHaveTextContent(`bar`);
   });
 });
