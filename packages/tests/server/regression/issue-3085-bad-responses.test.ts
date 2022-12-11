@@ -40,7 +40,7 @@ test('badly formatted response', async () => {
 
   const error = await waitError(client.test.query(), TRPCClientError);
   expect(error).toMatchInlineSnapshot(
-    `[TRPCClientError: Badly formatted response from server]`,
+    `[TRPCClientError: Unable to transform response from server]`,
   );
 
   server.close();
@@ -68,7 +68,7 @@ test('badly formatted superjson response', async () => {
 
   const error = await waitError(client.test.query(), TRPCClientError);
   expect(error).toMatchInlineSnapshot(
-    `[TRPCClientError: Cannot read properties of undefined (reading 'json')]`,
+    `[TRPCClientError: Unable to transform response from server]`,
   );
 
   server.close();
@@ -96,7 +96,7 @@ test('badly formatted superjson response', async () => {
 
   const error = await waitError(client.test.query(), TRPCClientError);
   expect(error).toMatchInlineSnapshot(
-    `[TRPCClientError: Cannot read properties of undefined (reading 'json')]`,
+    `[TRPCClientError: Unable to transform response from server]`,
   );
 
   server.close();
