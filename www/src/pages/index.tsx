@@ -32,6 +32,7 @@ const Iframe = (
   const [loaded, setLoaded] = useState(false);
   return (
     <iframe
+      loading="lazy"
       {...props}
       onLoad={() => {
         setLoaded(true);
