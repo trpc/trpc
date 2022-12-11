@@ -56,12 +56,17 @@ export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
   }
 
   public static from<TRouterOrProcedure extends RouterOrProcedure>(
-    cause: Error | TRPCErrorResponse<any>,
-    opts: { meta?: Record<string, unknown>; message?: string } = {},
+    cause: Error | TRPCErrorResponse<any> | {message: string},
+    opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
     if (!(cause instanceof Error)) {
+      let message = ''
+
+      if ('error' in cause && typeof cause.error.message === 'string') message = cause.error.message
+      if ('message' in cause) message = cause.message
+
       return new TRPCClientError<TRouterOrProcedure>(
-        opts.message ?? cause.error.message ?? '',
+        message,
         {
           ...opts,
           cause: undefined,
