@@ -289,7 +289,7 @@ html:not(.v10) [role='banner'] {
 }
 
 /* Toggle different gifs depending on version */
-.trpcgif {
+/* .trpcgif {
   display: none;
 }
 
@@ -303,7 +303,8 @@ html.v10 .trpcgif--v10.trpcgif--landscape {
 
 html.v9 .trpcgif--v9 {
   display: block;
-}
+} 
+*/
 
 /* Breadcrumbs */
 .breadcrumbs {
