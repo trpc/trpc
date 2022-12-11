@@ -6,7 +6,7 @@ import {
   httpRequest,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import { transformResult } from './internals/transformResult';
+import { transformResultSafe } from './internals/transformResult';
 import { TRPCLink } from './types';
 
 export function httpLink<TRouter extends AnyRouter>(
@@ -26,7 +26,7 @@ export function httpLink<TRouter extends AnyRouter>(
         });
         promise
           .then((res) => {
-            const transformed = transformResult(res.json, runtime);
+            const transformed = transformResultSafe(res.json, runtime);
 
             if (!transformed.ok) {
               observer.error(

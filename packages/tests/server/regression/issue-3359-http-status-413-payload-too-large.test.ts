@@ -1,5 +1,10 @@
 import { waitError } from '../___testHelpers';
-import { TRPCClientError, createTRPCProxyClient, httpLink, httpBatchLink } from '@trpc/client';
+import {
+  TRPCClientError,
+  createTRPCProxyClient,
+  httpBatchLink,
+  httpLink,
+} from '@trpc/client';
 import http from 'http';
 import fetch from 'node-fetch';
 
@@ -13,8 +18,9 @@ function createServer(handler: Handler) {
   server.listen(0);
 
   const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('Expected address to be AddressInfo')
-  const port = address.port
+  if (!address || typeof address === 'string')
+    throw new Error('Expected address to be AddressInfo');
+  const port = address.port;
 
   return {
     url: `http://localhost:${port}`,
@@ -26,14 +32,16 @@ describe('server responds with 413 Payload Too Large', () => {
   test('httpLink', async () => {
     const server = createServer(({ res }) => {
       res.setHeader('content-type', 'application/json');
-      res.statusCode = 413
-      res.statusMessage = 'Payload Too Large'
-      res.write(JSON.stringify({
-        "statusCode":413,
-        "code":"FST_ERR_CTP_BODY_TOO_LARGE",
-        "error":"Payload Too Large",
-        "message":"Request body is too large"
-      }));
+      res.statusCode = 413;
+      res.statusMessage = 'Payload Too Large';
+      res.write(
+        JSON.stringify({
+          statusCode: 413,
+          code: 'FST_ERR_CTP_BODY_TOO_LARGE',
+          error: 'Payload Too Large',
+          message: 'Request body is too large',
+        }),
+      );
       res.end();
     });
 
@@ -47,24 +55,30 @@ describe('server responds with 413 Payload Too Large', () => {
     });
 
     const error = await waitError(client.test.query(), TRPCClientError);
+
     expect(error).toMatchInlineSnapshot(
-      '[TRPCClientError: Request body is too large]',
+      `[TRPCClientError: Badly formatted response from server]`,
+    );
+    expect(error.message).toMatchInlineSnapshot(
+      `"Badly formatted response from server"`,
     );
 
     server.close();
-  })
+  });
 
   test('batchLink', async () => {
     const server = createServer(({ res }) => {
       res.setHeader('content-type', 'application/json');
-      res.statusCode = 413
-      res.statusMessage = 'Payload Too Large'
-      res.write(JSON.stringify({
-        "statusCode":413,
-        "code":"FST_ERR_CTP_BODY_TOO_LARGE",
-        "error":"Payload Too Large",
-        "message":"Request body is too large"
-      }));
+      res.statusCode = 413;
+      res.statusMessage = 'Payload Too Large';
+      res.write(
+        JSON.stringify({
+          statusCode: 413,
+          code: 'FST_ERR_CTP_BODY_TOO_LARGE',
+          error: 'Payload Too Large',
+          message: 'Request body is too large',
+        }),
+      );
       res.end();
     });
 
@@ -79,11 +93,12 @@ describe('server responds with 413 Payload Too Large', () => {
 
     const error = await waitError(client.test.query(), TRPCClientError);
     expect(error).toMatchInlineSnapshot(
-      '[TRPCClientError: Request body is too large]',
+      `[TRPCClientError: Badly formatted response from server]`,
+    );
+    expect(error.message).toMatchInlineSnapshot(
+      `"Badly formatted response from server"`,
     );
 
     server.close();
-  })
-})
-
-
+  });
+});
