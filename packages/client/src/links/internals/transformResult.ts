@@ -45,6 +45,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && !Array.isArray(value) && typeof value === 'object';
 }
 
+/**
+ * Transforms and validates that the result is a valid TRPCResponse
+ * @internal
+ */
 export function transformResultSafe<TRouter extends AnyRouter, TOutput>(
   response:
     | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>
