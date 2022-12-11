@@ -9,7 +9,7 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { transformResultSafe } from './internals/transformResult';
+import { transformResult } from './internals/transformResult';
 import { Operation, TRPCLink } from './types';
 
 type WSCallbackResult<TRouter extends AnyRouter, TOutput> = TRPCResponseMessage<
@@ -346,7 +346,7 @@ export function wsLink<TRouter extends AnyRouter>(
               }
             },
             next(message) {
-              const transformed = transformResultSafe(message, runtime);
+              const transformed = transformResult(message, runtime);
 
               if (!transformed.ok) {
                 observer.error(TRPCClientError.from(transformed.error));

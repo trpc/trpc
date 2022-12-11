@@ -11,7 +11,7 @@ import { TRPCClientError } from '../../TRPCClientError';
 // - the generics here are probably unnecessary
 // - the RPC-spec could probably be simplified to combine HTTP + WS
 /** @internal */
-function transformResult<TRouter extends AnyRouter, TOutput>(
+function transformResultInner<TRouter extends AnyRouter, TOutput>(
   response:
     | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>
     | TRPCResponse<TOutput, inferRouterError<TRouter>>,
@@ -49,16 +49,16 @@ function isObject(value: unknown): value is Record<string, unknown> {
  * Transforms and validates that the result is a valid TRPCResponse
  * @internal
  */
-export function transformResultSafe<TRouter extends AnyRouter, TOutput>(
+export function transformResult<TRouter extends AnyRouter, TOutput>(
   response:
     | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>
     | TRPCResponse<TOutput, inferRouterError<TRouter>>,
   runtime: TRPCClientRuntime,
-): ReturnType<typeof transformResult> {
-  let result: ReturnType<typeof transformResult>;
+): ReturnType<typeof transformResultInner> {
+  let result: ReturnType<typeof transformResultInner>;
   try {
     // Use the data transformers on the JSON-response
-    result = transformResult(response, runtime);
+    result = transformResultInner(response, runtime);
   } catch (err) {
     throw new TRPCClientError('Unable to transform response from server');
   }
