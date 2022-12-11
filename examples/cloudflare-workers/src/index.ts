@@ -14,7 +14,7 @@ import { appRouter } from './router';
 export default {
   async fetch(request: Request): Promise<Response> {
     return fetchRequestHandler({
-      endpoint: '',
+      endpoint: '/trpc',
       req: request,
       router: appRouter,
       createContext: () => ({}),

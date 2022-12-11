@@ -203,11 +203,7 @@ export function createHooksInternalProxy<
       };
     }
 
-    if (key === 'useQueries') {
-      return trpc.useQueries;
-    }
-
-    if ((key as string) in trpc) {
+    if (trpc.hasOwnProperty(key)) {
       return (trpc as any)[key];
     }
 

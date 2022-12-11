@@ -8,7 +8,7 @@ import type { AppRouter } from './router.ts';
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const url = 'http://127.0.0.1:8000';
+  const url = 'http://127.0.0.1:8000/trpc';
 
   const proxy = createTRPCProxyClient<AppRouter>({
     links: [loggerLink(), httpBatchLink({ url })],

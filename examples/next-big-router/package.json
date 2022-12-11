@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-big-router",
-  "version": "10.4.1",
+  "version": "10.4.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.4.1",
-    "@trpc/next": "^10.4.1",
-    "@trpc/react-query": "^10.4.1",
-    "@trpc/server": "^10.4.1",
+    "@trpc/client": "^10.4.3",
+    "@trpc/next": "^10.4.3",
+    "@trpc/react-query": "^10.4.3",
+    "@trpc/server": "^10.4.3",
     "next": "^13.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
