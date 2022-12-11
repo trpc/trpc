@@ -360,3 +360,10 @@ details p {
 .markdown .github-comment {
   margin-bottom: 2rem;
 }
+
+
+.navbar__link {
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
