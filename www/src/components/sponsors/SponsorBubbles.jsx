@@ -27,10 +27,9 @@ for (let index = 0; index < sponsors.length; index++) {
     pos++;
   }
   groups[pos] ||= [];
-  groups[pos].push({ ...sponsor, value: pos + 1 });
+  groups[pos].push({ ...sponsor, size: pos + 1 });
 }
 
-console.log('groups', groups);
 const pack = {
   children: groups.flat(),
   name: 'root',
@@ -42,7 +41,7 @@ export function SponsorBubbles() {
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => d?.value, 1)
+        .sum((d) => d?.size, 1)
         .sort((a, b) => (b.data.value ?? 0) - (a.data.value ?? 0)),
     [],
   );
