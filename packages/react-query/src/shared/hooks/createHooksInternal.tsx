@@ -678,7 +678,9 @@ export function createHooksInternal<
         const queryOption = query as TRPCQueryOptions<any, any, any, any>;
         if (
           queryOption.trpc?.ssr !== false &&
-          !queryClient.getQueryCache().find(queryOption.queryKey!)
+          !queryClient
+            .getQueryCache()
+            .find(getArrayQueryKey(queryOption.queryKey!, 'query'))
         ) {
           void prefetchQuery(queryOption.queryKey as any, queryOption as any);
         }
@@ -686,7 +688,10 @@ export function createHooksInternal<
     }
 
     return __useQueries({
-      queries: queries as readonly UseQueryOptions[],
+      queries: queries.map((query) => ({
+        ...query,
+        queryKey: getArrayQueryKey(query.queryKey, 'query'),
+      })) as readonly UseQueryOptions[],
       context,
     }) as any;
   };

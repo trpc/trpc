@@ -79,7 +79,32 @@ describe('withTRPC()', () => {
       v.state.data,
     ]);
     expect(allData).toHaveLength(1);
-    expect(allData).toMatchInlineSnapshot();
+    expect(allData).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Array [
+            Array [
+              "allPosts",
+            ],
+            Object {
+              "type": "query",
+            },
+          ],
+          Array [
+            Object {
+              "createdAt": 0,
+              "id": "1",
+              "title": "first post",
+            },
+            Object {
+              "createdAt": 1,
+              "id": "2",
+              "title": "second post",
+            },
+          ],
+        ],
+      ]
+    `);
 
     // @ts-ignore
     global.window = window;
