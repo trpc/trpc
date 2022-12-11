@@ -75,18 +75,6 @@ function tRPCOutputToAPIGatewayOutput<
   }
 }
 
-/** Will check the createContext of the TRouter and get the parameter of event.
- * @internal
- **/
-type inferAPIGWEvent<
-  TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
-> = AWSLambdaOptions<TRouter, TEvent>['createContext'] extends NonNullable<
-  AWSLambdaOptions<TRouter, TEvent>['createContext']
->
-  ? Parameters<AWSLambdaOptions<TRouter, TEvent>['createContext']>[0]['event']
-  : APIGatewayEvent;
-
 /** 1:1 mapping of v1 or v2 input events, deduces which is which.
  * @internal
  **/
@@ -97,7 +85,7 @@ type inferAPIGWReturn<TType> = TType extends APIGatewayProxyEvent
   : never;
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
-  TEvent extends inferAPIGWEvent<TRouter, TEvent>,
+  TEvent extends APIGatewayEvent,
   TResult extends inferAPIGWReturn<TEvent>,
 >(
   opts: AWSLambdaOptions<TRouter, TEvent>,
