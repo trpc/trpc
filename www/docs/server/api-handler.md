@@ -25,3 +25,5 @@ export default createNextApiHandler({
   createContext, // your request context, see https://trpc.io/docs/context
 });
 ```
+
+The API handler that is created by `createNextApiHandler` and equivalents in other frameworks is just a function that takes `req` and `res` objects. This means you can also modify those objects before passing them to the handler, for example to [enable CORS](https://trpc.io/docs/cors#enabling-on-the-server).
