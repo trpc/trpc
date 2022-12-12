@@ -37,7 +37,7 @@ const Iframe = (
         setLoaded(true);
       }}
       className={clsx(
-        'w-full h-full absolute transition-opacity transition-1000',
+        'w-full h-full absolute transition-opacity duration-1000',
         loaded ? 'opacity-100' : 'opacity-0',
       )}
     />
