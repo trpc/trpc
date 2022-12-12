@@ -45,7 +45,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
       <meta property={`og:title`} content={metadata.title} />
       <meta property={`og:url`} content={url + metadata.permalink} />
       <meta property={`og:image`} content={ogImg} />
-      <meta property="twitter:image" content={ogImg} />
+      <meta data-rh="true" name="twitter:image" content={ogImg} />
       <meta property="og:description" content={metadata.description} />
       <meta property="article:published_time" content={date} />
       {authors.some((author) => author.url) && (
