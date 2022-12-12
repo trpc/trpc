@@ -25,6 +25,15 @@ export default function BlogPostPageMetadata(): JSX.Element {
 
   const author = authors[0];
 
+  const ogImg = `https://og-image-trpc.vercel.app/api/vercel?${searchParams({
+    title: metadata.title,
+    authorName: author.name as string,
+    authorTitle: author.title as string,
+    authorImg: author.imageURL as string,
+    date,
+    readingTime: (metadata.readingTime as number).toString(),
+  })}`;
+
   return (
     <PageMetadata
       title={title}
@@ -35,17 +44,8 @@ export default function BlogPostPageMetadata(): JSX.Element {
       <meta property="og:type" content="article" />
       <meta property={`og:title`} content={metadata.title} />
       <meta property={`og:url`} content={url + metadata.permalink} />
-      <meta
-        property={`og:image`}
-        content={`https://og-image-trpc.vercel.app/api/vercel?${searchParams({
-          title: metadata.title,
-          authorName: author.name as string,
-          authorTitle: author.title as string,
-          authorImg: author.imageURL as string,
-          date,
-          readingTime: (metadata.readingTime as number).toString(),
-        })}`}
-      />
+      <meta property={`og:image`} content={ogImg} />
+      <meta property="twitter:image" content={ogImg} />
       <meta property="og:description" content={metadata.description} />
       <meta property="article:published_time" content={date} />
       {authors.some((author) => author.url) && (
