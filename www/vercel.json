@@ -1,4 +1,10 @@
 {
+  "functions": {
+    "api/og.tsx": {
+      "memory": 1024,
+      "runtime": "experimental-edge"
+    }
+  },
   "redirects": [
     {
       "source": "/docs/api-gateway",
