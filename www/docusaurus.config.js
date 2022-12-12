@@ -1,6 +1,16 @@
 // @ts-check
+
 /** @type {import('@docusaurus/types').Config} */
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config();
+
 module.exports = {
+  customFields: {
+    url: process.env.VERCEL_URL
+      ? process.env.VERCEL_URL
+      : 'http://localhost:' + process.env.PORT,
+  },
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -207,7 +217,7 @@ module.exports = {
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../../../../www/min-light-with-diff', 'nord'],
+        themes: ['../../../../../www/min-light-with-diff', 'nord'],
       },
     ],
   ],

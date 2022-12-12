@@ -72,6 +72,9 @@
       "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter",
       "@examples/interop-next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter",
       "@examples/interop-todo-web>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web"
+    },
+    "patchedDependencies": {
+      "yoga-layout-prebuilt@1.10.0": "patches/yoga-layout-prebuilt@1.10.0.patch"
     }
   }
 }
