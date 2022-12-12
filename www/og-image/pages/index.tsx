@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
@@ -7,6 +8,8 @@ function getBaseUrl() {
 }
 
 export default function Page() {
+  const { query } = useRouter();
+  const title = query.title ?? 'tRPC default title';
   return (
     <div>
       <Head>
@@ -15,7 +18,7 @@ export default function Page() {
         <meta name="og:image" content={`${getBaseUrl()}/api/vercel`} />
       </Head>
       <h1>A page with Open Graph Image.</h1>
-      <a href={getBaseUrl() + '/api/vercel'}>See preview</a>
+      <a href={getBaseUrl() + '/api/vercel?title=' + title}>See preview</a>
     </div>
   );
 }
