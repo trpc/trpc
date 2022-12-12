@@ -1,8 +1,8 @@
-import { ImageResponse } from "@vercel/og";
-import { type NextRequest } from "next/server";
+import { ImageResponse } from '@vercel/og';
+import { type NextRequest } from 'next/server';
 
 export const config = {
-  runtime: "experimental-edge",
+  runtime: 'experimental-edge',
 };
 
 // load proper font here
@@ -15,28 +15,27 @@ export default async function handler(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
 
-  const title = searchParams.get("title") ?? "Default tRPC Title";
+  const title = searchParams.get('title') ?? 'Default tRPC Title';
 
   return new ImageResponse(
     (
       <div
         style={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
           // fontFamily: "Inter",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`${
             process.env.VERCEL_URL
-              ? "https://" + process.env.VERCEL_URL
-              : "http://localhost:3000"
+              ? 'https://' + process.env.VERCEL_URL
+              : 'http://localhost:3000'
           }/pattern.svg`}
           tw="absolute"
         />
@@ -72,6 +71,6 @@ export default async function handler(req: NextRequest) {
       //     weight: 900,
       //   },
       // ],
-    }
+    },
   );
 }

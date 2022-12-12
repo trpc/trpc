@@ -86,6 +86,12 @@
       "rules": {
         "no-console": "error"
       }
+    },
+    {
+      "files": ["www/api/**", "www/og-image/**"],
+      "rules": {
+        "react/no-unknown-property": "off"
+      }
     }
   ],
   "settings": {

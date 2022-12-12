@@ -1,4 +1,4 @@
-import Head from 'next/head'
+import Head from 'next/head';
 
 export default function Page() {
   return (
@@ -21,5 +21,5 @@ export default function Page() {
       </Head>
       <h1>A page with Open Graph Image.</h1>
     </div>
-  )
+  );
 }
