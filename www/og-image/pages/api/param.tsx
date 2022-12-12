@@ -40,7 +40,6 @@ export default function handler(req: NextRequest) {
               justifyItems: 'center',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt="Vercel"
               height={200}
