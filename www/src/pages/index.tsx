@@ -37,8 +37,8 @@ const Iframe = (
         setLoaded(true);
       }}
       className={clsx(
-        'w-full h-full absolute',
-        loaded ? 'transition-opacity opacity-100' : 'opacity-0',
+        'w-full h-full absolute transition-opacity duration-1000',
+        loaded ? 'opacity-100' : 'opacity-0',
       )}
     />
   );
@@ -105,9 +105,10 @@ const HomeContent: React.FC = () => {
         />
         <div
           className={clsx(
-            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4 bg-gray-900',
+            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
           )}
         >
+          <div className="absolute inset-0 bg-gray-900 animate-pulse" />
           <Iframe
             src={
               `https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?` +
