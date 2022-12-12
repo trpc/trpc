@@ -64,13 +64,18 @@ export default async function handler(req: NextRequest) {
         <div tw="flex items-center justify-between h-full w-full p-16">
           <div tw="flex flex-col items-start">
             <h1 tw="text-6xl text-gray-900">{title}</h1>
-            <p>{date}</p>
-            <p>{readingTime}</p>
             <div tw="flex">
+              <p>{date}</p>
+              <p tw="mx-2">•</p>
+              <p>{readingTime}</p>
+            </div>
+            <div tw="flex items-center">
               <img src={img} tw="h-32 w-32 rounded-full" />
-              <div tw="flex flex-col">
-                <p>{author}</p>
-                <p>{authorDesc}</p>
+              <div tw="flex flex-col ml-4">
+                <p tw="my-1" style={{ fontFamily: 'SF Pro Display Bold' }}>
+                  {author}
+                </p>
+                <p tw="my-1">{authorDesc}</p>
               </div>
             </div>
           </div>
