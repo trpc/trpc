@@ -14,7 +14,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
   const { assets, metadata } = useBlogPost();
   const { title, description, date, tags, authors, frontMatter } = metadata;
   const { keywords } = frontMatter;
-  const image = assets.image ?? frontMatter.image;
+  const _image = assets.image ?? frontMatter.image;
   const {
     siteConfig: { customFields },
   } = useDocusaurusContext();
@@ -39,7 +39,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
       title={title}
       description={description}
       keywords={keywords}
-      image={image}
+      image={ogImg}
     >
       <meta property="og:type" content="article" />
       <meta property={`og:title`} content={metadata.title} />

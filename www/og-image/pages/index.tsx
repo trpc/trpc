@@ -9,7 +9,7 @@ function getBaseUrl() {
 
 export default function Page() {
   const { query } = useRouter();
-  const title = query.title ?? 'tRPC default title';
+  const title = query.title || 'tRPC default title';
   return (
     <div>
       <Head>
