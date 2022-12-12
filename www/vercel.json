@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/og.tsx": {
+    "api/**": {
       "memory": 1024
     }
   },
