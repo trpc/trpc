@@ -25,7 +25,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
 
   const author = authors[0];
 
-  const ogImg = `https://og-image-trpc.vercel.app/api/vercel?${searchParams({
+  const ogImg = `https://og-image-trpc.vercel.app/api/blog?${searchParams({
     title: metadata.title,
     authorName: author.name as string,
     authorTitle: author.title as string,

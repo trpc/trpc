@@ -11,7 +11,7 @@ export default function DocItemMetadata(): JSX.Element {
 
   console.log({ metadata });
 
-  const ogImg = `https://og-image-trpc.vercel.app/api/vercel?${searchParams({
+  const ogImg = `https://og-image-trpc.vercel.app/api/docs?${searchParams({
     title,
     description,
     // authorName: author.name as string,
