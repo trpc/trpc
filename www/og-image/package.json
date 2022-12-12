@@ -9,14 +9,14 @@
     "start": "next start"
   },
   "dependencies": {
-    "@vercel/og": "0.0.20",
+    "@vercel/og": "^0.0.21",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
   },
   "devDependencies": {
-    "@types/node": "^18.11.13",
-    "@types/react": "^18.0.15",
-    "typescript": "^4.7.4"
+    "@types/node": "^18.7.20",
+    "@types/react": "^18.0.9",
+    "typescript": "^4.8.3"
   }
 }

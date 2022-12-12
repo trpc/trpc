@@ -10,11 +10,6 @@ overrides:
   '@examples/interop-next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter
   '@examples/interop-todo-web>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web
 
-patchedDependencies:
-  yoga-layout-prebuilt@1.10.0:
-    hash: 2iqackjpe7l2xgjjajtn2ddx3q
-    path: patches/yoga-layout-prebuilt@1.10.0.patch
-
 importers:
 
   .:
@@ -1173,15 +1168,15 @@ importers:
 
   www/og-image:
     specifiers:
-      '@types/node': ^18.11.13
-      '@types/react': ^18.0.15
-      '@vercel/og': 0.0.20
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      '@vercel/og': ^0.0.21
       next: latest
       react: latest
       react-dom: latest
-      typescript: ^4.7.4
+      typescript: ^4.8.3
     dependencies:
-      '@vercel/og': 0.0.20
+      '@vercel/og': 0.0.21
       next: 13.0.6_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -7770,15 +7765,6 @@ packages:
       debug: 4.3.4
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /@vercel/og/0.0.20:
-    resolution: {integrity: sha512-089P+TfqWz0xBxjOvOhkZIDDtfrLcye94H4IZ+SqxoGPWpNGXaBvRJER/z5SoJxJRcCAL8tPiK5zdjRskM6tLw==}
-    engines: {node: '>=16'}
-    dependencies:
-      '@resvg/resvg-wasm': 2.0.0-alpha.4
-      satori: 0.0.43
-      yoga-wasm-web: 0.1.2
     dev: false
 
   /@vercel/og/0.0.21:
@@ -18878,19 +18864,6 @@ packages:
   /safer-buffer/2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  /satori/0.0.43:
-    resolution: {integrity: sha512-SzYwr+LsELWRJU9KMviEOE9TdShry+R5AdS54YQvgAVKFDN4yniAIzwQk1/z2TtIx0ceUT9zTeosWAoWvJBEtQ==}
-    engines: {node: '>=16'}
-    dependencies:
-      '@shuding/opentype.js': 1.4.0-beta.0
-      css-background-parser: 0.1.0
-      css-box-shadow: 1.0.0-3
-      css-to-react-native: 3.0.0
-      emoji-regex: 10.2.1
-      postcss-value-parser: 4.2.0
-      yoga-layout-prebuilt: 1.10.0_2iqackjpe7l2xgjjajtn2ddx3q
-    dev: false
-
   /satori/0.0.44:
     resolution: {integrity: sha512-WKUxXC2qeyno6J3ucwwLozPL6j1HXOZiN5wIUf7iqAhlx1RUC/6ePIKHi7iPc3Cy6DYuZcJriZXxXkSdo2FQHg==}
     engines: {node: '>=16'}
@@ -18901,7 +18874,7 @@ packages:
       css-to-react-native: 3.0.0
       emoji-regex: 10.2.1
       postcss-value-parser: 4.2.0
-      yoga-layout-prebuilt: 1.10.0_2iqackjpe7l2xgjjajtn2ddx3q
+      yoga-layout-prebuilt: 1.10.0
     dev: false
 
   /sax/1.2.1:
@@ -21789,13 +21762,12 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
-  /yoga-layout-prebuilt/1.10.0_2iqackjpe7l2xgjjajtn2ddx3q:
+  /yoga-layout-prebuilt/1.10.0:
     resolution: {integrity: sha512-YnOmtSbv4MTf7RGJMK0FvZ+KD8OEe/J5BNnR0GHhD8J/XcG/Qvxgszm0Un6FTHWW4uHlTgP0IztiXQnGyIR45g==}
     engines: {node: '>=8'}
     dependencies:
       '@types/yoga-layout': 1.9.2
     dev: false
-    patched: true
 
   /yoga-wasm-web/0.1.2:
     resolution: {integrity: sha512-8SkgawHcA0RUbMrnhxbaQkZDBi8rMed8pQHixkFF9w32zGhAwZ9/cOHWlpYfr6RCx42Yp3siV45/jPEkJxsk6w==}
