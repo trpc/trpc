@@ -2,7 +2,7 @@ import Head from '@docusaurus/Head';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React, { ComponentPropsWithoutRef, useEffect, useState } from 'react';
+import React, { ComponentPropsWithoutRef, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
@@ -14,7 +14,6 @@ import { SectionTitle } from '../components/SectionTitle';
 import { TwitterWall } from '../components/TwitterWall';
 import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
 import { TopSponsors } from '../components/sponsors/TopSponsors';
-import { useVersion } from '../components/useVersion';
 
 function searchParams(obj: Record<string, string | string[]>): string {
   return Object.entries(obj)
@@ -48,19 +47,6 @@ const Iframe = (
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
-  const { isV10, savePreferredVersionName } = useVersion();
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const requestedVersion = searchParams.get('v');
-
-    if (requestedVersion === '9' && isV10) {
-      savePreferredVersionName('9.x');
-    } else if (requestedVersion === '10' && !isV10) {
-      savePreferredVersionName('current');
-    }
-  }, [isV10, savePreferredVersionName]);
-
   return (
     <main className="container px-6 mx-auto space-y-28">
       <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24">
@@ -82,7 +68,7 @@ const HomeContent: React.FC = () => {
           <div className="flex justify-start flex-1">
             <Button
               variant="primary"
-              href={`/docs/${isV10 ? '' : 'v9/'}quickstart`}
+              href="/docs/quickstart"
               className="lg:text-lg"
             >
               Quickstart
@@ -101,7 +87,6 @@ const HomeContent: React.FC = () => {
       <section
         className={clsx(
           'border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900',
-          { hidden: !isV10 },
         )}
       >
         <QuickIntro />
@@ -239,12 +224,9 @@ const HomeContent: React.FC = () => {
 };
 
 const HomeHead: React.FC = () => {
-  const { isV10 } = useVersion();
-
   return (
     <Head>
       <body className="homepage" />
-      <html className={isV10 ? 'v10' : 'v9'} />
       <script async src="https://platform.twitter.com/widgets.js" />
       <link
         rel="preload"
