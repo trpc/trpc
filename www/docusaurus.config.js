@@ -65,7 +65,7 @@ module.exports = {
         },
         {
           to: 'docs/nextjs',
-          label: 'Usage with Next.js',
+          label: 'Using Next.js',
         },
         {
           href: 'https://github.com/trpc/trpc',
