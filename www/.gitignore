@@ -21,6 +21,3 @@ yarn-error.log*
 
 
 .env
-
-# og generated images
-/static/og-assets/generated
