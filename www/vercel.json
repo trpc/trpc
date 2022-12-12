@@ -1,8 +1,7 @@
 {
   "functions": {
     "api/og.tsx": {
-      "memory": 1024,
-      "runtime": "experimental-edge"
+      "memory": 1024
     }
   },
   "redirects": [
