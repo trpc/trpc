@@ -1,4 +1,5 @@
 {
+  "name": "@trpc/www-og-image",
   "repository": "https://github.com/vercel/examples.git",
   "license": "MIT",
   "private": true,
