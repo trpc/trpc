@@ -2,7 +2,7 @@ import Head from '@docusaurus/Head';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React, { ComponentPropsWithoutRef, useEffect, useState } from 'react';
+import React, { ComponentPropsWithoutRef, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
