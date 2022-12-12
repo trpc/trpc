@@ -15,7 +15,7 @@ import { TwitterWall } from '../components/TwitterWall';
 import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
 import { TopSponsors } from '../components/sponsors/TopSponsors';
 
-function searchParams(obj: Record<string, string | string[]>): string {
+export function searchParams(obj: Record<string, string | string[]>): string {
   return Object.entries(obj)
     .map(([key, value]) => {
       const values = Array.isArray(value) ? value : [value];

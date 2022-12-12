@@ -34,10 +34,10 @@ export default async function handler(req: NextRequest) {
 
   const readingTime = searchParams.get('readingTime') ?? '5 min read';
 
-  const img = searchParams.get('img') || alex;
+  const img = searchParams.get('authorImg') || alex;
 
-  const author = searchParams.get('author') ?? 'Alex';
-  const authorDesc = searchParams.get('authorDesc') ?? 'Creator of tRPC';
+  const author = searchParams.get('authorName') ?? 'Alex';
+  const authorDesc = searchParams.get('authorTitle') ?? 'Creator of tRPC';
 
   return new ImageResponse(
     (
