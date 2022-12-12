@@ -41,7 +41,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
           title: metadata.title,
           authorName: author.name as string,
           authorTitle: author.title as string,
-          authorImg: image as string,
+          authorImg: author.imageURL as string,
           date,
           readingTime: (metadata.readingTime as number).toString(),
         })}`}
