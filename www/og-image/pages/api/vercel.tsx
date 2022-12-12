@@ -32,7 +32,7 @@ export default async function handler(req: NextRequest) {
     searchParams.has('date') ? new Date(searchParams.get('date')) : new Date(),
   );
 
-  const readingTime = searchParams.get('readingTime') ?? '5 min read';
+  const readingTime = searchParams.get('readingTime') ?? '5.00';
 
   const img = searchParams.get('authorImg') || alex;
 
@@ -67,7 +67,7 @@ export default async function handler(req: NextRequest) {
             <div tw="flex">
               <p>{date}</p>
               <p tw="mx-2">•</p>
-              <p>{readingTime}</p>
+              <p>{readingTime} min read</p>
             </div>
             <div tw="flex items-center">
               <img src={img} tw="h-32 w-32 rounded-full" />
