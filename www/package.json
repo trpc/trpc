@@ -65,6 +65,7 @@
     "@types/node": "^18.7.20",
     "@types/oauth": "^0.9.1",
     "autoprefixer": "^10.4.7",
+    "dotenv": "^16.0.1",
     "next": "^13.0.0",
     "next-auth": "^4.14.0",
     "oauth": "^0.10.0",

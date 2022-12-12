@@ -1,7 +1,6 @@
 // @ts-check
 
 /** @type {import('@docusaurus/types').Config} */
-
 module.exports = {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',

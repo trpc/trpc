@@ -1099,6 +1099,7 @@ importers:
       clsx: ^1.1.1
       cssnano: ^5.1.13
       docusaurus-preset-shiki-twoslash: ^1.1.38
+      dotenv: ^16.0.1
       next: ^13.0.0
       next-auth: ^4.14.0
       oauth: ^0.10.0
@@ -1149,6 +1150,7 @@ importers:
       '@types/node': 18.7.20
       '@types/oauth': 0.9.1
       autoprefixer: 10.4.13_postcss@8.4.14
+      dotenv: 16.0.3
       next: 13.0.5_mqvh5p7ejg4taogoj6tpk3gd5a
       next-auth: 4.17.0_7iuvftg57tblwyxclfkwku5xo4
       oauth: 0.10.0
