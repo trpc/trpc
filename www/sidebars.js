@@ -13,6 +13,7 @@ module.exports = {
         'main/example-apps',
         'nextjs/introduction',
         'reactjs/introduction',
+        'main/edge-runtimes',
         'main/contributing',
         'main/love',
         'main/sponsors',

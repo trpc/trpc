@@ -1,13 +1,11 @@
 import { TRPCError } from '../../../error/TRPCError';
 import { NodeHTTPRequest } from '../types';
 
-export async function getPostBody({
-  req,
-  maxBodySize,
-}: {
+export async function getPostBody(opts: {
   req: NodeHTTPRequest;
   maxBodySize?: number;
 }) {
+  const { req, maxBodySize = Infinity } = opts;
   return new Promise<
     { ok: true; data: unknown } | { ok: false; error: TRPCError }
   >((resolve) => {
@@ -20,7 +18,7 @@ export async function getPostBody({
     req.on('data', function (data) {
       body += data;
       hasBody = true;
-      if (typeof maxBodySize === 'number' && body.length > maxBodySize) {
+      if (body.length > maxBodySize) {
         resolve({
           ok: false,
           error: new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }),
