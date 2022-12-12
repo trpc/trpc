@@ -2,15 +2,7 @@
 
 /** @type {import('@docusaurus/types').Config} */
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
-
 module.exports = {
-  customFields: {
-    url: `https://${process.env.VERCEL_URL}`
-      ? process.env.VERCEL_URL
-      : 'http://localhost:3000',
-  },
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
