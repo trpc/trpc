@@ -7,9 +7,9 @@ require('dotenv').config();
 
 module.exports = {
   customFields: {
-    url: process.env.VERCEL_URL
+    url: `https://${process.env.VERCEL_URL}`
       ? process.env.VERCEL_URL
-      : 'http://localhost:' + process.env.PORT,
+      : 'http://localhost:3000',
   },
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
