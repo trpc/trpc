@@ -31,6 +31,7 @@
     "@trpc/next": "^10.4.3",
     "@trpc/react-query": "^10.4.3",
     "@trpc/server": "^10.4.3",
+    "@vercel/og": "^0.0.21",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.1.1",
