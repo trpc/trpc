@@ -13,13 +13,31 @@ const fontBold = fetch(
   new URL('../../assets/SFPRODISPLAYBOLD.OTF', import.meta.url),
 ).then((res) => res.arrayBuffer());
 
+const alex = 'https://avatars.githubusercontent.com/u/459267?v=4';
+
 export default async function handler(req: NextRequest) {
   const fontData = await font;
   const fontBoldData = await fontBold;
 
   const { searchParams } = new URL(req.url);
+  console.log({ searchParams });
 
   const title = searchParams.get('title') ?? 'Default tRPC Title';
+
+  const date = Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(
+    searchParams.has('date') ? new Date(searchParams.get('date')) : new Date(),
+  );
+
+  const readingTime = searchParams.get('readingTime') ?? '5 min read';
+
+  const img = searchParams.get('img') || alex;
+
+  const author = searchParams.get('author') ?? 'Alex';
+  const authorDesc = searchParams.get('authorDesc') ?? 'Creator of tRPC';
 
   return new ImageResponse(
     (
@@ -43,13 +61,24 @@ export default async function handler(req: NextRequest) {
           }/pattern.svg`}
           tw="absolute"
         />
-        <div tw="flex items-start h-full w-full py-8">
-          {/* header */}
-          <div tw="flex w-full justify-between">
-            <h1 tw="text-6xl text-gray-900 mx-8">{title}</h1>
+        <div tw="flex items-center justify-between h-full w-full p-16">
+          <div tw="flex flex-col items-start">
+            <h1 tw="text-6xl text-gray-900">{title}</h1>
+            <p>{date}</p>
+            <p>{readingTime}</p>
+            <div tw="flex">
+              <img src={img} tw="h-32 w-32 rounded-full" />
+              <div tw="flex flex-col">
+                <p>{author}</p>
+                <p>{authorDesc}</p>
+              </div>
+            </div>
+          </div>
+
+          <div tw="flex justify-between">
             <div tw="flex flex-col items-center">
               <img
-                tw="h-48 w-48 mx-12"
+                tw="h-64 w-64 mb-4"
                 src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg"
                 alt=""
               />
@@ -61,9 +90,6 @@ export default async function handler(req: NextRequest) {
               </span>
             </div>
           </div>
-
-          {/* content */}
-          <div tw="flex flex-col w-full"></div>
         </div>
       </div>
     ),
