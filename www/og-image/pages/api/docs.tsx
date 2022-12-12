@@ -5,17 +5,12 @@ export const config = {
   runtime: 'experimental-edge',
 };
 
-// load proper font here
-const font = fetch(
-  new URL('../../assets/SFPRODISPLAYREGULAR.OTF', import.meta.url),
-).then((res) => res.arrayBuffer());
-const fontBold = fetch(
-  new URL('../../assets/SFPRODISPLAYBOLD.OTF', import.meta.url),
-).then((res) => res.arrayBuffer());
+const inter = fetch(new URL('../../assets/Inter.ttf', import.meta.url)).then(
+  (res) => res.arrayBuffer(),
+);
 
 export default async function handler(req: NextRequest) {
-  const fontData = await font;
-  const fontBoldData = await fontBold;
+  const interData = await inter;
 
   const { searchParams } = new URL(req.url);
   console.log({ searchParams });
@@ -35,7 +30,7 @@ export default async function handler(req: NextRequest) {
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          fontFamily: 'SF Pro Display',
+          fontFamily: 'Inter',
         }}
       >
         <img
@@ -59,12 +54,7 @@ export default async function handler(req: NextRequest) {
                 src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg"
                 alt=""
               />
-              <span
-                tw="text-5xl font-bold"
-                style={{ fontFamily: 'SF Pro Display Bold' }}
-              >
-                tRPC
-              </span>
+              <span tw="text-5xl font-bold">tRPC</span>
             </div>
           </div>
         </div>
@@ -75,16 +65,9 @@ export default async function handler(req: NextRequest) {
       height: 600,
       fonts: [
         {
-          name: 'SF Pro Display',
-          data: fontData,
+          name: 'Inter',
+          data: interData,
           style: 'normal',
-          weight: 400,
-        },
-        {
-          name: 'SF Pro Display Bold',
-          data: fontBoldData,
-          style: 'normal',
-          weight: 700,
         },
       ],
     },
