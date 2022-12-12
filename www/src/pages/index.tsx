@@ -105,7 +105,7 @@ const HomeContent: React.FC = () => {
         />
         <div
           className={clsx(
-            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4 ',
+            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
           )}
         >
           <div className="absolute inset-0 bg-gray-900 animate-pulse" />
