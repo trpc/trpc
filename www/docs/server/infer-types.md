@@ -151,6 +151,7 @@ type PostCreateOptions = ReactQueryOptions['post']['create'];
 function usePostCreate(options?: PostCreateOptions) {
   const utils = trpc.useContext();
   return trpc.post.create.useMutation({
+    ...options,
     onSuccess(post) {         
       // invalidate all queries on the post router
       // when a new post is created
