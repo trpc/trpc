@@ -31,11 +31,10 @@ const searchParamsSchema = z.object({
 export default async (req: Request) => {
   const interData = await inter;
 
-  const { searchParams } = new URL(req.url);
-  console.log(new URL(req.url));
-  console.log({ searchParams });
+  const url = new URL(req.url);
+  console.log(url.toJSON());
 
-  const parsed = searchParamsSchema.safeParse(searchParams);
+  const parsed = searchParamsSchema.safeParse(Object.entries(url.searchParams));
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }
