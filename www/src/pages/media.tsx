@@ -1,3 +1,4 @@
+import Head from '@docusaurus/Head';
 import Layout from '@theme/Layout';
 import React from 'react';
 
@@ -34,7 +35,10 @@ const InfoCard = (props: {
         <p>{props.title}</p>
         <button
           onClick={() => navigator.clipboard.writeText(props.value)}
-          className="ml-auto mr-4 hover:text-gray-300"
+          className={`ml-auto mr-4 hover:text-gray-300`}
+          style={{
+            fontFamily: props.value,
+          }}
         >
           {props.value}
         </button>
@@ -56,7 +60,7 @@ const PressContent = () => {
             title="Primary"
             value="#398ccb"
           />
-          <InfoCard className="bg-black " title="Font" value="SF Pro Display" />
+          <InfoCard className="bg-black " title="Font" value="Inter" />
         </div>
 
         <div className="grid grid-cols-3 gap-4 my-4 sm:mt-0 sm:w-2/3 lg:w-3/4">
@@ -85,9 +89,23 @@ const PressContent = () => {
 };
 const PressPage = () => {
   return (
-    <Layout title="Media" description="tRPC media assets">
-      <PressContent />
-    </Layout>
+    <>
+      <Head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin={'true'}
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </Head>
+      <Layout title="Media" description="tRPC media assets">
+        <PressContent />
+      </Layout>
+    </>
   );
 };
 export default PressPage;
