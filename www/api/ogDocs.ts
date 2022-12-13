@@ -1,4 +1,5 @@
 import { ImageResponse } from '@vercel/og';
+import { z } from 'zod';
 import { OGDocsComponent } from './ogComponents';
 
 export const config = {
@@ -9,20 +10,27 @@ const inter = fetch(new URL('../static/Inter.ttf', import.meta.url)).then(
   (res) => res.arrayBuffer(),
 );
 
+const searchParamsSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+});
+
 export default async (req: Request) => {
   const interData = await inter;
 
-  const { searchParams } = new URL(req.url);
-  console.log({ searchParams });
+  const url = new URL(req.url);
+  const parsed = searchParamsSchema.safeParse(
+    Object.fromEntries(url.searchParams.entries()),
+  );
 
-  const title = searchParams.get('title') ?? 'Default tRPC Title';
-  const description =
-    searchParams.get('description') ?? 'Move fast and break nothing!';
+  if (!parsed.success) {
+    return new Response(parsed.error.toString(), { status: 400 });
+  }
 
   return new ImageResponse(
     OGDocsComponent({
-      title,
-      description,
+      title: parsed.data.title,
+      description: parsed.data.description,
     }),
     {
       width: 1200,
