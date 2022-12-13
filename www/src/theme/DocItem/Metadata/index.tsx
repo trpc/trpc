@@ -4,7 +4,6 @@ import { PageMetadata } from '@docusaurus/theme-common';
 import { useDoc } from '@docusaurus/theme-common/internal';
 import React from 'react';
 import { searchParams } from '../../../pages';
-import { getBaseUrl } from '../../getBaseUrl';
 
 export default function DocItemMetadata(): JSX.Element {
   const { metadata } = useDoc();
@@ -12,15 +11,17 @@ export default function DocItemMetadata(): JSX.Element {
 
   console.log({ metadata });
 
-  const ogImg = `${getBaseUrl()}/api/ogDocs?${searchParams({
-    title,
-    description,
-    // authorName: author.name as string,
-    // authorTitle: author.title as string,
-    // authorImg: author.imageURL as string,
-    // date,
-    // readingTime: (metadata.readingTime as number).toString(),
-  })}`;
+  const ogImg = `https://www-git-og-images-trpc.vercel.app/api/ogDocs?${searchParams(
+    {
+      title,
+      description,
+      // authorName: author.name as string,
+      // authorTitle: author.title as string,
+      // authorImg: author.imageURL as string,
+      // date,
+      // readingTime: (metadata.readingTime as number).toString(),
+    },
+  )}`;
 
   return (
     <PageMetadata title={title} description={description} image={ogImg}>
