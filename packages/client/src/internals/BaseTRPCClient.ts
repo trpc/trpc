@@ -2,9 +2,6 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   DataTransformer,
-  inferProcedureInput,
-  inferProcedureOutput,
-  inferSubscriptionOutput,
 } from '@trpc/server';
 import {
   Unsubscribable,
@@ -12,7 +9,6 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
@@ -53,7 +49,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
       links: TRPCLink<TRouter>[];
     };
 
-export class TRPCClient<TRouter extends AnyRouter> {
+export class BaseTRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<TRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
@@ -130,47 +126,31 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     return abortablePromise;
   }
-  public query<
-    TQueries extends TRouter['_def']['queries'],
-    TPath extends string & keyof TQueries,
-    TInput extends inferProcedureInput<TQueries[TPath]>,
-  >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
-    type TOutput = inferProcedureOutput<TQueries[TPath]>;
-    return this.requestAsPromise<TInput, TOutput>({
+  public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+    return this.requestAsPromise<unknown, any>({
       type: 'query',
       path,
-      input: input as TInput,
+      input,
       context: opts?.context,
       signal: opts?.signal,
     });
   }
-  public mutation<
-    TMutations extends TRouter['_def']['mutations'],
-    TPath extends string & keyof TMutations,
-    TInput extends inferProcedureInput<TMutations[TPath]>,
-  >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
-    type TOutput = inferTransformedProcedureOutput<TMutations[TPath]>;
-    return this.requestAsPromise<TInput, TOutput>({
+  public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+    return this.requestAsPromise<unknown, any>({
       type: 'mutation',
       path,
-      input: input as TInput,
+      input,
       context: opts?.context,
       signal: opts?.signal,
     });
   }
-  public subscription<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & keyof TSubscriptions,
-    // TODO - this should probably be updated to use inferTransformedProcedureOutput but this is only hit for legacy clients
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(
-    path: TPath,
-    input: TInput,
+  public subscription(
+    path: string,
+    input: unknown,
     opts: TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<TRouter>>>,
   ): Unsubscribable {
-    const observable$ = this.$request<TInput, TOutput>({
+    const observable$ = this.$request({
       type: 'subscription',
       path,
       input,

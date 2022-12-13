@@ -1,10 +1,54 @@
-import type { AnyRouter } from '@trpc/server';
+import type {
+  AnyRouter,
+  inferProcedureInput,
+  inferProcedureOutput,
+  inferSubscriptionOutput,
+} from '@trpc/server';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { Unsubscribable } from 'packages/server/observable';
+import { TRPCClientError } from './TRPCClientError';
 import {
-  TRPCClient as Client,
+  BaseTRPCClient as Client,
   CreateTRPCClientOptions,
-} from './internals/TRPCClient';
+  TRPCRequestOptions,
+  TRPCSubscriptionObserver,
+} from './internals/BaseTRPCClient';
 import { httpBatchLink } from './links';
 
+export interface TRPCClient<TRouter extends AnyRouter> {
+  query<
+    TQueries extends TRouter['_def']['queries'],
+    TPath extends string & keyof TQueries,
+    TInput extends inferProcedureInput<TQueries[TPath]>,
+  >(
+    path: TPath,
+    input?: TInput,
+    opts?: TRPCRequestOptions,
+  ): Promise<inferProcedureOutput<TQueries[TPath]>>;
+
+  mutation<
+    TMutations extends TRouter['_def']['mutations'],
+    TPath extends string & keyof TMutations,
+    TInput extends inferProcedureInput<TMutations[TPath]>,
+  >(
+    path: TPath,
+    input?: TInput,
+    opts?: TRPCRequestOptions,
+  ): Promise<inferTransformedProcedureOutput<TMutations[TPath]>>;
+
+  subscription<
+    TSubscriptions extends TRouter['_def']['subscriptions'],
+    TPath extends string & keyof TSubscriptions,
+    // TODO - this should probably be updated to use inferTransformedProcedureOutput but this is only hit for legacy clients
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
+  >(
+    path: TPath,
+    input: TInput,
+    opts: TRPCRequestOptions &
+      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
+  ): Unsubscribable;
+}
 /**
  * @deprecated use `createTRPCProxyClient` instead
  */
@@ -21,13 +65,5 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     transformer: opts.transformer,
     links: getLinks(),
   });
-  return client;
+  return client as TRPCClient<TRouter>;
 }
-
-// Also the client created above needs to somehow be like `TRPCClient<Router> & Omit<Router, 'createCaller' | 'createProcedure' | '_def' | 'transformer' | 'errorFormatter' | 'getErrorShape>`
-
-export type {
-  CreateTRPCClientOptions,
-  TRPCClient,
-  TRPCRequestOptions,
-} from './internals/TRPCClient';

@@ -19,8 +19,10 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { CreateTRPCClientOptions } from './createTRPCClient';
-import { TRPCClient, TRPCSubscriptionObserver } from './internals/TRPCClient';
+import { CreateTRPCClientOptions } from './createBaseTRPCClient';
+import { TRPCClient } from './createTRPCClient';
+import { BaseTRPCClient } from './internals/BaseTRPCClient';
+import { TRPCSubscriptionObserver } from './internals/BaseTRPCClient';
 
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
@@ -121,7 +123,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
-  const client = new TRPCClient<TRouter>(opts);
-  const proxy = createTRPCClientProxy(client);
+  const client = new BaseTRPCClient<TRouter>(opts);
+  const proxy = createTRPCClientProxy(client as any);
   return proxy;
 }
