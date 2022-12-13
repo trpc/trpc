@@ -31,3 +31,11 @@ GIT_USER=<Your GitHub username> USE_SSH=true yarn deploy
 ```
 
 If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+
+## OG Images
+
+We use `@vercel/og-image` for dynamic open graph image generation. They are deployed on the edge from the [`/api`](./api) directory.
+
+**NOTE: The edge function and the JSX component has to be separate, so we have them in separate files and call them as "regular functions" from the edge function. See [ogDocs](./api/ogDocs.ts) and [ogDocsComponent](./api/ogComponents.tsx) for example usage.**
+
+To use the dynamic images, we override the default Docusaurus theme using [`swizzling`](https://www.docusaurus.io/docs/swizzling). You can find these overrides in [src/theme/**](./src/theme).
