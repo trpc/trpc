@@ -32,9 +32,10 @@ export default async (req: Request) => {
   const interData = await inter;
 
   const url = new URL(req.url);
-  console.log(url.toJSON());
 
-  const parsed = searchParamsSchema.safeParse(Object.entries(url.searchParams));
+  const parsed = searchParamsSchema.safeParse(
+    Object.fromEntries(url.searchParams.entries()),
+  );
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }

@@ -21,11 +21,7 @@ export const OGDocsComponent = ({
       }}
     >
       <img
-        src={`${
-          process.env.VERCEL_URL
-            ? 'https://' + process.env.VERCEL_URL
-            : 'http://localhost:3000'
-        }/og-pattern.svg`}
+        src="https://assets.trpc.io/www/og-pattern-light.svg"
         tw="absolute"
       />
       <div tw="flex items-center justify-between h-full w-full p-16">
@@ -78,11 +74,7 @@ export const OGBlogComponent = ({
       }}
     >
       <img
-        src={`${
-          process.env.VERCEL_URL
-            ? 'https://' + process.env.VERCEL_URL
-            : 'http://localhost:3000'
-        }/og-pattern.svg`}
+        src="https://assets.trpc.io/www/og-pattern-light.svg"
         tw="absolute"
       />
       <div tw="flex items-center justify-between h-full w-full p-16">
