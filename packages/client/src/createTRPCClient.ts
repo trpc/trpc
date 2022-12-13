@@ -4,8 +4,8 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { Unsubscribable } from '@trpc/server/observable';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import {
   BaseTRPCClient as Client,
