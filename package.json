@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.18.0",
+  "packageManager": "pnpm@7.18.2",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
@@ -56,7 +56,7 @@
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-multi-input": "^1.3.1",
     "rollup-plugin-node-externals": "^5.0.0",
-    "rollup-plugin-swc3": "^0.7.0",
+    "rollup-plugin-swc3": "^0.8.0",
     "rollup-plugin-typescript2": "^0.32.1",
     "tsx": "^3.9.0",
     "turbo": "^1.6.1",
