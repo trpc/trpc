@@ -47,6 +47,7 @@ export const OGDocsComponent = ({
 
 export const OGBlogComponent = ({
   title,
+  description,
   date,
   readingTime,
   img,
@@ -54,6 +55,7 @@ export const OGBlogComponent = ({
   authorDesc,
 }: {
   title: string;
+  description: string;
   date: string;
   readingTime: string;
   img: string;
@@ -80,6 +82,7 @@ export const OGBlogComponent = ({
       <div tw="flex items-center justify-between h-full w-full p-16">
         <div tw="flex flex-col items-start">
           <h1 tw="text-6xl text-gray-900">{title}</h1>
+          <p tw="text-2xl text-gray-700">{description}</p>
           <div tw="flex">
             <p>{date}</p>
             <p tw="mx-2">•</p>

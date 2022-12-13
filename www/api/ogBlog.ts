@@ -12,6 +12,7 @@ const inter = fetch(new URL('../static/Inter.ttf', import.meta.url)).then(
 
 const searchParamsSchema = z.object({
   title: z.string(),
+  description: z.string(),
   date: z
     .string()
     .transform((val) => new Date(val))
@@ -43,6 +44,7 @@ export default async (req: Request) => {
   return new ImageResponse(
     OGBlogComponent({
       title: parsed.data.title,
+      description: parsed.data.description,
       author: parsed.data.authorName,
       authorDesc: parsed.data.authorTitle,
       img: parsed.data.authorImg,
