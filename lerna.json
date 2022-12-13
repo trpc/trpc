@@ -6,5 +6,5 @@
   },
   "npmClient": "pnpm",
   "useWorkspaces": true,
-  "packages": ["packages/*", "www", "www/og-image"]
+  "packages": ["packages/*", "www"]
 }

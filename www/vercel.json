@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/**": {
+    "api/**.ts": {
       "memory": 1024
     }
   },
