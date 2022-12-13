@@ -1,6 +1,6 @@
 import { ImageResponse } from '@vercel/og';
 import { z } from 'zod';
-import { OGBlogComponent } from './ogComponents';
+import { OGBlogComponent } from './OGBlogComponent';
 
 export const config = {
   runtime: 'experimental-edge',
