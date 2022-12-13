@@ -62,7 +62,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     }
     return [httpBatchLink(opts)];
   };
-  const client = new Client<TRouter>({
+  const client = new Client({
     transformer: opts.transformer,
     links: getLinks(),
   });

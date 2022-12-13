@@ -123,7 +123,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
-  const client = new BaseTRPCClient<TRouter>(opts);
+  const client = new BaseTRPCClient(opts);
   const proxy = createTRPCClientProxy(client as TRPCClient<TRouter>);
   return proxy;
 }

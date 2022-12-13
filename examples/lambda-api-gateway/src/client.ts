@@ -1,8 +1,4 @@
-import {
-  createBaseTRPCClient,
-  createTRPCClient,
-  createTRPCClientProxy,
-} from '@trpc/client';
+import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
 
@@ -13,7 +9,7 @@ const proxy = createTRPCClientProxy(client);
 
 (async () => {
   try {
-    const q = await proxy.greet.query({ name: 'asdd' });
+    const q = await proxy.greet.query({ name: 'Erik' });
     console.log(q);
   } catch (error) {
     console.log('error', error);

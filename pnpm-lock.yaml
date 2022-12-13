@@ -365,13 +365,11 @@ importers:
       serverless-plugin-typescript: ^2.1.2
       tsx: ^3.9.0
       typescript: ^4.8.3
-      zod: ^3.19.1
     dependencies:
       '@trpc/client': link:../../packages/client
       '@trpc/server': link:../../packages/server
       node-fetch: 2.6.7
       tsx: 3.12.1
-      zod: 3.19.1
     devDependencies:
       '@types/node': 18.7.20
       serverless: 3.25.0
@@ -545,7 +543,7 @@ importers:
       react: ^18.2.0
       react-dom: ^18.2.0
       typescript: ^4.8.3
-      zod: ^3.19.1
+      zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
