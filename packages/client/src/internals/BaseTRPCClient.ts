@@ -44,17 +44,17 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
+export type CreateTRPCClientOptions<TRouter extends AnyRouter = AnyRouter> =
   | CreateTRPCClientBaseOptions & {
       links: TRPCLink<TRouter>[];
     };
 
-export class BaseTRPCClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<TRouter>[];
+export class BaseTRPCClient {
+  private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(opts: CreateTRPCClientOptions) {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {
@@ -89,7 +89,7 @@ export class BaseTRPCClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
   }) {
-    const chain$ = createChain<TRouter, TInput, TOutput>({
+    const chain$ = createChain<AnyRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
         id: ++this.requestId,
@@ -148,7 +148,7 @@ export class BaseTRPCClient<TRouter extends AnyRouter> {
     path: string,
     input: unknown,
     opts: TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<TRouter>>>,
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>>,
   ): Unsubscribable {
     const observable$ = this.$request({
       type: 'subscription',

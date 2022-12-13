@@ -13,9 +13,10 @@ import {
   TRPCRequestOptions,
   TRPCSubscriptionObserver,
 } from './internals/BaseTRPCClient';
-import { httpBatchLink } from './links';
+import { TRPCClientRuntime, httpBatchLink } from './links';
 
 export interface TRPCClient<TRouter extends AnyRouter> {
+  readonly runtime: TRPCClientRuntime;
   query<
     TQueries extends TRouter['_def']['queries'],
     TPath extends string & keyof TQueries,

@@ -9,10 +9,6 @@ import type { AppRouter } from './server';
 global.fetch = fetch as any;
 
 const client = createTRPCClient<AppRouter>({ url: 'http://127.0.0.1:4050' });
-const client2 = createBaseTRPCClient<AppRouter>({
-  url: 'http://127.0.0.1:4050',
-});
-const x = client2.query('asdsd', { a: 1 });
 const proxy = createTRPCClientProxy(client);
 
 (async () => {
