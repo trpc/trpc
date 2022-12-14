@@ -3,7 +3,7 @@ import { PageMetadata } from '@docusaurus/theme-common';
 // @ts-ignore
 import { useDoc } from '@docusaurus/theme-common/internal';
 import React from 'react';
-import { searchParams } from '../../../searchParams';
+import { searchParams } from '../../../utils/searchParams';
 
 export default function DocItemMetadata(): JSX.Element {
   const { metadata } = useDoc();
