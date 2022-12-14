@@ -1,19 +1,19 @@
-import { ImageResponse } from '@vercel/og'
-import { NextRequest } from 'next/server'
+import { ImageResponse } from '@vercel/og';
+import { NextRequest } from 'next/server';
 
 export const config = {
   runtime: 'experimental-edge',
-}
+};
 
 export default function handler(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
+    const { searchParams } = new URL(req.url);
 
     // ?title=<title>
-    const hasTitle = searchParams.has('title')
+    const hasTitle = searchParams.has('title');
     const title = hasTitle
       ? searchParams.get('title')?.slice(0, 100)
-      : 'My default title'
+      : 'My default title';
 
     return new ImageResponse(
       (
@@ -40,7 +40,6 @@ export default function handler(req: NextRequest) {
               justifyItems: 'center',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt="Vercel"
               height={200}
@@ -68,12 +67,12 @@ export default function handler(req: NextRequest) {
       {
         width: 1200,
         height: 630,
-      }
-    )
+      },
+    );
   } catch (e: any) {
-    console.log(`${e.message}`)
+    console.log(`${e.message}`);
     return new Response(`Failed to generate the image`, {
       status: 500,
-    })
+    });
   }
 }

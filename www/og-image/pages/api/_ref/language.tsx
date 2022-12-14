@@ -1,8 +1,8 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from '@vercel/og';
 
 export const config = {
   runtime: 'experimental-edge',
-}
+};
 
 export default async function handler() {
   return new ImageResponse(
@@ -27,6 +27,6 @@ export default async function handler() {
     {
       width: 1200,
       height: 630,
-    }
-  )
+    },
+  );
 }

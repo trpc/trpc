@@ -1,8 +1,8 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from '@vercel/og';
 
 export const config = {
   runtime: 'experimental-edge',
-}
+};
 
 export default async function handler() {
   return new ImageResponse(
@@ -30,6 +30,6 @@ export default async function handler() {
       // Supported options: 'twemoji', 'blobmoji', 'noto', 'openmoji', 'fluent', 'fluentFlat'
       // Default to 'twemoji'
       emoji: 'twemoji',
-    }
-  )
+    },
+  );
 }
