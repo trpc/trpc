@@ -79,14 +79,13 @@ export default async (req: Request) => {
     {
       width: 1200,
       height: 600,
-      // FIXME:
-      // fonts: [
-      //   {
-      //     name: 'Inter',
-      //     data: interData,
-      //     style: 'normal',
-      //   },
-      // ],
+      fonts: [
+        {
+          name: 'Inter',
+          data: interData,
+          style: 'normal',
+        },
+      ],
     },
   );
 };

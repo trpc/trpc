@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
 
 export const config = {

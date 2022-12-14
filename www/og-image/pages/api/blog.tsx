@@ -99,13 +99,12 @@ export default async (req: Request) => {
   return new ImageResponse(OGBlogComponent(parsed.data), {
     width: 1200,
     height: 600,
-    // FIXME idk why this doesn't work
-    // fonts: [
-    //   {
-    //     name: 'Inter',
-    //     data: interData,
-    //     style: 'normal',
-    //   },
-    // ],
+    fonts: [
+      {
+        name: 'Inter',
+        data: interData,
+        style: 'normal',
+      },
+    ],
   });
 };
