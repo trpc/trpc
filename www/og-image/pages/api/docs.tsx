@@ -10,7 +10,7 @@ const inter = fetch(new URL('../../public/Inter.ttf', import.meta.url)).then(
   (res) => res.arrayBuffer(),
 );
 
-const searchParamsSchema = z.object({
+export const docsParamsSchema = z.object({
   title: z.string(),
   description: z.string(),
 });
@@ -63,7 +63,7 @@ export default async (req: Request) => {
   const interData = await inter;
 
   const url = new URL(req.url);
-  const parsed = searchParamsSchema.safeParse(
+  const parsed = docsParamsSchema.safeParse(
     Object.fromEntries(url.searchParams.entries()),
   );
 

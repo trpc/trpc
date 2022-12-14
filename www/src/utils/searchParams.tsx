@@ -1,4 +1,6 @@
-export function searchParams(obj: Record<string, string | string[]>): string {
+export function searchParams<T extends Record<string, string | string[]>>(
+  obj: T,
+): string {
   return Object.entries(obj)
     .map(([key, value]) => {
       const values = Array.isArray(value) ? value : [value];

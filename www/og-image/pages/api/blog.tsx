@@ -73,7 +73,7 @@ const inter = fetch(new URL('../../public/Inter.ttf', import.meta.url)).then(
   (res) => res.arrayBuffer(),
 );
 
-const searchParamsSchema = z.object({
+export const blogParamsSchema = z.object({
   title: z.string(),
   description: z.string(),
   date: z
@@ -97,7 +97,7 @@ export default async (req: Request) => {
 
   const url = new URL(req.url);
 
-  const parsed = searchParamsSchema.safeParse(
+  const parsed = blogParamsSchema.safeParse(
     Object.fromEntries(url.searchParams.entries()),
   );
   if (!parsed.success) {
