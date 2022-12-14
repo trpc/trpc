@@ -5,7 +5,7 @@ import { useBlogPost as ubp } from '@docusaurus/theme-common/internal';
 import { useBlogPost as typedUbp } from '@docusaurus/theme-common/lib/internal';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import React from 'react';
-import { searchParams } from '../../../pages';
+import { searchParams } from '../../../utils/searchParams';
 
 // /lib doesn't actually export but actual export has import error in vscode
 const useBlogPost = ubp as unknown as typeof typedUbp;
@@ -25,17 +25,15 @@ export default function BlogPostPageMetadata(): JSX.Element {
 
   const author = authors[0];
 
-  const ogImg = `https://www-git-og-images-trpc.vercel.app/api/ogBlog?${searchParams(
-    {
-      title: metadata.title,
-      description: metadata.description,
-      authorName: author.name as string,
-      authorTitle: author.title as string,
-      authorImg: author.imageURL as string,
-      date,
-      readingTime: (metadata.readingTime as number).toString(),
-    },
-  )}`;
+  const ogImg = `https://og-image.trpc.io/api/ogBlog?${searchParams({
+    title: metadata.title,
+    description: metadata.description,
+    authorName: author.name as string,
+    authorTitle: author.title as string,
+    authorImg: author.imageURL as string,
+    date,
+    readingTime: (metadata.readingTime as number).toString(),
+  })}`;
 
   return (
     <PageMetadata
