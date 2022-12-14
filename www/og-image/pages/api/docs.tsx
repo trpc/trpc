@@ -81,13 +81,13 @@ export default async (req: Request) => {
       height: 600,
 
       // For some reason this doesn't work
-      fonts: [
-        {
-          name: 'Inter',
-          data: interData,
-          style: 'normal',
-        },
-      ],
+      // fonts: [
+      //   {
+      //     name: 'Inter',
+      //     data: interData,
+      //     style: 'normal',
+      //   },
+      // ],
     },
   );
 };

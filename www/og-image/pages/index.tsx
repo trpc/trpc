@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import { blogParamsSchema } from './api/blog';
+import { docsParamsSchema } from './api/docs';
 
 function searchParams<T extends Record<string, string | string[]>>(
   obj: T,
@@ -46,7 +47,12 @@ export default function Page() {
         })}&random=${Math.random()}`}
       />
       <h2>Docs</h2>
-      <img src="/api/docs?title=x&description=y" />
+      <img
+        src={`/api/docs?${searchParams<typeof docsParamsSchema['_input']>({
+          description: 'A blog post about trpc',
+          title: 'Hello world',
+        })}&random=${Math.random()}`}
+      />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <style jsx>{`
         img {
