@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/**.ts": {
-      "memory": 1024
-    }
-  },
   "redirects": [
     {
       "source": "/docs/api-gateway",
