@@ -26,6 +26,11 @@ export default function Page() {
 
       <h2>Docs</h2>
       <img src="/api/docs?title=x&description=y" />
+      <style jsx>{`
+        img {
+          max-width: 100%;
+        }
+      `}</style>
     </div>
   );
 }
