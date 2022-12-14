@@ -61,7 +61,7 @@ const OGBlogComponent = ({
   );
 };
 
-const inter = fetch(new URL('../../public/Inter.ttf', import.meta.url)).then(
+const inter = fetch(new URL('../../public/inter.ttf', import.meta.url)).then(
   (res) => res.arrayBuffer(),
 );
 
