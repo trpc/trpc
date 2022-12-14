@@ -87,11 +87,8 @@ export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
     TRPCUseQueryBaseOptions {}
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>
-  extends QueryOptions<TData, TError, TData, [TPath, TInput]> {
-  trpc?: {
-    ssr?: boolean;
-  };
-}
+  extends QueryOptions<TData, TError, TData, [TPath, TInput]>,
+    TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
@@ -691,7 +688,7 @@ export function createHooksInternal<
       queries: queries.map((query) => ({
         ...query,
         queryKey: getArrayQueryKey(query.queryKey, 'query'),
-      })) as readonly UseQueryOptions[],
+      })),
       context,
     }) as any;
   };
