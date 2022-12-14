@@ -11,17 +11,15 @@ export default function DocItemMetadata(): JSX.Element {
 
   console.log({ metadata });
 
-  const ogImg = `https://www-git-og-images-trpc.vercel.app/api/docs?${searchParams(
-    {
-      title,
-      description,
-      // authorName: author.name as string,
-      // authorTitle: author.title as string,
-      // authorImg: author.imageURL as string,
-      // date,
-      // readingTime: (metadata.readingTime as number).toString(),
-    },
-  )}`;
+  const ogImg = `https://og-image.trpc.io/api/docs?${searchParams({
+    title,
+    description,
+    // authorName: author.name as string,
+    // authorTitle: author.title as string,
+    // authorImg: author.imageURL as string,
+    // date,
+    // readingTime: (metadata.readingTime as number).toString(),
+  })}`;
 
   return (
     <PageMetadata title={title} description={description} image={ogImg}>
