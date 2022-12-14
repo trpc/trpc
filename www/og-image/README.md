@@ -16,7 +16,7 @@ relatedTemplates:
 
 # Vercel OG + Next.js
 
-🚧🚧🚧
+🚧🚧🚧🚧
 
 This example shows how to use [Vercel OG](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation) with Next.js.
 
