@@ -22,7 +22,7 @@ export interface CreateTRPCNextBase<
   TSSRContext extends NextPageContext,
 > {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
-  withTRPC: typeof withTRPC<TRouter, TSSRContext>;
+  withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: UseQueries<TRouter>;
 }
 
