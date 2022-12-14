@@ -49,22 +49,11 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 18.x
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+          node-version: ${{ matrix.node-start }}
+          cache: pnpm
 
       - run: node -v
+
       - name: Install deps (with cache)
         run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
@@ -84,11 +73,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
           key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
 
       - run: node -v
 
@@ -130,37 +114,21 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: ${{ matrix.node-start }}
+          cache: pnpm
 
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
-
       - run: node -v
+
       - name: Install deps (with cache)
         run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
 
       - run: deno --version
 
