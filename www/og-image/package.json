@@ -9,7 +9,8 @@
     "@vercel/og": "0.0.20",
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.13",
