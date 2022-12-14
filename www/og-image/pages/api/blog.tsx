@@ -6,15 +6,7 @@ export const config = {
   runtime: 'experimental-edge',
 };
 
-const OGBlogComponent = ({
-  title,
-  description,
-  date,
-  readingTime,
-  authorImg: img,
-  authorName: author,
-  authorTitle: authorDesc,
-}: typeof blogParamsSchema['_output']) => {
+const OGBlogComponent = (props: typeof blogParamsSchema['_output']) => {
   return (
     <div tw="bg-zinc-900 h-full w-full text-white bg-cover flex flex-col p-14">
       <img
@@ -26,8 +18,8 @@ const OGBlogComponent = ({
         <div tw="flex flex-col w-full">
           <div tw="flex justify-between items-center w-full">
             <div tw="flex flex-col">
-              <p tw="text-blue-500 text-xl font-semibold">{date}</p>
-              <h1 tw="text-6xl font-extrabold">{title}</h1>
+              <p tw="text-blue-500 text-xl font-semibold">{props.date}</p>
+              <h1 tw="text-6xl font-extrabold">{props.title}</h1>
             </div>
             <img
               src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg"
@@ -37,23 +29,23 @@ const OGBlogComponent = ({
             />
           </div>
           <p tw="text-3xl leading-snug font-semibold text-zinc-300">
-            {description}
+            {props.description}
           </p>
           <p tw="text-xl text-blue-500 font-semibold leading-3">
-            {readingTime}
+            {props.readingTime}
           </p>
         </div>
         <div tw="flex items-center">
           <img
-            src={img}
+            src={props.authorImg}
             alt="author profile"
             width="75px"
             height="75px"
             tw="mr-6 rounded-xl"
           />
           <div tw="flex flex-col justify-center">
-            <p tw="text-2xl leading-[1px]">{author}</p>
-            <p tw="text-xl leading-[1px] text-zinc-300">{authorDesc}</p>
+            <p tw="text-2xl leading-[1px]">{props.authorName}</p>
+            <p tw="text-xl leading-[1px] text-zinc-300">{props.authorTitle}</p>
           </div>
         </div>
       </div>
@@ -99,12 +91,13 @@ export default async (req: Request) => {
   return new ImageResponse(OGBlogComponent(parsed.data), {
     width: 1200,
     height: 600,
-    fonts: [
-      {
-        name: 'Inter',
-        data: interData,
-        style: 'normal',
-      },
-    ],
+    // For some reason this doesn't work
+    // fonts: [
+    //   {
+    //     name: 'Inter',
+    //     data: interData,
+    //     style: 'normal',
+    //   },
+    // ],
   });
 };
