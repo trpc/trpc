@@ -11,18 +11,10 @@ const OGBlogComponent = ({
   description,
   date,
   readingTime,
-  img,
-  author,
-  authorDesc,
-}: {
-  title: string;
-  description: string;
-  date: string;
-  readingTime: string;
-  img: string;
-  author: string;
-  authorDesc: string;
-}) => {
+  authorImg: img,
+  authorName: author,
+  authorTitle: authorDesc,
+}: typeof blogParamsSchema['_output']) => {
   return (
     <div tw="bg-zinc-900 h-full w-full text-white bg-cover flex flex-col p-14">
       <img
@@ -104,26 +96,15 @@ export default async (req: Request) => {
     return new Response(parsed.error.toString(), { status: 400 });
   }
 
-  return new ImageResponse(
-    OGBlogComponent({
-      title: parsed.data.title,
-      description: parsed.data.description,
-      author: parsed.data.authorName,
-      authorDesc: parsed.data.authorTitle,
-      img: parsed.data.authorImg,
-      date: parsed.data.date,
-      readingTime: parsed.data.readingTime,
-    }),
-    {
-      width: 1200,
-      height: 600,
-      fonts: [
-        {
-          name: 'Inter',
-          data: interData,
-          style: 'normal',
-        },
-      ],
-    },
-  );
+  return new ImageResponse(OGBlogComponent(parsed.data), {
+    width: 1200,
+    height: 600,
+    fonts: [
+      {
+        name: 'Inter',
+        data: interData,
+        style: 'normal',
+      },
+    ],
+  });
 };
