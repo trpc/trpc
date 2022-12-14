@@ -11,7 +11,7 @@ export default function DocItemMetadata(): JSX.Element {
 
   console.log({ metadata });
 
-  const ogImg = `https://www-git-og-images-trpc.vercel.app/api/ogDocs?${searchParams(
+  const ogImg = `https://www-git-og-images-trpc.vercel.app/api/docs?${searchParams(
     {
       title,
       description,

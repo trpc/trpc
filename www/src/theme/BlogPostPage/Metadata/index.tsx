@@ -25,7 +25,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
 
   const author = authors[0];
 
-  const ogImg = `https://og-image.trpc.io/api/ogBlog?${searchParams({
+  const ogImg = `https://og-image.trpc.io/api/blog?${searchParams({
     title: metadata.title,
     description: metadata.description,
     authorName: author.name as string,

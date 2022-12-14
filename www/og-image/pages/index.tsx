@@ -21,7 +21,7 @@ export default function Page() {
       </Head>
       <h1>A page with Open Graph Image.</h1>
 
-      <img src="/api/ogBlog?title=x&description=x&date=2020-01-01&readingTime=1&authorName=alex&authorTitle=o&authorImg=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F459267%3Fv%3D4" />
+      <img src="/api/blog?title=x&description=x&date=2020-01-01&readingTime=1&authorName=alex&authorTitle=o&authorImg=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F459267%3Fv%3D4" />
     </div>
   );
 }
