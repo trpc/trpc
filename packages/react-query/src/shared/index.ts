@@ -5,6 +5,7 @@ export type {
   DecoratedProcedureRecord,
   DecorateProcedure,
 } from '../createTRPCReact';
+export type { UseQueries } from '../internals/useQueries';
 export * from './hooks/createHooksInternal';
 export * from './queryClient';
 export * from './types';

@@ -58,6 +58,9 @@ export type QueriesOptions<
   ? UseQueryOptionsForUseQueries<TQueryFnData, TError, TData, TQueryKey>[]
   : UseQueryOptionsForUseQueries[];
 
+/**
+ * @internal
+ */
 export type UseQueries<TRouter extends AnyRouter> = <
   TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
 >(
