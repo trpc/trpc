@@ -6,7 +6,7 @@ export const config = {
 };
 
 // load proper font here
-// const font = fetch(new URL("../../assets/inter.ttf", import.meta.url)).then(
+// const font = fetch(new URL("../../../assets/inter.ttf", import.meta.url)).then(
 //   (res) => res.arrayBuffer()
 // );
 
