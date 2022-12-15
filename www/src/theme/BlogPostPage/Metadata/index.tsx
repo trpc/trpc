@@ -6,7 +6,6 @@ import { useBlogPost as typedUbp } from '@docusaurus/theme-common/lib/internal';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
-import { searchParams } from '../../../utils/searchParams';
 
 // /lib doesn't actually export but actual export has import error in vscode
 const useBlogPost = ubp as unknown as typeof typedUbp;
