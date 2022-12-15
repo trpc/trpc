@@ -9,13 +9,16 @@ export const config = {
 export const docsParamsSchema = z.object({
   title: z.string(),
   description: z.string(),
+  url: z.string(),
 });
 const OGDocsComponent = ({
   title,
   description,
+  url,
 }: {
   title: string;
   description: string;
+  url: string;
 }) => {
   return (
     <div tw="bg-zinc-900 h-full w-full text-white bg-cover flex flex-col p-14">
@@ -32,7 +35,8 @@ const OGDocsComponent = ({
           alt="tRPC logo"
         />
         <h1 tw="text-6xl">{title}</h1>
-        <p tw="text-center text-2xl text-zinc-300">{description}</p>
+        <p tw="text-center text-3xl text-zinc-300">{description}</p>
+        <p tw="text-blue-500 text-3xl">{url}</p>
       </div>
     </div>
   );
@@ -52,7 +56,11 @@ export default async (req: Request) => {
   return new ImageResponse(
     OGDocsComponent({
       title: parsed.data.title,
-      description: parsed.data.description,
+      description: `${parsed.data.description
+        .split(' ')
+        .slice(0, 20)
+        .join(' ')}...`,
+      url: parsed.data.url,
     }),
     {
       width: 1200,

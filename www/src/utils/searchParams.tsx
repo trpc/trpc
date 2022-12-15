@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function searchParams<T extends Record<string, string | string[]>>(
   obj: T,
 ): string {
