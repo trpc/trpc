@@ -40,7 +40,7 @@ export default function Page() {
           description:
             'The createContext() function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.',
           title: 'Inferring types',
-          urlPath: '/docs/inferring-types',
+          permalink: '/docs/inferring-types',
         })}&random=${Math.random()}`}
       />
       {/* eslint-disable-next-line react/no-unknown-property */}

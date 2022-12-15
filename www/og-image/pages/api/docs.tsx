@@ -34,7 +34,7 @@ export default async (req: Request) => {
           />
           <h1 tw="text-6xl">{props.title}</h1>
           <p tw="text-center text-3xl text-zinc-300">{props.description}</p>
-          <p tw="text-blue-500 text-3xl">{props.urlPath}</p>
+          <p tw="text-blue-500 text-3xl">{props.permalink}</p>
         </div>
       </div>
     ),
