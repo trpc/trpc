@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
-export function zodParams<TSchema extends z.ZodType>(schema: TSchema) {
+export function zodParams<TType>(schema: z.ZodType<TType>) {
   return {
     decodeURL: (url: URL) => {
       const input = url.searchParams.get('input');
       const obj = typeof input !== 'string' ? undefined : JSON.parse(input);
       return schema.safeParse(obj);
     },
-    toSearchString: (obj: z.input<TSchema>) => {
+    toSearchString: (obj: typeof schema['_input']) => {
       schema.parse(obj);
       return `input=${encodeURIComponent(JSON.stringify(obj))}`;
     },
@@ -34,7 +34,7 @@ export const blogParams = zodParams(
           year: 'numeric',
         }).format(date),
       ),
-    readingTime: z.string(),
+    readingTimeInMinutes: z.number().positive(),
     authorName: z.string(),
     authorTitle: z.string(),
     authorImg: z.string(),

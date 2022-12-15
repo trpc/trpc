@@ -30,7 +30,8 @@ export default function BlogPostPageMetadata(): JSX.Element {
     authorTitle: author.title as string,
     authorImg: author.imageURL as string,
     date,
-    readingTime: (metadata.readingTime as number).toString(),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    readingTimeInMinutes: metadata.readingTime!,
   })}`;
 
   return (
