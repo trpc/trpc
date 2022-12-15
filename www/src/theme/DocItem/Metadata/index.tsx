@@ -2,23 +2,26 @@ import { PageMetadata } from '@docusaurus/theme-common';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { useDoc } from '@docusaurus/theme-common/internal';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import React from 'react';
 import { searchParams } from '../../../utils/searchParams';
 
 export default function DocItemMetadata(): JSX.Element {
+  const {
+    siteConfig: { customFields },
+  } = useDocusaurusContext();
   const { metadata } = useDoc();
   const { title, description } = metadata;
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const url = customFields!['url']! as string;
 
   console.log({ metadata });
 
   const ogImg = `https://og-image.trpc.io/api/docs?${searchParams({
     title,
     description,
-    // authorName: author.name as string,
-    // authorTitle: author.title as string,
-    // authorImg: author.imageURL as string,
-    // date,
-    // readingTime: (metadata.readingTime as number).toString(),
+    url: url + metadata.permalink,
   })}`;
 
   return (

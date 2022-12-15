@@ -22,8 +22,6 @@ export default function BlogPostPageMetadata(): JSX.Element {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const url = customFields!['url']! as string;
 
-  console.log({ metadata });
-
   const author = authors[0];
 
   const ogImg = `https://og-image.trpc.io/api/blog?${searchParams<

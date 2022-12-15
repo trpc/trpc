@@ -83,13 +83,20 @@ export default async (req: Request) => {
     return new Response(parsed.error.toString(), { status: 400 });
   }
 
+  const titleWordCount = parsed.data.title.split(' ').length;
+  const descriptionWordCount = parsed.data.description.split(' ').length;
+
   return new ImageResponse(
     OGBlogComponent({
       ...parsed.data,
-      description: `${parsed.data.description
-        .split(' ')
-        .slice(0, 20)
-        .join(' ')}...`,
+      title:
+        titleWordCount > 13
+          ? `${parsed.data.title.split(' ').slice(0, 13).join(' ')}...`
+          : parsed.data.title,
+      description:
+        descriptionWordCount > 20
+          ? `${parsed.data.description.split(' ').slice(0, 20).join(' ')}...`
+          : parsed.data.description,
       readingTime: `${parsed.data.readingTime} min read`,
     }),
     {
