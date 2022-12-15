@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { blogParamsSchema } from './api/blog';
 import { docsParamsSchema } from './api/docs';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function searchParams<T extends Record<string, string | string[]>>(
   obj: T,
 ): string {
@@ -20,37 +21,44 @@ export default function Page() {
       <Head>
         <meta name="og:title" content="Vercel Edge Network" />
         <meta name="og:description" content="Vercel Edge Network" />
+        <meta
+          name="og:image"
+          content={
+            // Because OG images must have a absolute URL, we use the
+            // `VERCEL_URL` environment variable to get the deployment’s URL.
+            // More info:
+            // https://vercel.com/docs/concepts/projects/environment-variables
+            `${
+              process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : ''
+            }/api/vercel`
+          }
+        />
       </Head>
-      <h1>tRPC Open Graph images</h1>
-      <main>
-        <section>
-          <h2>Blog</h2>
-          <img
-            src={`/api/blog?${searchParams<typeof blogParamsSchema['_input']>({
-              authorImg: 'https://avatars.githubusercontent.com/u/459267',
-              authorName: 'Alex "KATT" Johansson',
-              authorTitle: 'Creator of tRPC',
-              date: '2021-08-01',
-              description: 'A blog post about trpc',
-              readingTime: '5',
-              title: 'Hello world',
-            })}&random=${Math.random()}`}
-          />
-        </section>
-        <section>
-          <h2>Docs</h2>
-          <img
-            src={`/api/docs?${searchParams<typeof docsParamsSchema['_input']>({
-              description: 'A blog post about trpc',
-              title: 'Hello world',
-            })}&random=${Math.random()}`}
-          />
-        </section>
-      </main>
+      <h1>A page with Open Graph Image.</h1>
+      <h2>Blog</h2>
+      <img
+        src={`/api/blog?${searchParams<typeof blogParamsSchema['_input']>({
+          authorImg: 'https://avatars.githubusercontent.com/u/459267',
+          authorName: 'Alex "KATT" Johansson',
+          authorTitle: 'Creator of tRPC',
+          date: '2021-08-01',
+          description:
+            'Eiusmod elit id dolor proident Lorem ut quis exercitation velit cupidatat sit occaecat. Fugiat do culpa exercitation quis anim tempor excepteur sit qui dolor ex aute in. Proident magna eiusmod mollit amet tempor aute in. Labore officia Lorem velit adipisicing reprehenderit. Incididunt aute aliqua Lorem qui consectetur eiusmod pariatur ut exercitation ea est mollit quis.',
+          readingTime: '5',
+          title: 'This is going to be a really long title for a blog post',
+        })}&random=${Math.random()}`}
+      />
+      <h2>Docs</h2>
+      <img
+        src={`/api/docs?${searchParams<typeof docsParamsSchema['_input']>({
+          description:
+            'The createContext() function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.',
+          title: 'Inferring types',
+        })}&random=${Math.random()}`}
+      />
       {/* eslint-disable-next-line react/no-unknown-property */}
       <style jsx>{`
         img {
-          width: 600px;
           max-width: 100%;
         }
       `}</style>

@@ -6,10 +6,6 @@ export const config = {
   runtime: 'experimental-edge',
 };
 
-const inter = fetch(new URL('../../public/inter.ttf', import.meta.url)).then(
-  (res) => res.arrayBuffer(),
-);
-
 export const docsParamsSchema = z.object({
   title: z.string(),
   description: z.string(),
@@ -22,47 +18,29 @@ const OGDocsComponent = ({
   description: string;
 }) => {
   return (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        width: '100%',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        fontFamily: 'Inter',
-      }}
-    >
+    <div tw="bg-zinc-900 h-full w-full text-white bg-cover flex flex-col p-14">
       <img
-        src="https://assets.trpc.io/www/og-pattern-light.svg"
+        src="https://assets.trpc.io/www/og-pattern-dark.svg"
+        alt="background"
         tw="absolute"
       />
-      <div tw="flex items-center justify-between h-full w-full p-16">
-        <div tw="flex flex-col items-start">
-          <h1 tw="text-6xl text-gray-900">{title}</h1>
-          <p tw="text-2xl text-gray-700">{description}</p>
-        </div>
-
-        <div tw="flex justify-between">
-          <div tw="flex flex-col items-center">
-            <img
-              tw="h-64 w-64 mb-4"
-              src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg"
-              alt=""
-            />
-            <span tw="text-5xl font-bold">tRPC</span>
-          </div>
-        </div>
+      <div tw="flex flex-col justify-center items-center w-full h-full">
+        <img
+          src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg"
+          width="100px"
+          height="100px"
+          alt="tRPC logo"
+        />
+        <h1 tw="text-6xl">{title}</h1>
+        <p tw="text-center text-2xl text-zinc-300">{description}</p>
       </div>
     </div>
   );
 };
 
 export default async (req: Request) => {
-  const interData = await inter;
-
   const url = new URL(req.url);
+
   const parsed = docsParamsSchema.safeParse(
     Object.fromEntries(url.searchParams.entries()),
   );
@@ -79,15 +57,6 @@ export default async (req: Request) => {
     {
       width: 1200,
       height: 600,
-
-      // For some reason this doesn't work
-      // fonts: [
-      //   {
-      //     name: 'Inter',
-      //     data: interData,
-      //     style: 'normal',
-      //   },
-      // ],
     },
   );
 };

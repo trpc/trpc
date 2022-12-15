@@ -17,7 +17,7 @@ const OGBlogComponent = (props: typeof blogParamsSchema['_output']) => {
       <div tw="flex flex-col justify-between w-full h-full">
         <div tw="flex flex-col w-full">
           <div tw="flex justify-between items-center w-full">
-            <div tw="flex flex-col">
+            <div tw="flex flex-col flex-1 pr-6">
               <p tw="text-blue-500 text-xl font-semibold">{props.date}</p>
               <h1 tw="text-6xl font-extrabold">{props.title}</h1>
             </div>
@@ -53,10 +53,6 @@ const OGBlogComponent = (props: typeof blogParamsSchema['_output']) => {
   );
 };
 
-const inter = fetch(new URL('../../public/inter.ttf', import.meta.url)).then(
-  (res) => res.arrayBuffer(),
-);
-
 export const blogParamsSchema = z.object({
   title: z.string(),
   description: z.string(),
@@ -77,27 +73,28 @@ export const blogParamsSchema = z.object({
 });
 
 export default async (req: Request) => {
-  const interData = await inter;
-
   const url = new URL(req.url);
 
   const parsed = blogParamsSchema.safeParse(
     Object.fromEntries(url.searchParams.entries()),
   );
+
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }
 
-  return new ImageResponse(OGBlogComponent(parsed.data), {
-    width: 1200,
-    height: 600,
-    // For some reason this doesn't work
-    // fonts: [
-    //   {
-    //     name: 'Inter',
-    //     data: interData,
-    //     style: 'normal',
-    //   },
-    // ],
-  });
+  return new ImageResponse(
+    OGBlogComponent({
+      ...parsed.data,
+      description: `${parsed.data.description
+        .split(' ')
+        .slice(0, 20)
+        .join(' ')}...`,
+      readingTime: `${parsed.data.readingTime} min read`,
+    }),
+    {
+      width: 1200,
+      height: 600,
+    },
+  );
 };
