@@ -95,6 +95,7 @@ describe('custom error formatter', () => {
           "minimum": 1,
           "type": "number",
           "inclusive": true,
+          "exact": false,
           "message": "Number must be greater than or equal to 1",
           "path": [
             "id"
@@ -177,6 +178,7 @@ describe('no custom formatter', () => {
           "minimum": 1,
           "type": "number",
           "inclusive": true,
+          "exact": false,
           "message": "Number must be greater than or equal to 1",
           "path": [
             "id"

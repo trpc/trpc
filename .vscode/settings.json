@@ -13,6 +13,7 @@
     "titleBar.inactiveForeground": "#639db2"
   },
   "editor.stickyScroll.enabled": true,
+  "tailwindCSS.classAttributes": ["class", "className", "ngClass", "tw"],
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
   ]
