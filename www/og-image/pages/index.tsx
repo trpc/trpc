@@ -1,19 +1,5 @@
 import Head from 'next/head';
-import { blogParams } from 'utils/zodParams';
-import { docsParamsSchema } from './api/docs';
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-function searchParams<T extends Record<string, string | string[]>>(
-  obj: T,
-): string {
-  return Object.entries(obj)
-    .map(([key, value]) => {
-      const values = Array.isArray(value) ? value : [value];
-
-      return values.map((v) => `${key}=${encodeURIComponent(v)}`).join('&');
-    })
-    .join('&');
-}
+import { blogParams, docsParams } from 'utils/zodParams';
 
 export default function Page() {
   return (
@@ -50,7 +36,7 @@ export default function Page() {
       />
       <h2>Docs</h2>
       <img
-        src={`/api/docs?${searchParams<typeof docsParamsSchema['_input']>({
+        src={`/api/docs?${docsParams.toSearchString({
           description:
             'The createContext() function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.',
           title: 'Inferring types',

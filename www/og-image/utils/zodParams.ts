@@ -40,3 +40,11 @@ export const blogParams = zodParams(
     authorImg: z.string(),
   }),
 );
+
+export const docsParams = zodParams(
+  z.object({
+    title: z.string(),
+    description: z.string().transform((str) => truncateWords(str, 20)),
+    url: z.string(),
+  }),
+);
