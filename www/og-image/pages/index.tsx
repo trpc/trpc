@@ -42,8 +42,8 @@ export default function Page() {
           authorTitle: 'Creator of tRPC',
           date: '2021-08-01',
           description: 'A blog post about trpc',
-          readingTime: '5',
-          title: 'Hello world',
+          readingTime: '5 mins',
+          title: 'This is going to be a really long title for a blog post',
         })}&random=${Math.random()}`}
       />
       <h2>Docs</h2>

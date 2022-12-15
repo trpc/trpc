@@ -17,7 +17,7 @@ const OGBlogComponent = (props: typeof blogParamsSchema['_output']) => {
       <div tw="flex flex-col justify-between w-full h-full">
         <div tw="flex flex-col w-full">
           <div tw="flex justify-between items-center w-full">
-            <div tw="flex flex-col">
+            <div tw="flex flex-col flex-1 pr-6">
               <p tw="text-blue-500 text-xl font-semibold">{props.date}</p>
               <h1 tw="text-6xl font-extrabold">{props.title}</h1>
             </div>
@@ -92,12 +92,12 @@ export default async (req: Request) => {
     width: 1200,
     height: 600,
     // For some reason this doesn't work
-    // fonts: [
-    //   {
-    //     name: 'Inter',
-    //     data: interData,
-    //     style: 'normal',
-    //   },
-    // ],
+    /* fonts: [
+      {
+        name: 'Inter',
+        data: interData,
+        style: 'normal',
+      },
+    ], */
   });
 };
