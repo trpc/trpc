@@ -124,7 +124,7 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.11.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
       '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
@@ -172,7 +172,7 @@ importers:
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
@@ -208,7 +208,7 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.11.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
       '@types/node': 18.7.20
@@ -233,7 +233,7 @@ importers:
     dependencies:
       '@trpc/client': link:../../packages/client
       '@trpc/server': link:../../packages/server
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@cloudflare/workers-types': 3.18.0
       '@types/node': 18.7.20
@@ -268,7 +268,7 @@ importers:
       '@types/node-fetch': 2.6.2
       express: 4.18.2
       node-fetch: 2.6.7
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
@@ -305,7 +305,7 @@ importers:
       abort-controller: 3.0.0
       express: 4.18.2
       node-fetch: 2.6.7
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
@@ -346,7 +346,7 @@ importers:
       superjson: 1.11.0
       tslib: 2.4.0
       ws: 8.11.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
@@ -444,7 +444,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@trpc/server': link:../../../packages/server
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       tsx: 3.12.1
@@ -493,7 +493,7 @@ importers:
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
@@ -525,7 +525,7 @@ importers:
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
@@ -556,7 +556,7 @@ importers:
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
@@ -608,7 +608,7 @@ importers:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.11.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
       '@types/node': 18.7.20
@@ -669,7 +669,7 @@ importers:
       superjson: 1.11.0
       todomvc-app-css: 2.4.2
       todomvc-common: 1.0.5
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
       '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
@@ -736,7 +736,7 @@ importers:
       superjson: 1.11.0
       tsx: 3.12.1
       ws: 8.11.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
       '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
@@ -809,7 +809,7 @@ importers:
       abort-controller: 3.0.0
       node-fetch: 2.6.7
       ws: 8.11.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
       '@types/ws': 8.5.3
@@ -836,7 +836,7 @@ importers:
     dependencies:
       '@trpc/client': link:../../packages/client
       '@trpc/server': link:../../packages/server
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@edge-runtime/types': 2.0.2
       '@types/node': 18.7.20
@@ -893,7 +893,7 @@ importers:
       react-dom: 18.2.0_react@18.2.0
       rollup: 2.79.1
       tsx: 3.12.1
-      zod: 3.19.1
+      zod: 3.20.2
 
   packages/react-query:
     specifiers:
@@ -921,7 +921,7 @@ importers:
       react-dom: 18.2.0_react@18.2.0
       rollup: 2.79.1
       tsx: 3.12.1
-      zod: 3.19.1
+      zod: 3.20.2
 
   packages/server:
     specifiers:
@@ -991,7 +991,7 @@ importers:
       typescript: 4.8.3
       ws: 8.11.0
       yup: 0.32.11
-      zod: 3.19.1
+      zod: 3.20.2
 
   packages/tests:
     specifiers:
@@ -1069,7 +1069,7 @@ importers:
       tsx: 3.12.1
       typescript: 4.8.3
       yup: 0.32.11
-      zod: 3.19.1
+      zod: 3.20.2
 
   www:
     specifiers:
@@ -1142,7 +1142,7 @@ importers:
       react-github-btn: 1.4.0_react@18.2.0
       react-icons: 4.6.0_react@18.2.0
       tailwind-merge: 1.8.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@babel/core': 7.20.2
       '@babel/preset-env': 7.20.2_@babel+core@7.20.2
@@ -1179,7 +1179,7 @@ importers:
       next: 13.0.7_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      zod: 3.19.1
+      zod: 3.20.2
     devDependencies:
       '@types/node': 18.11.13
       '@types/react': 18.0.25
@@ -21497,8 +21497,8 @@ packages:
       readable-stream: 3.6.0
     dev: true
 
-  /zod/3.19.1:
-    resolution: {integrity: sha512-LYjZsEDhCdYET9ikFu6dVPGp2YH9DegXjdJToSzD9rO6fy4qiRYFoyEYwps88OseJlPyl2NOe2iJuhEhL7IpEA==}
+  /zod/3.20.2:
+    resolution: {integrity: sha512-1MzNQdAvO+54H+EaK5YpyEy0T+Ejo/7YLHS93G3RnYWh5gaotGHwGeN/ZO687qEDU2y4CdStQYXVHIgrUl5UVQ==}
 
   /zwitch/1.0.5:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
