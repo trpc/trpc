@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { blogParamsSchema } from './api/blog';
+import { blogParams } from 'utils/zodParams';
 import { docsParamsSchema } from './api/docs';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -37,7 +37,7 @@ export default function Page() {
       <h1>A page with Open Graph Image.</h1>
       <h2>Blog</h2>
       <img
-        src={`/api/blog?${searchParams<typeof blogParamsSchema['_input']>({
+        src={`/api/blog?${blogParams.toSearchString({
           authorImg: 'https://avatars.githubusercontent.com/u/459267',
           authorName: 'Alex "KATT" Johansson',
           authorTitle: 'Creator of tRPC',

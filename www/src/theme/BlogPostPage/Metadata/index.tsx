@@ -5,7 +5,7 @@ import { useBlogPost as ubp } from '@docusaurus/theme-common/internal';
 import { useBlogPost as typedUbp } from '@docusaurus/theme-common/lib/internal';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import React from 'react';
-import type { blogParamsSchema } from '../../../../og-image/pages/api/blog';
+import { blogParams } from '../../../../og-image/utils/zodParams';
 import { searchParams } from '../../../utils/searchParams';
 
 // /lib doesn't actually export but actual export has import error in vscode
@@ -24,9 +24,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
 
   const author = authors[0];
 
-  const ogImg = `https://og-image.trpc.io/api/blog?${searchParams<
-    typeof blogParamsSchema['_input']
-  >({
+  const ogImg = `https://og-image.trpc.io/api/blog?${blogParams.toSearchString({
     title: metadata.title,
     description: metadata.description,
     authorName: author.name as string,

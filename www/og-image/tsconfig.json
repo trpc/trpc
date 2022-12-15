@@ -26,8 +26,7 @@
     "**/*.ts",
     "**/*.tsx",
     "./*.js",
-    "./src/**/*.js",
-, "../src/utils/searchParams.ts"    "../src/utils/searchParams.ts"
+    "./src/**/*.js"
   ],
   "exclude": ["node_modules"]
 }

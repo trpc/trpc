@@ -13,3 +13,30 @@ export function zodParams<TSchema extends z.ZodType>(schema: TSchema) {
     },
   };
 }
+
+function truncateWords(str: string, maxWords: number) {
+  return str.split(' ').length > maxWords
+    ? `${str.split(' ').slice(0, maxWords).join(' ')}...`
+    : str;
+}
+
+export const blogParams = zodParams(
+  z.object({
+    title: z.string().transform((str) => truncateWords(str, 13)),
+    description: z.string().transform((str) => truncateWords(str, 20)),
+    date: z
+      .string()
+      .transform((val) => new Date(val))
+      .transform((date) =>
+        Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(date),
+      ),
+    readingTime: z.string(),
+    authorName: z.string(),
+    authorTitle: z.string(),
+    authorImg: z.string(),
+  }),
+);
