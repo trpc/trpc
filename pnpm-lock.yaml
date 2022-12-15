@@ -1091,7 +1091,6 @@ importers:
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
-      '@vercel/og': ^0.0.21
       '@visx/hierarchy': ^2.10.0
       '@visx/responsive': ^2.10.0
       autoprefixer: ^10.4.7
@@ -1126,7 +1125,6 @@ importers:
       '@trpc/next': link:../packages/next
       '@trpc/react-query': link:../packages/react-query
       '@trpc/server': link:../packages/server
-      '@vercel/og': 0.0.21
       '@visx/hierarchy': 2.10.0_react@18.2.0
       '@visx/responsive': 2.10.0_react@18.2.0
       clsx: 1.2.1
