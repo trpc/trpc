@@ -6,12 +6,19 @@ import {
   UseTRPCQueryResult,
 } from '../shared';
 
+/**
+ * @internal
+ */
 export type UseQueryOptionsForUseQueries<
   TQueryFnData = unknown,
   TError = unknown,
   TData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 > = Omit<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'context'>;
+
+/**
+ * @internal
+ */
 export type TrpcQueryOptionsForUseQueries<
   TPath,
   TInput,
@@ -20,6 +27,9 @@ export type TrpcQueryOptionsForUseQueries<
   TError,
 > = Omit<UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>, 'context'>;
 
+/**
+ * @internal
+ */
 export declare type QueriesResults<
   TQueriesOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
 > = {
@@ -38,6 +48,9 @@ type GetOptions<TQueryOptions> =
     ? TQueryOptions
     : never;
 
+/**
+ * @internal
+ */
 export type QueriesOptions<
   TQueriesOptions extends any[],
   TResult extends any[] = [],
@@ -61,7 +74,7 @@ export type QueriesOptions<
 /**
  * @internal
  */
-export type UseQueries<TRouter extends AnyRouter> = <
+export type TRPCUseQueries<TRouter extends AnyRouter> = <
   TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
 >(
   queriesCallback: (

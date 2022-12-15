@@ -3,7 +3,7 @@
 import {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
-  UseQueries,
+  TRPCUseQueries,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
@@ -23,7 +23,7 @@ export interface CreateTRPCNextBase<
 > {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
-  useQueries: UseQueries<TRouter>;
+  useQueries: TRPCUseQueries<TRouter>;
 }
 
 /**

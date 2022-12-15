@@ -51,7 +51,7 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
-import { UseQueries } from '../../internals/useQueries';
+import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
@@ -663,7 +663,7 @@ export function createHooksInternal<
     return hook;
   }
 
-  const useQueries: UseQueries<TRouter> = (queriesCallback, context) => {
+  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback, context) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
     const proxy = createUseQueriesProxy(client);
