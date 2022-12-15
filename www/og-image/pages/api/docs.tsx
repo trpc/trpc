@@ -53,13 +53,15 @@ export default async (req: Request) => {
     return new Response(parsed.error.toString(), { status: 400 });
   }
 
+  const descriptionWordCount = parsed.data.description.split(' ').length;
+
   return new ImageResponse(
     OGDocsComponent({
       title: parsed.data.title,
-      description: `${parsed.data.description
-        .split(' ')
-        .slice(0, 20)
-        .join(' ')}...`,
+      description:
+        descriptionWordCount > 20
+          ? `${parsed.data.description.split(' ').slice(0, 20).join(' ')}...`
+          : parsed.data.description,
       url: parsed.data.url,
     }),
     {
