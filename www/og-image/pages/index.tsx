@@ -41,8 +41,9 @@ export default function Page() {
           authorName: 'Alex "KATT" Johansson',
           authorTitle: 'Creator of tRPC',
           date: '2021-08-01',
-          description: 'A blog post about trpc',
-          readingTime: '5 mins',
+          description:
+            'Eiusmod elit id dolor proident Lorem ut quis exercitation velit cupidatat sit occaecat. Fugiat do culpa exercitation quis anim tempor excepteur sit qui dolor ex aute in. Proident magna eiusmod mollit amet tempor aute in. Labore officia Lorem velit adipisicing reprehenderit. Incididunt aute aliqua Lorem qui consectetur eiusmod pariatur ut exercitation ea est mollit quis.',
+          readingTime: '5',
           title: 'This is going to be a really long title for a blog post',
         })}&random=${Math.random()}`}
       />
