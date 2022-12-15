@@ -47,6 +47,7 @@ export default function Page() {
       <style jsx>{`
         img {
           max-width: 100%;
+          width: 600px;
         }
       `}</style>
     </div>
