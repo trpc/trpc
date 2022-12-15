@@ -1,4 +1,18 @@
 // @ts-check
+
+const poweredByVercel = `
+  <a
+    href="https://vercel.com/?utm_source=trpc&utm_campaign=oss"
+    target="_blank"
+    rel="noreferrer"
+  >
+    <img
+      src="/img/powered-by-vercel.svg"
+      alt="Powered by Vercel"
+      style="height: 40px;display:inline-block;"
+    />
+  </a>
+`.trim();
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
@@ -137,7 +151,7 @@ module.exports = {
           ],
         },
       ],
-      // copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: poweredByVercel,
     },
   },
   plugins: [
