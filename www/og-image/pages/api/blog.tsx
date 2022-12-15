@@ -1,5 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
+import { searchParams } from 'utils/searchParams';
+import { zodParams } from 'utils/zodParams';
 import { z } from 'zod';
 
 export const config = {
@@ -53,32 +55,31 @@ const OGBlogComponent = (props: typeof blogParamsSchema['_output']) => {
   );
 };
 
-export const blogParamsSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  date: z
-    .string()
-    .transform((val) => new Date(val))
-    .transform((date) =>
-      Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      }).format(date),
-    ),
-  readingTime: z.string(),
-  authorName: z.string(),
-  authorTitle: z.string(),
-  authorImg: z.string(),
-});
+export const blogParamsSchema = zodParams(
+  z.object({
+    title: z.string(),
+    description: z.string(),
+    date: z
+      .string()
+      .transform((val) => new Date(val))
+      .transform((date) =>
+        Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(date),
+      ),
+    readingTime: z.string(),
+    authorName: z.string(),
+    authorTitle: z.string(),
+    authorImg: z.string(),
+  }),
+);
 
 export default async (req: Request) => {
   const url = new URL(req.url);
 
-  const parsed = blogParamsSchema.safeParse(
-    Object.fromEntries(url.searchParams.entries()),
-  );
-
+  const parsed = blogParamsSchema.decodeURL(url);
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }
