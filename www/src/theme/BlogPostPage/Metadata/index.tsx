@@ -3,7 +3,6 @@ import { PageMetadata } from '@docusaurus/theme-common';
 // @ts-ignore
 import { useBlogPost as ubp } from '@docusaurus/theme-common/internal';
 import { useBlogPost as typedUbp } from '@docusaurus/theme-common/lib/internal';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
 
@@ -11,16 +10,9 @@ import { blogParams } from '../../../../og-image/utils/zodParams';
 const useBlogPost = ubp as unknown as typeof typedUbp;
 
 export default function BlogPostPageMetadata(): JSX.Element {
-  const { assets, metadata } = useBlogPost();
+  const { metadata } = useBlogPost();
   const { title, description, date, tags, authors, frontMatter } = metadata;
   const { keywords } = frontMatter;
-  const _image = assets.image ?? frontMatter.image;
-  const {
-    siteConfig: { customFields },
-  } = useDocusaurusContext();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const url = customFields!['url']! as string;
-
   const author = authors[0];
 
   const ogImg = `https://og-image.trpc.io/api/blog?${blogParams.toSearchString({
@@ -43,7 +35,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
     >
       <meta property="og:type" content="article" />
       <meta property={`og:title`} content={metadata.title} />
-      <meta property={`og:url`} content={url + metadata.permalink} />
+      {/* <meta property={`og:url`} content={url + metadata.permalink} /> */}
       <meta property={`og:image`} content={ogImg} />
       <meta data-rh="true" name="twitter:image" content={ogImg} />
       <meta property="og:description" content={metadata.description} />

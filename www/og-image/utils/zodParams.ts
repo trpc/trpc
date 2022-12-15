@@ -45,6 +45,9 @@ export const docsParams = zodParams(
   z.object({
     title: z.string(),
     description: z.string().transform((str) => truncateWords(str, 20)),
-    url: z.string(),
+    permalink: z
+      .string()
+      .startsWith('/')
+      .transform((v) => `trpc.io${v}`),
   }),
 );
