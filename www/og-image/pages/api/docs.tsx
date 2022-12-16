@@ -1,12 +1,19 @@
 /* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
 import { docsParams } from 'utils/zodParams';
+import { fetchFont } from '../../utils/fetchFont';
 
 export const config = {
   runtime: 'experimental-edge',
 };
 
 export default async (req: Request) => {
+  const [inter900, inter700, inter400] = await Promise.all([
+    fetchFont('Inter', 900),
+    fetchFont('Inter', 700),
+    fetchFont('Inter', 400),
+  ]);
+
   const parsed = docsParams.decodeRequest(req);
 
   if (!parsed.success) {
@@ -30,7 +37,7 @@ export default async (req: Request) => {
             height="100px"
             alt="tRPC logo"
           />
-          <h1 tw="text-6xl">{props.title}</h1>
+          <h1 tw="text-6xl pt-3">{props.title}</h1>
           <p tw="text-center text-3xl text-zinc-300">{props.description}</p>
           <p tw="text-blue-500 text-3xl">{props.permalink}</p>
         </div>
@@ -39,6 +46,11 @@ export default async (req: Request) => {
     {
       width: 1200,
       height: 600,
+      fonts: [
+        { name: 'Inter', data: inter900, weight: 900 },
+        { name: 'Inter', data: inter700, weight: 700 },
+        { name: 'Inter', data: inter400, weight: 400 },
+      ],
     },
   );
 };
