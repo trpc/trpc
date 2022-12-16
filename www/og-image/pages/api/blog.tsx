@@ -42,7 +42,7 @@ export default async (req: Request) => {
               {props.description}
             </p>
             <p tw="text-xl text-blue-500 font-semibold leading-3">
-              {props.readingTimeInMinutes} min read
+              {Math.round(props.readingTimeInMinutes)} min read
             </p>
           </div>
           <div tw="flex items-center">
