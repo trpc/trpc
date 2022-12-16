@@ -1,4 +1,8 @@
 // @ts-check
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+const { parseEnv } = require('./src/utils/env');
+
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
@@ -222,4 +226,8 @@ module.exports = {
     require.resolve('./docusaurus.twitterReload.js'),
     require.resolve('./docusaurus.preferredTheme.js'),
   ],
+
+  customFields: {
+    env: parseEnv(process.env),
+  },
 };
