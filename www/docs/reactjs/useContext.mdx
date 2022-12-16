@@ -120,7 +120,7 @@ import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { trpc } from '~/utils/trpc';
 
 function MyComponent() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
 
   const posts = trpc.post.list.useQuery();
 
@@ -130,7 +130,7 @@ function MyComponent() {
 
   // Set some query defaults for an entire router
   const postKey = trpc.post.getQueryKey(undefined, 'any');
-  qc.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
+  queryClient.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
 
   // ...
 }
