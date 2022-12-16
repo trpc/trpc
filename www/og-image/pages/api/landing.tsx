@@ -1,23 +1,10 @@
 /* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
-import { fontParams } from 'utils/zodParams';
+import { fetchFont } from '../../utils/fetchFont';
 
 export const config = {
   runtime: 'experimental-edge',
 };
-
-const baseUrl = process.env.VERCEL
-  ? 'https://' + process.env.VERCEL_URL
-  : 'http://localhost:3000';
-
-const fetchFont = (family: string, weight?: number, text?: string) =>
-  fetch(
-    `${baseUrl}/api/font?${fontParams.toSearchString({
-      family,
-      weight,
-      text,
-    })}`,
-  ).then((res) => res.arrayBuffer());
 
 export default async (_req: Request) => {
   const [inter900, inter700] = await Promise.all([
