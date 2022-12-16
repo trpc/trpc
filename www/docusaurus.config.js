@@ -14,7 +14,7 @@ module.exports = {
   themeConfig: {
     disableSwitch: false,
     respectPrefersColorScheme: true,
-    image: 'https://assets.trpc.io/www/trpc-open-graph.png',
+    image: 'https://og-image.trpc.io/api/landing',
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
