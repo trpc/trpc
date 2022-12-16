@@ -11,7 +11,7 @@ export default function DocItemMetadata(): JSX.Element {
   const { title, description } = metadata;
   const env = useEnv();
 
-  const ogImg = `https://${env.OG_URL}/api/docs?${docsParams.toSearchString({
+  const ogImg = `${env.OG_URL}/api/docs?${docsParams.toSearchString({
     title,
     description,
     permalink: metadata.permalink,
