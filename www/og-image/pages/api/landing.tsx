@@ -47,10 +47,10 @@ export default async (_req: Request) => {
             <h1 tw="text-9xl ml-6 font-black">tRPC</h1>
           </div>
           <div tw="flex flex-col items-center">
-            <p tw="text-center text-6xl text-zinc-300 font-black">
+            <p tw="text-center pt-6 text-6xl font-black">
               Move Fast and Break Nothing
             </p>
-            <p tw="text-center text-3xl text-zinc-300 font-bold mt-0">
+            <p tw="text-center pt-3 text-3xl text-zinc-300 font-bold mt-0">
               End-to-end typesafe APIs made easy.
             </p>
           </div>
