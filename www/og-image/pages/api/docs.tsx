@@ -7,15 +7,13 @@ export const config = {
 };
 
 export default async (req: Request) => {
-  const url = new URL(req.url);
-
-  const parsed = docsParams.decodeURL(url);
+  const parsed = docsParams.decodeRequest(req);
 
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }
 
-  const props = parsed.data;
+  const props = parsed.data.input;
 
   return new ImageResponse(
     (

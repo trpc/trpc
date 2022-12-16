@@ -1,11 +1,18 @@
 import { z } from 'zod';
 
 export function zodParams<TType>(schema: z.ZodType<TType>) {
+  const querySchema = z.object({
+    input: z
+      .string()
+      .transform((str) => JSON.parse(str))
+      .pipe(schema),
+  });
   return {
-    decodeURL: (url: URL) => {
-      const input = url.searchParams.get('input');
-      const obj = typeof input !== 'string' ? undefined : JSON.parse(input);
-      return schema.safeParse(obj);
+    decodeRequest: (req: Request) => {
+      const url = new URL(req.url);
+      const obj = Object.fromEntries(url.searchParams.entries());
+
+      return querySchema.safeParse(obj);
     },
     toSearchString: (obj: typeof schema['_input']) => {
       schema.parse(obj);
