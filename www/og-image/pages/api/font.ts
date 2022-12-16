@@ -49,7 +49,11 @@ export default async (req: NextRequest) => {
     res.headers.delete('content-length');
   }
 
-  console.log('Cached?', res.headers);
+  console.log(
+    'Cached?',
+    res.headers.get('cache-control'),
+    res.headers.get('x-vercel-cache'),
+  );
 
   return res;
 };
