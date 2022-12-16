@@ -14,7 +14,10 @@ function parseEnv(input) {
     VERCEL_ENV: z
       .enum(['production', 'preview', 'development'])
       .default('development'),
-    VERCEL_GIT_COMMIT_REF: z.string().default('n/a'),
+    VERCEL_GIT_COMMIT_REF: z
+      .string()
+      .default('n/a')
+      .transform((ref) => ref.replace('/', '-')),
   });
 
   const env = envSchema.parse(input);
