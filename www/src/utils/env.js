@@ -27,12 +27,13 @@ function parseEnv(input) {
         return `https://og-image-git-${env.VERCEL_GIT_COMMIT_REF}-trpc.vercel.app`;
       case 'development':
         return 'http://localhost:3001';
+      default:
+        throw new Error("Can't happen");
     }
-    throw new Error("Can't happen");
   }
 
   const OG_URL = getOG_URL();
-  console.log({ OG_URL });
+  // console.log({ OG_URL });
   return {
     ...env,
     OG_URL,
