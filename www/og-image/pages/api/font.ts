@@ -13,11 +13,11 @@ export default async (req: NextRequest) => {
   if (req.nextUrl.pathname !== '/api/font') return;
   const url = new URL(req.url);
 
-  const parsed = fontParams.decodeURL(url);
+  const parsed = fontParams.decodeRequest(req);
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }
-  const props = parsed.data;
+  const props = parsed.data.input;
 
   let API = `https://fonts.googleapis.com/css2?family=${props.family}:wght@${props.weight}`;
   if (props.text) {
