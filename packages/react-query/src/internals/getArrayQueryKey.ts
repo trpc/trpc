@@ -28,7 +28,7 @@ export function getArrayQueryKey(
   return [
     arrayPath,
     {
-      ...(input && { input: input }),
+      ...(typeof input !== 'undefined' && { input: input }),
       ...(type && type !== 'any' && { type: type }),
     },
   ];

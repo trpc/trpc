@@ -22,7 +22,7 @@ export const sponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=6dac9b517b1246cb525de89ff8819d16cf0a2f83&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=63152744638f6b5df34941244016fa1a4b4a67bb&v=4",
     "monthlyPriceInDollars": 10,
     "link": "https://samholmes.net",
     "privacyLevel": "PUBLIC",
@@ -75,19 +75,10 @@ export const sponsors = [
     "createdAt": 1633034677000
   },
   {
-    "name": "Memory-Lane-Games",
-    "imgSrc": "https://avatars.githubusercontent.com/u/63847783?v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/Memory-Lane-Games",
-    "privacyLevel": "PUBLIC",
-    "login": "Memory-Lane-Games",
-    "createdAt": 1633354466000
-  },
-  {
     "name": "Beier (Bill)",
     "imgSrc": "https://avatars.githubusercontent.com/u/10513364?u=a129aade5f9a7a92cf06172b47d67ccefc736933&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://react-hook-form.com",
+    "link": "https://www.beekai.com",
     "privacyLevel": "PUBLIC",
     "login": "bluebill1049",
     "createdAt": 1633435620000
@@ -201,15 +192,6 @@ export const sponsors = [
     "createdAt": 1646015010000
   },
   {
-    "name": "Lucas Viana",
-    "imgSrc": "https://avatars.githubusercontent.com/u/13911440?u=7ef3b7a25610a3f8fc0f18a4af76a7c0999f33d3&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://blog.lucasviana.dev",
-    "privacyLevel": "PUBLIC",
-    "login": "mechamobau",
-    "createdAt": 1646016551000
-  },
-  {
     "name": "Faraz Patankar",
     "imgSrc": "https://avatars.githubusercontent.com/u/10681116?u=694385b48756c6be01f289f8c419e95b3103fa84&v=4",
     "monthlyPriceInDollars": 10,
@@ -262,15 +244,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "aslaker",
     "createdAt": 1655473412000
-  },
-  {
-    "name": "Luis Matheus",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8514703?u=8fa6072cc4524bdfedde3f80f0bb7fc96b2ff1a6&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/lmatheus",
-    "privacyLevel": "PUBLIC",
-    "login": "lmatheus",
-    "createdAt": 1656289505000
   },
   {
     "name": "Dmitry Maykov",
@@ -532,6 +505,42 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "austins",
     "createdAt": 1669799276000
+  },
+  {
+    "name": "Thorbjørn Hermansen",
+    "imgSrc": "https://avatars.githubusercontent.com/u/92300?v=4",
+    "monthlyPriceInDollars": 20,
+    "link": "https://skalar.no",
+    "privacyLevel": "PUBLIC",
+    "login": "thhermansen",
+    "createdAt": 1670347741000
+  },
+  {
+    "name": "SalihOsmankovic",
+    "imgSrc": "https://avatars.githubusercontent.com/u/45540328?v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://github.com/SalihOsmankovic",
+    "privacyLevel": "PUBLIC",
+    "login": "SalihOsmankovic",
+    "createdAt": 1670622555000
+  },
+  {
+    "name": "Lucas Santos",
+    "imgSrc": "https://avatars.githubusercontent.com/u/11416392?u=e1d9e059b8738791e80b18b7a976b921aa659c2a&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://lucasfsantos.com",
+    "privacyLevel": "PUBLIC",
+    "login": "lucashfreitas",
+    "createdAt": 1670757451000
+  },
+  {
+    "name": "Ahoy Labs",
+    "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
+    "monthlyPriceInDollars": 50,
+    "link": "https://ahoylabs.xyz/",
+    "privacyLevel": "PUBLIC",
+    "login": "ahoylabs",
+    "createdAt": 1671157456000
   },
   {
     "name": "Ping.gg",

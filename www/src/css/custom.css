@@ -284,12 +284,12 @@ h5 {
 }
 
 /* Hide announcement bar for v9 */
-html:not(.v10) [role='banner'] {
+/* html:not(.v10) [role='banner'] {
   display: none !important;
-}
+} */
 
 /* Toggle different gifs depending on version */
-.trpcgif {
+/* .trpcgif {
   display: none;
 }
 
@@ -303,7 +303,8 @@ html.v10 .trpcgif--v10.trpcgif--landscape {
 
 html.v9 .trpcgif--v9 {
   display: block;
-}
+} 
+*/
 
 /* Breadcrumbs */
 .breadcrumbs {
@@ -359,4 +360,14 @@ details p {
 
 .markdown .github-comment {
   margin-bottom: 2rem;
+}
+
+.navbar__link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer__item svg {
+  display: none;
 }

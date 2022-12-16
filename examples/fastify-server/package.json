@@ -1,6 +1,6 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.4.3",
+  "version": "10.5.0",
   "private": true,
   "scripts": {
     "build": "tsc",
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@fastify/websocket": "^5.0.0",
-    "@trpc/client": "^10.4.3",
-    "@trpc/server": "^10.4.3",
+    "@trpc/client": "^10.5.0",
+    "@trpc/server": "^10.5.0",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
     "node-fetch": "^2.6.1",

@@ -6,3 +6,4 @@ packages:
   - 'examples/minimal/*'
   - 'examples/minimal-react/*'
   - 'www'
+  - 'www/og-image'
