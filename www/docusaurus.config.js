@@ -1,4 +1,7 @@
 // @ts-check
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+const { parseEnv } = require('./src/utils/env');
 
 const poweredByVercel = `
   <div style="padding-top: 24px;">
@@ -239,4 +242,8 @@ module.exports = {
     require.resolve('./docusaurus.twitterReload.js'),
     require.resolve('./docusaurus.preferredTheme.js'),
   ],
+
+  customFields: {
+    env: parseEnv(process.env),
+  },
 };

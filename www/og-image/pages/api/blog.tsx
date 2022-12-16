@@ -7,14 +7,12 @@ export const config = {
 };
 
 export default async (req: Request) => {
-  const url = new URL(req.url);
-
-  const parsed = blogParams.decodeURL(url);
+  const parsed = blogParams.decodeRequest(req);
   if (!parsed.success) {
     return new Response(parsed.error.toString(), { status: 400 });
   }
 
-  const props = parsed.data;
+  const props = parsed.data.input;
 
   return new ImageResponse(
     (
@@ -42,7 +40,7 @@ export default async (req: Request) => {
               {props.description}
             </p>
             <p tw="text-xl text-blue-500 font-semibold leading-3">
-              {props.readingTimeInMinutes} min read
+              {Math.round(props.readingTimeInMinutes)} min read
             </p>
           </div>
           <div tw="flex items-center">
