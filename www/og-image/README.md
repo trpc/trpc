@@ -16,12 +16,14 @@ relatedTemplates:
 
 # Vercel OG + Next.js
 
-🚧🚧🚧🚧
 
-This example shows how to use [Vercel OG](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation) with Next.js.
+```
+pnpm dev
+```
 
 ## Demo
 
+- [tRPC dynamic OG-images](https://og-image.trpc.io)
 - [Static Text](https://og-image.trpc.io/api/_ref/static)
 - [Vercel Card](https://og-image.trpc.io/api/_ref/vercel)
 - [Dynamic Text from URL Query](https://og-image.trpc.io/api/_ref/param)
@@ -37,4 +39,6 @@ This example shows how to use [Vercel OG](https://vercel.com/docs/concepts/funct
 
 ```
 pnpm dev dev
-``
+```
+
+Files in `pages/api/`, previews rendered on `pages/index`.
