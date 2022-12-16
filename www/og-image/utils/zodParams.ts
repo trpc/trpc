@@ -20,6 +20,14 @@ function truncateWords(str: string, maxWords: number) {
     : str;
 }
 
+export const fontParams = zodParams(
+  z.object({
+    family: z.string(),
+    weight: z.number().default(400),
+    text: z.string().optional(),
+  }),
+);
+
 export const blogParams = zodParams(
   z.object({
     title: z.string().transform((str) => truncateWords(str, 13)),
