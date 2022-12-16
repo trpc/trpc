@@ -40,17 +40,17 @@ export default async (_req: Request) => {
           <div tw="flex items-center">
             <img
               src="https://assets.trpc.io/icons/svgs/blue-bg-rounded.svg"
-              width="100px"
-              height="100px"
+              width="150px"
+              height="150px"
               alt="tRPC logo"
             />
-            <h1 tw="text-6xl ml-4 font-black">tRPC</h1>
+            <h1 tw="text-9xl ml-6 font-black">tRPC</h1>
           </div>
           <div tw="flex flex-col items-center">
-            <p tw="text-center text-3xl text-zinc-300 font-black">
+            <p tw="text-center text-6xl text-zinc-300 font-black">
               Move Fast and Break Nothing
             </p>
-            <p tw="text-center text-xl text-zinc-300 font-bold mt-0">
+            <p tw="text-center text-3xl text-zinc-300 font-bold mt-0">
               End-to-end typesafe APIs made easy.
             </p>
           </div>
