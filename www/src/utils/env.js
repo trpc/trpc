@@ -21,6 +21,9 @@ function parseEnv(input) {
 
   const env = envSchema.parse(input);
 
+  console.log('input', input);
+  console.log('env', env);
+
   function getOG_URL() {
     switch (env.VERCEL_ENV) {
       case 'production':
