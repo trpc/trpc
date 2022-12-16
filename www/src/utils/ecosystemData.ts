@@ -33,7 +33,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'tRPC-Remix',
-    description: 'SvelteKit tRPC extension',
+    description: 'connect a tRPC router to Remix',
     url: 'https://github.com/ggrandi/trpc-remix',
     categories: ['framework'],
     authorName: 'ggrandi',
@@ -41,7 +41,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'Solid tRPC',
-    description: 'tRPC Client for Solid with Solid Query',
+    description: 'tRPC client for Solid with Solid Query',
     url: 'https://github.com/OrJDev/solid-trpc',
     categories: ['framework'],
     authorName: 'OrJDev',
@@ -65,7 +65,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'tRPC-uWebSockets',
-    description: 'Adapter for uWebSockets.js server',
+    description: 'adapter for uWebSockets.js server',
     url: 'https://github.com/romanzy-1612/trpc-uwebsockets',
     categories: ['framework'],
     authorName: 'romanzy-1612',
@@ -82,7 +82,7 @@ export const ecosystemItems: EcosystemItem[] = [
   {
     title: '@h4ad/serverless-adapter',
     description:
-      'Connect tRPC with AWS SQS, AWS API Gateway, and many more event sources',
+      'connect tRPC with AWS SQS, AWS API Gateway, and many more event sources',
     url: 'https://viniciusl.com.br/serverless-adapter/docs/main/frameworks/trpc',
     categories: ['framework'],
     authorName: 'Vinicius Lourenço',
@@ -115,7 +115,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'tRPC Client Devtools',
-    description: 'Devtools browser extension',
+    description: 'devtools browser extension',
     url: 'https://github.com/rhenriquez28/trpc-client-devtools',
     categories: ['extension'],
     authorName: 'Roy Henriquez',
@@ -123,7 +123,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'tRPC-Chrome',
-    description: 'Web extensions messaging support for tRPC',
+    description: 'web extensions messaging support for tRPC',
     url: 'https://github.com/jlalmes/trpc-chrome',
     categories: ['extension'],
     authorName: 'James Berry',
@@ -131,7 +131,8 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'trpc-iron-session',
-    description: 'Secure your tRPC based on iron-session authentication',
+    description:
+      'secure your tRPC application based on iron-session authentication',
     url: 'https://github.com/parkgang/trpc-iron-session',
     categories: ['extension'],
     authorName: 'Kyungeun Park',
@@ -139,7 +140,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'Step CI',
-    description: 'Automated API Testing and Quality Assurance',
+    description: 'automated API testing and quality assurance',
     url: 'https://github.com/stepci/stepci',
     categories: ['extension'],
     authorName: 'Step CI',
@@ -148,7 +149,7 @@ export const ecosystemItems: EcosystemItem[] = [
   {
     title: 'tRPC Panel',
     description:
-      'Automatically generates a UI for manually testing your tRPC backend',
+      'automatically generates a UI for manually testing your tRPC backend',
     url: 'https://github.com/iway1/trpc-panel',
     categories: ['extension'],
     authorName: 'Isaac Way',
@@ -156,7 +157,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'next-prisma-starter',
-    description: 'Starter project with Prisma, Next.js, tRPC, E2E-testing',
+    description: 'starter project with Prisma, Next.js, tRPC, E2E-testing',
     url: 'https://github.com/trpc/examples-next-prisma-starter',
     categories: ['starter'],
     authorName: 'Alex Johansson',
@@ -165,7 +166,7 @@ export const ecosystemItems: EcosystemItem[] = [
   {
     title: 'create-t3-app',
     description:
-      'Scaffold a starter project using the T3 Stack (Next.js, tRPC, Tailwind CSS, Prisma)',
+      'scaffold a starter project using the T3 Stack (Next.js, tRPC, Tailwind CSS, Prisma)',
     url: 'https://create.t3.gg',
     categories: ['starter'],
     authorName: 'T3 Open Source',
@@ -174,7 +175,7 @@ export const ecosystemItems: EcosystemItem[] = [
   {
     title: 'create-t3-turbo',
     description:
-      'Clean and simple starter repo using the T3 Stack along with Expo React Native',
+      'clean and simple starter repo using the T3 Stack along with Expo React Native',
     url: 'http://github.com/t3-oss/create-t3-turbo',
     categories: ['starter'],
     authorName: 'Julius Marminge',
@@ -190,7 +191,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'Create tRPC App',
-    description: 'Create tRPC-powered apps with one command',
+    description: 'create tRPC-powered apps with one command',
     url: 'https://github.com/omar-dulaimi/create-trpc-app',
     categories: ['starter'],
     authorName: 'Omar Dulaimi',
@@ -246,7 +247,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'trpc-sveltekit-fetchadapter-example',
-    description: 'tRPC (w/ Fetch Adapter) + SvelteKit + Tailwind CSS',
+    description: 'tRPC (with Fetch adapter) + SvelteKit + Tailwind CSS',
     url: 'https://github.com/austins/trpc-sveltekit-fetchadapter-example',
     categories: ['starter'],
     authorName: 'Austin S.',
@@ -254,7 +255,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'tRPC SIWE Monorepo',
-    description: 'Sign-In With Ethereum tRPC + ViteJS React',
+    description: 'Sign-In With Ethereum + tRPC + Vite + React',
     url: 'https://github.com/codingwithmanny/trpc-siwe-monorepo',
     categories: ['starter'],
     authorName: 'codingwithmanny',
@@ -262,7 +263,7 @@ export const ecosystemItems: EcosystemItem[] = [
   },
   {
     title: 'Cal.com',
-    description: 'Scheduling infrastructure',
+    description: 'scheduling infrastructure',
     url: 'https://github.com/calcom/cal.com',
     categories: ['open-source-project'],
     authorName: 'Cal.com',
