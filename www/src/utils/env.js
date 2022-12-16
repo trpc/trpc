@@ -31,9 +31,11 @@ function parseEnv(input) {
     throw new Error("Can't happen");
   }
 
+  const OG_URL = getOG_URL();
+  console.log({ OG_URL });
   return {
     ...env,
-    OG_URL: getOG_URL(),
+    OG_URL,
   };
 }
 
