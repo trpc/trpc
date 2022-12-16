@@ -3,9 +3,7 @@
 const { z } = require('zod');
 
 /**
- *
  * @param {unknown} input
- * @returns
  */
 function parseEnv(input) {
   const envSchema = z.object({
