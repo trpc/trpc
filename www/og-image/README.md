@@ -39,6 +39,6 @@ pnpm dev
 
 ```
 pnpm dev dev
-``
+```
 
 Files in `pages/api/`, previews rendered on `pages/index`.
