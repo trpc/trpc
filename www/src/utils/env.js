@@ -9,9 +9,7 @@ function parseEnv(input) {
   const envSchema = z.object({
     VERCEL_URL: z
       .string()
-      .transform((hostname) =>
-        hostname.startsWith('http') ? `https://${hostname}` : hostname,
-      )
+      .transform((url) => (!url.startsWith('http') ? `https://${url}` : url))
       .default('http://localhost:3000'),
     VERCEL_ENV: z
       .enum(['production', 'preview', 'development'])
