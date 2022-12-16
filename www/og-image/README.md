@@ -23,6 +23,7 @@ pnpm dev
 
 ## Demo
 
+- [tRPC dynamic OG-images](https://og-image.trpc.io)
 - [Static Text](https://og-image.trpc.io/api/_ref/static)
 - [Vercel Card](https://og-image.trpc.io/api/_ref/vercel)
 - [Dynamic Text from URL Query](https://og-image.trpc.io/api/_ref/param)
