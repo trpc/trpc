@@ -24,7 +24,7 @@ export default function Page() {
       <main className="grid grid-cols-2 grid-flow-row">
         <div>
           <h2>Landing</h2>
-          <img src="/api/landing" />
+          <img src={`/api/landing?random=${Math.random()}`} />
         </div>
         <div>
           <h2>Blog</h2>

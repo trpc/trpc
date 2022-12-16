@@ -21,7 +21,7 @@ const fetchFont = (family: string, weight?: number, text?: string) =>
 
 export default async (_req: Request) => {
   const [inter900, inter700] = await Promise.all([
-    fetchFont('Inter', 900, 'tRPC, Move Fast and Break Nothing'),
+    fetchFont('Inter', 900, 'tRPC   Move Fast and Break Nothing'),
     fetchFont('Inter', 700, 'End-to-end typesafe APIs made easy.'),
   ]);
 
