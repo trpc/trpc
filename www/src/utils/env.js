@@ -16,7 +16,7 @@ function parseEnv(input) {
     VERCEL_ENV: z
       .enum(['production', 'preview', 'development'])
       .default('development'),
-    VERCEL_GIT_REPO_SLUG: z.string().default('n/a'),
+    VERCEL_GIT_COMMIT_REF: z.string().default('n/a'),
   });
 
   const env = envSchema.parse(input);
@@ -29,10 +29,11 @@ function parseEnv(input) {
       case 'production':
         return 'https://og-image.trpc.io';
       case 'preview':
-        return `https://og-image-${env.VERCEL_GIT_REPO_SLUG}-trpc.vercel.app`;
+        return `https://og-image-${env.VERCEL_GIT_COMMIT_REF}-trpc.vercel.app`;
       case 'development':
         return 'http://localhost:3001';
     }
+    throw new Error("Can't happen");
   }
 
   return {
