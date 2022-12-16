@@ -7,7 +7,7 @@ export const config = {
 };
 
 const baseUrl = process.env.VERCEL
-  ? process.env.VERCEL_URL
+  ? 'https://' + process.env.VERCEL_URL
   : 'http://localhost:3000';
 
 const fetchFont = (family: string, weight?: number, text?: string) =>
