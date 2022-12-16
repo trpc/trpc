@@ -17,7 +17,6 @@ module.exports = {
         'main/contributing',
         'main/love',
         'main/sponsors',
-        'main/awesome-trpc',
       ],
     },
     {

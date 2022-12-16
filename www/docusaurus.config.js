@@ -50,8 +50,8 @@ module.exports = {
           label: 'Quickstart',
         },
         {
-          to: 'docs/awesome-trpc',
-          label: 'Awesome tRPC Collection',
+          to: 'ecosystem',
+          label: 'Ecosystem',
         },
         {
           to: 'docs/nextjs',

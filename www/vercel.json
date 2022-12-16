@@ -52,7 +52,7 @@
     },
     {
       "source": "/awesome",
-      "destination": "/docs/awesome-trpc",
+      "destination": "/ecosystem",
       "permanent": false
     },
     {
