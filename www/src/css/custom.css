@@ -362,9 +362,12 @@ details p {
   margin-bottom: 2rem;
 }
 
-
 .navbar__link {
-  overflow:hidden;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.footer__item svg {
+  display: none;
 }
