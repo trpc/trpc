@@ -1,20 +1,21 @@
 import { z } from 'zod';
 
+const isJSON = (str: string) => {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const jsonStr = z
+  .string()
+  .refine(isJSON, 'Needs to be JSON')
+  .transform((str) => JSON.parse(str));
+
 export function zodParams<TType>(schema: z.ZodType<TType>) {
-  const isJSON = (str: string) => {
-    try {
-      JSON.parse(str);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  const json = z
-    .string()
-    .refine(isJSON, 'Needs to be JSON')
-    .transform((str) => JSON.parse(str));
   const querySchema = z.object({
-    input: json.pipe(schema),
+    input: jsonStr.pipe(schema),
   });
   return {
     decodeRequest: (req: Request) => {
