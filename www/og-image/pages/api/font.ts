@@ -49,5 +49,8 @@ export default async (req: NextRequest) => {
     res.headers.delete('content-length');
   }
 
+  const CACHE_TIME = 60 * 60 * 24 * 365; // 1 year
+  res.headers.set('cache-control', `public, max-age=${CACHE_TIME}`);
+
   return res;
 };
