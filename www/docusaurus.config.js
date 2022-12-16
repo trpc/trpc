@@ -3,6 +3,8 @@
 
 const { parseEnv } = require('./src/utils/env');
 
+const env = parseEnv(process.env);
+
 const poweredByVercel = `
   <div style="padding-top: 24px;">
     <a
@@ -34,7 +36,7 @@ module.exports = {
   themeConfig: {
     disableSwitch: false,
     respectPrefersColorScheme: true,
-    image: 'https://assets.trpc.io/www/trpc-open-graph.png',
+    image: `${env.OG_URL}/api/landing`,
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
@@ -244,6 +246,6 @@ module.exports = {
   ],
 
   customFields: {
-    env: parseEnv(process.env),
+    env,
   },
 };
