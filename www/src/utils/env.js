@@ -24,7 +24,7 @@ function parseEnv(input) {
       case 'production':
         return 'https://og-image.trpc.io';
       case 'preview':
-        return `https://og-image-${env.VERCEL_GIT_COMMIT_REF}-trpc.vercel.app`;
+        return `https://og-image-${env.VERCEL_GIT_COMMIT_REF}-git-trpc.vercel.app`;
       case 'development':
         return 'http://localhost:3001';
     }
