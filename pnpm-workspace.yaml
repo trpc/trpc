@@ -5,5 +5,4 @@ packages:
   - 'examples/.test/*'
   - 'examples/minimal/*'
   - 'examples/minimal-react/*'
-  - 'examples/tanstack-router/*'
   - 'www'
