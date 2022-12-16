@@ -1,5 +1,6 @@
 import Layout from '@theme/Layout';
 import React from 'react';
+import { ContentSlider } from '../components/ContentSlider';
 import {
   EcosystemItem,
   categories,
@@ -80,6 +81,27 @@ const EcosystemContent = () => {
       </p>
 
       <EcosystemList items={ecosystemItems} />
+
+      <h2 className="mt-2 text-2xl">Videos</h2>
+
+      <div>
+        <ContentSlider
+          cards={[
+            {
+              title: 'Chris Bautista: Making typesafe APIs easy with tRPC',
+              time: '15m',
+              people: ['trash_dev'],
+              link: 'https://www.youtube.com/watch?v=2LYM8gf184U',
+            },
+            {
+              title: 'DevTools.FM Episode 21',
+              time: '1h',
+              people: ['devtools-fm', 'Alex/KATT'],
+              link: 'https://www.youtube.com/watch?v=eUyZ5Vn9ANk',
+            },
+          ]}
+        />
+      </div>
     </main>
   );
 };

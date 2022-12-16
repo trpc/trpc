@@ -1,7 +1,5 @@
 export const categories = [
   'framework',
-  'bootstrap',
-  'adapter',
   'extension',
   'starter',
   'open-source-project',
@@ -10,8 +8,6 @@ type Category = typeof categories[number];
 
 export const categoryLabels: Record<Category, string> = {
   framework: 'Framework',
-  bootstrap: 'Bootstrap',
-  adapter: 'Adapter',
   extension: 'Extension',
   starter: 'Starter',
   'open-source-project': 'Open Source Project',
@@ -68,35 +64,10 @@ export const ecosystemItems: EcosystemItem[] = [
     authorUrl: 'https://github.com/wobsoriano',
   },
   {
-    title: 'create-t3-app',
-    description:
-      'Scaffold a starter project using the T3 Stack (Next.js, tRPC, Tailwind CSS, Prisma)',
-    url: 'https://create.t3.gg',
-    categories: ['bootstrap', 'starter'],
-    authorName: 'T3 Open Source',
-    authorUrl: 'https://github.com/t3-oss',
-  },
-  {
-    title: 'Create JD App',
-    description: 'create-t3-app for Solid',
-    url: 'https://github.com/OrJDev/create-jd-app',
-    categories: ['bootstrap'],
-    authorName: 'OrJDev',
-    authorUrl: 'https://github.com/OrJDev',
-  },
-  {
-    title: 'Create tRPC App',
-    description: 'Create tRPC-powered apps with one command',
-    url: 'https://github.com/omar-dulaimi/create-trpc-app',
-    categories: ['bootstrap'],
-    authorName: 'Omar Dulaimi',
-    authorUrl: 'https://github.com/omar-dulaimi',
-  },
-  {
     title: 'tRPC-uWebSockets',
     description: 'Adapter for uWebSockets.js server',
     url: 'https://github.com/romanzy-1612/trpc-uwebsockets',
-    categories: ['adapter'],
+    categories: ['framework'],
     authorName: 'romanzy-1612',
     authorUrl: 'https://github.com/romanzy-1612',
   },
@@ -104,7 +75,7 @@ export const ecosystemItems: EcosystemItem[] = [
     title: 'jotai-trpc',
     description: 'Jotai wrapper around tRPC vanilla client',
     url: 'https://github.com/jotai-labs/jotai-trpc',
-    categories: ['adapter'],
+    categories: ['framework'],
     authorName: 'Jotai Labs',
     authorUrl: 'https://github.com/jotai-labs',
   },
@@ -113,7 +84,7 @@ export const ecosystemItems: EcosystemItem[] = [
     description:
       'Connect tRPC with AWS SQS, AWS API Gateway, and many more event sources',
     url: 'https://viniciusl.com.br/serverless-adapter/docs/main/frameworks/trpc',
-    categories: ['adapter'],
+    categories: ['framework'],
     authorName: 'Vinicius Lourenço',
     authorUrl: 'https://viniciusl.com.br',
   },
@@ -121,18 +92,11 @@ export const ecosystemItems: EcosystemItem[] = [
     title: 'trpc-koa-adapter',
     description: 'tRPC adapter for Koa server',
     url: 'https://github.com/BlairCurrey/trpc-koa-adapter',
-    categories: ['adapter'],
+    categories: ['framework'],
     authorName: 'Blair Currey',
     authorUrl: 'https://github.com/BlairCurrey',
   },
-  {
-    title: 'trpc-iron-session',
-    description: 'Secure your tRPC based on iron-session authentication',
-    url: 'https://github.com/parkgang/trpc-iron-session',
-    categories: ['adapter'],
-    authorName: 'Kyungeun Park',
-    authorUrl: 'https://github.com/parkgang',
-  },
+
   {
     title: 'tRPC Playground',
     description: 'sandbox for testing tRPC queries in the browser',
@@ -166,6 +130,14 @@ export const ecosystemItems: EcosystemItem[] = [
     authorUrl: 'https://github.com/jlalmes',
   },
   {
+    title: 'trpc-iron-session',
+    description: 'Secure your tRPC based on iron-session authentication',
+    url: 'https://github.com/parkgang/trpc-iron-session',
+    categories: ['extension'],
+    authorName: 'Kyungeun Park',
+    authorUrl: 'https://github.com/parkgang',
+  },
+  {
     title: 'Step CI',
     description: 'Automated API Testing and Quality Assurance',
     url: 'https://github.com/stepci/stepci',
@@ -191,6 +163,15 @@ export const ecosystemItems: EcosystemItem[] = [
     authorUrl: 'https://twitter.com/alexdotjs',
   },
   {
+    title: 'create-t3-app',
+    description:
+      'Scaffold a starter project using the T3 Stack (Next.js, tRPC, Tailwind CSS, Prisma)',
+    url: 'https://create.t3.gg',
+    categories: ['starter'],
+    authorName: 'T3 Open Source',
+    authorUrl: 'https://github.com/t3-oss',
+  },
+  {
     title: 'create-t3-turbo',
     description:
       'Clean and simple starter repo using the T3 Stack along with Expo React Native',
@@ -198,6 +179,22 @@ export const ecosystemItems: EcosystemItem[] = [
     categories: ['starter'],
     authorName: 'Julius Marminge',
     authorUrl: 'https://github.com/juliusmarminge',
+  },
+  {
+    title: 'Create JD App',
+    description: 'create-t3-app for Solid',
+    url: 'https://github.com/OrJDev/create-jd-app',
+    categories: ['starter'],
+    authorName: 'OrJDev',
+    authorUrl: 'https://github.com/OrJDev',
+  },
+  {
+    title: 'Create tRPC App',
+    description: 'Create tRPC-powered apps with one command',
+    url: 'https://github.com/omar-dulaimi/create-trpc-app',
+    categories: ['starter'],
+    authorName: 'Omar Dulaimi',
+    authorUrl: 'https://github.com/omar-dulaimi',
   },
   {
     title: 'next-prisma-starter-websockets',

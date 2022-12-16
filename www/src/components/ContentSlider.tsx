@@ -11,7 +11,7 @@ type Props = {
 
 export const ContentSlider = ({ cards }: Props) => {
   return (
-    <div className="px-4 no-scrollbar grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 snap-x snap-mandatory overflow-x-auto gap-8">
+    <div className="no-scrollbar grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 snap-x snap-mandatory overflow-x-auto gap-8">
       {cards.map((card) => {
         return (
           <a

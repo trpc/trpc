@@ -44,7 +44,7 @@ tRPC allows you to easily build & consume fully typesafe APIs without schemas or
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
 - 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React, and there are many [community adapters](https://trpc.io/ecosystem#extensions) for other libraries)_
+- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React, and there are many [community adapters](https://trpc.io/ecosystem#framework) for other libraries)_
 - 🥃&nbsp; Subscriptions support.
 - ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
 - 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
