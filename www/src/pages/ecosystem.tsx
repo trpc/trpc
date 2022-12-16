@@ -82,9 +82,9 @@ const EcosystemContent = () => {
 
       <EcosystemList items={ecosystemItems} />
 
-      <h2 className="mt-2 text-2xl">Videos</h2>
+      <div className="mt-2 mb-10">
+        <h2 className="text-2xl">Videos</h2>
 
-      <div>
         <ContentSlider
           cards={[
             {
