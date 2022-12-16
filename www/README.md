@@ -11,10 +11,12 @@ pnpm install
 ## Local Development
 
 ```console
-pnpm start
+pnpm dev
 ```
 
 This command starts a local development server and open up a browser window. Most changes are reflected live without having to restart the server.
+
+It also starts [open graph](#og-images) image generation on port `3001`.
 
 ## Build
 
