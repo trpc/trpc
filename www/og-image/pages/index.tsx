@@ -9,8 +9,11 @@ export default function Page() {
   return (
     <div>
       <Head>
-        <meta name="og:title" content="Vercel Edge Network" />
-        <meta name="og:description" content="Vercel Edge Network" />
+        <meta name="og:title" content="tRPC OG Image Playground" />
+        <meta
+          name="og:description"
+          content="Playground for OG Image Generation using @vercel/og-image"
+        />
         <meta name="og:image" content={ogImageUrl} />
         <meta data-rh="true" name="twitter:image" content={ogImageUrl} />
       </Head>
