@@ -25,7 +25,11 @@ const latestTweets = tweets.data
   .map((tweet) => {
     let text = tweet.text;
     tweet.entities.urls?.forEach((url) => {
-      if (url.display_url.startsWith('twitter.com')) {
+      if (
+        url.display_url.startsWith('twitter.com') ||
+        url.display_url.startsWith('pic.twitter.com')
+      ) {
+        // Delete some twitter links - replies etc
         text = text.replace(url.url, '');
         return;
       }
