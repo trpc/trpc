@@ -543,6 +543,15 @@ export const sponsors = [
     "createdAt": 1671157456000
   },
   {
+    "name": "Flightcontrol",
+    "imgSrc": "https://avatars.githubusercontent.com/u/87621213?v=4",
+    "monthlyPriceInDollars": 500,
+    "link": "https://flightcontrol.dev",
+    "privacyLevel": "PUBLIC",
+    "login": "flightcontrolhq",
+    "createdAt": 1671304160000
+  },
+  {
     "name": "Ping.gg",
     "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
     "monthlyPriceInDollars": 250,

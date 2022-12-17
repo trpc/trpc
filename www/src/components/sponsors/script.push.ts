@@ -23,6 +23,7 @@ const sections: Def = {
     'JasonDocton',
     'pingdotgg',
     'prisma',
+    'flightcontrolhq',
   ],
   bronze: [
     'newfront-insurance',
