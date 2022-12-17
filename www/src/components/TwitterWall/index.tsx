@@ -6,6 +6,7 @@ const knownGithubProfiles: Record<string, string> = {
 };
 
 const latestTweets = tweets.data
+  // Attach user to each tweet & replace profile image with github profile image
   .map((tweet) => {
     const user = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -14,7 +15,6 @@ const latestTweets = tweets.data
     const githubProfile = knownGithubProfiles[user.username];
 
     if (githubProfile) {
-      console.log({ githubProfile });
       user.profile_image_url = `https://github.com/${githubProfile}.png`;
     }
     return {
@@ -22,6 +22,7 @@ const latestTweets = tweets.data
       user,
     };
   })
+  // Skip displaying ugly Twitter-links
   .map((tweet) => {
     let text = tweet.text;
     tweet.entities.urls?.forEach((url) => {
@@ -40,7 +41,13 @@ const latestTweets = tweets.data
       ...tweet,
       text,
     };
-  });
+  })
+  // Sort by follower count
+  .sort(
+    (a, b) =>
+      b.user.public_metrics.followers_count -
+      a.user.public_metrics.followers_count,
+  );
 
 export const TwitterWall = () => {
   return (
