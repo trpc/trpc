@@ -54,7 +54,7 @@ export const TwitterWall = () => {
         <a
           href={tweet.url}
           key={tweet.id}
-          className="p-6 overflow-hidden transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-700/50 hover:no-underline"
+          className="p-6 transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-700/50 hover:no-underline"
         >
           <figure>
             <figcaption className="flex items-center justify-between">
