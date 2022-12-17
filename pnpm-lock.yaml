@@ -1079,7 +1079,7 @@ importers:
       '@docusaurus/types': ^2.2.0
       '@mdx-js/react': ^1.6.22
       '@octokit/graphql': ^5.0.0
-      '@octokit/graphql-schema': ^10.74.2
+      '@octokit/graphql-schema': ^12.0.0
       '@tailwindcss/line-clamp': ^0.4.2
       '@trpc/client': ^10.5.0
       '@trpc/next': ^10.5.0
@@ -1139,7 +1139,7 @@ importers:
       '@babel/preset-env': 7.20.2_@babel+core@7.20.2
       '@docusaurus/module-type-aliases': 2.2.0_biqbaboplfbrettd7655fr4n2y
       '@octokit/graphql': 5.0.4
-      '@octokit/graphql-schema': 10.74.2
+      '@octokit/graphql-schema': 12.41.0
       '@tsconfig/docusaurus': 1.0.6
       '@types/node': 18.7.20
       '@types/oauth': 0.9.1
@@ -5928,8 +5928,8 @@ packages:
       is-plain-object: 5.0.0
       universal-user-agent: 6.0.0
 
-  /@octokit/graphql-schema/10.74.2:
-    resolution: {integrity: sha512-PG6zZvFyOi4aRsfWwBji8GjJRHF6U9gUjqonVa0N6kpGae6Uhc75GDXOLX0x+/b+Kws82pug3+17tmgZ/o7HfQ==}
+  /@octokit/graphql-schema/12.41.0:
+    resolution: {integrity: sha512-npru7tKmOFRFu53+J9mtrM9z23bIhe4W4/jYBjlp7UX3dSibDZmeafmxH3J7WmPizDLQuCmQf7T4Z4iGTZXJhg==}
     dependencies:
       graphql: 16.6.0
       graphql-tag: 2.12.6_graphql@16.6.0
