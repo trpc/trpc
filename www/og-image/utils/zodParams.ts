@@ -33,7 +33,7 @@ export function zodParams<TType>(schema: z.ZodType<TType>) {
 
 function truncateWords(str: string, maxWords: number) {
   return str.split(' ').length > maxWords
-    ? `${str.split(' ').slice(0, maxWords).join(' ')}...`
+    ? `${str.split(' ').slice(0, maxWords).join(' ')} [...]`
     : str;
 }
 
