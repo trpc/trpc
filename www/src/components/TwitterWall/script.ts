@@ -65,32 +65,48 @@ const flattenTweets = (tweets: any, users: any) => {
   });
 };
 
-oauth.get(
-  'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291',
-  env.TWITTER_ACCESS_TOKEN,
-  env.TWITTER_ACCESS_TOKEN_SECRET,
-  (err: any, data: any) => {
-    const jsonParsed = JSON.parse(data);
-    const tweets = jsonParsed?.objects?.tweets;
-    const users = jsonParsed?.objects?.users;
+function req(pathname: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    oauth.get(
+      `https://api.twitter.com${pathname}`,
+      env.TWITTER_ACCESS_TOKEN,
+      env.TWITTER_ACCESS_TOKEN_SECRET,
+      (err, data) => {
+        if (err) {
+          reject(err);
+        }
+        try {
+          resolve(JSON.parse(data?.toString() as string));
+        } catch (err) {
+          reject(err);
+        }
+      },
+    );
+  });
+}
+async function main() {
+  const json = await req(
+    '/1.1/collections/entries.json?id=custom-1441435105910796291',
+  );
 
-    if (!tweets || !users) {
-      console.log(jsonParsed);
-      console.log('Error', err);
-      console.log('An error occurred while fetching the tweets, exiting...');
-      process.exit(1);
-    }
+  const tweets = json?.objects?.tweets;
+  const users = json?.objects?.users;
 
-    const flattenedTweets = flattenTweets(tweets, users);
+  if (!tweets || !users) {
+    throw new Error('An error occurred while fetching the tweet');
+  }
 
-    const json = JSON.stringify(flattenedTweets, null, 2);
-    const text = [
-      `// prettier-ignore`,
-      `// eslint-disable`,
-      `export const tweets = ${json}`,
-      ``,
-    ].join('\n');
+  const flattenedTweets = flattenTweets(tweets, users);
+  const output = JSON.stringify(flattenedTweets, null, 2);
+  const text = [
+    `// prettier-ignore`,
+    `// eslint-disable`,
+    `export const tweets = ${output}`,
+    ``,
+  ].join('\n');
 
-    fs.writeFileSync(__dirname + '/script.output.ts', text);
-  },
-);
+  fs.writeFileSync(__dirname + '/script.output.ts', text);
+}
+main().catch((err) => {
+  throw err;
+});

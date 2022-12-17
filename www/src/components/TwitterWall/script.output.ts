@@ -102,7 +102,7 @@ export const tweets = [
     "name": "🧙‍♂️Juliano Farias",
     "handle": "frontendwizard",
     "date": "Aug 22",
-    "avatar": "https://pbs.twimg.com/profile_images/1448195635723788288/_T_9D4gC_normal.jpg",
+    "avatar": "https://pbs.twimg.com/profile_images/1597950852685303810/gBC8_WH-_normal.jpg",
     "content": "@trpcio just feels right. Playing around with this is just magical. Big shoutout to @alexdotjs for this. Absolutely… "
   },
   {
