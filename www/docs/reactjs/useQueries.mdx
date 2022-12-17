@@ -1,0 +1,77 @@
+---
+id: usequeries
+title: useQueries()
+sidebar_label: useQueries()
+slug: /use-queries
+---
+
+The useQueries hook is used to fetch multiple queries using one hook call. This hook is an excellent choice in scenarios where you fetch numerous queries in one component as it can lead to a cleaner and more readable code.
+
+## Usage
+
+The useQueries hook is the same as that of [@tanstack/query useQueries](https://tanstack.com/query/v4/docs/react/reference/useQueries). The only difference is that you pass in a function that returns an array of queries instead of an array of queries inside an object parameter.
+
+```tsx
+const Component = () => {
+  const [post, greeting] = trpc.useQueries((t) => [
+    t.post.byId({ id: '1' }),
+    t.greeting({ text: 'world' }),
+  ]);
+
+  return (
+    <div>
+      <h1>{post.data.title}</h1>
+      <p>{greeting.data.message}</p>
+    </div>
+  );
+};
+```
+
+### Providing options to individual queries
+
+You can also pass in any normal query options to the second parameter of any of the query calls in the array such as `enabled`, `suspense`, `refetchOnWindowFocus`...etc. For a complete overview of all the available options, see the [tanstack useQuery](https://tanstack.com/query/v4/docs/react/reference/useQuery) documentation.
+
+```tsx
+const Component = () => {
+  const [post, greeting] = trpc.useQueries((t) => [
+    t.post.byId({ id: '1' }, { enabled: false }),
+    t.greeting({ text: 'world' }),
+  ]);
+
+  const onButtonClick = () => {
+    post.refetch();
+  };
+
+  return (
+    <div>
+      <h1>{post.data && post.data.title}</h1>
+      <p>{greeting.data.message}</p>
+      <button onClick={onButtonClick}>Click to fetch</button>
+    </div>
+  );
+};
+```
+
+## Options
+
+### `(t) => [t.query1(), t.query2()]`
+
+The first parameter of the useQueries hook is a function that contains a `t` object with all of the queries you can fetch. The function should return an array of `t` query calls with their inputs and options.
+
+```tsx
+const [post, greeting] = trpc.useQueries((t) => [
+  t.post.byId({ id: '1' }),
+  t.greeting({ text: 'world' }),
+]);
+```
+
+### Context
+
+You can also pass in an optional context if you would not like to use the default context of tRPC.
+
+```tsx
+const [post, greeting] = trpc.useQueries(
+  (t) => [t.post.byId({ id: '1' }), t.greeting({ text: 'world' })],
+  myCustomContext,
+);
+```
