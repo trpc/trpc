@@ -104,11 +104,10 @@ async function getCollection() {
   return flattenedTweets;
 }
 
-async function getLatest(opts: Array<{ id: string; date: string }>) {
+async function getTweets(opts: Array<{ id: string; date: string }>) {
   const ids = opts
     .map((it) => ({ ...it, date: Date.parse(it.date) }))
     .sort((a, b) => b.date - a.date)
-    .slice(0, 15)
     .map((it) => it.id)
     .join(',');
   const tweets = await req(
@@ -120,7 +119,7 @@ async function getLatest(opts: Array<{ id: string; date: string }>) {
 async function main() {
   const collection = await getCollection();
 
-  const tweets = await getLatest(collection);
+  const tweets = await getTweets(collection);
 
   const text = [
     `// prettier-ignore`,

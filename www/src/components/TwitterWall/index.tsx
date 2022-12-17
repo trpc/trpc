@@ -47,7 +47,8 @@ const latestTweets = tweets.data
     (a, b) =>
       b.user.public_metrics.followers_count -
       a.user.public_metrics.followers_count,
-  );
+  )
+  .slice(0, 10);
 
 export const TwitterWall = () => {
   return (
