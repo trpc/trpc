@@ -43,11 +43,7 @@ const latestTweets = tweets.data
     };
   })
   // Sort by follower count
-  .sort(
-    (a, b) =>
-      b.user.public_metrics.followers_count -
-      a.user.public_metrics.followers_count,
-  )
+  .sort((a, b) => b.public_metrics.like_count - a.public_metrics.like_count)
   .slice(0, 10);
 
 export const TwitterWall = () => {
