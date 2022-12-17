@@ -66,6 +66,7 @@ const flattenTweets = (tweets: any, users: any) => {
 };
 
 function req(pathname: string): Promise<any> {
+  console.log('fetching', pathname);
   return new Promise((resolve, reject) => {
     oauth.get(
       `https://api.twitter.com${pathname}`,
@@ -74,6 +75,7 @@ function req(pathname: string): Promise<any> {
       (err, data) => {
         if (err) {
           reject(err);
+          return;
         }
         try {
           resolve(JSON.parse(data?.toString() as string));
@@ -84,7 +86,8 @@ function req(pathname: string): Promise<any> {
     );
   });
 }
-async function main() {
+
+async function getCollection() {
   const json = await req(
     '/1.1/collections/entries.json?id=custom-1441435105910796291',
   );
@@ -97,11 +100,32 @@ async function main() {
   }
 
   const flattenedTweets = flattenTweets(tweets, users);
-  const output = JSON.stringify(flattenedTweets, null, 2);
+
+  return flattenedTweets;
+}
+
+async function getLatest(opts: Array<{ id: string; date: string }>) {
+  const ids = opts
+    .map((it) => ({ ...it, date: Date.parse(it.date) }))
+    .sort((a, b) => b.date - a.date)
+    .slice(0, 15)
+    .map((it) => it.id)
+    .join(',');
+  const tweets = await req(
+    `/2/tweets?ids=${ids}&tweet.fields=attachments,author_id,conversation_id,created_at,edit_history_tweet_ids,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,source,text,withheld&expansions=attachments.media_keys,attachments.poll_ids,author_id,edit_history_tweet_ids,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id&media.fields=alt_text,duration_ms,height,media_key,preview_image_url,public_metrics,type,url,variants,width&user.fields=id,name,public_metrics,profile_image_url`,
+  );
+
+  return tweets;
+}
+async function main() {
+  const collection = await getCollection();
+
+  const tweets = await getLatest(collection);
+
   const text = [
     `// prettier-ignore`,
     `// eslint-disable`,
-    `export const tweets = ${output}`,
+    `export const tweets = ${JSON.stringify(tweets, null, 4)}`,
     ``,
   ].join('\n');
 
