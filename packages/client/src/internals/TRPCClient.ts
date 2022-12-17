@@ -1,6 +1,7 @@
 import {
   AnyRouter,
   ClientDataTransformerOptions,
+  CombinedDataTransformer,
   DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
@@ -43,7 +44,9 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/data-transformers
          **/
-        transformer: TRouter['_def']['_config']['transformer'];
+        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
+          ? DataTransformerOptions
+          : TRouter['_def']['_config']['transformer'];
       }
     : {
         /**
