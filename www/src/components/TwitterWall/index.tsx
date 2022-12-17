@@ -1,12 +1,27 @@
 import React from 'react';
 import { tweets } from './script.output';
 
+const knownGithubProfiles: Record<string, string> = {
+  t3dotgg: 't3dotgg',
+};
+
 const latestTweets = tweets.data
-  .map((tweet) => ({
-    ...tweet,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    user: tweets.includes.users.find((user) => user.id === tweet.author_id)!,
-  }))
+  .map((tweet) => {
+    const user = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      ...tweets.includes.users.find((user) => user.id === tweet.author_id)!,
+    };
+    const githubProfile = knownGithubProfiles[user.username];
+
+    if (githubProfile) {
+      console.log({ githubProfile });
+      user.profile_image_url = `https://github.com/${githubProfile}.png`;
+    }
+    return {
+      ...tweet,
+      user,
+    };
+  })
   .map((tweet) => {
     let text = tweet.text;
     tweet.entities.urls?.forEach((url) => {
