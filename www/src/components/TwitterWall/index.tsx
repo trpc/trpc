@@ -19,6 +19,7 @@ const latestTweets = tweets.data
     }
     return {
       ...tweet,
+      url: `https://twitter.com/${user.username}/status/${tweet.id}`,
       user,
     };
   })
@@ -51,43 +52,47 @@ export const TwitterWall = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl">
       {latestTweets.map((tweet) => (
         <a
-          id="tweet"
-          href={`https://twitter.com/${tweet.user.id}/status/${tweet.id}`}
+          href={tweet.url}
           key={tweet.id}
-          className="p-6 overflow-hidden transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-700/50"
+          className="p-6 overflow-hidden transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-700/50 hover:no-underline"
         >
-          <div className="flex items-center justify-between">
-            <a
-              href={`https://twitter.com/${tweet.user.username}`}
-              className="cursor-pointer"
-            >
-              <div className="flex items-center gap-3 group">
-                <img
-                  src={tweet.user.profile_image_url}
-                  alt={tweet.user.username}
-                  className="w-12 h-12 rounded-full"
-                />
-                <div className="group-hover:underline">
-                  <p className="text-base font-bold">{tweet.user.name}</p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {tweet.user.username}
-                  </p>
+          <figure>
+            <figcaption className="flex items-center justify-between">
+              <a
+                href={`https://twitter.com/${tweet.user.username}`}
+                className="cursor-pointer hover:underline"
+              >
+                <div className="flex items-center gap-3 group">
+                  <img
+                    src={tweet.user.profile_image_url}
+                    alt={tweet.user.username}
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <cite className="group-hover:underline">
+                    <p className="text-base font-bold">{tweet.user.name}</p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {tweet.user.username}
+                    </p>
+                  </cite>
                 </div>
+              </a>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                <p>
+                  {new Date(tweet.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
               </div>
-            </a>
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">
-              <p>
-                {new Date(tweet.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-            </div>
-          </div>
+            </figcaption>
 
-          <p className="pt-4 whitespace-pre-wrap text-zinc-600 dark:text-zinc-400">
-            {tweet.text}
-          </p>
+            <blockquote
+              className="pt-4 whitespace-pre-wrap text-zinc-600 dark:text-zinc-400 border-none pl-0"
+              cite={tweet.url}
+            >
+              {tweet.text}
+            </blockquote>
+          </figure>
         </a>
       ))}
     </div>
