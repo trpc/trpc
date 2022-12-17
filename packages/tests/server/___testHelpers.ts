@@ -37,7 +37,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
           httpUrl: string;
           wssUrl: string;
           wsClient: TRPCWebSocketClient;
-        }) => Partial<WithTRPCConfig<TRouter>>);
+        }) => Partial<WithTRPCConfig<AnyNewRouter>>);
   },
 ) {
   // http
