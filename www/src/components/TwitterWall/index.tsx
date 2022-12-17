@@ -77,12 +77,12 @@ export const TwitterWall = () => {
                 </div>
               </a>
               <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                <p>
+                <time date={new Date(tweet.created_at).toJSON()}>
                   {new Date(tweet.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                   })}
-                </p>
+                </time>
               </div>
             </figcaption>
 
