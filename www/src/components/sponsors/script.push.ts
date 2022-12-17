@@ -1,7 +1,20 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors } from './script.output';
-import { getMultiplier } from './utils';
+import { sponsors as _sponsors } from './script.output';
+
+const sponsors = [
+  ..._sponsors,
+  {
+    __typename: 'Organization',
+    name: 'Ping.gg',
+    imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
+    monthlyPriceInDollars: 250,
+    link: 'https://ping.gg/',
+    privacyLevel: 'PUBLIC',
+    login: 'pingdotgg',
+    createdAt: 1645488994000,
+  } as const,
+];
 
 type Sponsor = typeof sponsors[number];
 type ValidLogins = Sponsor['login'];
@@ -12,6 +25,15 @@ interface Def {
   bronze: ValidLogins[];
 }
 
+const yearlySponsors: ValidLogins[] = [
+  //
+  'flightcontrolhq',
+  'ahoylabs',
+  'Wyatt-SG',
+  'pingdotgg',
+  'nihinihi01',
+  'newfront-insurance',
+];
 const sections: Def = {
   gold: [
     //
@@ -51,10 +73,35 @@ const buckets: Buckets = {
 };
 
 const sortedSponsors = sponsors
+  // overrides
   .map((sponsor) => {
+    switch (sponsor.login) {
+      case 't3dotgg':
+        return {
+          ...sponsor,
+          monthlyPriceInDollars: 5,
+        };
+    }
+    return sponsor;
+  })
+  // calculate total value
+  .map((sponsor) => {
+    const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+    const YEAR_MS = 12 * MONTH_MS;
+
+    const yearly = yearlySponsors.includes(sponsor.login);
+    const cycles = Math.ceil(
+      (Date.now() - sponsor.createdAt) / (yearly ? YEAR_MS : MONTH_MS),
+    );
+
+    const base = yearly ? 12 : 1;
+    const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
+    const value =
+      base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
+
     return {
       ...sponsor,
-      value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
+      value,
     };
   })
   .sort((a, b) => b.value - a.value);
@@ -69,7 +116,7 @@ for (const sponsor of sortedSponsors) {
     ? 'bronze'
     : 'other';
 
-  buckets[section].push(sponsor);
+  buckets[section].push(sponsor as Sponsor);
 }
 
 const bucketConfig: Record<
