@@ -84,7 +84,6 @@ async function getGithubSponsors() {
       },
     );
 
-    fs.writeFileSync(__dirname + '/script.raw.json', JSON.stringify(res));
     const {
       viewer: {
         sponsorshipsAsMaintainer: {
@@ -121,7 +120,7 @@ async function main() {
     '',
   ].join('\n');
 
-  fs.writeFileSync(__dirname + '/script.output.ts', text);
+  fs.writeFileSync(__dirname + '/script.raw.ts', text);
 }
 
 void main();

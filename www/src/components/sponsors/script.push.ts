@@ -1,6 +1,6 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors as _sponsors } from './script.output';
+import { sponsors as _sponsors } from './script.raw';
 
 const sponsors = [
   ..._sponsors,
@@ -102,10 +102,53 @@ const sortedSponsors = sponsors
     return {
       ...sponsor,
       value,
+      weight: 0,
     };
   })
   .sort((a, b) => b.value - a.value);
 
+function groupedSponsors(sponsors: typeof sortedSponsors) {
+  // this fn is a mess, don't judge
+  const min = Math.min(...sponsors.map((sponsors) => sponsors.value));
+  const max = Math.max(...sponsors.map((sponsors) => sponsors.value));
+
+  const nGroups = 100;
+
+  const groupDiff = (max - min) / nGroups;
+
+  const groups: Array<typeof sortedSponsors> = [];
+  for (let index = 0; index < sponsors.length; index++) {
+    let pos = 0;
+    const sponsor = sponsors[index];
+    while (sponsor.value > min + groupDiff * pos) {
+      pos++;
+    }
+    groups[pos] ||= [];
+    groups[pos].push({ ...sponsor, weight: pos + 1 });
+  }
+
+  return groups
+    .flatMap((group) => group.reverse())
+    .reverse()
+    .map((sponsor) => {
+      const { name, imgSrc, weight, login, link } = sponsor;
+      return { name, imgSrc, weight, login, link };
+    });
+}
+
+fs.writeFileSync(
+  __dirname + '/script.output.ts',
+  [
+    '// prettier-ignore',
+    '// eslint-disable',
+    `export const sponsors =  ${JSON.stringify(
+      groupedSponsors(sortedSponsors),
+      null,
+      2,
+    )} as const;`,
+    '',
+  ].join('\n'),
+);
 for (const sponsor of sortedSponsors) {
   const { login } = sponsor;
   const section = sections.gold.includes(login)

@@ -2,36 +2,10 @@ import { Pack, hierarchy } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { sponsors as _sponsors } from './script.output';
-import { getMultiplier } from './utils';
-
-const sponsors = _sponsors
-  .map((sponsor) => ({
-    ...sponsor,
-    value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
-  }))
-  .sort((a, b) => a.value - b.value);
-
-const min = Math.min(...sponsors.map((sponsors) => sponsors.value));
-const max = Math.max(...sponsors.map((sponsors) => sponsors.value));
-
-const nGroups = 100;
-
-const groupDiff = (max - min) / nGroups;
-
-const groups = [];
-for (let index = 0; index < sponsors.length; index++) {
-  let pos = 0;
-  const sponsor = sponsors[index];
-  while (sponsor.value > min + groupDiff * pos) {
-    pos++;
-  }
-  groups[pos] ||= [];
-  groups[pos].push({ ...sponsor, size: pos + 1 });
-}
+import { sponsors } from './script.output';
 
 const pack = {
-  children: groups.flat(),
+  children: sponsors,
   name: 'root',
   radius: 0,
   distance: 0,
@@ -41,8 +15,8 @@ export function SponsorBubbles() {
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => d?.size, 1)
-        .sort((a, b) => (b.data.value ?? 0) - (a.data.value ?? 0)),
+        .sum((d) => d?.weight, 1)
+        .sort((a, b) => (b.data.weight ?? 0) - (a.data.weight ?? 0)),
     [],
   );
 
