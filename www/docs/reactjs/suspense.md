@@ -6,7 +6,7 @@ slug: /suspense
 ---
 
 
-:::caution
+:::info
 - `useSuspense` & `useSuspenseInfiniteQuery` are *experimental* features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
 - Ensure you're on the latest version of React
 - When initializing `createTRPCReact` or `createTRPCNext`  you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
