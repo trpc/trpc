@@ -7,6 +7,8 @@ export const config = {
   runtime: 'experimental-edge',
 };
 
+console.log('env', process.env);
+
 const env = z
   .object({
     GITHUB_TOKEN: z.string().min(1),
