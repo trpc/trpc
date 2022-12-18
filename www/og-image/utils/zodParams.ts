@@ -40,8 +40,10 @@ function truncateWordsFn(str: string, maxCharacters: number) {
   const lastSpace = truncated.lastIndexOf(' ');
   return truncated.slice(0, lastSpace) + ' …';
 }
-function truncateWords(maxCharacters: number) {
-  return z.string().transform((str) => truncateWordsFn(str, maxCharacters));
+function truncatedWordSchema(opts: { maxCharacters: number }) {
+  return z
+    .string()
+    .transform((str) => truncateWordsFn(str, opts.maxCharacters));
 }
 
 export const fontParams = zodParams(
@@ -54,8 +56,8 @@ export const fontParams = zodParams(
 
 export const blogParams = zodParams(
   z.object({
-    title: z.string().pipe(truncateWords(70)),
-    description: z.string().pipe(truncateWords(145)),
+    title: truncatedWordSchema({ maxCharacters: 70 }),
+    description: truncatedWordSchema({ maxCharacters: 145 }),
     date: z
       .string()
       .transform((val) => new Date(val))
@@ -76,7 +78,7 @@ export const blogParams = zodParams(
 export const docsParams = zodParams(
   z.object({
     title: z.string(),
-    description: z.string().pipe(truncateWords(215)),
+    description: truncatedWordSchema({ maxCharacters: 215 }),
     permalink: z
       .string()
       .startsWith('/')
