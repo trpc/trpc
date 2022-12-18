@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useEffect, useState } from 'react';
 import { blogParams, docsParams } from 'utils/zodParams';
 
 const ogImageUrl = `${
@@ -6,6 +7,14 @@ const ogImageUrl = `${
 }/api/landing`;
 
 export default function Page() {
+  const [nonce, setNonce] = useState(Math.random());
+
+  useEffect(() => {
+    // randomize nonce on window focus
+    const handleFocus = () => setNonce(Math.random());
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
   return (
     <div>
       <Head>
@@ -21,7 +30,7 @@ export default function Page() {
       <main className="grid grid-cols-2 grid-flow-row">
         <div>
           <h2>Landing</h2>
-          <img src={`/api/landing?random=${Math.random()}`} />
+          <img src={`/api/landing?random=${nonce}`} />
         </div>
         <div>
           <h2>Blog</h2>
@@ -34,8 +43,9 @@ export default function Page() {
               description:
                 'Eiusmod elit id dolor proident Lorem ut quis exercitation velit cupidatat sit occaecat. Fugiat do culpa exercitation quis anim tempor excepteur sit qui dolor ex aute in. Proident magna eiusmod mollit amet tempor aute in. Labore officia Lorem velit adipisicing reprehenderit. Incididunt aute aliqua Lorem qui consectetur eiusmod pariatur ut exercitation ea est mollit quis.',
               readingTimeInMinutes: 5,
-              title: 'This is going to be a really long title for a blog post',
-            })}&random=${Math.random()}`}
+              title:
+                'This is going to be a really long title for a blog post, it will probably wrap around a few times',
+            })}&random=${nonce}`}
           />
         </div>
         <div>
@@ -43,10 +53,10 @@ export default function Page() {
           <img
             src={`/api/docs?${docsParams.toSearchString({
               description:
-                'The createContext() function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.',
+                'The createContext() function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
               title: 'Inferring types',
               permalink: '/docs/inferring-types',
-            })}&random=${Math.random()}`}
+            })}&random=${nonce}`}
           />
         </div>
       </main>
