@@ -8,15 +8,13 @@ const ogImageUrl = `${
 
 export default function Page() {
   const [nonce, setNonce] = useState(Math.random());
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setNonce(Math.random());
-      }, 2000);
-      return () => clearInterval(interval);
-    }, []);
-  }
+
+  useEffect(() => {
+    // randomize nonce on window focus
+    const handleFocus = () => setNonce(Math.random());
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
   return (
     <div>
       <Head>
@@ -45,7 +43,8 @@ export default function Page() {
               description:
                 'Eiusmod elit id dolor proident Lorem ut quis exercitation velit cupidatat sit occaecat. Fugiat do culpa exercitation quis anim tempor excepteur sit qui dolor ex aute in. Proident magna eiusmod mollit amet tempor aute in. Labore officia Lorem velit adipisicing reprehenderit. Incididunt aute aliqua Lorem qui consectetur eiusmod pariatur ut exercitation ea est mollit quis.',
               readingTimeInMinutes: 5,
-              title: 'This is going to be a really long title for a blog post',
+              title:
+                'This is going to be a really long title for a blog post, it will probably wrap around a few times',
             })}&random=${nonce}`}
           />
         </div>

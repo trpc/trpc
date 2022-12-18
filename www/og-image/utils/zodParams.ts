@@ -54,7 +54,7 @@ export const fontParams = zodParams(
 
 export const blogParams = zodParams(
   z.object({
-    title: z.string().pipe(truncateWords(60)),
+    title: z.string().pipe(truncateWords(70)),
     description: z.string().pipe(truncateWords(150)),
     date: z
       .string()
