@@ -7,8 +7,6 @@ export const config = {
   runtime: 'experimental-edge',
 };
 
-console.log('env', process.env.TWITTER_BEARER_TOKEN, process.env.GITHUB_TOKEN);
-
 const env = z
   .object({
     GITHUB_TOKEN: z.string().min(1),
@@ -20,7 +18,7 @@ const env = z
   });
 
 const fetchStars = async () => {
-  const res = await fetch('https://api.github.com/repos/tRPC/tRPC', {
+  const res = await fetch('https://api.github.com/repos/trpc/trpc', {
     headers: { authorization: `Bearer ${env.GITHUB_TOKEN}` },
   });
   const data = await res.json();
