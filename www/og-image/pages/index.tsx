@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import { useEffect, useState } from 'react';
 import { blogParams, docsParams } from 'utils/zodParams';
 
 const ogImageUrl = `${
@@ -6,6 +7,16 @@ const ogImageUrl = `${
 }/api/landing`;
 
 export default function Page() {
+  const [nonce, setNonce] = useState(Math.random());
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setNonce(Math.random());
+      }, 2000);
+      return () => clearInterval(interval);
+    }, []);
+  }
   return (
     <div>
       <Head>
@@ -21,7 +32,7 @@ export default function Page() {
       <main className="grid grid-cols-2 grid-flow-row">
         <div>
           <h2>Landing</h2>
-          <img src={`/api/landing?random=${Math.random()}`} />
+          <img src={`/api/landing?random=${nonce}`} />
         </div>
         <div>
           <h2>Blog</h2>
@@ -35,7 +46,7 @@ export default function Page() {
                 'Eiusmod elit id dolor proident Lorem ut quis exercitation velit cupidatat sit occaecat. Fugiat do culpa exercitation quis anim tempor excepteur sit qui dolor ex aute in. Proident magna eiusmod mollit amet tempor aute in. Labore officia Lorem velit adipisicing reprehenderit. Incididunt aute aliqua Lorem qui consectetur eiusmod pariatur ut exercitation ea est mollit quis.',
               readingTimeInMinutes: 5,
               title: 'This is going to be a really long title for a blog post',
-            })}&random=${Math.random()}`}
+            })}&random=${nonce}`}
           />
         </div>
         <div>
@@ -46,7 +57,7 @@ export default function Page() {
                 'The createContext() function is called for each request, and the result is propagated to all resolvers. You can use this to pass contextual data down to the resolvers.',
               title: 'Inferring types',
               permalink: '/docs/inferring-types',
-            })}&random=${Math.random()}`}
+            })}&random=${nonce}`}
           />
         </div>
       </main>
