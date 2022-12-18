@@ -17,7 +17,7 @@ const env = z
   .parse(process.env);
 
 const fetchStars = async () => {
-  const auth = Buffer.from(env.GITHUB_TOKEN, 'binary').toString('base64');
+  const auth = 'some-str-for-now'; // Buffer.from(env.GITHUB_TOKEN, 'binary').toString('base64');
   const res = await fetch('https://api.github.com/repos/tRPC/tRPC', {
     headers: { authorization: `Basic ${auth}` },
   });
