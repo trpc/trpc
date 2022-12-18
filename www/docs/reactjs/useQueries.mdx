@@ -52,22 +52,10 @@ const Component = () => {
 };
 ```
 
-## Options
-
-### `(t) => [t.query1(), t.query2()]`
-
-The first parameter of the useQueries hook is a function that contains a `t` object with all of the queries you can fetch. The function should return an array of `t` query calls with their inputs and options.
-
-```tsx
-const [post, greeting] = trpc.useQueries((t) => [
-  t.post.byId({ id: '1' }),
-  t.greeting({ text: 'world' }),
-]);
-```
 
 ### Context
 
-You can also pass in an optional context if you would not like to use the default context of tRPC.
+You can also pass in an optional React Query context to override the default.
 
 ```tsx
 const [post, greeting] = trpc.useQueries(
