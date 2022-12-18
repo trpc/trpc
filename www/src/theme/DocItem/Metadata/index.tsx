@@ -9,6 +9,7 @@ import { useEnv } from '../../../utils/useEnv';
 export default function DocItemMetadata(): JSX.Element {
   const { metadata } = useDoc();
   const { title, description } = metadata;
+
   const env = useEnv();
 
   const ogImg = `${env.OG_URL}/api/docs?${docsParams.toSearchString({
@@ -17,12 +18,5 @@ export default function DocItemMetadata(): JSX.Element {
     permalink: metadata.permalink,
   })}`;
 
-  return (
-    <PageMetadata title={title} description={description} image={ogImg}>
-      <meta property={`og:title`} content={title} />
-      <meta property={`og:image`} content={ogImg} />
-      <meta data-rh="true" name="twitter:image" content={ogImg} />
-      <meta property="og:description" content={description} />
-    </PageMetadata>
-  );
+  return <PageMetadata title={title} description={description} image={ogImg} />;
 }
