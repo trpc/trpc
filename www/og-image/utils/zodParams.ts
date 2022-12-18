@@ -55,7 +55,7 @@ export const fontParams = zodParams(
 export const blogParams = zodParams(
   z.object({
     title: z.string().pipe(truncateWords(70)),
-    description: z.string().pipe(truncateWords(150)),
+    description: z.string().pipe(truncateWords(145)),
     date: z
       .string()
       .transform((val) => new Date(val))
@@ -76,7 +76,7 @@ export const blogParams = zodParams(
 export const docsParams = zodParams(
   z.object({
     title: z.string(),
-    description: z.string().pipe(truncateWords(220)),
+    description: z.string().pipe(truncateWords(215)),
     permalink: z
       .string()
       .startsWith('/')
