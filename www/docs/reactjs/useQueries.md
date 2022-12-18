@@ -5,82 +5,32 @@ sidebar_label: useQueries()
 slug: /use-queries
 ---
 
-The useQueries hook is used to fetch multiple queries using one hook call. This hook is an excellent choice in scenarios where you fetch numerous queries in one component as it can lead to a cleaner and more readable code.
+The `useQueries` hook can be used to fetch a variable number of queries at the same time using only one hook call.
+
+The main use case for such a hook is to be able to fetch a number of queries, usually of the same type. For example if you fetch a list of todo ids, you can then map over them in a useQueries hook calling a byId endpoint that would fetch the details of each todo.
+
+:::note
+While fetching multiple types in a `useQueries` hook is possible, there is not much of an advantage compared to using multiple `useQuery` calls unless you use the `suspense` option as that `useQueries` can trigger suspense in parallel while multiple `useQuery` calls would waterfall.
+:::
 
 ## Usage
 
 The useQueries hook is the same as that of [@tanstack/query useQueries](https://tanstack.com/query/v4/docs/react/reference/useQueries). The only difference is that you pass in a function that returns an array of queries instead of an array of queries inside an object parameter.
 
-```twoslash include server
-// @target: esnext
+```tsx
+const Component = () => {
+  const [post, greeting] = trpc.useQueries((t) => [
+    t.post.byId({ id: '1' }),
+    t.greeting({ text: 'world' }),
+  ]);
 
-// @filename: server.ts
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-const posts = [
-  { id: '1', title: 'everlong' },
-  { id: '2', title: 'After Dark' },
-];
-
-const appRouter = t.router({
-  post: t.router({
-    byId: t.procedure
-      .input(
-        z.object({
-          id: z.string(),
-        })
-      )
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-          })
-        }
-        return post;
-     }),
-  }),
-  greeting: t.procedure
-    .input(
-      z.object({
-        text: z.string().nullish(),
-      })
-    )
-    .query(({ input }) => {
-      return {
-        message: `Hello ${input.text ?? 'World'}`
-      }
-    })
-});
-
-export type AppRouter = typeof appRouter;
-
-
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<AppRouter>();
-
-```
-
-```tsx twoslash
-// @target: esnext
-// @include: server
-// ---cut---
-// @filename: pages/index.tsx
-import React from 'react';
-import { trpc } from '../utils/trpc';
-
-function PostView() {
-  const data = trpc.greeting.useQuery({});
-  //      ^?
-
-  return <>{/* ... */}</>;
-}
+  return (
+    <div>
+      <h1>{post.data.title}</h1>
+      <p>{greeting.data.message}</p>
+    </div>
+  );
+};
 ```
 
 ### Providing options to individual queries
