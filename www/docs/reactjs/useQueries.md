@@ -11,20 +11,76 @@ The useQueries hook is used to fetch multiple queries using one hook call. This 
 
 The useQueries hook is the same as that of [@tanstack/query useQueries](https://tanstack.com/query/v4/docs/react/reference/useQueries). The only difference is that you pass in a function that returns an array of queries instead of an array of queries inside an object parameter.
 
-```tsx
-const Component = () => {
-  const [post, greeting] = trpc.useQueries((t) => [
-    t.post.byId({ id: '1' }),
-    t.greeting({ text: 'world' }),
-  ]);
+```twoslash include server
+// @target: esnext
 
-  return (
-    <div>
-      <h1>{post.data.title}</h1>
-      <p>{greeting.data.message}</p>
-    </div>
-  );
-};
+// @filename: server.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+const posts = [
+  { id: '1', title: 'everlong' },
+  { id: '2', title: 'After Dark' },
+];
+
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+        })
+      )
+      .query(({ input }) => {
+        const post = posts.find(p => p.id === input.id);
+        if (!post) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+          })
+        }
+        return post;
+     }),
+  }),
+  greeting: t.procedure
+    .input(
+      z.object({
+        text: z.string().nullish(),
+      })
+    )
+    .query(({ input }) => {
+      return {
+        message: `Hello ${input.text ?? 'World'}`
+      }
+    })
+});
+
+export type AppRouter = typeof appRouter;
+
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+
+export const trpc = createTRPCReact<AppRouter>();
+
+```
+
+```tsx twoslash
+// @target: esnext
+// @include: server
+// ---cut---
+// @filename: pages/index.tsx
+import React from 'react';
+import { trpc } from '../utils/trpc';
+
+function PostView() {
+  const data = trpc.greeting.useQuery({});
+  //      ^?
+
+  return <>{/* ... */}</>;
+}
 ```
 
 ### Providing options to individual queries
@@ -51,7 +107,6 @@ const Component = () => {
   );
 };
 ```
-
 
 ### Context
 
