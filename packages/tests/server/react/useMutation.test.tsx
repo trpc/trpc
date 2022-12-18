@@ -1,5 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
+import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -28,6 +29,17 @@ const ctx = konn()
             }),
           )
           .mutation(() => `__mutationResult` as const),
+        createWithSerializable: t.procedure
+          .input(
+            z.object({
+              text: z.string(),
+            }),
+          )
+          .mutation(({ input }) => ({
+            id: 1,
+            text: input.text,
+            date: new Date(),
+          })),
       }),
       /**
        * @deprecated
@@ -78,4 +90,37 @@ test('useMutation', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__mutationResult`);
   });
+});
+
+test('useMutation options inference', () => {
+  const { appRouter, proxy, App } = ctx;
+
+  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['createWithSerializable'];
+  type OptionsRequired = Required<Options>;
+
+  type OnSuccessVariables = Parameters<OptionsRequired['onSuccess']>[1];
+  expectTypeOf<OnSuccessVariables>().toMatchTypeOf<{ text: string }>();
+
+  function MyComponent() {
+    const options: Options = {};
+    proxy.post.createWithSerializable.useMutation({
+      ...options,
+      onSuccess: (data) => {
+        expectTypeOf(data).toMatchTypeOf<{
+          id: number;
+          text: string;
+          date: string;
+        }>();
+      },
+    });
+
+    return <></>;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
 });

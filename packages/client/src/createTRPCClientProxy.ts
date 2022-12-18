@@ -99,7 +99,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCClient<TRouter>,
 ) {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
-    if (key in client) {
+    if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
     }
     return createRecursiveProxy(({ path, args }) => {

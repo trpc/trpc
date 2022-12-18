@@ -3,13 +3,9 @@ import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { sponsors } from './script.output';
-import { getMultiplier } from './utils';
 
 const pack = {
-  children: sponsors.map((sponsor) => ({
-    ...sponsor,
-    value: getMultiplier(sponsor.createdAt) * sponsor.monthlyPriceInDollars,
-  })),
+  children: sponsors,
   name: 'root',
   radius: 0,
   distance: 0,
@@ -19,8 +15,8 @@ export function SponsorBubbles() {
   const root = React.useMemo(
     () =>
       hierarchy(pack)
-        .sum((d) => d?.value, 1)
-        .sort((a, b) => (b.data.value ?? 0) - (a.data.value ?? 0)),
+        .sum((d) => d?.weight, 1)
+        .sort((a, b) => (b.data.weight ?? 0) - (a.data.weight ?? 0)),
     [],
   );
 

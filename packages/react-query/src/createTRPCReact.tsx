@@ -15,6 +15,7 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
+import { TRPCUseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,
   createReactProxyDecoration,
@@ -177,6 +178,7 @@ export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
+  useQueries: TRPCUseQueries<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
 } & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
 
@@ -196,12 +198,12 @@ export function createHooksInternalProxy<
         const context = trpc.useContext();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtilsProxy as any)(context as any);
+          return (createReactQueryUtilsProxy as any)(context);
         }, [context]);
       };
     }
 
-    if ((key as string) in trpc) {
+    if (trpc.hasOwnProperty(key)) {
       return (trpc as any)[key];
     }
 

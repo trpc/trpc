@@ -5,6 +5,7 @@ import {
   InvalidateQueryFilters,
   RefetchOptions,
   RefetchQueryFilters,
+  ResetOptions,
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
@@ -35,7 +36,7 @@ type DecorateProcedure<
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -47,7 +48,7 @@ type DecorateProcedure<
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -59,7 +60,7 @@ type DecorateProcedure<
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchquery
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -71,7 +72,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -84,7 +85,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
     input?: inferProcedureInput<TProcedure>,
@@ -93,7 +94,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientrefetchqueries
    */
   refetch(
     input?: inferProcedureInput<TProcedure>,
@@ -102,7 +103,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-cancellation
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientcancelqueries
    */
   cancel(
     input?: inferProcedureInput<TProcedure>,
@@ -110,7 +111,15 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientresetqueries
+   */
+  reset(
+    input?: inferProcedureInput<TProcedure>,
+    options?: ResetOptions,
+  ): Promise<void>;
+
+  /**
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata
    */
   setData(
     /**
@@ -125,7 +134,7 @@ type DecorateProcedure<
   ): void;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
@@ -137,14 +146,14 @@ type DecorateProcedure<
   ): void;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
   ): inferTransformedProcedureOutput<TProcedure> | undefined;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
@@ -248,6 +257,7 @@ export function createReactQueryUtilsProxy<
         prefetchInfinite: () =>
           context.prefetchInfiniteQuery(queryKey, ...rest),
         invalidate: () => context.invalidateQueries(queryKey, ...rest),
+        reset: () => context.resetQueries(queryKey, ...rest),
         refetch: () => context.refetchQueries(queryKey, ...rest),
         cancel: () => context.cancelQuery(queryKey, ...rest),
         setData: () => context.setQueryData(queryKey, updater, ...rest),

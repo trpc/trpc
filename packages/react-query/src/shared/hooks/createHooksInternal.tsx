@@ -4,6 +4,7 @@ import {
   InfiniteQueryObserverSuccessResult,
   QueryClient,
   QueryObserverSuccessResult,
+  QueryOptions,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
@@ -12,6 +13,7 @@ import {
   UseQueryResult,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
+  useQueries as __useQueries,
   useQuery as __useQuery,
   hashQueryKey,
   useQueryClient,
@@ -49,6 +51,8 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import { TRPCUseQueries } from '../../internals/useQueries';
+import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 
 export type OutputWithCursor<TData, TCursor = any> = {
@@ -82,6 +86,10 @@ export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
+export interface TRPCQueryOptions<TPath, TInput, TData, TError>
+  extends QueryOptions<TData, TError, TData, [TPath, TInput]>,
+    TRPCUseQueryBaseOptions {}
+
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
       TOutput,
@@ -107,7 +115,7 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onError?: (err: TError) => void;
 }
 
-function getClientArgs<TPathAndInput extends unknown[], TOptions>(
+export function getClientArgs<TPathAndInput extends unknown[], TOptions>(
   pathAndInput: TPathAndInput,
   opts: TOptions,
 ) {
@@ -301,7 +309,19 @@ export function createHooksInternal<
           invalidateQueries: useCallback(
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
+
               return queryClient.invalidateQueries(
+                getArrayQueryKey(queryKey, 'any'),
+                ...rest,
+              );
+            },
+            [queryClient],
+          ),
+          resetQueries: useCallback(
+            (...args: any[]) => {
+              const [queryKey, ...rest] = args;
+
+              return queryClient.resetQueries(
                 getArrayQueryKey(queryKey, 'any'),
                 ...rest,
               );
@@ -642,6 +662,37 @@ export function createHooksInternal<
     });
     return hook;
   }
+
+  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback, context) => {
+    const { ssrState, queryClient, prefetchQuery, client } = useContext();
+
+    const proxy = createUseQueriesProxy(client);
+
+    const queries = queriesCallback(proxy);
+
+    if (typeof window === 'undefined' && ssrState === 'prepass') {
+      for (const query of queries) {
+        const queryOption = query as TRPCQueryOptions<any, any, any, any>;
+        if (
+          queryOption.trpc?.ssr !== false &&
+          !queryClient
+            .getQueryCache()
+            .find(getArrayQueryKey(queryOption.queryKey!, 'query'))
+        ) {
+          void prefetchQuery(queryOption.queryKey as any, queryOption as any);
+        }
+      }
+    }
+
+    return __useQueries({
+      queries: queries.map((query) => ({
+        ...query,
+        queryKey: getArrayQueryKey(query.queryKey, 'query'),
+      })),
+      context,
+    }) as any;
+  };
+
   const useDehydratedState: UseDehydratedState<TRouter> = (
     client,
     trpcState,
@@ -661,6 +712,7 @@ export function createHooksInternal<
     createClient,
     useContext,
     useQuery,
+    useQueries,
     useMutation,
     useSubscription,
     useDehydratedState,

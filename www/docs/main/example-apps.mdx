@@ -3,14 +3,11 @@ id: example-apps
 title: Example Apps
 sidebar_label: Example Apps
 slug: /example-apps
+description: Example apps built with tRPC
 ---
 
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
-
-:::info
-Some of the examples on this page need to be upgraded to V10. Please feel free to help us update!
-:::
 
 ---
 
@@ -126,22 +123,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ---
 
-### Express server with tRPC Shield and Prisma
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example
-```
-
-  </TabItem>
-</Tabs>
-
-- [Source code](https://github.com/omar-dulaimi/trpc-shield/tree/master/example)
-
----
-
 ### Minimal (Hello world) server and client in Node.js
 
 - [Source code](https://github.com/trpc/trpc/tree/main/examples/minimal)
@@ -176,8 +157,16 @@ npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/
 
 ---
 
-### Cloudflare Workers example
+### Sign-In With Ethereum Authentication With Express
 
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers)
+<Tabs>
+  <TabItem value="git" label="git">
 
----
+```bash
+git clone git@github.com:codingwithmanny/trpc-siwe-monorepo.git
+```
+
+  </TabItem>
+</Tabs>
+
+- [Source code](https://github.com/codingwithmanny/trpc-siwe-monorepo)

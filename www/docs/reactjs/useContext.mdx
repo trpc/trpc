@@ -9,7 +9,7 @@ slug: /useContext
 
 :::note
 
-In v10, `useContext` no longer exposes the raw `queryClient`. If you need some of the methods that aren't wrapped by tRPC yet, import and use it directly from `@tanstack/react-query`:
+In v10, `useContext` no longer exposes the raw `queryClient`. If you need some of the methods that aren't wrapped by tRPC yet, import and use them directly from `@tanstack/react-query`:
 
 <br />
 
@@ -235,9 +235,9 @@ function MyComponent() {
 
 ### Invalidate full cache on every mutation
 
-Keeping track of exactly what a queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the _full cache_ as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.
+Keeping track of exactly what queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the _full cache_ as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.
 
-:::caution
+:::info
 We have marked this API as `unstable_` as the exact API might change without a major version bump on tRPC, keep an eye on the release notes if you want to use this.
 :::
 

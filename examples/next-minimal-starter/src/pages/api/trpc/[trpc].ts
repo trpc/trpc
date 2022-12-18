@@ -23,7 +23,7 @@ const appRouter = router({
       };
     }),
   // 💡 Tip: Try adding a new procedure here and see if you can use it in the client!
-  // getUser: t.procedure.query(() => {
+  // getUser: publicProcedure.query(() => {
   //   return { id: '1', name: 'bob' };
   // }),
 });

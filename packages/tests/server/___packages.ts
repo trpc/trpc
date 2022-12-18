@@ -13,6 +13,8 @@ import * as mock_trpcReact from '../../react-query/src';
 jest.mock('@trpc/react-query', () => mock_trpcReact);
 import * as mock_trpcReact__ssg from '../../react-query/src/ssg';
 jest.mock('@trpc/react-query/ssg', () => mock_trpcReact__ssg);
+import * as mock_trpcReact__shared from '../../react-query/src/shared';
+jest.mock('@trpc/react-query/shared', () => mock_trpcReact__shared);
 
 import * as mock_trpcNext from '../../next/src';
 jest.mock('@trpc/next', () => mock_trpcNext);

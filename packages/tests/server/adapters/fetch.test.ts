@@ -38,6 +38,11 @@ export async function handleRequest(request: Request): Promise<Response> {
     req: request,
     router,
     createContext,
+    responseMeta() {
+      return {
+        headers: {},
+      };
+    },
   });
 }
 

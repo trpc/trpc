@@ -1,4 +1,5 @@
 import { inferObservableValue } from '../observable';
+import { inferTransformedProcedureOutput } from '../shared';
 import { AnyProcedure, ProcedureArgs } from './procedure';
 import { AnyRouter, AnyRouterDef, Router } from './router';
 
@@ -59,7 +60,7 @@ type GetInferenceHelpers<
       : TRouterOrProcedure extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<TRouterOrProcedure>
-        : inferProcedureOutput<TRouterOrProcedure>
+        : inferTransformedProcedureOutput<TRouterOrProcedure>
       : never
     : never;
 };

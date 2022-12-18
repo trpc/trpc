@@ -4,7 +4,7 @@ export const GithubSponsorButton = () => {
   return (
     <a
       id="sponsor-button"
-      href="https://github.com/sponsors/KATT"
+      href="https://trpc.io/sponsor"
       className="h-12 transition flex items-center gap-4 dark:bg-zinc-800 px-4 py-2 w-max rounded-lg group hover:dark:bg-zinc-900 border-2 dark:border-zinc-900 hover:dark:border-zinc-700 bg-zinc-200 hover:bg-zinc-100"
     >
       <svg

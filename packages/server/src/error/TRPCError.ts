@@ -17,7 +17,7 @@ export class TRPCError extends Error {
     const message =
       opts.message ?? getMessageFromUnknownError(opts.cause, code);
     const cause: Error | undefined =
-      opts !== undefined ? getErrorFromUnknown(opts.cause) : undefined;
+      opts.cause !== undefined ? getErrorFromUnknown(opts.cause) : undefined;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause

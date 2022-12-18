@@ -9,7 +9,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 
 ## Authorization
 
-In the example below any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
+In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
 ```ts
 import { initTRPC } from '@trpc/server';
@@ -125,49 +125,3 @@ export const appRouter = router({
   //                                                 ^?
 });
 ```
-
-
-
-<!-- Commented out this section as I don't think it's needed anymore now that we can have multiple input parsers -->
-<!--
-
-
-## Raw input
-
-A middleware can access the raw input that will be passed to a procedure. This can be used for authentication / other preprocessing in the middleware that requires access to the procedure input, and can be especially useful when used in conjunction with Context Swapping.
-
-:::caution
-The `rawInput` passed to a middleware has not yet been validated by a procedure's `input` schema / validator, so be careful when using it! Because of this, `rawInput` has type `unknown`. For more info see [#1059](https://github.com/trpc/trpc/pull/1059#issuecomment-932985023).
-:::
-
-```ts
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.create();
-
-const inputSchema = z.object({ userId: z.string() });
-
-const isUserIdChecked = t.middleware(async ({ next, rawInput, ctx }) => {
-  const result = inputSchema.safeParse(rawInput);
-  if (!result.success) {
-    throw new TRPCError({ code: 'BAD_REQUEST' });
-  }
-  const { userId } = result.data;
-  // Check user id auth
-  return next({
-    ctx: { 
-      userId,
-    },
-  });
-});
-
-export const userProtectedProcedure = t.procedure.use(isUserIdChecked);
-
-export const appRouter = t.router({
-  userId: userProtectedProcedure
-    .input(inputSchema)
-    .query(({ ctx }) => ctx.userId),
-});
-```
-
--->
