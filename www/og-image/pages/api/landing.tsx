@@ -7,19 +7,21 @@ export const config = {
   runtime: 'experimental-edge',
 };
 
-console.log('env', process.env);
+console.log('env', process.env.TWITTER_BEARER_TOKEN, process.env.GITHUB_TOKEN);
 
 const env = z
   .object({
     GITHUB_TOKEN: z.string().min(1),
     TWITTER_BEARER_TOKEN: z.string().min(1),
   })
-  .parse(process.env);
+  .parse({
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN,
+  });
 
 const fetchStars = async () => {
-  const auth = 'some-str-for-now'; // Buffer.from(env.GITHUB_TOKEN, 'binary').toString('base64');
   const res = await fetch('https://api.github.com/repos/tRPC/tRPC', {
-    headers: { authorization: `Basic ${auth}` },
+    headers: { authorization: `Bearer ${env.GITHUB_TOKEN}` },
   });
   const data = await res.json();
   if (typeof data?.stargazers_count !== 'number')
