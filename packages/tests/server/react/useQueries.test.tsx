@@ -105,8 +105,10 @@ test('mapping queries', async () => {
       ids.map((id) => t.post.byId({ id })),
     );
 
-    results[0]?.data;
-    //           ^?
+    if (results[0]?.data) {
+      //             ^?
+      expectTypeOf(results[0].data).toEqualTypeOf<`__result${string}`>();
+    }
 
     return (
       <pre>{JSON.stringify(results.map((v) => v.data) ?? 'n/a', null, 4)}</pre>
