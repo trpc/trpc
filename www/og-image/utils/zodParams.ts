@@ -1,17 +1,15 @@
 import { z } from 'zod';
 
-const isJSON = (str: string) => {
+type Primitives = string | number | boolean | null;
+type JsonValue = Primitives | JsonValue[] | { [key: string]: JsonValue };
+
+const jsonStr = z.string().transform((str, ctx) => {
   try {
-    JSON.parse(str);
-    return true;
-  } catch {
-    return false;
+    return JSON.parse(str) as JsonValue;
+  } catch (error) {
+    ctx.addIssue({ code: 'custom', message: 'Needs to be JSON' });
   }
-};
-const jsonStr = z
-  .string()
-  .refine(isJSON, 'Needs to be JSON')
-  .transform((str) => JSON.parse(str));
+});
 
 export function zodParams<TType>(schema: z.ZodType<TType>) {
   const querySchema = z.object({
