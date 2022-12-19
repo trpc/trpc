@@ -68,7 +68,7 @@ export const TwitterWall = () => {
                     alt={tweet.user.username}
                     className="w-12 h-12 rounded-full"
                   />
-                  <cite className="group-hover:underline">
+                  <cite className="group-hover:underline not-italic">
                     <p className="text-base font-bold">{tweet.user.name}</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
                       @{tweet.user.username}
