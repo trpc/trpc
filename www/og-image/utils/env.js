@@ -12,13 +12,16 @@ const envSchema = z.object({
   TWITTER_BEARER_TOKEN: z.string().min(1),
 });
 
-const env = envSchema.safeParse(process.env);
+const env = envSchema.safeParse({
+  GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+  TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN,
+});
 
 if (!env.success) {
   console.error(
     '❌ Invalid environment variables:',
     JSON.stringify(env.error.format(), null, 4),
   );
-  process.exit(1);
+  throw new Error('Invalid env vars');
 }
 module.exports.env = env.data;
