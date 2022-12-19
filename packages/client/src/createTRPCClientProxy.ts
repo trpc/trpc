@@ -19,7 +19,7 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { CreateTRPCClientOptions } from './createBaseTRPCClient';
+import { CreateTRPCClientOptions } from './createGenericTRPCClient';
 import { TRPCClient } from './createTRPCClient';
 import { BaseTRPCClient } from './internals/BaseTRPCClient';
 import { TRPCSubscriptionObserver } from './internals/BaseTRPCClient';
