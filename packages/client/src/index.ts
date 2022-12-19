@@ -1,4 +1,4 @@
-export * from './createBaseTRPCClient';
+export * from './createGenericTRPCClient';
 export * from './createTRPCClient';
 export * from './createTRPCClientProxy';
 export * from './getFetch';

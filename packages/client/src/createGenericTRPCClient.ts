@@ -4,7 +4,7 @@ import {
 } from './internals/BaseTRPCClient';
 import { httpBatchLink } from './links';
 
-export function createBaseTRPCClient(opts: CreateTRPCClientOptions) {
+export function createGenericTRPCClient(opts: CreateTRPCClientOptions) {
   const getLinks = () => {
     if ('links' in opts) {
       return opts.links;
