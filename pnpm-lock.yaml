@@ -921,7 +921,7 @@ importers:
   packages/server:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@fastify/websocket': ^5.0.0
+      '@fastify/websocket': ^7.0.0
       '@miniflare/core': ^2.9.0
       '@tanstack/react-query': 4.6.0
       '@types/aws-lambda': ^8.10.97
@@ -955,7 +955,7 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@cloudflare/workers-types': 3.18.0
-      '@fastify/websocket': 5.0.1
+      '@fastify/websocket': 7.1.1
       '@miniflare/core': 2.11.0
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@types/aws-lambda': 8.10.109
@@ -3747,6 +3747,17 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: false
+
+  /@fastify/websocket/7.1.1:
+    resolution: {integrity: sha512-8lvB/E6p/o3MlmHzM2NJ19ixteI6Ckw0xOebLfoHoORPmpvCWqSp8+HLz4Gc6HrChH4vM9VcSWAK8jYuTT08hQ==}
+    dependencies:
+      fastify-plugin: 4.4.0
+      ws: 8.11.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: true
 
   /@gar/promisify/1.1.3:
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
@@ -11411,6 +11422,10 @@ packages:
 
   /fastify-plugin/3.0.1:
     resolution: {integrity: sha512-qKcDXmuZadJqdTm6vlCqioEbyewF60b/0LOFCcYN1B6BIZGlYJumWWOYs70SFYLDAH4YqdE1cxH/RKMG7rFxgA==}
+
+  /fastify-plugin/4.4.0:
+    resolution: {integrity: sha512-ovwFQG2qNy3jcCROiWpr94Hs0le+c7N/3t7m9aVwbFhkxcR/esp2xu25dP8e617HpQdmeDv+gFX4zagdUhDByw==}
+    dev: true
 
   /fastify/3.29.4:
     resolution: {integrity: sha512-BEyKidZQvscNaiF1BLh+YLE7AzHH03NexhPzrwZP6KBQ+jG2czdgq72X+RFB5rK9hbqdaafVb5yiWN+hCvHfYg==}
