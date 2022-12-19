@@ -1,6 +1,6 @@
 {
   "name": "www",
-  "version": "10.5.0",
+  "version": "10.6.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -27,10 +27,10 @@
     "@docusaurus/types": "^2.2.0",
     "@mdx-js/react": "^1.6.22",
     "@tailwindcss/line-clamp": "^0.4.2",
-    "@trpc/client": "^10.5.0",
-    "@trpc/next": "^10.5.0",
-    "@trpc/react-query": "^10.5.0",
-    "@trpc/server": "^10.5.0",
+    "@trpc/client": "^10.6.0",
+    "@trpc/next": "^10.6.0",
+    "@trpc/react-query": "^10.6.0",
+    "@trpc/server": "^10.6.0",
     "@visx/hierarchy": "^2.10.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.1.1",
