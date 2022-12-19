@@ -104,8 +104,8 @@ module.exports = {
         slug: '/react-query',
       },
       items: [
-        'reactjs/queries',
-        'reactjs/mutations',
+        'reactjs/useQuery',
+        'reactjs/useMutation',
         'reactjs/useInfiniteQuery',
         'reactjs/useContext',
         'reactjs/useQueries',
