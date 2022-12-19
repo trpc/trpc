@@ -1,21 +1,11 @@
 /* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
-import { z } from 'zod';
+import { env } from '../../utils/env';
 import { fetchFont } from '../../utils/fetchFont';
 
 export const config = {
   runtime: 'experimental-edge',
 };
-
-const env = z
-  .object({
-    GITHUB_TOKEN: z.string().min(1),
-    TWITTER_BEARER_TOKEN: z.string().min(1),
-  })
-  .parse({
-    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
-    TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN,
-  });
 
 const fetchGithubStars = async () => {
   const data = await (
