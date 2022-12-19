@@ -56,7 +56,7 @@
       "permanent": true
     },
     {
-      "source": "/docs/react-query",
+      "source": "/docs/react-queries",
       "destination": "/docs/useQuery",
       "permanent": true
     },
