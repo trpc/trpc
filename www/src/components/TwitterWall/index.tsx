@@ -45,7 +45,7 @@ const latestTweets = tweets.data
   })
   // Sort by follower count
   .sort((a, b) => b.public_metrics.like_count - a.public_metrics.like_count)
-  .slice(0, 10);
+  .slice(0, 12);
 
 export const TwitterWall = () => {
   return (
@@ -68,10 +68,10 @@ export const TwitterWall = () => {
                     alt={tweet.user.username}
                     className="w-12 h-12 rounded-full"
                   />
-                  <cite className="group-hover:underline">
+                  <cite className="group-hover:underline not-italic">
                     <p className="text-base font-bold">{tweet.user.name}</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      {tweet.user.username}
+                      @{tweet.user.username}
                     </p>
                   </cite>
                 </div>
