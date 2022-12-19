@@ -1,10 +1,6 @@
 # Prisma + tRPC + WebSockets
 
-> ℹ️ WebSockets is a beta feature & may change without major version bump ℹ️
-
-
-- Try demo http://websockets.trpc.io/
-
+Try demo http://websockets.trpc.io/
 
 ## Features
 
