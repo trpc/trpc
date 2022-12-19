@@ -108,7 +108,7 @@ module.exports = {
         'reactjs/mutations',
         'reactjs/useInfiniteQuery',
         'reactjs/useContext',
-        'reactjs/usequeries',
+        'reactjs/useQueries',
       ],
     },
     {
