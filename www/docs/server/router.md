@@ -68,7 +68,7 @@ When initializing your router, tRPC allows you to:
 You can use method chaining to customize your `t`-object on initialization. For example:
 
 ```ts
-const t = initTRPC().context<Context>().meta<Meta>().create({
+const t = initTRPC.context<Context>().meta<Meta>().create({
   /* [...] */
 });
 ```
