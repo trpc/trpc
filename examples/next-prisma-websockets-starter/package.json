@@ -2,6 +2,10 @@
   "name": "@examples/next-websockets-starter",
   "version": "10.5.0",
   "private": true,
+  "engines": {
+    "node": "^18.0.0"
+  },
+  "packageManager": "pnpm@7.18.2",
   "scripts": {
     "build:1-generate": "prisma generate",
     "build:2-migrate": "prisma migrate deploy",
