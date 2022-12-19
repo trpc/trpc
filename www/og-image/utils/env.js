@@ -19,9 +19,10 @@ const env = envSchema.safeParse({
 
 if (!env.success) {
   console.error(
-    '❌ Invalid environment variables:',
+    '❌ Invalid environment variables. Some OG images will not work.',
     JSON.stringify(env.error.format(), null, 4),
   );
+
   throw new Error('Invalid env vars');
 }
 module.exports.env = env.data;

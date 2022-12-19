@@ -143,9 +143,9 @@ export default async (_req: Request) => {
       </div>
     ),
     {
-      // headers: {
-      //   'Cache-Control': 'public,s-maxage=86400',
-      // },
+      headers: {
+        'Cache-Control': 's-maxage=86400, stale-while-revalidate',
+      },
       width: 1200,
       height: 600,
       fonts: [
