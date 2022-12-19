@@ -19,4 +19,6 @@ services:
 
 databases:
   - name: trpc-websockets-db
-    plan: free
+    # you can change the below to "free"
+    plan: starter
+    # plan: free
