@@ -1,9 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
+const { PHASE_PRODUCTION_BUILD } = require('next/constants');
 
-// Validate that env vars are legit
-require('./utils/env');
+module.exports = (phase, { defaultConfig }) => {
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    // validate env vars
+    require('./src/utils/env');
+  }
+  /**
+   * @type {import('next').NextConfig}
+   */
+  const nextConfig = {
+    reactStrictMode: true,
+  };
 
-/** @type {import('next').NextConfig} */
-module.exports = {
-  reactStrictMode: true,
+  return nextConfig;
 };
