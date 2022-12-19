@@ -1,5 +1,5 @@
-# previewsEnabled: true
-# previewsExpireAfterDays: 1 # automatically delete the environment after the specified number of days of inactivity
+previewsEnabled: true
+previewsExpireAfterDays: 7 # automatically delete the environment after the specified number of days of inactivity
 services:
   - type: web
     name: trpc-websockets
@@ -9,8 +9,8 @@ services:
     startCommand: pnpm start
     healthCheckPath: /api/trpc/healthcheck
     # Preview Environment Initialization
-    initialDeployHook: |
-      pnpm run db-seed
+    # initialDeployHook: |
+    #   pnpm run db-seed
     envVars:
       - key: NODE_ENV
         value: production
