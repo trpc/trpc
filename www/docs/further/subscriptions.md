@@ -5,10 +5,6 @@ sidebar_label: Subscriptions / WebSockets
 slug: /subscriptions
 ---
 
-:::info
-Subscriptions & WebSockets are in beta & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc).
-:::
-
 ## Using Subscriptions
 
 :::tip
