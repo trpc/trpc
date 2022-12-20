@@ -1,3 +1,4 @@
+import { getTRPCErrorFromUnknown } from '../../error/utils';
 import { Parser } from '../parser';
 
 export type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
@@ -35,7 +36,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return (value) => {
       const decoded = parser.decode.bind(parser)(value);
       if (decoded.left) {
-        throw decoded.left;
+        throw getTRPCErrorFromUnknown(decoded.left);
       }
       return decoded.right;
     };
