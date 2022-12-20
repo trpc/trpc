@@ -18,7 +18,7 @@
 
 ## Documentation
 
-Full documentation for `@trpc/react-query` can be found [here](https://trpc.io/docs/react-queries)
+Full documentation for `@trpc/react-query` can be found [here](https://trpc.io/docs/react-query)
 
 ## Installation
 
