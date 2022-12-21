@@ -498,7 +498,10 @@ export function createHooksInternal<
     TContext
   > {
     const { client } = useContext();
-    const queryClient = useQueryClient({ context: ReactQueryContext });
+    const queryClient = useQueryClient({  
+      context: ReactQueryContext,
+      ...opts, 
+    });
 
     const hook = __useMutation(
       (input) => {
