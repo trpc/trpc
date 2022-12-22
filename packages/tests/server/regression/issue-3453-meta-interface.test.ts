@@ -14,3 +14,13 @@ test('context as interface', () => {
   }
   initTRPC.context<Context>();
 });
+
+test('bad: meta as primitive', () => {
+  // @ts-expect-error this is not allowed
+  initTRPC.meta<1>();
+});
+
+test('bad: context as primitive', () => {
+  // @ts-expect-error this is not allowed
+  initTRPC.context<1>();
+});
