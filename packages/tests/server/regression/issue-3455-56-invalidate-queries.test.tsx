@@ -110,7 +110,7 @@ test('tanstack query queries are invalidated', async () => {
 
     return (
       <>
-        <button onClick={() => utils.invalidate()}>Invalidate</button>
+        <button data-testid="invalidate" onClick={() => utils.invalidate()} />
         {rqQuery.isFetching ? 'rq:fetching' : 'rq:done'}
         {trpcQuery.isFetching ? 'trpc:fetching' : 'trpc:done'}
       </>
@@ -127,7 +127,7 @@ test('tanstack query queries are invalidated', async () => {
     expect(utils.container).toHaveTextContent('trpc:done');
   });
 
-  await userEvent.click(utils.getByText('Invalidate'));
+  await userEvent.click(utils.getByTestId('invalidate'));
 
   expect(utils.container).toHaveTextContent('rq:fetching');
   expect(utils.container).toHaveTextContent('trpc:fetching');
