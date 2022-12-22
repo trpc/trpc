@@ -1,4 +1,9 @@
-[![tRPC](https://assets.trpc.io/www/trpc-readme.png)](https://trpc.io/)
+<a href="https://trpc.io/" target="_blank" rel="noopener">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://assets.trpc.io/www/trpc-readme-dark.png" />
+    <img alt="tRPC" src="https://assets.trpc.io/www/trpc-readme.png" />
+  </picture>
+</a>
 
 <div align="center">
   <h1>tRPC</h1>
