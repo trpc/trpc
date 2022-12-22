@@ -3,12 +3,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
+import { IncomingMessage, ServerResponse } from 'http';
 import fetch from 'node-fetch';
 
 test('set custom headers in beforeEnd', async () => {
   const onError = jest.fn();
 
-  const t = initTRPC.context().create();
+  interface Context {
+    req: IncomingMessage;
+    res: ServerResponse<IncomingMessage>;
+  }
+  const t = initTRPC.context<Context>().create();
 
   const appRouter = t.router({
     ['public.q']: t.procedure.query(({}) => {
