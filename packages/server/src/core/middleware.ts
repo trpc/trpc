@@ -135,6 +135,10 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return {
       _self: fn,
+      // if we're going to pipe _n_ middlewares together
+      // we probably need to merge them in like in procedurebuilder
+      // we're also probably not preserving prev state
+      // its late...
       pipe(middleware) {
         return middleware as unknown as AnyMiddlewareBuilder;
       },
