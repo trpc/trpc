@@ -8,11 +8,11 @@ import { Unsubscribable } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import {
-  BaseTRPCClient as Client,
+  GenericTRPCClient as Client,
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCSubscriptionObserver,
-} from './internals/BaseTRPCClient';
+} from './internals/GenericTRPCClient';
 import { TRPCClientRuntime, httpBatchLink } from './links';
 
 export interface TRPCClient<TRouter extends AnyRouter> {

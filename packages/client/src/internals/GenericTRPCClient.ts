@@ -49,7 +49,7 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter = AnyRouter> =
       links: TRPCLink<TRouter>[];
     };
 
-export class BaseTRPCClient {
+export class GenericTRPCClient {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;

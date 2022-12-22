@@ -1,7 +1,7 @@
 import {
-  BaseTRPCClient as Client,
+  GenericTRPCClient as Client,
   CreateTRPCClientOptions,
-} from './internals/BaseTRPCClient';
+} from './internals/GenericTRPCClient';
 import { httpBatchLink } from './links';
 
 export function createGenericTRPCClient(opts: CreateTRPCClientOptions) {
@@ -20,6 +20,6 @@ export function createGenericTRPCClient(opts: CreateTRPCClientOptions) {
 
 export type {
   CreateTRPCClientOptions,
-  BaseTRPCClient,
+  GenericTRPCClient,
   TRPCRequestOptions,
-} from './internals/BaseTRPCClient';
+} from './internals/GenericTRPCClient';
