@@ -54,8 +54,8 @@ export interface MiddlewareBuilder<
   TNewParams extends ProcedureParams,
 > {
   pipe<$Params extends ProcedureParams>(
-    fn: MiddlewareFunction<TParams, $Params>,
-  ): CreateMiddlewareReturnInput<TParams, $Params>;
+    fn: MiddlewareFunction<TNewParams, $Params>,
+  ): CreateMiddlewareReturnInput<TNewParams, $Params>;
 
   _self: MiddlewareFunction<TParams, TNewParams>;
 }
@@ -64,6 +64,7 @@ type CreateMiddlewareReturnInput<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
 > = MiddlewareBuilder<
+  TPrev,
   {
     _config: TPrev['_config'];
     _meta: TPrev['_meta'];
@@ -72,8 +73,7 @@ type CreateMiddlewareReturnInput<
     _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
     _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
     _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
-  },
-  TNext
+  }
 >;
 
 type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
@@ -130,6 +130,7 @@ export type MiddlewareFunction<
 // }
 
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
+  // function createInner(before, after) {}
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
@@ -140,6 +141,7 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
       // we're also probably not preserving prev state
       // its late...
       pipe(middleware) {
+        // return middleware as any;
         return middleware as unknown as AnyMiddlewareBuilder;
       },
     };

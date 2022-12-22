@@ -7,37 +7,13 @@ test('decorate independently', () => {
     name: string;
   };
   type Context = {
-    user: User | null;
+    user: User;
   };
   const t = initTRPC.context<Context>().create();
 
-  const isAuthed = t.middleware(({ next, ctx }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-      });
-    }
-    return next({
-      ctx: {
-        user: ctx.user,
-      },
-    });
-  });
-  const addService = t.middleware(({ next, ctx }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-      });
-    }
-    return next({
-      ctx: {
-        doSomething: () => {
-          return 'very cool service';
-        },
-      },
-    });
-  });
   const fooMiddleware = t.middleware((opts) => {
+    expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
+    //   ^?
     return opts.next({
       ctx: {
         foo: 'foo' as const,
@@ -46,32 +22,43 @@ test('decorate independently', () => {
   });
 
   const barMiddleware = fooMiddleware.pipe((opts) => {
+    //                   ^?
     opts.ctx.foo;
+    expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      foo: 'foo';
+    }>();
     //        ^?
     return opts.next({
       ctx: {
-        bar: 'baz' as const,
+        bar: 'bar' as const,
       },
     });
   });
 
   const bazMiddleware = barMiddleware.pipe((opts) => {
-    opts.ctx.foo;
-    //        ^?
+    expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
+    expectTypeOf(opts.ctx.foo).toMatchTypeOf<'foo'>();
+    expectTypeOf(opts.ctx.bar).toMatchTypeOf<'bar'>();
     return opts.next({
       ctx: {
-        bar: 'baz' as const,
+        baz: 'baz' as const,
       },
     });
   });
 
-  t.procedure
-    .use(isAuthed._self)
-    .use(addService._self)
-    .query(({ ctx }) => {
-      expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
-      expectTypeOf(ctx.user).toMatchTypeOf<User>();
-    });
+  // TODO
+  // 1. test type in resolver
+  // 2. snapshot ctx in resolver
+
+  // throw new Error('TODO')
+  // t.procedure
+  //   .use(isAuthed._self)
+  //   .use(addService._self)
+  //   .query(({ ctx }) => {
+  //     expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
+  //     expectTypeOf(ctx.user).toMatchTypeOf<User>();
+  //   });
 });
 
 test('meta', () => {
