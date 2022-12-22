@@ -48,6 +48,11 @@
       "require": "./dist/adapters/aws-lambda/index.js",
       "default": "./dist/adapters/aws-lambda/index.js"
     },
+    "./adapters/azure-func": {
+      "import": "./dist/adapters/azure-func/index.mjs",
+      "require": "./dist/adapters/azure-func/index.js",
+      "default": "./dist/adapters/azure-func/index.js"
+    },
     "./adapters/express": {
       "import": "./dist/adapters/express.mjs",
       "require": "./dist/adapters/express.js",
@@ -124,6 +129,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@azure/functions": "^3.0.0",
     "@cloudflare/workers-types": "^3.14.1",
     "@fastify/websocket": "^5.0.0",
     "@miniflare/core": "^2.9.0",
