@@ -61,6 +61,10 @@ const ctx = konn()
             return newPost;
           }),
       }),
+
+      greeting: t.router({
+        get: t.procedure.query(() => 'hello'),
+      }),
     });
 
     return getServerAndReactClient(appRouter);
@@ -361,6 +365,71 @@ test('invalidate procedure for both query and infinite', async () => {
     expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
     expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
   });
+});
+
+test('invalidate with filter', async () => {
+  const { proxy, App } = ctx;
+  const greetingSpy = jest.fn();
+  const postSpy = jest.fn();
+
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      onSuccess: () => postSpy(),
+    });
+    const greeting = proxy.greeting.get.useQuery(undefined, {
+      onSuccess: () => greetingSpy(),
+    });
+
+    const utils = proxy.useContext();
+
+    return (
+      <>
+        <button
+          data-testid="invalidate"
+          onClick={() => {
+            utils.invalidate(undefined, {
+              predicate: (query) => {
+                return (query.queryKey[0] as string[])[0] === 'post';
+              },
+            });
+          }}
+        />
+        {allPosts.isFetching ? 'posts:fetching' : 'posts:done'}
+        {allPosts.data?.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+        {greeting.isFetching ? 'greeting:fetching' : 'greeting:done'}
+        {greeting.data}
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('posts:done');
+    expect(utils.container).toHaveTextContent('greeting:done');
+  });
+
+  const invalidateButton = await utils.findByTestId('invalidate');
+  await userEvent.click(invalidateButton);
+
+  // post should match the filter and be invalidated
+  // greeting should not and thus still be done
+  expect(utils.container).toHaveTextContent('posts:fetching');
+  expect(utils.container).toHaveTextContent('greeting:done');
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('posts:done');
+    expect(utils.container).toHaveTextContent('greeting:done');
+  });
+
+  expect(postSpy).toHaveBeenCalledTimes(2);
+  expect(greetingSpy).toHaveBeenCalledTimes(1);
 });
 
 test('reset', async () => {
