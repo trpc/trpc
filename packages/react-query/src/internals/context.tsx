@@ -160,13 +160,6 @@ export interface TRPCContextState<
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
-  /**
-   * @link https://react-query.tanstack.com/guides/query-invalidation
-   */
-  invalidateQueries(
-    filters?: InvalidateQueryFilters,
-    options?: InvalidateOptions,
-  ): Promise<void>;
 
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries

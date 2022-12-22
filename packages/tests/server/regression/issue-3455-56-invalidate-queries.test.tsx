@@ -25,7 +25,10 @@ const ctx = konn()
         all: t.procedure.query(() => posts),
       }),
 
-      greeting: t.procedure.query(() => 'Hello trpc'),
+      greeting: t.procedure.query(async () => {
+        await new Promise((res) => setTimeout(res, 500));
+        return 'Hello trpc';
+      }),
     });
     return getServerAndReactClient(appRouter);
   })
@@ -105,7 +108,10 @@ test('tanstack query queries are invalidated', async () => {
   function MyComponent() {
     const utils = proxy.useContext();
 
-    const rqQuery = useQuery(['test'], async () => 'Hello tanstack');
+    const rqQuery = useQuery(['test'], async () => {
+      await new Promise((res) => setTimeout(res, 500));
+      return 'Hello tanstack';
+    });
     const trpcQuery = proxy.greeting.useQuery();
 
     return (

@@ -25,7 +25,10 @@ export function getArrayQueryKey(
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
-  if (!input && (!type || type === 'any')) return [arrayPath];
+  if (!input && (!type || type === 'any'))
+    // for `utils.invalidate()` to match all queries (including vanilla react-query)
+    // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
+    return arrayPath.length ? [arrayPath] : ([] as unknown as QueryKey);
   return [
     arrayPath,
     {
