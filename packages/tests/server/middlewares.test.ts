@@ -16,6 +16,7 @@ test('decorate independently', () => {
     //   ^?
     return opts.next({
       ctx: {
+        // ...opts.ctx,
         foo: 'foo' as const,
       },
     });
@@ -47,18 +48,18 @@ test('decorate independently', () => {
     });
   });
 
+  bazMiddleware._self;
+  //             ^?
+
   // TODO
   // 1. test type in resolver
   // 2. snapshot ctx in resolver
 
-  // throw new Error('TODO')
-  // t.procedure
-  //   .use(isAuthed._self)
-  //   .use(addService._self)
-  //   .query(({ ctx }) => {
-  //     expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
-  //     expectTypeOf(ctx.user).toMatchTypeOf<User>();
-  //   });
+  // // throw new Error('TODO')
+  // t.procedure.use(bazMiddleware._self).query(({ ctx }) => {
+  //   expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
+  //   expectTypeOf(ctx.user).toMatchTypeOf<User>();
+  // });
 });
 
 test('meta', () => {

@@ -48,22 +48,49 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
   | MiddlewareErrorResult<TParams>;
 
-type AnyMiddlewareBuilder = MiddlewareBuilder<any, any>;
+type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any>;
 export interface MiddlewareBuilder<
+  TRoot extends ProcedureParams,
   TParams extends ProcedureParams,
   TNewParams extends ProcedureParams,
 > {
   pipe<$Params extends ProcedureParams>(
-    fn: MiddlewareFunction<TNewParams, $Params>,
-  ): CreateMiddlewareReturnInput<TNewParams, $Params>;
+    fn: MiddlewareFunction<
+      {
+        _config: TRoot['_config'];
+        _meta: TRoot['_meta'];
+        _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
+        _input_in: FallbackValue<TRoot['_input_in'], TNewParams['_input_in']>;
+        _input_out: FallbackValue<
+          TRoot['_input_out'],
+          TNewParams['_input_out']
+        >;
+        _output_in: FallbackValue<
+          TRoot['_output_in'],
+          TNewParams['_output_in']
+        >;
+        _output_out: FallbackValue<
+          TRoot['_output_out'],
+          TNewParams['_output_out']
+        >;
+      },
+      $Params
+    >,
+  ): CreateMiddlewareReturnInput<
+    TRoot,
+    TNewParams,
+    Overwrite<TNewParams, $Params>
+  >;
 
   _self: MiddlewareFunction<TParams, TNewParams>;
 }
 
 type CreateMiddlewareReturnInput<
+  TRoot extends ProcedureParams,
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
 > = MiddlewareBuilder<
+  TRoot,
   TPrev,
   {
     _config: TPrev['_config'];
@@ -117,23 +144,15 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-/**
- * @internal
- */
-// FIXME this should use RootConfig
-// export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
-//   return function createMiddleware<TNewParams extends ProcedureParams>(
-//     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
-//   ) {
-//     return fn;
-//   };
-// }
-
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   // function createInner(before, after) {}
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+  ): MiddlewareBuilder<
+    deriveParamsFromConfig<TConfig>,
+    deriveParamsFromConfig<TConfig>,
+    TNewParams
+  > {
     return {
       _self: fn,
       // if we're going to pipe _n_ middlewares together
