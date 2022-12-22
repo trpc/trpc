@@ -18,7 +18,7 @@ import { initTRPC } from '@trpc/server';
 
 // [...]
 
-interface Meta {
+type Meta = {
   hasAuth: boolean;
 }
 
@@ -36,7 +36,7 @@ import { initTRPC } from '@trpc/server';
 
 // [...]
 
-interface Meta {
+type Meta = {
   hasAuth: boolean;
 }
 
