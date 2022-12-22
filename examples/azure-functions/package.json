@@ -1,0 +1,25 @@
+{
+  "name": "azure-func-trpc-example",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "npm run build",
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "@trpc/client": "^10.6.0",
+    "@trpc/server": "^10.6.0",
+    "cross-fetch": "^3.1.5",
+    "ts-node": "^10.9.1",
+    "zod": "^3.20.2"
+  },
+  "devDependencies": {
+    "@azure/functions": "^3.0.0",
+    "azure-functions-core-tools": "^4.x",
+    "@types/node": "16.x",
+    "typescript": "^4.0.0"
+  }
+}
