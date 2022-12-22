@@ -37,10 +37,37 @@ test('decorate independently', () => {
       },
     });
   });
+  const fooMiddleware = t.middleware((opts) => {
+    return opts.next({
+      ctx: {
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const barMiddleware = fooMiddleware.pipe((opts) => {
+    opts.ctx.foo;
+    //        ^?
+    return opts.next({
+      ctx: {
+        bar: 'baz' as const,
+      },
+    });
+  });
+
+  const bazMiddleware = barMiddleware.pipe((opts) => {
+    opts.ctx.foo;
+    //        ^?
+    return opts.next({
+      ctx: {
+        bar: 'baz' as const,
+      },
+    });
+  });
 
   t.procedure
-    .use(isAuthed)
-    .use(addService)
+    .use(isAuthed._self)
+    .use(addService._self)
     .query(({ ctx }) => {
       expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
       expectTypeOf(ctx.user).toMatchTypeOf<User>();

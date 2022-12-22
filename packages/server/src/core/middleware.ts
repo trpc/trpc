@@ -3,7 +3,11 @@ import { getCauseFromUnknown } from '../error/utils';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
-import { MiddlewareMarker } from './internals/utils';
+import {
+  DefaultValue as FallbackValue,
+  MiddlewareMarker,
+  Overwrite,
+} from './internals/utils';
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
@@ -44,6 +48,43 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
   | MiddlewareErrorResult<TParams>;
 
+type AnyMiddlewareBuilder = MiddlewareBuilder<any, any>;
+export interface MiddlewareBuilder<
+  TParams extends ProcedureParams,
+  TNewParams extends ProcedureParams,
+> {
+  pipe<$Params extends ProcedureParams>(
+    fn: MiddlewareFunction<TParams, $Params>,
+  ): CreateMiddlewareReturnInput<TParams, $Params>;
+
+  _self: MiddlewareFunction<TParams, TNewParams>;
+}
+
+type CreateMiddlewareReturnInput<
+  TPrev extends ProcedureParams,
+  TNext extends ProcedureParams,
+> = MiddlewareBuilder<
+  {
+    _config: TPrev['_config'];
+    _meta: TPrev['_meta'];
+    _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
+    _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
+    _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
+    _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
+    _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+  },
+  TNext
+>;
+
+type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
+  _config: TConfig;
+  _ctx_out: TConfig['$types']['ctx'];
+  _input_out: unknown;
+  _input_in: unknown;
+  _output_in: unknown;
+  _output_out: unknown;
+  _meta: TConfig['$types']['meta'];
+};
 /**
  * @internal
  */
@@ -80,23 +121,27 @@ export type MiddlewareFunction<
  * @internal
  */
 // FIXME this should use RootConfig
+// export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
+//   return function createMiddleware<TNewParams extends ProcedureParams>(
+//     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
+//   ) {
+//     return fn;
+//   };
+// }
+
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
-  return function createMiddleware<TNewParams extends ProcedureParams>(
-    fn: MiddlewareFunction<
-      {
-        _config: TConfig;
-        _ctx_out: TConfig['$types']['ctx'];
-        _input_out: unknown;
-        _input_in: unknown;
-        _output_in: unknown;
-        _output_out: unknown;
-        _meta: TConfig['$types']['meta'];
+  function createMiddleware<TNewParams extends ProcedureParams>(
+    fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+    return {
+      _self: fn,
+      pipe(middleware) {
+        return middleware as unknown as AnyMiddlewareBuilder;
       },
-      TNewParams
-    >,
-  ) {
-    return fn;
-  };
+    };
+  }
+
+  return createMiddleware;
 }
 
 function isPlainObject(obj: unknown) {
