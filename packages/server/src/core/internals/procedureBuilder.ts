@@ -97,6 +97,7 @@ export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 export interface ProcedureBuilder<TParams extends ProcedureParams> {
+  // (): => void;
   /**
    * Add an input parser to the procedure.
    */
