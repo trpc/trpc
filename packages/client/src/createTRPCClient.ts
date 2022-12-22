@@ -15,6 +15,9 @@ import {
 } from './internals/GenericTRPCClient';
 import { TRPCClientRuntime, httpBatchLink } from './links';
 
+/**
+ * @deprecated
+ */
 export interface TRPCClient<TRouter extends AnyRouter> {
   readonly runtime: TRPCClientRuntime;
   query<
