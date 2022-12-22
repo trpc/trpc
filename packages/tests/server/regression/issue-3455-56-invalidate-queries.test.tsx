@@ -143,3 +143,76 @@ test('tanstack query queries are invalidated', async () => {
     expect(utils.container).toHaveTextContent('trpc:done');
   });
 });
+
+test('mixed providers with more "advanced" filter', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const utils = proxy.useContext();
+
+    const rqQuery1 = useQuery(
+      ['test', 1],
+      async () => {
+        await new Promise((res) => setTimeout(res, 500));
+        return 'Hello tanstack1';
+      },
+      { retry: false },
+    );
+
+    const rqQuery2 = useQuery(
+      ['test', 2],
+      async () => {
+        await new Promise((res) => setTimeout(res, 500));
+        return 'Hello tanstack2';
+      },
+      { retry: true },
+    );
+
+    const trpcQuery = proxy.greeting.useQuery(undefined, {
+      retry: false,
+    });
+
+    return (
+      <>
+        <button
+          data-testid="invalidate"
+          onClick={() => {
+            utils.invalidate(undefined, {
+              predicate: (query) => {
+                // invalidate all queries that have `retry: false`
+                return query.options.retry === false;
+              },
+            });
+          }}
+        />
+        {rqQuery1.isFetching ? 'rq1:fetching' : 'rq1:done'}
+        {rqQuery2.isFetching ? 'rq2:fetching' : 'rq2:done'}
+        {trpcQuery.isFetching ? 'trpc:fetching' : 'trpc:done'}
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('rq1:done');
+    expect(utils.container).toHaveTextContent('rq2:done');
+    expect(utils.container).toHaveTextContent('trpc:done');
+  });
+
+  await userEvent.click(utils.getByTestId('invalidate'));
+
+  expect(utils.container).toHaveTextContent('rq1:fetching');
+  expect(utils.container).toHaveTextContent('rq2:done');
+  expect(utils.container).toHaveTextContent('trpc:fetching');
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('rq1:done');
+    expect(utils.container).toHaveTextContent('rq2:done');
+    expect(utils.container).toHaveTextContent('trpc:done');
+  });
+});
