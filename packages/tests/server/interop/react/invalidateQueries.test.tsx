@@ -195,9 +195,12 @@ describe('invalidateQueries()', () => {
               utils.invalidateQueries(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
-                  const [path, input] = queryKey;
+                  const [path, rest] = queryKey;
 
-                  return path === 'count' && input === 'test';
+                  return (
+                    JSON.stringify(path) === '["count"]' &&
+                    (rest as any)?.input === 'test'
+                  );
                 },
               });
             }}
@@ -227,7 +230,7 @@ describe('invalidateQueries()', () => {
       'invalidate-2-tuple',
       'invalidate-3-exact',
       'invalidate-4-all',
-      // 'invalidate-5-predicate',
+      'invalidate-5-predicate',
     ]) {
       count++;
       // click button to invalidate
