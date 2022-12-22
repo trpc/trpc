@@ -2,7 +2,7 @@ export type QueryType = 'query' | 'infinite' | 'any';
 
 export type QueryKey = [
   string[],
-  { input?: unknown; type?: Exclude<QueryType, 'any'> },
+  { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
 /**
@@ -25,6 +25,7 @@ export function getArrayQueryKey(
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
+  if (!input && (!type || type === 'any')) return [arrayPath];
   return [
     arrayPath,
     {

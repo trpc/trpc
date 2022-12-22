@@ -1,6 +1,18 @@
 import { getArrayQueryKey } from './getArrayQueryKey';
 
 test('getArrayQueryKey', () => {
+  expect(getArrayQueryKey('', 'any')).toMatchInlineSnapshot(`
+    Array [
+      Array [],
+    ]
+  `);
+  expect(getArrayQueryKey('foo', 'any')).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "foo",
+      ],
+    ]
+  `);
   expect(getArrayQueryKey('foo', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [

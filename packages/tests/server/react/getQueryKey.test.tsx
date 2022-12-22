@@ -68,7 +68,7 @@ describe('getQueryKeys', () => {
         JSON.stringify([['post', 'all'], { type: 'query' }]),
       );
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
-        JSON.stringify([['post', 'all'], {}]),
+        JSON.stringify([['post', 'all']]),
       );
     });
   });
@@ -133,7 +133,7 @@ describe('getQueryKeys', () => {
 
     await waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
-        JSON.stringify([['post'], {}]),
+        JSON.stringify([['post']]),
       );
     });
   });
