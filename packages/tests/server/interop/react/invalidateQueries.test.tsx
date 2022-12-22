@@ -192,7 +192,7 @@ describe('invalidateQueries()', () => {
           <button
             data-testid="invalidate-5-predicate"
             onClick={() => {
-              utils.invalidateQueries({
+              utils.invalidateQueries(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
                   const [path, input] = queryKey;
