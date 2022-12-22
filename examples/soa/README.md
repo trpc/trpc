@@ -1,6 +1,6 @@
 # Service Oriented Architecture (SOA)
 
-- **Not recommended** unless you need it & may not be supported in future majors of tRPC.
+- **Not recommended** unless you really need it; if you're not sure you need it, you definitely don't need it.
 - All routers currently need to have the same Context, error formatters, etc
 
 
