@@ -1,8 +1,8 @@
 ---
-id: queries
+id: useQuery
 title: useQuery()
 sidebar_label: useQuery()
-slug: /react-queries
+slug: /useQuery
 ---
 
 :::note
