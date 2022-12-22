@@ -227,7 +227,7 @@ describe('invalidateQueries()', () => {
       'invalidate-2-tuple',
       'invalidate-3-exact',
       'invalidate-4-all',
-      'invalidate-5-predicate',
+      // 'invalidate-5-predicate',
     ]) {
       count++;
       // click button to invalidate
