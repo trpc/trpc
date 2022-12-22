@@ -27,7 +27,7 @@ const ctx = konn()
               id: z.string(),
             }),
           )
-          .query(() => '__result' as const),
+          .query(({ input }) => `__result${input.id}` as const),
       }),
       foo: t.procedure.query(() => 'foo' as const),
       bar: t.procedure.query(() => 'bar' as const),
@@ -64,7 +64,7 @@ test('single query', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
+    expect(utils.container).toHaveTextContent(`__result1`);
   });
 });
 
@@ -93,5 +93,36 @@ test('different queries', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`foo`);
     expect(utils.container).toHaveTextContent(`bar`);
+  });
+});
+
+test('mapping queries', async () => {
+  const ids = ['1', '2', '3'];
+
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const results = proxy.useQueries((t) =>
+      ids.map((id) => t.post.byId({ id })),
+    );
+
+    if (results[0]?.data) {
+      //             ^?
+      expectTypeOf(results[0].data).toEqualTypeOf<`__result${string}`>();
+    }
+
+    return (
+      <pre>{JSON.stringify(results.map((v) => v.data) ?? 'n/a', null, 4)}</pre>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`__result1`);
+    expect(utils.container).toHaveTextContent(`__result2`);
+    expect(utils.container).toHaveTextContent(`__result3`);
   });
 });

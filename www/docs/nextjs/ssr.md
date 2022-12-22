@@ -6,7 +6,8 @@ slug: /ssr
 ---
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
-:::caution
+
+:::info
 When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps`, and solving it is out of our hands.
 
 &nbsp;  

@@ -36,7 +36,7 @@ module.exports = {
   themeConfig: {
     disableSwitch: false,
     respectPrefersColorScheme: true,
-    image: `${env.OG_URL}/api/landing`,
+    image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },

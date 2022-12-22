@@ -1,8 +1,8 @@
 ---
-id: mutations
+id: useMutation
 title: useMutation()
 sidebar_label: useMutation()
-slug: /react-mutations
+slug: /useMutation
 ---
 
 :::note

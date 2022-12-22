@@ -1,17 +1,15 @@
 import { z } from 'zod';
 
-const isJSON = (str: string) => {
+type Primitives = string | number | boolean | null;
+type JsonValue = Primitives | JsonValue[] | { [key: string]: JsonValue };
+
+const jsonStr = z.string().transform((str, ctx) => {
   try {
-    JSON.parse(str);
-    return true;
-  } catch {
-    return false;
+    return JSON.parse(str) as JsonValue;
+  } catch (error) {
+    ctx.addIssue({ code: 'custom', message: 'Needs to be JSON' });
   }
-};
-const jsonStr = z
-  .string()
-  .refine(isJSON, 'Needs to be JSON')
-  .transform((str) => JSON.parse(str));
+});
 
 export function zodParams<TType>(schema: z.ZodType<TType>) {
   const querySchema = z.object({
@@ -31,10 +29,19 @@ export function zodParams<TType>(schema: z.ZodType<TType>) {
   };
 }
 
-function truncateWords(str: string, maxWords: number) {
-  return str.split(' ').length > maxWords
-    ? `${str.split(' ').slice(0, maxWords).join(' ')}...`
-    : str;
+function truncateWordsFn(str: string, maxCharacters: number) {
+  if (str.length <= maxCharacters) {
+    return str;
+  }
+  // break at closest word
+  const truncated = str.slice(0, maxCharacters);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return truncated.slice(0, lastSpace) + ' …';
+}
+function truncatedWordSchema(opts: { maxCharacters: number }) {
+  return z
+    .string()
+    .transform((str) => truncateWordsFn(str, opts.maxCharacters));
 }
 
 export const fontParams = zodParams(
@@ -47,8 +54,8 @@ export const fontParams = zodParams(
 
 export const blogParams = zodParams(
   z.object({
-    title: z.string().transform((str) => truncateWords(str, 13)),
-    description: z.string().transform((str) => truncateWords(str, 20)),
+    title: truncatedWordSchema({ maxCharacters: 70 }),
+    description: truncatedWordSchema({ maxCharacters: 145 }),
     date: z
       .string()
       .transform((val) => new Date(val))
@@ -69,7 +76,7 @@ export const blogParams = zodParams(
 export const docsParams = zodParams(
   z.object({
     title: z.string(),
-    description: z.string().transform((str) => truncateWords(str, 20)),
+    description: truncatedWordSchema({ maxCharacters: 215 }),
     permalink: z
       .string()
       .startsWith('/')
