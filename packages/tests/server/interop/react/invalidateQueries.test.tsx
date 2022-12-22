@@ -198,7 +198,7 @@ describe('invalidateQueries()', () => {
                   const [path, rest] = queryKey;
 
                   return (
-                    JSON.stringify(path) === '["count"]' &&
+                    JSON.stringify(path) === JSON.stringify(['count']) &&
                     (rest as any)?.input === 'test'
                   );
                 },
