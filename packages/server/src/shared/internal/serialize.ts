@@ -8,9 +8,12 @@ type JsonPrimitive =
   | string
   | number
   | boolean
-  | string
-  | number
-  | boolean
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | String
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | Number
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | Boolean
   | null;
 // eslint-disable-next-line @typescript-eslint/ban-types
 type NonJsonPrimitive = undefined | Function | symbol;
