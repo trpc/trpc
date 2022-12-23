@@ -393,16 +393,6 @@ export const sponsors = [
     "createdAt": 1661061502000
   },
   {
-    "__typename": "User",
-    "name": "Martin",
-    "imgSrc": "https://avatars.githubusercontent.com/u/17379661?u=2dc0effef1464639ae9ff98795cd29bb772bcce3&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/mshd",
-    "privacyLevel": "PUBLIC",
-    "login": "mshd",
-    "createdAt": 1661238661000
-  },
-  {
     "__typename": "Organization",
     "name": "Fanvue",
     "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",

@@ -23,6 +23,13 @@ export const sponsors =  [
     "link": "https://render.com"
   },
   {
+    "name": "Jason Docton",
+    "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
+    "weight": 52,
+    "login": "JasonDocton",
+    "link": "https://Youarerad.org"
+  },
+  {
     "name": "Ping.gg",
     "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
     "weight": 51,
@@ -30,16 +37,9 @@ export const sponsors =  [
     "link": "https://ping.gg/"
   },
   {
-    "name": "Jason Docton",
-    "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 48,
-    "login": "JasonDocton",
-    "link": "https://Youarerad.org"
-  },
-  {
     "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
-    "weight": 22,
+    "weight": 26,
     "login": "prisma",
     "link": "https://www.prisma.io"
   },
@@ -86,6 +86,13 @@ export const sponsors =  [
     "link": "https://ahoylabs.xyz/"
   },
   {
+    "name": "Interval",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
+    "weight": 10,
+    "login": "interval",
+    "link": "https://interval.com"
+  },
+  {
     "name": "Flylance",
     "imgSrc": "https://avatars.githubusercontent.com/u/67534310?v=4",
     "weight": 8,
@@ -100,25 +107,18 @@ export const sponsors =  [
     "link": "https://solberg.is"
   },
   {
+    "name": "Ethan Clark",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8572133?u=247a2ef2eb9bdba02076dfd8c6a25169a8ba3464&v=4",
+    "weight": 6,
+    "login": "ethangclark",
+    "link": "https://yorick.sh"
+  },
+  {
     "name": "nihinihi01",
     "imgSrc": "https://avatars.githubusercontent.com/u/57569287?v=4",
     "weight": 6,
     "login": "nihinihi01",
     "link": "https://github.com/nihinihi01"
-  },
-  {
-    "name": "Interval",
-    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 6,
-    "login": "interval",
-    "link": "https://interval.com"
-  },
-  {
-    "name": "Ethan Clark",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8572133?u=247a2ef2eb9bdba02076dfd8c6a25169a8ba3464&v=4",
-    "weight": 5,
-    "login": "ethangclark",
-    "link": "https://yorick.sh"
   },
   {
     "name": "Sam Holmes",
@@ -233,6 +233,13 @@ export const sponsors =  [
     "link": "https://github.com/iway1"
   },
   {
+    "name": "Lori Karikari",
+    "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
+    "weight": 3,
+    "login": "LoriKarikari",
+    "link": "https://github.com/LoriKarikari"
+  },
+  {
     "name": "Wyatt Schulte",
     "imgSrc": "https://avatars.githubusercontent.com/u/42128929?u=15dfd6d0ab827079a400ce33f0f78408637cb5ec&v=4",
     "weight": 3,
@@ -289,13 +296,6 @@ export const sponsors =  [
     "link": "https://jwyce.gg"
   },
   {
-    "name": "Lori Karikari",
-    "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
-    "weight": 2,
-    "login": "LoriKarikari",
-    "link": "https://github.com/LoriKarikari"
-  },
-  {
     "name": "Francis Provost",
     "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
     "weight": 2,
@@ -303,11 +303,11 @@ export const sponsors =  [
     "link": "https://francisprovost.com"
   },
   {
-    "name": "Martin",
-    "imgSrc": "https://avatars.githubusercontent.com/u/17379661?u=2dc0effef1464639ae9ff98795cd29bb772bcce3&v=4",
+    "name": "Fanvue",
+    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
     "weight": 2,
-    "login": "mshd",
-    "link": "https://github.com/mshd"
+    "login": "fanvue",
+    "link": "https://github.com/fanvue"
   },
   {
     "name": "Malcolm Still",
@@ -329,13 +329,6 @@ export const sponsors =  [
     "weight": 2,
     "login": "larskarbo",
     "link": "https://larskarbo.no"
-  },
-  {
-    "name": "Fanvue",
-    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
-    "weight": 2,
-    "login": "fanvue",
-    "link": "https://github.com/fanvue"
   },
   {
     "name": "Ivan Buncic",
@@ -394,6 +387,13 @@ export const sponsors =  [
     "link": "https://skalar.no"
   },
   {
+    "name": "Jonas Strassel",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
+    "weight": 2,
+    "login": "boredland",
+    "link": "https://jonas-strassel.de/"
+  },
+  {
     "name": "Joseph Lozano",
     "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
     "weight": 2,
@@ -413,13 +413,6 @@ export const sponsors =  [
     "weight": 2,
     "login": "AscentFactory",
     "link": "https://github.com/AscentFactory"
-  },
-  {
-    "name": "Jonas Strassel",
-    "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
-    "weight": 1,
-    "login": "boredland",
-    "link": "https://jonas-strassel.de/"
   },
   {
     "name": "SalihOsmankovic",
