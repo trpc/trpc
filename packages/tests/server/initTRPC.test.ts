@@ -57,7 +57,12 @@ test('config types', () => {
 
     t._config;
     // ^?
-    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<object>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<object>();
+
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
+    // eslint-disable-next-line @typescript-eslint/ban-types
     expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
   }
 

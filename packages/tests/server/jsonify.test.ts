@@ -46,8 +46,8 @@ describe('no transformer specified', () => {
     //     ^?
     expectTypeOf(result).toMatchTypeOf<{
       date: string;
-      map: {};
-      set: {};
+      map: object;
+      set: object;
     }>();
     expectTypeOf(result.arrayWithUndefined);
     //                     ^?

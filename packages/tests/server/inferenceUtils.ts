@@ -86,7 +86,7 @@ export type DeepBrand<T> = IsNever<T> extends true
 
 export type RequiredKeys<T> = Extract<
   {
-    [K in keyof T]-?: {} extends Pick<T, K> ? never : K;
+    [K in keyof T]-?: object extends Pick<T, K> ? never : K;
   }[keyof T],
   keyof T
 >;
