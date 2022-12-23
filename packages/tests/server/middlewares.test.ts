@@ -48,18 +48,51 @@ test('decorate independently', () => {
     });
   });
 
-  bazMiddleware._self;
-  //             ^?
-
   // TODO
   // 1. test type in resolver
   // 2. snapshot ctx in resolver
 
   // // throw new Error('TODO')
-  // t.procedure.use(bazMiddleware._self).query(({ ctx }) => {
-  //   expectTypeOf(ctx.doSomething).toMatchTypeOf<() => string>();
-  //   expectTypeOf(ctx.user).toMatchTypeOf<User>();
-  // });
+  t.procedure.use(bazMiddleware._self).query(({ ctx }) => {
+    expectTypeOf(ctx.user).toMatchTypeOf<User>();
+  });
+});
+
+test('resolver context', () => {
+  const t = initTRPC.create();
+
+  const fooMiddleware = t.middleware((opts) => {
+    return opts.next({
+      ctx: {
+        // ...opts.ctx,
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const barMiddleware = fooMiddleware.pipe((opts) => {
+    //                   ^?
+    opts.ctx.foo;
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      foo: 'foo';
+    }>();
+    //        ^?
+    return opts.next({
+      ctx: {
+        bar: 'bar' as const,
+      },
+    });
+  });
+
+  const testProcedure = t.procedure.use(barMiddleware._self);
+  const testRouter = t.router({
+    test: testProcedure.query(({ ctx }) => {
+      expectTypeOf(ctx).toMatchTypeOf<{
+        foo: 'foo';
+        bar: 'bar';
+      }>();
+    }),
+  });
 });
 
 test('meta', () => {

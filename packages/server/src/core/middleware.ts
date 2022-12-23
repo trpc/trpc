@@ -82,7 +82,7 @@ export interface MiddlewareBuilder<
     Overwrite<TNewParams, $Params>
   >;
 
-  _self: MiddlewareFunction<TParams, TNewParams>;
+  _self: MiddlewareFunction<TRoot, TNewParams>;
 }
 
 type CreateMiddlewareReturnInput<
@@ -145,7 +145,6 @@ export type MiddlewareFunction<
 };
 
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
-  // function createInner(before, after) {}
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
   ): MiddlewareBuilder<
@@ -155,12 +154,7 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   > {
     return {
       _self: fn,
-      // if we're going to pipe _n_ middlewares together
-      // we probably need to merge them in like in procedurebuilder
-      // we're also probably not preserving prev state
-      // its late...
       pipe(middleware) {
-        // return middleware as any;
         return middleware as unknown as AnyMiddlewareBuilder;
       },
     };
