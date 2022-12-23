@@ -213,6 +213,25 @@ importers:
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
+  examples/bun:
+    specifiers:
+      '@trpc/client': ^10.6.0
+      '@trpc/server': ^10.6.0
+      bun-livereload: ^1.0.3
+      bun-types: ^0.1.11
+      npm-run-all: ^4.1.5
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@trpc/client': link:../../packages/client
+      '@trpc/server': link:../../packages/server
+      zod: 3.20.2
+    devDependencies:
+      bun-livereload: 1.0.3
+      bun-types: 0.1.11
+      npm-run-all: 4.1.5
+      typescript: 4.8.3
+
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
@@ -10673,6 +10692,14 @@ packages:
       }
     dependencies:
       semver: 7.3.8
+
+  /bun-livereload/1.0.3:
+    resolution: {integrity: sha512-oIUaWoxYrjZtHhS29niHQ3AuIbPdkRkp+RIc/zIcjE9nB8zzTZe0kL5EPySfH4vThiM/lETc1dwl0r7GC1mZ9g==}
+    dev: true
+
+  /bun-types/0.1.11:
+    resolution: {integrity: sha512-a5G9LZtF5qBsDMjGnS5FfTvIeg1bS0PzI3Q2LqShEjJWdhZTB56xO8ewqZ83J+3my5rW/PPPWT/udAofRQ3zdg==}
+    dev: true
 
   /busboy/1.6.0:
     resolution:
