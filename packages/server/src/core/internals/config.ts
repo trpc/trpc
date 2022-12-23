@@ -5,8 +5,8 @@ import { ErrorFormatter } from '../../error/formatter';
  * @internal
  */
 export interface RootConfigTypes {
-  ctx: {};
-  meta: {};
+  ctx: object;
+  meta: object;
   errorShape: unknown;
   transformer: unknown;
 }
