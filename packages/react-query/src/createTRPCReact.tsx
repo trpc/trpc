@@ -102,8 +102,8 @@ export type DecorateProcedure<
                 >,
               ];
             }
-          : {})
-      : {}) &
+          : object)
+      : object) &
       (TFlags extends 'ExperimentalSuspense'
         ? {
             useSuspenseQuery: <
@@ -126,7 +126,7 @@ export type DecorateProcedure<
               UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
             ];
           }
-        : {})
+        : object)
   : TProcedure extends AnyMutationProcedure
   ? {
       useMutation: <TContext = unknown>(

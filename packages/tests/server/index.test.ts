@@ -29,7 +29,7 @@ test('smoke test', async () => {
 });
 
 test('mix query and mutation', async () => {
-  type Context = {};
+  type Context = object;
   const t = initTRPC.context<Context>().create();
 
   const router = t.router({
@@ -47,7 +47,7 @@ test('mix query and mutation', async () => {
 });
 
 test('merge', async () => {
-  type Context = {};
+  type Context = object;
   const t = initTRPC.context<Context>().create();
   const mergeRouters = t.mergeRouters;
 
@@ -365,7 +365,7 @@ describe('integration tests', () => {
 });
 
 describe('createCaller()', () => {
-  type Context = {};
+  type Context = object;
   const t = initTRPC.context<Context>().create();
 
   const router = t.router({
@@ -410,7 +410,7 @@ describe('createCaller()', () => {
 });
 
 describe('createCaller()', () => {
-  type Context = {};
+  type Context = object;
   const t = initTRPC.context<Context>().create();
 
   const router = t.router({

@@ -8,10 +8,14 @@ type JsonPrimitive =
   | string
   | number
   | boolean
+  // eslint-disable-next-line @typescript-eslint/ban-types
   | String
+  // eslint-disable-next-line @typescript-eslint/ban-types
   | Number
+  // eslint-disable-next-line @typescript-eslint/ban-types
   | Boolean
   | null;
+// eslint-disable-next-line @typescript-eslint/ban-types
 type NonJsonPrimitive = undefined | Function | symbol;
 
 /*
@@ -24,7 +28,7 @@ type IsAny<T> = 0 extends 1 & T ? true : false;
 export type Serialize<T> =
  IsAny<T> extends true ? any :
  T extends JsonPrimitive ? T :
- T extends Map<any,any> | Set<any> ? {} : 
+ T extends Map<any,any> | Set<any> ? object : 
  T extends NonJsonPrimitive ? never :
  T extends { toJSON(): infer U } ? U :
  T extends [] ? [] :
