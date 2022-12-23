@@ -70,14 +70,14 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     url: wssUrl,
     ...opts?.wsClient,
   });
-  const trpcClientOptions: WithTRPCConfig<typeof router> = {
+  const trpcClientOptions = {
     links: [httpBatchLink({ url: httpUrl })],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })
         : opts.client
       : {}),
-  };
+  } as WithTRPCConfig<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
   const proxy = createTRPCClientProxy<typeof router>(client);
@@ -110,7 +110,7 @@ export async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-type Constructor<T extends {} = {}> = new (...args: any[]) => T;
+type Constructor<T extends object = object> = new (...args: any[]) => T;
 
 export async function waitError<TError extends Error = Error>(
   /**

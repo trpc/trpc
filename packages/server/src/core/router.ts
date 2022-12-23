@@ -44,8 +44,11 @@ export interface RouterDef<
    * @deprecated
    */
   TOld extends DeprecatedProcedureRouterRecord = {
+    // eslint-disable-next-line @typescript-eslint/ban-types
     queries: {};
+    // eslint-disable-next-line @typescript-eslint/ban-types
     mutations: {};
+    // eslint-disable-next-line @typescript-eslint/ban-types
     subscriptions: {};
   },
 > {
