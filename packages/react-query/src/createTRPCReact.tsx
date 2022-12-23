@@ -6,6 +6,7 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  FlatOverwrite,
   ProcedureRouterRecord,
   inferProcedureInput,
 } from '@trpc/server';
@@ -174,13 +175,20 @@ export type DecoratedProcedureRecord<
     : never;
 };
 
-export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
-  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
-  Provider: TRPCProvider<TRouter, TSSRContext>;
-  createClient: CreateClient<TRouter>;
-  useQueries: TRPCUseQueries<TRouter>;
-  useDehydratedState: UseDehydratedState<TRouter>;
-} & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
+export type CreateTRPCReact<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TFlags,
+> = FlatOverwrite<
+  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>,
+  {
+    useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+    Provider: TRPCProvider<TRouter, TSSRContext>;
+    createClient: CreateClient<TRouter>;
+    useQueries: TRPCUseQueries<TRouter>;
+    useDehydratedState: UseDehydratedState<TRouter>;
+  }
+>;
 
 /**
  * @internal

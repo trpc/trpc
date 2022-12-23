@@ -9,6 +9,7 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   Filter,
+  FlatOverwrite,
   inferHandlerInput,
 } from '@trpc/server';
 import {
@@ -67,10 +68,13 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
 ) {
   const helpers = createSSGHelpers(opts);
 
-  type CreateProxySSGHelpers = {
-    queryClient: QueryClient;
-    dehydrate: (opts?: DehydrateOptions) => DehydratedState;
-  } & DecoratedProcedureSSGRecord<TRouter>;
+  type CreateProxySSGHelpers = FlatOverwrite<
+    DecoratedProcedureSSGRecord<TRouter>,
+    {
+      queryClient: QueryClient;
+      dehydrate: (opts?: DehydrateOptions) => DehydratedState;
+    }
+  >;
 
   return createFlatProxy<CreateProxySSGHelpers>((key) => {
     if (key === 'queryClient') {
