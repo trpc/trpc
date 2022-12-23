@@ -10,8 +10,7 @@ import { z } from 'zod';
 // https://github.com/trpc/trpc/issues/949
 // https://github.com/trpc/trpc/pull/955
 test('inferProcedureFromInput regression', async () => {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  type Context = object;
+  type Context = {};
   const appRouter = trpc
     .router<Context>()
     .merge(
