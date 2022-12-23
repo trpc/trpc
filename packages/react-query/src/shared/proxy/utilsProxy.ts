@@ -171,6 +171,7 @@ type DecorateRouter = {
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidate(
+    input?: undefined,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;

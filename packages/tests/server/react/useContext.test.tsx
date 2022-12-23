@@ -61,6 +61,10 @@ const ctx = konn()
             return newPost;
           }),
       }),
+
+      greeting: t.router({
+        get: t.procedure.query(() => 'hello'),
+      }),
     });
 
     return getServerAndReactClient(appRouter);
