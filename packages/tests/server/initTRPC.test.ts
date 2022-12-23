@@ -1,5 +1,4 @@
 import {
-  CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
   initTRPC,
@@ -34,7 +33,7 @@ test('custom transformer', () => {
   const router = t.router({});
   expectTypeOf(
     router._def._config.transformer,
-  ).toMatchTypeOf<CombinedDataTransformer>();
+  ).toMatchTypeOf<DataTransformerOptions>();
   expectTypeOf(
     router._def._config.transformer,
   ).not.toMatchTypeOf<DefaultDataTransformer>();

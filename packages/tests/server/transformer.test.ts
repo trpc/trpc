@@ -2,6 +2,7 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import {
   TRPCClientError,
+  createTRPCProxyClient,
   createWSClient,
   httpBatchLink,
   httpLink,
@@ -494,4 +495,53 @@ Object {
 `);
 
   close();
+});
+
+describe('required tranformers', () => {
+  test('works without transformer', () => {
+    const t = initTRPC.create({});
+    const router = t.router({});
+
+    createTRPCProxyClient<typeof router>({
+      links: [httpBatchLink({ url: '' })],
+    });
+  });
+
+  test('works with transformer', () => {
+    const transformer = superjson;
+    const t = initTRPC.create({
+      transformer,
+    });
+    const router = t.router({});
+
+    createTRPCProxyClient<typeof router>({
+      links: [httpBatchLink({ url: '' })],
+      transformer,
+    });
+  });
+
+  test('errors with transformer set on backend but not on frontend', () => {
+    const transformer = superjson;
+    const t = initTRPC.create({
+      transformer,
+    });
+    const router = t.router({});
+
+    // @ts-expect-error missing transformer on frontend
+    createTRPCProxyClient<typeof router>({
+      links: [httpBatchLink({ url: '' })],
+    });
+  });
+
+  test('errors with transformer set on frontend but not on backend', () => {
+    const transformer = superjson;
+    const t = initTRPC.create({});
+    const router = t.router({});
+
+    createTRPCProxyClient<typeof router>({
+      links: [httpBatchLink({ url: '' })],
+      // @ts-expect-error missing transformer on backend
+      transformer,
+    });
+  });
 });
