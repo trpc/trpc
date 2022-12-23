@@ -7,7 +7,6 @@ import {
 } from '../error/formatter';
 import { createFlatProxy } from '../shared';
 import {
-  CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
   defaultTransformer,
@@ -88,9 +87,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       ErrorFormatter<$Context, DefaultErrorShape>
     >;
     type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer'] extends DataTransformerOptions
-        ? CombinedDataTransformer
-        : DefaultDataTransformer
+      ? TOptions['transformer']
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 

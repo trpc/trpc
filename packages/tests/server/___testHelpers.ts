@@ -70,14 +70,14 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     url: wssUrl,
     ...opts?.wsClient,
   });
-  const trpcClientOptions: WithTRPCConfig<typeof router> = {
+  const trpcClientOptions = {
     links: [httpBatchLink({ url: httpUrl })],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })
         : opts.client
       : {}),
-  };
+  } as WithTRPCConfig<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
   const proxy = createTRPCClientProxy<typeof router>(client);
