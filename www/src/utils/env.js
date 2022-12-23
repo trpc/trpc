@@ -25,9 +25,11 @@ function parseEnv(input) {
   function getOG_URL() {
     switch (env.VERCEL_ENV) {
       case 'production':
-        return 'https://og-image.trpc.io';
       case 'preview':
-        return `https://og-image-git-${env.VERCEL_GIT_COMMIT_REF}-trpc.vercel.app`;
+        return 'https://og-image.trpc.io';
+      // FIXME: this gets cached across deployments for some reason
+      // case 'preview':
+      //   return `https://og-image-git-${env.VERCEL_GIT_COMMIT_REF}-trpc.vercel.app`;
       case 'development':
         return 'http://localhost:3001';
       default:
