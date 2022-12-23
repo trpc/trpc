@@ -6,7 +6,6 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
-  FlatOverwrite,
   ProcedureRouterRecord,
   inferProcedureInput,
 } from '@trpc/server';
@@ -175,11 +174,13 @@ export type DecoratedProcedureRecord<
     : never;
 };
 
+type Overwrite<TType, TWith> = Omit<TType, keyof TWith> & TWith;
+
 export type CreateTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext,
   TFlags,
-> = FlatOverwrite<
+> = Overwrite<
   DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>,
   {
     useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;

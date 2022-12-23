@@ -14,7 +14,7 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   Filter,
-  FlatOverwrite,
+  Overwrite,
   ProcedureOptions,
   inferProcedureInput,
 } from '@trpc/server';
@@ -196,7 +196,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
-> = FlatOverwrite<
+> = Overwrite<
   DecoratedProcedureUtilsRecord<TRouter>,
   DecoratedProxyTRPCContextProps<TRouter, TSSRContext>
 >;

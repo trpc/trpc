@@ -41,9 +41,11 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
     unknown,
     'ExperimentalSuspense'
   >();
+
   const client = opts.client;
 
   function App(props: { children: ReactNode }) {
+    proxy;
     return (
       <proxy.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
