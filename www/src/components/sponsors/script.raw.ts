@@ -7,7 +7,7 @@ export const sponsors = [
     "name": "Hampus Kraft",
     "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=87f4c5cd23ae2c8b66cfca5f2ac393795b9fbf13&v=4",
     "monthlyPriceInDollars": 3,
-    "link": "https://hampuskraft.com",
+    "link": "https://hampuskraft.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "hampuskraft",
     "createdAt": 1624189592000
@@ -27,7 +27,7 @@ export const sponsors = [
     "name": "Sam Holmes",
     "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=63152744638f6b5df34941244016fa1a4b4a67bb&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://samholmes.net",
+    "link": "https://samholmes.net/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "sam3d",
     "createdAt": 1626852612000
@@ -37,7 +37,7 @@ export const sponsors = [
     "name": "Newfront",
     "imgSrc": "https://avatars.githubusercontent.com/u/44950377?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://www.newfront.com",
+    "link": "https://www.newfront.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "newfront-insurance",
     "createdAt": 1629417344000
@@ -57,7 +57,7 @@ export const sponsors = [
     "name": "Theo Browne",
     "imgSrc": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
     "monthlyPriceInDollars": 250,
-    "link": "https://t3.gg",
+    "link": "http://t3.gg/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "t3dotgg",
     "createdAt": 1631688228000
@@ -67,7 +67,7 @@ export const sponsors = [
     "name": "Max Greenwald",
     "imgSrc": "https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://maxgreenwald.me",
+    "link": "https://maxgreenwald.me/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "mgreenw",
     "createdAt": 1632143542000
@@ -87,7 +87,7 @@ export const sponsors = [
     "name": "Beier (Bill)",
     "imgSrc": "https://avatars.githubusercontent.com/u/10513364?u=a129aade5f9a7a92cf06172b47d67ccefc736933&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://www.beekai.com",
+    "link": "https://www.beekai.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "bluebill1049",
     "createdAt": 1633435620000
@@ -97,7 +97,7 @@ export const sponsors = [
     "name": "Ryan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6907797?u=71aca5cb761c401b4abbf100057978a76f2f5e22&v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://standardresume.co/r/ryan-edge",
+    "link": "https://standardresume.co/r/ryan-edge?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "chimon2000",
     "createdAt": 1636211793000
@@ -107,7 +107,7 @@ export const sponsors = [
     "name": "Snaplet",
     "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://snaplet.dev",
+    "link": "https://snaplet.dev/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "snaplet",
     "createdAt": 1636827585000
@@ -117,7 +117,7 @@ export const sponsors = [
     "name": "Illarion Koperski",
     "imgSrc": "https://avatars.githubusercontent.com/u/5012724?u=f6f510f226382df2ebcea4a1935aaa94eacfcda4&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://www.illarionvk.com",
+    "link": "https://www.illarionvk.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "illarionvk",
     "createdAt": 1641570413000
@@ -127,7 +127,7 @@ export const sponsors = [
     "name": "Timothy Cole",
     "imgSrc": "https://avatars.githubusercontent.com/u/6754577?u=9dba0a4292ebe8e206257b62008ac4d1e1ca5a07&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://timcole.me",
+    "link": "https://timcole.me/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "timcole",
     "createdAt": 1642242868000
@@ -137,7 +137,7 @@ export const sponsors = [
     "name": "Ethan Clark",
     "imgSrc": "https://avatars.githubusercontent.com/u/8572133?u=247a2ef2eb9bdba02076dfd8c6a25169a8ba3464&v=4",
     "monthlyPriceInDollars": 20,
-    "link": "https://yorick.sh",
+    "link": "https://yorick.sh/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "ethangclark",
     "createdAt": 1643215166000
@@ -157,7 +157,7 @@ export const sponsors = [
     "name": "SchlagerKhan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://iamkhan.io",
+    "link": "https://iamkhan.io/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "SchlagerKhan",
     "createdAt": 1644656389000
@@ -167,7 +167,7 @@ export const sponsors = [
     "name": "Christian",
     "imgSrc": "https://avatars.githubusercontent.com/u/30244485?u=70f85b684ede25d672974d81a42049b718fd33af&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://lindeneg.org/",
+    "link": "https://lindeneg.org/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "Lindeneg",
     "createdAt": 1645121702000
@@ -177,7 +177,7 @@ export const sponsors = [
     "name": "Render",
     "imgSrc": "https://avatars.githubusercontent.com/u/36424661?v=4",
     "monthlyPriceInDollars": 500,
-    "link": "https://render.com",
+    "link": "https://render.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "renderinc",
     "createdAt": 1645226783000
@@ -197,7 +197,7 @@ export const sponsors = [
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
     "monthlyPriceInDollars": 250,
-    "link": "https://Youarerad.org",
+    "link": "http://youarerad.org/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "JasonDocton",
     "createdAt": 1645479378000
@@ -207,7 +207,7 @@ export const sponsors = [
     "name": "Jared Wyce",
     "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://jwyce.gg",
+    "link": "http://jwyce.gg/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "jwyce",
     "createdAt": 1646015010000
@@ -217,7 +217,7 @@ export const sponsors = [
     "name": "Faraz Patankar",
     "imgSrc": "https://avatars.githubusercontent.com/u/10681116?u=694385b48756c6be01f289f8c419e95b3103fa84&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://farazpatankar.com/",
+    "link": "https://farazpatankar.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "FarazPatankar",
     "createdAt": 1647861577000
@@ -227,7 +227,7 @@ export const sponsors = [
     "name": "Flylance",
     "imgSrc": "https://avatars.githubusercontent.com/u/67534310?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://flylance.com",
+    "link": "http://flylance.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "flylance-apps",
     "createdAt": 1651211349000
@@ -237,7 +237,7 @@ export const sponsors = [
     "name": "PatrickJS",
     "imgSrc": "https://avatars.githubusercontent.com/u/1016365?u=47d964a94849ae3bd59cc1a66e5f4aad0c43d2a2&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://patrickjs.com",
+    "link": "https://patrickjs.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "PatrickJS",
     "createdAt": 1651987523000
@@ -247,7 +247,7 @@ export const sponsors = [
     "name": "Ivan Buncic",
     "imgSrc": "https://avatars.githubusercontent.com/u/29887111?v=4",
     "monthlyPriceInDollars": 5,
-    "link": "http://www.ivanbuncic.com",
+    "link": "http://www.ivanbuncic.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "ivanbuncic",
     "createdAt": 1655236041000
@@ -257,7 +257,7 @@ export const sponsors = [
     "name": "Jökull Sólberg Auðunsson",
     "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://solberg.is",
+    "link": "http://solberg.is/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "jokull",
     "createdAt": 1655370373000
@@ -287,7 +287,7 @@ export const sponsors = [
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
     "monthlyPriceInDollars": 1000,
-    "link": "https://cal.com",
+    "link": "https://cal.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "calcom",
     "createdAt": 1656581731000
@@ -297,7 +297,7 @@ export const sponsors = [
     "name": "Omar López",
     "imgSrc": "https://avatars.githubusercontent.com/u/3504472?u=e0fa7d7acefff37b6735387dc45d448717dbf8e2&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://www.linkedin.com/in/zomars/",
+    "link": "https://www.linkedin.com/in/zomars/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "zomars",
     "createdAt": 1656596611000
@@ -307,7 +307,7 @@ export const sponsors = [
     "name": "Chris Bradley",
     "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://chrisbradley.dev",
+    "link": "https://chrisbradley.dev/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "chrisbradleydev",
     "createdAt": 1657316052000
@@ -317,7 +317,7 @@ export const sponsors = [
     "name": "Mateo Carriquí",
     "imgSrc": "https://avatars.githubusercontent.com/u/29718978?u=b9dd3b8f5f77bffb47e98ad0084bd94198d266c0&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://tryhackme.com/p/zast99",
+    "link": "https://tryhackme.com/p/zast99?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "system32uwu",
     "createdAt": 1657753179000
@@ -327,7 +327,7 @@ export const sponsors = [
     "name": "Ahmed Elsakaan",
     "imgSrc": "https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://elsakaan.dev",
+    "link": "https://elsakaan.dev/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "ixahmedxi",
     "createdAt": 1657794927000
@@ -357,7 +357,7 @@ export const sponsors = [
     "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
     "monthlyPriceInDollars": 250,
-    "link": "https://www.prisma.io",
+    "link": "https://www.prisma.io/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "prisma",
     "createdAt": 1658485707000
@@ -377,7 +377,7 @@ export const sponsors = [
     "name": "Francis Provost",
     "imgSrc": "https://avatars.githubusercontent.com/u/6840361?v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://francisprovost.com",
+    "link": "http://francisprovost.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "francisprovost",
     "createdAt": 1659711715000
@@ -407,7 +407,7 @@ export const sponsors = [
     "name": "Malcolm Still",
     "imgSrc": "https://avatars.githubusercontent.com/u/2567177?u=77d13b33c5d1bd4c9085abee5faddf42e6d5d5dc&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://mstill.dev/blog",
+    "link": "https://mstill.dev/blog?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "malcolmstill",
     "createdAt": 1662115384000
@@ -417,7 +417,7 @@ export const sponsors = [
     "name": "Thomas Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "http://ballingt.com/",
+    "link": "http://ballingt.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "thomasballinger",
     "createdAt": 1662563270000
@@ -427,7 +427,7 @@ export const sponsors = [
     "name": "Lars Karbo",
     "imgSrc": "https://avatars.githubusercontent.com/u/10865165?v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://larskarbo.no",
+    "link": "https://larskarbo.no/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "larskarbo",
     "createdAt": 1662896773000
@@ -437,7 +437,7 @@ export const sponsors = [
     "name": "Wyatt Schulte",
     "imgSrc": "https://avatars.githubusercontent.com/u/42128929?u=15dfd6d0ab827079a400ce33f0f78408637cb5ec&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://wyatt.dev",
+    "link": "http://wyatt.dev/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "Wyatt-SG",
     "createdAt": 1663779120000
@@ -457,7 +457,7 @@ export const sponsors = [
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
     "monthlyPriceInDollars": 250,
-    "link": "http://echobind.com",
+    "link": "http://echobind.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "echobind",
     "createdAt": 1665438965000
@@ -497,7 +497,7 @@ export const sponsors = [
     "name": "Jonas Strassel",
     "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://jonas-strassel.de/",
+    "link": "https://jonas-strassel.de/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "boredland",
     "createdAt": 1668778944000
@@ -507,7 +507,7 @@ export const sponsors = [
     "name": "Interval",
     "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
     "monthlyPriceInDollars": 250,
-    "link": "https://interval.com",
+    "link": "https://interval.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "interval",
     "createdAt": 1668779128000
@@ -517,7 +517,7 @@ export const sponsors = [
     "name": "Joseph Lozano",
     "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://josephlozano.dev",
+    "link": "https://josephlozano.dev/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "joseph-lozano",
     "createdAt": 1669229945000
@@ -527,7 +527,7 @@ export const sponsors = [
     "name": "Michal Malota",
     "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=3eba1b12a74987d406a98dbcb7f1d4fc2efe0390&v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://jobsinjs.com",
+    "link": "https://jobsinjs.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "michalmalota",
     "createdAt": 1669641880000
@@ -547,7 +547,7 @@ export const sponsors = [
     "name": "Austin S.",
     "imgSrc": "https://avatars.githubusercontent.com/u/1623983?u=3054cfbee08ca58eda4105c886cba6c472256534&v=4",
     "monthlyPriceInDollars": 20,
-    "link": "https://austinsdev.com/portfolio",
+    "link": "https://austinsdev.com/portfolio?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "austins",
     "createdAt": 1669799276000
@@ -557,7 +557,7 @@ export const sponsors = [
     "name": "Thorbjørn Hermansen",
     "imgSrc": "https://avatars.githubusercontent.com/u/92300?v=4",
     "monthlyPriceInDollars": 20,
-    "link": "https://skalar.no",
+    "link": "http://skalar.no/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "thhermansen",
     "createdAt": 1670347741000
@@ -577,7 +577,7 @@ export const sponsors = [
     "name": "Lucas Santos",
     "imgSrc": "https://avatars.githubusercontent.com/u/11416392?u=e1d9e059b8738791e80b18b7a976b921aa659c2a&v=4",
     "monthlyPriceInDollars": 5,
-    "link": "https://lucasfsantos.com",
+    "link": "https://lucasfsantos.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "lucashfreitas",
     "createdAt": 1670757451000
@@ -587,7 +587,7 @@ export const sponsors = [
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://ahoylabs.xyz/",
+    "link": "https://ahoylabs.xyz/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "ahoylabs",
     "createdAt": 1671157456000
@@ -597,7 +597,7 @@ export const sponsors = [
     "name": "Flightcontrol",
     "imgSrc": "https://avatars.githubusercontent.com/u/87621213?v=4",
     "monthlyPriceInDollars": 500,
-    "link": "https://flightcontrol.dev",
+    "link": "https://flightcontrol.dev/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "flightcontrolhq",
     "createdAt": 1671304160000
