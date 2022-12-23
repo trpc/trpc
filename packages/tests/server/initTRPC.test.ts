@@ -58,8 +58,8 @@ test('config types', () => {
 
     t._config;
     // ^?
-    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<{}>();
-    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<object>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<object>();
   }
 
   {

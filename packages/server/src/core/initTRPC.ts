@@ -30,8 +30,10 @@ type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
 type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
   CreateRootConfigTypes<{
-    ctx: TTypes['ctx'] extends RootConfigTypes['ctx'] ? TTypes['ctx'] : {};
-    meta: TTypes['meta'] extends RootConfigTypes['meta'] ? TTypes['meta'] : {};
+    ctx: TTypes['ctx'] extends RootConfigTypes['ctx'] ? TTypes['ctx'] : object;
+    meta: TTypes['meta'] extends RootConfigTypes['meta']
+      ? TTypes['meta']
+      : object;
     errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
   }>;
@@ -43,7 +45,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
-class TRPCBuilder<TParams extends PartialRootConfigTypes = {}> {
+class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   context<TNewContext extends RootConfigTypes['ctx']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
   }

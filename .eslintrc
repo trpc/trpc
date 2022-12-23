@@ -21,7 +21,6 @@
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-floating-promises": "error",
     "no-only-tests/no-only-tests": "error",
-    "@typescript-eslint/ban-types": "off",
     "@typescript-eslint/no-empty-interface": "off",
     "unicorn/filename-case": [
       "error",
