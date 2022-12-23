@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import {
   OperationLink,

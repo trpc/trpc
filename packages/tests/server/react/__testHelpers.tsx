@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';

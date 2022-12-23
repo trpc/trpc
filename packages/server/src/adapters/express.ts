@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type * as express from 'express';
 import { AnyRouter } from '../core';
 import { nodeHTTPRequestHandler } from './node-http';

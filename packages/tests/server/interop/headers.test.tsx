@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
