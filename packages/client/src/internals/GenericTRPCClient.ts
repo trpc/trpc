@@ -72,37 +72,35 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter = AnyRouter> =
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientBaseOptions<TRouter> & {
       links: TRPCLink<TRouter>[];
     };
 
-export class GenericTRPCClient {
+export class GenericTRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions) {
+  constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {
-      if (!opts.transformer || typeof opts.transformer === 'string')
+      const transformer = opts.transformer as
+        | ClientDataTransformerOptions
+        | undefined;
+      if (!transformer)
         return {
           serialize: (data) => data,
           deserialize: (data) => data,
         };
-      // Type guard for `opts.transformer` because it can be `any`
-      function isTransformer(obj: any): obj is ClientDataTransformerOptions {
-        return true;
-      }
-      if (isTransformer(opts.transformer)) {
-        if ('input' in opts.transformer)
-          return {
-            serialize: opts.transformer.input.serialize,
-            deserialize: opts.transformer.output.deserialize,
-          };
-      }
-      return opts.transformer;
+
+      if ('input' in transformer)
+        return {
+          serialize: transformer.input.serialize,
+          deserialize: transformer.output.deserialize,
+        };
+      return transformer;
     }
 
     this.runtime = {
