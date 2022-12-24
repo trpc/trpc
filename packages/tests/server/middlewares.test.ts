@@ -13,7 +13,6 @@ test('decorate independently', () => {
 
   const fooMiddleware = t.middleware((opts) => {
     expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
-    //   ^?
     return opts.next({
       ctx: {
         // ...opts.ctx,
@@ -23,13 +22,11 @@ test('decorate independently', () => {
   });
 
   const barMiddleware = fooMiddleware.pipe((opts) => {
-    //                   ^?
     opts.ctx.foo;
     expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
     }>();
-    //        ^?
     return opts.next({
       ctx: {
         bar: 'bar' as const,
@@ -49,10 +46,9 @@ test('decorate independently', () => {
   });
 
   // TODO
-  // 1. test type in resolver
+  // 1. test type in resolver -- DONE
   // 2. snapshot ctx in resolver
 
-  // // throw new Error('TODO')
   t.procedure.use(bazMiddleware._self).query(({ ctx }) => {
     expectTypeOf(ctx.user).toMatchTypeOf<User>();
   });
@@ -64,19 +60,16 @@ test('resolver context', () => {
   const fooMiddleware = t.middleware((opts) => {
     return opts.next({
       ctx: {
-        // ...opts.ctx,
         foo: 'foo' as const,
       },
     });
   });
 
   const barMiddleware = fooMiddleware.pipe((opts) => {
-    //                   ^?
     opts.ctx.foo;
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
     }>();
-    //        ^?
     return opts.next({
       ctx: {
         bar: 'bar' as const,
@@ -85,7 +78,7 @@ test('resolver context', () => {
   });
 
   const testProcedure = t.procedure.use(barMiddleware._self);
-  const testRouter = t.router({
+  t.router({
     test: testProcedure.query(({ ctx }) => {
       expectTypeOf(ctx).toMatchTypeOf<{
         foo: 'foo';
