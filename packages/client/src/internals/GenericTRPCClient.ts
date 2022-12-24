@@ -72,17 +72,17 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
+export type CreateTRPCClientOptions<TRouter extends AnyRouter = AnyRouter> =
   | CreateTRPCClientBaseOptions<TRouter> & {
       links: TRPCLink<TRouter>[];
     };
 
-export class GenericTRPCClient<TRouter extends AnyRouter> {
+export class GenericTRPCClient {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(opts: CreateTRPCClientOptions) {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {
