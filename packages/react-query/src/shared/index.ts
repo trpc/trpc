@@ -9,6 +9,7 @@ export type { TRPCUseQueries } from '../internals/useQueries';
 export * from './hooks/createHooksInternal';
 export * from './queryClient';
 export * from './types';
+export * from './hooks/types';
 
 export {
   /**

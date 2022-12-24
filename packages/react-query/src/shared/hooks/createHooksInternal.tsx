@@ -1,16 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   DehydratedState,
-  InfiniteQueryObserverSuccessResult,
   QueryClient,
-  QueryObserverSuccessResult,
-  QueryOptions,
-  UseInfiniteQueryOptions,
-  UseInfiniteQueryResult,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQueries as __useQueries,
@@ -18,16 +9,9 @@ import {
   hashQueryKey,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  CreateTRPCClientOptions,
-  TRPCClient,
-  TRPCClientErrorLike,
-  TRPCRequestOptions,
-  createTRPCClient,
-} from '@trpc/client';
+import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
 import type {
   AnyRouter,
-  ProcedureRecord,
   inferHandlerInput,
   inferProcedureClientError,
   inferProcedureInput,
@@ -35,18 +19,10 @@ import type {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   SSRState,
   TRPCContext,
-  TRPCContextProps,
   TRPCContextState,
 } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
@@ -55,137 +31,21 @@ import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
-
-export type OutputWithCursor<TData, TCursor = any> = {
-  cursor: TCursor | null;
-  data: TData;
-};
-
-export interface TRPCReactRequestOptions
-  // For RQ, we use their internal AbortSignals instead of letting the user pass their own
-  extends Omit<TRPCRequestOptions, 'signal'> {
-  /**
-   * Opt out of SSR for this query by passing `ssr: false`
-   */
-  ssr?: boolean;
-  /**
-   * Opt out or into aborting request on unmount
-   */
-  abortOnUnmount?: boolean;
-}
-
-export interface TRPCUseQueryBaseOptions {
-  /**
-   * tRPC-related options
-   */
-  trpc?: TRPCReactRequestOptions;
-}
-
-export type { TRPCContext, TRPCContextState } from '../../internals/context';
-
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
-  extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {}
-
-export interface TRPCQueryOptions<TPath, TInput, TData, TError>
-  extends QueryOptions<TData, TError, TData, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {}
-
-export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
-  extends UseInfiniteQueryOptions<
-      TOutput,
-      TError,
-      TOutput,
-      TOutput,
-      [TPath, TInput]
-    >,
-    TRPCUseQueryBaseOptions {}
-
-export interface UseTRPCMutationOptions<
-  TInput,
-  TError,
-  TOutput,
-  TContext = unknown,
-> extends UseMutationOptions<TOutput, TError, TInput, TContext>,
-    TRPCUseQueryBaseOptions {}
-
-export interface UseTRPCSubscriptionOptions<TOutput, TError> {
-  enabled?: boolean;
-  onStarted?: () => void;
-  onData: (data: TOutput) => void;
-  onError?: (err: TError) => void;
-}
-
-type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
-  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
-    cursor?: any;
-  }
-    ? TPath
-    : never;
-}[keyof TObj];
-
-type inferProcedures<TObj extends ProcedureRecord> = {
-  [TPath in keyof TObj]: {
-    input: inferProcedureInput<TObj[TPath]>;
-    output: inferTransformedProcedureOutput<TObj[TPath]>;
-  };
-};
-
-export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
-  extends TRPCContextProps<TRouter, TSSRContext> {
-  children: ReactNode;
-}
-
-export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
-  props: TRPCProviderProps<TRouter, TSSRContext>,
-) => JSX.Element;
-
-export type UseDehydratedState<TRouter extends AnyRouter> = (
-  client: TRPCClient<TRouter>,
-  trpcState: DehydratedState | undefined,
-) => DehydratedState | undefined;
-
-export type CreateClient<TRouter extends AnyRouter> = (
-  opts: CreateTRPCClientOptions<TRouter>,
-) => TRPCClient<TRouter>;
-
-export interface TRPCHookResult {
-  trpc: {
-    path: string;
-  };
-}
-
-/**
- * @internal
- */
-export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
-  TRPCHookResult;
-
-/**
- * @internal
- */
-export type UseTRPCQuerySuccessResult<TData, TError> =
-  QueryObserverSuccessResult<TData, TError> & TRPCHookResult;
-/**
- * @internal
- */
-export type UseTRPCInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
-  TData,
-  TError
-> &
-  TRPCHookResult;
-
-/**
- * @internal
- */
-export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
-  InfiniteQueryObserverSuccessResult<TData, TError> & TRPCHookResult;
-
-/**
- * @internal
- */
-export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
-  UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
+import {
+  CreateClient,
+  TRPCProvider,
+  TRPCQueryOptions,
+  UseDehydratedState,
+  UseTRPCInfiniteQueryOptions,
+  UseTRPCInfiniteQueryResult,
+  UseTRPCMutationOptions,
+  UseTRPCMutationResult,
+  UseTRPCQueryOptions,
+  UseTRPCQueryResult,
+  UseTRPCSubscriptionOptions,
+  inferInfiniteQueryNames,
+  inferProcedures,
+} from './types';
 
 /**
  * Create strongly typed react hooks
