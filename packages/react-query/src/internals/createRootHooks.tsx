@@ -71,13 +71,11 @@ export function createHooksInternal<
 
   type TQueries = TRouter['_def']['queries'];
   type TSubscriptions = TRouter['_def']['subscriptions'];
-  type TMutations = TRouter['_def']['mutations'];
 
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
 
   type TQueryValues = inferProcedures<TQueries>;
-  type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
 
@@ -280,6 +278,7 @@ export function createHooksInternal<
   }
 
   function useQuery(
+    // FIXME path should be a tuple
     pathAndInput: [path: string, ...args: unknown[]],
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
@@ -325,23 +324,11 @@ export function createHooksInternal<
     return hook;
   }
 
-  function useMutation<
-    TPath extends keyof TMutationValues & string,
-    TContext = unknown,
-  >(
-    path: TPath | [TPath],
-    opts?: UseTRPCMutationOptions<
-      TMutationValues[TPath]['input'],
-      TError,
-      TMutationValues[TPath]['output'],
-      TContext
-    >,
-  ): UseTRPCMutationResult<
-    TMutationValues[TPath]['output'],
-    TError,
-    TMutationValues[TPath]['input'],
-    TContext
-  > {
+  function useMutation(
+    // FIXME: this should only be a tuple path
+    path: string | [string],
+    opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
+  ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
@@ -366,12 +353,7 @@ export function createHooksInternal<
           });
         },
       },
-    ) as UseTRPCMutationResult<
-      TMutationValues[TPath]['output'],
-      TError,
-      TMutationValues[TPath]['input'],
-      TContext
-    >;
+    ) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
       path: Array.isArray(path) ? path[0] : path,
