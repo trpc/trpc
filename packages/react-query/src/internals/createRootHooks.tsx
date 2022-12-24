@@ -13,13 +13,9 @@ import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
 import type {
   AnyRouter,
   ProcedureRecord,
-  inferHandlerInput,
-  inferProcedureClientError,
   inferProcedureInput,
-  inferProcedureOutput,
-  inferSubscriptionOutput,
 } from '@trpc/server';
-import { inferObservableValue } from '@trpc/server/observable';
+import { Observable } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -70,7 +66,6 @@ export function createHooksInternal<
     ((options) => options.originalFn());
 
   type TQueries = TRouter['_def']['queries'];
-  type TSubscriptions = TRouter['_def']['subscriptions'];
 
   type TError = TRPCClientErrorLike<TRouter>;
   type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
@@ -363,23 +358,13 @@ export function createHooksInternal<
   }
 
   /* istanbul ignore next */
-  /**
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
-   *  **Experimental.** API might change without major version bump
-   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
-   */
-  function useSubscription<
-    TPath extends keyof TSubscriptions & string,
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-  >(
+  function useSubscription(
     pathAndInput: [
-      path: TPath,
-      ...args: inferHandlerInput<TSubscriptions[TPath]>,
+      // FIXME: tuple me
+      path: string,
+      ...args: unknown[],
     ],
-    opts: UseTRPCSubscriptionOptions<
-      inferObservableValue<inferProcedureOutput<TSubscriptions[TPath]>>,
-      inferProcedureClientError<TSubscriptions[TPath]>
-    >,
+    opts: UseTRPCSubscriptionOptions<Observable<unknown, unknown>, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -391,28 +376,28 @@ export function createHooksInternal<
       }
       const [path, input] = pathAndInput;
       let isStopped = false;
-      const subscription = client.subscription<
-        TRouter['_def']['subscriptions'],
-        TPath,
-        TOutput,
-        inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>
-      >(path, (input ?? undefined) as any, {
-        onStarted: () => {
-          if (!isStopped) {
-            opts.onStarted?.();
-          }
+      const subscription = client.subscription(
+        path,
+        (input ?? undefined) as any,
+        {
+          onStarted: () => {
+            if (!isStopped) {
+              opts.onStarted?.();
+            }
+          },
+          onData: (data) => {
+            if (!isStopped) {
+              // FIXME this shouldn't be needed as both should be `unknown`
+              opts.onData(data as any);
+            }
+          },
+          onError: (err) => {
+            if (!isStopped) {
+              opts.onError?.(err);
+            }
+          },
         },
-        onData: (data) => {
-          if (!isStopped) {
-            opts.onData(data);
-          }
-        },
-        onError: (err) => {
-          if (!isStopped) {
-            opts.onError?.(err);
-          }
-        },
-      });
+      );
       return () => {
         isStopped = true;
         subscription.unsubscribe();
