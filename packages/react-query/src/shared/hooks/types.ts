@@ -18,6 +18,7 @@ import {
 import { AnyRouter } from '@trpc/server';
 import { ReactNode } from 'react';
 import { TRPCContextProps } from '../../internals/context';
+import { TRPCHookResult } from '../../internals/useHookResult';
 
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
@@ -95,11 +96,6 @@ export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
 ) => TRPCClient<TRouter>;
 
-export interface TRPCHookResult {
-  trpc: {
-    path: string;
-  };
-}
 /**
  * @internal
  */

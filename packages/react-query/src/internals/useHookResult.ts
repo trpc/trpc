@@ -1,5 +1,10 @@
 import { useRef } from 'react';
-import { TRPCHookResult } from '../shared/hooks/types';
+
+export interface TRPCHookResult {
+  trpc: {
+    path: string;
+  };
+}
 
 /**
  * Makes a stable reference of the `trpc` prop
