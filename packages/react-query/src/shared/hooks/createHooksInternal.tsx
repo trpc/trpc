@@ -12,6 +12,7 @@ import {
 import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
 import type {
   AnyRouter,
+  ProcedureRecord,
   inferHandlerInput,
   inferProcedureClientError,
   inferProcedureInput,
@@ -19,6 +20,7 @@ import type {
   inferSubscriptionOutput,
 } from '@trpc/server';
 import { inferObservableValue } from '@trpc/server/observable';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   SSRState,
@@ -43,10 +45,22 @@ import {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
-  inferInfiniteQueryNames,
-  inferProcedures,
 } from './types';
 
+type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
+  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
+    cursor?: any;
+  }
+    ? TPath
+    : never;
+}[keyof TObj];
+
+type inferProcedures<TObj extends ProcedureRecord> = {
+  [TPath in keyof TObj]: {
+    input: inferProcedureInput<TObj[TPath]>;
+    output: inferTransformedProcedureOutput<TObj[TPath]>;
+  };
+};
 /**
  * Create strongly typed react hooks
  * @internal

@@ -15,8 +15,7 @@ import {
   TRPCClient,
   TRPCRequestOptions,
 } from '@trpc/client';
-import { AnyRouter, ProcedureRecord, inferProcedureInput } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { AnyRouter } from '@trpc/server';
 import { ReactNode } from 'react';
 import { TRPCContextProps } from '../../internals/context';
 
@@ -78,20 +77,6 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onData: (data: TOutput) => void;
   onError?: (err: TError) => void;
 }
-export type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
-  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
-    cursor?: any;
-  }
-    ? TPath
-    : never;
-}[keyof TObj];
-export type inferProcedures<TObj extends ProcedureRecord> = {
-  [TPath in keyof TObj]: {
-    input: inferProcedureInput<TObj[TPath]>;
-    output: inferTransformedProcedureOutput<TObj[TPath]>;
-  };
-};
-
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;
