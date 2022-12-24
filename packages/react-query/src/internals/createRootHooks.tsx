@@ -35,10 +35,9 @@ import { useHookResult } from './useHookResult';
 import { TRPCUseQueries } from './useQueries';
 
 /**
- * Create strongly typed react hooks
  * @internal
  */
-export function createHooksInternal<
+export function createRootHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
@@ -504,32 +503,3 @@ export function createHooksInternal<
     useInfiniteQuery,
   };
 }
-
-/**
- * Hack to infer the type of `createReactQueryHooks`
- * @link https://stackoverflow.com/a/59072991
- */
-class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
-  fn() {
-    return createHooksInternal<TRouter, TSSRContext>();
-  }
-}
-
-type returnTypeInferer<TType> = TType extends (
-  a: Record<string, string>,
-) => infer U
-  ? U
-  : never;
-type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
-  TRouter,
-  TSSRContext
->['fn'];
-
-/**
- * Infer the type of a `createReactQueryHooks` function
- * @internal
- */
-export type CreateReactQueryHooks<
-  TRouter extends AnyRouter,
-  TSSRContext = unknown,
-> = returnTypeInferer<fooType<TRouter, TSSRContext>>;

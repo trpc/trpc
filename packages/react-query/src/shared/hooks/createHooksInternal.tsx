@@ -27,6 +27,7 @@ import {
   TRPCContext,
   TRPCContextState,
 } from '../../internals/context';
+import { createRootHooks } from '../../internals/createRootHooks';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
@@ -61,11 +62,14 @@ type inferProcedures<TObj extends ProcedureRecord> = {
     output: inferTransformedProcedureOutput<TObj[TPath]>;
   };
 };
+
+/* istanbul ignore */
 /**
- * Create strongly typed react hooks
+ * This isn't used anymore - only exists for type inference
  * @internal
+ * @deprecated
  */
-export function createHooksInternal<
+function __createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
@@ -585,7 +589,7 @@ export function createHooksInternal<
  */
 class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
   fn() {
-    return createHooksInternal<TRouter, TSSRContext>();
+    return __createHooksInternal<TRouter, TSSRContext>();
   }
 }
 
@@ -607,3 +611,18 @@ export type CreateReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 > = returnTypeInferer<fooType<TRouter, TSSRContext>>;
+
+/**
+ * Create strongly typed react hooks
+ * @internal
+ * @deprecated
+ */
+export function createHooksInternal<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+>(config?: CreateTRPCReactOptions<TRouter>) {
+  return createRootHooks(config) as unknown as CreateReactQueryHooks<
+    TRouter,
+    TSSRContext
+  >;
+}
