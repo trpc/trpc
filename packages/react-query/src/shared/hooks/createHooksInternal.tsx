@@ -41,7 +41,6 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import {
@@ -51,6 +50,7 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
@@ -156,7 +156,7 @@ export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
 ) => TRPCClient<TRouter>;
 
-interface TRPCHookResult {
+export interface TRPCHookResult {
   trpc: {
     path: string;
   };
@@ -194,14 +194,6 @@ export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
   UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
 
-/**
- * Makes a stable reference of the `trpc` prop
- */
-function useHookResult(value: TRPCHookResult['trpc']): TRPCHookResult['trpc'] {
-  const ref = useRef(value);
-  ref.current.path = value.path;
-  return ref.current;
-}
 /**
  * Create strongly typed react hooks
  * @internal
