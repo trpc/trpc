@@ -10,13 +10,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
-import type {
-  AnyRouter,
-  ProcedureRecord,
-  inferProcedureInput,
-} from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CreateClient,
@@ -39,20 +34,6 @@ import { getClientArgs } from './getClientArgs';
 import { useHookResult } from './useHookResult';
 import { TRPCUseQueries } from './useQueries';
 
-type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
-  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
-    cursor?: any;
-  }
-    ? TPath
-    : never;
-}[keyof TObj];
-
-type inferProcedures<TObj extends ProcedureRecord> = {
-  [TPath in keyof TObj]: {
-    input: inferProcedureInput<TObj[TPath]>;
-    output: inferTransformedProcedureOutput<TObj[TPath]>;
-  };
-};
 /**
  * Create strongly typed react hooks
  * @internal
@@ -65,12 +46,7 @@ export function createHooksInternal<
     config?.unstable_overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
-  type TQueries = TRouter['_def']['queries'];
-
   type TError = TRPCClientErrorLike<TRouter>;
-  type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
-
-  type TQueryValues = inferProcedures<TQueries>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
 
@@ -273,7 +249,7 @@ export function createHooksInternal<
   }
 
   function useQuery(
-    // FIXME path should be a tuple
+    // FIXME path should be a tuple in next major
     pathAndInput: [path: string, ...args: unknown[]],
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
@@ -320,7 +296,7 @@ export function createHooksInternal<
   }
 
   function useMutation(
-    // FIXME: this should only be a tuple path
+    // FIXME: this should only be a tuple path in next major
     path: string | [string],
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
@@ -360,7 +336,7 @@ export function createHooksInternal<
   /* istanbul ignore next */
   function useSubscription(
     pathAndInput: [
-      // FIXME: tuple me
+      // FIXME: tuple me in next major
       path: string,
       ...args: unknown[],
     ],
@@ -387,7 +363,7 @@ export function createHooksInternal<
           },
           onData: (data) => {
             if (!isStopped) {
-              // FIXME this shouldn't be needed as both should be `unknown`
+              // FIXME this shouldn't be needed as both should be `unknown` in next major
               opts.onData(data as any);
             }
           },
@@ -406,18 +382,14 @@ export function createHooksInternal<
     }, [queryKey, enabled]);
   }
 
-  function useInfiniteQuery<TPath extends TInfiniteQueryNames & string>(
+  function useInfiniteQuery(
     pathAndInput: [
-      path: TPath,
-      input: Omit<TQueryValues[TPath]['input'], 'cursor'>,
+      // FIXME tuple in next major
+      path: string,
+      input: Record<any, unknown>,
     ],
-    opts?: UseTRPCInfiniteQueryOptions<
-      TPath,
-      Omit<TQueryValues[TPath]['input'], 'cursor'>,
-      TQueryValues[TPath]['output'],
-      TError
-    >,
-  ): UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
+    opts?: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
+  ): UseTRPCInfiniteQueryResult<unknown, TError> {
     const [path, input] = pathAndInput;
     const {
       client,
@@ -462,12 +434,13 @@ export function createHooksInternal<
           cursor: queryFunctionContext.pageParam,
         };
 
+        // FIXME as any shouldn't be needed as client should be untyped too
         return (client as any).query(
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
       { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
+    ) as UseTRPCInfiniteQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
       path,
