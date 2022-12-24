@@ -86,7 +86,10 @@ export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
   'abortOnUnmount',
 ];
 
-/** @internal */
+/**
+ * @internal
+ * @deprecated
+ **/
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,

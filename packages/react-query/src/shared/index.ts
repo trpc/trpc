@@ -17,3 +17,14 @@ export {
    */
   getClientArgs,
 } from '../internals/getClientArgs';
+
+export {
+  /**
+   * @deprecated
+   */
+  TRPCContextState,
+  /**
+   * @deprecated
+   */
+  TRPCContext,
+} from './../internals/context';
