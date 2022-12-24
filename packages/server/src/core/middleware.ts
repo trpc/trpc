@@ -48,10 +48,9 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
   | MiddlewareErrorResult<TParams>;
 
-type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any>;
+type AnyMiddlewareBuilder = MiddlewareBuilder<any, any>;
 export interface MiddlewareBuilder<
   TRoot extends ProcedureParams,
-  TParams extends ProcedureParams,
   TNewParams extends ProcedureParams,
 > {
   pipe<$Params extends ProcedureParams>(
@@ -91,7 +90,6 @@ type CreateMiddlewareReturnInput<
   TNext extends ProcedureParams,
 > = MiddlewareBuilder<
   TRoot,
-  TPrev,
   {
     _config: TPrev['_config'];
     _meta: TPrev['_meta'];
@@ -147,11 +145,7 @@ export type MiddlewareFunction<
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
-  ): MiddlewareBuilder<
-    deriveParamsFromConfig<TConfig>,
-    deriveParamsFromConfig<TConfig>,
-    TNewParams
-  > {
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return {
       _self: fn,
       pipe(middleware) {
