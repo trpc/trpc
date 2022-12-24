@@ -1,7 +1,10 @@
 import {
   AnyRouter,
   ClientDataTransformerOptions,
+  CombinedDataTransformer,
   DataTransformer,
+  DataTransformerOptions,
+  DefaultDataTransformer,
 } from '@trpc/server';
 import {
   Unsubscribable,
@@ -18,13 +21,38 @@ import {
   TRPCLink,
 } from '../links/types';
 
-interface CreateTRPCClientBaseOptions {
-  /**
-   * Data transformer
-   * @link https://trpc.io/docs/data-transformers
-   **/
-  transformer?: ClientDataTransformerOptions;
-}
+type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
+  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+    ? {
+        /**
+         * Data transformer
+         *
+         * You must use the same transformer on the backend and frontend
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer?: 'You must set a transformer on the backend router';
+      }
+    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
+    ? {
+        /**
+         * Data transformer
+         *
+         * You must use the same transformer on the backend and frontend
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
+          ? DataTransformerOptions
+          : TRouter['_def']['_config']['transformer'];
+      }
+    : {
+        /**
+         * Data transformer
+         *
+         * You must use the same transformer on the backend and frontend
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer?: ClientDataTransformerOptions;
+      };
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
@@ -44,30 +72,36 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter = AnyRouter> =
-  | CreateTRPCClientBaseOptions & {
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
+  | CreateTRPCClientBaseOptions<TRouter> & {
       links: TRPCLink<TRouter>[];
     };
 
-export class GenericTRPCClient {
+export class GenericTRPCClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions) {
+  constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {
-      if (!opts.transformer)
+      if (!opts.transformer || typeof opts.transformer === 'string')
         return {
           serialize: (data) => data,
           deserialize: (data) => data,
         };
-      if ('input' in opts.transformer)
-        return {
-          serialize: opts.transformer.input.serialize,
-          deserialize: opts.transformer.output.deserialize,
-        };
+      // Type guard for `opts.transformer` because it can be `any`
+      function isTransformer(obj: any): obj is ClientDataTransformerOptions {
+        return true;
+      }
+      if (isTransformer(opts.transformer)) {
+        if ('input' in opts.transformer)
+          return {
+            serialize: opts.transformer.input.serialize,
+            deserialize: opts.transformer.output.deserialize,
+          };
+      }
       return opts.transformer;
     }
 

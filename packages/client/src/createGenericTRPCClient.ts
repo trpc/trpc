@@ -1,10 +1,13 @@
+import { AnyRouter } from '@trpc/server';
 import {
   GenericTRPCClient as Client,
   CreateTRPCClientOptions,
 } from './internals/GenericTRPCClient';
 import { httpBatchLink } from './links';
 
-export function createGenericTRPCClient(opts: CreateTRPCClientOptions) {
+export function createGenericTRPCClient<TRouter extends AnyRouter>(
+  opts: CreateTRPCClientOptions<TRouter>,
+) {
   const getLinks = () => {
     if ('links' in opts) {
       return opts.links;
@@ -12,7 +15,7 @@ export function createGenericTRPCClient(opts: CreateTRPCClientOptions) {
     return [httpBatchLink(opts)];
   };
   const client = new Client({
-    transformer: opts.transformer,
+    ...opts,
     links: getLinks(),
   });
   return client;

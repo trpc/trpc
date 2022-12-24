@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-types */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCError } from '../error/TRPCError';
 import { defaultFormatter } from '../error/formatter';
