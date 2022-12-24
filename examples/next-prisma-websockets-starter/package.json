@@ -8,9 +8,9 @@
   "packageManager": "pnpm@7.18.2",
   "scripts": {
     "build:1-generate": "prisma generate",
-    "build:2-migrate": "prisma migrate deploy",
-    "build:3-next": "cross-env NODE_ENV=production next build",
-    "build:4-server": "tsc --project tsconfig.server.json",
+    "build:2-next": "cross-env NODE_ENV=production next build",
+    "build:3-server": "tsc --project tsconfig.server.json",
+    "build:4-migrate": "prisma migrate deploy",
     "build": "run-s build:*",
     "generate-sqlite": "prisma generate --schema=./prisma/_sqlite/schema.prisma",
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
