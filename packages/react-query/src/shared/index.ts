@@ -9,3 +9,10 @@ export type { TRPCUseQueries } from '../internals/useQueries';
 export * from './hooks/createHooksInternal';
 export * from './queryClient';
 export * from './types';
+
+export {
+  /**
+   * @deprecated this is an internal function
+   */
+  getClientArgs,
+} from '../internals/getClientArgs';

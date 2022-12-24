@@ -50,6 +50,7 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
@@ -113,14 +114,6 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onStarted?: () => void;
   onData: (data: TOutput) => void;
   onError?: (err: TError) => void;
-}
-
-export function getClientArgs<TPathAndInput extends unknown[], TOptions>(
-  pathAndInput: TPathAndInput,
-  opts: TOptions,
-) {
-  const [path, input] = pathAndInput;
-  return [path, input, (opts as any)?.trpc] as const;
 }
 
 type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
