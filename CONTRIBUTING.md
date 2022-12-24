@@ -90,7 +90,7 @@ The client is extensible via a "link" architecture. Links handle the parts of a 
 
 ### `@trpc/react-query`
 
-Here we build on top of React Query, using `@trpc/client` to create fetchers. Working similarly to `@trpc/client`, we wrap all React Query functions to make them typesafe, inferring them from the `Router` generic that users pass to `createReactQueryHooks`. Additionally, it includes some functionality needed for SSR.
+Here we build on top of React Query, using `@trpc/client` to create fetchers. Working similarly to `@trpc/client`, we wrap all React Query functions to make them typesafe, inferring them from the `Router` generic that users pass to `createTRPCReact`. Additionally, it includes some functionality needed for SSR.
 
 We also use proxies here to provide a similar API to `@trpc/client`.
 
