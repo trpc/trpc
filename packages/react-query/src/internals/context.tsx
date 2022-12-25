@@ -88,7 +88,6 @@ export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
 export const TRPCContext = createContext(null as any);
 
 /**
- * @internal
  * @deprecated
  **/
 export interface TRPCContextState<
