@@ -44,7 +44,6 @@ export interface TRPCUseQueryBaseOptions {
    */
   trpc?: TRPCReactRequestOptions;
 }
-export type { TRPCContext, TRPCContextState } from '../../internals/context';
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,

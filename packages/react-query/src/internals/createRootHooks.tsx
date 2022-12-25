@@ -28,7 +28,8 @@ import {
 } from '../shared/hooks/types';
 import { createUseQueriesProxy } from '../shared/proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../shared/types';
-import { SSRState, TRPCContext, TRPCContextState } from './context';
+import { SSRState, TRPCContext } from './context';
+import { TRPCContextState } from './deprecated/TRPCContextState';
 import { QueryType, getArrayQueryKey } from './getArrayQueryKey';
 import { getClientArgs } from './getClientArgs';
 import { useHookResult } from './useHookResult';

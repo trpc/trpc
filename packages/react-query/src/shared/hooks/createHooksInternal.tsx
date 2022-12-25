@@ -22,12 +22,9 @@ import type {
 import { inferObservableValue } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  SSRState,
-  TRPCContext,
-  TRPCContextState,
-} from '../../internals/context';
+import { SSRState, TRPCContext } from '../../internals/context';
 import { createRootHooks } from '../../internals/createRootHooks';
+import { TRPCContextState } from '../../internals/deprecated/TRPCContextState';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';

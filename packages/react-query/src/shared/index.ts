@@ -22,9 +22,7 @@ export {
   /**
    * @deprecated
    */
-  type TRPCContextState,
-  /**
-   * @deprecated
-   */
   TRPCContext,
 } from './../internals/context';
+
+export * from '../internals/deprecated/TRPCContextState';
