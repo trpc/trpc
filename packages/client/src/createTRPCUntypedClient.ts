@@ -1,11 +1,11 @@
 import { AnyRouter } from '@trpc/server';
 import {
   CreateTRPCClientOptions,
-  UntypedTRPCClient,
-} from './internals/UntypedTRPCClient';
+  TRPCUntypedClient,
+} from './internals/TRPCUntypedClient';
 import { httpBatchLink } from './links';
 
-export function createUntypedTRPCClient<TRouter extends AnyRouter>(
+export function createTRPCUntypedClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
   const getLinks = () => {
@@ -14,7 +14,7 @@ export function createUntypedTRPCClient<TRouter extends AnyRouter>(
     }
     return [httpBatchLink(opts)];
   };
-  const client = new UntypedTRPCClient({
+  const client = new TRPCUntypedClient({
     ...opts,
     links: getLinks(),
   });
@@ -23,6 +23,6 @@ export function createUntypedTRPCClient<TRouter extends AnyRouter>(
 
 export type {
   CreateTRPCClientOptions,
-  UntypedTRPCClient,
+  TRPCUntypedClient,
   TRPCRequestOptions,
-} from './internals/UntypedTRPCClient';
+} from './internals/TRPCUntypedClient';
