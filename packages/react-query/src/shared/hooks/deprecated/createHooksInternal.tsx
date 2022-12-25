@@ -10,9 +10,30 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { Observable } from '@trpc/server/observable';
+import type {
+  AnyRouter,
+  ProcedureRecord,
+  inferHandlerInput,
+  inferProcedureClientError,
+  inferProcedureInput,
+  inferProcedureOutput,
+  inferSubscriptionOutput,
+} from '@trpc/server';
+import { inferObservableValue } from '@trpc/server/observable';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { SSRState, TRPCContext } from '../../../internals/context';
+import { TRPCContextState } from '../../../internals/deprecated/TRPCContextState';
+import {
+  QueryType,
+  getArrayQueryKey,
+} from '../../../internals/getArrayQueryKey';
+import { getClientArgs } from '../../../internals/getClientArgs';
+import { useHookResult } from '../../../internals/useHookResult';
+import { TRPCUseQueries } from '../../../internals/useQueries';
+import { createUseQueriesProxy } from '../../proxy/useQueriesProxy';
+import { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
+import { createRootHooks } from '../createHooksInternal';
 import {
   CreateClient,
   TRPCProvider,
@@ -25,20 +46,30 @@ import {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
-} from '../shared/hooks/types';
-import { createUseQueriesProxy } from '../shared/proxy/useQueriesProxy';
-import { CreateTRPCReactOptions, UseMutationOverride } from '../shared/types';
-import { SSRState, TRPCContext } from './context';
-import { TRPCContextState } from './deprecated/TRPCContextState';
-import { QueryType, getArrayQueryKey } from './getArrayQueryKey';
-import { getClientArgs } from './getClientArgs';
-import { useHookResult } from './useHookResult';
-import { TRPCUseQueries } from './useQueries';
+} from '../types';
 
+type inferInfiniteQueryNames<TObj extends ProcedureRecord> = {
+  [TPath in keyof TObj]: inferProcedureInput<TObj[TPath]> extends {
+    cursor?: any;
+  }
+    ? TPath
+    : never;
+}[keyof TObj];
+
+type inferProcedures<TObj extends ProcedureRecord> = {
+  [TPath in keyof TObj]: {
+    input: inferProcedureInput<TObj[TPath]>;
+    output: inferTransformedProcedureOutput<TObj[TPath]>;
+  };
+};
+
+/* istanbul ignore next */
 /**
+ * This isn't used anymore - only exists for type inference
  * @internal
+ * @deprecated
  */
-export function createRootHooks<
+function __createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
@@ -46,7 +77,15 @@ export function createRootHooks<
     config?.unstable_overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
+  type TQueries = TRouter['_def']['queries'];
+  type TSubscriptions = TRouter['_def']['subscriptions'];
+  type TMutations = TRouter['_def']['mutations'];
+
   type TError = TRPCClientErrorLike<TRouter>;
+  type TInfiniteQueryNames = inferInfiniteQueryNames<TQueries>;
+
+  type TQueryValues = inferProcedures<TQueries>;
+  type TMutationValues = inferProcedures<TMutations>;
 
   type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
 
@@ -248,11 +287,20 @@ export function createRootHooks<
       : opts;
   }
 
-  function useQuery(
-    // FIXME path should be a tuple in next major
-    pathAndInput: [path: string, ...args: unknown[]],
-    opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
-  ): UseTRPCQueryResult<unknown, TError> {
+  function useQuery<
+    TPath extends keyof TQueryValues & string,
+    TQueryFnData = TQueryValues[TPath]['output'],
+    TData = TQueryValues[TPath]['output'],
+  >(
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
+    opts?: UseTRPCQueryOptions<
+      TPath,
+      TQueryValues[TPath]['input'],
+      TQueryFnData,
+      TData,
+      TError
+    >,
+  ): UseTRPCQueryResult<TData, TError> {
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       useContext();
 
@@ -287,7 +335,7 @@ export function createRootHooks<
         );
       },
       { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCQueryResult<unknown, TError>;
+    ) as UseTRPCQueryResult<TData, TError>;
     hook.trpc = useHookResult({
       path: pathAndInput[0],
     });
@@ -295,11 +343,23 @@ export function createRootHooks<
     return hook;
   }
 
-  function useMutation(
-    // FIXME: this should only be a tuple path in next major
-    path: string | [string],
-    opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
-  ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
+  function useMutation<
+    TPath extends keyof TMutationValues & string,
+    TContext = unknown,
+  >(
+    path: TPath | [TPath],
+    opts?: UseTRPCMutationOptions<
+      TMutationValues[TPath]['input'],
+      TError,
+      TMutationValues[TPath]['output'],
+      TContext
+    >,
+  ): UseTRPCMutationResult<
+    TMutationValues[TPath]['output'],
+    TError,
+    TMutationValues[TPath]['input'],
+    TContext
+  > {
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
@@ -324,7 +384,12 @@ export function createRootHooks<
           });
         },
       },
-    ) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
+    ) as UseTRPCMutationResult<
+      TMutationValues[TPath]['output'],
+      TError,
+      TMutationValues[TPath]['input'],
+      TContext
+    >;
 
     hook.trpc = useHookResult({
       path: Array.isArray(path) ? path[0] : path,
@@ -334,13 +399,23 @@ export function createRootHooks<
   }
 
   /* istanbul ignore next */
-  function useSubscription(
+  /**
+   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+   *  **Experimental.** API might change without major version bump
+   * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
+   */
+  function useSubscription<
+    TPath extends keyof TSubscriptions & string,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+  >(
     pathAndInput: [
-      // FIXME: tuple me in next major
-      path: string,
-      ...args: unknown[],
+      path: TPath,
+      ...args: inferHandlerInput<TSubscriptions[TPath]>,
     ],
-    opts: UseTRPCSubscriptionOptions<Observable<unknown, unknown>, TError>,
+    opts: UseTRPCSubscriptionOptions<
+      inferObservableValue<inferProcedureOutput<TSubscriptions[TPath]>>,
+      inferProcedureClientError<TSubscriptions[TPath]>
+    >,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -352,28 +427,28 @@ export function createRootHooks<
       }
       const [path, input] = pathAndInput;
       let isStopped = false;
-      const subscription = client.subscription(
-        path,
-        (input ?? undefined) as any,
-        {
-          onStarted: () => {
-            if (!isStopped) {
-              opts.onStarted?.();
-            }
-          },
-          onData: (data) => {
-            if (!isStopped) {
-              // FIXME this shouldn't be needed as both should be `unknown` in next major
-              opts.onData(data as any);
-            }
-          },
-          onError: (err) => {
-            if (!isStopped) {
-              opts.onError?.(err);
-            }
-          },
+      const subscription = client.subscription<
+        TRouter['_def']['subscriptions'],
+        TPath,
+        TOutput,
+        inferProcedureInput<TRouter['_def']['subscriptions'][TPath]>
+      >(path, (input ?? undefined) as any, {
+        onStarted: () => {
+          if (!isStopped) {
+            opts.onStarted?.();
+          }
         },
-      );
+        onData: (data) => {
+          if (!isStopped) {
+            opts.onData(data);
+          }
+        },
+        onError: (err) => {
+          if (!isStopped) {
+            opts.onError?.(err);
+          }
+        },
+      });
       return () => {
         isStopped = true;
         subscription.unsubscribe();
@@ -382,14 +457,18 @@ export function createRootHooks<
     }, [queryKey, enabled]);
   }
 
-  function useInfiniteQuery(
+  function useInfiniteQuery<TPath extends TInfiniteQueryNames & string>(
     pathAndInput: [
-      // FIXME tuple in next major
-      path: string,
-      input: Record<any, unknown>,
+      path: TPath,
+      input: Omit<TQueryValues[TPath]['input'], 'cursor'>,
     ],
-    opts?: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
-  ): UseTRPCInfiniteQueryResult<unknown, TError> {
+    opts?: UseTRPCInfiniteQueryOptions<
+      TPath,
+      Omit<TQueryValues[TPath]['input'], 'cursor'>,
+      TQueryValues[TPath]['output'],
+      TError
+    >,
+  ): UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError> {
     const [path, input] = pathAndInput;
     const {
       client,
@@ -434,13 +513,12 @@ export function createRootHooks<
           cursor: queryFunctionContext.pageParam,
         };
 
-        // FIXME as any shouldn't be needed as client should be untyped too
         return (client as any).query(
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
       { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCInfiniteQueryResult<unknown, TError>;
+    ) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
 
     hook.trpc = useHookResult({
       path,
@@ -503,4 +581,48 @@ export function createRootHooks<
     useDehydratedState,
     useInfiniteQuery,
   };
+}
+
+/**
+ * Hack to infer the type of `createReactQueryHooks`
+ * @link https://stackoverflow.com/a/59072991
+ */
+class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
+  fn() {
+    return __createHooksInternal<TRouter, TSSRContext>();
+  }
+}
+
+type returnTypeInferer<TType> = TType extends (
+  a: Record<string, string>,
+) => infer U
+  ? U
+  : never;
+type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
+  TRouter,
+  TSSRContext
+>['fn'];
+
+/**
+ * Infer the type of a `createReactQueryHooks` function
+ * @internal
+ */
+export type CreateReactQueryHooks<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+> = returnTypeInferer<fooType<TRouter, TSSRContext>>;
+
+/**
+ * Create strongly typed react hooks
+ * @internal
+ * @deprecated
+ */
+export function createHooksInternal<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+>(config?: CreateTRPCReactOptions<TRouter>) {
+  return createRootHooks(config) as unknown as CreateReactQueryHooks<
+    TRouter,
+    TSSRContext
+  >;
 }
