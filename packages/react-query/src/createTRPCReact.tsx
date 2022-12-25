@@ -219,7 +219,7 @@ export function createHooksInternalProxy<
       return (trpc as any)[key];
     }
 
-    return createReactProxyDecoration(key as string, trpc);
+    return createReactProxyDecoration(key, trpc);
   });
 }
 
