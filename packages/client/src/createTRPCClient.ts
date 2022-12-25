@@ -11,8 +11,8 @@ import {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCSubscriptionObserver,
-  UntypedTRPCClient,
-} from './internals/UntypedTRPCClient';
+  TRPCUntypedClient,
+} from './internals/TRPCUntypedClient';
 import { TRPCClientRuntime, httpBatchLink } from './links';
 
 /**
@@ -65,7 +65,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     }
     return [httpBatchLink(opts)];
   };
-  const client = new UntypedTRPCClient({
+  const client = new TRPCUntypedClient({
     ...opts,
     links: getLinks(),
   });
