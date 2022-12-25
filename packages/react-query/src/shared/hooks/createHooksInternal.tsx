@@ -60,7 +60,7 @@ type inferProcedures<TObj extends ProcedureRecord> = {
   };
 };
 
-/* istanbul ignore */
+/* istanbul ignore next */
 /**
  * This isn't used anymore - only exists for type inference
  * @internal
