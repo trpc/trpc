@@ -28,7 +28,7 @@ import {
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
-import { TRPCContextState } from '../../internals/deprecated/TRPCContextState';
+import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<

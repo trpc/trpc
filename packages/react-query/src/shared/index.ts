@@ -25,4 +25,4 @@ export {
   TRPCContext,
 } from './../internals/context';
 
-export * from '../internals/deprecated/TRPCContextState';
+export * from '../internals/context';
