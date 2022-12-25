@@ -23,7 +23,7 @@ import { inferObservableValue } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SSRState, TRPCContext } from '../../../internals/context';
-import { TRPCContextState } from '../../../internals/context';
+import { TRPCContextState } from '../../../internals/deprecated/TRPCContextState';
 import {
   QueryType,
   getArrayQueryKey,
