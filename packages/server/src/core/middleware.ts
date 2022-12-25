@@ -48,7 +48,6 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
   | MiddlewareErrorResult<TParams>;
 
-type AnyMiddlewareBuilder = MiddlewareBuilder<any, any>;
 export interface MiddlewareBuilder<
   TRoot extends ProcedureParams,
   TNewParams extends ProcedureParams,
