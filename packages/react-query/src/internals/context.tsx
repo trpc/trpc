@@ -91,7 +91,6 @@ export const TRPCContext = createContext(null as any);
  * @internal
  * @deprecated
  **/
-
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
