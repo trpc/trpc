@@ -33,7 +33,7 @@ import { useHookResult } from '../../../internals/useHookResult';
 import { TRPCUseQueries } from '../../../internals/useQueries';
 import { createUseQueriesProxy } from '../../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
-import { createRootHooks } from '../createRootHooks';
+import { createRootHooks } from '../createHooksInternal';
 import {
   CreateClient,
   TRPCProvider,

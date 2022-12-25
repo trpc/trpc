@@ -25,7 +25,7 @@ import {
 import {
   CreateReactQueryHooks,
   createHooksInternal,
-} from './shared/hooks/createRootHooks';
+} from './shared/hooks/createHooksInternal';
 import {
   CreateClient,
   TRPCProvider,
