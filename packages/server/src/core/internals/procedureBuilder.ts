@@ -147,7 +147,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a middleware to the procedure.
    */
   use<$Params extends ProcedureParams>(
-    fn: MiddlewareFunction<TParams, $Params>,
+    fn:
+      | MiddlewareFunction<TParams, $Params>
+      | Array<MiddlewareFunction<TParams, $Params>>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -254,7 +256,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     },
     use(middleware) {
       return createNewBuilder(_def, {
-        middlewares: [middleware],
+        middlewares: Array.isArray(middleware) ? middleware : [middleware],
       }) as AnyProcedureBuilder;
     },
     query(resolver) {

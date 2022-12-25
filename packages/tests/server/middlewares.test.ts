@@ -49,15 +49,18 @@ test('decorate independently', () => {
   // 1. test type in resolver -- DONE
   // 2. snapshot ctx in resolver
 
-  t.procedure.use(bazMiddleware._self).query(({ ctx }) => {
-    expectTypeOf(ctx.user).toMatchTypeOf<User>();
-  });
+  t.procedure
+    .use(barMiddleware._self.piped ?? barMiddleware._self)
+    .query(({ ctx }) => {
+      expectTypeOf(ctx.user).toMatchTypeOf<User>();
+    });
 });
 
-test('resolver context', () => {
+test.only('resolver context', async () => {
   const t = initTRPC.create();
 
   const fooMiddleware = t.middleware((opts) => {
+    console.log('foo');
     return opts.next({
       ctx: {
         foo: 'foo' as const,
@@ -70,6 +73,7 @@ test('resolver context', () => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
     }>();
+    console.log('bar');
     return opts.next({
       ctx: {
         bar: 'bar' as const,
@@ -77,15 +81,36 @@ test('resolver context', () => {
     });
   });
 
-  const testProcedure = t.procedure.use(barMiddleware._self);
-  t.router({
+  const bazMiddleware = barMiddleware.pipe((opts) => {
+    opts.ctx.foo;
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      foo: 'foo';
+      bar: 'bar';
+    }>();
+    console.log('baz');
+    return opts.next({
+      ctx: {
+        baz: 'baz' as const,
+      },
+    });
+  });
+
+  const testProcedure = t.procedure.use(
+    bazMiddleware._self.piped ?? bazMiddleware._self,
+  );
+  const router = t.router({
     test: testProcedure.query(({ ctx }) => {
       expectTypeOf(ctx).toMatchTypeOf<{
         foo: 'foo';
         bar: 'bar';
+        baz: 'baz';
       }>();
     }),
   });
+
+  // validate middlewares are called in order
+  // const caller = router.createCaller({});
+  // const result = await caller.test();
 });
 
 test('meta', () => {

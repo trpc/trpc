@@ -140,16 +140,27 @@ export type MiddlewareFunction<
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
+  piped?: Array<MiddlewareFunction<TParams, TParamsAfter>>;
 };
 
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
+  function createNewBuilder(
+    previousMiddleware: MiddlewareFunction<any, any>,
+    newMiddleware: MiddlewareFunction<any, any>,
+  ) {
+    newMiddleware.piped = [
+      ...(previousMiddleware.piped ?? [previousMiddleware]),
+      newMiddleware,
+    ];
+    return createMiddleware(newMiddleware);
+  }
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return {
       _self: fn,
       pipe(middleware) {
-        return middleware as unknown as AnyMiddlewareBuilder;
+        return createNewBuilder(fn, middleware);
       },
     };
   }
