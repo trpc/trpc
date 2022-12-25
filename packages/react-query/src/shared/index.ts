@@ -22,7 +22,7 @@ export {
   /**
    * @deprecated
    */
-  TRPCContextState,
+  type TRPCContextState,
   /**
    * @deprecated
    */
