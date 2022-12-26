@@ -14,7 +14,7 @@ import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SSRState, TRPCContext } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
+import { TRPCContextState } from '../../internals/deprecated/TRPCContextState';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
