@@ -7,9 +7,9 @@ slug: /links/splitLink
 
 import SplitLinkDiagram from '../../../static/img/split-link-diagram.svg';
 
-`splitLink` is a link that allows you to branch your link chain's execution depending on a given condition. Both the `true` and `false` branch are required. You can provide just one link, or multiple links per branch via an array.
+`splitLink` is a link that allows you to branch your link chain's execution depending on a given condition. Both the `true` and `false` branches are required. You can provide just one link, or multiple links per branch via an array.
 
-It's important to note that when you provide links for `splitLink` to execute, `splitLink` will create an entirely new link chain based on the links you passed. Therefore, you need to use a [**terminating link**](./index.md#the-terminating-link) if you only provide one link, or add the terminating link at the end of the array if you provide multiple links to be executed on a branch. Here's a visual representation of how `splitLink` works:
+It's important to note that when you provide links for `splitLink` to execute, `splitLink` will create an entirely new link chain based on the links you passed. Therefore, you need to use a [**terminating link**](./index.md#the-terminating-link) if you only provide one link or add the terminating link at the end of the array if you provide multiple links to be executed on a branch. Here's a visual representation of how `splitLink` works:
 
 <div align="center" style={{ marginBottom: '12px' }}>
   <SplitLinkDiagram style={{ width: '100%', height: '100%' }} />
@@ -19,7 +19,7 @@ It's important to note that when you provide links for `splitLink` to execute, `
 
 ### Disable batching for certain requests
 
-Let's say you're using `httpBatchLink` as the terminating link in your tRPC client config. This means request batching is enabled in every request. However, if you need to disable batching only for certain requests, you would need to change the terminating link in you tRPC client config dynamically between `httpLink` and `httpBatchLink`. This is a perfect opportunity for `splitLink` to be used:
+Let's say you're using `httpBatchLink` as the terminating link in your tRPC client config. This means request batching is enabled in every request. However, if you need to disable batching only for certain requests, you would need to change the terminating link in your tRPC client config dynamically between `httpLink` and `httpBatchLink`. This is a perfect opportunity for `splitLink` to be used:
 
 #### 1. Configure client / `utils/trpc.ts`
 
@@ -101,4 +101,4 @@ function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
 
 ## Reference
 
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/next/packages/client/src/links/splitLink.ts)
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/splitLink.ts)

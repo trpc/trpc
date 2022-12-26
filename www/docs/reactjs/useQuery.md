@@ -1,8 +1,8 @@
 ---
-id: queries
+id: useQuery
 title: useQuery()
 sidebar_label: useQuery()
-slug: /react-queries
+slug: /useQuery
 ---
 
 :::note
@@ -24,9 +24,9 @@ interface UseTRPCQueryOptions
 }
 ```
 
-Since `UseTRPCQueryOptions` extends @tanstack/react-query's `UseQueryOptions`, you can use any of their option in here such as `enabled`, `refetchOnWindowFocus` etc. We also have some `trpc` specific options that lets you opt in or out of certain behaviors on a per-procedure level:
+Since `UseTRPCQueryOptions` extends @tanstack/react-query's `UseQueryOptions`, you can use any of their options here such as `enabled`, `refetchOnWindowFocus`, etc. We also have some `trpc` specific options that let you opt in or out of certain behaviors on a per-procedure level:
 
-- **`trpc.ssr`:** If you have `ssr: true` in your [global config](nextjs#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e. you can not enable ssr on a procedure if your global config is set to false._
+- **`trpc.ssr`:** If you have `ssr: true` in your [global config](nextjs#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
 - **`trpc.abortOnUnmount`:** Override the [global config](nextjs#config-callback) and opt in or out of aborting queries on unmount.
 
 :::tip

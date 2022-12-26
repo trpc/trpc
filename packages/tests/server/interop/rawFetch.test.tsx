@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import * as trpc from '@trpc/server/src';
 import fetch from 'node-fetch';

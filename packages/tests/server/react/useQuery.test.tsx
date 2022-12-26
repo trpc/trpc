@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -31,6 +32,16 @@ const ctx = konn()
             }),
           )
           .query(() => '__result' as const),
+        byIdWithSerializable: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
+            }),
+          )
+          .query(() => ({
+            id: 1,
+            date: new Date(),
+          })),
         list: t.procedure
           .input(
             z.object({
@@ -151,7 +162,7 @@ test('useInfiniteQuery()', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
@@ -223,7 +234,7 @@ test('useSuspenseInfiniteQuery()', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
@@ -266,6 +277,37 @@ test('deprecated routers', async () => {
     proxy.deprecatedRouter.deprecatedProcedure.useQuery();
 
     return null;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+});
+
+test('useQuery options inference', () => {
+  const { appRouter, proxy, App } = ctx;
+
+  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['byIdWithSerializable'];
+
+  function MyComponent() {
+    const options: Options = {};
+    proxy.post.byIdWithSerializable.useQuery(
+      { id: '1' },
+      {
+        ...options,
+        onSuccess: (data) => {
+          expectTypeOf(data).toMatchTypeOf<{
+            id: number;
+            date: string;
+          }>();
+        },
+      },
+    );
+
+    return <></>;
   }
 
   render(

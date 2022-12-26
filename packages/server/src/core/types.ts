@@ -1,4 +1,5 @@
 import { inferObservableValue } from '../observable';
+import { inferTransformedProcedureOutput } from '../shared';
 import { AnyProcedure, ProcedureArgs } from './procedure';
 import { AnyRouter, AnyRouterDef, Router } from './router';
 
@@ -36,6 +37,9 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
 
+/**
+ * @deprecated will be removed in next major as it's v9 stuff
+ */
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'] & string,
@@ -56,7 +60,7 @@ type GetInferenceHelpers<
       : TRouterOrProcedure extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<TRouterOrProcedure>
-        : inferProcedureOutput<TRouterOrProcedure>
+        : inferTransformedProcedureOutput<TRouterOrProcedure>
       : never
     : never;
 };

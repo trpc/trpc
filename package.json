@@ -4,13 +4,13 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.17.0",
+  "packageManager": "pnpm@7.20.0",
   "scripts": {
-    "build": "turbo --filter=\"@trpc/*\" build",
+    "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",
-    "test": "turbo --filter tests test",
+    "test": "turbo --filter \"@trpc/tests\" test",
     "test-watch": "cd packages/tests && pnpm test-watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint -- --fix && manypkg fix",
@@ -36,18 +36,18 @@
     "@manypkg/cli": "^0.19.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@swc/core": "^1.3.3",
-    "@trivago/prettier-plugin-sort-imports": "^3.3.0",
+    "@trivago/prettier-plugin-sort-imports": "^4.0.0",
     "@types/node": "^18.7.20",
-    "@typescript-eslint/eslint-plugin": "^5.37.0",
-    "@typescript-eslint/parser": "^5.37.0",
-    "eslint": "^7.32.0",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "@typescript-eslint/parser": "^5.47.0",
+    "eslint": "^8.30.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-no-only-tests": "^3.0.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.25.1",
-    "eslint-plugin-react-hooks": "^4.2.0",
-    "eslint-plugin-turbo": "^0.0.4",
-    "eslint-plugin-unicorn": "40.1.0",
+    "eslint-plugin-no-only-tests": "^3.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.31.11",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-turbo": "^0.0.7",
+    "eslint-plugin-unicorn": "45.0.2",
     "fast-glob": "^3.2.12",
     "lerna": "^5.5.1",
     "npm-run-all": "^4.1.5",
@@ -56,7 +56,7 @@
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-multi-input": "^1.3.1",
     "rollup-plugin-node-externals": "^5.0.0",
-    "rollup-plugin-swc3": "^0.7.0",
+    "rollup-plugin-swc3": "^0.8.0",
     "rollup-plugin-typescript2": "^0.32.1",
     "tsx": "^3.9.0",
     "turbo": "^1.6.1",
@@ -65,13 +65,10 @@
   "pnpm": {
     "overrides": {
       "@tanstack/react-query": "4.6.0",
-      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
-      "@examples/next-starter-sqlite>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-starter-sqlite",
-      "@examples/next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Fnext-websockets-starter",
-      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
-      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Flegacy-next-starter",
-      "@examples/interop-next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-next-websockets-starter",
-      "@examples/interop-todo-web>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.3.1.tgz?id=%40examples%2Finterop-todo-web"
+      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
+      "@examples/next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Fnext-websockets-starter",
+      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
+      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Flegacy-next-starter"
     }
   }
 }

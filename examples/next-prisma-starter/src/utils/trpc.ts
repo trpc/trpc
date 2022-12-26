@@ -22,7 +22,7 @@ function getBaseUrl() {
   }
 
   // assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  return `http://127.0.0.1:${process.env.PORT ?? 3000}`;
 }
 
 /**
@@ -77,11 +77,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
               // This is so you can pass through things like cookies when we're server-side rendering
 
               // If you're using Node 18, omit the "connection" header
-              const {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                connection: _connection,
-                ...headers
-              } = ctx.req.headers;
+              const { connection: _connection, ...headers } = ctx.req.headers;
               return {
                 ...headers,
                 // Optional: inform server that it's an SSR request

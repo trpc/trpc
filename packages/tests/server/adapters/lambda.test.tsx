@@ -2,8 +2,6 @@
  * @deprecated
  * TODO: remove in next major
  */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as trpc from '@trpc/server/src';
 import { inferAsyncReturnType } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/lambda';

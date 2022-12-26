@@ -51,8 +51,23 @@
       "permanent": true
     },
     {
+      "source": "/docs/react-mutations",
+      "destination": "/docs/useMutation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/react-queries",
+      "destination": "/docs/useQuery",
+      "permanent": true
+    },
+    {
       "source": "/awesome",
       "destination": "/docs/awesome-trpc",
+      "permanent": false
+    },
+    {
+      "source": "/sponsor",
+      "destination": "https://github.com/sponsors/KATT",
       "permanent": false
     }
   ]

@@ -35,14 +35,6 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-:::info Is v10 ready for production?
-
-- tRPC v10 is **ready for production** and can safely be used today.
-- v10 is still a beta and might be changing as we continue to work through community feedback.
-- This doc is written for migrating from v9 to v10. If you start using v10 now, you will need to find your own path for migrating from v10-beta to v10.
-
-:::
-
 Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
 
 Under the hood of version 10, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
@@ -295,8 +287,8 @@ We recommend two strategies to start **(and finish!)** upgrading your codebase t
 
 :::info
 
-- If you use the codemod, you should still do step 1 to 3 below to make sure that works for you ahead of doing the full migration
-- Please note that this codemod isn't perfect - but will do a lot of the heavy lifting for you.
+- If you use the codemod, you should still do steps 1-3 below to make sure that works for you before doing the full migration.
+- Please note that this codemod isn't perfect but will do a lot of the heavy lifting for you.
 
 :::
 
@@ -306,7 +298,7 @@ Rewriting all of your existing v9 routes today may be too heavy of a lift for yo
 
 ### 1. Enable `interop()` on your v9 router
 
-Turning your v9 router into a v10 router only takes 10 characters. Add `.interop()` to the end of your v9 router...and you're done with your server code!
+Turning your v9 router into a v10 router only takes 10 characters. Add `.interop()` to the end of your v9 router... and you're done with your server code!
 
 ```diff title='src/server/routers/_app.ts'
   const appRouter = trpc
@@ -428,7 +420,7 @@ v10 also brings changes to the client side of your application. After making a f
 
 #### Renaming of @trpc/react to @trpc/react-query
 
-The `@trpc/react` package has been renamed to `@trpc/react-query`. This is to reflect that it is a thin wrapper around `react-query` as well as making room for instances where trpc may be used in react without the `@trpc/react-query` package; such as in use with upcoming React Server Components (RSC's) or in use with other data fetching library adapters. If you're using `@trpc/react` you'll need to remove it and install `@trpc/react-query` instead as well as updating your imports:
+The `@trpc/react` package has been renamed to `@trpc/react-query`. This is to reflect the fact that it is a thin wrapper around `react-query`, as well as to allow for situations where trpc may be used in react without the `@trpc/react-query` package, such as with upcoming React Server Components (RSCs) or with other data fetching library adapters. If you're using `@trpc/react`, you'll need to remove it and install `@trpc/react-query` instead, as well as update your imports:
 
 ```diff
 - import { createReactQueryHooks } from '@trpc/react';
@@ -437,7 +429,7 @@ The `@trpc/react` package has been renamed to `@trpc/react-query`. This is to re
 
 #### Major version upgrade of `react-query`
 
-We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around react-query, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details around your new React hooks implementation.
+We've upgraded `peerDependencies` from `react-query@^3` to `@tanstack/react-query@^4`. Because our client hooks are only a thin wrapper around react-query, we encourage you to [visit their migration guide](https://tanstack.com/query/v4/docs/guides/migrating-to-react-query-4) for more details about your new React hooks implementation.
 
 #### tRPC-specific options on hooks moved to `trpc`
 
@@ -470,7 +462,7 @@ trpc.post.byId.useQuery('1', {
 #### Query key changes
 
 :::note
-If you only use the tRPC provided API's in your app you will have no problems in
+If you only use the tRPC provided APIs in your app you will have no problems in
 migrating 👍 However if you have been using the tanstack query client directly
 to do things like update query data for multiple tRPC generated queries using
 [`queryClient.setQueriesData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetqueriesdata)
@@ -478,7 +470,7 @@ you may need to take note!
 :::
 
 To allow us to make room for some more advanced features like [invalidation across
-whole routers](useContext#invalidating-across-whole-routers) we needed to change how we use tanstack query keys under the
+whole routers](useContext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
@@ -487,7 +479,7 @@ between `query`'s and `infinite` queries when they are placed in the cache. We
 have also moved both this query `type` and the input into an object with named
 properties.
 
-given the simple router below:
+Given the simple router below:
 
 ```tsx
 export const appRouter = router({
@@ -562,7 +554,7 @@ const client = createTRPCProxyClient({
 });
 ```
 
-This change is also reflected in the `@trpc/server` package, where `http` related exports were previously exported from the main entrypoint, but has now been moved to their own `@trpc/server/http` entrypoint.
+This change is also reflected in the `@trpc/server` package, where `http` related exports were previously exported from the main entrypoint but have now been moved to their own `@trpc/server/http` entrypoint.
 
 ## Extras
 

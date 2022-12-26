@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+// We're not actually exporting this link
 import { AnyRouter } from '@trpc/server';
 import { Observable, observable, share } from '@trpc/server/observable';
 import { TRPCLink } from './types';
@@ -28,9 +30,7 @@ export function dedupeLink<
           delete pending[key];
         }
         const subscription = next(op).subscribe({
-          next(v) {
-            observer.next(v);
-          },
+          ...observer,
           error(e) {
             reset();
             observer.error(e);

@@ -1,6 +1,9 @@
 name: Build & Test
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   test:
@@ -14,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        node: ['16.x']
+        node: ['18.x']
         os: [ubuntu-latest]
 
     steps:
@@ -44,7 +47,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-trpc-main-
 
       - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root --filter tests install
+        run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Build
         run: pnpm turbo --filter "@trpc/*" build
@@ -52,7 +55,7 @@ jobs:
       - name: Test
         run: pnpm turbo --filter tests test-ci
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages

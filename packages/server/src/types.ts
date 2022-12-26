@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * @internal
  */
@@ -46,7 +44,7 @@ export type ThenArg<TType> = TType extends PromiseLike<infer U>
  */
 export type Simplify<TType> = TType extends any[] | Date
   ? TType
-  : { [K in keyof TType]: TType[K] } & {};
+  : { [K in keyof TType]: TType[K] };
 /**
  * @public
  */
@@ -73,7 +71,7 @@ export type InferLast<TType> = TType & {
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
-type FilterKeys<TObj extends object, TFilter> = {
+export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
 

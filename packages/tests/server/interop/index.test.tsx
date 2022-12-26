@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/ban-types */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { waitFor } from '@testing-library/react';
@@ -340,13 +340,11 @@ describe('integration tests', () => {
         const res = await client.query('hello', { who: 'katt' });
         expectTypeOf(res.input).toMatchTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
-        expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
       }
       {
         const res = await client.query('hello');
         expectTypeOf(res.input).toMatchTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
-        expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
       }
 
       close();
@@ -375,7 +373,6 @@ describe('integration tests', () => {
       const res = await client.mutation('hello', { who: 'katt' });
       expectTypeOf(res.input).toMatchTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
-      expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
       expect(res.text).toBe('hello katt');
       close();
     });

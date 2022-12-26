@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { createSSGHelpers } from '@trpc/react-query/src/ssg';

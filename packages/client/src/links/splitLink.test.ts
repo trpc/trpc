@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { observable } from '@trpc/server/observable';
 import { splitLink } from '../';
 import { OperationLink, TRPCLink } from '../';

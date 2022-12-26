@@ -61,6 +61,10 @@ const ctx = konn()
             return newPost;
           }),
       }),
+
+      greeting: t.router({
+        get: t.procedure.query(() => 'hello'),
+      }),
     });
 
     return getServerAndReactClient(appRouter);
@@ -114,7 +118,6 @@ test('client query sad path', async () => {
           setIsError(true);
         }
       })();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return <p>{isError ? 'Query errored' : "Query didn't error"}</p>;
@@ -202,7 +205,7 @@ test('prefetch', async () => {
     renderProxy(allPosts.data);
     return (
       <>
-        {allPosts!.data!.map((post) => {
+        {allPosts.data!.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
       </>
@@ -361,6 +364,60 @@ test('invalidate procedure for both query and infinite', async () => {
     expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
     expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
   });
+});
+
+test('reset', async () => {
+  const { proxy, App } = ctx;
+  const stableProxySpy = jest.fn();
+
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery();
+    const createPostMutation = proxy.post.create.useMutation();
+
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      stableProxySpy(proxy);
+    }, []);
+
+    if (!allPosts.data) {
+      return <>...</>;
+    }
+    return (
+      <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate(
+              { text: 'reset' },
+              {
+                onSuccess() {
+                  utils.post.all.reset();
+                },
+              },
+            );
+          }}
+        />
+        {allPosts.data.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  const addPostButton = await utils.findByTestId('add-post');
+
+  await userEvent.click(addPostButton);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('reset');
+  });
+  expect(stableProxySpy).toHaveBeenCalledTimes(1);
 });
 
 test('refetch', async () => {

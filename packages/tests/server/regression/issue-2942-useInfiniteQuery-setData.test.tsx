@@ -69,7 +69,7 @@ test('with input', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
@@ -148,7 +148,7 @@ test('w/o input', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 

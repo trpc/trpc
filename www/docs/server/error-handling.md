@@ -131,7 +131,7 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
-The `onError` parameter is an object that contains all information about the error and the context it occures in:
+The `onError` parameter is an object that contains all information about the error and the context it occurs in:
 
 ```ts
 {

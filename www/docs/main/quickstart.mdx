@@ -3,6 +3,7 @@ id: quickstart
 title: Quickstart
 sidebar_label: Quickstart
 slug: /quickstart
+description: Learn how to quickly get started and setup tRPC
 ---
 
 import CodeBlock from '@theme/CodeBlock';
@@ -10,7 +11,7 @@ import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
 :::tip
-We highly encourage you to check out [the example apps](example-apps.md) to learn about how tRPC is installed in your favorite framework.
+We highly encourage you to check out [the example apps](example-apps.mdx) to learn about how tRPC is installed in your favorite framework.
 :::
 
 <!-- Reusable snippet for a full backend -->
@@ -71,7 +72,7 @@ export type AppRouter = typeof appRouter;
 
 **⚠️ Requirements**: tRPC requires TypeScript > 4.1 as it relies on [Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html).
 
-tRPC is broken up into several packages so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase.
+tRPC is broken up into several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase.
 
 <table width="100%">
   <thead>
@@ -126,12 +127,12 @@ tRPC is broken up into several packages so you can install only what you need. M
 
 ### Installation Snippets
 
-Here are some install scripts to add tRPC to your project. These scripts include every `@trpc/*` package so feel free to remove what you don't need!
+Here are some install scripts to add tRPC to your project. These scripts include every `@trpc/*` package, so feel free to remove what you don't need!
 
 <Tabs>
-  <TabItem value="npm" label="npm">
+  <TabItem value="npm" label="npm" default>
 
-```bash
+```sh
 npm install @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query
 ```
 
@@ -181,7 +182,7 @@ export type AppRouter = typeof appRouter;
 
 Use `t.procedure.query()` to add a query procedure/endpoint to the router. The two methods on this procedure are:
 
-- `input` _(optional)_: When provided, this should be a function that validates and casts the _input_ of this procedure. It should return a strongly typed value when the input is valid or throw an error if the input is invalid. We recommend using a TypeScript validation library like [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct) or [Yup](https://github.com/jquense/yup) for input validation.
+- `input` _(optional)_: When provided, this should be a function that validates and casts the _input_ of this procedure. It should return a strongly typed value when the input is valid or throw an error if the input is invalid. We recommend using a TypeScript validation library like [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct), or [Yup](https://github.com/jquense/yup) for input validation.
 - `query`: This is the implementation of the procedure (a "resolver"). It's a function with a single `req` argument to represent the incoming request. The validated (and strongly typed!) input is passed into `req.input`.
 
 The following creates a query procedure called `userById` that takes a single string argument and returns a user object:
@@ -235,7 +236,7 @@ export type AppRouter = typeof appRouter;
 
 Similar to GraphQL, tRPC makes a distinction between query and mutation procedures.
 
-The way a procedure works on the server doesn't change much between query and mutation. The method name is different and the way that the client will use this procedure changes - but everything else is the same!
+The way a procedure works on the server doesn't change much between a query and a mutation. The method name is different, and the way that the client will use this procedure changes - but everything else is the same!
 
 Let's add a `userCreate` mutation by adding it as a new property on our router object:
 
@@ -323,6 +324,10 @@ trpc.u;
 ```
 
 ## Next steps
+
+:::tip
+By default, tRPC will map complex types like `Date` to their JSON-equivalent _(`string` in the case of `Date`)_. If you want to add to retain the integrity of those types, the easiest way to add support for these is to [use superjson](data-transformers#using-superjson) as a Data Transformer.
+:::
 
 tRPC includes more sophisticated client-side tooling designed for React projects and Next.js.
 

@@ -17,6 +17,11 @@ const t = initTRPC.create();
 
 const appRouter = t.router({
   post: t.router({
+    list: t.procedure
+      .query(() => {
+        // imaginary db call
+        return [{ id: 1, title: 'tRPC is the best!' }];
+    }),
     byId: t.procedure
       .input(z.string())
       .query(({ input }) => {
@@ -114,4 +119,55 @@ async function main() {
 }
 
 main();
+```
+
+## Infer React Query options based on your router
+
+When creating custom hooks around tRPC procedures, it's sometimes necesary to have the types of the options inferred from the router. You can do so via the `inferReactQueryProcedureOptions` helper exported from `@trpc/react-query`.
+
+```ts twoslash filename='trpc.ts'
+// @module: esnext
+// @include: server
+// ---cut---
+// @filename: trpc.ts
+import { 
+  type inferReactQueryProcedureOptions, 
+  createTRPCReact
+} from '@trpc/react-query';
+import type { inferRouterInputs } from '@trpc/server';
+import type { AppRouter } from './server';
+
+export type ReactQueryOptions = inferReactQueryProcedureOptions<AppRouter>;
+export type RouterInputs = inferRouterInputs<AppRouter>;
+
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: usePostCreate.ts
+// @noErrors
+import { type ReactQueryOptions, trpc } from './trpc';
+
+type PostCreateOptions = ReactQueryOptions['post']['create'];
+
+function usePostCreate(options?: PostCreateOptions) {
+  const utils = trpc.useContext();
+  return trpc.post.create.useMutation({
+    ...options,
+    onSuccess(post) {         
+      // invalidate all queries on the post router
+      // when a new post is created
+      utils.post.invalidate();
+      options?.onSuccess?.(post);
+    },
+  });
+}
+
+// @filename: usePostById.ts
+import { ReactQueryOptions, RouterInputs, trpc } from './trpc';
+
+type PostByIdOptions = ReactQueryOptions['post']['byId'];
+type PostByIdInput = RouterInputs['post']['byId'];
+
+function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
+  return trpc.post.byId.useQuery(input, options);
+}
 ```

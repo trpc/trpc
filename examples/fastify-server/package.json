@@ -1,13 +1,13 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.0.0-rc.8",
+  "version": "10.7.0",
   "private": true,
   "scripts": {
     "build": "tsc",
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "lint": "eslint --ext \".js,.ts,.tsx\" src",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start:server": "node dist/server/index.js",
     "start:client": "wait-port 2022 && node dist/client/index.js",
     "start": "run-p start:* --print-label",
@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@fastify/websocket": "^5.0.0",
-    "@trpc/client": "^10.0.0-rc.8",
-    "@trpc/server": "^10.0.0-rc.8",
+    "@trpc/client": "^10.7.0",
+    "@trpc/server": "^10.7.0",
     "abort-controller": "^3.0.0",
     "fastify": "^3.27.1",
     "node-fetch": "^2.6.1",

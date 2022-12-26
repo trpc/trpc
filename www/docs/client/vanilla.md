@@ -33,7 +33,7 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-As you can see, we passed `AppRouter` as a **type argument** of `createTRPCProxyClient`. This returns a strongly typed `client` instance, a proxy which mirrors the structure of your `AppRouter` on the client:
+As you can see, we passed `AppRouter` as a **type argument** of `createTRPCProxyClient`. This returns a strongly typed `client` instance, a proxy that mirrors the structure of your `AppRouter` on the client:
 
 ```ts title='client.ts'
 const bilbo = await client.getUser.query('id_bilbo');

@@ -48,7 +48,7 @@ const appRouter = router({
 
 ## Input validation
 
-tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
+tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/tests/server/validators.test.ts)
 
 
 ### With [Zod](https://github.com/colinhacks/zod)
@@ -234,7 +234,7 @@ export type AppRouter = typeof appRouter;
 
 ## Reusable base procedures
 
-You can create reusable base procedures to have a set of procedures that are i.e. login protected.
+You can create reusable base procedures to have a set of login-protected procedures.
 
 :::tip
 This can be combined with [multiple input parsers](#multiple-input-parsers) & [metadata](metadata.md) to create powerful reusable authorization and authentication patterns.

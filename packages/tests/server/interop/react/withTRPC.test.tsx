@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createLegacyAppRouter } from './__testHelpers';
 import { render, waitFor } from '@testing-library/react';

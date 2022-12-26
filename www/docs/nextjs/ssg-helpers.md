@@ -5,7 +5,10 @@ sidebar_label: SSG Helpers
 slug: /ssg-helpers
 ---
 
-`createProxySSGHelpers` provides you a set of helper functions that you can use to prefetch queries on the server.
+`createProxySSGHelpers` provides you with a set of helper functions that you can use to prefetch queries on the server.
+
+Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](server-side-calls).
+That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the SSG helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](context) in that scenario.
 
 ```ts
 import { createProxySSGHelpers } from '@trpc/react-query/ssg';
@@ -19,7 +22,7 @@ const ssg = createProxySSGHelpers({
 ```
 
 :::info
-For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/next/examples/.test/ssg)
+For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
 :::
 
 The returned functions are all wrappers around react-query functions. Please check out [their docs](https://react-query.tanstack.com/overview) to learn more about them.

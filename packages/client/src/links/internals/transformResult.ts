@@ -5,12 +5,13 @@ import {
   TRPCResultMessage,
 } from '@trpc/server/rpc';
 import { TRPCClientRuntime } from '..';
+import { TRPCClientError } from '../../TRPCClientError';
 
 // FIXME:
 // - the generics here are probably unnecessary
 // - the RPC-spec could probably be simplified to combine HTTP + WS
 /** @internal */
-export function transformResult<TRouter extends AnyRouter, TOutput>(
+function transformResultInner<TRouter extends AnyRouter, TOutput>(
   response:
     | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>
     | TRPCResponse<TOutput, inferRouterError<TRouter>>,
@@ -37,4 +38,41 @@ export function transformResult<TRouter extends AnyRouter, TOutput>(
     }),
   } as TRPCResultMessage<TOutput>['result'];
   return { ok: true, result } as const;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  // check that value is object
+  return !!value && !Array.isArray(value) && typeof value === 'object';
+}
+
+/**
+ * Transforms and validates that the result is a valid TRPCResponse
+ * @internal
+ */
+export function transformResult<TRouter extends AnyRouter, TOutput>(
+  response:
+    | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>
+    | TRPCResponse<TOutput, inferRouterError<TRouter>>,
+  runtime: TRPCClientRuntime,
+): ReturnType<typeof transformResultInner> {
+  let result: ReturnType<typeof transformResultInner>;
+  try {
+    // Use the data transformers on the JSON-response
+    result = transformResultInner(response, runtime);
+  } catch (err) {
+    throw new TRPCClientError('Unable to transform response from server');
+  }
+
+  // check that output of the transformers is a valid TRPCResponse
+  if (
+    !result.ok &&
+    (!isObject(result.error.error) ||
+      typeof result.error.error.code !== 'number')
+  ) {
+    throw new TRPCClientError('Badly formatted response from server');
+  }
+  if (result.ok && !isObject(result.result)) {
+    throw new TRPCClientError('Badly formatted response from server');
+  }
+  return result;
 }
