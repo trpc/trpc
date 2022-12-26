@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { routerToServerAndClientNew } from './___testHelpers';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
 import { Dict, initTRPC } from '@trpc/server/src';

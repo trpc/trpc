@@ -1,8 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
 /* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';

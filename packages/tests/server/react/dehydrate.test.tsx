@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { createAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
 import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';

@@ -19,7 +19,7 @@
     "build-postgres": "run-s generate-postgres migrate && next build",
     "build": "pnpm build-postgres",
     "start": "next start",
-    "lint": "eslint src",
+    "lint": "eslint src --report-unused-disable-directives",
     "lint-fix": "pnpm lint --fix",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
