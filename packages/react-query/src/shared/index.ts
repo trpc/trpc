@@ -7,6 +7,7 @@ export type {
 } from '../createTRPCReact';
 export type { TRPCUseQueries } from '../internals/useQueries';
 export * from './hooks/createHooks';
+export * from './hooks/deprecated/createHooksInternal';
 export * from './queryClient';
 export * from './types';
 export * from './hooks/types';
