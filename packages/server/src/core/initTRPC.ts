@@ -44,9 +44,20 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
+// If the type is a function (sync or async) unwrap it, else use the type as is
+type Unwrap<TType> = TType extends (...args: any[]) => infer R
+  ? Awaited<R>
+  : TType;
+
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
-  context<TNewContext extends RootConfigTypes['ctx']>() {
-    return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
+  context<
+    TNewContext extends
+      | RootConfigTypes['ctx']
+      | ((...args: unknown[]) => RootConfigTypes['ctx']),
+  >() {
+    return new TRPCBuilder<
+      FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>
+    >();
   }
   meta<TNewMeta extends RootConfigTypes['meta']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
