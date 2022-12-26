@@ -156,3 +156,57 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     };
   };
 }
+
+// Just testing out the types with the following snippets 🙂
+
+const t = initTRPC.create({});
+
+const fooMiddleware = t.middleware((opts) => {
+  return opts.next({
+    ctx: {
+      foo: 'foo' as const,
+    },
+  });
+});
+
+const barMiddleware = fooMiddleware.pipe((opts) => {
+  opts.ctx.foo;
+  //        ^?
+  return opts.next({
+    ctx: {
+      bar: 'bar' as const,
+    },
+  });
+});
+
+const bazMiddleware = barMiddleware.pipe((opts) => {
+  opts.ctx.foo;
+  //        ^?
+
+  opts.ctx.bar;
+  //        ^?
+
+  return opts.next({
+    ctx: {
+      baz: 'baz' as const,
+    },
+  });
+});
+
+bazMiddleware;
+// ^?
+
+export type TypeOfBazMiddleware = typeof bazMiddleware;
+//           ^?
+
+t.procedure.use(bazMiddleware).query((opts) => {
+  opts.ctx;
+  //    ^?
+
+  opts.ctx.foo;
+  //        ^?
+  opts.ctx.bar;
+  //        ^?
+  opts.ctx.baz;
+  //        ^?
+});

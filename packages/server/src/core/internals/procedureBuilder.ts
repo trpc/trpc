@@ -7,6 +7,7 @@ import {
   UndefinedKeys,
 } from '../../types';
 import {
+  MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
   createInputMiddleware,
@@ -148,6 +149,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    */
   use<$Params extends ProcedureParams>(
     fn:
+      | MiddlewareBuilder<TParams, $Params>
       | MiddlewareFunction<TParams, $Params>
       | Array<MiddlewareFunction<TParams, $Params>>,
   ): CreateProcedureReturnInput<TParams, $Params>;
@@ -194,7 +196,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
 
-export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
+export type ProcedureBuilderMiddleware =
+  | MiddlewareFunction<any, any>
+  | MiddlewareBuilder<any, any>;
 
 export type ProcedureBuilderResolver = (
   opts: ResolveOptions<any>,
@@ -341,7 +345,9 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
+        const middlewareDo =
+          'pipe' in middleware ? middleware._self : middleware;
+        const result = await middlewareDo({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
