@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { routerToServerAndClientNew } from './___testHelpers';
 import '@testing-library/jest-dom';
 import { initTRPC } from '@trpc/server/src';
