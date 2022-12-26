@@ -12,7 +12,7 @@
     "dev-www": "turbo --filter www dev",
     "test": "turbo --filter \"@trpc/tests\" test",
     "test-watch": "cd packages/tests && pnpm test-watch",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore . --max-warnings 0 --report-unused-disable-directives",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore . --report-unused-disable-directives",
     "lint-fix": "pnpm lint --fix && manypkg fix",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -type d -prune | xargs rm -rf",
     "codegen:override-prisma": "tsx scripts/addPrismaOverrides.ts",
