@@ -50,7 +50,7 @@ test('decorate independently', () => {
   // 2. snapshot ctx in resolver
 
   t.procedure
-    .use(barMiddleware._self.piped ?? barMiddleware._self)
+    .use(bazMiddleware._self.piped ?? bazMiddleware._self)
     .query(({ ctx }) => {
       expectTypeOf(ctx.user).toMatchTypeOf<User>();
     });
@@ -109,8 +109,8 @@ test.only('resolver context', async () => {
   });
 
   // validate middlewares are called in order
-  // const caller = router.createCaller({});
-  // const result = await caller.test();
+  const caller = router.createCaller({});
+  const result = await caller.test();
 });
 
 test('meta', () => {
