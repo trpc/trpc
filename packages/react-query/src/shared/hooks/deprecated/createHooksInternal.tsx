@@ -33,7 +33,7 @@ import { useHookResult } from '../../../internals/useHookResult';
 import { TRPCUseQueries } from '../../../internals/useQueries';
 import { createUseQueriesProxy } from '../../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
-import { createRootHooks } from '../createHooksInternal';
+import { createHooks } from '../createHooks';
 import {
   CreateClient,
   TRPCProvider,
@@ -606,6 +606,7 @@ type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
 /**
  * Infer the type of a `createReactQueryHooks` function
  * @internal
+ * @deprecated
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,
@@ -621,7 +622,7 @@ export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
-  return createRootHooks(config) as unknown as CreateReactQueryHooks<
+  return createHooks(config) as unknown as CreateReactQueryHooks<
     TRouter,
     TSSRContext
   >;

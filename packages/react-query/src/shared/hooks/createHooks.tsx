@@ -38,10 +38,9 @@ import {
 /**
  * @internal
  */
-export function createRootHooks<
-  TRouter extends AnyRouter,
-  TSSRContext = unknown,
->(config?: CreateTRPCReactOptions<TRouter>) {
+export function createHooks<TRouter extends AnyRouter, TSSRContext = unknown>(
+  config?: CreateTRPCReactOptions<TRouter>,
+) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
     config?.unstable_overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());

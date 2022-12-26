@@ -6,7 +6,7 @@ export type {
   DecorateProcedure,
 } from '../createTRPCReact';
 export type { TRPCUseQueries } from '../internals/useQueries';
-export * from './hooks/createHooksInternal';
+export * from './hooks/createHooks';
 export * from './queryClient';
 export * from './types';
 export * from './hooks/types';

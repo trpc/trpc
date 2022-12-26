@@ -5,7 +5,7 @@ import { CreateTRPCReactOptions } from './shared';
 import {
   CreateReactQueryHooks,
   createHooksInternal,
-} from './shared/hooks/createHooksInternal';
+} from './shared/hooks/createHooks';
 
 /**
  * @deprecated use `createTRPCReact` instead
