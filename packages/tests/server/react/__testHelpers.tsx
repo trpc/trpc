@@ -81,7 +81,7 @@ export function createAppRouter() {
         let nextCursor: typeof cursor = null;
         for (let index = 0; index < db.posts.length; index++) {
           const element = db.posts[index]!;
-          if (cursor != null && element!.createdAt < cursor) {
+          if (cursor != null && element.createdAt < cursor) {
             continue;
           }
           items.push(element);

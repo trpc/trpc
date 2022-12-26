@@ -159,7 +159,7 @@ describe('formatError()', () => {
       proxy.err.mutate(1 as any),
       TRPCClientError,
     );
-    delete (clientError.data as any).stack;
+    delete clientError.data.stack;
     expect(clientError.data).toMatchInlineSnapshot(`
 Object {
   "code": "BAD_REQUEST",

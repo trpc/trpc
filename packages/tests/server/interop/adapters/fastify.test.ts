@@ -196,9 +196,7 @@ describe('anonymous user', () => {
     await app.start();
   });
 
-  afterEach(async () => {
-    await app.stop();
-  });
+  afterEach(() => app.stop());
 
   test('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
@@ -324,9 +322,7 @@ describe('authorized user', () => {
     await app.start();
   });
 
-  afterEach(async () => {
-    await app.stop();
-  });
+  afterEach(() => app.stop());
 
   test('query', async () => {
     expect(await app.client.query('hello')).toMatchInlineSnapshot(`
@@ -358,9 +354,7 @@ describe('anonymous user with fastify-plugin', () => {
     await app.start();
   });
 
-  afterEach(async () => {
-    await app.stop();
-  });
+  afterEach(() => app.stop());
 
   test('fetch GET', async () => {
     const req = await fetch(`http://localhost:${config.port}/hello`);
