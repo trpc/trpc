@@ -8,7 +8,15 @@ import type {
 import { AnyRouter } from '../core';
 import { TRPCError } from '../error/TRPCError';
 import { nodeHTTPRequestHandler } from './node-http';
-import { NodeHTTPHandlerOptions } from './node-http';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPHandlerOptions,
+} from './node-http';
+
+export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
+  NextApiRequest,
+  NextApiResponse
+>;
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
