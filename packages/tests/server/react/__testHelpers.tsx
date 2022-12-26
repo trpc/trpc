@@ -9,7 +9,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { OutputWithCursor } from '@trpc/react-query/src/shared/hooks/createHooksInternal';
+import { OutputWithCursor } from '@trpc/react-query/shared';
 import { TRPCError, initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
@@ -80,7 +80,7 @@ export function createAppRouter() {
         let nextCursor: typeof cursor = null;
         for (let index = 0; index < db.posts.length; index++) {
           const element = db.posts[index]!;
-          if (cursor != null && element!.createdAt < cursor) {
+          if (cursor != null && element.createdAt < cursor) {
             continue;
           }
           items.push(element);

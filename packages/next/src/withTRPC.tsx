@@ -122,7 +122,7 @@ export function withTRPC<
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
       const hydratedState = trpc.useDehydratedState(
         trpcClient,
-        (props.pageProps as any).trpcState,
+        props.pageProps.trpcState,
       );
 
       return (

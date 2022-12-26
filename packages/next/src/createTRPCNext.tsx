@@ -69,6 +69,6 @@ export function createTRPCNext<
       return _withTRPC;
     }
 
-    return createReactProxyDecoration(key as string, hooks);
+    return createReactProxyDecoration(key, hooks);
   });
 }

@@ -205,7 +205,7 @@ test('prefetch', async () => {
     renderProxy(allPosts.data);
     return (
       <>
-        {allPosts!.data!.map((post) => {
+        {allPosts.data!.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
       </>

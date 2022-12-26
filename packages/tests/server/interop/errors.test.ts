@@ -156,7 +156,7 @@ describe('formatError()', () => {
       client.mutation('err', 1 as any),
       TRPCClientError,
     );
-    delete (clientError.data as any).stack;
+    delete clientError.data.stack;
     expect(clientError.data).toMatchInlineSnapshot(`
 Object {
   "code": "BAD_REQUEST",

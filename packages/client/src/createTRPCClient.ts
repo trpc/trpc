@@ -8,11 +8,11 @@ import { Unsubscribable } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
 import {
-  GenericTRPCClient as Client,
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCSubscriptionObserver,
-} from './internals/GenericTRPCClient';
+  TRPCUntypedClient,
+} from './internals/TRPCUntypedClient';
 import { TRPCClientRuntime, httpBatchLink } from './links';
 
 /**
@@ -65,7 +65,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
     }
     return [httpBatchLink(opts)];
   };
-  const client = new Client({
+  const client = new TRPCUntypedClient({
     ...opts,
     links: getLinks(),
   });

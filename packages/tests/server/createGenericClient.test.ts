@@ -1,10 +1,10 @@
 import { ignoreErrors } from './___testHelpers';
-import { createGenericTRPCClient } from '@trpc/client/src';
+import { createTRPCUntypedClient } from '@trpc/client/src';
 import { Unsubscribable } from '@trpc/server/src/observable';
 import { expectTypeOf } from 'expect-type';
 
 test('loosely typed parameters', () => {
-  const client = createGenericTRPCClient({
+  const client = createTRPCUntypedClient({
     links: [],
   });
 
@@ -24,7 +24,7 @@ test('loosely typed parameters', () => {
 });
 
 test('subscription required parameters and result', () => {
-  const client = createGenericTRPCClient({
+  const client = createTRPCUntypedClient({
     links: [],
   });
 
@@ -42,7 +42,7 @@ test('subscription required parameters and result', () => {
 });
 
 test('query and mutation result type is Promise<any>', () => {
-  const client = createGenericTRPCClient({
+  const client = createTRPCUntypedClient({
     links: [],
   });
 
