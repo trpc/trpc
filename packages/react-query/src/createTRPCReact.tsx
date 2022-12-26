@@ -23,8 +23,11 @@ import {
   createReactQueryUtilsProxy,
 } from './shared';
 import {
-  CreateClient,
   CreateReactQueryHooks,
+  createHooksInternal,
+} from './shared/hooks/createHooksInternal';
+import {
+  CreateClient,
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
@@ -36,8 +39,7 @@ import {
   UseTRPCQueryResult,
   UseTRPCQuerySuccessResult,
   UseTRPCSubscriptionOptions,
-  createHooksInternal,
-} from './shared/hooks/createHooksInternal';
+} from './shared/hooks/types';
 import { CreateTRPCReactOptions } from './shared/types';
 
 /**

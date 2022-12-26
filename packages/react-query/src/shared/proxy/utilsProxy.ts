@@ -24,11 +24,11 @@ import {
 } from '@trpc/server/shared';
 import {
   DecoratedProxyTRPCContextProps,
-  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
+import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<

@@ -1,11 +1,13 @@
 import {
-  CancelOptions,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
+  QueryClient,
+} from '@tanstack/react-query';
+import {
+  CancelOptions,
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
-  QueryClient,
   RefetchOptions,
   RefetchQueryFilters,
   ResetOptions,
@@ -15,16 +17,13 @@ import {
 } from '@tanstack/react-query';
 import {
   TRPCClient,
-  TRPCClientError,
   TRPCRequestOptions,
   inferRouterProxyClient,
 } from '@trpc/client';
-import type {
-  AnyRouter,
-  inferHandlerInput,
-  inferProcedureInput,
-} from '@trpc/server';
-import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { TRPCClientError } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
+import { inferHandlerInput, inferProcedureInput } from '@trpc/server';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { createContext } from 'react';
 
 export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
@@ -87,7 +86,7 @@ export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
 ];
 
 /** @internal */
-export type TRPCContextResetQueries<TRouter extends AnyRouter> =
+type TRPCContextResetQueries<TRouter extends AnyRouter> =
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
    */
@@ -104,7 +103,10 @@ export type TRPCContextResetQueries<TRouter extends AnyRouter> =
      */
     ((filters?: ResetQueryFilters, options?: ResetOptions) => Promise<void>);
 
-/** @internal */
+/**
+ * @deprecated
+ * @internal
+ **/
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
