@@ -83,6 +83,7 @@ export type ProcedureRecord<
  * @public
  * @deprecated
  */
+// ts-prune-ignore-next
 export type inferProcedureInput<
   TProcedure extends Procedure<any, any, any, any, any, any, any>,
 > = TProcedure extends Procedure<any, any, any, infer Input, any, any, any>
@@ -111,6 +112,7 @@ export type inferProcedureOutput<
  * @beta
  * @deprecated
  */
+// ts-prune-ignore-next
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'],
@@ -159,6 +161,7 @@ export type inferRouterContext<TRouter extends AnyRouter> = Parameters<
 /**
  * @internal
  */
+// ts-prune-ignore-next
 export type inferRouterMeta<TRouter extends AnyRouter> = TRouter extends Router<
   any,
   any,
@@ -191,6 +194,7 @@ export type AnyRouter<TContext extends Record<string, any> = any> = Router<
  * @internal
  * @deprecated
  */
+// ts-prune-ignore-next
 export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
   TRouter['getErrorShape']
 >;

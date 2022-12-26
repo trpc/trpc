@@ -18,10 +18,7 @@ import {
   TRPCResponseMessage,
 } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPCreateContextOption,
-} from './node-http';
+import { NodeHTTPCreateContextOption } from './node-http';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -104,11 +101,6 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   wss: ws.Server;
   process?: NodeJS.Process;
 } & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
-
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  ws
->;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
