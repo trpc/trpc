@@ -188,7 +188,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       next: ^13.0.0
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -212,7 +212,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/react-dom': 18.0.9
-      eslint: 7.32.0
+      eslint: 8.30.0
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
@@ -223,7 +223,7 @@ importers:
       '@trpc/server': ^10.7.0
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       node-fetch: ^2.6.1
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
@@ -238,7 +238,7 @@ importers:
       '@cloudflare/workers-types': 3.18.0
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
-      eslint: 7.32.0
+      eslint: 8.30.0
       node-fetch: 2.6.7
       start-server-and-test: 1.14.0
       tsx: 3.12.1
@@ -254,7 +254,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       express: ^4.17.1
       node-fetch: ^2.6.1
       npm-run-all: ^4.1.5
@@ -275,7 +275,7 @@ importers:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       '@types/react': 18.0.25
-      eslint: 7.32.0
+      eslint: 8.30.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.12.1
@@ -292,7 +292,7 @@ importers:
       '@types/node-fetch': ^2.5.11
       '@types/react': ^18.0.9
       abort-controller: ^3.0.0
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       express: ^4.17.1
       node-fetch: ^2.6.1
       npm-run-all: ^4.1.5
@@ -314,7 +314,7 @@ importers:
       '@types/express': 4.17.14
       '@types/node': 18.7.20
       '@types/react': 18.0.25
-      eslint: 7.32.0
+      eslint: 8.30.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.12.1
@@ -330,7 +330,7 @@ importers:
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       fastify: ^3.27.1
       node-fetch: ^2.6.1
       npm-run-all: ^4.1.5
@@ -357,7 +357,7 @@ importers:
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
       '@types/ws': 8.5.3
-      eslint: 7.32.0
+      eslint: 8.30.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.12.1
@@ -369,7 +369,7 @@ importers:
       '@trpc/client': ^10.7.0
       '@trpc/server': ^10.7.0
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       node-fetch: ^2.6.1
       serverless: ^3.18.1
       serverless-offline: ^8.8.0
@@ -383,7 +383,7 @@ importers:
       tsx: 3.12.1
     devDependencies:
       '@types/node': 18.7.20
-      eslint: 7.32.0
+      eslint: 8.30.0
       serverless: 3.25.0
       serverless-offline: 8.8.1_serverless@3.25.0
       serverless-plugin-typescript: 2.1.4_3z2btqcmsmejode72wbbaetqva
@@ -392,7 +392,7 @@ importers:
   examples/minimal:
     specifiers:
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
       tsx: ^3.9.0
@@ -400,7 +400,7 @@ importers:
       wait-port: ^1.0.1
     devDependencies:
       '@types/node': 18.7.20
-      eslint: 7.32.0
+      eslint: 8.30.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.12.1
@@ -428,7 +428,7 @@ importers:
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^2.1.0
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       react: ^18.2.0
       react-dom: ^18.2.0
       typescript: ^4.8.3
@@ -444,7 +444,7 @@ importers:
       '@types/react': 18.0.25
       '@types/react-dom': 18.0.9
       '@vitejs/plugin-react': 2.2.0_vite@3.2.4
-      eslint: 7.32.0
+      eslint: 8.30.0
       typescript: 4.8.3
       vite: 3.2.4
 
@@ -452,7 +452,7 @@ importers:
     specifiers:
       '@trpc/server': ^10.7.0
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       tsx: ^3.9.0
       typescript: ^4.8.3
       zod: ^3.0.0
@@ -461,7 +461,7 @@ importers:
       zod: 3.20.2
     devDependencies:
       '@types/node': 18.7.20
-      eslint: 7.32.0
+      eslint: 8.30.0
       tsx: 3.12.1
       typescript: 4.8.3
 
@@ -493,7 +493,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       next: ^13.0.0
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -514,7 +514,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/react-dom': 18.0.9
-      eslint: 7.32.0
+      eslint: 8.30.0
       tsx: 3.12.1
       typescript: 4.8.3
 
@@ -528,7 +528,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       next: ^13.0.0
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -548,7 +548,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/react-dom': 18.0.9
-      eslint: 7.32.0
+      eslint: 8.30.0
       typescript: 4.8.3
 
   examples/next-minimal-starter:
@@ -561,7 +561,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       next: ^13.0.0
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -581,7 +581,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/react-dom': 18.0.9
-      eslint: 7.32.0
+      eslint: 8.30.0
       typescript: 4.8.3
 
   examples/next-prisma-starter:
@@ -664,7 +664,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       next: ^13.0.0
       npm-run-all: ^4.1.5
       prisma: ^4.7.1
@@ -696,7 +696,7 @@ importers:
       '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
       '@types/node': 18.7.20
       '@types/react': 18.0.25
-      eslint: 7.32.0
+      eslint: 8.30.0
       npm-run-all: 4.1.5
       prisma: 4.7.1
       start-server-and-test: 1.14.0
@@ -816,7 +816,7 @@ importers:
       '@types/node-fetch': ^2.5.11
       '@types/ws': ^8.2.0
       abort-controller: ^3.0.0
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       node-fetch: ^2.6.1
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
@@ -837,7 +837,7 @@ importers:
     devDependencies:
       '@types/node': 18.7.20
       '@types/ws': 8.5.3
-      eslint: 7.32.0
+      eslint: 8.30.0
       npm-run-all: 4.1.5
       start-server-and-test: 1.14.0
       tsx: 3.12.1
@@ -878,14 +878,14 @@ importers:
       '@testing-library/dom': ^8.18.1
       '@trpc/server': ^10.7.0
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       rollup: ^2.79.1
       tsx: ^3.9.0
     devDependencies:
       '@testing-library/dom': 8.19.0
       '@trpc/server': link:../server
       '@types/node': 18.7.20
-      eslint: 7.32.0
+      eslint: 8.30.0
       rollup: 2.79.1
       tsx: 3.12.1
 
@@ -897,7 +897,7 @@ importers:
       '@trpc/server': ^10.7.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       express: ^4.17.1
       next: ^13.0.0
       react: ^18.2.0
@@ -915,7 +915,7 @@ importers:
       '@trpc/server': link:../server
       '@types/express': 4.17.14
       '@types/node': 18.7.20
-      eslint: 7.32.0
+      eslint: 8.30.0
       express: 4.18.2
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -931,7 +931,7 @@ importers:
       '@trpc/server': ^10.7.0
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       express: ^4.17.1
       next: ^13.0.0
       react: ^18.2.0
@@ -945,7 +945,7 @@ importers:
       '@trpc/server': link:../server
       '@types/express': 4.17.14
       '@types/node': 18.7.20
-      eslint: 7.32.0
+      eslint: 8.30.0
       express: 4.18.2
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
@@ -970,7 +970,7 @@ importers:
       abort-controller: ^3.0.0
       aws-lambda: ^1.0.7
       devalue: ^2.0.1
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       expect-type: ^0.15.0
       express: ^4.17.1
       fastify: ^3.27.1
@@ -1005,7 +1005,7 @@ importers:
       abort-controller: 3.0.0
       aws-lambda: 1.0.7
       devalue: 2.0.1
-      eslint: 7.32.0
+      eslint: 8.30.0
       expect-type: 0.15.0
       express: 4.18.2
       fastify: 3.29.4
@@ -1046,7 +1046,7 @@ importers:
       '@types/testing-library__jest-dom': ^5.14.5
       abort-controller: ^3.0.0
       devalue: ^2.0.1
-      eslint: ^7.32.0
+      eslint: ^8.30.0
       expect-type: ^0.15.0
       fastify: ^3.27.1
       fastify-plugin: ^3.0.1
@@ -1085,7 +1085,7 @@ importers:
       '@types/testing-library__jest-dom': 5.14.5
       abort-controller: 3.0.0
       devalue: 2.0.1
-      eslint: 7.32.0
+      eslint: 8.30.0
       expect-type: 0.15.0
       fastify: 3.29.4
       fastify-plugin: 3.0.1
@@ -1355,6 +1355,7 @@ packages:
     resolution: {integrity: sha512-Zt1yodBx1UcyiePMSkWnU4hPqhwq7hGi2nFL1LeA3EUl+q2LQx16MISgJ0+z7dnmgvP9QtIleuETGOiOH1RcIw==}
     dependencies:
       '@babel/highlight': 7.18.6
+    dev: true
 
   /@babel/code-frame/7.18.6:
     resolution: {integrity: sha512-TDCmlK5eOvH+eH7cdAFlNXeVJqWIQ7gW9tY1GJIpUtFb6CmjVyq2VM3u71bOyR8CRihcCgMUYoDNyLXao3+70Q==}
@@ -3792,6 +3793,7 @@ packages:
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@eslint/eslintrc/1.4.0:
     resolution: {integrity: sha512-7yfvXy6MWLgWSFsLhz5yH3iQ52St8cdUY6FoGieKkRDVxuxmrNuUetIuu6cmjNWwniUHiWXjxCr5tTXDrbYS5A==}
@@ -4086,6 +4088,7 @@ packages:
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /@humanwhocodes/module-importer/1.0.1:
     resolution: {integrity: sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA==}
@@ -7582,6 +7585,7 @@ packages:
       acorn: ^6.0.0 || ^7.0.0 || ^8.0.0
     dependencies:
       acorn: 7.4.1
+    dev: true
 
   /acorn-jsx/5.3.2_acorn@8.8.1:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -7949,6 +7953,7 @@ packages:
   /astral-regex/2.0.0:
     resolution: {integrity: sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==}
     engines: {node: '>=8'}
+    dev: true
 
   /async/3.2.4:
     resolution: {integrity: sha512-iAB+JbDEGXhyIUavoDl9WP/Jj106Kz9DEn1DPgYw5ruDn0e3Wgi3sKFm55sASdGBNOQB8F59d9qQ7deqrHA8wQ==}
@@ -11171,6 +11176,7 @@ packages:
     engines: {node: '>=6'}
     dependencies:
       eslint-visitor-keys: 1.3.0
+    dev: true
 
   /eslint-utils/3.0.0_eslint@8.30.0:
     resolution: {integrity: sha512-uuQC43IGctw68pJA1RgbQS8/NP7rch6Cwd4j3ZBtgo4/8Flj4eGE7ZYSZRN3iq5pVUv6GPdW5Z1RFleo84uLDA==}
@@ -11184,6 +11190,7 @@ packages:
   /eslint-visitor-keys/1.3.0:
     resolution: {integrity: sha512-6J72N8UNa462wa/KFODt/PJ3IU60SDpC3QXC1Hjc1BXXpfL2C9R5+AU7jhe0F6GREqVMh4Juu+NY7xn+6dipUQ==}
     engines: {node: '>=4'}
+    dev: true
 
   /eslint-visitor-keys/2.1.0:
     resolution: {integrity: sha512-0rSmRBzXgDzIsD6mGdJgevzgezI534Cer5L/vyMX0kHzT/jiB43jRhd9YUlMGYLQy2zprNmoT8qasCGtY+QaKw==}
@@ -11240,6 +11247,7 @@ packages:
       v8-compile-cache: 2.3.0
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /eslint/8.30.0:
     resolution: {integrity: sha512-MGADB39QqYuzEGov+F/qb18r4i7DohCDOfatHaxI2iGlPuC65bwG2gxgO+7DkyL38dRFaRH7RaRAgU6JKL9rMQ==}
@@ -11302,6 +11310,7 @@ packages:
       acorn: 7.4.1
       acorn-jsx: 5.3.2_acorn@7.4.1
       eslint-visitor-keys: 1.3.0
+    dev: true
 
   /espree/9.4.1:
     resolution: {integrity: sha512-XwctdmTO6SIvCzd9810yyNzIrOrqNYV9Koizx4C/mRhf9uq0o4yHoCEU/670pOxOL/MSraektvSAji79kX90Vg==}
@@ -12075,6 +12084,7 @@ packages:
 
   /functional-red-black-tree/1.0.1:
     resolution: {integrity: sha512-dsKNQNdj6xA3T+QlADDA7mOSlX0qiMINjn0cgr+eGHGsbSHzTabcIogz2+p/iqP1Xs6EP/sS2SbqH+brGTbq0g==}
+    dev: true
 
   /functions-have-names/1.2.3:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
@@ -12905,6 +12915,7 @@ packages:
   /ignore/4.0.6:
     resolution: {integrity: sha512-cyFDKrqc/YdcWFniJhzI42+AzS+gNwmUzOSFcRCQYwySuBBBy/KjuxWLZ/FHEH6Moq1NizMOBWyTcv8O4OZIMg==}
     engines: {node: '>= 4'}
+    dev: true
 
   /ignore/5.2.4:
     resolution: {integrity: sha512-MAb38BcSbH0eHNBxn7ql2NH/kX33OkB3lZ1BNdh7ENeRChHTYsTvWrMubiIAMNS2llXEEgZ1MUOBtXChP3kaFQ==}
@@ -14622,6 +14633,7 @@ packages:
 
   /lodash.truncate/4.4.2:
     resolution: {integrity: sha512-jttmRe7bRse52OsWIMDLaXxWqRAmtIUccAQ3garviCqJjafXOfNMO0yMfNpdD6zbGaTU0P5Nz7e7gAT6cKmJRw==}
+    dev: true
 
   /lodash.union/4.6.0:
     resolution: {integrity: sha512-c4pB2CdGrGdjMKYLA+XiRDO7Y0PRQbm/Gzg8qMj+QH+pFVAoTp5sBpO0odL3FjoPCGjK96p6qsP+yQoiLoOBcw==}
@@ -17400,6 +17412,7 @@ packages:
   /progress/2.0.3:
     resolution: {integrity: sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==}
     engines: {node: '>=0.4.0'}
+    dev: true
 
   /promise-all-reject-late/1.0.1:
     resolution: {integrity: sha512-vuf0Lf0lOxyQREH7GDIOUMLS7kz+gs8i6B+Yi8dC68a2sychGrHTJYghMBD6k7eUcH0H5P73EckCA48xijWqXw==}
@@ -18869,6 +18882,7 @@ packages:
       ansi-styles: 4.3.0
       astral-regex: 2.0.0
       is-fullwidth-code-point: 3.0.0
+    dev: true
 
   /smart-buffer/4.2.0:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
@@ -19503,6 +19517,7 @@ packages:
       slice-ansi: 4.0.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
+    dev: true
 
   /tailwind-merge/1.8.0:
     resolution: {integrity: sha512-tER/2SbYRdfPYg6m4pDWZSlbymLTmDi+dx4iCsJmgmz4UDGzgnVelOvBe3GNtGCw9Bmc4MiObfJJbKeVL+KnMQ==}
