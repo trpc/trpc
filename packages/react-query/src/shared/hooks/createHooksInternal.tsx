@@ -9,12 +9,14 @@ import {
   hashQueryKey,
   useQueryClient,
 } from '@tanstack/react-query';
-import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
+import { TRPCClientErrorLike, createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { Observable } from '@trpc/server/observable';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SSRState, TRPCContext } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextState,
+} from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
@@ -57,7 +59,7 @@ export function createRootHooks<
   >;
 
   const createClient: CreateClient<TRouter> = (opts) => {
-    return createTRPCClient(opts);
+    return createTRPCUntypedClient(opts);
   };
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
@@ -340,7 +342,7 @@ export function createRootHooks<
       path: string,
       ...args: unknown[],
     ],
-    opts: UseTRPCSubscriptionOptions<Observable<unknown, unknown>, TError>,
+    opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -363,8 +365,7 @@ export function createRootHooks<
           },
           onData: (data) => {
             if (!isStopped) {
-              // FIXME this shouldn't be needed as both should be `unknown` in next major
-              opts.onData(data as any);
+              opts.onData(data);
             }
           },
           onError: (err) => {
@@ -506,7 +507,30 @@ export function createRootHooks<
 }
 
 /**
- * @deprecated
- * DELETE ME
+ * Hack to infer the type of `createReactQueryHooks`
+ * @link https://stackoverflow.com/a/59072991
  */
-export * from './deprecated/createHooksInternal';
+class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
+  fn() {
+    return createRootHooks<TRouter, TSSRContext>();
+  }
+}
+
+type returnTypeInferer<TType> = TType extends (
+  a: Record<string, string>,
+) => infer U
+  ? U
+  : never;
+type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
+  TRouter,
+  TSSRContext
+>['fn'];
+
+/**
+ * Infer the type of a `createReactQueryHooks` function
+ * @internal
+ */
+export type CreateReactQueryHooks<
+  TRouter extends AnyRouter,
+  TSSRContext = unknown,
+> = returnTypeInferer<fooType<TRouter, TSSRContext>>;

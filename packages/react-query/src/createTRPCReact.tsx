@@ -24,7 +24,7 @@ import {
 } from './shared';
 import {
   CreateReactQueryHooks,
-  createHooksInternal,
+  createRootHooks,
 } from './shared/hooks/createHooksInternal';
 import {
   CreateClient,
@@ -230,7 +230,7 @@ export function createTRPCReact<
   TSSRContext = unknown,
   TFlags = null,
 >(opts?: CreateTRPCReactOptions<TRouter>) {
-  const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
+  const hooks = createRootHooks<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
 
   return proxy;

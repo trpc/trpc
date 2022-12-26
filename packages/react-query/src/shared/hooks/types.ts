@@ -12,8 +12,8 @@ import {
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
-  TRPCClient,
   TRPCRequestOptions,
+  TRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { ReactNode } from 'react';
@@ -87,13 +87,13 @@ export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
 ) => JSX.Element;
 
 export type UseDehydratedState<TRouter extends AnyRouter> = (
-  client: TRPCClient<TRouter>,
+  client: TRPCUntypedClient<TRouter>,
   trpcState: DehydratedState | undefined,
 ) => DehydratedState | undefined;
 
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
-) => TRPCClient<TRouter>;
+) => TRPCUntypedClient<TRouter>;
 
 /**
  * @internal
