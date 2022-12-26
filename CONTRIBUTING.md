@@ -33,11 +33,11 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 > Note: you will want to have `pnpm dev` running in parallel in another terminal
 
 ```bash
-# in project root directory
-pnpm test --watch
+# in packages/tests directory
+pnpm run test --watch
 
 # example if you want to test a specific test file:
-pnpm test --watch --testPathPattern react
+pnpm run test --watch --testPathPattern react
 ```
 
 Testing is currently coalesced in [./packages/server/test](./packages/server/test); we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
