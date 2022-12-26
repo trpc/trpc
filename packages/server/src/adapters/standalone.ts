@@ -47,7 +47,7 @@ export function createHTTPServer<TRouter extends AnyRouter>(
 
   return {
     server,
-    listen(port?: number) {
+    listen: (port?: number) => {
       server.listen(port);
       const actualPort =
         port === 0 ? ((server.address() as any).port as number) : port;
