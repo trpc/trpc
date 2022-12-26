@@ -503,9 +503,3 @@ export function createHooks<TRouter extends AnyRouter, TSSRContext = unknown>(
     useInfiniteQuery,
   };
 }
-
-/**
- * @deprecated
- * DELETE ME
- */
-export * from './deprecated/createHooksInternal';
