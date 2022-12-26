@@ -19,13 +19,11 @@ import { QueryKey, QueryType } from './internals/getArrayQueryKey';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,
+  CreateUntypedReactQueryHooks,
+  createHooks,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from './shared';
-import {
-  CreateReactQueryHooks,
-  createHooksInternal,
-} from './shared/hooks/deprecated/createHooksInternal';
 import {
   CreateClient,
   TRPCProvider,
@@ -203,7 +201,7 @@ export function createHooksInternalProxy<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
   TFlags = null,
->(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
+>(trpc: CreateUntypedReactQueryHooks<TRouter, TSSRContext>) {
   type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 
   return createFlatProxy<CreateHooksInternalProxy>((key) => {
@@ -230,7 +228,7 @@ export function createTRPCReact<
   TSSRContext = unknown,
   TFlags = null,
 >(opts?: CreateTRPCReactOptions<TRouter>) {
-  const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
+  const hooks = createHooks<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
 
   return proxy;

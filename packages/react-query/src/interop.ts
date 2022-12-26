@@ -20,7 +20,9 @@ export function createReactQueryHooks<
   proxy: CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 } {
   const trpc = createHooksInternal<TRouter, TSSRContext>(opts);
-  const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(trpc);
+  const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(
+    trpc as any,
+  );
 
   return {
     ...trpc,

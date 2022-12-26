@@ -2,7 +2,7 @@ import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getQueryKey } from '../../internals/getQueryKey';
-import { CreateReactQueryHooks } from '../hooks/deprecated/createHooksInternal';
+import { CreateUntypedReactQueryHooks } from '../hooks/createHooks';
 
 /**
  * Create proxy for decorating procedures
@@ -11,7 +11,7 @@ import { CreateReactQueryHooks } from '../hooks/deprecated/createHooksInternal';
 export function createReactProxyDecoration<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->(name: string, hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
+>(name: string, hooks: CreateUntypedReactQueryHooks<TRouter, TSSRContext>) {
   return createRecursiveProxy((opts) => {
     const args = opts.args;
 
@@ -24,7 +24,7 @@ export function createReactProxyDecoration<
     // The `path` ends up being something like `post.byId`
     const path = pathCopy.join('.');
     if (lastArg === 'useMutation') {
-      return (hooks as any)[lastArg](path, ...args);
+      return hooks[lastArg](path, ...(args as any));
     }
     const [input, ...rest] = args;
 

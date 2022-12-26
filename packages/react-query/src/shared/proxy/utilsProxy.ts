@@ -214,6 +214,7 @@ export function createReactQueryUtilsProxy<
   return createFlatProxy<CreateReactUtilsProxyReturnType>((key) => {
     const contextName = key as typeof contextProps[number];
     if (contextName === 'client') {
+      // FIXME - shouldn't be needed to create a new proxy wrapper for every `useContext().client`-call
       return createTRPCClientProxy(context.client);
     }
     if (contextProps.includes(contextName)) {
