@@ -371,7 +371,7 @@ test('measure time middleware', async () => {
   expect(await client.query('greeting')).toBe('hello');
   expect(durationMs > -1).toBeTruthy();
 
-  const calls = (logMock.mock.calls as any[]).map((args) => {
+  const calls = logMock.mock.calls.map((args) => {
     // omit durationMs as it's variable
     const [str, { durationMs, ...opts }] = args;
     return [str, opts];

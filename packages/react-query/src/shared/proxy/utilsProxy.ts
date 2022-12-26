@@ -25,11 +25,11 @@ import {
 } from '@trpc/server/shared';
 import {
   DecoratedProxyTRPCContextProps,
-  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
+import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
@@ -172,6 +172,7 @@ type DecorateRouter = {
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidate(
+    input?: undefined,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;

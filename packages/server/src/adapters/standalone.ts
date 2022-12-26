@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import http from 'http';
 import { AnyRouter } from '../core';
 import {
@@ -47,7 +45,7 @@ export function createHTTPServer<TRouter extends AnyRouter>(
 
   return {
     server,
-    listen(port?: number) {
+    listen: (port?: number) => {
       server.listen(port);
       const actualPort =
         port === 0 ? ((server.address() as any).port as number) : port;

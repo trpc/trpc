@@ -278,8 +278,7 @@ export default function TodosPage({
               <Link
                 href="/all"
                 className={clsx(
-                  !['active', 'completed'].includes(filter as string) &&
-                    'selected',
+                  !['active', 'completed'].includes(filter) && 'selected',
                 )}
               >
                 All

@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import * as trpc from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';

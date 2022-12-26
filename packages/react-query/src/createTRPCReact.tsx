@@ -15,6 +15,7 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
+import { QueryKey, QueryType } from './internals/getArrayQueryKey';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,
@@ -22,8 +23,11 @@ import {
   createReactQueryUtilsProxy,
 } from './shared';
 import {
-  CreateClient,
   CreateReactQueryHooks,
+  createHooksInternal,
+} from './shared/hooks/createHooksInternal';
+import {
+  CreateClient,
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
@@ -35,8 +39,7 @@ import {
   UseTRPCQueryResult,
   UseTRPCQuerySuccessResult,
   UseTRPCSubscriptionOptions,
-  createHooksInternal,
-} from './shared/hooks/createHooksInternal';
+} from './shared/hooks/types';
 import { CreateTRPCReactOptions } from './shared/types';
 
 /**
@@ -48,6 +51,15 @@ export type DecorateProcedure<
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
+      /**
+       * Method to extract the query key for a procedure
+       * @param type - defaults to `any`
+       * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
+       */
+      getQueryKey: (
+        input: inferProcedureInput<TProcedure>,
+        type?: QueryType,
+      ) => QueryKey;
       useQuery: <
         TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
         TData = inferTransformedProcedureOutput<TProcedure>,
@@ -164,7 +176,9 @@ export type DecoratedProcedureRecord<
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<
+    ? {
+        getQueryKey: () => QueryKey;
+      } & DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TFlags,
         `${TPath}${TKey & string}.`
@@ -216,7 +230,7 @@ export function createHooksInternalProxy<
       return (trpc as any)[key];
     }
 
-    return createReactProxyDecoration(key as string, trpc);
+    return createReactProxyDecoration(key, trpc);
   });
 }
 

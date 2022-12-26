@@ -168,7 +168,7 @@ export async function resolveHTTPResponse<
       const input: Record<number, unknown> = {};
       for (const key in rawInput) {
         const k = key as any as number;
-        const rawValue = (rawInput as any)[k];
+        const rawValue = rawInput[k];
 
         const value = deserializeInputValue(rawValue);
 
