@@ -3,14 +3,11 @@ id: example-apps
 title: Example Apps
 sidebar_label: Example Apps
 slug: /example-apps
+description: Example apps built with tRPC
 ---
 
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
-
-:::info
-Some of the examples on this page need to be upgraded to V10. Please feel free to help us update!
-:::
 
 ---
 
@@ -67,29 +64,29 @@ git clone git@github.com:t3-oss/create-t3-turbo.git
   <TabItem value="npm" label="npm" default>
 
 ```bash
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```sh
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```sh
-pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
+pnpx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
 ```
 
   </TabItem>
 </Tabs>
 
 - Example deploy: [websockets.trpc.io](https://websockets.trpc.io)
-- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-starter-websockets?file=/src/pages/index.tsx)
-- [Source code](https://github.com/trpc/examples-next-prisma-starter-websockets)
+- [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/next-prisma-websockets-starter?file=/src/pages/index.tsx)
+- [Source code](https://github.com/trpc/examples-next-prisma-websockets-starter)
 
 ---
 
@@ -126,22 +123,6 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ---
 
-### Express server with tRPC Shield and Prisma
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example
-```
-
-  </TabItem>
-</Tabs>
-
-- [Source code](https://github.com/omar-dulaimi/trpc-shield/tree/master/example)
-
----
-
 ### Minimal (Hello world) server and client in Node.js
 
 - [Source code](https://github.com/trpc/trpc/tree/main/examples/minimal)
@@ -173,12 +154,6 @@ npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/
 
 - [CodeSandbox](https://codesandbox.io/s/github/icflorescu/trpc-sveltekit-example)
 - [Source code](https://github.com/icflorescu/trpc-sveltekit-example)
-
----
-
-### Cloudflare Workers example
-
-- [Source code](https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers)
 
 ---
 

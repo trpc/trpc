@@ -61,6 +61,10 @@ const ctx = konn()
             return newPost;
           }),
       }),
+
+      greeting: t.router({
+        get: t.procedure.query(() => 'hello'),
+      }),
     });
 
     return getServerAndReactClient(appRouter);
@@ -114,7 +118,6 @@ test('client query sad path', async () => {
           setIsError(true);
         }
       })();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return <p>{isError ? 'Query errored' : "Query didn't error"}</p>;
@@ -202,7 +205,7 @@ test('prefetch', async () => {
     renderProxy(allPosts.data);
     return (
       <>
-        {allPosts!.data!.map((post) => {
+        {allPosts.data!.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
       </>

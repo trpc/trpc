@@ -95,6 +95,49 @@ These are the helpers you'll get access to via `useContext`. The table below wil
 | `setInfiniteData`   | [`queryClient.setInfiniteQueryData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata)           |
 | `getInfiniteData`   | [`queryClient.getInfiniteData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata)                |
 
+### ❓ The function I want isn't here!
+
+`@tanstack/react-query` has a lot of functions that we haven't put in the tRPC context yet. If you need a function that isn't here, feel free to [open a feature request](https://github.com/trpc/trpc/issues/new/choose) requesting it.
+
+In the meantime, you can import and use the function directly from `@tanstack/react-query`. We provide a `getQueryKey` helper on routers and procedures so that you can easily provide the native function the correct query key.
+
+```tsx
+function getQueryKey(
+  input: TInput,
+  type?: QueryType; /** @default 'any' */
+)
+
+type QueryType = "query" | "infinite" | "any";
+// for useQuery ──┘         │            │
+// for useInfinitQuery ─────┘            │
+// will match any ───────────────────────┘
+
+/** @note signature on router doesn't take any parameters */
+```
+
+```tsx
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { trpc } from '~/utils/trpc';
+
+function MyComponent() {
+  const queryClient = useQueryClient();
+
+  const posts = trpc.post.list.useQuery();
+
+  // See if a query is fetching
+  const postListKey = trpc.post.list.getQueryKey(undefined, 'infinite');
+  const isFetching = useIsFetching(postListKey);
+
+  // Set some query defaults for an entire router
+  const postKey = trpc.post.getQueryKey(undefined, 'any');
+  queryClient.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
+
+  // ...
+}
+```
+
+## Proxy client
+
 In addition to the above react-query helpers, the context also exposes your tRPC proxy client. This lets you call your procedures with `async`/`await` without needing to create an additional vanilla client.
 
 ```tsx
@@ -237,7 +280,7 @@ function MyComponent() {
 
 Keeping track of exactly what queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the _full cache_ as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.
 
-:::caution
+:::info
 We have marked this API as `unstable_` as the exact API might change without a major version bump on tRPC, keep an eye on the release notes if you want to use this.
 :::
 

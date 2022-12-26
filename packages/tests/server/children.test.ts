@@ -60,5 +60,5 @@ test('w/o children', async () => {
     foo,
   });
 
-  expectTypeOf(router._def.procedures.foo).toMatchTypeOf(foo);
+  expectTypeOf(router._def.procedures.foo).toEqualTypeOf(foo);
 });

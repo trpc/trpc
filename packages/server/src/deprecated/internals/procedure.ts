@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TRPCError } from '../../error/TRPCError';
 import {
   getCauseFromUnknown,

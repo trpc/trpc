@@ -1,4 +1,26 @@
 // @ts-check
+/* eslint-disable @typescript-eslint/no-var-requires */
+
+const { parseEnv } = require('./src/utils/env');
+
+const env = parseEnv(process.env);
+
+const poweredByVercel = `
+  <div style="padding-top: 24px;">
+    <a
+      href="https://vercel.com/?utm_source=trpc&utm_campaign=oss"
+      target="_blank"
+      rel="noreferrer"
+    >
+      <img
+        src="/img/powered-by-vercel.svg"
+        alt="Powered by Vercel"
+        style="height: 40px;display:inline-block;box-shadow: 0px 0px 32px rgba(255, 255, 255, 0.2);"
+      />
+    </a>
+  </div>
+`.trim();
+
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tRPC',
@@ -14,7 +36,7 @@ module.exports = {
   themeConfig: {
     disableSwitch: false,
     respectPrefersColorScheme: true,
-    image: 'https://assets.trpc.io/www/trpc-open-graph.png',
+    image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
     prism: {
       theme: require('prism-react-renderer/themes/vsDark'),
     },
@@ -55,7 +77,7 @@ module.exports = {
         },
         {
           to: 'docs/nextjs',
-          label: 'Usage with Next.js',
+          label: 'Using Next.js',
         },
         {
           href: 'https://github.com/trpc/trpc',
@@ -137,7 +159,7 @@ module.exports = {
           ],
         },
       ],
-      // copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: poweredByVercel,
     },
   },
   plugins: [
@@ -222,4 +244,8 @@ module.exports = {
     require.resolve('./docusaurus.twitterReload.js'),
     require.resolve('./docusaurus.preferredTheme.js'),
   ],
+
+  customFields: {
+    env,
+  },
 };

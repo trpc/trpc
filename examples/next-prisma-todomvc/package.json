@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-todomvc",
-  "version": "10.4.3",
+  "version": "10.7.0",
   "private": true,
   "scripts": {
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
@@ -26,15 +26,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^4.3.1",
+    "@prisma/client": "^4.7.1",
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.4.3",
-    "@trpc/next": "^10.4.3",
-    "@trpc/react-query": "^10.4.3",
-    "@trpc/server": "^10.4.3",
+    "@trpc/client": "^10.7.0",
+    "@trpc/next": "^10.7.0",
+    "@trpc/react-query": "^10.7.0",
+    "@trpc/server": "^10.7.0",
     "clsx": "^1.1.1",
     "next": "^13.0.0",
-    "prisma": "^4.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "superjson": "^1.7.4",
@@ -48,6 +47,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "npm-run-all": "^4.1.5",
+    "prisma": "^4.7.1",
     "start-server-and-test": "^1.12.0",
     "typescript": "^4.8.3"
   },

@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import {
   OperationLink,
@@ -58,7 +55,7 @@ test('chainer', async () => {
 
   const result = await observableToPromise(chain).promise;
   expect(result?.context?.response).toBeTruthy();
-  result!.context!.response = '[redacted]' as any;
+  result.context!.response = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -157,7 +154,7 @@ describe('batching', () => {
     ]);
     for (const res of results) {
       expect(res?.context?.response).toBeTruthy();
-      res!.context!.response = '[redacted]';
+      res.context!.response = '[redacted]';
     }
     expect(results).toMatchInlineSnapshot(`
       Array [

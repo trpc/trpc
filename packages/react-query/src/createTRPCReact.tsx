@@ -15,14 +15,19 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
+import { QueryKey, QueryType } from './internals/getArrayQueryKey';
+import { TRPCUseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from './shared';
 import {
-  CreateClient,
   CreateReactQueryHooks,
+  createHooksInternal,
+} from './shared/hooks/createHooksInternal';
+import {
+  CreateClient,
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
@@ -34,8 +39,7 @@ import {
   UseTRPCQueryResult,
   UseTRPCQuerySuccessResult,
   UseTRPCSubscriptionOptions,
-  createHooksInternal,
-} from './shared/hooks/createHooksInternal';
+} from './shared/hooks/types';
 import { CreateTRPCReactOptions } from './shared/types';
 
 /**
@@ -47,6 +51,15 @@ export type DecorateProcedure<
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
+      /**
+       * Method to extract the query key for a procedure
+       * @param type - defaults to `any`
+       * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
+       */
+      getQueryKey: (
+        input: inferProcedureInput<TProcedure>,
+        type?: QueryType,
+      ) => QueryKey;
       useQuery: <
         TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
         TData = inferTransformedProcedureOutput<TProcedure>,
@@ -101,8 +114,8 @@ export type DecorateProcedure<
                 >,
               ];
             }
-          : {})
-      : {}) &
+          : object)
+      : object) &
       (TFlags extends 'ExperimentalSuspense'
         ? {
             useSuspenseQuery: <
@@ -125,7 +138,7 @@ export type DecorateProcedure<
               UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
             ];
           }
-        : {})
+        : object)
   : TProcedure extends AnyMutationProcedure
   ? {
       useMutation: <TContext = unknown>(
@@ -163,7 +176,9 @@ export type DecoratedProcedureRecord<
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<
+    ? {
+        getQueryKey: () => QueryKey;
+      } & DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TFlags,
         `${TPath}${TKey & string}.`
@@ -177,6 +192,7 @@ export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
+  useQueries: TRPCUseQueries<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
 } & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
 
@@ -196,7 +212,7 @@ export function createHooksInternalProxy<
         const context = trpc.useContext();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtilsProxy as any)(context as any);
+          return (createReactQueryUtilsProxy as any)(context);
         }, [context]);
       };
     }
@@ -205,7 +221,7 @@ export function createHooksInternalProxy<
       return (trpc as any)[key];
     }
 
-    return createReactProxyDecoration(key as string, trpc);
+    return createReactProxyDecoration(key, trpc);
   });
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { createQueryClient } from '../__queryClient';
 import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
@@ -186,7 +185,7 @@ describe('invalidateQueries()', () => {
           <button
             data-testid="invalidate-4-predicate"
             onClick={() => {
-              utils.invalidate({
+              utils.invalidate(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
                   const [path, input] = queryKey;

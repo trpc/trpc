@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-types */
 import { TRPCError } from '../error/TRPCError';
 import { defaultFormatter } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
@@ -255,7 +255,6 @@ type SwapProcedureContext<
   TNewContext,
 > = TProcedure extends Procedure<
   infer TInputContext,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   infer _TOldContext,
   infer TMeta,
   infer TInput,
