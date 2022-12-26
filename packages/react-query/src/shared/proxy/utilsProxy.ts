@@ -22,13 +22,13 @@ import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
+import { TRPCUntypedContextState } from '../../internals/TRPCCUntypedContextState';
 import {
   DecoratedProxyTRPCContextProps,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
-import { TRPCContextState } from '../../internals/deprecated/TRPCContextState';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
@@ -205,7 +205,7 @@ export type CreateReactUtilsProxy<
 export function createReactQueryUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
->(context: TRPCContextState<AnyRouter, unknown>) {
+>(context: TRPCUntypedContextState<AnyRouter, unknown>) {
   type CreateReactUtilsProxyReturnType = CreateReactUtilsProxy<
     TRouter,
     TSSRContext

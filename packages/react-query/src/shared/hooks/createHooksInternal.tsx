@@ -13,8 +13,8 @@ import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { TRPCUntypedContextState } from '../../internals/TRPCCUntypedContextState';
 import { SSRState, TRPCContext } from '../../internals/context';
-import { TRPCContextState } from '../../internals/deprecated/TRPCContextState';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
@@ -48,7 +48,7 @@ export function createRootHooks<
 
   type TError = TRPCClientErrorLike<TRouter>;
 
-  type ProviderContext = TRPCContextState<TRouter, TSSRContext>;
+  type ProviderContext = TRPCUntypedContextState<TRouter, TSSRContext>;
 
   const Context = (config?.context ??
     TRPCContext) as React.Context<ProviderContext>;
