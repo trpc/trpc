@@ -76,42 +76,70 @@ const ctx = konn()
   })
   .done();
 
-test('useQuery()', async () => {
-  const { proxy, App } = ctx;
-  function MyComponent() {
-    const query1 = proxy.post.byId.useQuery({
-      id: '1',
-    });
+describe('useQuery()', () => {
+  test('loading data', async () => {
+    const { proxy, App } = ctx;
+    function MyComponent() {
+      const query1 = proxy.post.byId.useQuery({
+        id: '1',
+      });
 
-    expect(query1.trpc.path).toBe('post.byId');
+      expect(query1.trpc.path).toBe('post.byId');
 
-    // @ts-expect-error Should not exist
-    proxy.post.byId.useInfiniteQuery;
-    const utils = proxy.useContext();
-
-    useEffect(() => {
-      utils.post.byId.invalidate();
       // @ts-expect-error Should not exist
-      utils.doesNotExist.invalidate();
-    }, [utils]);
+      proxy.post.byId.useInfiniteQuery;
+      const utils = proxy.useContext();
 
-    if (!query1.data) {
-      return <>...</>;
+      useEffect(() => {
+        utils.post.byId.invalidate();
+        // @ts-expect-error Should not exist
+        utils.doesNotExist.invalidate();
+      }, [utils]);
+
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      type TData = typeof query1['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    type TData = typeof query1['data'];
-    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
+  });
 
-    return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
-  }
+  test('data type without initialData', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.proxy.post.byId.useQuery({ id: '1' }),
+    ).returns;
 
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
+    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
+    expectation.not.toMatchTypeOf<{ data: '__result' }>();
+  });
+
+  test('data type with initialData', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.proxy.post.byId.useQuery(
+        { id: '1' },
+        {
+          initialData: {
+            id: 1,
+            text: '',
+          },
+        },
+      ),
+    ).returns;
+
+    expectation.toMatchTypeOf<{ data: '__result' }>();
+    expectation.not.toMatchTypeOf<{ data: undefined }>();
   });
 });
 
