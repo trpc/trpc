@@ -1,6 +1,6 @@
 import { createQueryClient } from '../../__queryClient';
 import { Post, createLegacyAppRouter } from './__testHelpers';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
@@ -40,37 +40,6 @@ describe('useQuery()', () => {
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
-  });
-
-  test('with initialData', async () => {
-    const { trpc, client } = factory;
-    function MyComponent() {
-      const allPostsQuery = trpc.useQuery(['allPosts'], {
-        initialData: [
-          {
-            id: '1',
-            title: 'first post',
-            createdAt: 123,
-          },
-        ],
-      });
-      expectTypeOf(allPostsQuery.data).toMatchTypeOf<Post[]>();
-
-      return <pre>{JSON.stringify(allPostsQuery.data, null, 4)}</pre>;
-    }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
-
-    const utils = render(<App />);
-    expect(utils.container).toHaveTextContent('first post');
   });
 
   test('with operation context', async () => {
