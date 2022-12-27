@@ -118,7 +118,6 @@ test('client query sad path', async () => {
           setIsError(true);
         }
       })();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return <p>{isError ? 'Query errored' : "Query didn't error"}</p>;

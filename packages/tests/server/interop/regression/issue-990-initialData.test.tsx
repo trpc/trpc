@@ -1,10 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createQueryClient } from '../../__queryClient';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
 import { QueryClientProvider } from '@tanstack/react-query';

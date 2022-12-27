@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';

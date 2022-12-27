@@ -3,6 +3,7 @@ import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
 import { AnyRouter, createRouterFactory } from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
+// ts-prune-ignore-next -- Used in generated code
 export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
   const record = mergeWithoutOverrides(
     {},
