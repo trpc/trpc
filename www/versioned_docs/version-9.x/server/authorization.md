@@ -25,7 +25,9 @@ export async function createContext({
   // This is just an example of something you'd might want to do in your ctx fn
   async function getUserFromHeader() {
     if (req.headers.authorization) {
-      const user = await decodeAndVerifyJwtToken(req.headers.authorization.split(' ')[1])
+      const user = await decodeAndVerifyJwtToken(
+        req.headers.authorization.split(' ')[1],
+      );
       return user;
     }
     return null;
@@ -37,7 +39,6 @@ export async function createContext({
   };
 }
 type Context = inferAsyncReturnType<typeof createContext>;
-
 
 // [..] Define API handler and app router
 ```
@@ -70,7 +71,6 @@ export const appRouter = createRouter()
   });
 ```
 
-
 ## Option 2: Authorize using middleware
 
 ```ts title='server/routers/_app.ts'
@@ -94,15 +94,15 @@ export const appRouter = createRouter()
         if (!ctx.user?.isAdmin) {
           throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
-        return next()
+        return next();
       })
       .query('secret', {
         resolve: ({ ctx }) => {
           return {
             secret: 'sauce',
-          }
+          };
         },
-    }),
+      }),
   );
 ```
 

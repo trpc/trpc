@@ -59,6 +59,9 @@ export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   abortOnUnmount?: boolean;
 }
 
+/**
+ * @internal
+ */
 export type DecoratedProxyTRPCContextProps<
   TRouter extends AnyRouter,
   TSSRContext,

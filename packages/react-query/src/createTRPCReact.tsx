@@ -7,6 +7,7 @@ import {
   AnyRouter,
   AnySubscriptionProcedure,
   ProcedureRouterRecord,
+  ProtectedIntersection,
   inferProcedureInput,
 } from '@trpc/server';
 import {
@@ -188,13 +189,25 @@ export type DecoratedProcedureRecord<
     : never;
 };
 
-export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
+/**
+ * @internal
+ */
+export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
-} & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
+};
+
+export type CreateTRPCReact<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TFlags,
+> = ProtectedIntersection<
+  CreateTRPCReactBase<TRouter, TSSRContext>,
+  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
+>;
 
 /**
  * @internal
@@ -229,9 +242,11 @@ export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
   TFlags = null,
->(opts?: CreateTRPCReactOptions<TRouter>) {
+>(
+  opts?: CreateTRPCReactOptions<TRouter>,
+): CreateTRPCReact<TRouter, TSSRContext, TFlags> {
   const hooks = createRootHooks<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
 
-  return proxy;
+  return proxy as any;
 }
