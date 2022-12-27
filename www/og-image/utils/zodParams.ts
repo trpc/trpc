@@ -77,9 +77,14 @@ export const docsParams = zodParams(
   z.object({
     title: z.string(),
     description: truncatedWordSchema({ maxCharacters: 215 }),
-    permalink: z
+    hostname: z
       .string()
-      .startsWith('/')
-      .transform((v) => `trpc.io${v}`),
+      .optional()
+      .default('trpc.io')
+      .refine((v) => {
+        const parts = v.split('.');
+        return parts.slice(parts.length - 2).join('.') === 'trpc.io';
+      }, 'Needs to be a tRPC domain'),
+    permalink: z.string().startsWith('/'),
   }),
 );

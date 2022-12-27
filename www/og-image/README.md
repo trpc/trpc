@@ -7,7 +7,7 @@ useCase: Edge Functions
 css: Tailwind
 deployUrl: https://vercel.com/new/clone?repository-url=https://github.com/vercel/examples/tree/main/edge-functions/vercel-og-nextjs&project-name=vercel-og-nextjs&repository-name=vercel-og-nextjs
 demoUrl: https://og-image.trpc.io/api/_ref/static
-relatedTemplates: 
+relatedTemplates:
   - nextjs-boilerplate
   - aws-s3-image-upload-nextjs
   - platforms-starter-kit
@@ -15,7 +15,6 @@ relatedTemplates:
 ---
 
 # Vercel OG + Next.js
-
 
 ```
 pnpm dev

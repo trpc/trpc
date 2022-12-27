@@ -111,25 +111,22 @@ export function MyComponent() {
     async onMutate({ post }) {
       await utils.infinitePosts.cancel();
 
-      utils.infinitePosts.setInfiniteData(
-        { limit: 10 },
-        (data) => {
-          if (!data) {
-            return {
-              pages: [],
-              pageParams: [],
-            };
-          }
-
+      utils.infinitePosts.setInfiniteData({ limit: 10 }, (data) => {
+        if (!data) {
           return {
-            ...data,
-            pages: data.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((item) => item.status === 'published'),
-            })),
+            pages: [],
+            pageParams: [],
           };
-        },
-      );
+        }
+
+        return {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((item) => item.status === 'published'),
+          })),
+        };
+      });
     },
   });
 

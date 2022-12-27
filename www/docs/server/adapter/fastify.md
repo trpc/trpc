@@ -192,7 +192,7 @@ export const appRouter = t.router({
         clearInterval(timer);
       };
     });
-  })
+  }),
 });
 ```
 
