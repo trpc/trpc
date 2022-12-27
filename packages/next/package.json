@@ -25,7 +25,8 @@
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
-    "codegen:entrypoints": "tsx entrypoints.script.ts"
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
+    "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "exports": {
     ".": {

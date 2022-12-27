@@ -9,17 +9,16 @@ import {
   QueryClientProvider,
   dehydrate,
 } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions } from '@trpc/client';
 import {
-  TRPCClient,
-  TRPCClientError,
-  TRPCClientErrorLike,
-  createReactQueryHooks,
-  createTRPCClient,
-} from '@trpc/react-query';
+  CreateTRPCClientOptions,
+  TRPCUntypedClient,
+  createTRPCUntypedClient,
+} from '@trpc/client';
+import { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
+  createRootHooks,
   getQueryClient,
 } from '@trpc/react-query/shared';
 import type { AnyRouter, Dict, Maybe } from '@trpc/server';
@@ -88,12 +87,12 @@ export function withTRPC<
   type TRPCPrepassProps = {
     config: WithTRPCConfig<TRouter>;
     queryClient: QueryClient;
-    trpcClient: TRPCClient<TRouter>;
+    trpcClient: TRPCUntypedClient<TRouter>;
     ssrState: 'prepass';
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>({
+    const trpc = createRootHooks<TRouter, TSSRContext>({
       unstable_overrides: opts.unstable_overrides,
     });
 
@@ -175,7 +174,7 @@ export function withTRPC<
         }
 
         const config = getClientConfig({ ctx });
-        const trpcClient = createTRPCClient(config);
+        const trpcClient = createTRPCUntypedClient(config);
         const queryClient = getQueryClient(config);
 
         const trpcProp: TRPCPrepassProps = {
