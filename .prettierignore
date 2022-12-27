@@ -3,4 +3,4 @@ __generated__/
 dist/
 examples/next-big-router/src/server/routers/*.ts
 packages/server/test/__packages.ts
-pnpm-lock.yaml
+packages/tests/server/___packages.ts
