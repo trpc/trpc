@@ -36,8 +36,6 @@ import { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
 import { createRootHooks } from '../createHooksInternal';
 import {
   CreateClient,
-  DefinedUseTRPCQueryOptions,
-  DefinedUseTRPCQueryResult,
   TRPCProvider,
   TRPCQueryOptions,
   UseDehydratedState,
