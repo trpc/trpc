@@ -13,18 +13,15 @@ The result is propagated to all resolvers.
 
 ## Example code
 
+<!-- prettier-ignore-start -->
+
 ```tsx twoslash
 // -------------------------------------------------
 // @filename: context.ts
 // -------------------------------------------------
 import type { inferAsyncReturnType } from '@trpc/server';
-// -------------------------------------------------
-// @filename: trpc.ts
-// -------------------------------------------------
-import { TRPCError, initTRPC } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
-import { Context } from './context';
 
 /**
  * Creates context for an incoming request
@@ -39,6 +36,12 @@ export async function createContext(opts: CreateNextContextOptions) {
 }
 
 export type Context = inferAsyncReturnType<typeof createContext>;
+
+// -------------------------------------------------
+// @filename: trpc.ts
+// -------------------------------------------------
+import { initTRPC, TRPCError } from '@trpc/server';
+import { Context } from './context';
 
 const t = initTRPC.context<Context>().create();
 
@@ -69,6 +72,8 @@ export const publicProcedure = t.procedure;
  */
 export const protectedProcedure = t.procedure.use(isAuthed);
 ```
+
+<!-- prettier-ignore-end -->
 
 ## Inner and outer context
 
