@@ -100,3 +100,27 @@ test('detect server env', () => {
     initTRPC.create({ isServer: false, allowOutsideOfServer: true }),
   ).not.toThrowError();
 });
+
+test('context function type', () => {
+  const createContext = () => ({
+    foo: 'bar' as const,
+  });
+
+  const t = initTRPC.context<typeof createContext>().create();
+
+  expectTypeOf<typeof t._config.$types.ctx>().toMatchTypeOf<{
+    foo: 'bar';
+  }>();
+});
+
+test('context async function type', () => {
+  const createContext = async () => ({
+    foo: 'bar' as const,
+  });
+
+  const t = initTRPC.context<typeof createContext>().create();
+
+  expectTypeOf<typeof t._config.$types.ctx>().toMatchTypeOf<{
+    foo: 'bar';
+  }>();
+});
