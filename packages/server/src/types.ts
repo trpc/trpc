@@ -96,3 +96,11 @@ export type Filter<TObj extends object, TFilter> = Pick<
   TObj,
   FilterKeys<TObj, TFilter>
 >;
+
+/**
+ * Unwrap return type if the type is a function (sync or async), else use the type as is
+ * @internal
+ */
+export type Unwrap<TType> = TType extends (...args: any[]) => infer R
+  ? ThenArg<R>
+  : TType;

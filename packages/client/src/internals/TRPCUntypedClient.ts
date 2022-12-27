@@ -159,7 +159,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     return abortablePromise;
   }
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
-    return this.requestAsPromise<unknown, any>({
+    return this.requestAsPromise<unknown, unknown>({
       type: 'query',
       path,
       input,
@@ -168,7 +168,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     });
   }
   public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
-    return this.requestAsPromise<unknown, any>({
+    return this.requestAsPromise<unknown, unknown>({
       type: 'mutation',
       path,
       input,
