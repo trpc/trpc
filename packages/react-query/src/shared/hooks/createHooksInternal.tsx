@@ -9,12 +9,14 @@ import {
   hashQueryKey,
   useQueryClient,
 } from '@tanstack/react-query';
-import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
+import { TRPCClientErrorLike, createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { Observable } from '@trpc/server/observable';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SSRState, TRPCContext } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextState,
+} from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
@@ -57,7 +59,7 @@ export function createRootHooks<
   >;
 
   const createClient: CreateClient<TRouter> = (opts) => {
-    return createTRPCClient(opts);
+    return createTRPCUntypedClient(opts);
   };
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
@@ -364,7 +366,7 @@ export function createRootHooks<
       path: string,
       ...args: unknown[],
     ],
-    opts: UseTRPCSubscriptionOptions<Observable<unknown, unknown>, TError>,
+    opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
@@ -387,8 +389,7 @@ export function createRootHooks<
           },
           onData: (data) => {
             if (!isStopped) {
-              // FIXME this shouldn't be needed as both should be `unknown` in next major
-              opts.onData(data as any);
+              opts.onData(data);
             }
           },
           onError: (err) => {

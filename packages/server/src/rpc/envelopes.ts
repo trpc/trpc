@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { ProcedureType } from '../deprecated/router';
+import { ProcedureType } from '../core';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
 /**

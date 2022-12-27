@@ -42,11 +42,11 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
+      "dependsOn": ["^build", "codegen:bigBoi"],
       "cache": false
     },
     "test-ci": {
-      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
+      "dependsOn": ["^build", "codegen:bigBoi"],
       "cache": false
     },
     "test-dev": {

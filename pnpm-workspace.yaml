@@ -1,7 +1,7 @@
 packages:
   - 'packages/*'
   - 'examples/*'
-  - 'examples/.interop/*'
+  # - 'examples/.interop/*'
   - 'examples/.test/*'
   - 'examples/minimal/*'
   - 'examples/minimal-react/*'
