@@ -1,4 +1,3 @@
-/* eslint-disable */
 import * as mock_trpcServer from '../../server/src';
 jest.mock('@trpc/server', () => mock_trpcServer);
 import * as mock_trpcServer__observable from '../../server/src/observable';

@@ -31,6 +31,7 @@ export const client = createTRPCClient<AppRouter>({
   transformer: superjson,
 });
 ```
+
 ```ts title='pages/_app.tsx'
 import superjson from 'superjson';
 
@@ -41,20 +42,19 @@ export default withTRPC<AppRouter>({
     return {
       // [...]
       transformer: superjson,
-    }
-  }
+    };
+  },
 })(MyApp);
 ```
 
 #### 3. Add to your `AppRouter`
 
 ```ts title='server/routers/_app.ts'
-import superjson from 'superjson';
 import * as trpc from '@trpc/server';
+import superjson from 'superjson';
 
-export const appRouter = trpc.router()
-  .transformer(superjson)
-  // .query(...)
+export const appRouter = trpc.router().transformer(superjson);
+// .query(...)
 ```
 
 ## Different transformers for upload and download
@@ -74,8 +74,8 @@ yarn add superjson devalue
 #### 2. Add to `utils/trpc.ts`
 
 ```ts title='utils/trpc.ts'
-import superjson from 'superjson';
 import devalue from 'devalue';
+import superjson from 'superjson';
 
 // [...]
 
@@ -104,14 +104,12 @@ export const client = createTRPCClient<AppRouter>({
 #### 4. Add to your `AppRouter`
 
 ```ts title='server/routers/_app.ts'
-import { transformer } from '../../utils/trpc';
 import * as trpc from '@trpc/server';
+import { transformer } from '../../utils/trpc';
 
-export const appRouter = trpc.router()
-  .transformer(transformer)
-  // .query(...)
+export const appRouter = trpc.router().transformer(transformer);
+// .query(...)
 ```
-
 
 ## `DataTransformer` interface
 

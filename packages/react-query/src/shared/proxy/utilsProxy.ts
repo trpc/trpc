@@ -15,6 +15,7 @@ import {
   AnyRouter,
   Filter,
   ProcedureOptions,
+  ProtectedIntersection,
   inferProcedureInput,
 } from '@trpc/server';
 import {
@@ -24,11 +25,11 @@ import {
 } from '@trpc/server/shared';
 import {
   DecoratedProxyTRPCContextProps,
-  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
+import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
@@ -196,8 +197,10 @@ type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
-> = DecoratedProcedureUtilsRecord<TRouter> &
-  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>;
+> = ProtectedIntersection<
+  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>,
+  DecoratedProcedureUtilsRecord<TRouter>
+>;
 
 /**
  * @internal

@@ -21,14 +21,13 @@ export const t = initTRPC.context<Context>().create({
       data: {
         ...shape.data,
         zodError:
-          error.code === 'BAD_REQUEST' &&
-          error.cause instanceof ZodError
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
             ? error.cause.flatten()
             : null,
       },
     };
-  }
-})
+  },
+});
 ```
 
 ### Usage in React

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * @internal
  */
@@ -27,6 +25,20 @@ export type FlatOverwrite<TType, TWith> = InferOptional<
   },
   UndefinedKeys<TType> | UndefinedKeys<TWith>
 >;
+
+/**
+ * @internal
+ */
+export type IntersectionError<TKey extends string> =
+  `${TKey} collides with a built-in method, you should rename this router or procedure on your backend`;
+
+/**
+ * @internal
+ */
+export type ProtectedIntersection<TType, TWith> = keyof TType &
+  keyof TWith extends never
+  ? TType & TWith
+  : IntersectionError<keyof TType & keyof TWith & string>;
 
 /**
  * @public
@@ -84,3 +96,11 @@ export type Filter<TObj extends object, TFilter> = Pick<
   TObj,
   FilterKeys<TObj, TFilter>
 >;
+
+/**
+ * Unwrap return type if the type is a function (sync or async), else use the type as is
+ * @internal
+ */
+export type Unwrap<TType> = TType extends (...args: any[]) => infer R
+  ? ThenArg<R>
+  : TType;
