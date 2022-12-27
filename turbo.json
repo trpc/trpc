@@ -19,11 +19,8 @@
     "codegen:bigLegacyRouter": {
       "outputs": ["server/__generated__/bigLegacyRouter/**"]
     },
-    "codegen:mergeRouters": {
-      "outputs": ["src/core/internals/__generated__/**"]
-    },
     "build": {
-      "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
+      "dependsOn": ["^build", "codegen:entrypoints"],
       "outputs": [".next/**", "dist/**", "build/**"]
     },
     "build-sqlite": {
