@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import * as trpcReact from '@trpc/react-query/src';
 import * as trpcServer from '@trpc/server/src';
+import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
 test('initialData type', async () => {
@@ -27,7 +28,10 @@ test('initialData type', async () => {
       enabled: false,
     });
 
-    return <pre>{JSON.stringify(query.data ?? 'n/a', null, 4)}</pre>;
+    expectTypeOf(query.data).toMatchTypeOf<{ text: string }>();
+    expectTypeOf(query.data).not.toMatchTypeOf<undefined>();
+
+    return <pre>{JSON.stringify(query.data, null, 4)}</pre>;
   }
   function App() {
     const [queryClient] = useState(() => createQueryClient());

@@ -36,6 +36,8 @@ import { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
 import { createRootHooks } from '../createHooksInternal';
 import {
   CreateClient,
+  DefinedUseTRPCQueryOptions,
+  DefinedUseTRPCQueryResult,
   TRPCProvider,
   TRPCQueryOptions,
   UseDehydratedState,
@@ -291,6 +293,34 @@ function __createHooksInternal<
     TPath extends keyof TQueryValues & string,
     TQueryFnData = TQueryValues[TPath]['output'],
     TData = TQueryValues[TPath]['output'],
+  >(
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
+    opts: DefinedUseTRPCQueryOptions<
+      TPath,
+      TQueryValues[TPath]['input'],
+      TQueryFnData,
+      TData,
+      TError
+    >,
+  ): DefinedUseTRPCQueryResult<TData, TError>;
+  function useQuery<
+    TPath extends keyof TQueryValues & string,
+    TQueryFnData = TQueryValues[TPath]['output'],
+    TData = TQueryValues[TPath]['output'],
+  >(
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
+    opts?: UseTRPCQueryOptions<
+      TPath,
+      TQueryValues[TPath]['input'],
+      TQueryFnData,
+      TData,
+      TError
+    >,
+  ): UseTRPCQueryResult<TData, TError>;
+  function useQuery<
+    TPath extends keyof TQueryValues & string,
+    TQueryFnData,
+    TData,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TQueries[TPath]>],
     opts?: UseTRPCQueryOptions<
