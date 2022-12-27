@@ -124,5 +124,5 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
 ) {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy(client);
-  return proxy;
+  return proxy as CreateTRPCProxyClient<TRouter>;
 }
