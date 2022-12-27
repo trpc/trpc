@@ -61,6 +61,7 @@ const caller = appRouter.createCaller(await createContext());
 
 // 3. SSG helper
 import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { appRouter } from './router';
 import { createContext } from './context';
 const ssg = createProxySSGHelpers({
   router: appRouter,
