@@ -51,6 +51,7 @@ export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
     TRPCUseQueryBaseOptions {}
 
+/** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TPath,
   TInput,
