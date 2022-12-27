@@ -11,6 +11,31 @@ The `createContext()` function is called for each call to a procedure, which eit
 
 The result is propagated to all resolvers.
 
+When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` to the `initTRPC` builder function before calling `.create()`. The type `TType` can either be inferred from a function's return type or be explicitly defined.
+
+```ts twoslash
+import { initTRPC, type inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getSession } from 'next-auth/react';
+
+export const createContext = async (opts: CreateNextContextOptions) => {
+  const session = await getSession({ req: opts.req });
+  
+  return {
+    session,
+  };
+};
+
+const t1 = initTRPC.context<typeof createContext>().create();
+t1._config.$types.ctx;
+//                ^?
+
+type Context = inferAsyncReturnType<typeof createContext>;
+const t2 = initTRPC.context<Context>().create();
+t2._config.$types.ctx;
+//                ^?
+```
+
 ## Example code
 
 ```tsx twoslash
