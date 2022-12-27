@@ -12,7 +12,7 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
-import { FlatOverwrite } from '../types';
+import { FlatOverwrite, Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
   RootConfig,
@@ -43,11 +43,6 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Simplify typings
  * - Doesn't need to be a class but it doesn't really hurt either
  */
-
-// If the type is a function (sync or async) unwrap it, else use the type as is
-type Unwrap<TType> = TType extends (...args: any[]) => infer R
-  ? Awaited<R>
-  : TType;
 
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   context<
