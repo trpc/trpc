@@ -51,6 +51,7 @@ importers:
       '@typescript-eslint/eslint-plugin': 5.47.0_jhaguxqfxx2v4alxps2nzei754
       '@typescript-eslint/parser': 5.47.0_yvgxsonm4ikac5pm5z5getdq5e
       eslint: 8.30.0
+      eslint-config-prettier: 8.5.0_eslint@8.30.0
       eslint-plugin-no-only-tests: 3.1.0
       eslint-plugin-react: 7.31.11_eslint@8.30.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.30.0
@@ -70,8 +71,6 @@ importers:
       tsx: 3.12.1
       turbo: 1.6.3
       typescript: 4.8.3
-    devDependencies:
-      eslint-config-prettier: 8.5.0_eslint@8.30.0
 
   examples/.interop/next-prisma-starter:
     specifiers:
@@ -14200,7 +14199,6 @@ packages:
       eslint: '>=7.0.0'
     dependencies:
       eslint: 8.30.0
-    dev: true
 
   /eslint-import-resolver-node/0.3.6:
     resolution:

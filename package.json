@@ -44,6 +44,7 @@
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
     "eslint": "^8.30.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-no-only-tests": "^3.1.0",
     "eslint-plugin-react": "^7.31.11",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -72,8 +73,5 @@
       "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
       "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Flegacy-next-starter"
     }
-  },
-  "devDependencies": {
-    "eslint-config-prettier": "^8.5.0"
   }
 }
