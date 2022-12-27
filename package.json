@@ -12,6 +12,8 @@
     "dev-www": "turbo --filter www dev",
     "test": "turbo --filter \"@trpc/tests\" test",
     "test-watch": "cd packages/tests && pnpm test-watch",
+    "format": "prettier \"**/*\" --ignore-unknown",
+    "format:write": "pnpm format --write",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore . --report-unused-disable-directives",
     "lint-fix": "pnpm lint --fix && manypkg fix",
     "lint-prune": "! ts-prune | grep -v \"used in module\"",
@@ -21,6 +23,7 @@
     "prepublish": "pnpm build",
     "postinstall": "pnpm codegen",
     "prepack": "tsx scripts/postversion.ts",
+    "prepare": "husky install",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
     "release:canary": "changeset publish --tag canary",
@@ -42,7 +45,6 @@
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
     "eslint": "^8.30.0",
-    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-no-only-tests": "^3.1.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-react": "^7.31.11",
@@ -50,7 +52,9 @@
     "eslint-plugin-turbo": "^0.0.7",
     "eslint-plugin-unicorn": "45.0.2",
     "fast-glob": "^3.2.12",
+    "husky": "^8.0.2",
     "lerna": "^5.5.1",
+    "lint-staged": "^13.1.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.7.1",
     "rollup": "^2.79.1",
@@ -63,6 +67,9 @@
     "tsx": "^3.9.0",
     "turbo": "^1.6.1",
     "typescript": "^4.8.3"
+  },
+  "lint-staged": {
+    "*": "prettier --ignore-unknown --write"
   },
   "pnpm": {
     "overrides": {

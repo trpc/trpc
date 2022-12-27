@@ -1,3 +1,5 @@
+export const isThisValid: boolean = 'yee';
+
 export * from './createTRPCUntypedClient';
 export * from './createTRPCClient';
 export * from './createTRPCClientProxy';

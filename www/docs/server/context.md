@@ -18,8 +18,13 @@ The result is propagated to all resolvers.
 // @filename: context.ts
 // -------------------------------------------------
 import type { inferAsyncReturnType } from '@trpc/server';
+// -------------------------------------------------
+// @filename: trpc.ts
+// -------------------------------------------------
+import { TRPCError, initTRPC } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
+import { Context } from './context';
 
 /**
  * Creates context for an incoming request
@@ -27,19 +32,13 @@ import { getSession } from 'next-auth/react';
  */
 export async function createContext(opts: CreateNextContextOptions) {
   const session = await getSession({ req: opts.req });
-  
+
   return {
     session,
   };
-};
+}
 
 export type Context = inferAsyncReturnType<typeof createContext>;
-
-// -------------------------------------------------
-// @filename: trpc.ts
-// -------------------------------------------------
-import { initTRPC, TRPCError } from '@trpc/server';
-import { Context } from './context';
 
 const t = initTRPC.context<Context>().create();
 
@@ -84,39 +83,39 @@ In some scenarios it could make sense to split up your context into "inner" and 
 ```ts
 import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { getSessionFromCookie, type Session } from "./auth"
+import { type Session, getSessionFromCookie } from './auth';
 
-/** 
+/**
  * Defines your inner context shape.
  * Add fields here that the inner context brings.
  */
 interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
-  session: Session | null
+  session: Session | null;
 }
 
-/** 
+/**
  * Inner context. Will always be available in your procedures, in contrast to the outer context.
- * 
+ *
  * Also useful for:
  * - testing, so you don't have to mock Next.js' `req`/`res`
  * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
- * 
+ *
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
     prisma,
     session: opts.session,
-  }
-};
+  };
+}
 
-/** 
+/**
  * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
- * 
+ *
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export async function createContext(opts: CreateNextContextOptions) {
-  const session = getSessionFromCookie(req)
+  const session = getSessionFromCookie(req);
 
   const contextInner = await createContextInner({ session });
 
@@ -124,8 +123,8 @@ export async function createContext(opts: CreateNextContextOptions) {
     ...contextInner,
     req: opts.req,
     res: opts.res,
-  }
-};
+  };
+}
 
 export type Context = inferAsyncReturnType<typeof createContextInner>;
 
@@ -139,7 +138,7 @@ If you don't want to check `req` or `res` for `undefined` in your procedures all
 ```ts
 export const apiProcedure = publicProcedure.use((opts) => {
   if (!opts.ctx.req || !opts.ctx.res) {
-    throw new Error("You are missing `req` or `res` in your call.");
+    throw new Error('You are missing `req` or `res` in your call.');
   }
   return opts.next({
     ctx: {

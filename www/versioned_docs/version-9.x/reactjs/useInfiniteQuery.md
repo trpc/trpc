@@ -13,8 +13,6 @@ slug: /useInfiniteQuery
 
 :::
 
-
-
 ## Example Procedure
 
 ```tsx title='server/routers/_app.ts'
@@ -55,7 +53,6 @@ export const appRouter = trpc.router<Context>()
     })
 ```
 
-
 ## Example React Component
 
 ```tsx title='components/MyComponent.tsx'
@@ -75,7 +72,6 @@ export function MyComponent() {
   );
   // [...]
 }
-
 ```
 
 ## Helpers
