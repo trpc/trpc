@@ -11,7 +11,7 @@ Setting up the context is done in 2 steps, defining the type during initializati
 
 ## Defining the context type
 
-When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` to the `initTRPC` builder function before calling `.create()`. The type `TContext` can either be inferred from a function's return type or be explicitly defined. 
+When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` to the `initTRPC` builder function before calling `.create()`. The type `TContext` can either be inferred from a function's return type or be explicitly defined.
 
 This will make sure your context is properly typed in your procedures and middlewares.
 
@@ -22,7 +22,7 @@ import { getSession } from 'next-auth/react';
 
 export const createContext = async (opts: CreateNextContextOptions) => {
   const session = await getSession({ req: opts.req });
-  
+
   return {
     session,
   };
