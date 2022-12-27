@@ -7,9 +7,67 @@ slug: /context
 
 Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
 
-The `createContext()` function is called for each call to a procedure, which either comes via HTTP or from a [server-side call](server-side-calls)/[SSG helper](ssg-helpers).
+Setting up the context is done in 2 steps, defining the type during initialization and then creating the runtime context for each request.
 
-The result is propagated to all resolvers.
+## Defining the context type
+
+When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` to the `initTRPC` builder function before calling `.create()`. The type `TContext` can either be inferred from a function's return type or be explicitly defined. 
+
+This will make sure your context is properly typed in your procedures and middlewares.
+
+```ts twoslash
+import { initTRPC, type inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getSession } from 'next-auth/react';
+
+export const createContext = async (opts: CreateNextContextOptions) => {
+  const session = await getSession({ req: opts.req });
+  
+  return {
+    session,
+  };
+};
+
+const t1 = initTRPC.context<typeof createContext>().create();
+// @noErrors
+t1.procedure.use(({ ctx }) => { ... });
+//                  ^?
+
+type Context = inferAsyncReturnType<typeof createContext>;
+const t2 = initTRPC.context<Context>().create();
+// @noErrors
+t2.procedure.use(({ ctx }) => { ... });
+//                  ^?
+```
+
+## Creating the context
+
+The `createContext()` function is called for each call to a procedure, which either comes via HTTP, a [server-side call](server-side-calls) or by using our [SSG helper](ssg-helpers):
+
+```ts
+// 1. HTTP request
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+import { createContext } from './context';
+const handler = createHTTPHandler({
+  router: appRouter,
+  createContext,
+});
+
+// 2. Server-side call
+import { appRouter } from './router';
+import { createContext } from './context';
+const caller = appRouter.createCaller(await createContext());
+
+// 3. SSG helper
+import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { appRouter } from './router';
+import { createContext } from './context';
+const ssg = createProxySSGHelpers({
+  router: appRouter,
+  ctx: await createContext(),
+});
+```
 
 ## Example code
 
