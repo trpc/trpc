@@ -2,8 +2,8 @@ import './___packages';
 import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
-  createTRPCClient,
   createTRPCClientProxy,
+  createTRPCUntypedClient,
   createWSClient,
   httpBatchLink,
 } from '@trpc/client/src';
@@ -78,7 +78,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       : {}),
   } as WithTRPCConfig<typeof router>;
 
-  const client = createTRPCClient<typeof router>(trpcClientOptions);
+  const client = createTRPCUntypedClient<typeof router>(trpcClientOptions);
   const proxy = createTRPCClientProxy<typeof router>(client);
   return {
     wsClient,

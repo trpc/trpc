@@ -30,8 +30,10 @@ test('old client - happy path w/o input', async () => {
   });
   const { client, close } = routerToServerAndClientNew(router);
 
-  // @ts-expect-error cannot call new procedure with old client
-  expect(await client.query('hello')).toBe('world');
+  // client is untyped
+  const res = await client.query('hello');
+  expect(res).toBe('world');
+  expectTypeOf(res).toBeUnknown();
   close();
 });
 
@@ -42,7 +44,7 @@ test('old client - happy path with input', async () => {
       .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
-  // @ts-expect-error cannot call new procedure with old client
+
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
   close();
 });

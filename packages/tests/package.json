@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
-    "codegen:bigLegacyRouter": "tsx ../../scripts/generateBigLegacyRouter.ts",
     "test": "jest",
     "test-watch": "jest --watch",
     "test-ci": "jest --ci --maxWorkers=2 --coverage"

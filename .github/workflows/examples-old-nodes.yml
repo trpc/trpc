@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        dir: [.interop/next-prisma-starter]
+        dir: [next-prisma-starter]
         # start example with:
         node-start: ['14.x', '16.x']
         os: [ubuntu-latest]
