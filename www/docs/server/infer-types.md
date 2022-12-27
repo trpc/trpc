@@ -130,8 +130,8 @@ When creating custom hooks around tRPC procedures, it's sometimes necesary to ha
 // @include: server
 // ---cut---
 // @filename: trpc.ts
-import { 
-  type inferReactQueryProcedureOptions, 
+import {
+  type inferReactQueryProcedureOptions,
   createTRPCReact
 } from '@trpc/react-query';
 import type { inferRouterInputs } from '@trpc/server';
@@ -152,7 +152,7 @@ function usePostCreate(options?: PostCreateOptions) {
   const utils = trpc.useContext();
   return trpc.post.create.useMutation({
     ...options,
-    onSuccess(post) {         
+    onSuccess(post) {
       // invalidate all queries on the post router
       // when a new post is created
       utils.post.invalidate();

@@ -3,7 +3,6 @@
 - **Not recommended** unless you really need it; if you're not sure you need it, you definitely don't need it.
 - All routers currently need to have the same Context, error formatters, etc
 
-
 ### Overview
 
 - `server-a` and `server-b` are two different node instances
@@ -12,7 +11,6 @@
 - `client`:
   - is initialized with the types from `faux-gateway`
   - contains a custom ending [Link](https://trpc.io/docs/links) which allows you to call each server without caring where the call actually ends up
-
 
 ---
 

@@ -7,7 +7,6 @@ slug: /links
 
 Similar to urql's [_exchanges_](https://formidable.com/open-source/urql/docs/architecture/) or Apollo's [links](https://www.apollographql.com/docs/react/api/link/introduction/). Links enables you to customize the flow of data between tRPC Client and the tRPC-server.
 
-
 ## Request Batching
 
 Request batching is automatically enabled which batches your requests to the server, this can make the below code produce exactly **one** HTTP request and on the server exactly **one** database query:
@@ -18,7 +17,7 @@ const somePosts = await Promise.all([
   client.query('post.byId', 1),
   client.query('post.byId', 2),
   client.query('post.byId', 3),
-])
+]);
 ```
 
 ## Customizing data flow
@@ -30,11 +29,11 @@ const somePosts = await Promise.all([
 This limits the number of requests that can be sent together in batch ( useful to prevent the url from getting too large and run into [HTTP error 413](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413) ).
 
 ```ts title='server.ts'
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpBatchLink
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppRouter } from 'pages/api/trpc/[trpc]';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -46,7 +45,7 @@ export default withTRPC<AppRouter>({
       links: [
         httpBatchLink({
           url: '/api/trpc',
-          maxBatchSize: 10 // a reasonable size
+          maxBatchSize: 10, // a reasonable size
         }),
       ],
     };
@@ -72,13 +71,12 @@ export default trpcNext.createNextApiHandler({
 
 #### 2. Use batch-free link in your tRPC Client
 
-
 ```tsx title='pages/_app.tsx'
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
-import { withTRPC } from '@trpc/next';
-import { AppType } from 'next/dist/shared/lib/utils';
 // 👇 import the httpLink
 import { httpLink } from '@trpc/client/links/httpLink';
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppRouter } from 'pages/api/trpc/[trpc]';
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return <Component {...pageProps} />;
@@ -98,7 +96,6 @@ export default withTRPC<AppRouter>({
 })(MyApp);
 ```
 
-
 ### Using a `splitLink` to control request flow
 
 #### Disable batching for certain requests
@@ -106,10 +103,10 @@ export default withTRPC<AppRouter>({
 ##### 1. Configure client / `_app.tsx`
 
 ```tsx title='pages/_app.tsx'
-import { withTRPC } from '@trpc/next';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { httpLink } from '@trpc/client/links/httpLink';
 import { splitLink } from '@trpc/client/links/splitLink';
+import { withTRPC } from '@trpc/next';
 
 // [..]
 export default withTRPC<AppRouter>({
@@ -160,15 +157,14 @@ const postResult = client.query('posts', null, {
   context: {
     skipBatch: true,
   },
-})
+});
 ```
-
 
 ### Creating a custom link
 
 ```tsx title='pages/_app.tsx'
-import type { AppRouter } from 'pages/api/trpc/[trpc]';
 import { TRPCLink } from '@trpc/client';
+import type { AppRouter } from 'pages/api/trpc/[trpc]';
 
 const customLink: TRPCLink<AppRouter> = (runtime) => {
   // here we just got initialized in the app - this happens once per app
@@ -197,6 +193,4 @@ export default withTRPC<AppRouter>({
   },
   // ssr: false
 })(MyApp);
-
-
 ```
