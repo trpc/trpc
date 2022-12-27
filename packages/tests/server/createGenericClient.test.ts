@@ -50,11 +50,11 @@ test('query and mutation result type is Promise<any>', () => {
     const queryResult = client.query('foo');
     expectTypeOf<typeof queryResult>().toEqualTypeOf<Promise<any>>();
     const awaitedQueryResult = await queryResult;
-    expectTypeOf<typeof awaitedQueryResult>().toBeAny();
+    expectTypeOf<typeof awaitedQueryResult>().toBeUnknown();
 
     const mutationResult = client.query('foo');
     expectTypeOf<typeof mutationResult>().toEqualTypeOf<Promise<any>>();
     const awaitedMutationResult = await mutationResult;
-    expectTypeOf<typeof awaitedMutationResult>().toBeAny();
+    expectTypeOf<typeof awaitedMutationResult>().toBeUnknown();
   });
 });
