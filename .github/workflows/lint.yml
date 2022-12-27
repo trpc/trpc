@@ -46,7 +46,7 @@ jobs:
         run: pnpm turbo --filter "@trpc/*" build
 
       - name: Run ESLint
-        run: pnpm turbo lint -vv
+        run: pnpm turbo lint -vvv
 
       - run: git status
 
