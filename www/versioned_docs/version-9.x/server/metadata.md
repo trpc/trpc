@@ -5,7 +5,7 @@ sidebar_label: Route Metadata
 slug: /metadata
 ---
 
-Route metadata allows you to add an optional route specific `meta` property which will be available in all `middleware` function parameters. 
+Route metadata allows you to add an optional route specific `meta` property which will be available in all `middleware` function parameters.
 
 ## Create router with typed metadata
 
@@ -29,7 +29,7 @@ import * as trpc from '@trpc/server';
 // [...]
 
 interface Meta {
-  hasAuth: boolean
+  hasAuth: boolean;
 }
 
 export const appRouter = trpc
@@ -37,13 +37,13 @@ export const appRouter = trpc
   .middleware(async ({ meta, next, ctx }) => {
     // only check authorization if enabled
     if (meta?.hasAuth && !ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
-    return next()
+    return next();
   })
   .query('hello', {
     meta: {
-      hasAuth: false
+      hasAuth: false,
     },
     resolve({ ctx }) {
       return {
@@ -53,7 +53,7 @@ export const appRouter = trpc
   })
   .query('protected-hello', {
     meta: {
-      hasAuth: true
+      hasAuth: true,
     },
     resolve({ ctx }) {
       return {
@@ -61,3 +61,4 @@ export const appRouter = trpc
       };
     },
   });
+```

@@ -7,7 +7,6 @@ slug: /caching
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
-
 ## :warning: A word of caution :warning:
 
 Always be careful with caching - especially if you handle personal information.
@@ -15,7 +14,6 @@ Always be careful with caching - especially if you handle personal information.
 Since batching is enabled by default, it's recommended to set your cache headers in the `responseMeta` function and make sure that there are not any concurrent calls that may include personal data - or to omit cache headers completely if there is an auth headers or cookie.
 
 You can also use a [`splitLink`](../client/links.md) to split your requests that are public and those that should be private and uncached.
-
 
 ## App Caching
 
@@ -54,14 +52,11 @@ export default withTRPC({
     return {
       headers: {
         'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
-      }
+      },
     };
   },
 })(MyApp);
-
 ```
-
-
 
 ## API Response caching
 
@@ -96,16 +91,15 @@ export function createRouter() {
 const waitFor = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const appRouter = createRouter()
-  .query('public.slow-query-cached', {
-    async resolve({ ctx }) {
-      await waitFor(5000); // wait for 5s
+export const appRouter = createRouter().query('public.slow-query-cached', {
+  async resolve({ ctx }) {
+    await waitFor(5000); // wait for 5s
 
-      return {
-        lastUpdated: new Date().toJSON(),
-      };
-    },
-  });
+    return {
+      lastUpdated: new Date().toJSON(),
+    };
+  },
+});
 
 // Exporting type _type_ AppRouter only exposes types that can be used for inference
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
@@ -117,8 +111,7 @@ export default trpcNext.createNextApiHandler({
   createContext,
   responseMeta({ ctx, paths, type, errors }) {
     // assuming you have all your public routes with the keyword `public` in them
-    const allPublic =
-      paths && paths.every((path) => path.includes('public'));
+    const allPublic = paths && paths.every((path) => path.includes('public'));
     // checking that no procedures errored
     const allOk = errors.length === 0;
     // checking we're doing a query request

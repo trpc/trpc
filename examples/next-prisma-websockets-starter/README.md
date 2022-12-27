@@ -15,7 +15,6 @@ Try demo http://websockets.trpc.io/
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
 
-
 ## Setup
 
 ```bash
@@ -29,7 +28,7 @@ yarn dx
 
 ### Using [Render](https://render.com/)
 
-The project contains a [`render.yaml`](./render.yaml) [*"Blueprint"*](https://render.com/docs/blueprint-spec) which makes the project easily deployable on [Render](https://render.com/).
+The project contains a [`render.yaml`](./render.yaml) [_"Blueprint"_](https://render.com/docs/blueprint-spec) which makes the project easily deployable on [Render](https://render.com/).
 
 The database is setup with a `starter` plan, but you can use a free plan for 90 days.
 
@@ -68,12 +67,13 @@ You will either need to create an environment group called `trpc-websockets` wit
 pnpm build      # runs `prisma generate` + `prisma migrate` + `next build`
 pnpm db-nuke    # resets local db
 pnpm dev        # starts next.js + WebSocket server
-pnpm dx         # starts postgres db + runs migrations + seeds + starts next.js 
+pnpm dx         # starts postgres db + runs migrations + seeds + starts next.js
 pnpm test-dev   # runs e2e tests on dev
 pnpm test-start # runs e2e tests on `next start` - build required before
 pnpm test:unit  # runs normal jest unit tests
 pnpm test:e2e   # runs e2e tests
 ```
+
 ---
 
 Created by [@alexdotjs](https://twitter.com/alexdotjs).

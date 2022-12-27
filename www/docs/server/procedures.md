@@ -5,7 +5,6 @@ sidebar_label: Define Procedures
 slug: /procedures
 ---
 
-
 :::tip
 
 - A publicProcedure can be viewed as the equivalent of a REST-endpoint or a function.
@@ -13,8 +12,6 @@ slug: /procedures
 - Defining publicProcedure is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
 
 :::
-
-
 
 ## Example without input validation
 
@@ -49,7 +46,6 @@ const appRouter = router({
 ## Input validation
 
 tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/tests/server/validators.test.ts)
-
 
 ### With [Zod](https://github.com/colinhacks/zod)
 
@@ -142,11 +138,9 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-
 ## Multiple input parsers
 
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
-
 
 ```ts twoslash
 // @filename: trpc.ts
@@ -255,7 +249,7 @@ import { getSession } from 'next-auth/react';
  */
 export async function createContext(opts: trpcNext.CreateNextContextOptions) {
   const session = await getSession({ req: opts.req });
-  
+
   return {
     session,
   };

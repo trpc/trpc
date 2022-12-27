@@ -12,8 +12,10 @@ Similarily to `input:`, an `output:` validation to the `query()` and `mutation()
 When an `output` validator is defined, its inferred type is expected as the return type of the `resolve()` function.
 
 :::info
+
 - This is entirely optional and only if you want to ensure you don't accidentally leak anything e
 - If output validation fails, the server will respond with a `INTERNAL_SERVER_ERROR`.
+
 :::
 
 ## Examples
