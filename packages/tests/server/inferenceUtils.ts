@@ -13,7 +13,6 @@ export type And<Types extends boolean[]> = Types[number] extends true
 export type Eq<Left extends boolean, Right extends boolean> = Left extends true
   ? Right
   : Not<Right>;
-export type Xor<Types extends [boolean, boolean]> = Not<Eq<Types[0], Types[1]>>;
 
 const secret = Symbol('secret');
 type Secret = typeof secret;
