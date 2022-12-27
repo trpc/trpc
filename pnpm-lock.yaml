@@ -37,6 +37,7 @@ importers:
       rollup-plugin-node-externals: ^5.0.0
       rollup-plugin-swc3: ^0.8.0
       rollup-plugin-typescript2: ^0.32.1
+      ts-prune: ^0.10.3
       tsx: ^3.9.0
       turbo: ^1.6.1
       typescript: ^4.8.3
@@ -68,6 +69,7 @@ importers:
       rollup-plugin-node-externals: 5.0.2_rollup@2.79.1
       rollup-plugin-swc3: 0.8.0_cjbrhyywzvvyh6otltqtw4alqy
       rollup-plugin-typescript2: 0.32.1_5q64ijqsuisqe52alrh6v6njki
+      ts-prune: 0.10.3
       tsx: 3.12.1
       turbo: 1.6.3
       typescript: 4.8.3
@@ -8278,6 +8280,18 @@ packages:
     engines: { node: '>=10.13.0' }
     dev: false
 
+  /@ts-morph/common/0.12.3:
+    resolution:
+      {
+        integrity: sha512-4tUmeLyXJnJWvTFOKtcNJ1yh0a3SsTLi2MUoyj8iUNznFRN1ZquaNe7Oukqrnki2FzZkm0J9adCNLDZxUzvj+w==,
+      }
+    dependencies:
+      fast-glob: 3.2.12
+      minimatch: 3.1.2
+      mkdirp: 1.0.4
+      path-browserify: 1.0.1
+    dev: false
+
   /@tsconfig/docusaurus/1.0.6:
     resolution:
       {
@@ -11293,6 +11307,13 @@ packages:
     engines: { iojs: '>= 1.0.0', node: '>= 0.12.0' }
     dev: false
 
+  /code-block-writer/11.0.3:
+    resolution:
+      {
+        integrity: sha512-NiujjUFB4SwScJq2bwbYUtXbZhBSlY6vYzm++3Q6oC+U+injTqfPYFK8wS9COOmb2lueqp0ZRB4nK1VYeHgNyw==,
+      }
+    dev: false
+
   /collapse-white-space/1.0.6:
     resolution:
       {
@@ -11420,6 +11441,14 @@ packages:
         integrity: sha512-P0CysNDQ7rtVw4QIQtm+MRxV66vKFSvlsQvGYXZWR3qFU0jlMKHZZZgw8e+8DSah4UDKMqnknRDQz+xuQXQ/Zg==,
       }
     engines: { node: '>= 6' }
+
+  /commander/6.2.1:
+    resolution:
+      {
+        integrity: sha512-U7VdrJFnJgo4xjrHpTzu0yrHPGImdsmD95ZlgYSEajAn2JKzDhDTPG9kBTefmObL2w/ngeZnilk+OV9CG3d7UA==,
+      }
+    engines: { node: '>= 6' }
+    dev: false
 
   /commander/7.2.0:
     resolution:
@@ -21605,6 +21634,13 @@ packages:
       tslib: 2.4.1
     dev: false
 
+  /path-browserify/1.0.1:
+    resolution:
+      {
+        integrity: sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==,
+      }
+    dev: false
+
   /path-exists/3.0.0:
     resolution:
       {
@@ -26507,6 +26543,14 @@ packages:
       }
     dev: false
 
+  /true-myth/4.1.1:
+    resolution:
+      {
+        integrity: sha512-rqy30BSpxPznbbTcAcci90oZ1YR4DqvKcNXNerG5gQBU2v4jk0cygheiul5J6ExIMrgDVuanv/MkGfqZbKrNNg==,
+      }
+    engines: { node: 10.* || >= 12.* }
+    dev: false
+
   /ts-jest/27.1.5_qqheuyrmnawe7ws7n63adpwbnu:
     resolution:
       {
@@ -26542,6 +26586,31 @@ packages:
       semver: 7.3.8
       typescript: 4.8.3
       yargs-parser: 20.2.9
+    dev: false
+
+  /ts-morph/13.0.3:
+    resolution:
+      {
+        integrity: sha512-pSOfUMx8Ld/WUreoSzvMFQG5i9uEiWIsBYjpU9+TTASOeUa89j5HykomeqVULm1oqWtBdleI3KEFRLrlA3zGIw==,
+      }
+    dependencies:
+      '@ts-morph/common': 0.12.3
+      code-block-writer: 11.0.3
+    dev: false
+
+  /ts-prune/0.10.3:
+    resolution:
+      {
+        integrity: sha512-iS47YTbdIcvN8Nh/1BFyziyUqmjXz7GVzWu02RaZXqb+e/3Qe1B7IQ4860krOeCGUeJmterAlaM2FRH0Ue0hjw==,
+      }
+    hasBin: true
+    dependencies:
+      commander: 6.2.1
+      cosmiconfig: 7.1.0
+      json5: 2.2.1
+      lodash: 4.17.21
+      true-myth: 4.1.1
+      ts-morph: 13.0.3
     dev: false
 
   /tsconfig-paths/3.14.1:
