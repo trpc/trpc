@@ -27,6 +27,20 @@ export type FlatOverwrite<TType, TWith> = InferOptional<
 >;
 
 /**
+ * @internal
+ */
+export type IntersectionError<TKey extends string> =
+  `${TKey} collides with a built-in method, you should rename this router or procedure on your backend`;
+
+/**
+ * @internal
+ */
+export type ProtectedIntersection<TType, TWith> = keyof TType &
+  keyof TWith extends never
+  ? TType & TWith
+  : IntersectionError<keyof TType & keyof TWith & string>;
+
+/**
  * @public
  */
 export type Maybe<TType> = TType | undefined | null;
