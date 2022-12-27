@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
 import { initTRPC } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
@@ -210,20 +209,6 @@ Object {
     close();
   });
 
-  test('double errors', async () => {
-    expect(() => {
-      trpc
-        .router()
-        .formatError(({ shape }) => {
-          return shape;
-        })
-        .formatError(({ shape }) => {
-          return shape;
-        });
-    }).toThrowErrorMatchingInlineSnapshot(
-      `"You seem to have double \`formatError()\`-calls in your router tree"`,
-    );
-  });
   test('setting custom http response code', async () => {
     const TEAPOT_ERROR_CODE = 418;
     const onError = jest.fn();
