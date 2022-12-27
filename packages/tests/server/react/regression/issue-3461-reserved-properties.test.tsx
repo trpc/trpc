@@ -2,7 +2,9 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
 import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
+import { IntersectionError } from '@trpc/server';
 import { initTRPC } from '@trpc/server/src/core';
+import { expectTypeOf } from 'expect-type';
 import React from 'react';
 import { z } from 'zod';
 
@@ -15,13 +17,13 @@ test('utils client', async () => {
         .input(z.object({ text: z.string().optional() }))
         .query(({ input }) => `Hello ${input.text ?? 'world'}`),
     }),
+    a: t.procedure.query(() => 'a'),
   });
 
   const { proxy, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    // @ts-expect-error property should not exist
-    proxy.Provider.greeting;
+    expectTypeOf(proxy).toMatchTypeOf<IntersectionError<'Provider'>>();
 
     return null;
   }
@@ -49,8 +51,7 @@ test('utils client', async () => {
   function MyComponent() {
     const utils = proxy.useContext();
 
-    // @ts-expect-error property should not exist
-    utils.client.greeting;
+    expectTypeOf(utils).toEqualTypeOf<IntersectionError<'client'>>();
 
     return null;
   }
@@ -75,6 +76,5 @@ test('ssg queryClient', async () => {
 
   const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
 
-  // @ts-expect-error property should not exist
-  ssg.queryClient.greeting;
+  expectTypeOf(ssg).toEqualTypeOf<IntersectionError<'queryClient'>>();
 });
