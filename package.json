@@ -72,5 +72,8 @@
       "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
       "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Flegacy-next-starter"
     }
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^8.5.0"
   }
 }
