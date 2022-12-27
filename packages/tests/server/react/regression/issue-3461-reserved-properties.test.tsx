@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
 import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
