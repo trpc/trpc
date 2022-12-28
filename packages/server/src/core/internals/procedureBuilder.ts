@@ -195,9 +195,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
 
-export type ProcedureBuilderMiddleware =
-  | MiddlewareFunction<any, any>
-  | MiddlewareBuilder<any, any>;
+export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
 
 export type ProcedureBuilderResolver = (
   opts: ResolveOptions<any>,
@@ -349,9 +347,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
-        const middlewareDo =
-          'pipe' in middleware ? middleware._self : middleware;
-        const result = await middlewareDo({
+        const result = await middleware({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
