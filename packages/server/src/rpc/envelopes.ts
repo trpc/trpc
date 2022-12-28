@@ -64,11 +64,6 @@ export interface TRPCSuccessResponse<TData>
     }
   > {}
 
-/**
- * @deprecated use `TRPCSuccessResponse` instead
- */
-export type TRPCResultResponse<TData = unknown> = TRPCSuccessResponse<TData>;
-
 export interface TRPCErrorResponse<
   TError extends TRPCErrorShape = TRPCErrorShape,
 > extends JSONRPC2.ErrorResponse<TError> {}
