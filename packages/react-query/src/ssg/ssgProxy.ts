@@ -128,6 +128,7 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
 
+      // TODO: Come back when we have sorted out all the querykey stuff
       const queryKey = getArrayQueryKey(
         getQueryKey(fullPath, input),
         ['fetchInfinite', 'prefetchInfinite'].includes(utilName)
