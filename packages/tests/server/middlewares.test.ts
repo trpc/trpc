@@ -45,7 +45,6 @@ test('decorate independently', () => {
     });
   });
 
-
   t.procedure.use(bazMiddleware).query(({ ctx }) => {
     expectTypeOf(ctx.user).toMatchTypeOf<User>();
   });
@@ -88,21 +87,18 @@ test('resolver context', async () => {
   const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
     test: testProcedure.query(({ ctx }) => {
+      expect(ctx).toEqual({
+        foo: 'foo',
+        bar: 'bar',
+        baz: 'baz',
+      });
       expectTypeOf(ctx).toMatchTypeOf<{
         foo: 'foo';
         bar: 'bar';
         baz: 'baz';
-expect(ctx).toEqual({
-  foo: 'foo',
-  bar: 'bar',
-  baz: 'baz',
-})
+      }>();
     }),
   });
-
-  // validate middlewares are called in order
-  const caller = router.createCaller({});
-  const result = await caller.test();
 });
 
 test('meta', () => {
