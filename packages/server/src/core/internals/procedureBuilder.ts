@@ -148,7 +148,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a middleware to the procedure.
    */
   use<$Params extends ProcedureParams>(
-    fn: MiddlewareBuilder<TParams, $Params>,
+    fn:
+      | MiddlewareBuilder<TParams, $Params>
+      | MiddlewareFunction<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -256,8 +258,13 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       return createNewBuilder(_def, builder._def) as any;
     },
     use(middleware) {
+      if ('pipe' in middleware) {
+        return createNewBuilder(_def, {
+          middlewares: middleware._self.piped ?? [middleware._self],
+        }) as AnyProcedureBuilder;
+      }
       return createNewBuilder(_def, {
-        middlewares: middleware._self.piped ?? [middleware._self],
+        middlewares: [middleware],
       }) as AnyProcedureBuilder;
     },
     query(resolver) {

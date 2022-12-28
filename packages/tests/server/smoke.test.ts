@@ -48,10 +48,11 @@ test('old client - happy path with input', async () => {
 });
 
 test('very happy path', async () => {
-  const middleware = t.middleware(({ next }) => next());
   const greeting = t.procedure
     .input(z.string())
-    .use(middleware)
+    .use(({ next }) => {
+      return next();
+    })
     .query(({ input }) => `hello ${input}`);
   const router = t.router({
     greeting,
@@ -77,24 +78,22 @@ test('very happy path', async () => {
 });
 
 test('middleware', async () => {
-  const helloMiddleware = t.middleware(({ next }) => {
-    return next({
-      ctx: {
-        prefix: 'hello',
-      },
-    });
-  });
-  const userMiddleware = t.middleware(({ next }) => {
-    return next({
-      ctx: {
-        user: 'KATT',
-      },
-    });
-  });
   const router = t.router({
     greeting: procedure
-      .use(helloMiddleware)
-      .use(userMiddleware)
+      .use(({ next }) => {
+        return next({
+          ctx: {
+            prefix: 'hello',
+          },
+        });
+      })
+      .use(({ next }) => {
+        return next({
+          ctx: {
+            user: 'KATT',
+          },
+        });
+      })
       .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
   });
   const { proxy, close } = routerToServerAndClientNew(router);
