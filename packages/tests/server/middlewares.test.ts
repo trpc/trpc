@@ -66,7 +66,6 @@ test('resolver context', async () => {
   });
 
   const barMiddleware = fooMiddleware.pipe((opts) => {
-    opts.ctx.foo;
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
     }>();
@@ -78,7 +77,6 @@ test('resolver context', async () => {
   });
 
   const bazMiddleware = barMiddleware.pipe((opts) => {
-    opts.ctx.foo;
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
       bar: 'bar';

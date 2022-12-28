@@ -27,10 +27,11 @@ describe('meta', () => {
       const middlewareCalls = jest.fn((_opts: Meta | undefined) => {
         // noop
       });
-      const baseProc = t.procedure.use(({ next, meta }) => {
+      const middleware = t.middleware(({ next, meta }) => {
         middlewareCalls(meta);
         return next();
       });
+      const baseProc = t.procedure.use(middleware);
 
       const appRouter = t.router({
         withMeta: baseProc
