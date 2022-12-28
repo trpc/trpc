@@ -254,6 +254,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 </a>
 
 ---
+
 <a href="https://vercel.com/?utm_source=trpc&utm_campaign=oss">
   <p align="center">
     <img src="./images/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
