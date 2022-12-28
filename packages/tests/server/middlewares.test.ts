@@ -45,9 +45,6 @@ test('decorate independently', () => {
     });
   });
 
-  // TODO
-  // 1. test type in resolver -- DONE
-  // 2. snapshot ctx in resolver
 
   t.procedure.use(bazMiddleware).query(({ ctx }) => {
     expectTypeOf(ctx.user).toMatchTypeOf<User>();
