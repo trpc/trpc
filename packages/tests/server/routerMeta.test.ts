@@ -52,8 +52,13 @@ test('route meta in middleware', async () => {
   const middleware = jest.fn((opts) => {
     return opts.next();
   });
+  const middlewareBuilder = {
+    _self: middleware,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    pipe: (() => {}) as any,
+  };
 
-  const procedure = t.procedure.use(middleware);
+  const procedure = t.procedure.use(middlewareBuilder);
   const router = t.router({
     foo1: procedure.meta({ data: 'foo1' }).query(() => 'bar1'),
     foo2: procedure.meta({ data: 'foo2' }).mutation(() => 'bar2'),

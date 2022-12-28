@@ -49,18 +49,15 @@ test('decorate independently', () => {
   // 1. test type in resolver -- DONE
   // 2. snapshot ctx in resolver
 
-  t.procedure
-    .use(bazMiddleware._self.piped ?? bazMiddleware._self)
-    .query(({ ctx }) => {
-      expectTypeOf(ctx.user).toMatchTypeOf<User>();
-    });
+  t.procedure.use(bazMiddleware).query(({ ctx }) => {
+    expectTypeOf(ctx.user).toMatchTypeOf<User>();
+  });
 });
 
-test.only('resolver context', async () => {
+test('resolver context', async () => {
   const t = initTRPC.create();
 
   const fooMiddleware = t.middleware((opts) => {
-    console.log('foo');
     return opts.next({
       ctx: {
         foo: 'foo' as const,
@@ -73,7 +70,6 @@ test.only('resolver context', async () => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
     }>();
-    console.log('bar');
     return opts.next({
       ctx: {
         bar: 'bar' as const,
@@ -87,7 +83,6 @@ test.only('resolver context', async () => {
       foo: 'foo';
       bar: 'bar';
     }>();
-    console.log('baz');
     return opts.next({
       ctx: {
         baz: 'baz' as const,
