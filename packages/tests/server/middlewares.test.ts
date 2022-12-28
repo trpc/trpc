@@ -51,7 +51,11 @@ test('decorate independently', () => {
 });
 
 test('resolver context', async () => {
-  const t = initTRPC.create();
+  const t = initTRPC
+    .context<{
+      init: 'init';
+    }>()
+    .create();
 
   const fooMiddleware = t.middleware((opts) => {
     return opts.next({
@@ -88,17 +92,34 @@ test('resolver context', async () => {
   const router = t.router({
     test: testProcedure.query(({ ctx }) => {
       expect(ctx).toEqual({
+        init: 'init',
         foo: 'foo',
         bar: 'bar',
         baz: 'baz',
       });
-      expectTypeOf(ctx).toMatchTypeOf<{
+      expectTypeOf(ctx).toEqualTypeOf<{
+        init: 'init';
         foo: 'foo';
         bar: 'bar';
         baz: 'baz';
       }>();
+
+      return ctx;
     }),
   });
+
+  const caller = router.createCaller({
+    init: 'init',
+  });
+
+  expect(await caller.test()).toMatchInlineSnapshot(`
+    Object {
+      "bar": "bar",
+      "baz": "baz",
+      "foo": "foo",
+      "init": "init",
+    }
+  `);
 });
 
 test('meta', () => {

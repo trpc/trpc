@@ -52,6 +52,9 @@ export interface MiddlewareBuilder<
   TRoot extends ProcedureParams,
   TNewParams extends ProcedureParams,
 > {
+  /**
+   * Create a new builder based on the current middleware builder
+   */
   pipe<$Params extends ProcedureParams>(
     fn: MiddlewareFunction<
       {
@@ -80,9 +83,16 @@ export interface MiddlewareBuilder<
     Overwrite<TNewParams, $Params>
   >;
 
-  _self: MiddlewareFunction<TRoot, TNewParams>;
+  /**
+   * List of middlewares within this middleware builder
+   */
+  _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
 }
 
+/**
+ * @internal
+ * FIXME: there must be a nicer way of doing this, it's hard to maintain when we have several structures like this
+ */
 type CreateMiddlewareReturnInput<
   TRoot extends ProcedureParams,
   TPrev extends ProcedureParams,
@@ -100,6 +110,9 @@ type CreateMiddlewareReturnInput<
   }
 >;
 
+/**
+ * @internal
+ */
 type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
   _config: TConfig;
   _ctx_out: TConfig['$types']['ctx'];
@@ -143,25 +156,22 @@ export type MiddlewareFunction<
 };
 
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
-  function createNewBuilder(
-    previousMiddleware: MiddlewareFunction<any, any>,
-    newMiddleware: MiddlewareFunction<any, any>,
-  ) {
-    newMiddleware.piped = [
-      ...(previousMiddleware.piped ?? [previousMiddleware]),
-      newMiddleware,
-    ];
-    return createMiddleware(newMiddleware);
+  function createMiddlewareInner<TNewParams extends ProcedureParams>(
+    middlewares: MiddlewareFunction<any, any>[],
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+    return {
+      _middlewares: middlewares,
+      // Create a new builder with a new array of middlewares
+      pipe(middleware) {
+        return createMiddlewareInner([...middlewares, middleware]);
+      },
+    };
   }
+
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
-    return {
-      _self: fn,
-      pipe(middleware) {
-        return createNewBuilder(fn, middleware);
-      },
-    };
+    return createMiddlewareInner([fn]);
   }
 
   return createMiddleware;

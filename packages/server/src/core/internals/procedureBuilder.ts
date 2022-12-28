@@ -254,14 +254,15 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     unstable_concat(builder) {
       return createNewBuilder(_def, builder._def) as any;
     },
-    use(middleware) {
-      if ('pipe' in middleware) {
-        return createNewBuilder(_def, {
-          middlewares: middleware._self.piped ?? [middleware._self],
-        }) as AnyProcedureBuilder;
-      }
+    use(middlewareBuilderOrFn) {
+      // Distinguish between a middleware builder and a middleware function
+      const middlewares =
+        '_middlewares' in middlewareBuilderOrFn
+          ? middlewareBuilderOrFn._middlewares
+          : [middlewareBuilderOrFn];
+
       return createNewBuilder(_def, {
-        middlewares: [middleware],
+        middlewares,
       }) as AnyProcedureBuilder;
     },
     query(resolver) {
