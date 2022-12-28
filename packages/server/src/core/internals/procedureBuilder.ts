@@ -7,6 +7,7 @@ import {
   UndefinedKeys,
 } from '../../types';
 import {
+  MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
   createInputMiddleware,
@@ -147,9 +148,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a middleware to the procedure.
    */
   use<$Params extends ProcedureParams>(
-    fn:
-      | MiddlewareFunction<TParams, $Params>
-      | Array<MiddlewareFunction<TParams, $Params>>,
+    fn: MiddlewareBuilder<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -194,7 +193,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
 
-export type ProcedureBuilderMiddleware = MiddlewareFunction<any, any>;
+export type ProcedureBuilderMiddleware =
+  | MiddlewareFunction<any, any>
+  | MiddlewareBuilder<any, any>;
 
 export type ProcedureBuilderResolver = (
   opts: ResolveOptions<any>,
@@ -256,7 +257,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     },
     use(middleware) {
       return createNewBuilder(_def, {
-        middlewares: Array.isArray(middleware) ? middleware : [middleware],
+        middlewares: middleware._self.piped ?? [middleware._self],
       }) as AnyProcedureBuilder;
     },
     query(resolver) {
@@ -341,7 +342,9 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
+        const middlewareDo =
+          'pipe' in middleware ? middleware._self : middleware;
+        const result = await middlewareDo({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,

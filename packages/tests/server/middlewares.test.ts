@@ -95,9 +95,7 @@ test.only('resolver context', async () => {
     });
   });
 
-  const testProcedure = t.procedure.use(
-    bazMiddleware._self.piped ?? bazMiddleware._self,
-  );
+  const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
     test: testProcedure.query(({ ctx }) => {
       expectTypeOf(ctx).toMatchTypeOf<{
