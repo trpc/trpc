@@ -73,7 +73,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > tRPC is rapidly gaining momentum!
 
-<a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
+<a href="https://star-history.com/#trpc/trpc"><p align="center"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></p></a>
 
 ## Core Team
 
@@ -254,5 +254,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 </a>
 
 ---
-
-[![Powered by Vercel](./images/powered-by-vercel.svg 'Powered by Vercel')](https://vercel.com/?utm_source=trpc&utm_campaign=oss)
+<a href="https://vercel.com/?utm_source=trpc&amp;utm_campaign=oss">
+  <p align="center">
+    <img src="./images/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
+  </p>
+</a>
