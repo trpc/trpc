@@ -92,7 +92,11 @@ test('resolver context', async () => {
         foo: 'foo';
         bar: 'bar';
         baz: 'baz';
-      }>();
+expect(ctx).toEqual({
+  foo: 'foo',
+  bar: 'bar',
+  baz: 'baz',
+})
     }),
   });
 
