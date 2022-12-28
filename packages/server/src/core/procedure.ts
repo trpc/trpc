@@ -79,10 +79,6 @@ export interface Procedure<
 > {
   _type: TType;
   _def: TParams & ProcedureBuilderDef<TParams>;
-  /**
-   * @deprecated use `._def.meta` instead
-   */
-  meta?: TParams['_meta'];
   _procedure: true;
   /**
    * @internal
