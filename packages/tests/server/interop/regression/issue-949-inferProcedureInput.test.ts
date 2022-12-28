@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/ban-types */
 // IMPORTANT:
 // needs to be imported from compiled output otherwise we get a false-positive
 import * as trpc from '@trpc/server';
@@ -8,7 +8,6 @@ import { z } from 'zod';
 // https://github.com/trpc/trpc/issues/949
 // https://github.com/trpc/trpc/pull/955
 test('inferProcedureFromInput regression', async () => {
-  // eslint-disable-next-line @typescript-eslint/ban-types
   type Context = {};
   const appRouter = trpc
     .router<Context>()

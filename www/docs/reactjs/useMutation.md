@@ -1,8 +1,8 @@
 ---
-id: mutations
+id: useMutation
 title: useMutation()
 sidebar_label: useMutation()
-slug: /react-mutations
+slug: /useMutation
 ---
 
 :::note
@@ -16,32 +16,31 @@ Works like react-query's mutations - [see their docs](https://react-query.tansta
 <details><summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
-import { initTRPC } from '@trpc/server'
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-export const t = initTRPC.create()
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
   // Create procedure at path 'login'
   // The syntax is identical to creating queries
-  login: t
-    .procedure
+  login: t.procedure
     // using zod schema to validate and infer input values
     .input(
       z.object({
         name: z.string(),
-      })
+      }),
     )
     .mutation(({ input }) => {
-        // Here some login stuff would happen
-        return {
-          user: {
-            name: input.name,
-            role: 'ADMIN'
-          },
-        };
-       })
-})
+      // Here some login stuff would happen
+      return {
+        user: {
+          name: input.name,
+          role: 'ADMIN',
+        },
+      };
+    }),
+});
 ```
 
 </details>

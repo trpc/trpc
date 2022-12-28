@@ -1,10 +1,10 @@
 import {
   AnyRouter,
   ClientDataTransformerOptions,
+  CombinedDataTransformer,
   DataTransformer,
-  inferProcedureInput,
-  inferProcedureOutput,
-  inferSubscriptionOutput,
+  DataTransformerOptions,
+  DefaultDataTransformer,
 } from '@trpc/server';
 import {
   Unsubscribable,
@@ -12,7 +12,6 @@ import {
   observableToPromise,
   share,
 } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
@@ -22,13 +21,38 @@ import {
   TRPCLink,
 } from '../links/types';
 
-interface CreateTRPCClientBaseOptions {
-  /**
-   * Data transformer
-   * @link https://trpc.io/docs/data-transformers
-   **/
-  transformer?: ClientDataTransformerOptions;
-}
+type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
+  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+    ? {
+        /**
+         * Data transformer
+         *
+         * You must use the same transformer on the backend and frontend
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer?: 'You must set a transformer on the backend router';
+      }
+    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
+    ? {
+        /**
+         * Data transformer
+         *
+         * You must use the same transformer on the backend and frontend
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
+          ? DataTransformerOptions
+          : TRouter['_def']['_config']['transformer'];
+      }
+    : {
+        /**
+         * Data transformer
+         *
+         * You must use the same transformer on the backend and frontend
+         * @link https://trpc.io/docs/data-transformers
+         **/
+        transformer?: ClientDataTransformerOptions;
+      };
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
@@ -49,12 +73,12 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 
 /** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions & {
+  | CreateTRPCClientBaseOptions<TRouter> & {
       links: TRPCLink<TRouter>[];
     };
 
-export class TRPCClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<TRouter>[];
+export class TRPCUntypedClient<TRouter extends AnyRouter> {
+  private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
@@ -62,17 +86,21 @@ export class TRPCClient<TRouter extends AnyRouter> {
     this.requestId = 0;
 
     function getTransformer(): DataTransformer {
-      if (!opts.transformer)
+      const transformer = opts.transformer as
+        | ClientDataTransformerOptions
+        | undefined;
+      if (!transformer)
         return {
           serialize: (data) => data,
           deserialize: (data) => data,
         };
-      if ('input' in opts.transformer)
+
+      if ('input' in transformer)
         return {
-          serialize: opts.transformer.input.serialize,
-          deserialize: opts.transformer.output.deserialize,
+          serialize: transformer.input.serialize,
+          deserialize: transformer.output.deserialize,
         };
-      return opts.transformer;
+      return transformer;
     }
 
     this.runtime = {
@@ -93,7 +121,7 @@ export class TRPCClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
   }) {
-    const chain$ = createChain<TRouter, TInput, TOutput>({
+    const chain$ = createChain<AnyRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
         id: ++this.requestId,
@@ -130,47 +158,31 @@ export class TRPCClient<TRouter extends AnyRouter> {
 
     return abortablePromise;
   }
-  public query<
-    TQueries extends TRouter['_def']['queries'],
-    TPath extends string & keyof TQueries,
-    TInput extends inferProcedureInput<TQueries[TPath]>,
-  >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
-    type TOutput = inferProcedureOutput<TQueries[TPath]>;
-    return this.requestAsPromise<TInput, TOutput>({
+  public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+    return this.requestAsPromise<unknown, unknown>({
       type: 'query',
       path,
-      input: input as TInput,
+      input,
       context: opts?.context,
       signal: opts?.signal,
     });
   }
-  public mutation<
-    TMutations extends TRouter['_def']['mutations'],
-    TPath extends string & keyof TMutations,
-    TInput extends inferProcedureInput<TMutations[TPath]>,
-  >(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
-    type TOutput = inferTransformedProcedureOutput<TMutations[TPath]>;
-    return this.requestAsPromise<TInput, TOutput>({
+  public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+    return this.requestAsPromise<unknown, unknown>({
       type: 'mutation',
       path,
-      input: input as TInput,
+      input,
       context: opts?.context,
       signal: opts?.signal,
     });
   }
-  public subscription<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & keyof TSubscriptions,
-    // TODO - this should probably be updated to use inferTransformedProcedureOutput but this is only hit for legacy clients
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(
-    path: TPath,
-    input: TInput,
+  public subscription(
+    path: string,
+    input: unknown,
     opts: TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>>,
   ): Unsubscribable {
-    const observable$ = this.$request<TInput, TOutput>({
+    const observable$ = this.$request({
       type: 'subscription',
       path,
       input,

@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
 import { expectTypeOf } from 'expect-type';
@@ -46,8 +43,8 @@ describe('no transformer specified', () => {
     //     ^?
     expectTypeOf(result).toMatchTypeOf<{
       date: string;
-      map: {};
-      set: {};
+      map: object;
+      set: object;
     }>();
     expectTypeOf(result.arrayWithUndefined);
     //                     ^?

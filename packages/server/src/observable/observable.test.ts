@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { observable, share, tap } from '.';
 
 test('vanilla observable - complete()', () => {

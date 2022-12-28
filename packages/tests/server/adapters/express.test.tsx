@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Context, router } from './__router';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';

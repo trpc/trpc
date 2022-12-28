@@ -49,16 +49,16 @@ tRPC defines a list of error codes that each represent a different type of error
 tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
 
 ```ts twoslash
-import { TRPCError } from "@trpc/server";
+import { TRPCError } from '@trpc/server';
 // ---cut---
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
 // Example error you might get if your input valdidation fails
 const error: TRPCError = {
-  name: "TRPCError",
-  code: "BAD_REQUEST",
-  message: "\"password\" must be at least 4 characters"
-}
+  name: 'TRPCError',
+  code: 'BAD_REQUEST',
+  message: '"password" must be at least 4 characters',
+};
 
 if (error instanceof TRPCError) {
   const httpCode = getHTTPStatusCodeFromError(error);
@@ -79,7 +79,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 For example, throwing this error:
 
 ```ts title='server.ts'
-import { initTRPC, TRPCError } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 

@@ -57,7 +57,9 @@ export function MyComponent() {
   return (
     <div>
       <h1>Login Form</h1>
-      <button onClick={handleLogin} disabled={mutation.isLoading}>Login</button>
+      <button onClick={handleLogin} disabled={mutation.isLoading}>
+        Login
+      </button>
 
       {mutation.error && <p>Something went wrong! {mutation.error.message}</p>}
     </div>

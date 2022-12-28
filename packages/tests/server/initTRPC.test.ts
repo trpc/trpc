@@ -1,5 +1,4 @@
 import {
-  CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
   initTRPC,
@@ -34,7 +33,7 @@ test('custom transformer', () => {
   const router = t.router({});
   expectTypeOf(
     router._def._config.transformer,
-  ).toMatchTypeOf<CombinedDataTransformer>();
+  ).toMatchTypeOf<DataTransformerOptions>();
   expectTypeOf(
     router._def._config.transformer,
   ).not.toMatchTypeOf<DefaultDataTransformer>();
@@ -58,7 +57,12 @@ test('config types', () => {
 
     t._config;
     // ^?
-    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<{}>();
+    expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<object>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<object>();
+
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
+    // eslint-disable-next-line @typescript-eslint/ban-types
     expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<{}>();
   }
 
@@ -95,4 +99,28 @@ test('detect server env', () => {
   expect(() =>
     initTRPC.create({ isServer: false, allowOutsideOfServer: true }),
   ).not.toThrowError();
+});
+
+test('context function type', () => {
+  const createContext = () => ({
+    foo: 'bar' as const,
+  });
+
+  const t = initTRPC.context<typeof createContext>().create();
+
+  expectTypeOf<typeof t._config.$types.ctx>().toMatchTypeOf<{
+    foo: 'bar';
+  }>();
+});
+
+test('context async function type', () => {
+  const createContext = async () => ({
+    foo: 'bar' as const,
+  });
+
+  const t = initTRPC.context<typeof createContext>().create();
+
+  expectTypeOf<typeof t._config.$types.ctx>().toMatchTypeOf<{
+    foo: 'bar';
+  }>();
 });
