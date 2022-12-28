@@ -73,7 +73,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 > tRPC is rapidly gaining momentum!
 
-<a href="https://star-history.com/#trpc/trpc"><p align="center"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></p></a>
+<a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
 
 ## Core Team
 
