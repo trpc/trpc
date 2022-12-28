@@ -3,21 +3,35 @@ import {
   DehydratedState,
   InfiniteData,
   QueryClient,
+  dehydrate,
 } from '@tanstack/react-query';
 import {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
+  ClientDataTransformerOptions,
   Filter,
   ProtectedIntersection,
+  callProcedure,
   inferHandlerInput,
+  inferRouterContext,
 } from '@trpc/server';
 import {
   createFlatProxy,
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
-import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
+import { getArrayQueryKey } from '../internals/getArrayQueryKey';
+import { getQueryKey } from '../internals/getQueryKey';
+import { CreateTRPCReactQueryClientConfig, getQueryClient } from '../shared';
+
+interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
+  router: TRouter;
+  ctx: inferRouterContext<TRouter>;
+  transformer?: ClientDataTransformerOptions;
+}
+export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
+  CreateSSGHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -66,7 +80,25 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
 export function createProxySSGHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
 ) {
-  const helpers = createSSGHelpers(opts);
+  const { router, transformer, ctx } = opts;
+  const queryClient = getQueryClient(opts);
+
+  const serialize = transformer
+    ? ('input' in transformer ? transformer.input : transformer).serialize
+    : (obj: unknown) => obj;
+
+  function _dehydrate(
+    opts: DehydrateOptions = {
+      shouldDehydrateQuery() {
+        // makes sure to serialize errors
+        return true;
+      },
+    },
+  ): DehydratedState {
+    const before = dehydrate(queryClient, opts);
+    const after = serialize(before);
+    return after;
+  }
 
   type CreateProxySSGHelpers = ProtectedIntersection<
     {
@@ -77,36 +109,42 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
   >;
 
   return createFlatProxy<CreateProxySSGHelpers>((key) => {
-    if (key === 'queryClient') {
-      return helpers.queryClient;
-    }
+    if (key === 'queryClient') return queryClient;
+    if (key === 'dehydrate') return _dehydrate;
 
-    if (key === 'dehydrate') {
-      return helpers.dehydrate;
-    }
     return createRecursiveProxy((opts) => {
       const args = opts.args;
-
+      const input = args[0];
       const pathCopy = [key, ...opts.path];
-
       const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
-
       const fullPath = pathCopy.join('.');
 
-      switch (utilName) {
-        case 'fetch': {
-          return helpers.fetchQuery(fullPath, ...(args as any));
-        }
-        case 'fetchInfinite': {
-          return helpers.fetchInfiniteQuery(fullPath, ...(args as any));
-        }
-        case 'prefetch': {
-          return helpers.prefetchQuery(fullPath, ...(args as any));
-        }
-        case 'prefetchInfinite': {
-          return helpers.prefetchInfiniteQuery(fullPath, ...(args as any));
-        }
-      }
+      const _callProcedure = () =>
+        callProcedure({
+          procedures: router._def.procedures,
+          path: fullPath,
+          rawInput: input,
+          ctx,
+          type: 'query',
+        });
+
+      const queryKey = getArrayQueryKey(
+        getQueryKey(fullPath, input),
+        ['fetchInfinite', 'prefetchInfinite'].includes(utilName)
+          ? 'infinite'
+          : 'query',
+      );
+
+      const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+        fetch: () => queryClient.fetchQuery(queryKey, _callProcedure),
+        fetchInfinite: () =>
+          queryClient.fetchInfiniteQuery(queryKey, _callProcedure),
+        prefetch: () => queryClient.prefetchQuery(queryKey, _callProcedure),
+        prefetchInfinite: () =>
+          queryClient.prefetchInfiniteQuery(queryKey, _callProcedure),
+      };
+
+      return helperMap[utilName]();
     });
   });
 }

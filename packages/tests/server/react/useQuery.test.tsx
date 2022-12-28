@@ -58,15 +58,6 @@ const ctx = konn()
             };
           }),
       }),
-      /**
-       * @deprecated
-       */
-      deprecatedRouter: t.router({
-        /**
-         * @deprecated
-         */
-        deprecatedProcedure: t.procedure.query(() => '..'),
-      }),
     });
 
     return getServerAndReactClient(appRouter);
@@ -225,23 +216,6 @@ test('useInfiniteQuery()', async () => {
   });
 });
 
-test('deprecated routers', async () => {
-  const { proxy, App } = ctx;
-
-  function MyComponent() {
-    // FIXME this should have strike-through
-    proxy.deprecatedRouter.deprecatedProcedure.useQuery();
-
-    return null;
-  }
-
-  render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-});
-
 test('useSuspenseInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
@@ -295,23 +269,6 @@ test('useSuspenseInfiniteQuery()', async () => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });
-});
-
-test('deprecated routers', async () => {
-  const { proxy, App } = ctx;
-
-  function MyComponent() {
-    // FIXME this should have strike-through
-    proxy.deprecatedRouter.deprecatedProcedure.useQuery();
-
-    return null;
-  }
-
-  render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
 });
 
 test('useQuery options inference', () => {

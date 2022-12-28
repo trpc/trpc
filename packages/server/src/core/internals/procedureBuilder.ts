@@ -386,7 +386,6 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     return result.data;
   };
   procedure._def = _def;
-  procedure.meta = _def.meta;
 
   return procedure as AnyProcedure;
 }

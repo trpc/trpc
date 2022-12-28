@@ -7,19 +7,8 @@ import { defaultTransformer } from '../transformer';
 import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
-import {
-  AnyMutationProcedure,
-  AnyProcedure,
-  AnyQueryProcedure,
-  AnySubscriptionProcedure,
-  ProcedureArgs,
-} from './procedure';
-import {
-  ProcedureType,
-  inferHandlerInput,
-  inferProcedureOutput,
-  procedureTypes,
-} from './types';
+import { AnyProcedure, ProcedureArgs } from './procedure';
+import { ProcedureType, procedureTypes } from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
@@ -28,66 +17,18 @@ export interface ProcedureRouterRecord {
   [key: string]: AnyProcedure | AnyRouter;
 }
 
-/**
- * @deprecated
- */
-interface DeprecatedProcedureRouterRecord {
-  queries: Record<string, AnyQueryProcedure>;
-  mutations: Record<string, AnyMutationProcedure>;
-  subscriptions: Record<string, AnySubscriptionProcedure>;
-}
-
 export interface RouterDef<
   TConfig extends AnyRootConfig,
   TRecord extends ProcedureRouterRecord,
-  /**
-   * @deprecated
-   */
-  TOld extends DeprecatedProcedureRouterRecord = {
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    queries: {};
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    mutations: {};
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    subscriptions: {};
-  },
 > {
   _config: TConfig;
   router: true;
   procedures: TRecord;
   record: TRecord;
-  /**
-   * V9 queries
-   * @deprecated
-   */
-  queries: TOld['queries'];
-  /**
-   * V9 mutations
-   * @deprecated
-   */
-  mutations: TOld['mutations'];
-  /**
-   * V9 subscriptions
-   * @deprecated
-   */
-  subscriptions: TOld['subscriptions'];
 }
 
-export type AnyRouterDef<
-  TConfig extends AnyRootConfig = AnyRootConfig,
-  TOld extends DeprecatedProcedureRouterRecord = any,
-> = RouterDef<TConfig, any, TOld>;
-
-/**
- * @internal
- */
-type inferHandlerFn<TProcedures extends ProcedureRecord> = <
-  TProcedure extends TProcedures[TPath],
-  TPath extends keyof TProcedures & string,
->(
-  path: TPath,
-  ...args: inferHandlerInput<TProcedure>
-) => Promise<inferProcedureOutput<TProcedure>>;
+export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =
+  RouterDef<TConfig, any>;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: ProcedureArgs<TProcedure['_def']>[0],
@@ -109,20 +50,7 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
  */
 type RouterCaller<TDef extends AnyRouterDef> = (
   ctx: TDef['_config']['$types']['ctx'],
-) => {
-  /**
-   * @deprecated
-   */
-  query: inferHandlerFn<TDef['queries']>;
-  /**
-   * @deprecated
-   */
-  mutation: inferHandlerFn<TDef['mutations']>;
-  /**
-   * @deprecated
-   */
-  subscription: inferHandlerFn<TDef['subscriptions']>;
-} & DecoratedProcedureRecord<TDef['record']>;
+) => DecoratedProcedureRecord<TDef['record']>;
 
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
@@ -221,15 +149,6 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       procedures: routerProcedures,
       ...emptyRouter,
       record: procedures,
-      queries: Object.entries(routerProcedures)
-        .filter((pair) => (pair[1] as any)._def.query)
-        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      mutations: Object.entries(routerProcedures)
-        .filter((pair) => (pair[1] as any)._def.mutation)
-        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-      subscriptions: Object.entries(routerProcedures)
-        .filter((pair) => (pair[1] as any)._def.subscription)
-        .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
     };
 
     const router: AnyRouter = {
