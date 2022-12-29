@@ -22,9 +22,8 @@ test('decorate independently', () => {
   });
 
   const barMiddleware = fooMiddleware.pipe((opts) => {
-    opts.ctx.foo;
-    expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      user: User;
       foo: 'foo';
     }>();
     return opts.next({
@@ -35,9 +34,11 @@ test('decorate independently', () => {
   });
 
   const bazMiddleware = barMiddleware.pipe((opts) => {
-    expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
-    expectTypeOf(opts.ctx.foo).toMatchTypeOf<'foo'>();
-    expectTypeOf(opts.ctx.bar).toMatchTypeOf<'bar'>();
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      user: User;
+      foo: 'foo';
+      bar: 'bar';
+    }>();
     return opts.next({
       ctx: {
         baz: 'baz' as const,
@@ -46,7 +47,12 @@ test('decorate independently', () => {
   });
 
   t.procedure.use(bazMiddleware).query(({ ctx }) => {
-    expectTypeOf(ctx.user).toMatchTypeOf<User>();
+    expectTypeOf(ctx).toEqualTypeOf<{
+      user: User;
+      foo: 'foo';
+      bar: 'bar';
+      baz: 'baz';
+    }>();
   });
 });
 
