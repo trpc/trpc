@@ -48,5 +48,11 @@ jobs:
       - name: Run ESLint
         run: pnpm turbo lint
 
+      - name: Run ts-prune
+        run: pnpm lint-prune
+
       - name: Run Manypkg
         run: pnpm manypkg check
+
+      - name: Run Prettier
+        run: pnpm format --list-different

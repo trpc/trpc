@@ -7,29 +7,24 @@ slug: /error-formatting
 
 The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)
 
-
 ## Usage example highlighted
 
 ### Adding custom formatting
 
 ```ts title='server.ts'
-
-const router = trpc.router<Context>()
-  .formatError(({ shape, error }) => {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.code === 'BAD_REQUEST' &&
-          error.cause instanceof ZodError
-            ? error.cause.flatten()
-            : null,
-      },
-    };
-  })
+const router = trpc.router<Context>().formatError(({ shape, error }) => {
+  return {
+    ...shape,
+    data: {
+      ...shape.data,
+      zodError:
+        error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+          ? error.cause.flatten()
+          : null,
+    },
+  };
+});
 ```
-
 
 ### Usage in React
 
@@ -51,7 +46,6 @@ export function MyComponent() {
 }
 ```
 
-
 ## All properties sent to `formatError()`
 
 > Since `v8.x` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
@@ -70,7 +64,6 @@ export function MyComponent() {
 **`DefaultErrorShape`:**
 
 ```ts
-
 interface DefaultErrorData {
   code: TRPC_ERROR_CODE_KEY;
   httpStatus: number;

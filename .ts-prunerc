@@ -1,0 +1,4 @@
+{
+  "error": true,
+  "ignore": ".d.ts|config.ts|examples|index.ts|packages/server/src/adapters/*"
+}

@@ -70,8 +70,6 @@ export const userRouter = router({
 
 If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
 
-
-
 ```ts twoslash title='server.ts'
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
