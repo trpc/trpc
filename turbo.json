@@ -34,6 +34,7 @@
       "cache": false
     },
     "lint": {
+      "dependsOn": ["^build"],
       "outputs": [],
       "cache": true
     },
