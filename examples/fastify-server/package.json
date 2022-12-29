@@ -30,7 +30,7 @@
     "@types/node": "^18.7.20",
     "@types/node-fetch": "^2.5.11",
     "@types/ws": "^8.2.0",
-    "eslint": "^7.32.0",
+    "eslint": "^8.30.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",

@@ -29,7 +29,7 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "abort-controller": "^3.0.0",
     "devalue": "^2.0.1",
-    "eslint": "^7.32.0",
+    "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
     "fastify": "^3.27.1",
     "fastify-plugin": "^3.0.1",

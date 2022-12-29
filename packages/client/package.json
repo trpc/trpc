@@ -73,7 +73,7 @@
     "@testing-library/dom": "^8.18.1",
     "@trpc/server": "^10.7.0",
     "@types/node": "^18.7.20",
-    "eslint": "^7.32.0",
+    "eslint": "^8.30.0",
     "rollup": "^2.79.1",
     "tsx": "^3.9.0"
   },
