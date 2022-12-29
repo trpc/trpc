@@ -9,6 +9,8 @@ const client = createTRPCProxyClient<AppRouter>({
   ],
 });
 
+const x = 5;
+
 async function main() {
   const result = await client.greet.query('tRPC');
 
