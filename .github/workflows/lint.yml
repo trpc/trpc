@@ -54,5 +54,5 @@ jobs:
       - name: Run Manypkg
         run: pnpm manypkg check
 
-      - name: Run Prettier
-        run: pnpm format --list-different
+      # - name: Run Prettier
+      #   run: pnpm format --list-different
