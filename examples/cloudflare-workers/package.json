@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
-    "test-dev": "start-server-and-test 'wrangler dev' 8787 'tsx src/client.ts'"
+    "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
     "@trpc/client": "^10.7.0",
