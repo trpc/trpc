@@ -25,7 +25,7 @@ export default function BlogPostPageMetadata(): JSX.Element {
     authorImg: author.imageURL as string,
     date,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    readingTimeInMinutes: metadata.readingTime!,
+    readingTimeInMinutes: Math.ceil(metadata.readingTime!),
   })}`;
 
   return (
