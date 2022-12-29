@@ -46,7 +46,7 @@ jobs:
       #   run: pnpm turbo --filter "@trpc/*" build
 
       - name: Run ESLint
-        run: pnpm turbo lint -vvv
+        run: pnpm turbo lint
 
       # - name: Run ts-prune
       #   run: pnpm lint-prune
