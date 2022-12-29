@@ -11,7 +11,7 @@
   "parserOptions": {
     "ecmaVersion": 2018, // Allows for the parsing of modern ECMAScript features
     "sourceType": "module", // Allows for the use of import
-    "project": "./tsconfig.json" // Allows for the use of rules which require parserServices to be generated
+    "project": "./tsconfig.eslint.json" // Allows for the use of rules which require parserServices to be generated
   },
   "rules": {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
