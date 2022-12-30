@@ -22,9 +22,10 @@ declare interface MyEventEmitter {
     ...args: Parameters<MyEvents[TEv]>
   ): boolean;
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 class MyEventEmitter extends EventEmitter {}
 
+// In a real app, you'd probably use Redis or something
 const ee = new MyEventEmitter();
 
 // who is currently typing, key is `name`

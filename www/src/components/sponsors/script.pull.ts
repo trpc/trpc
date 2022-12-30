@@ -13,17 +13,21 @@ const graphqlWithAuth = graphql.defaults({
   },
 });
 
-function ensureHttp(url: string) {
-  if (url.startsWith('http')) {
-    return url;
+function ensureHttpAndAddRef(urlStr: string) {
+  const httpUrlStr = urlStr.startsWith('http') ? urlStr : `http://${urlStr}`;
+  const url = new URL(httpUrlStr);
+  if (!url.searchParams.has('ref')) {
+    url.searchParams.set('ref', 'trpc');
   }
-  return `https://${url}`;
+  return url.toString();
 }
+
 function flattenSponsor(node: Node) {
   const link = node.sponsorEntity.websiteUrl
-    ? ensureHttp(node.sponsorEntity.websiteUrl)
+    ? ensureHttpAndAddRef(node.sponsorEntity.websiteUrl)
     : `https://github.com/${node.sponsorEntity.login}`;
   return {
+    __typename: node.sponsorEntity.__typename,
     name: node.sponsorEntity.name || node.sponsorEntity.login,
     imgSrc: node.sponsorEntity.avatarUrl,
     monthlyPriceInDollars: node.tier.monthlyPriceInDollars,
@@ -50,6 +54,7 @@ async function getGithubSponsors() {
               node {
                 createdAt
                 sponsorEntity {
+                  __typename
                   ... on User {
                     id
                     name
@@ -81,7 +86,6 @@ async function getGithubSponsors() {
       },
     );
 
-    fs.writeFileSync(__dirname + '/script.raw.json', JSON.stringify(res));
     const {
       viewer: {
         sponsorshipsAsMaintainer: {
@@ -106,29 +110,7 @@ async function getGithubSponsors() {
 }
 
 async function main() {
-  const _sponsors = await getGithubSponsors();
-
-  // overrides
-  const sponsors = _sponsors.map((sponsor) => {
-    switch (sponsor.login) {
-      case 't3dotgg':
-        return {
-          ...sponsor,
-          monthlyPriceInDollars: 5,
-        };
-    }
-    return sponsor;
-  });
-
-  sponsors.push({
-    name: 'Ping.gg',
-    imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
-    monthlyPriceInDollars: 250,
-    link: 'https://ping.gg/',
-    privacyLevel: 'PUBLIC',
-    login: 'pingdotgg',
-    createdAt: 1645488994000,
-  });
+  const sponsors = await getGithubSponsors();
 
   const json = JSON.stringify(sponsors, null, 2);
 
@@ -140,7 +122,7 @@ async function main() {
     '',
   ].join('\n');
 
-  fs.writeFileSync(__dirname + '/script.output.ts', text);
+  fs.writeFileSync(__dirname + '/script.raw.ts', text);
 }
 
 void main();

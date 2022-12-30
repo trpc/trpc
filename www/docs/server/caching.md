@@ -7,7 +7,7 @@ slug: /caching
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
 
-:::caution
+:::info
 Always be careful with caching - especially if you handle personal information.
 
 &nbsp;  

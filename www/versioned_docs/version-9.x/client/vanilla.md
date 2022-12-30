@@ -21,8 +21,8 @@ Create a typesafe client with the `createTRPCClient` method from `@trpc/client`:
 
 ```ts title='client.ts'
 // pages/index.tsx
-import type { AppRouter } from '../path/to/server/trpc';
 import { createTRPCClient } from '@trpc/client';
+import type { AppRouter } from '../path/to/server/trpc';
 
 const client = createTRPCClient<AppRouter>({
   url: 'http://localhost:5000/trpc',
@@ -38,5 +38,3 @@ const bilbo = await client.query('getUser', 'id_bilbo');
 const frodo = await client.mutation('createUser', { name: 'Frodo' });
 // => { id: 'id_frodo', name: 'Frodo' };
 ```
-
-

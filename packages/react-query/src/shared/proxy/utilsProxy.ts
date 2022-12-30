@@ -15,6 +15,7 @@ import {
   AnyRouter,
   Filter,
   ProcedureOptions,
+  ProtectedIntersection,
   inferProcedureInput,
 } from '@trpc/server';
 import {
@@ -24,11 +25,11 @@ import {
 } from '@trpc/server/shared';
 import {
   DecoratedProxyTRPCContextProps,
-  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   contextProps,
 } from '../../internals/context';
+import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
@@ -36,7 +37,7 @@ type DecorateProcedure<
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -48,7 +49,7 @@ type DecorateProcedure<
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -60,7 +61,7 @@ type DecorateProcedure<
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchquery
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -72,7 +73,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -85,7 +86,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
     input?: inferProcedureInput<TProcedure>,
@@ -94,7 +95,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientrefetchqueries
    */
   refetch(
     input?: inferProcedureInput<TProcedure>,
@@ -103,7 +104,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-cancellation
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientcancelqueries
    */
   cancel(
     input?: inferProcedureInput<TProcedure>,
@@ -111,7 +112,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientresetqueries
    */
   reset(
     input?: inferProcedureInput<TProcedure>,
@@ -119,7 +120,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata
    */
   setData(
     /**
@@ -134,7 +135,7 @@ type DecorateProcedure<
   ): void;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
@@ -146,14 +147,14 @@ type DecorateProcedure<
   ): void;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
   ): inferTransformedProcedureOutput<TProcedure> | undefined;
 
   /**
-   * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
@@ -171,6 +172,7 @@ type DecorateRouter = {
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidate(
+    input?: undefined,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
@@ -195,8 +197,10 @@ type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
-> = DecoratedProcedureUtilsRecord<TRouter> &
-  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>;
+> = ProtectedIntersection<
+  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>,
+  DecoratedProcedureUtilsRecord<TRouter>
+>;
 
 /**
  * @internal

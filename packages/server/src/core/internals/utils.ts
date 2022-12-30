@@ -64,7 +64,3 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
-
-export type EnsureRecord<TRecord> = TRecord extends Record<string, any>
-  ? TRecord
-  : Record<string, never>;

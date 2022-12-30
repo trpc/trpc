@@ -7,11 +7,11 @@ slug: /rpc
 
 ## Methods <-> Type mapping
 
-| HTTP Method  | Mapping           | Notes                                                                                                         |
-| ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------- |
-| `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))` |
-| `POST`       | `.mutation()`     | Input as POST body.                                                                                           |
-| <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                    |
+| HTTP Method  | Mapping           | Notes                                                                                                          |
+| ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}` |
+| `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
+| <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
 
 ## Batching
 

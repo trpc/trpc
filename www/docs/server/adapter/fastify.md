@@ -174,10 +174,6 @@ server.register(ws);
 
 ### Add some subscriptions
 
-:::caution
-Work in progress: https://github.com/trpc/trpc/issues/2114
-:::
-
 Edit the `router.ts` file created in the previous steps and add the following code:
 
 ```ts title='router.ts'
@@ -196,7 +192,7 @@ export const appRouter = t.router({
         clearInterval(timer);
       };
     });
-  })
+  }),
 });
 ```
 

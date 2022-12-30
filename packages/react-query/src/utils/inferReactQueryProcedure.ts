@@ -6,7 +6,7 @@ import {
   AnyRouter,
   inferProcedureInput,
 } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/dist/shared';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { UseTRPCMutationOptions, UseTRPCQueryOptions } from '../shared';
 
 type InferQueryOptions<

@@ -7,13 +7,12 @@ import {
 } from '../error/formatter';
 import { createFlatProxy } from '../shared';
 import {
-  CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
-import { FlatOverwrite } from '../types';
+import { FlatOverwrite, Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
   RootConfig,
@@ -30,8 +29,10 @@ type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
 type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
   CreateRootConfigTypes<{
-    ctx: TTypes['ctx'] extends RootConfigTypes['ctx'] ? TTypes['ctx'] : {};
-    meta: TTypes['meta'] extends RootConfigTypes['meta'] ? TTypes['meta'] : {};
+    ctx: TTypes['ctx'] extends RootConfigTypes['ctx'] ? TTypes['ctx'] : object;
+    meta: TTypes['meta'] extends RootConfigTypes['meta']
+      ? TTypes['meta']
+      : object;
     errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
   }>;
@@ -43,9 +44,15 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
-class TRPCBuilder<TParams extends PartialRootConfigTypes = {}> {
-  context<TNewContext extends RootConfigTypes['ctx']>() {
-    return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
+class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
+  context<
+    TNewContext extends
+      | RootConfigTypes['ctx']
+      | ((...args: unknown[]) => RootConfigTypes['ctx']),
+  >() {
+    return new TRPCBuilder<
+      FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>
+    >();
   }
   meta<TNewMeta extends RootConfigTypes['meta']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
@@ -86,9 +93,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       ErrorFormatter<$Context, DefaultErrorShape>
     >;
     type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer'] extends DataTransformerOptions
-        ? CombinedDataTransformer
-        : DefaultDataTransformer
+      ? TOptions['transformer']
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 

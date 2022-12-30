@@ -1,6 +1,17 @@
 import { getArrayQueryKey } from './getArrayQueryKey';
 
 test('getArrayQueryKey', () => {
+  // empty path should not nest an extra array
+  expect(getArrayQueryKey('', 'any')).toMatchInlineSnapshot(`Array []`);
+
+  // should not nest an empty object
+  expect(getArrayQueryKey('foo', 'any')).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "foo",
+      ],
+    ]
+  `);
   expect(getArrayQueryKey('foo', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
