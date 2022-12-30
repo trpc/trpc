@@ -1,5 +1,5 @@
 import { InfiniteData } from '@tanstack/react-query';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg/ssgProxy';
+import { createSSGHelpers } from '@trpc/react-query/src/ssg';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
@@ -26,14 +26,14 @@ const appRouter = t.router({
 });
 
 test('fetch', async () => {
-  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
 
   const post = await ssg.post.byId.fetch({ id: '1' });
   expectTypeOf<'__result'>(post);
 });
 
 test('fetchInfinite', async () => {
-  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
 
   const post = await ssg.post.list.fetchInfinite({});
   expectTypeOf<InfiniteData<'__infResult'>>(post);
@@ -42,7 +42,7 @@ test('fetchInfinite', async () => {
 });
 
 test('prefetch and dehydrate', async () => {
-  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
   await ssg.post.byId.prefetch({ id: '1' });
 
   const data = JSON.stringify(ssg.dehydrate());
@@ -50,7 +50,7 @@ test('prefetch and dehydrate', async () => {
 });
 
 test('prefetchInfinite and dehydrate', async () => {
-  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createSSGHelpers({ router: appRouter, ctx: {} });
   await ssg.post.list.prefetchInfinite({});
 
   const data = JSON.stringify(ssg.dehydrate());
