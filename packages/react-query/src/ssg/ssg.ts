@@ -77,7 +77,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
 /**
  * Create functions you can use for server-side rendering / static generation
  */
-export function createProxySSGHelpers<TRouter extends AnyRouter>(
+export function createSSGHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
 ) {
   const { router, transformer, ctx } = opts;
@@ -100,7 +100,7 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     return after;
   }
 
-  type CreateProxySSGHelpers = ProtectedIntersection<
+  type CreateSSGHelpers = ProtectedIntersection<
     {
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
@@ -108,7 +108,7 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     DecoratedProcedureSSGRecord<TRouter>
   >;
 
-  return createFlatProxy<CreateProxySSGHelpers>((key) => {
+  return createFlatProxy<CreateSSGHelpers>((key) => {
     if (key === 'queryClient') return queryClient;
     if (key === 'dehydrate') return _dehydrate;
 
