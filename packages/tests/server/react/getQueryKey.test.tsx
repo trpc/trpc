@@ -28,6 +28,21 @@ const ctx = konn()
           )
           .query(({ input }) => posts.find((post) => post.id === input.id)),
         all: t.procedure.query(() => posts),
+        update: t.procedure
+          .input(
+            z.object({
+              id: z.number(),
+              text: z.string(),
+            }),
+          )
+          .mutation(({ input }) => {
+            const index = posts.findIndex((post) => post.id === input.id);
+            if (index > -1) {
+              posts[index] = input;
+            } else {
+              posts.push(input);
+            }
+          }),
       }),
     });
 
@@ -45,6 +60,7 @@ describe('getQueryKeys', () => {
     function MyComponent() {
       const happy1 = proxy.post.all.getQueryKey(undefined, 'query');
       const happy2 = proxy.post.all.getQueryKey();
+      const happy3 = proxy.post.update.getQueryKey();
 
       // @ts-expect-error - post.all has no input
       const sad = proxy.post.all.getQueryKey('foo');
@@ -53,6 +69,7 @@ describe('getQueryKeys', () => {
         <>
           <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
           <pre data-testid="qKey2">{JSON.stringify(happy2)}</pre>
+          <pre data-testid="qKey3">{JSON.stringify(happy3)}</pre>
         </>
       );
     }
@@ -69,6 +86,9 @@ describe('getQueryKeys', () => {
       );
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
         JSON.stringify([['post', 'all']]),
+      );
+      expect(utils.getByTestId('qKey3')).toHaveTextContent(
+        JSON.stringify([['post', 'update']]),
       );
     });
   });
@@ -168,11 +188,13 @@ describe('getQueryKeys', () => {
 
     const all = proxy.post.all.getQueryKey(undefined, 'query');
     const byId = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+    const update = proxy.post.update.getQueryKey();
 
     expect(all).toEqual([['post', 'all'], { type: 'query' }]);
     expect(byId).toEqual([
       ['post', 'byId'],
       { input: { id: 1 }, type: 'query' },
     ]);
+    expect(update).toEqual([['post', 'update']]);
   });
 });
