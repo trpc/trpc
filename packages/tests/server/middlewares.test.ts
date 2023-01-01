@@ -56,7 +56,7 @@ test('decorate independently', () => {
   });
 });
 
-test('resolver context', async () => {
+test('pipe middlewares - inlined', async () => {
   const t = initTRPC
     .context<{
       init: 'init';
@@ -83,6 +83,75 @@ test('resolver context', async () => {
   });
 
   const bazMiddleware = barMiddleware.pipe((opts) => {
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      foo: 'foo';
+      bar: 'bar';
+    }>();
+    return opts.next({
+      ctx: {
+        baz: 'baz' as const,
+      },
+    });
+  });
+
+  const testProcedure = t.procedure.use(bazMiddleware);
+  const router = t.router({
+    test: testProcedure.query(({ ctx }) => {
+      expect(ctx).toEqual({
+        init: 'init',
+        foo: 'foo',
+        bar: 'bar',
+        baz: 'baz',
+      });
+      expectTypeOf(ctx).toEqualTypeOf<{
+        init: 'init';
+        foo: 'foo';
+        bar: 'bar';
+        baz: 'baz';
+      }>();
+
+      return ctx;
+    }),
+  });
+
+  const caller = router.createCaller({
+    init: 'init',
+  });
+
+  expect(await caller.test()).toMatchInlineSnapshot(`
+    Object {
+      "bar": "bar",
+      "baz": "baz",
+      "foo": "foo",
+      "init": "init",
+    }
+  `);
+});
+
+test('pipe middlewares - standalone', async () => {
+  const t = initTRPC
+    .context<{
+      init: 'init';
+    }>()
+    .create();
+
+  const fooMiddleware = t.middleware((opts) => {
+    return opts.next({
+      ctx: {
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const barMiddleware = t.middleware((opts) => {
+    return opts.next({
+      ctx: {
+        bar: 'bar' as const,
+      },
+    });
+  });
+
+  const bazMiddleware = fooMiddleware.pipe(barMiddleware).pipe((opts) => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
       bar: 'bar';
