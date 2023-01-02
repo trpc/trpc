@@ -31,7 +31,7 @@
     },
     "build-sqlite": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "prisma/**"]
+      "outputs": [".next/**", "dist/**", "prisma/_sqlite/**"]
     },
     "dev": {
       "cache": false
