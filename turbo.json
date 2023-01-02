@@ -30,6 +30,7 @@
       "outputs": ["client/dist/**", "server/dist/**"]
     },
     "@examples/next-websockets-starter#build-sqlite": {
+      "dependsOn": ["^build", "prep-sqlite"],
       "cache": false
     },
     "prep-sqlite": {

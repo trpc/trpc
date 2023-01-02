@@ -15,7 +15,7 @@
     "generate-sqlite": "prisma generate --schema=./prisma/_sqlite/schema.prisma",
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
     "prep-sqlite": "run-s generate-sqlite migrate-sqlite",
-    "build-sqlite": "pnpm prep-sqlite && pnpm build:3-server && next build",
+    "build-sqlite": "pnpm build:3-server && next build",
     "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
