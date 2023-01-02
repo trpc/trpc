@@ -28,7 +28,7 @@
     },
     "build-sqlite": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**"]
+      "outputs": [".next/**", "prisma/**"]
     },
     "dev": {
       "cache": false
