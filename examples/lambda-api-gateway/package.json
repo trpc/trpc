@@ -8,7 +8,8 @@
     "@trpc/client": "^10.7.0",
     "@trpc/server": "^10.7.0",
     "node-fetch": "^2.6.1",
-    "tsx": "^3.9.0"
+    "tsx": "^3.9.0",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
