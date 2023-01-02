@@ -23,7 +23,7 @@ const poweredByVercel = `
 
 /** @type {import('@docusaurus/types').Config} */
 module.exports = {
-  title: 'tRPC2',
+  title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
   baseUrl: '/',
