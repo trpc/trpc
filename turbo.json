@@ -33,7 +33,7 @@
       "cache": false
     },
     "build-sqlite": {
-      "dependsOn": ["^build", "^prep-sqlite"],
+      "dependsOn": ["^build", "prep-sqlite"],
       "outputs": [".next/**", "dist/**"]
     },
     "dev": {

@@ -78,11 +78,11 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - name: Next.js cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+      # - name: Next.js cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
+      #     key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
       - uses: actions/setup-node@v3
         with:
