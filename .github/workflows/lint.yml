@@ -42,17 +42,14 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-      # - name: Build
-      #   run: pnpm turbo --filter "@trpc/*" build
-
       - name: Run ESLint
         run: pnpm turbo lint -vvv
 
-      # - name: Run ts-prune
-      #   run: pnpm lint-prune
+      - name: Run ts-prune
+        run: pnpm lint-prune
 
       - name: Run Manypkg
         run: pnpm manypkg check
 
-      # - name: Run Prettier
-      #   run: pnpm format --list-different
+      - name: Run Prettier
+        run: pnpm format --list-different
