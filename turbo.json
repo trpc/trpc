@@ -27,7 +27,7 @@
       "outputs": [".next/**", "dist/**", "build/**"]
     },
     "@examples/minimal-react#build": {
-      "cache": false
+      "outputs": ["client/dist/**", "server/dist/**"]
     },
     "@examples/next-websockets-starter#build-sqlite": {
       "cache": false
