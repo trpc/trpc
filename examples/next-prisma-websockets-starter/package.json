@@ -15,7 +15,7 @@
     "generate-sqlite": "prisma generate --schema=./prisma/_sqlite/schema.prisma",
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
     "prep-sqlite": "run-s generate-sqlite migrate-sqlite",
-    "build-sqlite": "run-s build:3-server && next build",
+    "build-sqlite": "pnpm build:3-server && next build",
     "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
@@ -34,7 +34,7 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives --report-unused-disable-directives src",
     "lint-fix": "pnpm lint --fix",
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev-sqlite http://127.0.0.1:3000 test",
-    "test-start": "cross-env APP_ENV=test WS_URL=ws://127.0.0.1:3000 start-server-and-test start http://127.0.0.1:3000 test",
+    "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start http://127.0.0.1:3000 test",
     "test": "playwright test",
     "postinstall": "prisma generate"
   },
