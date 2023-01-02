@@ -12,8 +12,6 @@ module.exports = {
     APP_URL: process.env.APP_URL,
     WS_URL: process.env.WS_URL,
   },
-  eslint: {
-    // We run lint as a separate task in CI
-    ignoreDuringBuilds: !!process.env.CI,
-  },
+  /** We run eslint as a separate task in CI */
+  eslint: { ignoreDuringBuilds: !!process.env.CI },
 };
