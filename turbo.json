@@ -26,6 +26,9 @@
       "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
       "outputs": [".next/**", "dist/**", "build/**"]
     },
+    "@examples/minimal-react#build": {
+      "cache": false
+    },
     "build-sqlite": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "prisma/**"]
