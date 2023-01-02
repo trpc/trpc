@@ -11,13 +11,12 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of import
-    tsconfigRootDir: __dirname,
+    // tsconfigRootDir: __dirname,
     project: [
       './examples/.test/*/tsconfig.json',
       './examples/.interop/*/tsconfig.json',
       './examples/minimal-react/*/tsconfig.json',
       './examples/*/tsconfig.json',
-      './www/og-image/tsconfig.json',
       './www/tsconfig.json',
       './packages/*/tsconfig.json',
       './tsconfig.eslint.json',

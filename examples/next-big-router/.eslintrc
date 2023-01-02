@@ -1,6 +1,4 @@
 {
-  "parserOptions": { "project": "tsconfig.json" },
-  "extends": ["next"],
   "overrides": [
     {
       "files": ["**/routers/**"],
