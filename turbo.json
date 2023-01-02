@@ -29,9 +29,12 @@
     "@examples/minimal-react#build": {
       "cache": false
     },
+    "prep-sqlite": {
+      "cache": false
+    },
     "build-sqlite": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "prisma/_sqlite/**"]
+      "dependsOn": ["^build", "^prep-sqlite"],
+      "outputs": [".next/**", "dist/**"]
     },
     "dev": {
       "cache": false
