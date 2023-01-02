@@ -8,8 +8,6 @@ const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
-const x = 5;
-
 const appRouter = router({
   greet: publicProcedure
     .input((val: unknown) => {
