@@ -21,7 +21,7 @@ test('send message', async ({ browser, page }) => {
   await page.type('[name=text]', nonce);
   await page.click('[type=submit]');
 
-  // await viewer.waitForSelector(`text=${nonce}`);
+  await viewer.waitForSelector(`text=${nonce}`);
   viewer.close();
 });
 
