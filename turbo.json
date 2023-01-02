@@ -29,6 +29,9 @@
     "@examples/minimal-react#build": {
       "cache": false
     },
+    "@examples/next-websockets-starter#build-sqlite": {
+      "cache": false
+    },
     "prep-sqlite": {
       "cache": false
     },
