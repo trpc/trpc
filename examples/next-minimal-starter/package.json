@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "next start"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
+    "eslint": "^8.30.0",
     "typescript": "^4.8.3"
   }
 }
