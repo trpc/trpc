@@ -4,7 +4,7 @@ So excited to have you here! If you want **any** guidance whatsoever with contri
 
 ## Development workflow
 
-Necessary tool versions are in the `.tool-versions` file. Using [asdf](https://asdf-vm.com/) is a recommended but not obligatory way to install and manage different tool versions. If you use `asdf` you'll need the `nodejs` and the `pnpm` plugins installed.
+We use [pnpm](https://pnpm.io) as our package manager, so make sure to [install](https://pnpm.io/installation) it first.
 
 ```bash
 git clone git@github.com:trpc/trpc.git
