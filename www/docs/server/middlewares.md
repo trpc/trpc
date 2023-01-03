@@ -12,7 +12,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
 ```ts
-import { initTRPC } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 
 interface Context {
   user?: {
@@ -31,7 +31,7 @@ const isAdmin = t.middleware(async ({ ctx, next }) => {
   return next({
     ctx: {
       user: ctx.user,
-    }
+    },
   });
 });
 
@@ -85,8 +85,7 @@ A middleware can change properties of the context, and procedures will receive t
 
 ```ts twoslash
 // @target: esnext
-import { initTRPC, TRPCError } from '@trpc/server';
-
+import { TRPCError, initTRPC } from '@trpc/server';
 
 const t = initTRPC.context<Context>().create();
 const publicProcedure = t.procedure;
@@ -100,7 +99,7 @@ type Context = {
   user?: {
     id: string;
   };
-}
+};
 
 const isAuthed = middleware(({ ctx, next }) => {
   // `ctx.user` is nullable

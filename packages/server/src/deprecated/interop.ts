@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { ProcedureParams, ProcedureType } from '..';
 import { AnyRootConfig, RootConfig } from '../core/internals/config';
 import { getParseFnOrPassThrough } from '../core/internals/getParseFn';

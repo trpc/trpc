@@ -115,10 +115,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir:
-          [
-            deno-deploy,
-          ]
+        dir: [deno-deploy]
         node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
@@ -152,7 +149,6 @@ jobs:
       - run: node -v
       - name: Install deps (with cache)
         run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
-
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build

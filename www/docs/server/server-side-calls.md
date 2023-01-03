@@ -174,7 +174,7 @@ export default async (
 
       res.status(httpStatusCode).json({ error: { message: cause.message } });
       return;
-    } 
+    }
 
     // This is not a tRPC error, so we don't have specific information.
     res.status(500).json({

@@ -33,8 +33,8 @@ import { createSSGHelpers } from '@trpc/react/ssg';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { createContext, prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
-import { trpc } from 'utils/trpc';
 import superjson from 'superjson';
+import { trpc } from 'utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,

@@ -3,6 +3,7 @@ import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Operation, httpBatchLink, splitLink, wsLink } from '@trpc/client/src';
 import { createTRPCReact } from '@trpc/react-query/src';
+import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
 import { AnyRouter } from '@trpc/server/src';
 import React, { ReactNode } from 'react';
 
@@ -36,20 +37,18 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   });
 
   const queryClient = createQueryClient();
-  const proxy = createTRPCReact<
-    typeof appRouter,
-    unknown,
-    'ExperimentalSuspense'
-  >();
+  const proxy = createTRPCReact<TRouter, unknown, 'ExperimentalSuspense'>();
+  const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
+
   const client = opts.client;
 
   function App(props: { children: ReactNode }) {
     return (
-      <proxy.Provider {...{ queryClient, client }}>
+      <baseProxy.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
           {props.children}
         </QueryClientProvider>
-      </proxy.Provider>
+      </baseProxy.Provider>
     );
   }
 

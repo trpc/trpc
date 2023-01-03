@@ -1,8 +1,8 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  // Auto-fix issues with ESLint when you save code changes
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
