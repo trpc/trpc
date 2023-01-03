@@ -38,12 +38,12 @@ export function generateEntrypoints(inputs: string[]) {
   };
 
   /** Parse the inputs to get the user-import-paths, e.g.
-   *   src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
-   *   src/adapters/express.ts -> adapters/express
+   *  src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
+   *  src/adapters/express.ts -> adapters/express
    *
    *  Also, write to the package.json exports field, e.g.
-   *   src/adapters/aws-lambda/index.ts -> exports['adapters/aws-lambda'] = { import: './dist/adapters/aws-lambda/index.mjs', ... }
-   *   src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
+   *  src/adapters/aws-lambda/index.ts -> exports['adapters/aws-lambda'] = { import: './dist/adapters/aws-lambda/index.mjs', ... }
+   *  src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
    */
   inputs
     .filter((i) => i !== 'src/index.ts') // index included by default above

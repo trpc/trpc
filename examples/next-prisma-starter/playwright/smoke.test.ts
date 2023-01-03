@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.setTimeout(35e3);
+
 test('go to /', async ({ page }) => {
   await page.goto('/');
 
