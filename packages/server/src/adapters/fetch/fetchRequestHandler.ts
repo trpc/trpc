@@ -11,8 +11,10 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {
+  const resHeaders = new Headers();
+
   const createContext = async () => {
-    return opts.createContext?.({ req: opts.req });
+    return opts.createContext?.({ req: opts.req, resHeaders });
   };
 
   const url = new URL(opts.req.url);
@@ -36,10 +38,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     },
   });
 
-  const res = new Response(result.body, {
-    status: result.status,
-  });
-
   for (const [key, value] of Object.entries(result.headers ?? {})) {
     /* istanbul ignore if  */
     if (typeof value === 'undefined') {
@@ -47,13 +45,19 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     }
 
     if (typeof value === 'string') {
-      res.headers.set(key, value);
+      resHeaders.set(key, value);
       continue;
     }
 
     for (const v of value) {
-      res.headers.append(key, v);
+      resHeaders.append(key, v);
     }
   }
+
+  const res = new Response(result.body, {
+    status: result.status,
+    headers: resHeaders,
+  });
+
   return res;
 }
