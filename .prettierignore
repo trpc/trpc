@@ -1,1 +1,10 @@
+__generated__/
+.docusaurus/
+.test/
+**/.next/
+**/www/build/
+dist/
+examples/next-big-router/src/server/routers/*.ts
 packages/server/test/__packages.ts
+packages/tests/server/___packages.ts
+pnpm-lock.yaml

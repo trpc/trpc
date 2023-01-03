@@ -58,6 +58,7 @@ First we define a router somewhere in our server codebase:
 
 ```ts title='server.ts'
 import * as trpc from '@trpc/server';
+
 const appRouter = trpc.router();
 
 // only export *type signature* of router!

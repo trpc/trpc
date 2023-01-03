@@ -7,6 +7,7 @@ import {
   AnyRouter,
   AnySubscriptionProcedure,
   ProcedureRouterRecord,
+  ProtectedIntersection,
   inferProcedureInput,
 } from '@trpc/server';
 import {
@@ -28,6 +29,8 @@ import {
 } from './shared/hooks/createHooksInternal';
 import {
   CreateClient,
+  DefinedUseTRPCQueryOptions,
+  DefinedUseTRPCQueryResult,
   TRPCProvider,
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
@@ -41,6 +44,42 @@ import {
   UseTRPCSubscriptionOptions,
 } from './shared/hooks/types';
 import { CreateTRPCReactOptions } from './shared/types';
+
+/**
+ * @internal
+ */
+export interface ProcedureUseQuery<
+  TProcedure extends AnyProcedure,
+  TPath extends string,
+> {
+  <
+    TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
+    TData = inferTransformedProcedureOutput<TProcedure>,
+  >(
+    input: inferProcedureInput<TProcedure>,
+    opts: DefinedUseTRPCQueryOptions<
+      TPath,
+      inferProcedureInput<TProcedure>,
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<TProcedure>
+    >,
+  ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+
+  <
+    TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
+    TData = inferTransformedProcedureOutput<TProcedure>,
+  >(
+    input: inferProcedureInput<TProcedure>,
+    opts?: UseTRPCQueryOptions<
+      TPath,
+      inferProcedureInput<TProcedure>,
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<TProcedure>
+    >,
+  ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+}
 
 /**
  * @internal
@@ -60,19 +99,7 @@ export type DecorateProcedure<
         input: inferProcedureInput<TProcedure>,
         type?: QueryType,
       ) => QueryKey;
-      useQuery: <
-        TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-        TData = inferTransformedProcedureOutput<TProcedure>,
-      >(
-        input: inferProcedureInput<TProcedure>,
-        opts?: UseTRPCQueryOptions<
-          TPath,
-          inferProcedureInput<TProcedure>,
-          TQueryFnData,
-          TData,
-          TRPCClientErrorLike<TProcedure>
-        >,
-      ) => UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+      useQuery: ProcedureUseQuery<TProcedure, TPath>;
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
           useInfiniteQuery: <
@@ -188,13 +215,25 @@ export type DecoratedProcedureRecord<
     : never;
 };
 
-export type CreateTRPCReact<TRouter extends AnyRouter, TSSRContext, TFlags> = {
+/**
+ * @internal
+ */
+export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
-} & DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
+};
+
+export type CreateTRPCReact<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TFlags,
+> = ProtectedIntersection<
+  CreateTRPCReactBase<TRouter, TSSRContext>,
+  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
+>;
 
 /**
  * @internal
@@ -229,9 +268,11 @@ export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
   TFlags = null,
->(opts?: CreateTRPCReactOptions<TRouter>) {
+>(
+  opts?: CreateTRPCReactOptions<TRouter>,
+): CreateTRPCReact<TRouter, TSSRContext, TFlags> {
   const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
 
-  return proxy;
+  return proxy as any;
 }

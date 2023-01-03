@@ -137,13 +137,6 @@ export interface Router<TDef extends AnyRouterDef> {
   }): TDef['_config']['$types']['errorShape'];
 }
 
-/**
- * @internal
- */
-export type RouterBuildOptions<TConfig extends AnyRootConfig> = Partial<
-  Pick<AnyRouterDef<TConfig>, 'procedures'>
->;
-
 export type AnyRouter = Router<AnyRouterDef>;
 
 function isRouter(

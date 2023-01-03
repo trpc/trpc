@@ -12,7 +12,7 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
-import { FlatOverwrite } from '../types';
+import { FlatOverwrite, Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
   RootConfig,
@@ -45,8 +45,14 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  */
 
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
-  context<TNewContext extends RootConfigTypes['ctx']>() {
-    return new TRPCBuilder<FlatOverwrite<TParams, { ctx: TNewContext }>>();
+  context<
+    TNewContext extends
+      | RootConfigTypes['ctx']
+      | ((...args: unknown[]) => RootConfigTypes['ctx']),
+  >() {
+    return new TRPCBuilder<
+      FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>
+    >();
   }
   meta<TNewMeta extends RootConfigTypes['meta']>() {
     return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
