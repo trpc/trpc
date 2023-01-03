@@ -14,7 +14,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   const headers = new Headers();
 
   const createContext = async () => {
-    return opts.createContext?.({ req: opts.req, headers });
+    return opts.createContext?.({ req: opts.req, resHeaders: headers });
   };
 
   const url = new URL(opts.req.url);

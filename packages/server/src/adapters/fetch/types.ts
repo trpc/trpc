@@ -3,7 +3,7 @@ import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
 export type FetchCreateContextFnOptions = {
   req: Request;
-  headers: Headers;
+  resHeaders: Headers;
 };
 
 export type FetchCreateContextFn<TRouter extends AnyRouter> = (

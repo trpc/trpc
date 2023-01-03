@@ -3,18 +3,13 @@
  */
 /// <reference types="@cloudflare/workers-types" />
 import { Response as MiniflareResponse } from '@miniflare/core';
-import {
-  TRPCLink,
-  createTRPCProxyClient,
-  httpBatchLink,
-} from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
+import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
-} from '@trpc/server/src/adapters/fetch';
-import { observable, tap } from '@trpc/server/src/observable';
+} from '@trpc/server/adapters/fetch';
+import { tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';
 
@@ -24,7 +19,7 @@ globalThis.Response = MiniflareResponse as any;
 const port = 8788;
 const url = `http://localhost:${port}`;
 
-const createContext = ({ req, headers }: FetchCreateContextFnOptions) => {
+const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
     if (req.headers.get('authorization') === 'meow') {
       return {
@@ -36,7 +31,7 @@ const createContext = ({ req, headers }: FetchCreateContextFnOptions) => {
 
   return {
     user: getUser(),
-    headers,
+    resHeaders,
   };
 };
 
@@ -60,7 +55,7 @@ function createAppRouter() {
         text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
       })),
     foo: publicProcedure.query(({ ctx }) => {
-      ctx.headers.set('x-foo', 'bar');
+      ctx.resHeaders.set('x-foo', 'bar');
       return 'foo';
     }),
   });
@@ -110,7 +105,7 @@ async function startServer() {
   };
 }
 
-let t: trpc.inferAsyncReturnType<typeof startServer>;
+let t: inferAsyncReturnType<typeof startServer>;
 beforeAll(async () => {
   t = await startServer();
 });
