@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "next start",
     "test:e2e": "playwright test",
     "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test:e2e",
@@ -27,6 +28,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
+    "eslint": "^8.30.0",
     "start-server-and-test": "^1.12.0",
     "typescript": "^4.8.3"
   }
