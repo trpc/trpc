@@ -11,10 +11,10 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {
-  const headers = new Headers();
+  const resHeaders = new Headers();
 
   const createContext = async () => {
-    return opts.createContext?.({ req: opts.req, resHeaders: headers });
+    return opts.createContext?.({ req: opts.req, resHeaders });
   };
 
   const url = new URL(opts.req.url);
@@ -45,18 +45,18 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     }
 
     if (typeof value === 'string') {
-      headers.set(key, value);
+      resHeaders.set(key, value);
       continue;
     }
 
     for (const v of value) {
-      headers.append(key, v);
+      resHeaders.append(key, v);
     }
   }
 
   const res = new Response(result.body, {
     status: result.status,
-    headers,
+    headers: resHeaders,
   });
 
   return res;
