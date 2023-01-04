@@ -197,6 +197,54 @@ test('pipe middlewares - standalone', async () => {
   `);
 });
 
+test('pipe middlewares - failure', async () => {
+  const t = initTRPC
+    .context<{
+      init: {
+        a: 'a';
+        b: 'b';
+        c: {
+          d: 'd';
+          e: 'e';
+        };
+      };
+    }>()
+    .create();
+
+  const fooMiddleware = t.middleware((opts) => {
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
+    }>();
+    opts.ctx.init.a;
+    return opts.next({
+      ctx: {
+        init: { a: 'a' } as const,
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const barMiddleware = t.middleware((opts) => {
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
+    }>();
+    if (opts.ctx.init.c.d) {
+      // <-- this will break if fooMiddleware is piped first since it overrides init
+      // some logic
+    }
+    return opts.next({
+      ctx: {
+        bar: 'bar' as const,
+      },
+    });
+  });
+
+  const bazMiddleware = fooMiddleware.pipe(barMiddleware);
+
+  const testProcedure = t.procedure.use(bazMiddleware);
+  testProcedure.query(({ ctx }) => {});
+});
+
 test('pipe middlewares - override', async () => {
   const t = initTRPC
     .context<{
