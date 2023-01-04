@@ -56,27 +56,32 @@ export interface MiddlewareBuilder<
    * Create a new builder based on the current middleware builder
    */
   pipe<$Params extends ProcedureParams>(
-    fn: MiddlewareFunction<
-      {
-        _config: TRoot['_config'];
-        _meta: TRoot['_meta'];
-        _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-        _input_in: FallbackValue<TRoot['_input_in'], TNewParams['_input_in']>;
-        _input_out: FallbackValue<
-          TRoot['_input_out'],
-          TNewParams['_input_out']
-        >;
-        _output_in: FallbackValue<
-          TRoot['_output_in'],
-          TNewParams['_output_in']
-        >;
-        _output_out: FallbackValue<
-          TRoot['_output_out'],
-          TNewParams['_output_out']
-        >;
-      },
-      $Params
-    >,
+    fn:
+      | MiddlewareBuilder<TRoot, $Params>
+      | MiddlewareFunction<
+          {
+            _config: TRoot['_config'];
+            _meta: TRoot['_meta'];
+            _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
+            _input_in: FallbackValue<
+              TRoot['_input_in'],
+              TNewParams['_input_in']
+            >;
+            _input_out: FallbackValue<
+              TRoot['_input_out'],
+              TNewParams['_input_out']
+            >;
+            _output_in: FallbackValue<
+              TRoot['_output_in'],
+              TNewParams['_output_in']
+            >;
+            _output_out: FallbackValue<
+              TRoot['_output_out'],
+              TNewParams['_output_out']
+            >;
+          },
+          $Params
+        >,
   ): CreateMiddlewareReturnInput<
     TRoot,
     TNewParams,
@@ -162,8 +167,12 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
     return {
       _middlewares: middlewares,
       // Create a new builder with a new array of middlewares
-      pipe(middleware) {
-        return createMiddlewareInner([...middlewares, middleware]);
+      pipe(middlewareBuilderOrFn) {
+        const middleware =
+          '_middlewares' in middlewareBuilderOrFn
+            ? middlewareBuilderOrFn._middlewares
+            : [middlewareBuilderOrFn];
+        return createMiddlewareInner([...(middlewares as any), middleware]);
       },
     };
   }
