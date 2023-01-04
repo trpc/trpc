@@ -168,11 +168,15 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
       _middlewares: middlewares,
       // Create a new builder with a new array of middlewares
       pipe(middlewareBuilderOrFn) {
-        const middleware =
+        const pipedMiddleware =
           '_middlewares' in middlewareBuilderOrFn
             ? middlewareBuilderOrFn._middlewares
             : [middlewareBuilderOrFn];
-        return createMiddlewareInner([...(middlewares as any), middleware]);
+
+        return createMiddlewareInner([
+          ...(middlewares as any),
+          ...pipedMiddleware,
+        ]);
       },
     };
   }
