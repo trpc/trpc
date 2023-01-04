@@ -13,7 +13,7 @@ import {
   TRPCSubscriptionObserver,
   TRPCUntypedClient,
 } from './internals/TRPCUntypedClient';
-import { TRPCClientRuntime, httpBatchLink } from './links';
+import { TRPCClientRuntime } from './links';
 
 /**
  * @deprecated
