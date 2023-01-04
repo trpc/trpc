@@ -216,6 +216,8 @@ test('pipe middlewares - override', async () => {
   });
 
   const barMiddleware = fooMiddleware.pipe((opts) => {
+    // @ts-expect-error foundation has been overwritten
+    opts.ctx.init.foundation;
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       init: 'override';
       foo: 'foo';
@@ -260,6 +262,70 @@ test('pipe middlewares - override', async () => {
   `);
 });
 
+test('pipe middlewares - failure', async () => {
+  const t = initTRPC
+    .context<{
+      init: {
+        a: 'a';
+        b: 'b';
+      };
+    }>()
+    .create();
+
+  const fooMiddleware = t.middleware((opts) => {
+    return opts.next({
+      ctx: {
+        init: 'override' as const,
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const barMiddleware = fooMiddleware.pipe((opts) => {
+    expectTypeOf(opts.ctx).toMatchTypeOf<{
+      init: 'override';
+      foo: 'foo';
+    }>();
+    return opts.next({
+      ctx: {
+        bar: 'bar' as const,
+      },
+    });
+  });
+
+  const testProcedure = t.procedure.use(barMiddleware);
+  const router = t.router({
+    test: testProcedure.query(({ ctx }) => {
+      expect(ctx).toEqual({
+        init: 'override',
+        foo: 'foo',
+        bar: 'bar',
+      });
+      expectTypeOf(ctx).toEqualTypeOf<{
+        init: 'override';
+        foo: 'foo';
+        bar: 'bar';
+      }>();
+
+      return ctx;
+    }),
+  });
+
+  const caller = router.createCaller({
+    init: {
+      a: 'a',
+      b: 'b',
+    },
+  });
+
+  expect(await caller.test()).toMatchInlineSnapshot(`
+    Object {
+      "bar": "bar",
+      "foo": "foo",
+      "init": "override",
+    }
+  `);
+});
 test('meta', () => {
   type Meta = {
     permissions: string[];
