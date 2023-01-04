@@ -117,55 +117,55 @@ function __createHooksInternal<
           ssrState,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.fetchQuery(
-                getArrayQueryKey(pathAndInput, 'query'),
-                () =>
+              return queryClient.fetchQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryFn: () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.fetchInfiniteQuery(
-                getArrayQueryKey(pathAndInput, 'infinite'),
-                ({ pageParam }) => {
+              return queryClient.fetchInfiniteQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+                queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
                 },
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.prefetchQuery(
-                getArrayQueryKey(pathAndInput, 'query'),
-                () =>
+              return queryClient.prefetchQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryFn: () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.prefetchInfiniteQuery(
-                getArrayQueryKey(pathAndInput, 'infinite'),
-                ({ pageParam }) => {
+              return queryClient.prefetchInfiniteQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+                queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
                 },
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
@@ -173,10 +173,10 @@ function __createHooksInternal<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
 
-              return queryClient.invalidateQueries(
-                getArrayQueryKey(queryKey, 'any'),
+              return queryClient.invalidateQueries({
+                queryKey: getArrayQueryKey(queryKey, 'any'),
                 ...rest,
-              );
+              });
             },
             [queryClient],
           ),
@@ -184,10 +184,10 @@ function __createHooksInternal<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
 
-              return queryClient.resetQueries(
-                getArrayQueryKey(queryKey, 'any'),
+              return queryClient.resetQueries({
+                queryKey: getArrayQueryKey(queryKey, 'any'),
                 ...rest,
-              );
+              });
             },
             [queryClient],
           ),
@@ -195,18 +195,18 @@ function __createHooksInternal<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
 
-              return queryClient.refetchQueries(
-                getArrayQueryKey(queryKey, 'any'),
+              return queryClient.refetchQueries({
+                queryKey: getArrayQueryKey(queryKey, 'any'),
                 ...rest,
-              );
+              });
             },
             [queryClient],
           ),
           cancelQuery: useCallback(
             (pathAndInput) => {
-              return queryClient.cancelQueries(
-                getArrayQueryKey(pathAndInput, 'any'),
-              );
+              return queryClient.cancelQueries({
+                queryKey: getArrayQueryKey(pathAndInput, 'any'),
+              });
             },
             [queryClient],
           ),
@@ -317,9 +317,9 @@ function __createHooksInternal<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    const hook = __useQuery(
-      getArrayQueryKey(pathAndInput, 'query') as any,
-      (queryFunctionContext) => {
+    const hook = __useQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'query') as any,
+      queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
           trpc: {
@@ -334,8 +334,9 @@ function __createHooksInternal<
           ...getClientArgs(pathAndInput, actualOpts),
         );
       },
-      { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCQueryResult<TData, TError>;
+      context: ReactQueryContext,
+      ...ssrOpts,
+    }) as UseTRPCQueryResult<TData, TError>;
     hook.trpc = useHookResult({
       path: pathAndInput[0],
     });
@@ -363,28 +364,25 @@ function __createHooksInternal<
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
-    const hook = __useMutation(
-      (input) => {
+    const hook = __useMutation({
+      mutationFn: (input) => {
         const actualPath = Array.isArray(path) ? path[0] : path;
 
         return (client.mutation as any)(
           ...getClientArgs([actualPath, input], opts),
         );
       },
-      {
-        context: ReactQueryContext,
-        ...opts,
-        onSuccess(...args) {
-          const originalFn = () => opts?.onSuccess?.(...args);
-
-          return mutationSuccessOverride({
-            originalFn,
-            queryClient,
-            meta: opts?.meta ?? {},
-          });
-        },
+      context: ReactQueryContext,
+      ...opts,
+      onSuccess(...args) {
+        const originalFn = () => opts?.onSuccess?.(...args);
+        return mutationSuccessOverride({
+          originalFn,
+          queryClient,
+          meta: opts?.meta ?? {},
+        });
       },
-    ) as UseTRPCMutationResult<
+    }) as UseTRPCMutationResult<
       TMutationValues[TPath]['output'],
       TError,
       TMutationValues[TPath]['input'],
@@ -495,9 +493,9 @@ function __createHooksInternal<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    const hook = __useInfiniteQuery(
-      getArrayQueryKey(pathAndInput, 'infinite') as any,
-      (queryFunctionContext) => {
+    const hook = __useInfiniteQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'infinite') as any,
+      queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
           trpc: {
@@ -517,8 +515,9 @@ function __createHooksInternal<
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
+      context: ReactQueryContext,
+      ...ssrOpts,
+    }) as UseTRPCInfiniteQueryResult<TQueryValues[TPath]['output'], TError>;
 
     hook.trpc = useHookResult({
       path,

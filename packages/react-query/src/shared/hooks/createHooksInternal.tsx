@@ -2,6 +2,7 @@
 import {
   DehydratedState,
   QueryClient,
+  UseQueryOptions,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQueries as __useQueries,
@@ -78,55 +79,55 @@ export function createRootHooks<
           ssrState,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.fetchQuery(
-                getArrayQueryKey(pathAndInput, 'query'),
-                () =>
+              return queryClient.fetchQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryFn: () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.fetchInfiniteQuery(
-                getArrayQueryKey(pathAndInput, 'infinite'),
-                ({ pageParam }) => {
+              return queryClient.fetchInfiniteQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+                queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
                 },
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.prefetchQuery(
-                getArrayQueryKey(pathAndInput, 'query'),
-                () =>
+              return queryClient.prefetchQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryFn: () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
-              return queryClient.prefetchInfiniteQuery(
-                getArrayQueryKey(pathAndInput, 'infinite'),
-                ({ pageParam }) => {
+              return queryClient.prefetchInfiniteQuery({
+                queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+                queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
                 },
-                opts,
-              );
+                ...opts,
+              });
             },
             [client, queryClient],
           ),
@@ -134,10 +135,10 @@ export function createRootHooks<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
 
-              return queryClient.invalidateQueries(
-                getArrayQueryKey(queryKey, 'any'),
+              return queryClient.invalidateQueries({
+                queryKey: getArrayQueryKey(queryKey, 'any'),
                 ...rest,
-              );
+              });
             },
             [queryClient],
           ),
@@ -145,10 +146,10 @@ export function createRootHooks<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
 
-              return queryClient.resetQueries(
-                getArrayQueryKey(queryKey, 'any'),
+              return queryClient.resetQueries({
+                queryKey: getArrayQueryKey(queryKey, 'any'),
                 ...rest,
-              );
+              });
             },
             [queryClient],
           ),
@@ -156,18 +157,18 @@ export function createRootHooks<
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
 
-              return queryClient.refetchQueries(
-                getArrayQueryKey(queryKey, 'any'),
+              return queryClient.refetchQueries({
+                queryKey: getArrayQueryKey(queryKey, 'any'),
                 ...rest,
-              );
+              });
             },
             [queryClient],
           ),
           cancelQuery: useCallback(
             (pathAndInput) => {
-              return queryClient.cancelQueries(
-                getArrayQueryKey(pathAndInput, 'any'),
-              );
+              return queryClient.cancelQueries({
+                queryKey: getArrayQueryKey(pathAndInput, 'any'),
+              });
             },
             [queryClient],
           ),
@@ -269,9 +270,9 @@ export function createRootHooks<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    const hook = __useQuery(
-      getArrayQueryKey(pathAndInput, 'query') as any,
-      (queryFunctionContext) => {
+    const hook = __useQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'query'),
+      queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
           trpc: {
@@ -286,8 +287,10 @@ export function createRootHooks<
           ...getClientArgs(pathAndInput, actualOpts),
         );
       },
-      { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCQueryResult<unknown, TError>;
+      context: ReactQueryContext,
+      ...(ssrOpts as UseQueryOptions), // <-- why is this cast needed?
+    }) as UseTRPCQueryResult<unknown, TError>;
+
     hook.trpc = useHookResult({
       path: pathAndInput[0],
     });
@@ -303,28 +306,26 @@ export function createRootHooks<
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
-    const hook = __useMutation(
-      (input) => {
+    const hook = __useMutation({
+      mutationFn: (input) => {
         const actualPath = Array.isArray(path) ? path[0] : path;
 
         return (client.mutation as any)(
           ...getClientArgs([actualPath, input], opts),
         );
       },
-      {
-        context: ReactQueryContext,
-        ...opts,
-        onSuccess(...args) {
-          const originalFn = () => opts?.onSuccess?.(...args);
+      context: ReactQueryContext,
+      ...opts,
+      onSuccess(...args) {
+        const originalFn = () => opts?.onSuccess?.(...args);
 
-          return mutationSuccessOverride({
-            originalFn,
-            queryClient,
-            meta: opts?.meta ?? {},
-          });
-        },
+        return mutationSuccessOverride({
+          originalFn,
+          queryClient,
+          meta: opts?.meta ?? {},
+        });
       },
-    ) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
+    }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
       path: Array.isArray(path) ? path[0] : path,
@@ -416,9 +417,9 @@ export function createRootHooks<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    const hook = __useInfiniteQuery(
-      getArrayQueryKey(pathAndInput, 'infinite') as any,
-      (queryFunctionContext) => {
+    const hook = __useInfiniteQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'infinite') as any,
+      queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
           trpc: {
@@ -439,8 +440,9 @@ export function createRootHooks<
           ...getClientArgs([path, actualInput], actualOpts),
         );
       },
-      { context: ReactQueryContext, ...ssrOpts },
-    ) as UseTRPCInfiniteQueryResult<unknown, TError>;
+      context: ReactQueryContext,
+      ...ssrOpts,
+    }) as UseTRPCInfiniteQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
       path,
