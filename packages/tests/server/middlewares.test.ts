@@ -228,10 +228,6 @@ test('pipe middlewares - failure', async () => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
     }>();
-    if (opts.ctx.init.c.d) {
-      // <-- this will break if fooMiddleware is piped first since it overrides init
-      // some logic
-    }
     return opts.next({
       ctx: {
         bar: 'bar' as const,
