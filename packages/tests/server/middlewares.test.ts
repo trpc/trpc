@@ -218,7 +218,7 @@ test('pipe middlewares - failure', async () => {
     opts.ctx.init.a;
     return opts.next({
       ctx: {
-        init: { a: 'a' } as const,
+        init: { a: 'a' as const },
         foo: 'foo' as const,
       },
     });
@@ -239,10 +239,17 @@ test('pipe middlewares - failure', async () => {
     });
   });
 
+  // ts-expect-error barMiddleware accessing invalid property
   const bazMiddleware = fooMiddleware.pipe(barMiddleware);
 
   const testProcedure = t.procedure.use(bazMiddleware);
-  testProcedure.query(({ ctx }) => {});
+  testProcedure.query(({ ctx }) => {
+    expectTypeOf(ctx).toEqualTypeOf<{
+      init: { a: 'a' };
+      foo: 'foo';
+      bar: 'bar';
+    }>();
+  });
 });
 
 test('pipe middlewares - override', async () => {

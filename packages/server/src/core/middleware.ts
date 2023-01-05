@@ -166,7 +166,6 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return {
       _middlewares: middlewares,
-      // Create a new builder with a new array of middlewares
       pipe(middlewareBuilderOrFn) {
         const pipedMiddleware =
           '_middlewares' in middlewareBuilderOrFn
