@@ -9,6 +9,7 @@ import { fastifyRequestHandler } from './fastifyRequestHandler';
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
   prefix?: string;
   useWSS?: boolean;
+  wssKeepAliveMs?: undefined;
   trpcOptions: FastifyHandlerOptions<TRouter, FastifyRequest, FastifyReply>;
 }
 
@@ -47,6 +48,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
     applyWSSHandler<TRouter>({
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
       wss: fastify.websocketServer,
+      keepAliveMs: opts.wssKeepAliveMs,
     });
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     fastify.get(prefix ?? '/', { websocket: true }, () => {});
