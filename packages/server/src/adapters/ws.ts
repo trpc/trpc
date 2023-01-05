@@ -103,6 +103,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
 > & {
   wss: ws.Server;
   process?: NodeJS.Process;
+  keepAliveMs?: number;
 } & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
 
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
@@ -300,6 +301,26 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       }
     });
 
+    const keepAliveMs = opts.keepAliveMs || 20_000;
+    let pingInterval: NodeJS.Timer | null = null;
+    let pongWait: NodeJS.Timeout | null = null;
+    if (keepAliveMs > 0) {
+      pingInterval = setInterval(() => {
+        if (client.readyState === 1 /* ws.OPEN */) {
+          pongWait = setTimeout(() => client.terminate(), keepAliveMs);
+
+          client.once('pong', () => {
+            if (pongWait) {
+              clearTimeout(pongWait);
+              pongWait = null;
+            }
+          });
+
+          client.ping();
+        }
+      }, keepAliveMs);
+    }
+
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
     // This line was introduced after the following error brought down production systems:
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
@@ -316,6 +337,12 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     });
 
     client.once('close', () => {
+      if (pongWait) {
+        clearTimeout(pongWait);
+      }
+      if (pingInterval) {
+        clearInterval(pingInterval);
+      }
       for (const sub of clientSubscriptions.values()) {
         sub.unsubscribe();
       }

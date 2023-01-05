@@ -27,7 +27,13 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
   const wss = new ws.Server({ server });
-  const handler = applyWSSHandler({ wss, router: appRouter, createContext });
+  const handler = applyWSSHandler({
+    wss,
+    router: appRouter,
+    createContext,
+    // send websocket keep alive frames every 5 seconds, pass e.g. 0 to disable
+    keepAliveMs: 5000,
+  });
 
   process.on('SIGTERM', () => {
     console.log('SIGTERM');

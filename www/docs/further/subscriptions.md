@@ -78,7 +78,13 @@ import { createContext } from './trpc';
 const wss = new ws.Server({
   port: 3001,
 });
-const handler = applyWSSHandler({ wss, router: appRouter, createContext });
+const handler = applyWSSHandler({
+    wss,
+    router: appRouter,
+    createContext,
+    // send websocket keep alive frames every 5 seconds, pass 0 to disable
+    keepAliveMs: 5000
+});
 
 wss.on('connection', (ws) => {
   console.log(`➕➕ Connection (${wss.clients.size})`);
