@@ -239,7 +239,7 @@ test('pipe middlewares - failure', async () => {
     });
   });
 
-  // ts-expect-error barMiddleware accessing invalid property
+  // @ts-expect-error barMiddleware accessing invalid property
   const bazMiddleware = fooMiddleware.pipe(barMiddleware);
 
   const testProcedure = t.procedure.use(bazMiddleware);
