@@ -5,6 +5,11 @@ export type QueryKey = [
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
+export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
+  string[],
+  { input: TInput; type: TType },
+];
+
 /**
  * To allow easy interactions with groups of related queries, such as
  * invalidating all queries of a router, we use an array as the path when
