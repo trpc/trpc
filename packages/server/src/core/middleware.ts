@@ -56,55 +56,22 @@ export interface MiddlewareBuilder<
    * Create a new builder based on the current middleware builder
    */
   pipe<$Params extends ProcedureParams>(
-    fn:
-      | MiddlewareBuilder<
-          {
-            _config: TRoot['_config'];
-            _meta: TRoot['_meta'];
-            _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-            _input_in: FallbackValue<
-              TRoot['_input_in'],
-              TNewParams['_input_in']
-            >;
-            _input_out: FallbackValue<
-              TRoot['_input_out'],
-              TNewParams['_input_out']
-            >;
-            _output_in: FallbackValue<
-              TRoot['_output_in'],
-              TNewParams['_output_in']
-            >;
-            _output_out: FallbackValue<
-              TRoot['_output_out'],
-              TNewParams['_output_out']
-            >;
-          },
-          $Params
-        >
-      | MiddlewareFunction<
-          {
-            _config: TRoot['_config'];
-            _meta: TRoot['_meta'];
-            _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-            _input_in: FallbackValue<
-              TRoot['_input_in'],
-              TNewParams['_input_in']
-            >;
-            _input_out: FallbackValue<
-              TRoot['_input_out'],
-              TNewParams['_input_out']
-            >;
-            _output_in: FallbackValue<
-              TRoot['_output_in'],
-              TNewParams['_output_in']
-            >;
-            _output_out: FallbackValue<
-              TRoot['_output_out'],
-              TNewParams['_output_out']
-            >;
-          },
-          $Params
-        >,
+    fn: {
+      _config: TRoot['_config'];
+      _meta: TRoot['_meta'];
+      _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
+      _input_in: FallbackValue<TRoot['_input_in'], TNewParams['_input_in']>;
+      _input_out: FallbackValue<TRoot['_input_out'], TNewParams['_input_out']>;
+      _output_in: FallbackValue<TRoot['_output_in'], TNewParams['_output_in']>;
+      _output_out: FallbackValue<
+        TRoot['_output_out'],
+        TNewParams['_output_out']
+      >;
+    } extends infer OParams extends ProcedureParams
+      ?
+          | MiddlewareBuilder<OParams, $Params>
+          | MiddlewareFunction<OParams, $Params>
+      : never,
   ): CreateMiddlewareReturnInput<
     TRoot,
     TNewParams,
