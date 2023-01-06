@@ -15,6 +15,8 @@ module.exports = {
     project: [
       './examples/*/tsconfig.json',
       './examples/*/*/tsconfig.json',
+      // This extra ./ is necessary only for https://github.com/typescript-eslint/typescript-eslint/issues/6306
+      './examples/.*/*/tsconfig.json',
       './packages/*/tsconfig.json',
       './tsconfig.eslint.json',
     ], // Allows for the use of rules which require parserServices to be generated
