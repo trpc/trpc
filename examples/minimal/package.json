@@ -1,13 +1,14 @@
 {
   "name": "@examples/minimal",
   "private": true,
-  "version": "10.7.0",
+  "version": "10.8.1",
   "scripts": {
+    "build": "tsc",
     "dev:server": "tsx watch server",
     "dev:client": "wait-port 2022 && tsx watch client",
     "dev": "run-p dev:* --print-label",
     "start": "node dist/server",
-    "build": "tsc",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives */*.ts",
     "test-dev": "start-server-and-test 'tsx server' 2022 'tsx client'",
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
@@ -17,6 +18,7 @@
   ],
   "devDependencies": {
     "@types/node": "^18.7.20",
+    "eslint": "^8.30.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",

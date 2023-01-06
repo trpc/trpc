@@ -46,7 +46,7 @@ export const appRouter = trpc
 
 </details>
 
-```tsx  title='components/MyComponent.tsx'
+```tsx title='components/MyComponent.tsx'
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

@@ -154,9 +154,12 @@ A sample context is given below, save it in a file named `context.ts`:
 import { inferAsyncReturnType } from '@trpc/server';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 
-export function createContext({ req }: FetchCreateContextFnOptions) {
+export function createContext({
+  req,
+  resHeaders,
+}: FetchCreateContextFnOptions) {
   const user = { name: req.headers.get('username') ?? 'anonymous' };
-  return { req, user };
+  return { req, resHeaders, user };
 }
 
 export type Context = inferAsyncReturnType<typeof createContext>;
