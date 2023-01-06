@@ -301,9 +301,9 @@ export function createRootHooks<
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client } = useContext();
-    const queryClient = useQueryClient({  
+    const queryClient = useQueryClient({
       context: ReactQueryContext,
-      ...opts, 
+      ...opts,
     });
 
     const hook = __useMutation(
