@@ -67,7 +67,7 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "^10.0.0-alpha.48"
+    "@trpc/server": "^10.8.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^8.18.1",
