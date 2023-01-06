@@ -15,7 +15,6 @@ module.exports = {
     project: [
       './examples/*/tsconfig.json',
       './examples/*/*/tsconfig.json',
-      './examples/.*/*/tsconfig.json',
       './packages/*/tsconfig.json',
       './tsconfig.eslint.json',
     ], // Allows for the use of rules which require parserServices to be generated
