@@ -45,6 +45,7 @@
     },
     "lint": {
       "dependsOn": ["^build"],
+      "inputs": [".eslintrc", "examples/**/.eslintrc"],
       "outputs": [],
       "cache": true
     },
