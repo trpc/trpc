@@ -20,7 +20,7 @@ const wsClient = createWSClient({
 });
 
 const trpcClient = createTRPCProxyClient<AppRouter>({
-  links: [wsLink<AppRouter>(wsClient)],
+  links: [wsLink<AppRouter>({ client: wsClient })],
 });
 ```
 
