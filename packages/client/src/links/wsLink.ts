@@ -265,7 +265,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       callbacks?.complete?.();
       if (
-        activeConnection.readyState === WebSocket.OPEN &&
+        activeConnection.readyState === WebSocketImpl.OPEN &&
         op.type === 'subscription'
       ) {
         outgoing.push({

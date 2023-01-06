@@ -2,12 +2,16 @@
  * @jest-environment miniflare
  */
 /// <reference types="@cloudflare/workers-types" />
-import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
-import * as trpcFetch from '@trpc/server/src/adapters/fetch';
+import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import {
+  FetchCreateContextFnOptions,
+  fetchRequestHandler,
+} from '@trpc/server/adapters/fetch';
+import { tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
+import { z } from 'zod';
 
 // miniflare does an instanceof check
 globalThis.Response = MiniflareResponse as any;
@@ -15,9 +19,7 @@ globalThis.Response = MiniflareResponse as any;
 const port = 8788;
 const url = `http://localhost:${port}`;
 
-const createContext = ({
-  req,
-}: trpcFetch.FetchCreateContextFnOptions): Context => {
+const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
     if (req.headers.get('authorization') === 'meow') {
       return {
@@ -29,31 +31,61 @@ const createContext = ({
 
   return {
     user: getUser(),
+    resHeaders,
   };
 };
 
-export async function handleRequest(request: Request): Promise<Response> {
-  return trpcFetch.fetchRequestHandler({
-    endpoint: '',
-    req: request,
-    router,
-    createContext,
-    responseMeta() {
-      return {
-        headers: {},
-      };
-    },
+type Context = inferAsyncReturnType<typeof createContext>;
+
+function createAppRouter() {
+  const t = initTRPC.context<Context>().create();
+  const router = t.router;
+  const publicProcedure = t.procedure;
+
+  const appRouter = router({
+    hello: publicProcedure
+      .input(
+        z
+          .object({
+            who: z.string().nullish(),
+          })
+          .nullish(),
+      )
+      .query(({ input, ctx }) => ({
+        text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+      })),
+    foo: publicProcedure.query(({ ctx }) => {
+      ctx.resHeaders.set('x-foo', 'bar');
+      return 'foo';
+    }),
   });
+
+  return appRouter;
 }
 
+type AppRouter = ReturnType<typeof createAppRouter>;
+
 async function startServer() {
+  const router = createAppRouter();
+
   const mf = new Miniflare({
     script: '//',
     port,
   });
   const globalScope = await mf.getGlobalScope();
   globalScope.addEventListener('fetch', (event: FetchEvent) => {
-    event.respondWith(handleRequest(event.request));
+    const response = fetchRequestHandler({
+      endpoint: '',
+      req: event.request,
+      router,
+      createContext,
+      responseMeta() {
+        return {
+          headers: {},
+        };
+      },
+    });
+    event.respondWith(response);
   });
   const server = await mf.startServer();
 
@@ -73,7 +105,7 @@ async function startServer() {
   };
 }
 
-let t: trpc.inferAsyncReturnType<typeof startServer>;
+let t: inferAsyncReturnType<typeof startServer>;
 beforeAll(async () => {
   t = await startServer();
 });
@@ -100,7 +132,7 @@ test('simple query', async () => {
 });
 
 test('query with headers', async () => {
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCProxyClient<AppRouter>({
     links: [
       httpBatchLink({
         url,
@@ -115,4 +147,32 @@ test('query with headers', async () => {
       "text": "hello KATT",
     }
   `);
+});
+
+test('response with headers', async () => {
+  const customLink: TRPCLink<AppRouter> = () => {
+    return ({ next, op }) => {
+      return next(op).pipe(
+        tap({
+          next(result) {
+            const context = result.context as { response: Response };
+            expect(context.response.headers.get('x-foo')).toBe('bar');
+          },
+        }),
+      );
+    };
+  };
+
+  const client = createTRPCProxyClient<AppRouter>({
+    links: [
+      customLink,
+      httpBatchLink({
+        url,
+        fetch: fetch as any,
+        headers: { authorization: 'meow' },
+      }),
+    ],
+  });
+
+  await client.foo.query();
 });
