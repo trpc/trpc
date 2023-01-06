@@ -1131,7 +1131,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
       '@visx/hierarchy': ^3.0.0
-      '@visx/responsive': ^2.10.0
+      '@visx/responsive': ^3.0.0
       autoprefixer: ^10.4.7
       clsx: ^1.1.1
       cssnano: ^5.1.13
@@ -1166,7 +1166,7 @@ importers:
       '@trpc/react-query': link:../packages/react-query
       '@trpc/server': link:../packages/server
       '@visx/hierarchy': 3.0.0_react@18.2.0
-      '@visx/responsive': 2.10.0_react@18.2.0
+      '@visx/responsive': 3.0.0_react@18.2.0
       clsx: 1.2.1
       cssnano: 5.1.14_postcss@8.4.14
       docusaurus-preset-shiki-twoslash: 1.1.38
@@ -4357,10 +4357,6 @@ packages:
     resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
     dev: false
 
-  /@juggle/resize-observer/3.4.0:
-    resolution: {integrity: sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==}
-    dev: false
-
   /@kwsites/file-exists/1.1.1_supports-color@8.1.1:
     resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
     dependencies:
@@ -7352,12 +7348,11 @@ packages:
       react: 18.2.0
     dev: false
 
-  /@visx/responsive/2.10.0_react@18.2.0:
-    resolution: {integrity: sha512-NssDPpuUYp7hqVISuYkKZ5zk6ob0++RdTIaUjRcUdyFEbvzb9+zIb8QToOkvI90L2EC/MY4Jx0NpDbEe79GpAw==}
+  /@visx/responsive/3.0.0_react@18.2.0:
+    resolution: {integrity: sha512-immnxQwOWlrxbnlCIqJWuDpPfrM6tglgMTN1WsyXyGluLMJqhuuxqxllfXaRPkQFS4fcvs66KCEELdazh96U2w==}
     peerDependencies:
       react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
     dependencies:
-      '@juggle/resize-observer': 3.4.0
       '@types/lodash': 4.14.190
       '@types/react': 18.0.25
       lodash: 4.17.21
