@@ -31,7 +31,7 @@
     "@trpc/next": "^10.8.1",
     "@trpc/react-query": "^10.8.1",
     "@trpc/server": "^10.8.1",
-    "@visx/hierarchy": "^2.10.0",
+    "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^2.10.0",
     "clsx": "^1.1.1",
     "cssnano": "^5.1.13",
