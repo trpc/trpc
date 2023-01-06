@@ -44,8 +44,8 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Jan Zimmek",
-    "imgSrc": "https://avatars.githubusercontent.com/u/40382?v=4",
+    "name": "jzimmek",
+    "imgSrc": "https://avatars.githubusercontent.com/u/40382?u=72d3eac4641aaf8dba497e986a55d93d12012cd2&v=4",
     "monthlyPriceInDollars": 3,
     "link": "https://github.com/jzimmek",
     "privacyLevel": "PUBLIC",
@@ -184,16 +184,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "nihinihi01",
-    "imgSrc": "https://avatars.githubusercontent.com/u/57569287?v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://github.com/nihinihi01",
-    "privacyLevel": "PUBLIC",
-    "login": "nihinihi01",
-    "createdAt": 1645365016000
-  },
-  {
-    "__typename": "User",
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
     "monthlyPriceInDollars": 250,
@@ -311,16 +301,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "chrisbradleydev",
     "createdAt": 1657316052000
-  },
-  {
-    "__typename": "User",
-    "name": "Mateo Carriquí",
-    "imgSrc": "https://avatars.githubusercontent.com/u/29718978?u=b9dd3b8f5f77bffb47e98ad0084bd94198d266c0&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://tryhackme.com/p/zast99?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "system32uwu",
-    "createdAt": 1657753179000
   },
   {
     "__typename": "User",
@@ -467,9 +447,9 @@ export const sponsors = [
     "name": "Ron Mizrahi",
     "imgSrc": "https://avatars.githubusercontent.com/u/50079487?u=a5c77b3b68319a8447e6a5a3d4d0f944d2b66c05&v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://github.com/sronmiz",
+    "link": "https://github.com/rondered",
     "privacyLevel": "PUBLIC",
-    "login": "sronmiz",
+    "login": "rondered",
     "createdAt": 1666029744000
   },
   {
@@ -541,16 +521,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "AscentFactory",
     "createdAt": 1669694752000
-  },
-  {
-    "__typename": "User",
-    "name": "Austin S.",
-    "imgSrc": "https://avatars.githubusercontent.com/u/1623983?u=3054cfbee08ca58eda4105c886cba6c472256534&v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://austinsdev.com/portfolio?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "austins",
-    "createdAt": 1669799276000
   },
   {
     "__typename": "User",
