@@ -1,9 +1,7 @@
 import { MonoTypeOperatorFunction, Observer, Unsubscribable } from '../types';
 
-/* eslint-disable @typescript-eslint/no-empty-interface */
 interface ShareConfig {}
 export function share<TValue, TError>(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _opts?: ShareConfig,
 ): MonoTypeOperatorFunction<TValue, TError> {
   return (originalObserver) => {

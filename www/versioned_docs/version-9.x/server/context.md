@@ -10,8 +10,8 @@ The `createContext()` function is called for each request and the result is prop
 ## Example code
 
 ```ts title='server/context.ts'
-import * as trpc from "@trpc/server";
-import * as trpcNext from "@trpc/server/adapters/next";
+import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
 
 // The app's context - is generated for each incoming request
 export async function createContext(opts?: trpcNext.CreateNextContextOptions) {

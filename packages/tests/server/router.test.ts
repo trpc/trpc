@@ -1,7 +1,7 @@
 import './___packages';
 import { initTRPC } from '@trpc/server/src/core';
 
-const t = initTRPC.create<{}>();
+const t = initTRPC.create();
 
 describe('router', () => {
   test('is a reserved word', async () => {

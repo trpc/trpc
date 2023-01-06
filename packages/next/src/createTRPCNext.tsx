@@ -8,7 +8,7 @@ import {
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
 } from '@trpc/react-query/shared';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter, ProtectedIntersection } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
@@ -33,8 +33,10 @@ export type CreateTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
   TFlags,
-> = CreateTRPCNextBase<TRouter, TSSRContext> &
-  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>;
+> = ProtectedIntersection<
+  CreateTRPCNextBase<TRouter, TSSRContext>,
+  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
+>;
 
 export function createTRPCNext<
   TRouter extends AnyRouter,
@@ -69,6 +71,6 @@ export function createTRPCNext<
       return _withTRPC;
     }
 
-    return createReactProxyDecoration(key as string, hooks);
+    return createReactProxyDecoration(key, hooks);
   });
 }

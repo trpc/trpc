@@ -22,7 +22,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 
 export default withTRPC<AppRouter>({
     config({ ctx }) {
-      /** 
+      /**
       * Headers will be called on each request.
       */
         headers() {

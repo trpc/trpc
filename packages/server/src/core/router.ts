@@ -44,8 +44,11 @@ export interface RouterDef<
    * @deprecated
    */
   TOld extends DeprecatedProcedureRouterRecord = {
+    // eslint-disable-next-line @typescript-eslint/ban-types
     queries: {};
+    // eslint-disable-next-line @typescript-eslint/ban-types
     mutations: {};
+    // eslint-disable-next-line @typescript-eslint/ban-types
     subscriptions: {};
   },
 > {
@@ -133,13 +136,6 @@ export interface Router<TDef extends AnyRouterDef> {
     ctx: undefined | TDef['_config']['$types']['ctx'];
   }): TDef['_config']['$types']['errorShape'];
 }
-
-/**
- * @internal
- */
-export type RouterBuildOptions<TConfig extends AnyRootConfig> = Partial<
-  Pick<AnyRouterDef<TConfig>, 'procedures'>
->;
 
 export type AnyRouter = Router<AnyRouterDef>;
 

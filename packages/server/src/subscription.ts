@@ -8,7 +8,6 @@ export function subscriptionPullFactory<TOutput>(opts: {
   intervalMs: number;
   pull(emit: Observer<TOutput, unknown>): void | Promise<void>;
 }): Observable<TOutput, unknown> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let timer: any;
   let stopped = false;
   async function _pull(emit: Observer<TOutput, unknown>) {

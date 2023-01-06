@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as trpc from '@trpc/server/src';
 import * as trpcNext from '@trpc/server/src/adapters/next';
 import { EventEmitter } from 'events';

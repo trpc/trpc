@@ -5,13 +5,11 @@ sidebar_label: Middlewares
 slug: /middlewares
 ---
 
-
 You are able to add middleware(s) to a whole router with the `middleware()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
 
 ## Authorization
 
 In the example below any call to `admin.*` will ensure that the user is an "admin" before executing any query or mutation.
-
 
 ```ts
 trpc
@@ -27,16 +25,16 @@ trpc
       .router<Context>()
       .middleware(async ({ ctx, next }) => {
         if (!ctx.user?.isAdmin) {
-          throw new TRPCError({ code: "UNAUTHORIZED" });
+          throw new TRPCError({ code: 'UNAUTHORIZED' });
         }
-        return next()
+        return next();
       })
       .query('secretPlace', {
         resolve() {
           return 'a key';
         },
       }),
-  )
+  );
 ```
 
 :::tip
@@ -69,7 +67,7 @@ trpc
     resolve() {
       return 'def';
     },
-  })
+  });
 ```
 
 ## Context Swapping
@@ -80,8 +78,8 @@ A middleware can replace the router's context, and downstream procedures will re
 interface Context {
   // user is nullable
   user?: {
-    id: string
-  }
+    id: string;
+  };
 }
 
 trpc
@@ -99,9 +97,9 @@ trpc
     });
   })
   .query('userId', {
-    async resolve({ctx}) {
+    async resolve({ ctx }) {
       return ctx.user.id;
-    }
+    },
   });
 ```
 
@@ -109,25 +107,23 @@ trpc
 
 This helper can be used anywhere in your app tree to enforce downstream procedures to be authorized.
 
-```tsx  title='server/createRouter.ts'
-import * as trpc from "@trpc/server";
-import { Context } from "./context";
+```tsx title='server/createRouter.ts'
+import * as trpc from '@trpc/server';
+import { Context } from './context';
 
 export function createProtectedRouter() {
-  return trpc
-    .router<Context>()
-    .middleware(({ ctx, next }) => {
-      if (!ctx.user) {
-        throw new trpc.TRPCError({ code: "UNAUTHORIZED" });
-      }
-      return next({
-        ctx: {
-          ...ctx,
-          // infers that `user` is non-nullable to downstream procedures
-          user: ctx.user,
-        },
-      });
+  return trpc.router<Context>().middleware(({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new trpc.TRPCError({ code: 'UNAUTHORIZED' });
+    }
+    return next({
+      ctx: {
+        ...ctx,
+        // infers that `user` is non-nullable to downstream procedures
+        user: ctx.user,
+      },
     });
+  });
 }
 ```
 
@@ -146,10 +142,10 @@ trpc
   .router<Context>()
   .middleware(async ({ next, rawInput, ctx }) => {
     const result = inputSchema.safeParse(rawInput);
-    if (!result.success) throw new TRPCError({ code: "BAD_REQUEST" });
+    if (!result.success) throw new TRPCError({ code: 'BAD_REQUEST' });
     const { userId } = result.data;
     // Check user id auth
-    return next({ ctx: { ...ctx, userId }})
+    return next({ ctx: { ...ctx, userId } });
   })
   .query('userId', {
     input: inputSchema,

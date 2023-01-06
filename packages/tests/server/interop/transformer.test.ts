@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { routerToServerAndClientNew, waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import {
