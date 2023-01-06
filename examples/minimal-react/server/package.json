@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch index.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -13,6 +14,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
+    "eslint": "^8.30.0",
     "tsx": "^3.9.0",
     "typescript": "^4.8.3"
   }

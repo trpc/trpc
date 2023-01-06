@@ -29,7 +29,9 @@ You'll notice we are exporting certain methods of the `t` variable here rather t
 
 ## Defining a router
 
-Next, let's define a router with a procedure to use in our application. We are now exposing an API "endpoint."
+Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
+
+In order for these endpoints to be exposed to the frontend, the outermost router (in the example below, this is the `appRouter`) needs to be passed to the [API Handler](/docs/api-handler)'s `router` argument.
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts

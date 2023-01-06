@@ -1,17 +1,15 @@
-import { createTRPCClient, createTRPCClientProxy } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import fetch from 'node-fetch';
 import type { AppRouter } from './server';
 
 global.fetch = fetch as any;
 
-const httpApiClient = createTRPCClient<AppRouter>({
-  url: 'http://127.0.0.1:4050',
+const httpApiProxy = createTRPCProxyClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://127.0.0.1:4050' })],
 });
-const httpApiProxy = createTRPCClientProxy(httpApiClient);
-const restApiClient = createTRPCClient<AppRouter>({
-  url: 'http://127.0.0.1:4050/dev',
+const restApiProxy = createTRPCProxyClient<AppRouter>({
+  links: [httpBatchLink({ url: 'http://127.0.0.1:4050/dev' })],
 });
-const restApiProxy = createTRPCClientProxy(restApiClient);
 
 (async () => {
   try {

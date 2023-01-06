@@ -3,11 +3,12 @@ import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 
 export type FetchCreateContextFnOptions = {
   req: Request;
+  resHeaders: Headers;
 };
 
-export type FetchCreateContextFn<TRouter extends AnyRouter> = (opts: {
-  req: Request;
-}) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
+export type FetchCreateContextFn<TRouter extends AnyRouter> = (
+  opts: FetchCreateContextFnOptions,
+) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export type FetchCreateContextOption<TRouter extends AnyRouter> =
   unknown extends inferRouterContext<TRouter>
