@@ -1201,14 +1201,14 @@ importers:
     specifiers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
-      '@vercel/og': ^0.0.21
+      '@vercel/og': ^0.0.22
       next: latest
       react: latest
       react-dom: latest
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@vercel/og': 0.0.21
+      '@vercel/og': 0.0.22
       next: 13.1.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -7314,12 +7314,12 @@ packages:
       - supports-color
     dev: false
 
-  /@vercel/og/0.0.21:
-    resolution: {integrity: sha512-WgMahG5c8UM7xtn/mT+ljUpDMSDnSlu8AXL52JtTwxb1odrd0GWqZg2N1X38wulPj+sCccNpDdFmmAuw0GLc+Q==}
+  /@vercel/og/0.0.22:
+    resolution: {integrity: sha512-HJjYfjpuNVnxwH7GnEv5QxzdIV4xytjY2RkVmhaOAKlms4X071WSPR9Jp6vjZ3Zmjz0tKSiRnrT5uN/PkW/q9Q==}
     engines: {node: '>=16'}
     dependencies:
       '@resvg/resvg-wasm': 2.0.0-alpha.4
-      satori: 0.0.44
+      satori: 0.0.45
       yoga-wasm-web: 0.1.2
     dev: false
 
@@ -18289,8 +18289,8 @@ packages:
   /safer-buffer/2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  /satori/0.0.44:
-    resolution: {integrity: sha512-WKUxXC2qeyno6J3ucwwLozPL6j1HXOZiN5wIUf7iqAhlx1RUC/6ePIKHi7iPc3Cy6DYuZcJriZXxXkSdo2FQHg==}
+  /satori/0.0.45:
+    resolution: {integrity: sha512-jF7AAK5ddZQVE6r6gTG07YxOvhldev0wBrFqBXRNbPH/mEy15gfIqA4xjGfVHczcGYZvY/VWmKri6DzRJF8cgQ==}
     engines: {node: '>=16'}
     dependencies:
       '@shuding/opentype.js': 1.4.0-beta.0
