@@ -1,4 +1,7 @@
 import { expectTypeOf } from 'expect-type';
+import isomorphicFetch from 'isomorphic-fetch';
+import nodeFetch from 'node-fetch';
+import { fetch as undiciFetch } from 'undici';
 import { getFetch } from '../getFetch';
 import { getAbortController } from './fetchHelpers';
 import {
@@ -42,8 +45,8 @@ describe('fetch', () => {
   });
 
   test('NativeFetchEsque', () => {
-    getFetch({} as unknown as typeof import('isomorphic-fetch'));
-    getFetch({} as unknown as typeof import('node-fetch')['default']);
-    getFetch({} as unknown as typeof import('undici')['fetch']);
+    getFetch(isomorphicFetch);
+    getFetch(nodeFetch);
+    getFetch(undiciFetch);
   });
 });
