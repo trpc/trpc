@@ -78,16 +78,6 @@ export interface HeadersEsque {
   ): void;
 }
 
-export type RequestCache =
-  | 'default'
-  | 'force-cache'
-  | 'no-cache'
-  | 'no-store'
-  | 'only-if-cached'
-  | 'reload';
-
-export type RequestCredentials = 'include' | 'omit' | 'same-origin';
-
 export type ResponseType =
   | 'basic'
   | 'cors'
