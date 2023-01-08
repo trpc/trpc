@@ -19,21 +19,27 @@ export const Preview = () => {
           />
           You need a browser that supports HTML5 video to view this video.
         </video>
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          width="1200px"
-          className="border-[20px] shadow-xl rounded-lg bg-[#111111] border-[#111111] hidden md:block"
-          poster="https://assets.trpc.io/www/v10/v10-dark-landscape.png"
+        <a
+          href="#try-it-out"
+          className="hidden md:block"
+          title="Click to try it out"
         >
-          <source
-            src="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
-            type="video/mp4"
-          />
-          You need a browser that supports HTML5 video to view this video.
-        </video>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            width="1200px"
+            className="border-[20px] shadow-xl rounded-lg bg-[#111111] border-[#111111]"
+            poster="https://assets.trpc.io/www/v10/v10-dark-landscape.png"
+          >
+            <source
+              src="https://assets.trpc.io/www/v10/v10-dark-landscape.mp4"
+              type="video/mp4"
+            />
+            You need a browser that supports HTML5 video to view this video.
+          </video>
+        </a>
       </figure>
     </div>
   );
