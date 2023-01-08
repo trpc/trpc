@@ -39,7 +39,11 @@ const newPost = await client.post.create.mutate({ title: 'Foo' });
 
 To do this, tRPC uses [proxies](https://mdn.io/proxy) to augment the object structure with the `.query` and `.mutate` methods on them. Proxies allows us to intercept and modify the operations for the path you are accessing.
 
-What we want to do is to map the `post.byId.query` to a GET request to our server, and `post.create.mutate` to a POST request. So, how do we do this? We'll first create a helper function for creating recursive proxies - `createRecursiveProxy`:
+What we want to do is to map the `post.byId.query` to a GET request to our server, and `post.create.mutate` to a POST request. So, how do we do this?
+
+## Implementing a tiny tRPC client
+
+We'll first create a helper function for creating recursive proxies - `createRecursiveProxy`:
 
 ```ts
 interface ProxyCallbackOptions {
@@ -189,4 +193,18 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
 };
 ```
 
-And that's it! We'll now have full autocompletion and type safety for our client! The full code for the client can be found [here](https://github.com/trpc/trpc/blob/f08e36476fc0f09d512f63bfc1b225b417058dd0/packages/tests/server/minitrpc.ts):
+And that's it! Create the client and provide it your server's url and you'll get full autocompletion and type safety when you call your procedures!
+
+```ts
+import { type AppRouter } from '~/server/router';
+
+const client = createTinyRPCClient<AppRouter>('http://localhost:3000/api/trpc');
+
+const post = await client.post.byId.query('123');
+```
+
+The full code for the client can be found [here](https://github.com/trpc/trpc/blob/f08e36476fc0f09d512f63bfc1b225b417058dd0/packages/tests/server/minitrpc.ts):
+
+## Conclusion
+
+I hope you enjoyed this article and learned something about how tRPC works. Obviously, there's a lot of stuff missing compared to the full client shipped in `@trpc/client` such as batching, subscriptions and links to alter the request flow, but if you want a really small client with just the bare minimum, this is all you need! We also didn't cover much of the server side of things today, maybe we'll cover that in a future article.
