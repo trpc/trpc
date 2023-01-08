@@ -74,18 +74,21 @@ export const createMiniTRPCClient = <TRouter extends AnyRouter>(url: string) =>
 
     let uri = `${url}/${path}`;
     const [input] = opts.args;
-    if (last === 'query' && input !== undefined) {
-      uri += `?input=${encodeURIComponent(JSON.stringify(input))}`;
+    const stringifiedInput = input !== undefined && JSON.stringify(input);
+    let body: undefined | string = undefined;
+    if (stringifiedInput !== false) {
+      if (last === 'query') {
+        uri += `?input=${encodeURIComponent(stringifiedInput)}`;
+      } else {
+        body = stringifiedInput;
+      }
     }
     const json: TRPCResponse = await fetch(uri, {
       method: last === 'query' ? 'GET' : 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body:
-        last === 'mutate' && input !== undefined
-          ? JSON.stringify(input)
-          : undefined,
+      body,
     }).then((res) => res.json());
 
     if ('error' in json) {
