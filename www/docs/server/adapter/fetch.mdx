@@ -1,14 +1,41 @@
 ---
 id: fetch
 title: Usage with the Fetch API
-sidebar_label: Fetch
+sidebar_label: Fetch / Edge Runtimes
 slug: /fetch
 ---
 
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
+You can create a tRPC server within any edge runtime that follow the [WinterCG](https://wintercg.org/), specifically the [Minimum Common Web Platform API](https://common-min-api.proposal.wintercg.org/) specification.
+
+Some of these runtimes includes, but not limited to:
+
+- Cloudflare Workers
+- Deno Deploy
+- Vercel Edge Runtime (& Next.js Edge Runtime)
+
+## How to use tRPC server with an edge runtime
+
+tRPC provides a [fetch adapter](/docs/fetch) that uses the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) APIs as input and output. The tRPC-specific code is the same across all runtimes, the only difference being how the response is returned.
+
 tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) out of the box. This adapter lets you convert your tRPC router into a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) handler that returns [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects.
+
+## Required Web APIs
+
+tRPC server uses the following Fetch APIs:
+
+- `Request`, `Response`
+- `fetch`
+- `Headers`
+- `URL`
+
+If your runtime supports these APIs, you can [use tRPC server](#how-to-use-trpc-server-with-an-edge-runtime).
+
+:::tip
+Fun fact: that also means you can use a tRPC server in your browser!
+:::
 
 ## Example apps
 

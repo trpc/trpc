@@ -74,6 +74,11 @@
       "source": "/docs/aborting-procedures",
       "destination": "/docs/aborting-procedure-calls",
       "permanent": true
+    },
+    {
+      "source": "/edge-runtimes",
+      "destination": "/docs/fetch",
+      "permanent": true
     }
   ]
 }
