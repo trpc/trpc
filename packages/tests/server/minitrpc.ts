@@ -20,7 +20,7 @@ const noop = () => {
   // noop
 };
 
-function createInnerProxy(callback: ProxyCallback, path: string[]) {
+function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
   const proxy: unknown = new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
@@ -28,7 +28,7 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-      return createInnerProxy(callback, [...path, key]);
+      return createRecursiveProxy(callback, [...path, key]);
     },
     apply(_1, _2, args) {
       return callback({
@@ -66,16 +66,8 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
     : never;
 };
 
-/**
- * Creates a proxy that calls the callback with the path and arguments
- *
- * @internal
- */
-export const createRecursiveProxy = (callback: ProxyCallback) =>
-  createInnerProxy(callback, []);
-
 export function createMiniTRPCClient<TRouter extends AnyRouter>(url: string) {
-  return createInnerProxy(async (opts) => {
+  return createRecursiveProxy(async (opts) => {
     const parts = [...opts.path];
     const last = parts.pop()! as 'query' | 'mutate';
     const path = parts.join('.');
