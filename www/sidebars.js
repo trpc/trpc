@@ -44,7 +44,6 @@ module.exports = {
         'server/data-transformers',
         'server/metadata',
         'server/caching',
-        'server/edge-runtimes',
         {
           type: 'category',
           label: 'Adapters',
