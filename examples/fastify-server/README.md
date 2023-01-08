@@ -1,7 +1,7 @@
 # Fastify adapter example
 
 - Fastify server with WebSocket
-- Simple TRPC client in node
+- Simple tRPC client in node
 - Try it live on [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server)
 - Adapter [documentation](https://trpc.io/docs/fastify)
 
