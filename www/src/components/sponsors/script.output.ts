@@ -65,18 +65,18 @@ export const sponsors =  [
     "link": "https://github.com/hidrb"
   },
   {
+    "name": "Snaplet",
+    "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
+    "weight": 12,
+    "login": "snaplet",
+    "link": "https://snaplet.dev/?ref=trpc"
+  },
+  {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
     "weight": 12,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc"
-  },
-  {
-    "name": "Snaplet",
-    "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
-    "weight": 11,
-    "login": "snaplet",
-    "link": "https://snaplet.dev/?ref=trpc"
   },
   {
     "name": "Ahoy Labs",
@@ -156,18 +156,18 @@ export const sponsors =  [
     "link": "https://farazpatankar.com/?ref=trpc"
   },
   {
-    "name": "Theo Browne",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
-    "weight": 3,
-    "login": "t3dotgg",
-    "link": "http://t3.gg/?ref=trpc"
-  },
-  {
     "name": "PatrickJS",
     "imgSrc": "https://avatars.githubusercontent.com/u/1016365?u=47d964a94849ae3bd59cc1a66e5f4aad0c43d2a2&v=4",
     "weight": 3,
     "login": "PatrickJS",
     "link": "https://patrickjs.com/?ref=trpc"
+  },
+  {
+    "name": "Theo Browne",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
+    "weight": 3,
+    "login": "t3dotgg",
+    "link": "http://t3.gg/?ref=trpc"
   },
   {
     "name": "aslaker",
@@ -184,6 +184,13 @@ export const sponsors =  [
     "link": "https://github.com/dmaykov"
   },
   {
+    "name": "Chris Bradley",
+    "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
+    "weight": 3,
+    "login": "chrisbradleydev",
+    "link": "https://chrisbradley.dev/?ref=trpc"
+  },
+  {
     "name": "Illarion Koperski",
     "imgSrc": "https://avatars.githubusercontent.com/u/5012724?u=f6f510f226382df2ebcea4a1935aaa94eacfcda4&v=4",
     "weight": 2,
@@ -198,11 +205,11 @@ export const sponsors =  [
     "link": "https://github.com/utevo"
   },
   {
-    "name": "Chris Bradley",
-    "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
+    "name": "SchlagerKhan",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
     "weight": 2,
-    "login": "chrisbradleydev",
-    "link": "https://chrisbradley.dev/?ref=trpc"
+    "login": "SchlagerKhan",
+    "link": "https://iamkhan.io/?ref=trpc"
   },
   {
     "name": "Ahmed Elsakaan",
@@ -261,13 +268,6 @@ export const sponsors =  [
     "link": "https://github.com/danielyogel"
   },
   {
-    "name": "SchlagerKhan",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
-    "weight": 2,
-    "login": "SchlagerKhan",
-    "link": "https://iamkhan.io/?ref=trpc"
-  },
-  {
     "name": "Christian",
     "imgSrc": "https://avatars.githubusercontent.com/u/30244485?u=70f85b684ede25d672974d81a42049b718fd33af&v=4",
     "weight": 2,
@@ -296,18 +296,18 @@ export const sponsors =  [
     "link": "https://mstill.dev/blog?ref=trpc"
   },
   {
-    "name": "Fanvue",
-    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
-    "weight": 2,
-    "login": "fanvue",
-    "link": "https://github.com/fanvue"
-  },
-  {
     "name": "Thomas Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
     "weight": 2,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc"
+  },
+  {
+    "name": "Fanvue",
+    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
+    "weight": 2,
+    "login": "fanvue",
+    "link": "https://github.com/fanvue"
   },
   {
     "name": "Lars Karbo",
@@ -352,13 +352,6 @@ export const sponsors =  [
     "link": "https://github.com/svobik7"
   },
   {
-    "name": "_P",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
-    "weight": 2,
-    "login": "PabloRosales",
-    "link": "https://github.com/PabloRosales"
-  },
-  {
     "name": "Joseph Lozano",
     "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
     "weight": 2,
@@ -373,11 +366,11 @@ export const sponsors =  [
     "link": "https://jobsinjs.com/?ref=trpc"
   },
   {
-    "name": "Thorbjørn Hermansen",
-    "imgSrc": "https://avatars.githubusercontent.com/u/92300?v=4",
+    "name": "David Parks",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5482124?u=aaab3112e3b81e45eb9bc4a1de5f6df57e6bf6c8&v=4",
     "weight": 2,
-    "login": "thhermansen",
-    "link": "http://skalar.no/?ref=trpc"
+    "login": "DavidTParks",
+    "link": "https://davidparks.dev/?ref=trpc"
   },
   {
     "name": "Ascent Factory",
