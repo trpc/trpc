@@ -1,0 +1,50 @@
+---
+id: faq
+title: FAQ / Troubleshooting
+sidebar_label: FAQ / Troubleshooting
+slug: /faq
+---
+
+Collection of common problems and and ideas on how to troubleshoot & resolve them. Feel free to contribute to this page with improvements or create a new discussion [on GitHub](https://github.com/trpc/trpc/discussions) if you have a question that isn't answered here.
+
+Also, have look through the [GitHub Discussions](https://github.com/trpc/trpc/discussions) and our [Discord](https://trpc.io/discord) if your question isn't answered here.
+
+## It doesn't work! I'm getting `any` everywhere
+
+- Make sure you have no type errors in your code
+- Make sure you have `"strict": true` in your `tsconfig.json`
+- Make sure your `@trpc/*`-versions match in your `package.json`
+
+## How do I make a middleware change the type of my `Context`?
+
+See [Context Swapping](middlewares#context-swapping).
+
+## Is tRPC production ready?
+
+Yes. tRPC is very stable and is used by thousands of companies, even big ones like [Netflix](https://netflix.com) & [Pleo](https://pleo.io) are using tRPC in production.
+
+## Why doesn't tRPC work in my monorepo?
+
+This is difficult question to answer, but since tRPC doesn't have any build step, it's unlikely that the problem is on tRPC's side.
+
+Here are some things to check:
+
+- Make sure you have the same version of all `@trpc/*` across all your project
+- Make sure you have `"strict": true` in all your `tsconfig.json`s
+- Make sure you have no type errors in your app
+
+You can also have a look at our [Awesome tRPC](awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
+
+## Is a monorepo mandatory?
+
+No, a monorepo is not mandatory but you will lose some of the benefits of using tRPC if you don't use it since you will lose gurantees that your client and server works together.
+
+One way you can leverage tRPC is to publish a private npm package with the types of your backend repo and consume them in your frontend repo.
+
+> _Related discussion: https://github.com/trpc/trpc/discussions/1860_
+
+## Can I dynamically return a different output depending on what input I send?
+
+No, not currently, in order for tRPC to do that automatically, we need something called "Higher kinded types" which is not yet supported in TypeScript.
+
+> _Related discussion: https://github.com/trpc/trpc/discussions/2150_

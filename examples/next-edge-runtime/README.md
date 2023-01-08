@@ -1,4 +1,4 @@
-# Next.js Edge Runtime + TRPC
+# Next.js Edge Runtime + tRPC
 
 This example is the same as [next-minimal-starter](../next-minimal-starter/), excepts that it uses the [Next.js Edge Runtime](https://nextjs.org/docs/api-reference/edge-runtime) using tRPC's fetch adapter.
 
