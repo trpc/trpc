@@ -21,7 +21,7 @@ export const Preview = () => {
         </video>
         <a
           href="#try-it-out"
-          className="hidden md:block"
+          className="hidden md:block transition active:opacity-90 hover:shadow-lg dark:hover:shadow-primary-darkest hover:shadow-primary hover:shadow-opacity-10 rounded-lg bg-[#111111] border-[#111111] border-[20px]"
           title="Click to try it out"
         >
           <video
@@ -30,7 +30,6 @@ export const Preview = () => {
             muted
             playsInline
             width="1200px"
-            className="border-[20px] shadow-xl rounded-lg bg-[#111111] border-[#111111]"
             poster="https://assets.trpc.io/www/v10/v10-dark-landscape.png"
           >
             <source
