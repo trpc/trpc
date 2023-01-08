@@ -66,8 +66,8 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
     : never;
 };
 
-export function createMiniTRPCClient<TRouter extends AnyRouter>(url: string) {
-  return createRecursiveProxy(async (opts) => {
+export const createMiniTRPCClient = <TRouter extends AnyRouter>(url: string) =>
+  createRecursiveProxy(async (opts) => {
     const parts = [...opts.path];
     const last = parts.pop()! as 'query' | 'mutate';
     const path = parts.join('.');
@@ -93,4 +93,3 @@ export function createMiniTRPCClient<TRouter extends AnyRouter>(url: string) {
     }
     return json.result.data;
   }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
-}
