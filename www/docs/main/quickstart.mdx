@@ -25,6 +25,9 @@ import { z } from 'zod';
 
 const t = initTRPC.create();
 
+const router = t.router;
+const publicProcedure = t.procedure;
+
 interface User {
   id: string;
   name: string;
@@ -37,8 +40,8 @@ const userList: User[] = [
   },
 ];
 
-const appRouter = t.router({
-  userById: t.procedure
+const appRouter = router({
+  userById: publicProcedure
     .input((val: unknown) => {
       if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
@@ -49,7 +52,7 @@ const appRouter = t.router({
 
       return user;
     }),
-  userCreate: t.procedure
+  userCreate: publicProcedure
     .input(z.object({ name: z.string() }))
     .mutation((req) => {
       const id = `${Math.random()}`;
@@ -171,7 +174,10 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const appRouter = t.router({});
+const router = t.router;
+const publicProcedure = t.procedure;
+
+const appRouter = router({});
 
 // Export type router type signature,
 // NOT the router itself.
@@ -180,7 +186,7 @@ export type AppRouter = typeof appRouter;
 
 ### Add a query procedure
 
-Use `t.procedure.query()` to add a query procedure/endpoint to the router. The two methods on this procedure are:
+Use `procedure.query()` to add a query procedure/endpoint to the router. The two methods on this procedure are:
 
 - `input` _(optional)_: When provided, this should be a function that validates and casts the _input_ of this procedure. It should return a strongly typed value when the input is valid or throw an error if the input is invalid. We recommend using a TypeScript validation library like [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct), or [Yup](https://github.com/jquense/yup) for input validation.
 - `query`: This is the implementation of the procedure (a "resolver"). It's a function with a single `req` argument to represent the incoming request. The validated (and strongly typed!) input is passed into `req.input`.
@@ -291,10 +297,16 @@ const trpc = createTRPCProxyClient<AppRouter>({
 // @noErrors
 // Inferred types
 const user = await trpc.userById.query('1');
-//    ^?
+user.id;
+//   ^?
+user.name;
+//   ^?
 
 const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
-//    ^?
+createdUser.id;
+//          ^?
+createdUser.name;
+//          ^?
 ```
 
 ### Full autocompletion
