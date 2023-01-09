@@ -7,9 +7,13 @@
     "typeRoots": ["./node_modules/@types", "./types"],
     "paths": {
       "@trpc/server": ["packages/server/src"],
-      "@trpc/react-query": ["packages/react-query/src"],
+      "@trpc/server/*": ["packages/server/src/*"],
       "@trpc/client": ["packages/client/src"],
+      "@trpc/client/*": ["packages/client/src/*"],
+      "@trpc/react-query": ["packages/react-query/src"],
+      "@trpc/react-query/*": ["packages/react-query/src/*"],
       "@trpc/next": ["packages/next/src"],
+      "@trpc/next/*": ["packages/next/src/*"],
       "$test/*": ["test/*"]
     }
   }

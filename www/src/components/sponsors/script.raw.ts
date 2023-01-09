@@ -44,8 +44,8 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Jan Zimmek",
-    "imgSrc": "https://avatars.githubusercontent.com/u/40382?v=4",
+    "name": "jzimmek",
+    "imgSrc": "https://avatars.githubusercontent.com/u/40382?u=72d3eac4641aaf8dba497e986a55d93d12012cd2&v=4",
     "monthlyPriceInDollars": 3,
     "link": "https://github.com/jzimmek",
     "privacyLevel": "PUBLIC",
@@ -184,16 +184,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "nihinihi01",
-    "imgSrc": "https://avatars.githubusercontent.com/u/57569287?v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://github.com/nihinihi01",
-    "privacyLevel": "PUBLIC",
-    "login": "nihinihi01",
-    "createdAt": 1645365016000
-  },
-  {
-    "__typename": "User",
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
     "monthlyPriceInDollars": 250,
@@ -311,16 +301,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "chrisbradleydev",
     "createdAt": 1657316052000
-  },
-  {
-    "__typename": "User",
-    "name": "Mateo Carriquí",
-    "imgSrc": "https://avatars.githubusercontent.com/u/29718978?u=b9dd3b8f5f77bffb47e98ad0084bd94198d266c0&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://tryhackme.com/p/zast99?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "system32uwu",
-    "createdAt": 1657753179000
   },
   {
     "__typename": "User",
@@ -467,9 +447,9 @@ export const sponsors = [
     "name": "Ron Mizrahi",
     "imgSrc": "https://avatars.githubusercontent.com/u/50079487?u=a5c77b3b68319a8447e6a5a3d4d0f944d2b66c05&v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://github.com/sronmiz",
+    "link": "https://github.com/rondered",
     "privacyLevel": "PUBLIC",
-    "login": "sronmiz",
+    "login": "rondered",
     "createdAt": 1666029744000
   },
   {
@@ -481,16 +461,6 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "andrew-werdna",
     "createdAt": 1666979682000
-  },
-  {
-    "__typename": "User",
-    "name": "_P",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/PabloRosales",
-    "privacyLevel": "PUBLIC",
-    "login": "PabloRosales",
-    "createdAt": 1668701929000
   },
   {
     "__typename": "User",
@@ -544,26 +514,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Austin S.",
-    "imgSrc": "https://avatars.githubusercontent.com/u/1623983?u=3054cfbee08ca58eda4105c886cba6c472256534&v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://austinsdev.com/portfolio?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "austins",
-    "createdAt": 1669799276000
-  },
-  {
-    "__typename": "User",
-    "name": "Thorbjørn Hermansen",
-    "imgSrc": "https://avatars.githubusercontent.com/u/92300?v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "http://skalar.no/?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "thhermansen",
-    "createdAt": 1670347741000
-  },
-  {
-    "__typename": "User",
     "name": "SalihOsmankovic",
     "imgSrc": "https://avatars.githubusercontent.com/u/45540328?v=4",
     "monthlyPriceInDollars": 5,
@@ -601,5 +551,15 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "flightcontrolhq",
     "createdAt": 1671304160000
+  },
+  {
+    "__typename": "User",
+    "name": "David Parks",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5482124?u=aaab3112e3b81e45eb9bc4a1de5f6df57e6bf6c8&v=4",
+    "monthlyPriceInDollars": 20,
+    "link": "https://davidparks.dev/?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "DavidTParks",
+    "createdAt": 1673023326000
   }
 ] as const

@@ -26,14 +26,29 @@
       "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
       "outputs": [".next/**", "dist/**", "build/**"]
     },
+    "@examples/minimal-react#build": {
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "@examples/next-websockets-starter#build-sqlite": {
+      "dependsOn": ["^build", "prep-sqlite"],
+      "cache": false
+    },
+    "prep-sqlite": {
+      "cache": false
+    },
     "build-sqlite": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**"]
+      "dependsOn": ["^build", "prep-sqlite"],
+      "outputs": [".next/**", "dist/**"]
     },
     "dev": {
       "cache": false
     },
     "lint": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
+    },
+    "lint-fix": {
       "cache": false
     },
     "test": {

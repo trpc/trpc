@@ -12,7 +12,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
 ```ts
-import { initTRPC } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 
 interface Context {
   user?: {
@@ -56,11 +56,16 @@ See [Error Handling](error-handling.md) to learn more about the `TRPCError` thro
 In the example below timings for queries are logged automatically.
 
 ```ts
+// trpc.ts
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 
-const logger = t.middleware(async ({ path, type, next }) => {
+export const middleware = t.middleware;
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+export const loggerMiddleware = middleware(async ({ path, type, next }) => {
   const start = Date.now();
   const result = await next();
   const durationMs = Date.now() - start;
@@ -71,9 +76,12 @@ const logger = t.middleware(async ({ path, type, next }) => {
   return result;
 });
 
-const loggedProcedure = t.procedure.use(logger);
+export const loggedProcedure = procedure.use(loggerMiddleware);
 
-export const appRouter = t.router({
+// _app.ts
+import { router, loggedProcedure } from '../trpc';
+
+export const appRouter = router({
   foo: loggedProcedure.query(() => 'bar'),
   abc: loggedProcedure.query(() => 'def'),
 });
@@ -81,7 +89,9 @@ export const appRouter = t.router({
 
 ## Context Swapping
 
-A middleware can change properties of the context, and procedures will receive the new context value:
+Context swapping in tRPC is a very powerful feature that allows you to create base procedures that can create base procedures that dynamically infers new context in a flexible and typesafe manner.
+
+Below we have an example of a a middleware that changes properties of the context, and procedures will receive the new context value:
 
 ```ts twoslash
 // @target: esnext
