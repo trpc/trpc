@@ -313,6 +313,7 @@ export function createRootHooks<
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
     const hook = __useMutation({
+      ...opts,
       mutationFn: (input) => {
         const actualPath = Array.isArray(path) ? path[0] : path;
 
@@ -320,7 +321,6 @@ export function createRootHooks<
           ...getClientArgs([actualPath, input], opts),
         );
       },
-      ...opts,
       context: ReactQueryContext,
       onSuccess(...args) {
         const originalFn = () => opts?.onSuccess?.(...args);
