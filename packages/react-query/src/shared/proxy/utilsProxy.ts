@@ -41,10 +41,13 @@ type DecorateProcedure<
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
-      inferTransformedProcedureOutput<TProcedure>
+    opts?: Omit<
+      TRPCFetchQueryOptions<
+        inferProcedureInput<TProcedure>,
+        TRPCClientError<TRouter>,
+        inferTransformedProcedureOutput<TProcedure>
+      >,
+      'queryKey' | 'queryFn'
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
@@ -53,10 +56,13 @@ type DecorateProcedure<
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchInfiniteQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
-      inferTransformedProcedureOutput<TProcedure>
+    opts?: Omit<
+      TRPCFetchInfiniteQueryOptions<
+        inferProcedureInput<TProcedure>,
+        TRPCClientError<TRouter>,
+        inferTransformedProcedureOutput<TProcedure>
+      >,
+      'queryKey' | 'queryFn'
     >,
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
@@ -65,10 +71,13 @@ type DecorateProcedure<
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
-      inferTransformedProcedureOutput<TProcedure>
+    opts?: Omit<
+      TRPCFetchQueryOptions<
+        inferProcedureInput<TProcedure>,
+        TRPCClientError<TRouter>,
+        inferTransformedProcedureOutput<TProcedure>
+      >,
+      'queryKey' | 'queryFn'
     >,
   ): Promise<void>;
 
@@ -78,10 +87,13 @@ type DecorateProcedure<
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
     procedureOpts?: ProcedureOptions,
-    opts?: TRPCFetchInfiniteQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
-      inferTransformedProcedureOutput<TProcedure>
+    opts?: Omit<
+      TRPCFetchInfiniteQueryOptions<
+        inferProcedureInput<TProcedure>,
+        TRPCClientError<TRouter>,
+        inferTransformedProcedureOutput<TProcedure>
+      >,
+      'queryKey' | 'queryFn'
     >,
   ): Promise<void>;
 

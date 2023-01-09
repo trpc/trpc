@@ -96,17 +96,19 @@ export interface TRPCContextState<
    */
   fetchQuery: (
     pathAndInput: [path: string, ...args: unknown[]],
-    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+    opts?: Omit<
+      TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+      'queryKey' | 'queryFn'
+    >,
   ) => Promise<unknown>;
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfiniteQuery: (
     pathAndInput: [path: string, ...args: unknown[]],
-    opts?: TRPCFetchInfiniteQueryOptions<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown
+    opts?: Omit<
+      TRPCFetchInfiniteQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+      'queryKey' | 'queryFn'
     >,
   ) => Promise<InfiniteData<unknown>>;
   /**
@@ -114,7 +116,10 @@ export interface TRPCContextState<
    */
   prefetchQuery: (
     pathAndInput: [path: string, ...args: unknown[]],
-    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+    opts?: Omit<
+      TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+      'queryKey' | 'queryFn'
+    >,
   ) => Promise<void>;
 
   /**
@@ -122,10 +127,9 @@ export interface TRPCContextState<
    */
   prefetchInfiniteQuery: (
     pathAndInput: [path: string, ...args: unknown[]],
-    opts?: TRPCFetchInfiniteQueryOptions<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown
+    opts?: Omit<
+      TRPCFetchInfiniteQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+      'queryKey' | 'queryFn'
     >,
   ) => Promise<void>;
 
