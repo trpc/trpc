@@ -134,8 +134,8 @@ export function createRootHooks<
             (queryKey, filters, options) => {
               return queryClient.invalidateQueries(
                 {
-                  queryKey: getArrayQueryKey(queryKey as any, 'any'),
                   ...filters,
+                  queryKey: getArrayQueryKey(queryKey as any, 'any'),
                 },
                 options,
               );
