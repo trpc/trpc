@@ -94,7 +94,7 @@ export function createRootHooks<
                 queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
-                  const actualInput = { ...(input as any), cursor: pageParam };
+                  const actualInput = { ...input, cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
@@ -121,7 +121,7 @@ export function createRootHooks<
                 queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
-                  const actualInput = { ...(input as any), cursor: pageParam };
+                  const actualInput = { ...input, cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
@@ -132,13 +132,14 @@ export function createRootHooks<
             [client, queryClient],
           ),
           invalidateQueries: useCallback(
-            (...args: any[]) => {
-              const [queryKey, ...rest] = args;
-
-              return queryClient.invalidateQueries({
-                queryKey: getArrayQueryKey(queryKey, 'any'),
-                ...rest,
-              });
+            (queryKey, filters, options) => {
+              return queryClient.invalidateQueries(
+                {
+                  queryKey: getArrayQueryKey(queryKey as any, 'any'),
+                  ...filters,
+                },
+                options,
+              );
             },
             [queryClient],
           ),
