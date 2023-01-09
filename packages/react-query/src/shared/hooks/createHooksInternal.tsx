@@ -2,7 +2,6 @@
 import {
   DehydratedState,
   QueryClient,
-  UseQueryOptions,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQueries as __useQueries,
@@ -278,7 +277,8 @@ export function createRootHooks<
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery({
-      queryKey: getArrayQueryKey(pathAndInput, 'query'),
+      ...ssrOpts,
+      queryKey: getArrayQueryKey(pathAndInput, 'query') as any,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -295,7 +295,6 @@ export function createRootHooks<
         );
       },
       context: ReactQueryContext,
-      ...((ssrOpts ?? {}) as UseQueryOptions), // <-- why is this cast needed?
     }) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
