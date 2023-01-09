@@ -107,10 +107,10 @@ export function createRootHooks<
           prefetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.prefetchQuery({
+                ...opts,
                 queryKey: getArrayQueryKey(pathAndInput, 'query'),
                 queryFn: () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
-                ...opts,
               });
             },
             [client, queryClient],
@@ -289,7 +289,7 @@ export function createRootHooks<
         );
       },
       context: ReactQueryContext,
-      ...(ssrOpts as UseQueryOptions), // <-- why is this cast needed?
+      ...((ssrOpts ?? {}) as UseQueryOptions), // <-- why is this cast needed?
     }) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
