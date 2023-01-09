@@ -87,6 +87,47 @@ export const appRouter = router({
 });
 ```
 
+## Using Express-like middleware without Express
+
+It is possible to use Express-like middleware with other adapters if it extends the `IncomingMessage` and `ServerResponse` classes for their request and response objects.
+
+In this example, [Morgan](https://www.npmjs.com/package/morgan) is used to log the requests being sent to the server.
+
+```ts
+import morgan from "morgan";
+import { inferAsyncReturnType, initTRPC } from "@trpc/server";
+
+// The adapter creates a context containing the request and response objects
+export async function createContext(opts: CreateNextContextOptions) {
+  return { req: opts.req, res: opts.res };
+}
+
+const t = initTRPC.context<inferAsyncReturnType<typeof createContext>>().create();
+
+// Create a new logger with the "dev" preset
+// More info: https://expressjs.com/en/resources/middleware/morgan.html
+// logger is a function that accepts the req, res, and next function
+const logger = morgan("dev");
+
+export const loggingMiddleware = t.procedure.use(
+  t.middleware(async ({ ctx, next }) => {
+    const result = await new Promise<ReturnType<typeof next>>((resolver) => {
+      // logger calls the third parameter
+      logger(ctx.req, ctx.res, () => {
+        // Call the next function and resolve the promise with its returned value
+        resolver(next());
+      });
+    });
+
+    // The value of result is the return value of the next function
+    return result;
+  })
+);
+
+// Only uses the middleware if the server is running in a development environment
+export const procedure = process.env.NODE_ENV !== "development" ? t.procedure : loggingMiddleware;
+```
+
 ## Context Swapping
 
 Context swapping in tRPC is a very powerful feature that allows you to create base procedures that can create base procedures that dynamically infers new context in a flexible and typesafe manner.
