@@ -1201,14 +1201,14 @@ importers:
     specifiers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
-      '@vercel/og': ^0.0.23
+      '@vercel/og': ^1.0.0
       next: latest
       react: latest
       react-dom: latest
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@vercel/og': 0.0.23
+      '@vercel/og': 1.0.0
       next: 13.1.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -7310,8 +7310,8 @@ packages:
       - supports-color
     dev: false
 
-  /@vercel/og/0.0.23:
-    resolution: {integrity: sha512-spVm1JL1FwZNSv9i389gVVu9pfjWS3RPvKQHdDjgbmToIu3MvOEIJzEKT2mZ6JlZvZKubGRf/lv8Wsya47iJXw==}
+  /@vercel/og/1.0.0:
+    resolution: {integrity: sha512-/uj/sVvxE4SFYUmc4VnMHGkVx/m+jkWzsqAawAghK8BFm5KXP8WAJ475osnO0xhqhptlZLWJDXcxGDht/sVm+g==}
     engines: {node: '>=16'}
     dependencies:
       '@resvg/resvg-wasm': 2.0.0-alpha.4
