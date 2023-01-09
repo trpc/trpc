@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'expect-type';
 import isomorphicFetch from 'isomorphic-fetch';
 import nodeFetch from 'node-fetch';
-import { fetch as undiciFetch } from 'undici';
+import type { fetch as undiciFetch } from 'undici';
 import { getFetch } from '../getFetch';
 import { getAbortController } from './fetchHelpers';
 import {
@@ -47,6 +47,10 @@ describe('fetch', () => {
   test('NativeFetchEsque', () => {
     getFetch(isomorphicFetch);
     getFetch(nodeFetch);
-    getFetch(undiciFetch);
+
+    // Passing in undiciFetch directly in Node v18.7.0 gives:
+    // ReferenceError: TextEncoder is not defined
+    // 🤷
+    getFetch({} as unknown as typeof undiciFetch);
   });
 });
