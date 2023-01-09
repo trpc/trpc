@@ -424,6 +424,7 @@ export function createRootHooks<
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useInfiniteQuery({
+      ...ssrOpts,
       queryKey: getArrayQueryKey(pathAndInput, 'infinite') as any,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
@@ -447,7 +448,6 @@ export function createRootHooks<
         );
       },
       context: ReactQueryContext,
-      ...ssrOpts,
     }) as UseTRPCInfiniteQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
