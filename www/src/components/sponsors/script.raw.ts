@@ -464,16 +464,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "_P",
-    "imgSrc": "https://avatars.githubusercontent.com/u/2329117?u=dbec433b960a36275e1ba331460e7ead1ee8fb28&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/PabloRosales",
-    "privacyLevel": "PUBLIC",
-    "login": "PabloRosales",
-    "createdAt": 1668701929000
-  },
-  {
-    "__typename": "User",
     "name": "Jonas Strassel",
     "imgSrc": "https://avatars.githubusercontent.com/u/4662748?u=e4a5cc2d110935a5c88fcbc02925d733fcc0bbb9&v=4",
     "monthlyPriceInDollars": 5,
@@ -524,16 +514,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Thorbjørn Hermansen",
-    "imgSrc": "https://avatars.githubusercontent.com/u/92300?v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "http://skalar.no/?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "thhermansen",
-    "createdAt": 1670347741000
-  },
-  {
-    "__typename": "User",
     "name": "SalihOsmankovic",
     "imgSrc": "https://avatars.githubusercontent.com/u/45540328?v=4",
     "monthlyPriceInDollars": 5,
@@ -571,5 +551,15 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "flightcontrolhq",
     "createdAt": 1671304160000
+  },
+  {
+    "__typename": "User",
+    "name": "David Parks",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5482124?u=aaab3112e3b81e45eb9bc4a1de5f6df57e6bf6c8&v=4",
+    "monthlyPriceInDollars": 20,
+    "link": "https://davidparks.dev/?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "DavidTParks",
+    "createdAt": 1673023326000
   }
 ] as const
