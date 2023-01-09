@@ -7,7 +7,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@vercel/og": "^0.0.21",
+    "@vercel/og": "^0.0.23",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
