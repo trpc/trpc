@@ -320,8 +320,8 @@ export function createRootHooks<
           ...getClientArgs([actualPath, input], opts),
         );
       },
-      context: ReactQueryContext,
       ...opts,
+      context: ReactQueryContext,
       onSuccess(...args) {
         const originalFn = () => opts?.onSuccess?.(...args);
 
