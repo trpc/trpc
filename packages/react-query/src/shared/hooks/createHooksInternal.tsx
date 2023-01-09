@@ -80,10 +80,10 @@ export function createRootHooks<
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchQuery({
+                ...opts,
                 queryKey: getArrayQueryKey(pathAndInput, 'query'),
                 queryFn: () =>
                   (client as any).query(...getClientArgs(pathAndInput, opts)),
-                ...opts,
               });
             },
             [client, queryClient],
@@ -91,6 +91,7 @@ export function createRootHooks<
           fetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.fetchInfiniteQuery({
+                ...opts,
                 queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
@@ -99,7 +100,6 @@ export function createRootHooks<
                     ...getClientArgs([path, actualInput], opts),
                   );
                 },
-                ...opts,
               });
             },
             [client, queryClient],
@@ -118,6 +118,7 @@ export function createRootHooks<
           prefetchInfiniteQuery: useCallback(
             (pathAndInput, opts) => {
               return queryClient.prefetchInfiniteQuery({
+                ...opts,
                 queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
@@ -126,7 +127,6 @@ export function createRootHooks<
                     ...getClientArgs([path, actualInput], opts),
                   );
                 },
-                ...opts,
               });
             },
             [client, queryClient],
@@ -145,23 +145,29 @@ export function createRootHooks<
           ),
           resetQueries: useCallback(
             (...args: any[]) => {
-              const [queryKey, ...rest] = args;
+              const [queryKey, filters, options] = args;
 
-              return queryClient.resetQueries({
-                queryKey: getArrayQueryKey(queryKey, 'any'),
-                ...rest,
-              });
+              return queryClient.resetQueries(
+                {
+                  ...filters,
+                  queryKey: getArrayQueryKey(queryKey, 'any'),
+                },
+                options,
+              );
             },
             [queryClient],
           ),
           refetchQueries: useCallback(
             (...args: any[]) => {
-              const [queryKey, ...rest] = args;
+              const [queryKey, filters, options] = args;
 
-              return queryClient.refetchQueries({
-                queryKey: getArrayQueryKey(queryKey, 'any'),
-                ...rest,
-              });
+              return queryClient.refetchQueries(
+                {
+                  ...filters,
+                  queryKey: getArrayQueryKey(queryKey, 'any'),
+                },
+                options,
+              );
             },
             [queryClient],
           ),
