@@ -96,7 +96,7 @@ export function createRootHooks<
                 queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
-                  const actualInput = { ...input, cursor: pageParam };
+                  const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
@@ -123,7 +123,7 @@ export function createRootHooks<
                 queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const [path, input] = pathAndInput;
-                  const actualInput = { ...input, cursor: pageParam };
+                  const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
                     ...getClientArgs([path, actualInput], opts),
                   );
