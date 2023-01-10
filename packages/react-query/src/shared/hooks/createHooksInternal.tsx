@@ -17,7 +17,7 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
-import { QueryKey, getQueryKey } from '../../internals/getQueryKey';
+import { TRPCQueryKey, getQueryKey } from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
@@ -214,7 +214,7 @@ export function createRootHooks<
    */
   function useSSRQueryOptionsIfNeeded<
     TOptions extends { retryOnMount?: boolean } | undefined,
-  >(queryKey: QueryKey, opts: TOptions): TOptions {
+  >(queryKey: TRPCQueryKey, opts: TOptions): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&

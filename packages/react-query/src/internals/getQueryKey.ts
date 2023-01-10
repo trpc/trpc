@@ -1,6 +1,6 @@
 export type QueryType = 'query' | 'infinite' | 'any';
 
-export type QueryKey = [
+export type TRPCQueryKey = [
   string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
@@ -14,7 +14,7 @@ export function getQueryKey(
   path: string[],
   input: unknown,
   type: QueryType,
-): QueryKey {
+): TRPCQueryKey {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
   // https://github.com/trpc/trpc/issues/3128
@@ -25,7 +25,7 @@ export function getQueryKey(
   if (!input && (!type || type === 'any'))
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
     // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
-    return splitPath.length ? [splitPath] : ([] as unknown as QueryKey);
+    return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
   return [
     splitPath,
     {

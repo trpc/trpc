@@ -1,7 +1,7 @@
-import { QueryKey } from './getQueryKey';
+import { TRPCQueryKey } from './getQueryKey';
 
 export function getClientArgs<TOptions>(
-  queryKey: QueryKey,
+  queryKey: TRPCQueryKey,
   opts: TOptions,
   pageParam?: any,
 ) {
