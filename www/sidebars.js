@@ -10,14 +10,13 @@ module.exports = {
       },
       items: [
         'main/quickstart',
+        'main/awesome-trpc',
         'main/example-apps',
         'nextjs/introduction',
         'reactjs/introduction',
-        'main/edge-runtimes',
         'main/contributing',
         'main/love',
         'main/sponsors',
-        'main/awesome-trpc',
       ],
     },
     {
@@ -74,7 +73,7 @@ module.exports = {
       },
       items: [
         'client/vanilla',
-        'client/aborting-procedures',
+        'client/aborting-procedure-calls',
         {
           type: 'category',
           label: 'Links',
@@ -105,6 +104,7 @@ module.exports = {
         slug: '/react-query',
       },
       items: [
+        'reactjs/introduction',
         'reactjs/useQuery',
         'reactjs/useMutation',
         'reactjs/useInfiniteQuery',
@@ -122,6 +122,7 @@ module.exports = {
         slug: '/next',
       },
       items: [
+        'nextjs/introduction',
         'nextjs/ssr',
         'nextjs/ssg',
         'nextjs/ssg-helpers',
@@ -138,6 +139,7 @@ module.exports = {
         slug: '/extra',
       },
       items: [
+        'further/faq',
         'further/rpc',
         'further/subscriptions',
         'further/further-reading',

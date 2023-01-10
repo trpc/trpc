@@ -256,7 +256,7 @@ for (const file of files) {
       '',
       '<!-- markdownlint-restore -->',
       '<!-- prettier-ignore-end -->',
-      '',
+      '\n',
     ].join('\n'),
   );
   fs.writeFileSync(file, newContents);
