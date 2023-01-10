@@ -178,7 +178,7 @@ export async function createContextInner(opts?: CreateInnerContextOptions) {
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export async function createContext(opts: CreateNextContextOptions) {
-  const session = getSessionFromCookie(req);
+  const session = getSessionFromCookie(opts.req);
 
   const contextInner = await createContextInner({ session });
 

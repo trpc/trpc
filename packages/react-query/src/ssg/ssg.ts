@@ -119,7 +119,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
       const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
       const fullPath = pathCopy.join('.');
 
-      const _callProcedure = () =>
+      const queryFn = () =>
         callProcedure({
           procedures: router._def.procedures,
           path: fullPath,
@@ -137,12 +137,12 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
       );
 
       const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
-        fetch: () => queryClient.fetchQuery(queryKey, _callProcedure),
+        fetch: () => queryClient.fetchQuery({ queryKey, queryFn }),
         fetchInfinite: () =>
-          queryClient.fetchInfiniteQuery(queryKey, _callProcedure),
-        prefetch: () => queryClient.prefetchQuery(queryKey, _callProcedure),
+          queryClient.fetchInfiniteQuery({ queryKey, queryFn }),
+        prefetch: () => queryClient.prefetchQuery({ queryKey, queryFn }),
         prefetchInfinite: () =>
-          queryClient.prefetchInfiniteQuery(queryKey, _callProcedure),
+          queryClient.prefetchInfiniteQuery({ queryKey, queryFn }),
       };
 
       return helperMap[utilName]();

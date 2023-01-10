@@ -21,7 +21,7 @@ The best way to start with the Fastify adapter is to take a look at the example 
       <td>
         <ul>
           <li>Fastify server with WebSocket</li>
-          <li>Simple TRPC client in node</li>
+          <li>Simple tRPC client in node</li>
         </ul>
       </td>
       <td>
