@@ -22,7 +22,11 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import { getQueryKey } from '../internals/getQueryKey';
-import { CreateTRPCReactQueryClientConfig, getQueryClient } from '../shared';
+import {
+  CreateTRPCReactQueryClientConfig,
+  getQueryClient,
+  getQueryType,
+} from '../shared';
 
 interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
   router: TRouter;
@@ -126,14 +130,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
 
-      // TODO: Come back when we have sorted out all the querykey stuff
-      const queryKey = getQueryKey(
-        arrayPath,
-        input,
-        ['fetchInfinite', 'prefetchInfinite'].includes(utilName)
-          ? 'infinite'
-          : 'query',
-      );
+      const queryKey = getQueryKey(arrayPath, input, getQueryType(utilName));
 
       const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
         fetch: () => queryClient.fetchQuery({ queryKey, queryFn }),

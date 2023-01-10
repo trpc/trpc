@@ -11,10 +11,8 @@ export function createReactProxyDecoration<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(name: string, hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  return createRecursiveProxy((opts) => {
-    const args = opts.args;
-
-    const pathCopy = [name, ...opts.path];
+  return createRecursiveProxy(({ path, args }) => {
+    const pathCopy = [name, ...path];
 
     // The last arg is for instance `.useMutation` or `.useQuery()`
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -30,8 +28,8 @@ export function createReactProxyDecoration<
       return getQueryKey(pathCopy, input, (rest[0] as any) ?? 'any');
     }
 
+    const opts = rest[0] || {};
     if (lastArg.startsWith('useSuspense')) {
-      const opts = rest[0] || {};
       const fn =
         lastArg === 'useSuspenseQuery' ? 'useQuery' : 'useInfiniteQuery';
       const result = (hooks as any)[fn](pathCopy, input, {
@@ -41,6 +39,6 @@ export function createReactProxyDecoration<
       });
       return [result.data, result];
     }
-    return (hooks as any)[lastArg](pathCopy, input, rest[0] || {});
+    return (hooks as any)[lastArg](pathCopy, input, opts);
   });
 }
