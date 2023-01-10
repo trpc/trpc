@@ -83,7 +83,7 @@ export function createRootHooks<
                 ...opts,
                 queryKey: getQueryKey(path, input, 'query'),
                 queryFn: () =>
-                  (client as any).query(...getClientArgs(path, input, opts)),
+                  client.query(...getClientArgs(path, input, opts)),
               });
             },
             [client, queryClient],
@@ -95,7 +95,7 @@ export function createRootHooks<
                 queryKey: getQueryKey(path, input, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const actualInput = { ...(input as any), cursor: pageParam };
-                  return (client as any).query(
+                  return client.query(
                     ...getClientArgs(path, actualInput, opts),
                   );
                 },
@@ -109,7 +109,7 @@ export function createRootHooks<
                 ...opts,
                 queryKey: getQueryKey(path, input, 'query'),
                 queryFn: () =>
-                  (client as any).query(...getClientArgs(path, input, opts)),
+                  client.query(...getClientArgs(path, input, opts)),
               });
             },
             [client, queryClient],
@@ -121,7 +121,7 @@ export function createRootHooks<
                 queryKey: getQueryKey(path, input, 'infinite'),
                 queryFn: ({ pageParam }) => {
                   const actualInput = { ...(input as any), cursor: pageParam };
-                  return (client as any).query(
+                  return client.query(
                     ...getClientArgs(path, actualInput, opts),
                   );
                 },
@@ -284,7 +284,7 @@ export function createRootHooks<
           },
         };
 
-        return (client as any).query(...getClientArgs(path, input, actualOpts));
+        return client.query(...getClientArgs(path, input, actualOpts));
       },
       context: ReactQueryContext,
     }) as UseTRPCQueryResult<unknown, TError>;
@@ -420,10 +420,7 @@ export function createRootHooks<
           cursor: queryFunctionContext.pageParam,
         };
 
-        // FIXME as any shouldn't be needed as client should be untyped too
-        return (client as any).query(
-          ...getClientArgs(path, actualInput, actualOpts),
-        );
+        return client.query(...getClientArgs(path, actualInput, actualOpts));
       },
       context: ReactQueryContext,
     }) as UseTRPCInfiniteQueryResult<unknown, TError>;
