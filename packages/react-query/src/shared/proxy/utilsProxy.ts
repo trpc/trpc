@@ -30,7 +30,6 @@ import {
   contextProps,
 } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
-import { getQueryKey } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
@@ -223,52 +222,45 @@ export function createReactQueryUtilsProxy<
       return context[contextName];
     }
 
-    return createRecursiveProxy(({ path, args }) => {
-      const pathCopy = [key, ...path];
-      const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
-
-      const fullPath = pathCopy.join('.');
+    return createRecursiveProxy((opts) => {
+      const path = [key, ...opts.path];
+      const utilName = path.pop() as keyof AnyDecoratedProcedure;
 
       const getOpts = (name: typeof utilName) => {
         if (['setData', 'setInfiniteData'].includes(name)) {
-          const [input, updater, ...rest] = args as Parameters<
+          const [input, updater, ...rest] = opts.args as Parameters<
             AnyDecoratedProcedure[typeof utilName]
           >;
-          const queryKey = getQueryKey(fullPath, input);
           return {
-            queryKey,
+            input,
             updater,
             rest,
           };
         }
 
-        const [input, ...rest] = args as Parameters<
+        const [input, ...rest] = opts.args as Parameters<
           AnyDecoratedProcedure[typeof utilName]
         >;
-        const queryKey = getQueryKey(fullPath, input);
-        return {
-          queryKey,
-          rest,
-        };
+        return { input, rest };
       };
 
-      const { queryKey, rest, updater } = getOpts(utilName);
+      const { input, rest, updater } = getOpts(utilName);
 
       const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
-        fetch: () => context.fetchQuery(queryKey, ...rest),
-        fetchInfinite: () => context.fetchInfiniteQuery(queryKey, ...rest),
-        prefetch: () => context.prefetchQuery(queryKey, ...rest),
+        fetch: () => context.fetchQuery(path, input, ...rest),
+        fetchInfinite: () => context.fetchInfiniteQuery(path, input, ...rest),
+        prefetch: () => context.prefetchQuery(path, input, ...rest),
         prefetchInfinite: () =>
-          context.prefetchInfiniteQuery(queryKey, ...rest),
-        invalidate: () => context.invalidateQueries(queryKey, ...rest),
-        reset: () => context.resetQueries(queryKey, ...rest),
-        refetch: () => context.refetchQueries(queryKey, ...rest),
-        cancel: () => context.cancelQuery(queryKey, ...rest),
-        setData: () => context.setQueryData(queryKey, updater, ...rest),
+          context.prefetchInfiniteQuery(path, input, ...rest),
+        invalidate: () => context.invalidateQueries(path, input, ...rest),
+        reset: () => context.resetQueries(path, input, ...rest),
+        refetch: () => context.refetchQueries(path, input, ...rest),
+        cancel: () => context.cancelQuery(path, input, ...rest),
+        setData: () => context.setQueryData(path, input, updater, ...rest),
         setInfiniteData: () =>
-          context.setInfiniteQueryData(queryKey, updater, ...rest),
-        getData: () => context.getQueryData(queryKey),
-        getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+          context.setInfiniteQueryData(path, input, updater, ...rest),
+        getData: () => context.getQueryData(path, input),
+        getInfiniteData: () => context.getInfiniteQueryData(path, input),
       };
 
       return contextMap[utilName]();

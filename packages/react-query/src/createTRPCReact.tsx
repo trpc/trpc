@@ -16,7 +16,7 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
-import { QueryKey, QueryType } from './internals/getArrayQueryKey';
+import { QueryKey, QueryType } from './internals/getQueryKey';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,

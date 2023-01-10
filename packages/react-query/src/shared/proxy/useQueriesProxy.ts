@@ -65,15 +65,14 @@ export function createUseQueriesProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ) {
   return createRecursiveProxy((opts) => {
-    const path = opts.path.join('.');
+    const arrayPath = opts.path;
+    const dotPath = arrayPath.join('.');
     const [input, ...rest] = opts.args;
 
-    const queryKey = getQueryKey(path, input);
-
     const options: QueryOptions = {
-      queryKey,
+      queryKey: getQueryKey(arrayPath, input, 'query'),
       queryFn: () => {
-        return client.query(path, input);
+        return client.query(dotPath, input);
       },
       ...(rest[1] as any),
     };

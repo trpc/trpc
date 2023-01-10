@@ -20,6 +20,7 @@ import {
 import { AnyRouter } from '@trpc/server';
 import { ReactNode } from 'react';
 import { TRPCContextProps } from '../../internals/context';
+import { QueryKey } from '../../internals/getQueryKey';
 import { TRPCHookResult } from '../../internals/useHookResult';
 
 export type OutputWithCursor<TData, TCursor = any> = {
@@ -63,8 +64,10 @@ export interface DefinedUseTRPCQueryOptions<
 }
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>
-  extends QueryOptions<TData, TError, TData, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {}
+  extends Omit<QueryOptions<TData, TError, TData, [TPath, TInput]>, 'queryKey'>,
+    TRPCUseQueryBaseOptions {
+  queryKey: QueryKey;
+}
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<

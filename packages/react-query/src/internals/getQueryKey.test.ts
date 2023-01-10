@@ -1,28 +1,18 @@
-import { getArrayQueryKey } from './getArrayQueryKey';
+import { getQueryKey } from './getQueryKey';
 
 test('getArrayQueryKey', () => {
   // empty path should not nest an extra array
-  expect(getArrayQueryKey('', 'any')).toMatchInlineSnapshot(`Array []`);
+  expect(getQueryKey([], undefined, 'any')).toMatchInlineSnapshot(`Array []`);
 
   // should not nest an empty object
-  expect(getArrayQueryKey('foo', 'any')).toMatchInlineSnapshot(`
+  expect(getQueryKey(['foo'], undefined, 'any')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
       ],
     ]
   `);
-  expect(getArrayQueryKey('foo', 'query')).toMatchInlineSnapshot(`
-    Array [
-      Array [
-        "foo",
-      ],
-      Object {
-        "type": "query",
-      },
-    ]
-  `);
-  expect(getArrayQueryKey(['foo'], 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKey(['foo'], undefined, 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
@@ -32,7 +22,7 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getArrayQueryKey('foo', 'infinite')).toMatchInlineSnapshot(`
+  expect(getQueryKey(['foo'], undefined, 'infinite')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
@@ -42,17 +32,24 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getArrayQueryKey(['foo'], 'infinite')).toMatchInlineSnapshot(`
+
+  // some proc may have dot separated parts
+  expect(getQueryKey(['foo', 'bar.baz'], 'bar', 'query'))
+    .toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
+        "bar",
+        "baz",
       ],
       Object {
-        "type": "infinite",
+        "input": "bar",
+        "type": "query",
       },
     ]
   `);
-  expect(getArrayQueryKey(['foo', 'bar'], 'query')).toMatchInlineSnapshot(`
+
+  expect(getQueryKey(['foo'], 'bar', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
@@ -63,7 +60,7 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getArrayQueryKey([undefined, 'bar'], 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKey([], 'bar', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [],
       Object {
@@ -72,7 +69,7 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getArrayQueryKey(['post.byId', '1'], 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKey(['post', 'byId'], '1', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "post",

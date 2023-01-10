@@ -17,8 +17,8 @@ import {
   TRPCContext,
   TRPCContextState,
 } from '../../internals/context';
-import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
+import { QueryType, getQueryKey } from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
@@ -79,26 +79,25 @@ export function createRootHooks<
           ssrContext: ssrContext || null,
           ssrState,
           fetchQuery: useCallback(
-            (pathAndInput, opts) => {
+            (path, input, opts) => {
               return queryClient.fetchQuery({
                 ...opts,
-                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryKey: getQueryKey(path, input, 'query'),
                 queryFn: () =>
-                  (client as any).query(...getClientArgs(pathAndInput, opts)),
+                  (client as any).query(...getClientArgs(path, input, opts)),
               });
             },
             [client, queryClient],
           ),
           fetchInfiniteQuery: useCallback(
-            (pathAndInput, opts) => {
+            (path, input, opts) => {
               return queryClient.fetchInfiniteQuery({
                 ...opts,
-                queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+                queryKey: getQueryKey(path, input, 'infinite'),
                 queryFn: ({ pageParam }) => {
-                  const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
-                    ...getClientArgs([path, actualInput], opts),
+                    ...getClientArgs(path, actualInput, opts),
                   );
                 },
               });
@@ -106,26 +105,25 @@ export function createRootHooks<
             [client, queryClient],
           ),
           prefetchQuery: useCallback(
-            (pathAndInput, opts) => {
+            (path, input, opts) => {
               return queryClient.prefetchQuery({
                 ...opts,
-                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryKey: getQueryKey(path, input, 'query'),
                 queryFn: () =>
-                  (client as any).query(...getClientArgs(pathAndInput, opts)),
+                  (client as any).query(...getClientArgs(path, input, opts)),
               });
             },
             [client, queryClient],
           ),
           prefetchInfiniteQuery: useCallback(
-            (pathAndInput, opts) => {
+            (path, input, opts) => {
               return queryClient.prefetchInfiniteQuery({
                 ...opts,
-                queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+                queryKey: getQueryKey(path, input, 'infinite'),
                 queryFn: ({ pageParam }) => {
-                  const [path, input] = pathAndInput;
                   const actualInput = { ...(input as any), cursor: pageParam };
                   return (client as any).query(
-                    ...getClientArgs([path, actualInput], opts),
+                    ...getClientArgs(path, actualInput, opts),
                   );
                 },
               });
@@ -133,11 +131,11 @@ export function createRootHooks<
             [client, queryClient],
           ),
           invalidateQueries: useCallback(
-            (queryKey, filters, options) => {
+            (path, input, filters, options) => {
               return queryClient.invalidateQueries(
                 {
                   ...filters,
-                  queryKey: getArrayQueryKey(queryKey as any, 'any'),
+                  queryKey: getQueryKey(path, input, 'any'),
                 },
                 options,
               );
@@ -146,12 +144,12 @@ export function createRootHooks<
           ),
           resetQueries: useCallback(
             (...args: any[]) => {
-              const [queryKey, filters, options] = args;
+              const [path, input, filters, options] = args;
 
               return queryClient.resetQueries(
                 {
                   ...filters,
-                  queryKey: getArrayQueryKey(queryKey, 'any'),
+                  queryKey: getQueryKey(path, input, 'any'),
                 },
                 options,
               );
@@ -160,12 +158,12 @@ export function createRootHooks<
           ),
           refetchQueries: useCallback(
             (...args: any[]) => {
-              const [queryKey, filters, options] = args;
+              const [path, input, filters, options] = args;
 
               return queryClient.refetchQueries(
                 {
                   ...filters,
-                  queryKey: getArrayQueryKey(queryKey, 'any'),
+                  queryKey: getQueryKey(path, input, 'any'),
                 },
                 options,
               );
@@ -173,52 +171,46 @@ export function createRootHooks<
             [queryClient],
           ),
           cancelQuery: useCallback(
-            (pathAndInput) => {
+            (path, input, _options) => {
               return queryClient.cancelQueries({
-                queryKey: getArrayQueryKey(pathAndInput, 'any'),
+                queryKey: getQueryKey(path, input, 'any'),
               });
             },
             [queryClient],
           ),
           setQueryData: useCallback(
-            (...args) => {
-              const [queryKey, ...rest] = args;
+            (path, input, updater, options) => {
               return queryClient.setQueryData(
-                getArrayQueryKey(queryKey, 'query'),
-                ...rest,
+                getQueryKey(path, input, 'query'),
+                updater,
+                options,
               );
             },
             [queryClient],
           ),
           getQueryData: useCallback(
-            (...args) => {
-              const [queryKey, ...rest] = args;
-
+            // REVIEW: Should this take opts?? The types doesn't have it
+            (path, input) => {
               return queryClient.getQueryData(
-                getArrayQueryKey(queryKey, 'query'),
-                ...rest,
+                getQueryKey(path, input, 'query'),
               );
             },
             [queryClient],
           ),
           setInfiniteQueryData: useCallback(
-            (...args) => {
-              const [queryKey, ...rest] = args;
-
+            (path, input, updater, options) => {
               return queryClient.setQueryData(
-                getArrayQueryKey(queryKey, 'infinite'),
-                ...rest,
+                getQueryKey(path, input, 'infinite'),
+                updater,
+                options,
               );
             },
             [queryClient],
           ),
           getInfiniteQueryData: useCallback(
-            (...args) => {
-              const [queryKey, ...rest] = args;
-
+            (path, input) => {
               return queryClient.getQueryData(
-                getArrayQueryKey(queryKey, 'infinite'),
-                ...rest,
+                getQueryKey(path, input, 'infinite'),
               );
             },
             [queryClient],
@@ -241,15 +233,16 @@ export function createRootHooks<
   function useSSRQueryOptionsIfNeeded<
     TOptions extends { retryOnMount?: boolean } | undefined,
   >(
-    pathAndInput: unknown[],
+    path: string[],
+    input: unknown,
     type: Exclude<QueryType, 'any'>,
     opts: TOptions,
   ): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, type))
-        ?.state.status === 'error'
+      queryClient.getQueryCache().find(getQueryKey(path, input, type))?.state
+        .status === 'error'
       ? {
           retryOnMount: false,
           ...opts,
@@ -258,8 +251,8 @@ export function createRootHooks<
   }
 
   function useQuery(
-    // FIXME path should be a tuple in next major
-    pathAndInput: [path: string, ...args: unknown[]],
+    path: string[],
+    input: unknown,
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
@@ -270,17 +263,17 @@ export function createRootHooks<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, 'query'))
+      !queryClient.getQueryCache().find(getQueryKey(path, input, 'query'))
     ) {
-      void prefetchQuery(pathAndInput as any, opts as any);
+      void prefetchQuery(path, input, opts as any);
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(path, input, 'query', opts);
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery({
       ...ssrOpts,
-      queryKey: getArrayQueryKey(pathAndInput, 'query') as any,
+      queryKey: getQueryKey(path, input, 'query') as any,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -292,23 +285,21 @@ export function createRootHooks<
           },
         };
 
-        return (client as any).query(
-          ...getClientArgs(pathAndInput, actualOpts),
-        );
+        return (client as any).query(...getClientArgs(path, input, actualOpts));
       },
       context: ReactQueryContext,
     }) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
-      path: pathAndInput[0],
+      // REVIEW: What do we want to return here?
+      path: path.join('.'),
     });
 
     return hook;
   }
 
   function useMutation(
-    // FIXME: this should only be a tuple path in next major
-    path: string | [string],
+    path: string[],
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client } = useContext();
@@ -317,11 +308,7 @@ export function createRootHooks<
     const hook = __useMutation({
       ...opts,
       mutationFn: (input) => {
-        const actualPath = Array.isArray(path) ? path[0] : path;
-
-        return (client.mutation as any)(
-          ...getClientArgs([actualPath, input], opts),
-        );
+        return (client.mutation as any)(...getClientArgs(path, input, opts));
       },
       context: ReactQueryContext,
       onSuccess(...args) {
@@ -336,7 +323,8 @@ export function createRootHooks<
     }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
-      path: Array.isArray(path) ? path[0] : path,
+      // REVIEW: What do we want to return here?
+      path: path.join('.'),
     });
 
     return hook;
@@ -344,26 +332,22 @@ export function createRootHooks<
 
   /* istanbul ignore next */
   function useSubscription(
-    pathAndInput: [
-      // FIXME: tuple me in next major
-      path: string,
-      ...args: unknown[],
-    ],
+    path: string[],
+    input: unknown,
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
-    const queryKey = hashQueryKey(pathAndInput);
+    const queryKey = hashQueryKey(getQueryKey(path, input, 'any'));
     const { client } = useContext();
 
     return useEffect(() => {
       if (!enabled) {
         return;
       }
-      const [path, input] = pathAndInput;
       let isStopped = false;
       const subscription = client.subscription(
-        path,
-        (input ?? undefined) as any,
+        path.join('.'),
+        input ?? undefined,
         {
           onStarted: () => {
             if (!isStopped) {
@@ -391,14 +375,10 @@ export function createRootHooks<
   }
 
   function useInfiniteQuery(
-    pathAndInput: [
-      // FIXME tuple in next major
-      path: string,
-      input: Record<any, unknown>,
-    ],
+    path: string[],
+    input: unknown,
     opts?: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
   ): UseTRPCInfiniteQueryResult<unknown, TError> {
-    const [path, input] = pathAndInput;
     const {
       client,
       ssrState,
@@ -412,21 +392,19 @@ export function createRootHooks<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       opts?.enabled !== false &&
-      !queryClient
-        .getQueryCache()
-        .find(getArrayQueryKey(pathAndInput, 'infinite'))
+      !queryClient.getQueryCache().find(getQueryKey(path, input, 'infinite'))
     ) {
-      void prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      void prefetchInfiniteQuery(path, input, opts as any);
     }
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(path, input, 'infinite', opts);
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useInfiniteQuery({
       ...ssrOpts,
-      queryKey: getArrayQueryKey(pathAndInput, 'infinite') as any,
+      queryKey: getQueryKey(path, input, 'infinite') as any,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -445,14 +423,15 @@ export function createRootHooks<
 
         // FIXME as any shouldn't be needed as client should be untyped too
         return (client as any).query(
-          ...getClientArgs([path, actualInput], actualOpts),
+          ...getClientArgs(path, actualInput, actualOpts),
         );
       },
       context: ReactQueryContext,
     }) as UseTRPCInfiniteQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
-      path,
+      // REVIEW: What do we want to return here?
+      path: path.join('.'),
     });
     return hook;
   }
@@ -469,11 +448,14 @@ export function createRootHooks<
         const queryOption = query as TRPCQueryOptions<any, any, any, any>;
         if (
           queryOption.trpc?.ssr !== false &&
-          !queryClient
-            .getQueryCache()
-            .find(getArrayQueryKey(queryOption.queryKey!, 'query'))
+          !queryClient.getQueryCache().find(queryOption.queryKey)
         ) {
-          void prefetchQuery(queryOption.queryKey as any, queryOption as any);
+          void prefetchQuery(
+            // FIXME: hacky
+            query.queryKey[0],
+            query.queryKey[1].input,
+            queryOption as any,
+          );
         }
       }
     }
@@ -481,7 +463,7 @@ export function createRootHooks<
     return __useQueries({
       queries: queries.map((query) => ({
         ...query,
-        queryKey: getArrayQueryKey(query.queryKey, 'query'),
+        queryKey: query.queryKey,
       })),
       context,
     }) as any;

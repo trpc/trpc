@@ -1,7 +1,7 @@
-export function getClientArgs<TPathAndInput extends unknown[], TOptions>(
-  pathAndInput: TPathAndInput,
+export function getClientArgs<TOptions>(
+  path: string[],
+  input: unknown,
   opts: TOptions,
 ) {
-  const [path, input] = pathAndInput;
-  return [path, input, (opts as any)?.trpc] as const;
+  return [path.join('.'), input, (opts as any)?.trpc] as const;
 }
