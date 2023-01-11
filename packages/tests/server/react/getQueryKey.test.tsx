@@ -28,7 +28,6 @@ const ctx = konn()
           )
           .query(({ input }) => posts.find((post) => post.id === input.id)),
         all: t.procedure.query(() => posts),
-        create: t.procedure.mutation(() => 'new post'),
       }),
     });
 
