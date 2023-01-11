@@ -212,7 +212,7 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
-export const appRouter = router({
+export const appRouter = t.router({
   hello: publicProcedure.query(() => {
     return {
       text: 'hello world',
