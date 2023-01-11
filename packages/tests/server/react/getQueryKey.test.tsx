@@ -1,9 +1,14 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import { useIsFetching } from '@tanstack/react-query';
+import {
+  useIsFetching,
+  useIsMutating,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn/dist-cjs';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 
 type Post = {
@@ -28,6 +33,7 @@ const ctx = konn()
           )
           .query(({ input }) => posts.find((post) => post.id === input.id)),
         all: t.procedure.query(() => posts),
+        create: t.procedure.mutation(() => 'new post'),
       }),
     });
 
@@ -174,5 +180,49 @@ describe('getQueryKeys', () => {
       ['post', 'byId'],
       { input: { id: 1 }, type: 'query' },
     ]);
+  });
+});
+
+describe('mutation keys', () => {
+  test('can grab from cache using correct key', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const postCreate = proxy.post.create.useMutation();
+
+      const mutationKey = [['post', 'create']]; // TODO: Maybe add a getter later?
+      const isMutating = useIsMutating({ mutationKey });
+
+      const queryClient = useQueryClient();
+      const mutationCache = queryClient.getMutationCache();
+
+      useEffect(() => {
+        postCreate.mutate();
+        const mutation = mutationCache.find({ mutationKey });
+        expect(mutation).not.toBeUndefined();
+      }, []);
+
+      return (
+        <div>
+          <button onClick={() => postCreate.mutate()} data-testid="mutate" />
+          <pre data-testid="status">{isMutating}</pre>
+        </div>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    // should not be mutating
+    expect(utils.getByTestId('status')).toHaveTextContent('0');
+
+    // should be mutating after button press
+    userEvent.click(utils.getByTestId('mutate'));
+    await waitFor(() => {
+      expect(utils.getByTestId('status')).toHaveTextContent('1');
+    });
   });
 });

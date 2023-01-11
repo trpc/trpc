@@ -268,7 +268,6 @@ export function createRootHooks<
     }) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
-      // REVIEW: What do we want to return here?
       path: path.join('.'),
     });
 
@@ -301,7 +300,6 @@ export function createRootHooks<
     }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
-      // REVIEW: What do we want to return here?
       path: path.join('.'),
     });
 
