@@ -250,10 +250,10 @@ export function createReactQueryUtilsProxy<
     return createRecursiveProxy((opts) => {
       const path = [key, ...opts.path];
       const utilName = path.pop() as keyof AnyDecoratedProcedure;
-      const args = opts.args as Parameters<
+      const args = [...opts.args] as Parameters<
         AnyDecoratedProcedure[typeof utilName]
       >;
-      const input = args.shift();
+      const input = args.shift(); // args can now be spread when input removed
       const queryType = getQueryType(utilName);
       const queryKey = getQueryKey(path, input, queryType);
 
