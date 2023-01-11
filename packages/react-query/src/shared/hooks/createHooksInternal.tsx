@@ -313,12 +313,12 @@ export function createRootHooks<
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
+    const actualPath = Array.isArray(path) ? path[0] : path;
 
     const hook = __useMutation({
       ...opts,
+      mutationKey: [actualPath.split('.')],
       mutationFn: (input) => {
-        const actualPath = Array.isArray(path) ? path[0] : path;
-
         return (client.mutation as any)(
           ...getClientArgs([actualPath, input], opts),
         );
@@ -336,7 +336,7 @@ export function createRootHooks<
     }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
-      path: Array.isArray(path) ? path[0] : path,
+      path: actualPath,
     });
 
     return hook;

@@ -514,16 +514,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "SalihOsmankovic",
-    "imgSrc": "https://avatars.githubusercontent.com/u/45540328?v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/SalihOsmankovic",
-    "privacyLevel": "PUBLIC",
-    "login": "SalihOsmankovic",
-    "createdAt": 1670622555000
-  },
-  {
-    "__typename": "User",
     "name": "Lucas Santos",
     "imgSrc": "https://avatars.githubusercontent.com/u/11416392?u=e1d9e059b8738791e80b18b7a976b921aa659c2a&v=4",
     "monthlyPriceInDollars": 5,
@@ -561,5 +551,35 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "DavidTParks",
     "createdAt": 1673023326000
+  },
+  {
+    "__typename": "User",
+    "name": "matt",
+    "imgSrc": "https://avatars.githubusercontent.com/u/42226854?u=137b0ccb3e93c2373e3bc01997c46cac31265692&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/0mjs",
+    "privacyLevel": "PUBLIC",
+    "login": "0mjs",
+    "createdAt": 1673311584000
+  },
+  {
+    "__typename": "User",
+    "name": "Ilko Kacharov",
+    "imgSrc": "https://avatars.githubusercontent.com/u/893608?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://stackoverflow.com/users/668245/kachar?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "kachar",
+    "createdAt": 1673326373000
+  },
+  {
+    "__typename": "User",
+    "name": "Daniel Burger",
+    "imgSrc": "https://avatars.githubusercontent.com/u/34251194?u=2cad4388c1544e539ecb732d656e42fb07b4ff2d&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "http://danielburger.online/?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "danburonline",
+    "createdAt": 1673457748000
   }
 ] as const
