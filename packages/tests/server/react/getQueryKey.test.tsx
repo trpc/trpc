@@ -216,8 +216,15 @@ describe('mutation keys', () => {
       </App>,
     );
 
-    // should not be mutating
-    expect(utils.getByTestId('status')).toHaveTextContent('0');
+    // should be mutating due to effect
+    await waitFor(() => {
+      expect(utils.getByTestId('status')).toHaveTextContent('1');
+    });
+
+    // let the mutation finish
+    await waitFor(() => {
+      expect(utils.getByTestId('status')).toHaveTextContent('0');
+    });
 
     // should be mutating after button press
     userEvent.click(utils.getByTestId('mutate'));
