@@ -283,7 +283,6 @@ export function createRootHooks<
 
     const hook = __useMutation({
       ...opts,
-      mutationKey: [path], // ?
       mutationFn: (input) => {
         return client.mutation(...getClientArgs([path, { input }], opts));
       },
