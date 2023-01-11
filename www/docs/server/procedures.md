@@ -212,6 +212,9 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
+const router = t.router;
+const publicProcedure = t.procedure;
+
 export const appRouter = router({
   hello: publicProcedure.query(() => {
     return {
