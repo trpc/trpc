@@ -75,7 +75,7 @@ export function createUseQueriesProxy<TRouter extends AnyRouter>(
       queryFn: () => {
         return client.query(path, input);
       },
-      ...(rest[1] as any),
+      ...(rest[0] as any),
     };
 
     return options;

@@ -126,3 +126,26 @@ test('mapping queries', async () => {
     expect(utils.container).toHaveTextContent(`__result3`);
   });
 });
+
+test('single query with options', async () => {
+  const { proxy, App } = ctx;
+  function MyComponent() {
+    const results = proxy.useQueries((t) => [
+      t.post.byId(
+        { id: '1' },
+        { enabled: false, placeholderData: '__result2' },
+      ),
+    ]);
+
+    return <pre>{JSON.stringify(results[0].data ?? 'n/a', null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`__result2`);
+  });
+});
