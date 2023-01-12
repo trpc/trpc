@@ -177,3 +177,44 @@ export const appRouter = router({
   //                                    ^?
 });
 ```
+
+Beware that the order in which you pipe your middlewares matter and that the context must overlap. An exmaple of a forbidden pipe is shown below. Here, the `fooMiddleware` overrides the `ctx.a` while `barMiddleware` still expects the root context from the initialization in `initTRPC` - so piping `fooMiddleware` with `barMiddleware` would not work, while piping `barMiddleware` with `fooMiddleware` does work.
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC
+  .context<{
+    a: {
+      b: 'a';
+    };
+  }>()
+  .create();
+
+const fooMiddleware = t.middleware(({ ctx, next }) => {
+  ctx.a; // 👈 fooMiddleware expects `ctx.a` to be an object
+  //  ^?
+  return next({
+    ctx: {
+      a: 'a' as const, // 👈 `ctx.a` is no longer an object
+    },
+  });
+});
+
+const barMiddleware = t.middleware(({ ctx, next }) => {
+  ctx.a; // 👈 barMiddleware expects `ctx.a` to be an object
+  //  ^?
+  return next({
+    ctx: {
+      foo: 'foo' as const,
+    },
+  });
+});
+
+// @errors: 2345
+// ❌ `ctx.a` does not overlap from `fooMiddleware` to `barMiddleware`
+const bazMiddleware = fooMiddleware.unstable_pipe(barMiddleware);
+
+// ✅ `ctx.a` overlaps from `barMiddleware` and `fooMiddleware`
+const gooshMiddleware = barMiddleware.unstable_pipe(fooMiddleware);
+```
