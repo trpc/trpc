@@ -248,6 +248,7 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
     if ('error' in json) {
       throw new Error(`Error: ${json.error.message}`);
     }
+    // No error - all good. Return the data.
     return json.result.data;
   }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
 
