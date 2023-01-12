@@ -140,7 +140,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Multiple input parsers
+## Multiple input parsers {#multiple-input-parsers}
 
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
 
@@ -231,7 +231,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Reusable base procedures
+## Reusable base procedures {#reusable-base-procedures}
 
 You can create reusable base procedures to have a set of login-protected procedures.
 
