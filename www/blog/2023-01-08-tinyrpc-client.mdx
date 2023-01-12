@@ -11,7 +11,7 @@ Ever wondered how tRPC works? Maybe you want to start contributing to the projec
 
 ## Overview
 
-Let's assume we have simple tRPC router that looks like this:
+Let's assume we have simple tRPC router with three procedures that looks like this:
 
 ```twoslash include router
 // @filename: trpc.ts
@@ -24,9 +24,9 @@ export const publicProcedure = t.procedure;
 // @filename: router.ts
 const posts = [] as {id: string, title: string}[]
 declare function uuid(): string;
-// ---cut---
 import { z } from "zod";
 import { router, publicProcedure } from './trpc';
+// ---cut---
 
 const appRouter = router({
   post: router({
@@ -34,6 +34,11 @@ const appRouter = router({
       .input(z.object({ id: z.string() }))
       .query(({ input }) => {
         return posts.find((p) => p.id === input.id);
+      }),
+    byTitle: publicProcedure
+      .input(z.object({ title: z.string() }))
+      .query(({ input }) => {
+        return posts.find((p) => p.title === input.title);
       }),
     create: publicProcedure
       .input(z.object({ title: z.string() }))
@@ -55,111 +60,24 @@ export type AppRouter = typeof appRouter;
 The goal of our client is to mimic this object structure on our client so that we can call procedures like:
 
 ```ts
-const post = await client.post.byId.query('123');
+const post1 = await client.post.byId.query({ id: '123' });
+const post2 = await client.post.byTitle.query({ title: 'Hello world' });
 const newPost = await client.post.create.mutate({ title: 'Foo' });
 ```
 
-To do this, tRPC uses [proxies](https://mdn.io/proxy) to augment the object structure with the `.query` and `.mutate` methods on them. Proxies allows us to intercept and modify the operations for the path you are accessing.
+To do this, tRPC uses a combination of [`Proxy`](https://mdn.io/proxy)-objects and some TypeScript magic to augment the object structure with the `.query` and `.mutate` methods on them - meaning we actually LIE to you about what you're doing (more on that later) in order to provide an excellent developer experience!
 
-What we want to do is to map the `post.byId.query` to a GET request to our server, and `post.create.mutate` to a POST request. So, how do we do this?
+What we want to do is to map the `post.byId.query()` to a GET request to our server, and `post.create.mutate()` to a POST request, and the types should all be propagated from back to front . So, how do we do this?
 
 ## Implementing a tiny tRPC client
 
-We'll first create a helper function for creating recursive proxies - `createRecursiveProxy`:
+## 🧙‍♀️ The TypeScript magic
 
-```twoslash include proxy
-interface ProxyCallbackOptions {
-  path: string[];
-  args: unknown[];
-}
+Let's start with the fun TypeScript magic to unlock the awesome autocompletion and typesafety we all know and love from using tRPC.
 
-type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
+We'll need to use recursive types so that we can infer arbitrary deep router structures. Also, we know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` on them respectively - in tRPC, we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions, so let's write some code!
 
-function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
-  const proxy: unknown = new Proxy(
-    {}, // dummy object since we don't have any client-side target we want to remap to
-    {
-      get(_obj, key) {
-        if (typeof key !== 'string' || key === 'then') {
-          // special case for if the proxy is accidentally treated
-          // like a PromiseLike (like in `Promise.resolve(proxy)`)
-          return undefined;
-        }
-        // Recursively compose the entire path until we call a function
-        return createRecursiveProxy(callback, [...path, key]);
-      },
-      apply(_1, _2, args) {
-        // Call the callback function with the entire path we
-        // recursively created and forward the arguments
-        return callback({
-          args,
-          path,
-        });
-      },
-    },
-  );
-
-  return proxy;
-}
-```
-
-```ts twoslash
-// @include: proxy
-```
-
-This looks a bit magical, what does this do?
-
-- The `get` method handles property accesses such as `post.byId`. The key is the property name we're accessing, so when we type `post` our `key` will be `post`, and when we type `post.byId` our `key` will be `byId`. The recursive proxy combines all of these keys into a final path, e.g. ["post", "byId", "query"], that we can use to determine the URL we want to call on the server.
-- The `apply` method is called when we call a function on the proxy, such as `.query(args)`. The `args` is the arguments we pass to the function, so when we call `post.byId.query(args)` our `args` will be our input, which we'll provide as query parameters or request body. We'll provide a `callback` function to the `createRecursiveProxy` function that will be called with the path and args. This callback will be a `fetch` request to our server.
-
-Now that we have this helper and knows what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`.
-
-```ts twoslash
-// @include: proxy
-// ---cut---
-import { TRPCResponse } from '@trpc/server/rpc';
-
-export const createTinyRPCClient = (baseUrl: string) =>
-  createRecursiveProxy(async (opts) => {
-    const fullPath = [...opts.path]; // e.g. ["post", "byId", "query"]
-    const method = fullPath.pop()! as 'query' | 'mutate';
-    // @trpc/server uses dot-separated paths for procedures
-    const path = fullPath.join('.'); // e.g. "post.byId"
-
-    let uri = `${baseUrl}/${path}`; // join users baseUrl with the path
-    const [input] = opts.args;
-    const stringifiedInput = input !== undefined && JSON.stringify(input);
-    let body: undefined | string = undefined;
-    if (stringifiedInput !== false) {
-      if (method === 'query') {
-        uri += `?input=${encodeURIComponent(stringifiedInput)}`;
-      } else {
-        body = stringifiedInput;
-      }
-    }
-    const json: TRPCResponse = await fetch(uri, {
-      method: method === 'query' ? 'GET' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body,
-    }).then((res) => res.json());
-
-    if ('error' in json) {
-      throw new Error(`Error: ${json.error.message}`);
-    }
-    return json.result.data;
-  }, []);
-//   ^? provide empty array as path to begin with
-```
-
-Most notably here is that our path is `.`-separated instead of `/`. This allows us to have a single API handler on the server which will process all requests, and not one for each procedure. If you're using a framework with filebased routing such as Next.js, you might recognize the catchall `/api/trpc/[trpc].ts` file which will match all procedure paths.
-
-This is all the code you'll need to call your tRPC procedures on your client as if they were local functions. On the surface, it looks like we're just calling the `.procedure.query` resolver functions via normal property accesses, but we're actaully crossing a network boundary so we can use server-side libraries such as Prisma without leaking database credentials.
-
-Now we want to get all the nice features from TypeScript with autocompletion and type safety for your paths and inputs. To do this, we'll need some TypeScript magic using generics.
-
-Again, we'll use recursion so that we can infer arbitrary deep router structures. We know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` on them respectively - we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions.
+The first thing we'll define is the type for our resolver functions (`query` and `mutate`):
 
 ```twoslash include resolver
 import type { AnyProcedure, ProcedureArgs } from "@trpc/server";
@@ -176,7 +94,7 @@ type Resolver<TProcedure extends AnyProcedure> = (
 
 Next, we'll need a type that will provide autocompletion of the path as we traverse the router object. Here's what we want:
 
-- If we're on a router, we want to be able to access it's procedures. (we'll get to this later)
+- If we're on a router, we want to be able to access it's sub-routers and procedures. (we'll get to this in a little bit)
 - If we're on a query procedure, we want to be able to call `.query` on it.
 - If we're on a mutation procedure, we want to be able to call `.mutate` on it.
 - If we're trying to access anything else, we want to get a type error indicating that procedure doesn't exist on the backend.
@@ -204,7 +122,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
 // @include: decorate
 ```
 
-Finally, we'll create a type that will recursively traverse the router and decorate the procedures with the `.query` and `.mutate` methods.
+Finally, we'll create a type that will recursively traverse the router and decorate all sub-routers and procedures along the way:
 
 ```twoslash include decoraterecord
 import type { AnyRouter, ProcedureRouterRecord } from "@trpc/server";
@@ -233,7 +151,108 @@ Let's digest this type a bit:
    - If the key maps to a procedure, we decorate the procedure using the `DecorateProcedure` type we created earlier.
    - If the key doesn't map to a procedure or router, we assign the `never` type which is like saying "this key doesn't exist" which will cause a type error if we try to access it.
 
-Finally, we'll need to use these types as we create the client. We'll add a generic to the `createTinyRPCClient` function that will accept any tRPC router type, and then we'll cast the return type of the function to the `DecoratedProcedureRecord` type we created earlier:
+## 🤯 The Proxy remapping
+
+Now that we got all the types setup, we need to actually implement the functionality which will augment the server's router definition on the client so we can invoke the procedures like normal functions.
+
+We'll first create a helper function for creating recursive proxies - `createRecursiveProxy`:
+
+:::info
+
+💻 This is the exact implementation we have in the tRPC codebase today, [see for yourself](https://github.com/trpc/trpc/blob/minitrpc/packages/server/src/shared/createProxy/index.ts)!
+
+:::
+
+```twoslash include proxy
+interface ProxyCallbackOptions {
+  path: string[];
+  args: unknown[];
+}
+
+type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
+
+function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
+  const proxy: unknown = new Proxy(
+    {
+      // dummy object since we don't have any client-side target
+      // we want to remap to, we just want to intercept the calls
+      // and make a request to the server
+    },
+    {
+      get(_obj, key) {
+        if (typeof key !== 'string' || key === 'then') {
+          // special case for if the proxy is accidentally treated
+          // like a PromiseLike (like in `Promise.resolve(proxy)`)
+          return undefined;
+        }
+        // Recursively compose the full path until a function is invoked
+        return createRecursiveProxy(callback, [...path, key]);
+      },
+      apply(_1, _2, args) {
+        // Call the callback function with the entire path we
+        // recursively created and forward the arguments
+        return callback({
+          path,
+          args,
+        });
+      },
+    },
+  );
+
+  return proxy;
+}
+```
+
+```ts twoslash
+// @include: proxy
+```
+
+This looks a bit magical, what does this do?
+
+- The `get` method handles property accesses such as `post.byId`. The key is the property name we're accessing, so when we type `post` our `key` will be `post`, and when we type `post.byId` our `key` will be `byId`. The recursive proxy combines all of these keys into a final path, e.g. ["post", "byId", "query"], that we can use to determine the URL we want to send a request to.
+- The `apply` method is called when we invoke a function on the proxy, such as `.query(args)`. The `args` is the arguments we pass to the function, so when we call `post.byId.query(args)` our `args` will be our input, which we'll provide as query parameters or request body depending on the type of procedure. The `createRecursiveProxy` takes in a callback function which we'll map the `apply` to with the path and args.
+
+Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyRouter`), and then we'll cast the return type to the `DecoratedProcedureRecord` type we created earlier:
+
+```twoslash include tinyrpc
+import { TRPCResponse } from '@trpc/server/rpc';
+
+export const createTinyRPCClient = <TRouter extends AnyRouter>(
+  baseUrl: string,
+) =>
+  createRecursiveProxy(async (opts) => {
+    const path = [...opts.path]; // e.g. ["post", "byId", "query"]
+    const method = path.pop()! as 'query' | 'mutate';
+    const dotPath = path.join('.'); // "post.byId" - this is the path procedures have on the backend
+    let uri = `${baseUrl}/${dotPath}`;
+
+    const [input] = opts.args;
+    const stringifiedInput = input !== undefined && JSON.stringify(input);
+    let body: undefined | string = undefined;
+    if (stringifiedInput !== false) {
+      if (method === 'query') {
+        uri += `?input=${encodeURIComponent(stringifiedInput)}`;
+      } else {
+        body = stringifiedInput;
+      }
+    }
+
+    const json: TRPCResponse = await fetch(uri, {
+      method: method === 'query' ? 'GET' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body,
+    }).then((res) => res.json());
+
+    if ('error' in json) {
+      throw new Error(`Error: ${json.error.message}`);
+    }
+    return json.result.data;
+  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+
+//   ^? provide empty array as path to begin with
+```
 
 ```ts twoslash
 // @include: proxy
@@ -241,14 +260,18 @@ Finally, we'll need to use these types as we create the client. We'll add a gene
 // @include: decorate
 // @include: decoraterecord
 // ---cut---
-export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
-  return createRecursiveProxy(async (opts) => {
-    // ...
-  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
-};
+// @include: tinyrpc
 ```
 
-And that's it! Create the client and provide it your server's url and you'll get full autocompletion and type safety when you call your procedures!
+Most notably here is that our path is `.`-separated instead of `/`. This allows us to have a single API handler on the server which will process all requests, and not one for each procedure. If you're using a framework with filebased routing such as Next.js, you might recognize the catchall `/api/trpc/[trpc].ts` file which will match all procedure paths.
+
+We also have a `TRPCResponse` type annotation on the `fetch`-request. This determines the JSONRPC-compliant response format that the server responds with. You can read more on that [here](https://trpc.io/docs/rpc). TL;DR, we get back either a `result` or an `error` object, which we can use to determine if the request was successful or not and do appropriate error handling if something went wrong.
+
+And that's it! This is all the code you'll need to call your tRPC procedures on your client as if they were local functions. On the surface, it looks like we're just calling the `.procedure.query` resolver functions via normal property accesses, but we're actaully crossing a network boundary so we can use server-side libraries such as Prisma without leaking database credentials.
+
+## Trying it out!
+
+Now, create the client and provide it your server's url and you'll get full autocompletion and type safety when you call your procedures!
 
 ```ts twoslash
 // @target: esnext
@@ -257,14 +280,7 @@ And that's it! Create the client and provide it your server's url and you'll get
 // @include: resolver
 // @include: decorate
 // @include: decoraterecord
-export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
-  return createRecursiveProxy(async (opts) => {
-    // ...
-  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
-};
-
-// @errors: 2339
-
+// @include: tinyrpc
 // @filename: router.ts
 // @include: router
 // @filename: client.ts
@@ -272,9 +288,11 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
 import type { AppRouter } from './router';
 import { createTinyRPCClient } from './tinyrpc';
 
-const client = createTinyRPCClient<AppRouter>('http://localhost:3000/api/trpc');
+const url = 'http://localhost:3000/api/trpc';
+const client = createTinyRPCClient<AppRouter>(url);
 //    ^?
 
+// @errors: 2339
 // 🧙‍♀️ magic autocompletion
 client.post.b;
 //           ^|
@@ -288,4 +306,13 @@ The full code for the client can be found [here](https://github.com/trpc/trpc/bl
 
 ## Conclusion
 
-I hope you enjoyed this article and learned something about how tRPC works. Obviously, there's a lot of stuff missing compared to the full client shipped in `@trpc/client` such as batching, subscriptions and links to alter the request flow, but if you want a really small client with just the bare minimum, this is all you need! We also didn't cover much of the server side of things today, maybe we'll cover that in a future article.
+I hope you enjoyed this article and learned something about how tRPC works. You should probably not use this to in favor of the @trpc/client which is only a couple of kbs bigger - it comes with a lot more flexibility than what we're showcasing here:
+
+- Links
+- Procedure batching
+- WebSockets / subscriptions
+- Nice error handling
+- Data transformers
+- Edge cases handling like when we don't get a tRPC-compliant response
+
+We also didn't cover much of the server side of things today, maybe we'll cover that in a future article.

@@ -68,13 +68,15 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
     : never;
 };
 
-export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) =>
+export const createTinyRPCClient = <TRouter extends AnyRouter>(
+  baseUrl: string,
+) =>
   createRecursiveProxy(async (opts) => {
-    const fullPath = [...opts.path]; // e.g. ["post", "byId", "query"]
-    const method = fullPath.pop()! as 'query' | 'mutate';
-    const path = fullPath.join('.'); // "post.byId" - this is the path procedures have on the backend
+    const path = [...opts.path]; // e.g. ["post", "byId", "query"]
+    const method = path.pop()! as 'query' | 'mutate';
+    const dotPath = path.join('.'); // "post.byId" - this is the path procedures have on the backend
+    let uri = `${baseUrl}/${dotPath}`;
 
-    let uri = `${url}/${path}`;
     const [input] = opts.args;
     const stringifiedInput = input !== undefined && JSON.stringify(input);
     let body: undefined | string = undefined;
@@ -85,6 +87,7 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) =>
         body = stringifiedInput;
       }
     }
+
     const json: TRPCResponse = await fetch(uri, {
       method: method === 'query' ? 'GET' : 'POST',
       headers: {
