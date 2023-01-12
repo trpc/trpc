@@ -135,7 +135,7 @@ export const appRouter = router({
 });
 ```
 
-## Piping (extending)
+## Piping(unstable) (extending)
 
 Piping is a powerful feature that allows you to extend middlewares in a typesafe manner.
 
