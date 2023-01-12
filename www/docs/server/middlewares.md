@@ -213,8 +213,8 @@ const barMiddleware = t.middleware(({ ctx, next }) => {
 
 // @errors: 2345
 // ❌ `ctx.a` does not overlap from `fooMiddleware` to `barMiddleware`
-const bazMiddleware = fooMiddleware.unstable_pipe(barMiddleware);
+fooMiddleware.unstable_pipe(barMiddleware);
 
 // ✅ `ctx.a` overlaps from `barMiddleware` and `fooMiddleware`
-const gooshMiddleware = barMiddleware.unstable_pipe(fooMiddleware);
+barMiddleware.unstable_pipe(fooMiddleware);
 ```
