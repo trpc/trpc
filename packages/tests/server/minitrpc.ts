@@ -16,27 +16,29 @@ interface ProxyCallbackOptions {
 
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
-const noop = () => {
-  // noop
-};
-
 function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
-  const proxy: unknown = new Proxy(noop, {
-    get(_obj, key) {
-      if (typeof key !== 'string' || key === 'then') {
-        // special case for if the proxy is accidentally treated
-        // like a PromiseLike (like in `Promise.resolve(proxy)`)
-        return undefined;
-      }
-      return createRecursiveProxy(callback, [...path, key]);
+  const proxy: unknown = new Proxy(
+    {}, // dummy object since we don't have any client-side target we want to remap to
+    {
+      get(_obj, key) {
+        if (typeof key !== 'string' || key === 'then') {
+          // special case for if the proxy is accidentally treated
+          // like a PromiseLike (like in `Promise.resolve(proxy)`)
+          return undefined;
+        }
+        // Recursively compose the entire path until we call a function
+        return createRecursiveProxy(callback, [...path, key]);
+      },
+      apply(_1, _2, args) {
+        // Call the callback function with the entire path we
+        // recursively created and forward the arguments
+        return callback({
+          args,
+          path,
+        });
+      },
     },
-    apply(_1, _2, args) {
-      return callback({
-        args,
-        path,
-      });
-    },
-  });
+  );
 
   return proxy;
 }
@@ -66,25 +68,25 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
     : never;
 };
 
-export const createMiniTRPCClient = <TRouter extends AnyRouter>(url: string) =>
+export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) =>
   createRecursiveProxy(async (opts) => {
-    const parts = [...opts.path];
-    const last = parts.pop()! as 'query' | 'mutate';
-    const path = parts.join('.');
+    const fullPath = [...opts.path]; // e.g. ["post", "byId", "query"]
+    const method = fullPath.pop()! as 'query' | 'mutate';
+    const path = fullPath.join('.'); // "post.byId" - this is the path procedures have on the backend
 
     let uri = `${url}/${path}`;
     const [input] = opts.args;
     const stringifiedInput = input !== undefined && JSON.stringify(input);
     let body: undefined | string = undefined;
     if (stringifiedInput !== false) {
-      if (last === 'query') {
+      if (method === 'query') {
         uri += `?input=${encodeURIComponent(stringifiedInput)}`;
       } else {
         body = stringifiedInput;
       }
     }
     const json: TRPCResponse = await fetch(uri, {
-      method: last === 'query' ? 'GET' : 'POST',
+      method: method === 'query' ? 'GET' : 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
