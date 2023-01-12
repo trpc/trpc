@@ -3,7 +3,7 @@ import '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { z } from 'zod';
-import { createMiniTRPCClient } from './minitrpc';
+import { createTinyRPCClient } from './minitrpc';
 
 if (!global.fetch) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -66,10 +66,10 @@ function createServer() {
   };
 }
 
-test('minitrpc', async () => {
+test('tinytrpc', async () => {
   const server = createServer();
 
-  const trpc = createMiniTRPCClient<AppRouter>(
+  const trpc = createTinyRPCClient<AppRouter>(
     `http://localhost:${server.port}`,
   );
 

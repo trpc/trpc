@@ -235,7 +235,12 @@ Let's digest this type a bit:
 
 Finally, we'll need to use these types as we create the client. We'll add a generic to the `createTinyRPCClient` function that will accept any tRPC router type, and then we'll cast the return type of the function to the `DecoratedProcedureRecord` type we created earlier:
 
-```twoslash include tinyrpc
+```ts twoslash
+// @include: proxy
+// @include: resolver
+// @include: decorate
+// @include: decoraterecord
+// ---cut---
 export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
   return createRecursiveProxy(async (opts) => {
     // ...
@@ -246,12 +251,20 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
 And that's it! Create the client and provide it your server's url and you'll get full autocompletion and type safety when you call your procedures!
 
 ```ts twoslash
+// @target: esnext
 // @filename: tinyrpc.ts
 // @include: proxy
 // @include: resolver
 // @include: decorate
 // @include: decoraterecord
-// @include: tinyrpc
+export const createTinyRPCClient = <TRouter extends AnyRouter>(url: string) => {
+  return createRecursiveProxy(async (opts) => {
+    // ...
+  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+};
+
+// @errors: 2339
+
 // @filename: router.ts
 // @include: router
 // @filename: client.ts
@@ -261,10 +274,14 @@ import { createTinyRPCClient } from './tinyrpc';
 
 const client = createTinyRPCClient<AppRouter>('http://localhost:3000/api/trpc');
 //    ^?
-async function main() {
-  const post = await client.post.byId.query({ id: '123' });
-  //     ^?
-}
+
+// 🧙‍♀️ magic autocompletion
+client.post.b;
+//           ^|
+
+// 👀 fully typesafe
+const post = await client.post.byId.query({ id: '123' });
+//     ^?
 ```
 
 The full code for the client can be found [here](https://github.com/trpc/trpc/blob/f08e36476fc0f09d512f63bfc1b225b417058dd0/packages/tests/server/minitrpc.ts):
