@@ -65,7 +65,7 @@ If you encounter a feature in tRPC that is marked as `unstable_` it means that t
 
 Yes, tRPC is very strict with [semantic versioning](https://semver.org/) and we will never introduce breaking changes in a minor version bump.
 
-With this, we also consider unexpected type errors when upgrading as a breaking change and will fix them as soon as possible, so please report [if you notice any](https://github.com/trpc/trpc/issues).
+With this, we also consider changes in `export`ed TypeScript `type`s as breaking changes _(apart from ones marked as `@internal` in the JSDoc)_ when upgrading as a breaking change and will fix them as soon as possible, so please report [if you notice any](https://github.com/trpc/trpc/issues).
 
 As an example, it took us 13 months between version `9.x` and `10.x` and in that time, we did not introduce any breaking changes.
 
