@@ -135,9 +135,13 @@ export const appRouter = router({
 });
 ```
 
-## Piping(unstable) (extending)
+## Extending middlewares
 
-Piping is a powerful feature that allows you to extend middlewares in a typesafe manner.
+:::info
+We have prefixed this as `unstable_` as it's a new API that might change its name in future versions, but the feature is well-tested, is running in production already, and we highly encourage you to use it.
+:::
+
+We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.
 
 Below we have an example of a middleware that extends a base middleware(foo). Like the context swapping example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
 
