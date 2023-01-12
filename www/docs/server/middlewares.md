@@ -91,7 +91,7 @@ export const appRouter = router({
 
 Context swapping in tRPC is a very powerful feature that allows you to create base procedures that can create base procedures that dynamically infers new context in a flexible and typesafe manner.
 
-Below we have an example of a a middleware that changes properties of the context, and procedures will receive the new context value:
+Below we have an example of a middleware that changes properties of the context, and procedures will receive the new context value:
 
 ```ts twoslash
 // @target: esnext
@@ -132,5 +132,48 @@ const protectedProcedure = publicProcedure.use(isAuthed);
 export const appRouter = router({
   userId: protectedProcedure.query(({ ctx }) => ctx.user.id),
   //                                                 ^?
+});
+```
+
+## Piping (extending)
+
+Piping is a powerful feature that allows you to extend middlewares in a typesafe manner.
+
+Below we have an example of a middleware that extends a base middleware(foo). Like the context swapping example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
+
+```ts twoslash
+// @target: esnext
+import { TRPCError, initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
+const middleware = t.middleware;
+
+// ---cut---
+
+const fooMiddleware = middleware((opts) => {
+  return opts.next({
+    ctx: {
+      foo: 'foo' as const,
+    },
+  });
+});
+
+const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
+  opts.ctx.foo;
+  //        ^?
+  return opts.next({
+    ctx: {
+      bar: 'bar' as const,
+    },
+  });
+});
+
+const procedure = publicProcedure.use(barMiddleware);
+
+export const appRouter = router({
+  example: procedure.query(({ ctx }) => ctx.bar),
+  //                                    ^?
 });
 ```

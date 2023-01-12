@@ -21,7 +21,7 @@ test('decorate independently', () => {
     });
   });
 
-  const barMiddleware = fooMiddleware.pipe((opts) => {
+  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
     expectTypeOf(opts.ctx).toEqualTypeOf<{
       user: User;
       foo: 'foo';
@@ -33,7 +33,7 @@ test('decorate independently', () => {
     });
   });
 
-  const bazMiddleware = barMiddleware.pipe((opts) => {
+  const bazMiddleware = barMiddleware.unstable_pipe((opts) => {
     expectTypeOf(opts.ctx).toEqualTypeOf<{
       user: User;
       foo: 'foo';
@@ -71,7 +71,7 @@ test('pipe middlewares - inlined', async () => {
     });
   });
 
-  const barMiddleware = fooMiddleware.pipe((opts) => {
+  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
     }>();
@@ -82,7 +82,7 @@ test('pipe middlewares - inlined', async () => {
     });
   });
 
-  const bazMiddleware = barMiddleware.pipe((opts) => {
+  const bazMiddleware = barMiddleware.unstable_pipe((opts) => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       foo: 'foo';
       bar: 'bar';
@@ -151,17 +151,19 @@ test('pipe middlewares - standalone', async () => {
     });
   });
 
-  const bazMiddleware = fooMiddleware.pipe(barMiddleware).pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      foo: 'foo';
-      bar: 'bar';
-    }>();
-    return opts.next({
-      ctx: {
-        baz: 'baz' as const,
-      },
+  const bazMiddleware = fooMiddleware
+    .unstable_pipe(barMiddleware)
+    .unstable_pipe((opts) => {
+      expectTypeOf(opts.ctx).toMatchTypeOf<{
+        foo: 'foo';
+        bar: 'bar';
+      }>();
+      return opts.next({
+        ctx: {
+          baz: 'baz' as const,
+        },
+      });
     });
-  });
 
   const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
@@ -236,7 +238,7 @@ test('pipe middlewares - failure', async () => {
   });
 
   // @ts-expect-error barMiddleware accessing invalid property
-  const bazMiddleware = fooMiddleware.pipe(barMiddleware);
+  const bazMiddleware = fooMiddleware.unstable_pipe(barMiddleware);
 
   const testProcedure = t.procedure.use(bazMiddleware);
   testProcedure.query(({ ctx }) => {
@@ -266,7 +268,7 @@ test('pipe middlewares - override', async () => {
     });
   });
 
-  const barMiddleware = fooMiddleware.pipe((opts) => {
+  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
     // @ts-expect-error foundation has been overwritten
     opts.ctx.init.foundation;
     expectTypeOf(opts.ctx).toMatchTypeOf<{
@@ -332,7 +334,7 @@ test('pipe middlewares - failure', async () => {
     });
   });
 
-  const barMiddleware = fooMiddleware.pipe((opts) => {
+  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
     expectTypeOf(opts.ctx).toMatchTypeOf<{
       init: 'override';
       foo: 'foo';

@@ -55,7 +55,7 @@ export interface MiddlewareBuilder<
   /**
    * Create a new builder based on the current middleware builder
    */
-  pipe<$Params extends ProcedureParams>(
+  unstable_pipe<$Params extends ProcedureParams>(
     fn: {
       _config: TRoot['_config'];
       _meta: TRoot['_meta'];
@@ -147,7 +147,6 @@ export type MiddlewareFunction<
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
-  piped?: Array<MiddlewareFunction<TParams, TParamsAfter>>;
 };
 
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
@@ -156,7 +155,7 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return {
       _middlewares: middlewares,
-      pipe(middlewareBuilderOrFn) {
+      unstable_pipe(middlewareBuilderOrFn) {
         const pipedMiddleware =
           '_middlewares' in middlewareBuilderOrFn
             ? middlewareBuilderOrFn._middlewares
