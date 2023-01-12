@@ -49,6 +49,16 @@ No, not currently, in order for tRPC to do that automatically, we need something
 
 > _Related discussion: https://github.com/trpc/trpc/discussions/2150_
 
+## Can I apply a middleware to a full router?
+
+No, but you can use [base procedures](procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
+
+## Does tRPC work with Next.js 13 App Layouts & RSC?
+
+Yes, tRPC works with Next.js 13 App Layouts & React Server Components, but we have not built any official examples of it yet.
+
+For more information, you can read & follow [this issue](https://github.com/trpc/trpc/issues/3297) where we've referenced a few examples of it.
+
 ## Am I safe with using features marked as as `unstable_`?
 
 **tl;dr**: Yes!
@@ -75,16 +85,6 @@ When tRPC started and had very few users and we often iterated on the API design
 - [Version 10](https://trpc.io/blog/announcing-trpc-10) which we released 14 months after v9 should be seen as the real "version 2" of tRPC where we did any fundamental changes to the API decisions. _<small>(2 is 10 in binary, amirite?)</small>_
 
 We expect the API to be stable now and are planning to release codemods for any breaking changes in the future, just like we did with the v9->v10 upgrade.
-
-## Can I apply a middleware to a full router?
-
-No, but you can use [base procedures](procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
-
-## Does tRPC work with Next.js 13 App Layouts & RSC?
-
-Yes, tRPC works with Next.js 13 App Layouts & React Server Components, but we have not built any official examples of it yet.
-
-For more information, you can read & follow [this issue](https://github.com/trpc/trpc/issues/3297) where we've referenced a few examples of it.
 
 ---
 
