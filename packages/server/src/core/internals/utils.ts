@@ -1,4 +1,4 @@
-import { Simplify } from '@trpc/server/types';
+import { Simplify } from '../../types';
 import { ProcedureParams } from '../procedure';
 
 /**
