@@ -11,7 +11,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 
 In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
-```ts twoslash
+```twoslash include admin
 import { TRPCError, initTRPC } from '@trpc/server';
 
 interface Context {
@@ -22,9 +22,12 @@ interface Context {
   };
 }
 
-export const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create();
+export const middleware = t.middleware;
+export const publicProcedure = t.procedure;
+export const router = t.router;
 
-const isAdmin = t.middleware(async ({ ctx, next }) => {
+const isAdmin = middleware(async ({ ctx, next }) => {
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
@@ -35,14 +38,26 @@ const isAdmin = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-const adminProcedure = t.procedure.use(isAdmin);
+export const adminProcedure = publicProcedure.use(isAdmin);
+```
 
-const adminRouter = t.router({
+```ts twoslash
+// @include: admin
+```
+
+```ts twoslash
+// @filename: trpc.ts
+// @include: admin
+// @filename: _app.ts
+// ---cut---
+import { adminProcedure, publicProcedure, router } from './trpc';
+
+const adminRouter = router({
   secretPlace: adminProcedure.query(() => 'a key'),
 });
 
-export const appRouter = t.router({
-  foo: t.procedure.query(() => 'bar'),
+export const appRouter = router({
+  foo: publicProcedure.query(() => 'bar'),
   admin: adminRouter,
 });
 ```
