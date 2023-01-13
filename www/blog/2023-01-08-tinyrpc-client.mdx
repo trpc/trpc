@@ -71,7 +71,7 @@ What we want to do is to map the `post.byId.query()` to a GET request to our ser
 
 ## Implementing a tiny tRPC client
 
-## 🧙‍♀️ The TypeScript magic
+### 🧙‍♀️ The TypeScript magic
 
 Let's start with the fun TypeScript magic to unlock the awesome autocompletion and typesafety we all know and love from using tRPC.
 
@@ -151,7 +151,7 @@ Let's digest this type a bit:
    - If the key maps to a procedure, we decorate the procedure using the `DecorateProcedure` type we created earlier.
    - If the key doesn't map to a procedure or router, we assign the `never` type which is like saying "this key doesn't exist" which will cause a type error if we try to access it.
 
-## 🤯 The Proxy remapping
+### 🤯 The Proxy remapping
 
 Now that we got all the types setup, we need to actually implement the functionality which will augment the server's router definition on the client so we can invoke the procedures like normal functions.
 
