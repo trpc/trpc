@@ -11,7 +11,7 @@ You are able to add middleware(s) to a procedure with the `t.procedure.use()` me
 
 In the example below, any call to a `protectedProcedure` will ensure that the user is an "admin" before executing.
 
-```ts
+```ts twoslash
 import { TRPCError, initTRPC } from '@trpc/server';
 
 interface Context {
@@ -55,17 +55,17 @@ See [Error Handling](error-handling.md) to learn more about the `TRPCError` thro
 
 In the example below timings for queries are logged automatically.
 
-```ts
-// trpc.ts
+```twoslash include trpclogger
 import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.context<Context>().create();
+const t = initTRPC.create();
 
 export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
-export const loggerMiddleware = middleware(async ({ path, type, next }) => {
+declare function logMock(...args: any[]): void;
+// ---cut---
+const loggerMiddleware = middleware(async ({ path, type, next }) => {
   const start = Date.now();
   const result = await next();
   const durationMs = Date.now() - start;
@@ -76,10 +76,19 @@ export const loggerMiddleware = middleware(async ({ path, type, next }) => {
   return result;
 });
 
-export const loggedProcedure = procedure.use(loggerMiddleware);
+export const loggedProcedure = publicProcedure.use(loggerMiddleware);
+```
 
-// _app.ts
-import { router, loggedProcedure } from '../trpc';
+```ts twoslash
+// @include: trpclogger
+```
+
+```ts twoslash
+// @filename: trpc.ts
+// @include: trpclogger
+// @filename: _app.ts
+// ---cut---
+import { loggedProcedure, router } from './trpc';
 
 export const appRouter = router({
   foo: loggedProcedure.query(() => 'bar'),
