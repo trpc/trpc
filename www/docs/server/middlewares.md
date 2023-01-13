@@ -138,7 +138,7 @@ export const appRouter = router({
 ## Extending middlewares
 
 :::info
-We have prefixed this as `unstable_` as it's a new API that might change its name in future versions, but the feature is well-tested, is running in production already, and we highly encourage you to use it.
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](faq#unstable).
 :::
 
 We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.
