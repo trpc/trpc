@@ -156,18 +156,18 @@ const middleware = t.middleware;
 
 // ---cut---
 
-const fooMiddleware = middleware((opts) => {
-  return opts.next({
+const fooMiddleware = middleware(({ next }) => {
+  return next({
     ctx: {
       foo: 'foo' as const,
     },
   });
 });
 
-const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-  opts.ctx.foo;
-  //        ^?
-  return opts.next({
+const barMiddleware = fooMiddleware.unstable_pipe(({ ctx, next }) => {
+  ctx.foo;
+  //   ^?
+  return next({
     ctx: {
       bar: 'bar' as const,
     },
