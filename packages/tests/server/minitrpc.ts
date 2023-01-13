@@ -18,7 +18,9 @@ type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
 function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
   const proxy: unknown = new Proxy(
-    {}, // dummy object since we don't have any client-side target we want to remap to
+    () => {
+      // dummy object since we don't have any client-side target we want to remap to
+    },
     {
       get(_obj, key) {
         if (typeof key !== 'string' || key === 'then') {
