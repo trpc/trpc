@@ -21,6 +21,7 @@ import {
 } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { createContext } from 'react';
+import { TRPCQueryKey } from './getQueryKey';
 
 export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
@@ -95,14 +96,14 @@ export interface TRPCContextState<
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
   fetchQuery: (
-    pathAndInput: [path: string, ...args: unknown[]],
+    queryKey: TRPCQueryKey,
     opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
   ) => Promise<unknown>;
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfiniteQuery: (
-    pathAndInput: [path: string, ...args: unknown[]],
+    queryKey: TRPCQueryKey,
     opts?: TRPCFetchInfiniteQueryOptions<
       unknown,
       TRPCClientError<TRouter>,
@@ -113,7 +114,7 @@ export interface TRPCContextState<
    * @link https://react-query.tanstack.com/guides/prefetching
    */
   prefetchQuery: (
-    pathAndInput: [path: string, ...args: unknown[]],
+    queryKey: TRPCQueryKey,
     opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
   ) => Promise<void>;
 
@@ -121,7 +122,7 @@ export interface TRPCContextState<
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfiniteQuery: (
-    pathAndInput: [path: string, ...args: unknown[]],
+    queryKey: TRPCQueryKey,
     opts?: TRPCFetchInfiniteQueryOptions<
       unknown,
       TRPCClientError<TRouter>,
@@ -133,7 +134,7 @@ export interface TRPCContextState<
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidateQueries: (
-    pathAndInput?: [string, unknown?] | string,
+    queryKey: TRPCQueryKey,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ) => Promise<void>;
@@ -141,52 +142,45 @@ export interface TRPCContextState<
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientresetqueries
    */
-  resetQueries:
-    | ((
-        pathAndInput?: [string, unknown?] | string,
-        filters?: ResetQueryFilters,
-        options?: ResetOptions,
-      ) => Promise<void>)
-    | ((filters?: ResetQueryFilters, options?: ResetOptions) => Promise<void>);
+  resetQueries: (
+    queryKey: TRPCQueryKey,
+    filters?: ResetQueryFilters,
+    options?: ResetOptions,
+  ) => Promise<void>;
 
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
    */
-  refetchQueries:
-    | ((
-        pathAndInput: [string, unknown?],
-        filters?: RefetchQueryFilters,
-        options?: RefetchOptions,
-      ) => Promise<void>)
-    | ((
-        filters?: RefetchQueryFilters,
-        options?: RefetchOptions,
-      ) => Promise<void>);
+  refetchQueries: (
+    queryKey: TRPCQueryKey,
+    filters?: RefetchQueryFilters,
+    options?: RefetchOptions,
+  ) => Promise<void>;
 
   /**
    * @link https://react-query.tanstack.com/guides/query-cancellation
    */
   cancelQuery: (
-    pathAndInput: [string, unknown?],
+    queryKey: TRPCQueryKey,
     options?: CancelOptions,
   ) => Promise<void>;
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
   setQueryData: (
-    pathAndInput: [string, unknown?],
+    queryKey: TRPCQueryKey,
     updater: Updater<unknown | undefined, unknown | undefined>,
     options?: SetDataOptions,
   ) => void;
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
-  getQueryData: (pathAndInput: [string, unknown?]) => unknown | undefined;
+  getQueryData: (queryKey: TRPCQueryKey) => unknown | undefined;
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteQueryData: (
-    pathAndInput: [string, unknown?],
+    queryKey: TRPCQueryKey,
     updater: Updater<
       InfiniteData<unknown> | undefined,
       InfiniteData<unknown> | undefined
@@ -197,7 +191,7 @@ export interface TRPCContextState<
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteQueryData: (
-    pathAndInput: [string, unknown?],
+    queryKey: TRPCQueryKey,
   ) => InfiniteData<unknown> | undefined;
 }
 export const TRPCContext = createContext(null as any);
