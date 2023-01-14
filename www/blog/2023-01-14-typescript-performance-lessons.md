@@ -1,5 +1,5 @@
 ---
-slug: ts-perf
+slug: typescript-performance-lessons
 title: TypeScript performance lessons while refactoring for v10
 author: Sachin Raja
 author_title: tRPC Core Team Member
@@ -21,9 +21,9 @@ While tRPC was in `v9`, we began seeing reports from developers that their large
 
 Your library may not be slow _now_, but it's important to keep an eye on performance as your library grows and changes. Automated testing can remove an immense burden from your library authoring (and application building!) by _programatically_ testing your library code on each commit.
 
-For tRPC, we ensure this by [generating](https://github.com/trpc/trpc/blob/9fc2d06a8924da73e10b9d4497f3a1f53de706ed/scripts/generateBigBoi.ts) and [testing](https://github.com/trpc/trpc/blob/9fc2d06a8924da73e10b9d4497f3a1f53de706ed/packages/tests/server/react/bigBoi.test.tsx) a router with 3,500 procedures and 1,000 routers. We test all three pieces of the library (server, vanilla client, and the React client) because they all have different code paths. In the past, we have seen regressions that are isolated to one section of the library and rely on our tests to show us when those unexpected behaviors occur. (We still do [want to do more](https://github.com/trpc/trpc/issues/2892) to measure compilation times)
+For tRPC, we do our best to ensure this by [generating](https://github.com/trpc/trpc/blob/9fc2d06a8924da73e10b9d4497f3a1f53de706ed/scripts/generateBigBoi.ts) and [testing](https://github.com/trpc/trpc/blob/9fc2d06a8924da73e10b9d4497f3a1f53de706ed/packages/tests/server/react/bigBoi.test.tsx) a router with 3,500 procedures and 1,000 routers. But this only tests how far we can push the TS compiler before it breaks and not how long type-checking takes. We test all three pieces of the library (server, vanilla client, and the React client) because they all have different code paths. In the past, we have seen regressions that are isolated to one section of the library and rely on our tests to show us when those unexpected behaviors occur. (We still do [want to do more](https://github.com/trpc/trpc/issues/2892) to measure compilation times)
 
-tRPC is not a runtime-heavy library so our performance metrics are centered around type-checking. Therefore, our tests keep us mindful of:
+tRPC is not a runtime-heavy library so our performance metrics are centered around type-checking. Therefore, we stay mindful of:
 
 - Being slow to type-check using `tsc`
 - Having a large initial load time
@@ -33,7 +33,7 @@ The last point is one that the tRPC must pay attention to the most. You **never*
 
 ## How I found performance opportunities in tRPC
 
-There is always a tradeoff between TypeScript accuracy and compiler performance. Both are important concerns for other developers so we must be mindful of how we write types. Will it be possible for an application to run into severe errors because a certain type is "too loose"? Is the performance gain worth it?
+There is always a tradeoff between TypeScript accuracy and compiler performance. Both are important concerns for other developers so we must be extremely conscious of how we write types. Will it be possible for an application to run into severe errors because a certain type is "too loose"? Is the performance gain worth it?
 
 Is there even going to be a meaningful performance gain at all? Great question.
 
@@ -43,7 +43,7 @@ Let's have a look at _how_ to find moments for performance improvements in TypeS
 
 TypeScript has a built-in [tracing tool](https://github.com/microsoft/TypeScript/wiki/Performance-Tracing) that can help you find the bottleneck in your types. It's not perfect, but it's the best tool available.
 
-It's ideal to test your library on a real-world sample app to simulate what your libary is doing for real developers. For tRPC, I created a basic [T3 app](https://create.t3.gg/) resembling what users work with in a real-world app.
+It's ideal to test your library on a real-world app to simulate what your libary is doing for real developers. For tRPC, I created a basic [T3 app](https://create.t3.gg/) resembling what many of our users work with.
 
 Here's the steps I followed to trace tRPC:
 
@@ -55,12 +55,15 @@ Here's the steps I followed to trace tRPC:
 tsc --generateTrace ./trace --incremental false
 ```
 
-3. You'll be given a `trace/trace.json` file on your machine. You can open that file in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/) or chrome://tracing.
+3. You'll be given a `trace/trace.json` file on your machine. You can open that file in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/) or `chrome://tracing`.
 
 This is where things get interesting and we can start to learn about the performance profile of the types in the application. Here's what the first trace looked like:
 ![trace bar showing that src/pages/index.ts took 332ms to type-check](https://user-images.githubusercontent.com/58836760/190300723-5366674f-2fe0-48e9-8a00-7a8bc85b5c91.png)
 
-A longer bar means more time spent performing that process. I've selected the top green bar for this screenshot, indicating that `src/pages/index.ts` is the bottleneck. Under the `Duration` field, you'll see that it took 332ms - an enormous amount of time to spend type-checking! The blue `checkVariableDeclaration` bar tells us the compiler spent most of its time on one variable: our React Query `utils = trpc.useContext()`. (TODO: Sachin, where in this graphic is useContext being shown? How does our reader follow you from `checkVariableDeclaration` to "oh, that's useContext()? Do we need to write? "When I click on the blue bar, I see that the `trpc.useContext()` variable is responsible.")
+A longer bar means more time spent performing that process. I've selected the top green bar for this screenshot, indicating that `src/pages/index.ts` is the bottleneck. Under the `Duration` field, you'll see that it took 332ms - an enormous amount of time to spend type-checking! The blue `checkVariableDeclaration` bar tells us the compiler spent most of its time on one variable.
+Clicking on that bar will tell us which one it is:
+![trace info showing the variable's position is 275](https://user-images.githubusercontent.com/58836760/212483649-65e30d0f-497b-4af4-a58d-57f83e92a273.png)
+The `pos` field reveals the position of the variable in the file's text. Going to that position in `src/pages/index.ts` reveals that the culprit is `utils = trpc.useContext()`!
 
 But how could this be? We're just using a simple hook! Let's look at the code:
 
@@ -74,7 +77,6 @@ const Home: NextPage = () => {
   const utils = trpc.useContext();
 
   utils.r49.greeting.invalidate();
-  utils.r44.greeting3.setData('hello from tRPC');
 };
 
 export default Home;
@@ -96,7 +98,7 @@ type DecorateProcedure<
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
-  // ... and so on
+  // ... and so on for all the other React Query utilities
 };
 
 export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
@@ -115,11 +117,11 @@ Okay, now we have some things to unpack and learn about. Let's figure out what t
 
 We have a recursive type `DecoratedProcedureUtilsRecord` that walks through all the procedures in the router and "decorates" (adds methods to) them with the React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation).
 
-In tRPC v10 we still support old `v9` routers, but `v10` clients do not calling procedures from `v9` routers. So for each procedure we check if it's a `v9` procedure (`extends LegacyV9ProcedureTag`) and strip it out if so. It's all a lot of work for TypeScript to do...**if it's not lazily evaluated**.
+In tRPC v10 we still support old `v9` routers, but `v10` clients cannot call procedures from `v9` routers. So for each procedure we check if it's a `v9` procedure (`extends LegacyV9ProcedureTag`) and strip it out if so. It's all a lot of work for TypeScript to do...**if it's not lazily evaluated**.
 
 ### Lazy evaluation
 
-The problem here is that TypeScript is evaluating all of this code in the type system, even though it's not used immediately. TypeScript defers evaluation of properties on **objects** so theoretically our type above should get lazy evaulation...right?
+The problem here is that TypeScript is evaluating all of this code in the type system, even though it's not used immediately. Our code is only using `utils.r49.greeting.invalidate` so TypeScript should only need to unwrap the `r49` property (a router), then the `greeting` property (a procedure), and finally the `invalidate` function for that procedure. No other types are needed in that code and immediately finding the type for every React Query utility method for all your tRPC procedures would unnecessarily slow TypeScript down. TypeScript defers type evaluation of properties on **objects** until they are directly used so theoretically our type above should get lazy evaluation...right?
 
 Well, it's not _exactly_ an object. There's actually a type wrapping the entire thing: `OmitNeverKeys`. This type is a utility that removes keys that have the value `never` from an object. This is the part where we strip off the v9 procedures so those properties don't show up in Intellisense.
 
@@ -131,17 +133,18 @@ How can we fix this? Let's change our types to _do less_.
 
 We need to find a way for the `v10` API to adapt to the legacy `v9` routers more gracefully. New tRPC projects should not suffer from the reduced TypeScript performance of [interop mode](/docs/migrate-from-v9-to-v10#using-interop).
 
-The idea is to rearrange the core types themselves. `v9` procedures are different entities than `v10` procedures so they shouldn't share the same space in our library code. On the tRPC server side, this means we had some work to do to store the types on different fields in the router instead of a single `record` field (the `DecoratedProcedureUtilsRecord` from above).
+The idea is to rearrange the core types themselves. `v9` procedures are different entities than `v10` procedures so they shouldn't share the same space in our library code. On the tRPC server side, this means we had some work to do to store the types on different fields in the router instead of a single `record` field (see the `DecoratedProcedureUtilsRecord` from above).
 
 We made a change so `v9` routers inject their procedures into a `legacy` field when they are converted to `v10` routers.
 
 Old types:
 
 ```ts
-export type V10Router<TProcedures> = {
-  procedures: TProcedures;
+export type V10Router<TProcedureRecord> = {
+  record: TProcedureRecord;
 };
 
+// convert a v9 interop router to a v10 router
 export type MigrateV9Router<TV9Router extends V9Router> = V10Router<{
   [TKey in keyof TV9Router['procedures']]: MigrateProcedure<
     TV9Router['procedures'][TKey]
@@ -150,13 +153,13 @@ export type MigrateV9Router<TV9Router extends V9Router> = V10Router<{
 }>;
 ```
 
-That `LegacyV9ProcedureTag` is so we can differentiate between v9 and v10 procedures on the type level and enforce that v9 procedures are not called from v10 clients.
+If you recall the `DecoratedProcedureUtilsRecord` type above, you can see that we attached the tag here to differentiate between `v9` and `v10` procedures on the type level and enforce that `v9` procedures are not called from `v10` clients.
 
 New types:
 
 ```ts
-export type V10Router<TProcedures> = {
-  procedures: TProcedures;
+export type V10Router<TProcedureRecord> = {
+  record: TProcedureRecord;
   // by default, no legacy procedures
   legacy: {};
 };
@@ -172,7 +175,7 @@ export type MigrateV9Router<TV9Router extends V9Router> = {
 } & V10Router</* empty object, v9 routers have no v10 procedures to pass */ {}>;
 ```
 
-Now, we can remove `OmitNeverKeys` and stop forcing TypeScript to fully evaluate the huge `DecoratedProcedureUtilsRecord` type. We can also remove the filtering for v9 procedures with `LegacyV9ProcedureTag`.
+Now, we can remove `OmitNeverKeys` because the procedures are pre-sorted so a router's `record` property type will contain all the `v10` procedures and its `legacy` property type will contain all the `v9` procedures. We no longer force TypeScript to fully evaluate the huge `DecoratedProcedureUtilsRecord` type. We can also remove the filtering for`v9`procedures with `LegacyV9ProcedureTag`.
 
 ## Did it work?
 
