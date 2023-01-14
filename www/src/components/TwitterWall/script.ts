@@ -65,32 +65,71 @@ const flattenTweets = (tweets: any, users: any) => {
   });
 };
 
-oauth.get(
-  'https://api.twitter.com/1.1/collections/entries.json?id=custom-1441435105910796291',
-  env.TWITTER_ACCESS_TOKEN,
-  env.TWITTER_ACCESS_TOKEN_SECRET,
-  (err: any, data: any) => {
-    const jsonParsed = JSON.parse(data);
-    const tweets = jsonParsed?.objects?.tweets;
-    const users = jsonParsed?.objects?.users;
+function req(pathname: string): Promise<any> {
+  console.log('fetching', pathname);
+  return new Promise((resolve, reject) => {
+    oauth.get(
+      `https://api.twitter.com${pathname}`,
+      env.TWITTER_ACCESS_TOKEN,
+      env.TWITTER_ACCESS_TOKEN_SECRET,
+      (err, data) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        try {
+          resolve(JSON.parse(data?.toString() as string));
+        } catch (err) {
+          reject(err);
+        }
+      },
+    );
+  });
+}
 
-    if (!tweets || !users) {
-      console.log(jsonParsed);
-      console.log('Error', err);
-      console.log('An error occurred while fetching the tweets, exiting...');
-      process.exit(1);
-    }
+async function getCollection() {
+  const json = await req(
+    '/1.1/collections/entries.json?id=custom-1441435105910796291',
+  );
 
-    const flattenedTweets = flattenTweets(tweets, users);
+  const tweets = json?.objects?.tweets;
+  const users = json?.objects?.users;
 
-    const json = JSON.stringify(flattenedTweets, null, 2);
-    const text = [
-      `// prettier-ignore`,
-      `// eslint-disable`,
-      `export const tweets = ${json}`,
-      ``,
-    ].join('\n');
+  if (!tweets || !users) {
+    throw new Error('An error occurred while fetching the tweet');
+  }
 
-    fs.writeFileSync(__dirname + '/script.output.ts', text);
-  },
-);
+  const flattenedTweets = flattenTweets(tweets, users);
+
+  return flattenedTweets;
+}
+
+async function getTweets(opts: Array<{ id: string; date: string }>) {
+  const ids = opts
+    .map((it) => ({ ...it, date: Date.parse(it.date) }))
+    .sort((a, b) => b.date - a.date)
+    .map((it) => it.id)
+    .join(',');
+  const tweets = await req(
+    `/2/tweets?ids=${ids}&tweet.fields=attachments,author_id,conversation_id,created_at,edit_history_tweet_ids,entities,geo,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,source,text,withheld&expansions=attachments.media_keys,attachments.poll_ids,author_id,edit_history_tweet_ids,entities.mentions.username,geo.place_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id&media.fields=alt_text,duration_ms,height,media_key,preview_image_url,public_metrics,type,url,variants,width&user.fields=id,name,public_metrics,profile_image_url`,
+  );
+
+  return tweets;
+}
+async function main() {
+  const collection = await getCollection();
+
+  const tweets = await getTweets(collection);
+
+  const text = [
+    `// prettier-ignore`,
+    `// eslint-disable`,
+    `export const tweets = ${JSON.stringify(tweets, null, 4)}`,
+    ``,
+  ].join('\n');
+
+  fs.writeFileSync(__dirname + '/script.output.ts', text);
+}
+main().catch((err) => {
+  throw err;
+});

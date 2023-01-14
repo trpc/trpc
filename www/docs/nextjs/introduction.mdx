@@ -8,15 +8,15 @@ slug: /nextjs
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
+Next.js makes it easy for you to build your client and server together in one codebase. tRPC makes it easy to share types between them, ensuring typesafety for your application's data fetching.
+
 :::tip
 If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](example-apps)
 :::
 
-Next.js makes it easy for you to build your client and server together in one codebase. tRPC makes it easy to share types between them, ensuring typesafety for your application's data fetching.
-
 ## Recommended file structure
 
-We recommend a file structure like this one but it is not enforced by tRPC. This is what you'll get when starting from [the examples](/main/example-apps.mdx).
+We recommend a file structure like this one, although it is not enforced by tRPC. This is what you'll get when starting from [the examples](/main/example-apps.mdx).
 
 ```graphql
 .
@@ -145,6 +145,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/routers/_app';
 
 // export API handler
+// @see https://trpc.io/docs/api-handler
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: () => ({}),
@@ -204,12 +205,12 @@ export const trpc = createTRPCNext<AppRouter>({
   /**
    * @link https://trpc.io/docs/ssr
    **/
-  ssr: true,
+  ssr: false,
 });
 ```
 
-:::info
-createTRPCNext does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+:::note
+`createTRPCNext` does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
 :::
 
 ### 5. Configure `_app.tsx`
@@ -301,4 +302,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/authorization), [middlewares](/docs/middlewares), and [error handling](/docs/error-handling).
 
-You can also find usual information about [queries](react-queries) and [mutations](react-mutations) now that you're using `@trpc/react-query`.
+You can also find usual information about [queries](useQuery) and [mutations](useMutation) now that you're using `@trpc/react-query`.

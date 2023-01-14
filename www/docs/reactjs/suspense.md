@@ -5,25 +5,22 @@ sidebar_label: Suspense (Experimental)
 slug: /suspense
 ---
 
+:::info
 
-:::caution
-- `useSuspense` & `useSuspenseInfiniteQuery` are *experimental* features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
+- `useSuspense` & `useSuspenseInfiniteQuery` are _experimental_ features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
 - Ensure you're on the latest version of React
-- When initializing `createTRPCReact` or `createTRPCNext`  you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
+- When initializing `createTRPCReact` or `createTRPCNext` you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
 - If you use suspense with [tRPC's _automatic_ SSR in Next.js](ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
 :::
-
 
 ## Usage
 
 :::tip
 
-`useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-*tuple*, to make it easy to directly use your data and renaming the variable to something descriptive
+`useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
 
 :::
-
-
 
 ```twoslash include server
 // @target: esnext
@@ -43,7 +40,7 @@ const appRouter = t.router({
   post: t.router({
     all: t.procedure
       .input(
-        z.object({ 
+        z.object({
           cursor: z.string().optional(),
         })
       )
@@ -55,7 +52,7 @@ const appRouter = t.router({
       }),
     byId: t.procedure
       .input(
-        z.object({ 
+        z.object({
           id: z.string(),
         })
       )
@@ -84,42 +81,37 @@ export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>(
 
 ### Enabling Suspense
 
-
 ```ts
 // @filename: utils/trpc.tsx
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server';
 
-export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
+export const trpc = createTRPCReact<
+  AppRouter,
+  unknown,
+  'ExperimentalSuspense'
+>();
 ```
 
 ### `useSuspenseQuery()`
 
-
-
 ```tsx twoslash
 // @target: esnext
 // @include: server
-
 // ---cut---
-
-
 // @filename: pages/index.tsx
 import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {
-  const [post, postQuery] = trpc.post.byId.useSuspenseQuery({ id: "1" });
+  const [post, postQuery] = trpc.post.byId.useSuspenseQuery({ id: '1' });
   //      ^?
-  
-  return <>{/* ... */}</>
+
+  return <>{/* ... */}</>;
 }
 ```
 
-
 ### `useInfiniteSuspenseQuery()`
-
-
 
 ```tsx
 // @filename: pages/index.tsx
@@ -127,14 +119,18 @@ import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {
-  const [pages, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery({}, {
-    getNextPageParam(lastPage) {
-      return lastPage.nextCursor;
+  const [pages, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
+    {},
+    {
+      getNextPageParam(lastPage) {
+        return lastPage.nextCursor;
+      },
     },
-  });
+  );
 
-  const { isFetching, isFetchingNextPage, fetchNextPage, hasNextPage } = allPostsQuery;
-  
-  return <>{/* ... */}</>
+  const { isFetching, isFetchingNextPage, fetchNextPage, hasNextPage } =
+    allPostsQuery;
+
+  return <>{/* ... */}</>;
 }
 ```

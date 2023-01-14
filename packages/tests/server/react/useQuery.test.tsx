@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -31,6 +32,16 @@ const ctx = konn()
             }),
           )
           .query(() => '__result' as const),
+        byIdWithSerializable: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
+            }),
+          )
+          .query(() => ({
+            id: 1,
+            date: new Date(),
+          })),
         list: t.procedure
           .input(
             z.object({
@@ -65,42 +76,70 @@ const ctx = konn()
   })
   .done();
 
-test('useQuery()', async () => {
-  const { proxy, App } = ctx;
-  function MyComponent() {
-    const query1 = proxy.post.byId.useQuery({
-      id: '1',
-    });
+describe('useQuery()', () => {
+  test('loading data', async () => {
+    const { proxy, App } = ctx;
+    function MyComponent() {
+      const query1 = proxy.post.byId.useQuery({
+        id: '1',
+      });
 
-    expect(query1.trpc.path).toBe('post.byId');
+      expect(query1.trpc.path).toBe('post.byId');
 
-    // @ts-expect-error Should not exist
-    proxy.post.byId.useInfiniteQuery;
-    const utils = proxy.useContext();
-
-    useEffect(() => {
-      utils.post.byId.invalidate();
       // @ts-expect-error Should not exist
-      utils.doesNotExist.invalidate();
-    }, [utils]);
+      proxy.post.byId.useInfiniteQuery;
+      const utils = proxy.useContext();
 
-    if (!query1.data) {
-      return <>...</>;
+      useEffect(() => {
+        utils.post.byId.invalidate();
+        // @ts-expect-error Should not exist
+        utils.doesNotExist.invalidate();
+      }, [utils]);
+
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      type TData = typeof query1['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    type TData = typeof query1['data'];
-    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
+  });
 
-    return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
-  }
+  test('data type without initialData', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.proxy.post.byId.useQuery({ id: '1' }),
+    ).returns;
 
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
+    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
+    expectation.not.toMatchTypeOf<{ data: '__result' }>();
+  });
+
+  test('data type with initialData', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.proxy.post.byId.useQuery(
+        { id: '1' },
+        {
+          initialData: {
+            id: 1,
+            text: '',
+          },
+        },
+      ),
+    ).returns;
+
+    expectation.toMatchTypeOf<{ data: '__result' }>();
+    expectation.not.toMatchTypeOf<{ data: undefined }>();
   });
 });
 
@@ -151,7 +190,7 @@ test('useInfiniteQuery()', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
@@ -223,7 +262,7 @@ test('useSuspenseInfiniteQuery()', async () => {
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
-        next: number | undefined;
+        next?: number | undefined;
       }>
     >();
 
@@ -266,6 +305,37 @@ test('deprecated routers', async () => {
     proxy.deprecatedRouter.deprecatedProcedure.useQuery();
 
     return null;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+});
+
+test('useQuery options inference', () => {
+  const { appRouter, proxy, App } = ctx;
+
+  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['byIdWithSerializable'];
+
+  function MyComponent() {
+    const options: Options = {};
+    proxy.post.byIdWithSerializable.useQuery(
+      { id: '1' },
+      {
+        ...options,
+        onSuccess: (data) => {
+          expectTypeOf(data).toMatchTypeOf<{
+            id: number;
+            date: string;
+          }>();
+        },
+      },
+    );
+
+    return <></>;
   }
 
   render(

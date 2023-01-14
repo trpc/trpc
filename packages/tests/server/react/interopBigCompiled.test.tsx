@@ -1,6 +1,4 @@
 /* eslint-disable no-console */
-
-/* eslint-disable no-restricted-imports */
 import { appRouter as bigV10Router } from '../__generated__/bigBoi/_app';
 import { t } from '../__generated__/bigBoi/_trpc';
 import { bigRouter as bigV9Router } from '../__generated__/bigLegacyRouter/bigRouter';

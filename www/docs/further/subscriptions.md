@@ -5,10 +5,6 @@ sidebar_label: Subscriptions / WebSockets
 slug: /subscriptions
 ---
 
-:::info
-Subscriptions & WebSockets are in beta & might change without a major version bump. However, feel free to use them and report any issue you may find on [GitHub](https://github.com/trpc/trpc)
-:::
-
 ## Using Subscriptions
 
 :::tip
@@ -102,7 +98,7 @@ process.on('SIGTERM', () => {
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can [use Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can use [Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
 ```tsx title='client.ts'
@@ -223,4 +219,4 @@ See https://www.jsonrpc.org/specification#error_object or [Error Formatting](../
 
 ### `{ id: null, type: 'reconnect' }`
 
-Tells clients to reconnect before shutting down server. Invoked by `wssHandler.broadcastReconnectNotification()`.
+Tells clients to reconnect before shutting down the server. Invoked by `wssHandler.broadcastReconnectNotification()`.

@@ -1,6 +1,7 @@
 name: Lint
 
-on: [push]
+on:
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,6 +9,10 @@ concurrency:
 
 jobs:
   lint:
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -38,7 +43,13 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: pnpm lint
+        run: pnpm turbo lint
+
+      - name: Run ts-prune
+        run: pnpm lint-prune
 
       - name: Run Manypkg
         run: pnpm manypkg check
+
+      - name: Run Prettier
+        run: pnpm format --list-different

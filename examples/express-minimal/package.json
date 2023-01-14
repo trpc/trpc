@@ -1,20 +1,21 @@
 {
   "name": "@examples/express-minimal",
-  "version": "10.1.0",
+  "version": "10.9.0",
   "private": true,
   "scripts": {
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 3000 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "build": "tsc",
     "start": "pnpm dev",
     "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.1.0",
-    "@trpc/react-query": "^10.1.0",
-    "@trpc/server": "^10.1.0",
+    "@trpc/client": "^10.9.0",
+    "@trpc/react-query": "^10.9.0",
+    "@trpc/server": "^10.9.0",
     "@types/node-fetch": "^2.5.11",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
@@ -27,6 +28,7 @@
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
+    "eslint": "^8.30.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",

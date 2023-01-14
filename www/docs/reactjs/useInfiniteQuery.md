@@ -7,7 +7,7 @@ slug: /useInfiniteQuery
 
 :::info
 
-- Your procedure needs to accept a `cursor` input of `any` type
+- Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc)
 - For more details on infinite queries read the [react-query docs](https://react-query.tanstack.com/reference/useInfiniteQuery)
 - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
 
@@ -111,25 +111,22 @@ export function MyComponent() {
     async onMutate({ post }) {
       await utils.infinitePosts.cancel();
 
-      utils.infinitePosts.setInfiniteData(
-        { limit: 10 },
-        (data) => {
-          if (!data) {
-            return {
-              pages: [],
-              pageParams: [],
-            };
-          }
-
+      utils.infinitePosts.setInfiniteData({ limit: 10 }, (data) => {
+        if (!data) {
           return {
-            ...data,
-            pages: data.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((item) => item.status === 'published'),
-            })),
+            pages: [],
+            pageParams: [],
           };
-        },
-      );
+        }
+
+        return {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((item) => item.status === 'published'),
+          })),
+        };
+      });
     },
   });
 

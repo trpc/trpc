@@ -7,11 +7,11 @@ slug: /rpc
 
 ## Methods <-> Type mapping
 
-| HTTP Method  | Mapping           | Notes                                                                                                         |
-| ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------- |
-| `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))` |
-| `POST`       | `.mutation()`     | Input as POST body.                                                                                           |
-| <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                    |
+| HTTP Method  | Mapping           | Notes                                                                                                          |
+| ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}` |
+| `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
+| <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
 
 ## Batching
 
@@ -20,7 +20,7 @@ When batching, we combine all parallel procedure calls of the same type in one r
 - The called procedures' names are combined by a comma (`,`) in the `pathname`
 - Input parameters are sent as a query parameter called `input` which has the shape `Record<number, unknown>`.
 - We also need to pass `batch=1` as a query parameter.
-- If the response has different statuses we send back `207 Multi-Status` _(e.g. if one call errored and one succeeded) _
+- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded) _
 
 ### Batching Example Request
 
@@ -41,7 +41,7 @@ export const appRouter = t.router({
 });
 ```
 
-#### .. And two queries defined like this in a React component:
+#### ... And two queries defined like this in a React component:
 
 ```tsx title='MyComponent.tsx'
 export function MyComponent() {
@@ -170,8 +170,8 @@ In order to have a specification that works regardless of the transport layer we
 <br/>
 
 - When possible, we propagate HTTP status codes from the error thrown.
-- If the response has different statuses we send back `207 Multi-Status` _(e.g. if one call errored and one succeeded) _
-- For more on errors and how customize them see [Error Formatting](../server/error-formatting.md).
+- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded) _
+- For more on errors and how to customize them see [Error Formatting](../server/error-formatting.md).
 
 ## Error Codes <-> HTTP Status
 

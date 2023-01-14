@@ -1,8 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
 /* eslint-disable @typescript-eslint/no-empty-function */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { TRPCClientError } from '@trpc/client/src';
@@ -160,7 +156,7 @@ describe('formatError()', () => {
       client.mutation('err', 1 as any),
       TRPCClientError,
     );
-    delete (clientError.data as any).stack;
+    delete clientError.data.stack;
     expect(clientError.data).toMatchInlineSnapshot(`
 Object {
   "code": "BAD_REQUEST",

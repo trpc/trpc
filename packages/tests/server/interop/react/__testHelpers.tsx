@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/ban-types */
 import { routerToServerAndClientNew } from '../../___testHelpers';
 import {
   createQueryClient,
@@ -12,8 +12,8 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client/src';
+import { OutputWithCursor } from '@trpc/react-query/shared';
 import { createReactQueryHooks } from '@trpc/react-query/src';
-import { OutputWithCursor } from '@trpc/react-query/src/shared/hooks/createHooksInternal';
 import * as trpcServer from '@trpc/server/src';
 import { TRPCError } from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
@@ -91,7 +91,7 @@ export function createLegacyAppRouter() {
         let nextCursor: typeof cursor = null;
         for (let index = 0; index < db.posts.length; index++) {
           const element = db.posts[index]!;
-          if (cursor != null && element!.createdAt < cursor) {
+          if (cursor != null && element.createdAt < cursor) {
             continue;
           }
           items.push(element);

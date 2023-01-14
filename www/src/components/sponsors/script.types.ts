@@ -6,6 +6,7 @@ export interface PageInfo {
 }
 
 export interface SponsorEntity {
+  __typename: string;
   id: string;
   name: string | null;
   login: string;

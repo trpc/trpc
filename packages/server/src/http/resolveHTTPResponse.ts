@@ -124,6 +124,7 @@ export async function resolveHTTPResponse<
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
+    /* istanbul ignore if  */
     if (type === 'subscription') {
       throw new TRPCError({
         message: 'Subscriptions should use wsLink',
@@ -153,6 +154,7 @@ export async function resolveHTTPResponse<
         };
       }
 
+      /* istanbul ignore if  */
       if (
         rawInput == null ||
         typeof rawInput !== 'object' ||
@@ -166,7 +168,7 @@ export async function resolveHTTPResponse<
       const input: Record<number, unknown> = {};
       for (const key in rawInput) {
         const k = key as any as number;
-        const rawValue = (rawInput as any)[k];
+        const rawValue = rawInput[k];
 
         const value = deserializeInputValue(rawValue);
 

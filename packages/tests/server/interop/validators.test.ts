@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import '@testing-library/jest-dom';
 import * as trpc from '@trpc/server/src';

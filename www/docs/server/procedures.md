@@ -5,6 +5,7 @@ sidebar_label: Define Procedures
 slug: /procedures
 ---
 
+Procedures in tRPC is a very flexible primitive to create backend functions; they use a builder pattern which means you can create reusable base procedures for different parts of your backend application.
 
 :::tip
 
@@ -13,8 +14,6 @@ slug: /procedures
 - Defining publicProcedure is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
 
 :::
-
-
 
 ## Example without input validation
 
@@ -48,8 +47,7 @@ const appRouter = router({
 
 ## Input validation
 
-tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/server/test/validators.test.ts)
-
+tRPC works out-of-the-box with yup/superstruct/zod/myzod/custom validators/[..] - [see test suite](https://github.com/trpc/trpc/blob/main/packages/tests/server/validators.test.ts)
 
 ### With [Zod](https://github.com/colinhacks/zod)
 
@@ -142,11 +140,9 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-
-## Multiple input parsers
+## Multiple input parsers {#multiple-input-parsers}
 
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
-
 
 ```ts twoslash
 // @filename: trpc.ts
@@ -216,6 +212,9 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
+const router = t.router;
+const publicProcedure = t.procedure;
+
 export const appRouter = router({
   hello: publicProcedure.query(() => {
     return {
@@ -232,9 +231,9 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Reusable base procedures
+## Reusable base procedures {#reusable-base-procedures}
 
-You can create reusable base procedures to have a set of procedures that are i.e. login protected.
+You can create reusable base procedures to have a set of login-protected procedures.
 
 :::tip
 This can be combined with [multiple input parsers](#multiple-input-parsers) & [metadata](metadata.md) to create powerful reusable authorization and authentication patterns.
@@ -255,7 +254,7 @@ import { getSession } from 'next-auth/react';
  */
 export async function createContext(opts: trpcNext.CreateNextContextOptions) {
   const session = await getSession({ req: opts.req });
-  
+
   return {
     session,
   };

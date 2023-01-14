@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * @internal
  */
@@ -29,6 +27,20 @@ export type FlatOverwrite<TType, TWith> = InferOptional<
 >;
 
 /**
+ * @internal
+ */
+export type IntersectionError<TKey extends string> =
+  `${TKey} collides with a built-in method, you should rename this router or procedure on your backend`;
+
+/**
+ * @internal
+ */
+export type ProtectedIntersection<TType, TWith> = keyof TType &
+  keyof TWith extends never
+  ? TType & TWith
+  : IntersectionError<keyof TType & keyof TWith & string>;
+
+/**
  * @public
  */
 export type Maybe<TType> = TType | undefined | null;
@@ -46,7 +58,7 @@ export type ThenArg<TType> = TType extends PromiseLike<infer U>
  */
 export type Simplify<TType> = TType extends any[] | Date
   ? TType
-  : { [K in keyof TType]: TType[K] } & {};
+  : { [K in keyof TType]: TType[K] };
 /**
  * @public
  */
@@ -73,7 +85,7 @@ export type InferLast<TType> = TType & {
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
   ThenArg<ReturnType<TFunction>>;
 
-type FilterKeys<TObj extends object, TFilter> = {
+export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
 
@@ -84,3 +96,11 @@ export type Filter<TObj extends object, TFilter> = Pick<
   TObj,
   FilterKeys<TObj, TFilter>
 >;
+
+/**
+ * Unwrap return type if the type is a function (sync or async), else use the type as is
+ * @internal
+ */
+export type Unwrap<TType> = TType extends (...args: any[]) => infer R
+  ? ThenArg<R>
+  : TType;

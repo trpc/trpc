@@ -51,8 +51,38 @@
       "permanent": true
     },
     {
+      "source": "/docs/react-mutations",
+      "destination": "/docs/useMutation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/react-queries",
+      "destination": "/docs/useQuery",
+      "permanent": true
+    },
+    {
       "source": "/awesome",
       "destination": "/docs/awesome-trpc",
+      "permanent": false
+    },
+    {
+      "source": "/sponsor",
+      "destination": "https://github.com/sponsors/KATT",
+      "permanent": false
+    },
+    {
+      "source": "/docs/aborting-procedures",
+      "destination": "/docs/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/edge-runtimes",
+      "destination": "/docs/fetch",
+      "permanent": true
+    },
+    {
+      "source": "/faq",
+      "destination": "/docs/faq",
       "permanent": false
     }
   ]

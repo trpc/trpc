@@ -1,7 +1,7 @@
 # https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
 
 
-* @KATT @trpc-bot @sachinraja
+* @KATT @trpc-bot @sachinraja @bautistaaa @juliusmarminge
 
-www/**/* @trpc/website-docs
+www/**/* @trpc/trpc-website-docs
 # **/*lambda* @Lilja @KATT

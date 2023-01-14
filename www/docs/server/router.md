@@ -5,7 +5,7 @@ sidebar_label: Define Routers
 slug: /router
 ---
 
-To begin building your tRPC-based API, you'll first need to define your router. You can [customize your routers](#advanced-usage) for more advanced use cases once you've learned the basics.
+To begin building your tRPC-based API, you'll first need to define your router. Once you've mastered the fundamentals, you can [customize your routers](#advanced-usage) for more advanced use cases.
 
 ## Initialize tRPC
 
@@ -29,7 +29,9 @@ You'll notice we are exporting certain methods of the `t` variable here rather t
 
 ## Defining a router
 
-Next, let's define a router with a procedure to use in our application. We are now exposing an API "endpoint."
+Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
+
+In order for these endpoints to be exposed to the frontend, the outermost router (in the example below, this is the `appRouter`) needs to be passed to the [API Handler](/docs/api-handler)'s `router` argument.
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
@@ -68,7 +70,7 @@ When initializing your router, tRPC allows you to:
 You can use method chaining to customize your `t`-object on initialization. For example:
 
 ```ts
-const t = initTRPC().context<Context>().meta<Meta>().create({
+const t = initTRPC.context<Context>().meta<Meta>().create({
   /* [...] */
 });
 ```
