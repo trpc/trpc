@@ -43,11 +43,11 @@ Let's have a look at _how_ to find moments for performance improvements in TypeS
 
 TypeScript has a built-in [tracing tool](https://github.com/microsoft/TypeScript/wiki/Performance-Tracing) that can help you find the bottleneck in your types. It's not perfect, but it's the best tool available.
 
-It's ideal to test your library on a real-world app to simulate what your libary is doing for real developers. For tRPC, I created a basic [T3 app](https://create.t3.gg/) resembling what many of our users work with.
+It's ideal to test your library on a real-world app to simulate what your library is doing for real developers. For tRPC, I created a basic [T3 app](https://create.t3.gg/) resembling what many of our users work with.
 
 Here's the steps I followed to trace tRPC:
 
-1. [Locally link library](https://docs.npmjs.com/cli/commands/npm-link) to the example app. This is so you can change your library code and immediately test changes locally.
+1. [Locally link the library](https://docs.npmjs.com/cli/commands/npm-link) to the example app. This is so you can change your library code and immediately test changes locally.
 
 2. Run this command in the example app:
 
@@ -55,7 +55,7 @@ Here's the steps I followed to trace tRPC:
 tsc --generateTrace ./trace --incremental false
 ```
 
-3. You'll be given a `trace/trace.json` file on your machine. You can open that file in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/) or `chrome://tracing`.
+3. You'll be given a `trace/trace.json` file on your machine. You can open that file in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/)) or `chrome://tracing`.
 
 This is where things get interesting and we can start to learn about the performance profile of the types in the application. Here's what the first trace looked like:
 ![trace bar showing that src/pages/index.ts took 332ms to type-check](https://user-images.githubusercontent.com/58836760/190300723-5366674f-2fe0-48e9-8a00-7a8bc85b5c91.png)
@@ -107,7 +107,7 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
       ? never
       : TRouter['_def']['record'][TKey] extends AnyRouter
       ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
-      : TRouter['_def']['record'][TKey] extends QueryProcedure<any>
+      : TRouter['_def']['record'][TKey] extends AnyQueryProcedure
       ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
       : never;
   }>;
@@ -115,13 +115,13 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
 
 Okay, now we have some things to unpack and learn about. Let's figure out what this code is doing first.
 
-We have a recursive type `DecoratedProcedureUtilsRecord` that walks through all the procedures in the router and "decorates" (adds methods to) them with the React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation).
+We have a recursive type `DecoratedProcedureUtilsRecord` that walks through all the procedures in the router and "decorates" (adds methods to) them with React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation).
 
 In tRPC v10 we still support old `v9` routers, but `v10` clients cannot call procedures from `v9` routers. So for each procedure we check if it's a `v9` procedure (`extends LegacyV9ProcedureTag`) and strip it out if so. It's all a lot of work for TypeScript to do...**if it's not lazily evaluated**.
 
 ### Lazy evaluation
 
-The problem here is that TypeScript is evaluating all of this code in the type system, even though it's not used immediately. Our code is only using `utils.r49.greeting.invalidate` so TypeScript should only need to unwrap the `r49` property (a router), then the `greeting` property (a procedure), and finally the `invalidate` function for that procedure. No other types are needed in that code and immediately finding the type for every React Query utility method for all your tRPC procedures would unnecessarily slow TypeScript down. TypeScript defers type evaluation of properties on **objects** until they are directly used so theoretically our type above should get lazy evaluation...right?
+The problem here is that TypeScript is evaluating all of this code in the type system, even though it's not used immediately. Our code is only using `utils.r49.greeting.invalidate` so TypeScript should only need to unwrap the `r49` property (a router), then the `greeting` property (a procedure), and finally the `invalidate` function for that procedure. No other types are needed in that code and immediately finding the type for every React Query utility method for all your tRPC procedures would unnecessarily slow TypeScript down. TypeScript defers type evaluation of properties on **objects** until they are directly used, so theoretically our type above should get lazy evaluation...right?
 
 Well, it's not _exactly_ an object. There's actually a type wrapping the entire thing: `OmitNeverKeys`. This type is a utility that removes keys that have the value `never` from an object. This is the part where we strip off the v9 procedures so those properties don't show up in Intellisense.
 
@@ -153,7 +153,7 @@ export type MigrateV9Router<TV9Router extends V9Router> = V10Router<{
 }>;
 ```
 
-If you recall the `DecoratedProcedureUtilsRecord` type above, you can see that we attached the tag here to differentiate between `v9` and `v10` procedures on the type level and enforce that `v9` procedures are not called from `v10` clients.
+If you recall the `DecoratedProcedureUtilsRecord` type above, you can see that we attached `LegacyV9ProcedureTag` here to differentiate between `v9` and `v10` procedures on the type level and enforce that `v9` procedures are not called from `v10` clients.
 
 New types:
 
