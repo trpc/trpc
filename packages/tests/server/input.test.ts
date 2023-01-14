@@ -159,6 +159,7 @@ test('no input', async () => {
 
   const proc = t.procedure.query(({ input }) => {
     expectTypeOf(input).toBeUndefined();
+    expect(input).toBeUndefined();
     return input;
   });
 
