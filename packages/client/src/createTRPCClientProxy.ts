@@ -93,10 +93,9 @@ export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
   inferRouterProxyClient<TRouter>;
 
 /**
- * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
-export function createTRPCClientProxy<TRouter extends AnyRouter>(
+function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ) {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {

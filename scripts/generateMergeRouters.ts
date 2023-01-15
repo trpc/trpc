@@ -1,6 +1,7 @@
 /**
- * @deprecated Only keeping this for future reference if our testing was a false-positive
  * Generates a big `mergeRouters`-file that can take a bunch of different number of generics.
+ * @FIXME This can be improved and potentially deleted.
+ * @see https://github.com/trpc/trpc/issues/3145
  */
 import fs from 'fs';
 
