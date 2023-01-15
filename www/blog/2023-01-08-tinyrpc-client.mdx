@@ -318,9 +318,9 @@ import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
+  ProcedureRouterRecord,
   inferProcedureInput,
   inferProcedureOutput,
-  ProcedureRouterRecord,
 } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
@@ -360,7 +360,7 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
 }
 
 type Resolver<TProcedure extends AnyProcedure> = (
-  input: inferProcedureInput<TProcedure>
+  input: inferProcedureInput<TProcedure>,
 ) => Promise<inferProcedureOutput<TProcedure>>;
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
@@ -473,6 +473,7 @@ The full code for the client can be found [here](https://github.com/trpc/trpc/bl
 
 I hope you enjoyed this article and learned something about how tRPC works. You should probably not use this to in favor of @trpc/client which is only a couple of KBs bigger - it comes with a lot more flexibility than what we're showcasing here:
 
+- Query options for abort signals, ssr etc...
 - Links
 - Procedure batching
 - WebSockets / subscriptions
