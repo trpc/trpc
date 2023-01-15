@@ -26,11 +26,10 @@ import { initTRPC, TRPCError } from '@trpc/server';
 const t = initTRPC.create();
 const router = t.router;
 const publicProcedure = t.procedure;
-
-type Post = { id: string; title: string };
-const posts: Post[] = [];
 declare const uuid: () => string;
 // ---cut---
+type Post = { id: string; title: string };
+const posts: Post[] = [];
 
 const appRouter = router({
   post: router({
