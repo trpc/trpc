@@ -11,18 +11,4 @@ export * from './queryClient';
 export * from './types';
 export * from './hooks/types';
 
-export {
-  /**
-   * @deprecated this is an internal function
-   */
-  getClientArgs,
-} from '../internals/getClientArgs';
-
-export {
-  /**
-   * @deprecated
-   */
-  TRPCContext,
-} from './../internals/context';
-
 export * from '../internals/context';
