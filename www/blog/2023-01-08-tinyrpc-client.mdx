@@ -86,7 +86,11 @@ We'll need to use recursive types so that we can infer arbitrary deep router str
 The first thing we'll define is the type for our resolver functions (`query` and `mutate`):
 
 ```twoslash include resolver
-import type { AnyProcedure, ProcedureArgs, inferProcedureOutput } from "@trpc/server";
+import type {
+  AnyProcedure,
+  inferProcedureOutput,
+  ProcedureArgs,
+} from "@trpc/server";
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
