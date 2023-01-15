@@ -1,5 +1,5 @@
 export * from './createTRPCUntypedClient';
-export * from './createTRPCClientProxy';
+export * from './toTRPCClientProxy';
 export * from './getFetch';
 export * from './TRPCClientError';
 export * from './links';
