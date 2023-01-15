@@ -465,7 +465,7 @@ export function createRootHooks<
     useInfiniteQuery,
   };
 }
-
+/* istanbul ignore next */
 /**
  * Hack to infer the type of `createReactQueryHooks`
  * @link https://stackoverflow.com/a/59072991
