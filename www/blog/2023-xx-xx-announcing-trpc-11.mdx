@@ -1,0 +1,58 @@
+---
+slug: announcing-trpc-11
+title: Announcing tRPC v11
+author: Alex / KATT 🐱
+author_title: Creator of tRPC
+author_url: https://twitter.com/alexdotjs
+author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
+---
+
+import { GithubSponsorButton } from '@site/src/components/GithubSponsorButton';
+
+Today we're releaseing tRPC version 11, the most boring release of tRPC yet. [Version 10](./2022-11-21-announcing-trpc-10) was the most feature packed release of tRPC yet.
+
+**Today, we're launching tRPC v11**, version **11** of tRPC comes with no new features, but it does come with of a lot of internal improvements & removal of deprecated functionality.
+
+<img
+  width="190"
+  alt="CleanShot 2023-01-15 at 11 42 49@2x"
+  src="https://user-images.githubusercontent.com/459267/212536152-f29cd19f-7b69-49d0-9bbc-53a7dc07a849.png"
+/>
+
+## Overview of changes
+
+### Removal of `.interop()`-mode
+
+In version 10, we wanted to make sure we could support a smooth migration path for existing tRPC users. To do this, we introduced a new `.interop()`-mode that allowed you to use the new v10 syntax while still using the v9 router.
+
+This was a great way to ease into the new syntax, but it also meant that we had to maintain two different routers. This was a lot of work and we've decided to remove the `.interop()`-mode in v11.
+
+If you're still using the `.interop()`-mode, you can migrate to the new syntax by following the [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10).
+
+### A lot of refactoring
+
+Because we've removed the `.interop()`-mode, we've been able to remove a lot of code from tRPC. This has made the codebase a lot easier to work with and has also makes it easier to add new features.
+
+This is especially true for the `@trpc/react-query` and the `@trpc/client`-packages that included a lot of code that was only used for the `.interop()`-mode.
+
+### Massively improved TypeScript performance
+
+TypeScript enables developers to do incredible things - but it can come at a cost. Many of the techniques we use to keep your types tight are heavy work on the TypeScript compiler. We heard community feedback that the largest applications using tRPC v9 were beginning to suffer from decreased performance in developers' IDEs as a result of this compiler pressure.
+
+Our goal is to enhance the developer experience for applications of all sizes. In v10, we've dramatically improved TypeScript performance (especially with TS incremental compilation) so that your editor stays snappy.
+
+## Migration path
+
+The migration path from version 10 to version 11 is very straight-forward - most people can just do `npx npm-check-updates --filter /trpc/ -u` and then `npm install` to get the latest version.
+
+## Thank you!
+
+Thanks for using and supporting tRPC.
+
+---
+
+- Follow [@trpcio](https://twitter.com/trpcio) on Twitter.
+- Join our [Discord-community](https://trpc.io/discord)
+- [Try out tRPC in your browser](https://trpc.io/#try-it-out)
+
+<GithubSponsorButton />
