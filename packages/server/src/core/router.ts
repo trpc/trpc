@@ -8,7 +8,7 @@ import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import { AnyProcedure, ProcedureArgs } from './procedure';
-import { ProcedureType, procedureTypes } from './types';
+import { ProcedureType } from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
@@ -106,9 +106,9 @@ export type CreateRouterInner<
   TProcRouterRecord extends ProcedureRouterRecord,
 > = Router<RouterDef<TConfig, TProcRouterRecord>> &
   /**
-   * This should be deleted in v11
-   * @deprecated
-   */ TProcRouterRecord;
+   * This adds ability to call procedures directly but is primarily used for quick access in type inference
+   */
+  TProcRouterRecord;
 
 /**
  * @internal
@@ -163,20 +163,6 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       _def,
       createCaller(ctx) {
         const proxy = createRecursiveProxy(({ path, args }) => {
-          // interop mode
-          if (
-            path.length === 1 &&
-            procedureTypes.includes(path[0] as ProcedureType)
-          ) {
-            return callProcedure({
-              procedures: _def.procedures,
-              path: args[0] as string,
-              rawInput: args[1],
-              ctx,
-              type: path[0] as ProcedureType,
-            });
-          }
-
           const fullPath = path.join('.');
           const procedure = _def.procedures[fullPath] as AnyProcedure;
 
