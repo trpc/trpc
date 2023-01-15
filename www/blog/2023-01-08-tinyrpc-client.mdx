@@ -9,7 +9,7 @@ author_image_url: https://github.com/juliusmarminge.png
 
 Ever wondered how tRPC works? Maybe you want to start contributing to the project but you're frightened by the internals? The aim of this post is to familiarize you with the internals of tRPC by writing a minimal client that covers the big parts of how tRPC works.
 
-:::note
+:::info
 
 It's recommended that you understand some of the core concepts in TypeScript such as generics, conditional types, the `extends` keyword and recursion. If you're not familiar with these, I recommend going through [Matt Pocock](https://twitter.com/mattpocockuk)'s [Beginner TypeScript](https://github.com/total-typescript/beginners-typescript-tutorial) tutorial to get familiar with these concepts before reading on.
 
@@ -20,18 +20,16 @@ It's recommended that you understand some of the core concepts in TypeScript suc
 Let's assume we have a simple tRPC router with three procedures that looks like this:
 
 ```twoslash include router
-// @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
-export const router = t.router;
-export const publicProcedure = t.procedure;
+const router = t.router;
+const publicProcedure = t.procedure;
 
-// @filename: router.ts
-const posts = [] as {id: string, title: string}[]
-declare function uuid(): string;
-import { z } from "zod";
-import { router, publicProcedure } from './trpc';
+type Post = { id: string; title: string };
+const posts: Post[] = [];
+declare const uuid: () => string;
 // ---cut---
 
 const appRouter = router({
@@ -39,12 +37,16 @@ const appRouter = router({
     byId: publicProcedure
       .input(z.object({ id: z.string() }))
       .query(({ input }) => {
-        return posts.find((p) => p.id === input.id);
+        const post = posts.find((p) => p.id === input.id);
+        if (!post) throw new TRPCError({ code: "NOT_FOUND" });
+        return post;
       }),
     byTitle: publicProcedure
       .input(z.object({ title: z.string() }))
       .query(({ input }) => {
-        return posts.find((p) => p.title === input.title);
+        const post = posts.find((p) => p.title === input.title);
+        if (!post) throw new TRPCError({ code: "NOT_FOUND" });
+        return post;
       }),
     create: publicProcedure
       .input(z.object({ title: z.string() }))
@@ -55,8 +57,6 @@ const appRouter = router({
       }),
   }),
 });
-
-export type AppRouter = typeof appRouter;
 ```
 
 ```ts twoslash
@@ -83,25 +83,7 @@ Let's start with the fun TypeScript magic to unlock the awesome autocompletion a
 
 We'll need to use recursive types so that we can infer arbitrary deep router structures. Also, we know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` on them respectively - in tRPC, we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions, so let's write some code!
 
-The first thing we'll define is the type for our resolver functions (`query` and `mutate`):
-
-```twoslash include resolver
-import type {
-  AnyProcedure,
-  inferProcedureOutput,
-  ProcedureArgs,
-} from "@trpc/server";
-
-type Resolver<TProcedure extends AnyProcedure> = (
-  ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferProcedureOutput<TProcedure>>;
-```
-
-```ts twoslash
-// @include: resolver
-```
-
-Next, we'll need a type that will provide autocompletion of the path as we traverse the router object. Here's what we want:
+Let's consider what we want to achive to provide autocompletion on paths as well as inference of the procedures input and output types:
 
 - If we're on a router, we want to be able to access it's sub-routers and procedures. (we'll get to this in a little bit)
 - If we're on a query procedure, we want to be able to call `.query` on it.
@@ -109,6 +91,18 @@ Next, we'll need a type that will provide autocompletion of the path as we trave
 - If we're trying to access anything else, we want to get a type error indicating that procedure doesn't exist on the backend.
 
 So let's create a type that will do this for us:
+
+```twoslash include resolver
+import type {
+  AnyProcedure,
+  inferProcedureInput,
+  inferProcedureOutput,
+} from "@trpc/server";
+
+type Resolver<TProcedure extends AnyProcedure> = (
+  input: inferProcedureInput<TProcedure>
+) => Promise<inferProcedureOutput<TProcedure>>;
+```
 
 ```twoslash include decorate
 import type { AnyQueryProcedure, AnyMutationProcedure } from "@trpc/server";
@@ -131,7 +125,40 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
 // @include: decorate
 ```
 
-Finally, we'll create a type that will recursively traverse the router and decorate all sub-routers and procedures along the way:
+We'll use some of tRPC's built-in inference helpers to infer the input and output types of our procedures to define the `Resolver` type.
+
+```ts twoslash
+// @include: resolver
+```
+
+Let's try this out on our `post.byId` procedure:
+
+```ts twoslash
+import { TRPCError, initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+type Post = { id: string; title: string };
+const posts: Post[] = [];
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
+      const post = posts.find((p) => p.id === input.id);
+      if (!post) throw new TRPCError({ code: 'NOT_FOUND' });
+      return post;
+    }),
+  }),
+});
+type AppRouter = typeof appRouter;
+// @include: resolver
+// ---cut---
+type PostById = Resolver<AppRouter['post']['byId']>;
+//    ^?
+```
+
+Nice, that's what we expected - we can now call `.query` on our procedure and get the correct input and output types inferred!
+
+Finally, we'll create a type that will recursively traverse the router and decorate all procedures along the way:
 
 ```twoslash include decoraterecord
 import type { AnyRouter, ProcedureRouterRecord } from "@trpc/server";
@@ -291,9 +318,9 @@ import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
-  ProcedureArgs,
-  ProcedureRouterRecord,
+  inferProcedureInput,
   inferProcedureOutput,
+  ProcedureRouterRecord,
 } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
@@ -333,7 +360,7 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
 }
 
 type Resolver<TProcedure extends AnyProcedure> = (
-  ...args: ProcedureArgs<TProcedure['_def']>
+  input: inferProcedureInput<TProcedure>
 ) => Promise<inferProcedureOutput<TProcedure>>;
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
@@ -403,12 +430,16 @@ const appRouter = router({
     byId: publicProcedure
       .input(z.object({ id: z.string() }))
       .query(({ input }) => {
-        return posts.find((p) => p.id === input.id);
+        const post = posts.find((p) => p.id === input.id);
+        if (!post) throw new TRPCError({ code: 'NOT_FOUND' });
+        return post;
       }),
     byTitle: publicProcedure
       .input(z.object({ title: z.string() }))
       .query(({ input }) => {
-        return posts.find((p) => p.title === input.title);
+        const post = posts.find((p) => p.title === input.title);
+        if (!post) throw new TRPCError({ code: 'NOT_FOUND' });
+        return post;
       }),
     create: publicProcedure
       .input(z.object({ title: z.string() }))
@@ -448,5 +479,4 @@ I hope you enjoyed this article and learned something about how tRPC works. You 
 - Nice error handling
 - Data transformers
 - Edge cases handling like when we don't get a tRPC-compliant response
-
-We also didn't cover much of the server-side of things today, maybe we'll cover that in a future article.
+  We also didn't cover much of the server-side of things today, maybe we'll cover that in a future article.

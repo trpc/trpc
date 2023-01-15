@@ -91,7 +91,7 @@ test('tinytrpc', async () => {
 
   const post = await trpc.byId.query({ id: addedPost.id });
   expect(post).not.toBeFalsy();
-  expect(post.title).toBe(title);
+  expect(post?.title).toBe(title);
 
   expect(await trpc.listPosts.query()).toHaveLength(posts.length + 1);
 
