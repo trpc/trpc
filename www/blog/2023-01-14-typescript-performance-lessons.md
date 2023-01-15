@@ -51,9 +51,9 @@ Here's the steps I followed to trace tRPC:
 
 2. Run this command in the example app:
 
-```sh
-tsc --generateTrace ./trace --incremental false
-```
+   ```sh
+   tsc --generateTrace ./trace --incremental false
+   ```
 
 3. You'll be given a `trace/trace.json` file on your machine. You can open that file in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/)) or `chrome://tracing`.
 
