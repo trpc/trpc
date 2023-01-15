@@ -9,6 +9,12 @@ author_image_url: https://github.com/juliusmarminge.png
 
 Ever wondered how tRPC works? Maybe you want to start contributing to the project but you're frightened by the internals? The aim of this post is to familiarize you with the internals of tRPC by writing a minimal client that covers the big parts of how tRPC works.
 
+:::note
+
+It's recommended that you understand some of the core concepts in TypeScript such as generics, conditional types, the `extends` keyword and recursion. If you're not familiar with these, I recommend going through [Matt Pocock](https://twitter.com/mattpocockuk)'s [Beginner TypeScript](https://github.com/total-typescript/beginners-typescript-tutorial) tutorial to get familiar with these concepts before reading on.
+
+:::
+
 ## Overview
 
 Let's assume we have a simple tRPC router with three procedures that looks like this:
@@ -210,6 +216,12 @@ This looks a bit magical, what does this do?
 
 - The `get` method handles property accesses such as `post.byId`. The key is the property name we're accessing, so when we type `post` our `key` will be `post`, and when we type `post.byId` our `key` will be `byId`. The recursive proxy combines all of these keys into a final path, e.g. ["post", "byId", "query"], that we can use to determine the URL we want to send a request to.
 - The `apply` method is called when we invoke a function on the proxy, such as `.query(args)`. The `args` is the arguments we pass to the function, so when we call `post.byId.query(args)` our `args` will be our input, which we'll provide as query parameters or request body depending on the type of procedure. The `createRecursiveProxy` takes in a callback function which we'll map the `apply` to with the path and args.
+
+Below is a visual representation of how the proxy works on the call `trpc.post.byId.query({ id: 1 })`:
+
+![proxy](https://user-images.githubusercontent.com/51714798/212556886-16ac6398-d950-49b7-b8fa-efb1792d7339.png)
+
+### 🧩 Putting it all together
 
 Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyRouter`), and then we'll cast the return type to the `DecoratedProcedureRecord` type we created earlier:
 
