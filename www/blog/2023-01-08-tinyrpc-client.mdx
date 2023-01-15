@@ -7,11 +7,11 @@ author_url: https://twitter.com/jullerino
 author_image_url: https://github.com/juliusmarminge.png
 ---
 
-Ever wondered how tRPC works? Maybe you want to start contributing to the project but is freightened by the internals? The aim of this post is to familiarize you with the internals of tRPC by writing a minimal client that covers the big parts of how tRPC works.
+Ever wondered how tRPC works? Maybe you want to start contributing to the project but you're frightened by the internals? The aim of this post is to familiarize you with the internals of tRPC by writing a minimal client that covers the big parts of how tRPC works.
 
 ## Overview
 
-Let's assume we have simple tRPC router with three procedures that looks like this:
+Let's assume we have a simple tRPC router with three procedures that looks like this:
 
 ```twoslash include router
 // @filename: trpc.ts
@@ -67,7 +67,7 @@ const newPost = await client.post.create.mutate({ title: 'Foo' });
 
 To do this, tRPC uses a combination of [`Proxy`](https://mdn.io/proxy)-objects and some TypeScript magic to augment the object structure with the `.query` and `.mutate` methods on them - meaning we actually LIE to you about what you're doing (more on that later) in order to provide an excellent developer experience!
 
-What we want to do is to map the `post.byId.query()` to a GET request to our server, and `post.create.mutate()` to a POST request, and the types should all be propagated from back to front . So, how do we do this?
+What we want to do is to map the `post.byId.query()` to a GET request to our server, and `post.create.mutate()` to a POST request, and the types should all be propagated from back to front. So, how do we do this?
 
 ## Implementing a tiny tRPC client
 
@@ -306,7 +306,7 @@ The full code for the client can be found [here](https://github.com/trpc/trpc/bl
 
 ## Conclusion
 
-I hope you enjoyed this article and learned something about how tRPC works. You should probably not use this to in favor of the @trpc/client which is only a couple of kbs bigger - it comes with a lot more flexibility than what we're showcasing here:
+I hope you enjoyed this article and learned something about how tRPC works. You should probably not use this to in favor of @trpc/client which is only a couple of KBs bigger - it comes with a lot more flexibility than what we're showcasing here:
 
 - Links
 - Procedure batching
@@ -315,4 +315,4 @@ I hope you enjoyed this article and learned something about how tRPC works. You 
 - Data transformers
 - Edge cases handling like when we don't get a tRPC-compliant response
 
-We also didn't cover much of the server side of things today, maybe we'll cover that in a future article.
+We also didn't cover much of the server-side of things today, maybe we'll cover that in a future article.
