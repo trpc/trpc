@@ -7,13 +7,13 @@ jest.mock('@trpc/server/shared', () => mock_trpcServer__shared);
 
 
 import * as mock_trpcServer__adapters__awsLambda from '../../server/src/adapters/aws-lambda';
-jest.mock('@trpc/server/adapters/awsLambda', () => mock_trpcServer__adapters__awsLambda);
+jest.mock('@trpc/server/adapters/aws-lambda', () => mock_trpcServer__adapters__awsLambda);
 import * as mock_trpcServer__adapters__fastify from '../../server/src/adapters/fastify';
 jest.mock('@trpc/server/adapters/fastify', () => mock_trpcServer__adapters__fastify);
 import * as mock_trpcServer__adapters__fetch from '../../server/src/adapters/fetch';
 jest.mock('@trpc/server/adapters/fetch', () => mock_trpcServer__adapters__fetch);
 import * as mock_trpcServer__adapters__nodeHTTP from '../../server/src/adapters/node-http';
-jest.mock('@trpc/server/adapters/nodeHTTP', () => mock_trpcServer__adapters__nodeHTTP);
+jest.mock('@trpc/server/adapters/node-http', () => mock_trpcServer__adapters__nodeHTTP);
 import * as mock_trpcServer__adapters__express from '../../server/src/adapters/express';
 jest.mock('@trpc/server/adapters/express', () => mock_trpcServer__adapters__express);
 import * as mock_trpcServer__adapters__next from '../../server/src/adapters/next';
