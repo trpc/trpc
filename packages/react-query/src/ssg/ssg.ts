@@ -44,9 +44,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    return queryClient.prefetchQuery(
-      getArrayQueryKey(pathAndInput, 'query'),
-      () => {
+    return queryClient.prefetchQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'query'),
+      queryFn: () => {
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
@@ -55,7 +55,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
       },
-    );
+    });
   };
 
   const prefetchInfiniteQuery = async <
@@ -64,9 +64,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ) => {
-    return queryClient.prefetchInfiniteQuery(
-      getArrayQueryKey(pathAndInput, 'infinite'),
-      () => {
+    return queryClient.prefetchInfiniteQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+      queryFn: () => {
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
@@ -75,7 +75,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
       },
-    );
+    });
   };
 
   const fetchQuery = async <
@@ -85,9 +85,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<TOutput> => {
-    return queryClient.fetchQuery(
-      getArrayQueryKey(pathAndInput, 'query'),
-      () => {
+    return queryClient.fetchQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'query'),
+      queryFn: () => {
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
@@ -96,7 +96,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
       },
-    );
+    });
   };
 
   const fetchInfiniteQuery = async <
@@ -106,9 +106,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
   ): Promise<InfiniteData<TOutput>> => {
-    return queryClient.fetchInfiniteQuery(
-      getArrayQueryKey(pathAndInput, 'infinite'),
-      () => {
+    return queryClient.fetchInfiniteQuery({
+      queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
+      queryFn: () => {
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
@@ -117,7 +117,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
       },
-    );
+    });
   };
 
   function _dehydrate(

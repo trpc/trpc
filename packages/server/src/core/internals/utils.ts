@@ -43,7 +43,9 @@ export type UnsetMarker = typeof unsetMarker;
  */
 export interface ResolveOptions<TParams extends ProcedureParams> {
   ctx: TParams['_ctx_out'];
-  input: TParams['_input_out'];
+  input: TParams['_input_out'] extends UnsetMarker
+    ? undefined
+    : TParams['_input_out'];
 }
 
 /**

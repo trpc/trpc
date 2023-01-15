@@ -5,7 +5,7 @@ sidebar_label: Define Procedures
 slug: /procedures
 ---
 
-Procedures in tRPC is a very flexible primitive to create backend functions; they use a builder patter which means you can create reusable base procedures for different parts fo your backend application.
+Procedures in tRPC is a very flexible primitive to create backend functions; they use a builder pattern which means you can create reusable base procedures for different parts of your backend application.
 
 :::tip
 
@@ -140,7 +140,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Multiple input parsers
+## Multiple input parsers {#multiple-input-parsers}
 
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
 
@@ -212,6 +212,9 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
+const router = t.router;
+const publicProcedure = t.procedure;
+
 export const appRouter = router({
   hello: publicProcedure.query(() => {
     return {
@@ -228,7 +231,7 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Reusable base procedures
+## Reusable base procedures {#reusable-base-procedures}
 
 You can create reusable base procedures to have a set of login-protected procedures.
 
