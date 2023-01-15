@@ -37,12 +37,6 @@ Because we've removed the `.interop()`-mode, we've been able to remove a lot of 
 
 This is especially true for the `@trpc/react-query` and the `@trpc/client`-packages that included a lot of code that was only used for the `.interop()`-mode.
 
-### Massively improved TypeScript performance
-
-TypeScript enables developers to do incredible things - but it can come at a cost. Many of the techniques we use to keep your types tight are heavy work on the TypeScript compiler. We heard community feedback that the largest applications using tRPC v9 were beginning to suffer from decreased performance in developers' IDEs as a result of this compiler pressure.
-
-Our goal is to enhance the developer experience for applications of all sizes. In v10, we've dramatically improved TypeScript performance (especially with TS incremental compilation) so that your editor stays snappy.
-
 ## Migration path
 
 The migration path from version 10 to version 11 is very straight-forward - most people can just do `npx npm-check-updates --filter /trpc/ -u` and then `npm install` to get the latest version.
