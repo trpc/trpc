@@ -17,6 +17,50 @@ test('mergeRouters', async () => {
   await expect(caller.bar()).resolves.toBe('bar');
 });
 
+test('good merge: one has default formatter', async () => {
+  const t1 = initTRPC.create({});
+
+  const t2 = initTRPC.create({
+    errorFormatter: (fmt) => fmt.shape,
+  });
+
+  const router1 = t1.router({
+    foo: t1.procedure.query(() => 'foo'),
+  });
+  const router2 = t2.router({
+    bar: t1.procedure.query(() => 'bar'),
+  });
+
+  const merged = t1.mergeRouters(router1, router2);
+  const caller = merged.createCaller({});
+
+  await expect(caller.foo()).resolves.toBe('foo');
+  await expect(caller.bar()).resolves.toBe('bar');
+});
+
+test('good merge: one has default transformer', async () => {
+  const t1 = initTRPC.create({});
+
+  const t2 = initTRPC.create({
+    transformer: {
+      deserialize: (v) => v,
+      serialize: (v) => v,
+    },
+  });
+
+  const router1 = t1.router({
+    foo: t1.procedure.query(() => 'foo'),
+  });
+  const router2 = t2.router({
+    bar: t1.procedure.query(() => 'bar'),
+  });
+
+  const merged = t1.mergeRouters(router1, router2);
+  const caller = merged.createCaller({});
+
+  await expect(caller.foo()).resolves.toBe('foo');
+  await expect(caller.bar()).resolves.toBe('bar');
+});
 test('bad merge: error formatter', async () => {
   const t1 = initTRPC.create({
     errorFormatter: (fmt) => fmt.shape,
@@ -33,12 +77,10 @@ test('bad merge: error formatter', async () => {
     bar: t1.procedure.query(() => 'bar'),
   });
 
-  const err = await waitError(() => {
-    t1.mergeRouters(router1, router2);
-  });
-
-  expect(err).toMatchInlineSnapshot(
-    `[Error: You seem to have several error formatters]`,
+  expect(() =>
+    t1.mergeRouters(router1, router2),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `"You seem to have several error formatters"`,
   );
 });
 
@@ -64,11 +106,9 @@ test('bad merge: transformer', async () => {
     bar: t1.procedure.query(() => 'bar'),
   });
 
-  const err = await waitError(() => {
-    t1.mergeRouters(router1, router2);
-  });
-
-  expect(err).toMatchInlineSnapshot(
-    `[Error: You seem to have several transformers]`,
+  expect(() =>
+    t1.mergeRouters(router1, router2),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `"You seem to have several transformers"`,
   );
 });
