@@ -24,9 +24,6 @@ import {
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
-/**
- * @deprecated
- */
 export interface ProcedureRouterRecord {
   [key: string]: AnyProcedure | AnyRouter;
 }
