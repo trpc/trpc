@@ -9,11 +9,11 @@ You may need to call your procedure(s) directly from the server, `createCaller()
 
 :::info
 
-`createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to (potentially) create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
 
-<div className="flex gap-2 w-full justify-between">
-  <img src="https://user-images.githubusercontent.com/51714798/212567920-22a9b2c7-4115-4d7d-bf8a-1697cff1da8e.png" className="w-[49.5%]" />
-  <img src="https://user-images.githubusercontent.com/51714798/212567917-bb936676-355b-4171-ad17-9d1c1c41f3f3.png" className="w-[49.5%]" />
+<div className="flex gap-2 w-full justify-between pt-2">
+  <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />
+  <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" className="w-[49.5%]" />
 </div>
 
 :::
