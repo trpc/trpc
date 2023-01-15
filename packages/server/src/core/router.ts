@@ -104,11 +104,7 @@ const reservedWords = [
 export type CreateRouterInner<
   TConfig extends AnyRootConfig,
   TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<RouterDef<TConfig, TProcRouterRecord>> &
-  /**
-   * This should be deleted in v11
-   * @deprecated
-   */ TProcRouterRecord;
+> = Router<RouterDef<TConfig, TProcRouterRecord>> & TProcRouterRecord;
 
 /**
  * @internal
