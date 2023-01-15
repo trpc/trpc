@@ -104,7 +104,11 @@ const reservedWords = [
 export type CreateRouterInner<
   TConfig extends AnyRootConfig,
   TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<RouterDef<TConfig, TProcRouterRecord>> & TProcRouterRecord;
+> = Router<RouterDef<TConfig, TProcRouterRecord>> &
+  /**
+   * This adds ability to call procedures directly but is primarily used for quick access in type inference
+   */
+  TProcRouterRecord;
 
 /**
  * @internal
