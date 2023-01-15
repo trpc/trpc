@@ -274,31 +274,6 @@ Now, create the client and provide it your server's url and you'll get full auto
 
 ```ts twoslash
 // @target: esnext
-// @include: router
-// @filename: tinyrpc.ts
-// @include: proxy
-// @include: resolver
-// @include: decorate
-// @include: decoraterecord
-// @include: tinyrpc
-// @filename: client.ts
-// ---cut---
-import type { AppRouter } from './router';
-import { createTinyRPCClient } from './tinyrpc';
-
-const url = 'http://localhost:3000/api/trpc';
-const client = createTinyRPCClient<AppRouter>(url);
-//    ^?
-
-// 🧙‍♀️ magic autocompletion
-
-// 👀 fully typesafe
-const post = await client.post.byId.query({ id: '123' });
-//     ^?
-```
-
-```ts twoslash
-// @target: esnext
 import type {
   AnyMutationProcedure,
   AnyProcedure,
