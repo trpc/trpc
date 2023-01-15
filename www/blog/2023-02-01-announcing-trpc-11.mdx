@@ -9,13 +9,11 @@ author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
 
 import { GithubSponsorButton } from '@site/src/components/GithubSponsorButton';
 
-Today we're releasing tRPC **version 11**, the most boring major release of tRPC yet.
+Are you ready for the newest and most ~~exciting~~boring release of tRPC yet? We're thrilled to announce the release of tRPC version 11, packed with internal improvements and the removal of `@deprecated` functionality.
 
-Version **11** of tRPC comes with no new features, but it does come with of a lot of internal improvements & removal of `@deprecated` functionality.
+## What's new in tRPC v11
 
-## Overview of changes
-
-We've mainly been removing code.
+While tRPC v11 may not come with any new features, we've been working hard behind the scenes to make significant internal improvements that will make using tRPC easier to work with for us, which means we can ship new feature at a higher pace.
 
 <img
   width="190"
@@ -23,27 +21,23 @@ We've mainly been removing code.
   src="https://user-images.githubusercontent.com/459267/212536152-f29cd19f-7b69-49d0-9bbc-53a7dc07a849.png"
 />
 
-### Removal of `.interop()`-mode
+### Goodbye `.interop()`-mode
 
-In version 10, we wanted to make sure we could support a smooth migration path for existing tRPC users. To do this, we introduced a new `.interop()`-mode that allowed you to use the new v10 syntax while still using the v9 router.
+In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration path for existing tRPC users. However, maintaining two different routers proved to be a lot of work. That's why, in tRPC v11, we've decided to remove the `.interop()`-mode. Don't worry though, if you're still using the `.interop()`-mode, you can use the [v10 migration guide](#TODO-LINK) to help you make the transition to the new syntax.
 
-This was a great way to ease into the new syntax, but it also meant that we had to maintain two different routers. This was a lot of work and we've decided to remove the `.interop()`-mode in v11.
+### Refactoring for a Better Developer Experience
 
-If you're still using the `.interop()`-mode, you can migrate to the new syntax by following the [migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10).
-
-### A lot of refactoring
-
-Because we've removed the `.interop()`-mode, we've been able to remove a lot of code from tRPC. This has made the codebase a lot easier to work with and has also makes it easier to add new features.
-
-This is especially true for the `@trpc/react-query` and the `@trpc/client`-packages that included a lot of code that was only used for the `.interop()`-mode.
+Removing the `.interop()`-mode has allowed us to remove a significant amount of code from tRPC, making the codebase much more manageable and easier to work with. This is especially true for the `@trpc/react-query` and the `@trpc/client`-packages, which improves our quality of life when working on the codebase.
 
 ## Migration path
 
-The migration path from version 10 to version 11 is very straight-forward - most people can just do `npx npm-check-updates --filter /trpc/ -u` and then `npm install` to get the latest version.
+Upgrading to tRPC v11 is easy, most people can just do `npx npm-check-updates --filter /trpc/` -u and then npm install to get the latest version.
+
+If this, doesn't work, first make sure that you've completely migrated from v9-syntax.
 
 ## Thank you!
 
-Thanks for using and supporting tRPC.
+We want to extend a heartfelt thank you to all of our users who have supported and used tRPC. We couldn't have done this without you and we're excited for you to experience the improvements in tRPC v11.
 
 ---
 
