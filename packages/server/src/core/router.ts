@@ -156,20 +156,6 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       _def,
       createCaller(ctx) {
         const proxy = createRecursiveProxy(({ path, args }) => {
-          // interop mode
-          if (
-            path.length === 1 &&
-            procedureTypes.includes(path[0] as ProcedureType)
-          ) {
-            return callProcedure({
-              procedures: _def.procedures,
-              path: args[0] as string,
-              rawInput: args[1],
-              ctx,
-              type: path[0] as ProcedureType,
-            });
-          }
-
           const fullPath = path.join('.');
           const procedure = _def.procedures[fullPath] as AnyProcedure;
 
