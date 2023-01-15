@@ -1,3 +1,6 @@
+/**
+ * @see https://trpc.io/blog/tinyrpc-client
+ */
 import type {
   AnyMutationProcedure,
   AnyProcedure,

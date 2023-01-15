@@ -1,9 +1,12 @@
-import './___packages';
+/**
+ * @see https://trpc.io/blog/tinyrpc-client
+ */
+import '../server/___packages';
 import '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { z } from 'zod';
-import { createTinyRPCClient } from './minitrpc';
+import { createTinyRPCClient } from './tinyrpc';
 
 if (!global.fetch) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
