@@ -5,7 +5,13 @@
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
-},
+  },
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#2596be",
+    "titleBar.activeForeground": "#ffffff",
+    "titleBar.inactiveBackground": "#004a72",
+    "titleBar.inactiveForeground": "#639db2"
+  },
   "editor.stickyScroll.enabled": true,
   "tailwindCSS.classAttributes": ["class", "className", "ngClass", "tw"],
   "tailwindCSS.experimental.classRegex": [
