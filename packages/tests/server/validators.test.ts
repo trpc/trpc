@@ -12,7 +12,7 @@ test('no validator', async () => {
 
   const router = t.router({
     hello: t.procedure.query(({ input }) => {
-      expectTypeOf(input).toBeSymbol();
+      expectTypeOf(input).toBeUndefined();
       return 'test';
     }),
   });
