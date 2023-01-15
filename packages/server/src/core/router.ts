@@ -13,6 +13,9 @@ import { ProcedureType, procedureTypes } from './types';
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
+/**
+ * @deprecated
+ */
 export interface ProcedureRouterRecord {
   [key: string]: AnyProcedure | AnyRouter;
 }
@@ -101,7 +104,11 @@ const reservedWords = [
 export type CreateRouterInner<
   TConfig extends AnyRootConfig,
   TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<RouterDef<TConfig, TProcRouterRecord>> & TProcRouterRecord;
+> = Router<RouterDef<TConfig, TProcRouterRecord>> &
+  /**
+   * This should be deleted in v11
+   * @deprecated
+   */ TProcRouterRecord;
 
 /**
  * @internal
