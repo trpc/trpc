@@ -164,4 +164,4 @@ jobs:
         if: ${{ matrix.dir == 'deno-deploy' }}
         run: |
           cd ./examples/${{ matrix.dir }}
-          pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net ./src/client.ts"
+          pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
