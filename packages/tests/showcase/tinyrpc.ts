@@ -8,9 +8,9 @@ import type {
   AnyRouter,
   ProcedureArgs,
   ProcedureRouterRecord,
+  inferProcedureOutput,
 } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
-import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
 
 interface ProxyCallbackOptions {
   path: string[];
@@ -50,7 +50,7 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferTransformedProcedureOutput<TProcedure>>;
+) => Promise<inferProcedureOutput<TProcedure>>;
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
     ? {

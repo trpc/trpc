@@ -86,12 +86,11 @@ We'll need to use recursive types so that we can infer arbitrary deep router str
 The first thing we'll define is the type for our resolver functions (`query` and `mutate`):
 
 ```twoslash include resolver
-import type { AnyProcedure, ProcedureArgs } from "@trpc/server";
-import type { inferTransformedProcedureOutput } from "@trpc/server/shared";
+import type { AnyProcedure, ProcedureArgs, inferProcedureOutput } from "@trpc/server";
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferTransformedProcedureOutput<TProcedure>>;
+) => Promise<inferProcedureOutput<TProcedure>>;
 ```
 
 ```ts twoslash
@@ -165,7 +164,7 @@ We'll first create a helper function for creating recursive proxies - `createRec
 
 :::info
 
-This is the exact implementation used in production, [see for yourself](https://github.com/trpc/trpc/blob/main/packages/server/src/shared/createProxy/index.ts)
+This is almost the exact implementation used in production, with the exception that we aren't handling some edge cases. [See for yourself](https://github.com/trpc/trpc/blob/main/packages/server/src/shared/createProxy/index.ts)!
 
 :::
 
@@ -185,11 +184,8 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
     },
     {
       get(_obj, key) {
-        if (typeof key !== 'string' || key === 'then') {
-          // special case for if the proxy is accidentally treated
-          // like a PromiseLike (like in `Promise.resolve(proxy)`)
-          return undefined;
-        }
+        if (typeof key !== 'string') return undefined;
+
         // Recursively compose the full path until a function is invoked
         return createRecursiveProxy(callback, [...path, key]);
       },
@@ -219,7 +215,7 @@ This looks a bit magical, what does this do?
 
 Below is a visual representation of how the proxy works on the call `trpc.post.byId.query({ id: 1 })`:
 
-![proxy](https://user-images.githubusercontent.com/51714798/212560970-ea683145-2cb9-40be-bccb-0d46fd0bb6ec.png)
+![proxy](https://user-images.githubusercontent.com/51714798/212561242-28e8bcd2-220a-4f9c-b5fa-ef4d940baee6.png)
 
 ### 🧩 Putting it all together
 
@@ -293,10 +289,10 @@ import type {
   AnyRouter,
   ProcedureArgs,
   ProcedureRouterRecord,
+  inferProcedureOutput,
 } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
-import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { z } from 'zod';
 
 interface ProxyCallbackOptions {
@@ -313,11 +309,8 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
     },
     {
       get(_obj, key) {
-        if (typeof key !== 'string' || key === 'then') {
-          // special case for if the proxy is accidentally treated
-          // like a PromiseLike (like in `Promise.resolve(proxy)`)
-          return undefined;
-        }
+        if (typeof key !== 'string') return undefined;
+
         // Recursively compose the entire path until we call a function
         return createRecursiveProxy(callback, [...path, key]);
       },
@@ -337,7 +330,7 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferTransformedProcedureOutput<TProcedure>>;
+) => Promise<inferProcedureOutput<TProcedure>>;
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
     ? {
