@@ -5,13 +5,16 @@ sidebar_label: Server Side Calls
 slug: /server-side-calls
 ---
 
-import CodeBlock from '@theme/CodeBlock';
-
 You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
 
 :::info
 
 `createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
+
+<div className="flex gap-4">
+  <img src="https://user-images.githubusercontent.com/51714798/212567920-22a9b2c7-4115-4d7d-bf8a-1697cff1da8e.png" className="w-1/2" />
+  <img src="https://user-images.githubusercontent.com/51714798/212567917-bb936676-355b-4171-ad17-9d1c1c41f3f3.png" className="w-1/2" />
+</div>
 
 :::
 
