@@ -5,7 +5,15 @@ sidebar_label: Server Side Calls
 slug: /server-side-calls
 ---
 
+import CodeBlock from '@theme/CodeBlock';
+
 You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
+
+:::info
+
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
+
+:::
 
 ## Create caller
 
@@ -64,7 +72,7 @@ const result = await caller.post.add('Four');
 
 We create a middleware to check the context before executing the `secret` procedure. Below are two examples: the former fails because the context doesn't fit the middleware logic, and the latter works correctly.
 
-<br/>
+<br />
 
 :::info
 
@@ -72,7 +80,7 @@ Middlewares are performed before any procedure(s) are called.
 
 :::
 
-<br/>
+<br />
 
 ```ts twoslash
 // @target: esnext
