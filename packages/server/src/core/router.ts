@@ -8,7 +8,7 @@ import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import { AnyProcedure, ProcedureArgs } from './procedure';
-import { ProcedureType, procedureTypes } from './types';
+import { ProcedureType } from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
