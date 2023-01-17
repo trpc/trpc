@@ -48,7 +48,7 @@ describe('getQueryKeys', () => {
       const happy2 = getQueryKey(proxy.post.all);
 
       // @ts-expect-error - post.all has no input
-      const sad = proxy.post.all.getQueryKey('foo');
+      const sad = getQueryKey(proxy.post.all, 'foo');
 
       return (
         <>
