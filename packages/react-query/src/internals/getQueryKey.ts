@@ -20,20 +20,20 @@ export function getQueryKeyInternal(
  * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
  */
 export function getQueryKey<
-  TProcedureOrOuter extends AnyProcedure | AnyRouter,
+  TProcedureOrRouter extends AnyProcedure | AnyRouter,
   TPath extends string,
   TFlags,
 >(
-  ..._params: TProcedureOrOuter extends AnyProcedure
+  ..._params: TProcedureOrRouter extends AnyProcedure
     ? [
-        procedureOrRouter: DecorateProcedure<TProcedureOrOuter, TFlags, TPath>,
-        ..._params: inferProcedureInput<TProcedureOrOuter> extends undefined
+        procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
+        ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
           ? []
-          : [input: inferProcedureInput<TProcedureOrOuter>, type?: QueryType],
+          : [input: inferProcedureInput<TProcedureOrRouter>, type?: QueryType],
       ]
     : [
         procedureOrRouter: DecoratedProcedureRecord<
-          TProcedureOrOuter['_def']['record'],
+          TProcedureOrRouter['_def']['record'],
           TFlags,
           any
         >,
