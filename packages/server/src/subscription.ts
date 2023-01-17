@@ -1,6 +1,10 @@
 import { getTRPCErrorFromUnknown } from './error/utils';
 import { Observable, Observer, observable } from './observable';
 
+/**
+ * @deprecated
+ * This functionality is deprecated and will be removed in the next major version.
+ */
 export function subscriptionPullFactory<TOutput>(opts: {
   /**
    * The interval of how often the function should run
