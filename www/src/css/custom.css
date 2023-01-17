@@ -269,6 +269,14 @@ h5 {
   @apply list-decimal list-inside;
 }
 
+.markdown ol li {
+  @apply my-4;
+}
+
+.markdown li > p {
+  display: inline;
+}
+
 /** Hide noisy shiki stuff */
 
 .shiki data-lsp {

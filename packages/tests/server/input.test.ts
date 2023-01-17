@@ -5,6 +5,7 @@ import {
   inferProcedureParams,
   initTRPC,
 } from '@trpc/server';
+import { UnsetMarker } from '@trpc/server/core/internals/utils';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import { ZodError, z } from 'zod';
@@ -151,6 +152,33 @@ test('only allow double input validator for object-like inputs', () => {
   } catch {
     // whatever
   }
+});
+
+test('no input', async () => {
+  const t = initTRPC.create();
+
+  const proc = t.procedure.query(({ input }) => {
+    expectTypeOf(input).toBeUndefined();
+    expect(input).toBeUndefined();
+    return input;
+  });
+
+  type ProcType = inferProcedureParams<typeof proc>;
+
+  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<UnsetMarker>();
+  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<UnsetMarker>();
+  expectTypeOf<ProcType['_output_in']>().toBeUndefined();
+  expectTypeOf<ProcType['_output_out']>().toBeUndefined();
+
+  const router = t.router({
+    proc,
+  });
+
+  const opts = routerToServerAndClientNew(router);
+
+  await expect(opts.proxy.proc.query()).resolves.toBeUndefined();
+
+  await opts.close();
 });
 
 test('zod default() string', async () => {
