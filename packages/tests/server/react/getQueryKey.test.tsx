@@ -114,10 +114,10 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy = proxy.post.getQueryKey();
+      const happy = getQueryKey(proxy.post);
 
       // @ts-expect-error - router has no input
-      const sad = proxy.post.getQueryKey('foo');
+      const sad = getQueryKey(proxy.post, 'foo');
 
       return (
         <div>
