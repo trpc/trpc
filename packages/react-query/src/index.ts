@@ -9,6 +9,11 @@ export { createTRPCReact, type CreateTRPCReact } from './createTRPCReact';
 export { createReactQueryHooks } from './interop';
 export type { inferReactQueryProcedureOptions } from './utils/inferReactQueryProcedure';
 
+/**
+ * Method to extract the query key for a procedure
+ * @param type - defaults to `any`
+ * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
+ */
 export function getQueryKey<
   TProcedure extends AnyProcedure,
   TPath extends string,
