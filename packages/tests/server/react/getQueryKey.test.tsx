@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { useIsFetching } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import { getQueryKey } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn/dist-cjs';
 import React from 'react';
@@ -43,8 +44,8 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy1 = proxy.post.all.getQueryKey(undefined, 'query');
-      const happy2 = proxy.post.all.getQueryKey();
+      const happy1 = getQueryKey(proxy.post.all, undefined, 'query');
+      const happy2 = getQueryKey(proxy.post.all);
 
       // @ts-expect-error - post.all has no input
       const sad = proxy.post.all.getQueryKey('foo');
@@ -77,13 +78,13 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy1 = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+      const happy1 = getQueryKey(proxy.post.byId, { id: 1 }, 'query');
 
       // doesn't really make sense but should still work
-      const happyIsh = proxy.post.byId.getQueryKey({ id: 1 });
+      const happyIsh = getQueryKey(proxy.post.byId, { id: 1 });
 
       // @ts-expect-error - post.byId has required input
-      const sad = proxy.post.byId.getQueryKey(undefined, 'query');
+      const sad = getQueryKey(proxy.post.byId, undefined, 'query');
 
       return (
         <>
@@ -144,7 +145,7 @@ describe('getQueryKeys', () => {
     function MyComponent() {
       proxy.post.all.useQuery();
 
-      const qKey = proxy.post.all.getQueryKey(undefined, 'query');
+      const qKey = getQueryKey(proxy.post.all, undefined, 'query');
       const isFetching = useIsFetching(qKey);
 
       return <div>{isFetching}</div>;
@@ -166,8 +167,8 @@ describe('getQueryKeys', () => {
   test('outside of the react context', () => {
     const { proxy } = ctx;
 
-    const all = proxy.post.all.getQueryKey(undefined, 'query');
-    const byId = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+    const all = getQueryKey(proxy.post.all, undefined, 'query');
+    const byId = getQueryKey(proxy.post.byId, { id: 1 }, 'query');
 
     expect(all).toEqual([['post', 'all'], { type: 'query' }]);
     expect(byId).toEqual([

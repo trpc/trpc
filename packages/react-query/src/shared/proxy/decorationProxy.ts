@@ -35,6 +35,12 @@ export function createReactProxyDecoration<
       return getArrayQueryKey(queryKey, (rest[0] as any) ?? 'any');
     }
 
+    if (lastArg === '_def') {
+      return {
+        path: pathCopy,
+      };
+    }
+
     if (lastArg.startsWith('useSuspense')) {
       const opts = rest[0] || {};
       const fn =
