@@ -30,7 +30,7 @@ import {
   contextProps,
 } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
-import { getQueryKey } from '../../internals/getQueryKey';
+import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
@@ -234,7 +234,7 @@ export function createReactQueryUtilsProxy<
           const [input, updater, ...rest] = args as Parameters<
             AnyDecoratedProcedure[typeof utilName]
           >;
-          const queryKey = getQueryKey(fullPath, input);
+          const queryKey = getQueryKeyInternal(fullPath, input);
           return {
             queryKey,
             updater,
@@ -245,7 +245,7 @@ export function createReactQueryUtilsProxy<
         const [input, ...rest] = args as Parameters<
           AnyDecoratedProcedure[typeof utilName]
         >;
-        const queryKey = getQueryKey(fullPath, input);
+        const queryKey = getQueryKeyInternal(fullPath, input);
         return {
           queryKey,
           rest,

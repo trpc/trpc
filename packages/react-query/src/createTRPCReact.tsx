@@ -16,7 +16,7 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
-import { QueryKey } from './internals/getArrayQueryKey';
+import { QueryKey, QueryType } from './internals/getArrayQueryKey';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
   CreateReactUtilsProxy,
@@ -90,6 +90,16 @@ export type DecorateProcedure<
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
+      /**
+       * Method to extract the query key for a procedure
+       * @param type - defaults to `any`
+       * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
+       * @deprecated
+       */
+      getQueryKey: (
+        input: inferProcedureInput<TProcedure>,
+        type?: QueryType,
+      ) => QueryKey;
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
@@ -195,6 +205,9 @@ export type DecoratedProcedureRecord<
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? {
+        /**
+         * @deprecated
+         */
         getQueryKey: () => QueryKey;
       } & DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
