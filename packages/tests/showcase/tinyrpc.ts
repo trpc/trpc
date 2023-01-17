@@ -22,24 +22,22 @@ type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
   const proxy: unknown = new Proxy(
     () => {
-      // dummy object since we don't have any client-side target we want to remap to
+      // dummy no-op function since we don't have any
+      // client-side target we want to remap to
     },
     {
       get(_obj, key) {
-        if (typeof key !== 'string' || key === 'then') {
-          // special case for if the proxy is accidentally treated
-          // like a PromiseLike (like in `Promise.resolve(proxy)`)
-          return undefined;
-        }
-        // Recursively compose the entire path until we call a function
+        if (typeof key !== 'string') return undefined;
+
+        // Recursively compose the full path until a function is invoked
         return createRecursiveProxy(callback, [...path, key]);
       },
       apply(_1, _2, args) {
         // Call the callback function with the entire path we
         // recursively created and forward the arguments
         return callback({
-          args,
           path,
+          args,
         });
       },
     },
@@ -104,5 +102,6 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
     if ('error' in json) {
       throw new Error(`Error: ${json.error.message}`);
     }
+    // No error - all good. Return the data.
     return json.result.data;
   }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
