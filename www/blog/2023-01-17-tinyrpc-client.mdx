@@ -72,7 +72,7 @@ const newPost = await client.post.create.mutate({ title: 'Foo' });
 
 To do this, tRPC uses a combination of [`Proxy`](https://mdn.io/proxy)-objects and some TypeScript magic to augment the object structure with the `.query` and `.mutate` methods on them - meaning we actually LIE to you about what you're doing (more on that later) in order to provide an excellent developer experience!
 
-What we want to do is to map the `post.byId.query()` to a GET request to our server, and `post.create.mutate()` to a POST request, and the types should all be propagated from back to front. So, how do we do this?
+On a high level, what we want to do is to map `post.byId.query()` to a GET request to our server, and `post.create.mutate()` to a POST request, and the types should all be propagated from back to front. So, how do we do this?
 
 ## Implementing a tiny tRPC client
 
@@ -80,7 +80,7 @@ What we want to do is to map the `post.byId.query()` to a GET request to our ser
 
 Let's start with the fun TypeScript magic to unlock the awesome autocompletion and typesafety we all know and love from using tRPC.
 
-We'll need to use recursive types so that we can infer arbitrary deep router structures. Also, we know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` on them respectively - in tRPC, we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions, so let's write some code!
+We'll need to use recursive types so that we can infer arbitrary deep router structures. Also, we know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` methods on them respectively - in tRPC, we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions, so let's write some code!
 
 Let's consider what we want to achive to provide autocompletion on paths as well as inference of the procedures input and output types:
 
@@ -104,7 +104,10 @@ type Resolver<TProcedure extends AnyProcedure> = (
 ```
 
 ```twoslash include decorate
-import type { AnyQueryProcedure, AnyMutationProcedure } from "@trpc/server";
+import type {
+  AnyQueryProcedure,
+  AnyMutationProcedure
+} from "@trpc/server";
 
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
@@ -369,7 +372,7 @@ const post = await client.post.byId.query({ id: '123' });
 //    ^?
 ```
 
-The full code for the client can be found [here](https://github.com/trpc/trpc/blob/main/packages/tests/showcase/tinyrpc.ts):
+The full code for the client can be found [here](https://github.com/trpc/trpc/blob/main/packages/tests/showcase/tinyrpc.ts), and tests showing the usage [here](https://github.com/trpc/trpc/blob/main/packages/tests/showcase/tinyrpc.test.ts).
 
 ## Conclusion
 
