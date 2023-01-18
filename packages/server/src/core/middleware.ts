@@ -49,6 +49,9 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
   | MiddlewareErrorResult<TParams>;
 
+/**
+ * @internal
+ */
 export interface MiddlewareBuilder<
   TRoot extends ProcedureParams,
   TNewParams extends ProcedureParams,
@@ -150,6 +153,9 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
+/**
+ * @internal
+ */
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   function createMiddlewareInner<TNewParams extends ProcedureParams>(
     middlewares: MiddlewareFunction<any, any>[],
