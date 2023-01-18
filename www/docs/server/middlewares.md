@@ -113,7 +113,7 @@ export const appRouter = router({
 
 ## Context Swapping
 
-Context swapping in tRPC is a very powerful feature that allows you to create base procedures that can create base procedures that dynamically infers new context in a flexible and typesafe manner.
+Context swapping in tRPC is a very powerful feature that allows you to create base procedures that dynamically infers new context in a flexible and typesafe manner.
 
 Below we have an example of a middleware that changes properties of the context, and procedures will receive the new context value:
 
@@ -152,11 +152,8 @@ const isAuthed = middleware(({ ctx, next }) => {
 });
 
 const protectedProcedure = publicProcedure.use(isAuthed);
-
-export const appRouter = router({
-  userId: protectedProcedure.query(({ ctx }) => ctx.user.id),
-  //                                                 ^?
-});
+protectedProcedure.query(({ ctx }) => ctx.user);
+//                                        ^?
 ```
 
 ## Extending middlewares
@@ -198,12 +195,9 @@ const barMiddleware = fooMiddleware.unstable_pipe(({ ctx, next }) => {
   });
 });
 
-const procedure = publicProcedure.use(barMiddleware);
-
-export const appRouter = router({
-  example: procedure.query(({ ctx }) => ctx.bar),
-  //                                    ^?
-});
+const barProcedure = publicProcedure.use(barMiddleware);
+barProcedure.query(({ ctx }) => ctx.bar);
+//                              ^?
 ```
 
 Beware that the order in which you pipe your middlewares matter and that the context must overlap. An example of a forbidden pipe is shown below. Here, the `fooMiddleware` overrides the `ctx.a` while `barMiddleware` still expects the root context from the initialization in `initTRPC` - so piping `fooMiddleware` with `barMiddleware` would not work, while piping `barMiddleware` with `fooMiddleware` does work.
