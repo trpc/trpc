@@ -5,7 +5,7 @@ sidebar_label: getQueryKey()
 slug: /getQueryKey
 ---
 
-We provide a getQueryKey helper that accepts a router or procedure so that you can easily provide the native function the correct query key.
+We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
 ```tsx
 function getQueryKey(
