@@ -439,7 +439,7 @@ export function createRootHooks<
 
         const actualInput = {
           ...((input as any) ?? {}),
-          cursor: queryFunctionContext.pageParam,
+          cursor: queryFunctionContext.pageParam ?? opts?.initialCursor,
         };
 
         // FIXME as any shouldn't be needed as client should be untyped too

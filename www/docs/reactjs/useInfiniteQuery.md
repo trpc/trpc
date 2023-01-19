@@ -69,6 +69,7 @@ export function MyComponent() {
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialCursor: 1, // <-- optional you can pass an initialCursor
     },
   );
   // [...]
