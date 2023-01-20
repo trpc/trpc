@@ -21,7 +21,7 @@ export const Preview = () => {
         </video>
         <a
           href="#try-it-out"
-          className="hidden md:block transition active:opacity-90 hover:shadow-lg dark:hover:shadow-primary-darkest hover:shadow-primary hover:shadow-opacity-10 rounded-lg bg-[#111111] border-[#111111] border-[20px]"
+          className="hidden md:block rounded-lg bg-[#111111] border-[#111111] border-[20px] shadow-[0px_-24px_300px_0px_rgba(57,140,203,0.15)] transition hover:shadow-[0px_-24px_150px_0px_rgba(57,140,203,0.3)]"
           title="Click to try it out"
         >
           <video
