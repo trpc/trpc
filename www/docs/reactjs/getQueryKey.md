@@ -7,16 +7,22 @@ slug: /getQueryKey
 
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
+:::note
+
+This works for mutations too.
+
+:::
+
 ```tsx
 function getQueryKey(
   procedureOrRouter: AnyProcedure | AnyRouter,
   input: TInput,
   type?: QueryType; /** @default 'any' */
-)
+): TRPCQueryKey;
 
 type QueryType = "query" | "infinite" | "any";
 // for useQuery ──┘         │            │
-// for useInfinitQuery ─────┘            │
+// for useInfiniteQuery ────┘            │
 // will match any ───────────────────────┘
 
 /** @note signature on router doesn't take any parameters */
