@@ -7,6 +7,7 @@ import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
 import {
   ExportRouteLike,
+  ExportUtilsRoute,
   FileExportStatusType,
   createExportRoute,
 } from './polymorphism.factory';
@@ -76,9 +77,20 @@ describe('polymorphism', () => {
   test('can pass an arbitrary route to the component so long as it matches the interface', async () => {
     const { trpc } = ctx;
 
+    function PullRequestsExportPage() {
+      const utils = trpc.useContext();
+
+      return (
+        <GenericExportsComponent
+          route={trpc.github.pullRequests.export}
+          utils={utils.github.pullRequests.export}
+        />
+      );
+    }
+
     const $ = render(
       <ctx.App>
-        <GenericExportsComponent route={trpc.github.pullRequests.export} />
+        <PullRequestsExportPage />
       </ctx.App>,
     );
 
@@ -96,7 +108,12 @@ describe('polymorphism', () => {
  * A general use components which implements a UI for the `createExportRoute` interface
  *  and can be used across all routes which use the factory
  */
-function GenericExportsComponent({ route }: { route: ExportRouteLike }) {
+function GenericExportsComponent({
+  route,
+}: {
+  route: ExportRouteLike;
+  utils: ExportUtilsRoute;
+}) {
   const [currentExport, setCurrentExport] = useState<null | number>(null);
 
   const exportsList = route.list.useQuery();

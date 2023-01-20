@@ -2,7 +2,13 @@
 // This file contains a useful pattern in tRPC,
 //  building factories which can produce common functionality over a homologous data source.
 //
-import { MutationLike, QueryLike, UtilsLike } from '@trpc/react-query/shared';
+import {
+  DecoratedProcedureUtilsRecord,
+  MutationLike,
+  QueryLike,
+  RouterLike,
+  UtilsLike,
+} from '@trpc/react-query/shared';
 import { AnyRootConfig, TRPCError } from '@trpc/server';
 import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
 import { createRouterFactory } from '@trpc/server/core/router';
@@ -104,14 +110,12 @@ export function createExportRoute<
 
 type ExportRouteType = ReturnType<typeof createExportRoute>;
 
-export interface ExportRouteLike {
-  start: MutationLike<ExportRouteType['start']>;
-  list: QueryLike<ExportRouteType['list']>;
-  status: QueryLike<ExportRouteType['status']>;
-}
+// export interface ExportRouteLike {
+//   start: MutationLike<ExportRouteType['start']>;
+//   list: QueryLike<ExportRouteType['list']>;
+//   status: QueryLike<ExportRouteType['status']>;
+// }
 
-// TODO:
-export interface ExportUtilsLike {
-  start: UtilsLike;
-  status: UtilsLike;
-}
+export type ExportRouteLike = RouterLike<ExportRouteType>;
+
+export type ExportUtilsRoute = UtilsLike<ExportRouteType>;
