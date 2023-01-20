@@ -12,11 +12,10 @@ import z from 'zod';
 // DTOs
 //
 
-export const FileExportRequest = z.object({
+const FileExportRequest = z.object({
   name: z.string().min(0),
   filter: z.string().min(0),
 });
-export type FileExportRequestType = z.infer<typeof FileExportRequest>;
 
 export const FileExportStatus = z.object({
   id: z.number().min(0),
