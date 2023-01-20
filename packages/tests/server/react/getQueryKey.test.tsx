@@ -29,6 +29,19 @@ const ctx = konn()
           )
           .query(({ input }) => posts.find((post) => post.id === input.id)),
         all: t.procedure.query(() => posts),
+        update: t.procedure
+          .input(
+            z.object({
+              name: z.string(),
+            }),
+          )
+          .mutation(({ input }) => {
+            return {
+              user: {
+                name: input.name,
+              },
+            };
+          }),
       }),
     });
 
@@ -106,6 +119,32 @@ describe('getQueryKeys', () => {
       );
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { input: { id: 1 } }]),
+      );
+    });
+  });
+
+  test('mutation', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const happy = getQueryKey(proxy.post.update, { name: 'trash' });
+
+      return (
+        <div>
+          <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
+        </div>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('qKey')).toHaveTextContent(
+        JSON.stringify([['post', 'update'], { input: { name: 'trash' } }]),
       );
     });
   });
