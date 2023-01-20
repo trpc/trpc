@@ -29,6 +29,11 @@ const ctx = konn()
           )
           .query(({ input }) => posts.find((post) => post.id === input.id)),
         all: t.procedure.query(() => posts),
+        list: t.procedure
+          .input(z.object({ cursor: z.number() }))
+          .query(({ input }) => {
+            return posts.slice(input.cursor);
+          }),
         update: t.procedure
           .input(
             z.object({
@@ -119,6 +124,58 @@ describe('getQueryKeys', () => {
       );
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { input: { id: 1 } }]),
+      );
+    });
+  });
+
+  test('undefined input but type', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const happy = getQueryKey(proxy.post.all, undefined, 'query');
+
+      return (
+        <>
+          <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('qKey')).toHaveTextContent(
+        JSON.stringify([['post', 'list'], { type: 'query' }]),
+      );
+    });
+  });
+
+  test('infinite', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const happy = getQueryKey(proxy.post.list, undefined, 'infinite');
+
+      return (
+        <>
+          <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('qKey')).toHaveTextContent(
+        JSON.stringify([['post', 'list'], { type: 'infinite' }]),
       );
     });
   });
