@@ -123,7 +123,7 @@ main();
 
 ## Infer React Query options based on your router
 
-When creating custom hooks around tRPC procedures, it's sometimes necesary to have the types of the options inferred from the router. You can do so via the `inferReactQueryProcedureOptions` helper exported from `@trpc/react-query`.
+When creating custom hooks around tRPC procedures, it's sometimes necessary to have the types of the options inferred from the router. You can do so via the `inferReactQueryProcedureOptions` helper exported from `@trpc/react-query`.
 
 ```ts twoslash filename='trpc.ts'
 // @module: esnext
