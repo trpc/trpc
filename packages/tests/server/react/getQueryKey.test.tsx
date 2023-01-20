@@ -127,7 +127,10 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post.update, { name: 'trash' });
+      const happy = getQueryKey(proxy.post.update);
+
+      // @ts-expect-error - mutations takes no input
+      const sad = getQueryKey(proxy.post.update, { name: 'trash' });
 
       return (
         <div>
@@ -144,7 +147,7 @@ describe('getQueryKeys', () => {
 
     await waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
-        JSON.stringify([['post', 'update'], { input: { name: 'trash' } }]),
+        JSON.stringify([['post', 'update']]),
       );
     });
   });

@@ -1,4 +1,9 @@
-import { AnyProcedure, AnyRouter, inferProcedureInput } from '@trpc/server';
+import {
+  AnyMutationProcedure,
+  AnyQueryProcedure,
+  AnyRouter,
+  inferProcedureInput,
+} from '@trpc/server';
 import { QueryType, getArrayQueryKey } from '../internals/getArrayQueryKey';
 import { DecorateProcedure, DecoratedProcedureRecord } from '../shared';
 
@@ -20,17 +25,22 @@ export function getQueryKeyInternal(
  * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
  */
 export function getQueryKey<
-  TProcedureOrRouter extends AnyProcedure | AnyRouter,
+  TProcedureOrRouter extends
+    | AnyQueryProcedure
+    | AnyMutationProcedure
+    | AnyRouter,
   TPath extends string,
   TFlags,
 >(
-  ..._params: TProcedureOrRouter extends AnyProcedure
+  ..._params: TProcedureOrRouter extends AnyQueryProcedure
     ? [
         procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
         ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
           ? []
           : [input: inferProcedureInput<TProcedureOrRouter>, type?: QueryType],
       ]
+    : TProcedureOrRouter extends AnyMutationProcedure
+    ? [procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>]
     : [
         procedureOrRouter: DecoratedProcedureRecord<
           TProcedureOrRouter['_def']['record'],
