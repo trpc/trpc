@@ -172,7 +172,7 @@ function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
 }
 ```
 
-You can also infer abstract types for router interfaces which you share around an application via a router factory. For example
+You can also infer abstract types for router interfaces which you share around an application via a router factory. For example:
 
 ```tsx twoslash filename='trpc.ts'
 // @module: esnext
@@ -265,3 +265,5 @@ function MyOtherPageComponent() {
   )
 }
 ```
+
+A more complete working example [can be found here](https://github.com/trpc/trpc/tree/main/packages/tests/server/react/polymorphism.test.tsx)
