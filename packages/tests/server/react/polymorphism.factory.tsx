@@ -73,11 +73,7 @@ export function createExportRoute<
           downloadUri: undefined,
         };
 
-        // When status is polled the download should be ready
-        dataProvider.push({
-          ...exportInstance,
-          downloadUri: `example.com/export-${opts.input.filter}.csv`,
-        });
+        dataProvider.push(exportInstance);
 
         return exportInstance;
       }),
@@ -88,9 +84,11 @@ export function createExportRoute<
       .input(z.object({ id: z.number().min(0) }))
       .output(FileExportStatus)
       .query(async (opts) => {
-        const exportInstance = dataProvider.find(
+        const index = dataProvider.findIndex(
           (item) => item.id === opts.input.id,
         );
+
+        const exportInstance = dataProvider[index];
 
         if (!exportInstance) {
           throw new TRPCError({
@@ -98,24 +96,23 @@ export function createExportRoute<
           });
         }
 
+        // When status is polled a second time the download should be ready
+        dataProvider[index] = {
+          ...exportInstance,
+          downloadUri: `example.com/export-${exportInstance.name}.csv`,
+        };
+
         return exportInstance;
       }),
   });
 }
 
 //
-// Set up a polymorphic interface which can be used by the client
-// Could amost certainly generate this using recursive mapped types, but simple is good for now
+// Generate abstract types which can be used by the client
 //
 
 type ExportRouteType = ReturnType<typeof createExportRoute>;
 
-// export interface ExportRouteLike {
-//   start: MutationLike<ExportRouteType['start']>;
-//   list: QueryLike<ExportRouteType['list']>;
-//   status: QueryLike<ExportRouteType['status']>;
-// }
-
 export type ExportRouteLike = RouterLike<ExportRouteType>;
 
-export type ExportUtilsRoute = UtilsLike<ExportRouteType>;
+export type ExportUtilsLike = UtilsLike<ExportRouteType>;
