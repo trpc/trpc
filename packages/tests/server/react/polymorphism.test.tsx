@@ -76,72 +76,9 @@ describe('polymorphism', () => {
   test('can pass an arbitrary route to the component so long as it matches the interface', async () => {
     const { trpc } = ctx;
 
-    function MyComp({ route }: { route: ExportRouteLike }) {
-      const [currentExport, setCurrentExport] = useState<null | number>(null);
-
-      const exportsList = route.list.useQuery();
-
-      const exportStatus = route.status.useQuery(
-        { id: currentExport ?? -1 },
-        { enabled: currentExport !== null },
-      );
-
-      const exportStarter = route.start.useMutation({
-        onSuccess(data) {
-          setCurrentExport(data.id);
-        },
-      });
-
-      return (
-        <>
-          <button
-            onClick={() => {
-              exportStarter.mutateAsync({
-                filter: 'some-filter',
-                name: 'Some Export',
-              });
-            }}
-          >
-            Start Export
-          </button>
-
-          <button
-            onClick={() => {
-              exportStarter.mutateAsync({
-                filter: 'some-filter',
-                name: 'Some Export',
-              });
-            }}
-          >
-            Refresh
-          </button>
-
-          {exportStatus.data && (
-            <p>
-              Last Export: {exportStatus.data?.name} (
-              {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
-            </p>
-          )}
-
-          <h4>Downloads:</h4>
-          <ul>
-            {exportsList.data
-              ?.map((item) =>
-                item.downloadUri ? (
-                  <li key={item.id}>
-                    <a href={item.downloadUri ?? '#'}>{item.name}</a>
-                  </li>
-                ) : null,
-              )
-              .filter(Boolean)}
-          </ul>
-        </>
-      );
-    }
-
     const $ = render(
       <ctx.App>
-        <MyComp route={trpc.github.pullRequests.export} />
+        <GenericExportsComponent route={trpc.github.pullRequests.export} />
       </ctx.App>,
     );
 
@@ -154,3 +91,70 @@ describe('polymorphism', () => {
     // });
   });
 });
+
+/**
+ * A general use components which implements a UI for the `createExportRoute` interface
+ *  and can be used across all routes which use the factory
+ */
+function GenericExportsComponent({ route }: { route: ExportRouteLike }) {
+  const [currentExport, setCurrentExport] = useState<null | number>(null);
+
+  const exportsList = route.list.useQuery();
+
+  const exportStatus = route.status.useQuery(
+    { id: currentExport ?? -1 },
+    { enabled: currentExport !== null },
+  );
+
+  const exportStarter = route.start.useMutation({
+    onSuccess(data) {
+      setCurrentExport(data.id);
+    },
+  });
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          exportStarter.mutateAsync({
+            filter: 'some-filter',
+            name: 'Some Export',
+          });
+        }}
+      >
+        Start Export
+      </button>
+
+      <button
+        onClick={() => {
+          exportStarter.mutateAsync({
+            filter: 'some-filter',
+            name: 'Some Export',
+          });
+        }}
+      >
+        Refresh
+      </button>
+
+      {exportStatus.data && (
+        <p>
+          Last Export: {exportStatus.data?.name} (
+          {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
+        </p>
+      )}
+
+      <h4>Downloads:</h4>
+      <ul>
+        {exportsList.data
+          ?.map((item) =>
+            item.downloadUri ? (
+              <li key={item.id}>
+                <a href={item.downloadUri ?? '#'}>{item.name}</a>
+              </li>
+            ) : null,
+          )
+          .filter(Boolean)}
+      </ul>
+    </>
+  );
+}

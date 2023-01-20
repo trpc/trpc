@@ -1,14 +1,12 @@
 //
-// This file contains a real pattern which is useful in tRPC,
+// This file contains a useful pattern in tRPC,
 //  building factories which can produce common functionality over a homologous data source.
 //
-// What we might be missing is a way to pass this interface around a client application in a polymorphic way
-//
+import { MutationLike, QueryLike, UtilsLike } from '@trpc/react-query/shared';
 import { AnyRootConfig, TRPCError } from '@trpc/server';
 import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
 import { createRouterFactory } from '@trpc/server/core/router';
 import z from 'zod';
-import { MutationLike, QueryLike, UtilsLike } from './polymorphism.types';
 
 //
 // DTOs
