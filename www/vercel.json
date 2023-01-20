@@ -79,6 +79,11 @@
       "source": "/edge-runtimes",
       "destination": "/docs/fetch",
       "permanent": true
+    },
+    {
+      "source": "/faq",
+      "destination": "/docs/faq",
+      "permanent": false
     }
   ]
 }

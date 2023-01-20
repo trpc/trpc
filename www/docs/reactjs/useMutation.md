@@ -52,7 +52,7 @@ export function MyComponent() {
   // This can either be a tuple ['login'] or string 'login'
   const mutation = trpc.login.useMutation();
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     const name = 'John Doe';
 
     mutation.mutate({ name });
