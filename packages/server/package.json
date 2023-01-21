@@ -74,6 +74,11 @@
       "require": "./dist/adapters/standalone.js",
       "default": "./dist/adapters/standalone.js"
     },
+    "./adapters/solid": {
+      "import": "./dist/adapters/solid.mjs",
+      "require": "./dist/adapters/solid.js",
+      "default": "./dist/adapters/solid.js"
+    },
     "./adapters/ws": {
       "import": "./dist/adapters/ws.mjs",
       "require": "./dist/adapters/ws.js",
@@ -152,6 +157,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",
+    "solid-start": "^0.2.16",
     "superjson": "^1.7.4",
     "superstruct": "^0.16.0",
     "tsx": "^3.9.0",
