@@ -1,5 +1,5 @@
 import type { inferAsyncReturnType } from '@trpc/server';
-import { CreateSolidContextOptions } from '@trpc/server/adapters/solid';
+import { type CreateSolidContextOptions } from '@trpc/server/adapters/solid';
 
 export const createContextInner = async (opts: CreateSolidContextOptions) => {
   return {
