@@ -845,7 +845,7 @@ importers:
       '@solidjs/meta': ^0.28.2
       '@solidjs/router': ^0.7.0
       '@tanstack/solid-query': ^4.22.0
-      '@trpc/client': workspace:^10.9.0
+      '@trpc/client': ^10.9.0
       '@trpc/server': ^10.9.0
       '@types/node': ^18.11.18
       esbuild: ^0.14.54
