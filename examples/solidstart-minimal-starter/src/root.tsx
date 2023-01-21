@@ -1,7 +1,7 @@
 // @refresh reload
+import "./root.css";
 import { Suspense } from "solid-js";
 import {
-  A,
   Body,
   ErrorBoundary,
   FileRoutes,
@@ -12,26 +12,26 @@ import {
   Scripts,
   Title,
 } from "solid-start";
-import "./root.css";
+import { trpc, client, queryClient } from "~/utils/trpc";
 
 export default function Root() {
   return (
     <Html lang="en">
       <Head>
-        <Title>SolidStart - Bare</Title>
+        <Title>Create JD App</Title>
         <Meta charset="utf-8" />
         <Meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <Body>
-        <Suspense>
-          <ErrorBoundary>
-            <A href="/">Index</A>
-            <A href="/about">About</A>
-            <Routes>
-              <FileRoutes />
-            </Routes>
-          </ErrorBoundary>
-        </Suspense>
+        <trpc.Provider client={client} queryClient={queryClient}>
+          <Suspense>
+            <ErrorBoundary>
+              <Routes>
+                <FileRoutes />
+              </Routes>
+            </ErrorBoundary>
+          </Suspense>
+        </trpc.Provider>
         <Scripts />
       </Body>
     </Html>
