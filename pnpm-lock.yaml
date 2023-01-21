@@ -819,7 +819,6 @@ importers:
       solid-js: ^1.5.7
       solid-start: ^0.2.15
       solid-start-node: ^0.2.15
-      solid-start-trpc: ^0.0.16
       solid-trpc: ^0.1.0
       typescript: ^4.8.3
       undici: 5.11.0
@@ -833,7 +832,6 @@ importers:
       '@trpc/server': link:../../packages/server
       solid-js: 1.6.9
       solid-start: 0.2.16_qbief6xtayngu5svimsh47y5fy
-      solid-start-trpc: 0.0.16_ek52vh6f6ijk53azp7wophpkza
       solid-trpc: 0.1.0_5yfz6vdtb42y7zdb7ianub77mm
       undici: 5.11.0
       zod: 3.20.2
@@ -20362,20 +20360,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /solid-start-trpc/0.0.16_ek52vh6f6ijk53azp7wophpkza:
-    resolution: {integrity: sha512-99/EGIE0SObmCVhZR00bYpkEQpCDP22YgjalQpVgm0BKy2+tJzEC6vdvOII2Ppa0Fm7iPwc4LDZoFX2E3KYmsg==}
-    peerDependencies:
-      '@trpc/client': ^10.0.0
-      '@trpc/server': ^10.0.0
-      solid-js: ^1.5.7
-      solid-start: ^0.2.1
-    dependencies:
-      '@trpc/client': link:packages/client
-      '@trpc/server': link:packages/server
-      solid-js: 1.6.9
-      solid-start: 0.2.16_qbief6xtayngu5svimsh47y5fy
-    dev: false
 
   /solid-start/0.2.16:
     resolution: {integrity: sha512-gkc14UFGBWF61qPu3nGVaB/wWKzX0r46BiOmwuMqIDJKpWAiOjzd+wDPGQOLkzVuobVGGFFcTbIUBvVZRUZ/qw==}
