@@ -9,7 +9,7 @@
   "devDependencies": {
     "solid-start-node": "^0.2.15",
     "typescript": "^4.8.3",
-    "vite": "^3.1.0"
+    "vite": "^3.1.3"
   },
   "dependencies": {
     "@adeora/solid-query": "^0.12.0",
@@ -18,10 +18,10 @@
     "@trpc/client": "^10.1.0",
     "@trpc/server": "^10.1.0",
     "solid-js": "^1.5.7",
-    "solid-start": "^0.2.15",
+    "solid-start": "^0.2.16",
     "solid-trpc": "^0.1.0",
     "undici": "5.11.0",
-    "zod": "^3.19.1"
+    "zod": "^3.0.0"
   },
   "engines": {
     "node": ">=16"

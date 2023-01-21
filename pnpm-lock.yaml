@@ -817,13 +817,13 @@ importers:
       '@trpc/client': ^10.1.0
       '@trpc/server': ^10.1.0
       solid-js: ^1.5.7
-      solid-start: ^0.2.15
+      solid-start: ^0.2.16
       solid-start-node: ^0.2.15
       solid-trpc: ^0.1.0
       typescript: ^4.8.3
       undici: 5.11.0
-      vite: ^3.1.0
-      zod: ^3.19.1
+      vite: ^3.1.3
+      zod: ^3.0.0
     dependencies:
       '@adeora/solid-query': 0.12.0_solid-js@1.6.9
       '@solidjs/meta': 0.28.2_solid-js@1.6.9
