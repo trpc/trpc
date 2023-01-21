@@ -12,13 +12,12 @@ import {
   Title,
 } from 'solid-start';
 import { client, queryClient, trpc } from '~/utils/trpc';
-import './root.css';
 
 export default function Root() {
   return (
     <Html lang="en">
       <Head>
-        <Title>Create JD App</Title>
+        <Title>tRPC + Solid Start</Title>
         <Meta charset="utf-8" />
         <Meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>

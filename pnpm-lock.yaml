@@ -816,6 +816,7 @@ importers:
       '@solidjs/router': ^0.6.0
       '@trpc/client': ^10.1.0
       '@trpc/server': ^10.1.0
+      eslint: ^8.30.0
       solid-js: ^1.5.7
       solid-start: ^0.2.16
       solid-start-node: ^0.2.15
@@ -836,6 +837,7 @@ importers:
       undici: 5.11.0
       zod: 3.20.2
     devDependencies:
+      eslint: 8.30.0
       solid-start-node: 0.2.16_ghktrbyxnjmg4w6ky73x64bntq
       typescript: 4.9.4
       vite: 3.2.4
