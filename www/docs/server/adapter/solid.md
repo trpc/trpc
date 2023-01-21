@@ -7,6 +7,8 @@ slug: /solid
 
 ## Example app
 
+See a full example app using SolidStart and tRPC [here](https://github.com/trpc/trpc/tree/main/examples/solidstart-minimal-starter).
+
 ## How to add tRPC to existing SolidStart project
 
 ### 1. Install deps
