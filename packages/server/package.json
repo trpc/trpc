@@ -84,6 +84,11 @@
       "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
     },
+    "./adapters/solid": {
+      "import": "./dist/adapters/solid.mjs",
+      "require": "./dist/adapters/solid.js",
+      "default": "./dist/adapters/solid.js"
+    },
     "./http": {
       "import": "./dist/http/index.mjs",
       "require": "./dist/http/index.js",
