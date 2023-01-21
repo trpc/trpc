@@ -3,7 +3,7 @@ import { Head, Link, Meta, Title } from 'solid-start';
 import { trpc } from '~/utils/trpc';
 
 const Home: VoidComponent = () => {
-  const hello = trpc.example.hello.useQuery(() => ({ name: 'from tRPC' }));
+  const hello = trpc.hello.useQuery(() => ({ name: 'from tRPC' }));
   return (
     <>
       <Head>
