@@ -74,11 +74,6 @@
       "require": "./dist/adapters/standalone.js",
       "default": "./dist/adapters/standalone.js"
     },
-    "./adapters/solid": {
-      "import": "./dist/adapters/solid.mjs",
-      "require": "./dist/adapters/solid.js",
-      "default": "./dist/adapters/solid.js"
-    },
     "./adapters/ws": {
       "import": "./dist/adapters/ws.mjs",
       "require": "./dist/adapters/ws.js",
