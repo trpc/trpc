@@ -1,6 +1,6 @@
 {
   "name": "trpc-init",
-  "version": "0.0.1-alpha.6",
+  "version": "0.0.1-alpha.11",
   "private": false,
   "description": "CLI for adding tRPC to your current project",
   "repository": {

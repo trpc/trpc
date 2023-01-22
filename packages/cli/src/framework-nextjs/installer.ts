@@ -33,6 +33,7 @@ const curriedGetPath =
 export async function nextjs(opts: { projectRoot: string }) {
   await promptAndInstallDeps({
     deps: [
+      'zod',
       '@trpc/server',
       '@trpc/next',
       '@trpc/react-query',
