@@ -1,6 +1,6 @@
 {
   "name": "@trpc/cli",
-  "version": "0.0.0",
+  "version": "0.0.1-alpha.0",
   "description": "CLI for adding tRPC to your current project",
   "repository": {
     "type": "git",
@@ -15,11 +15,18 @@
   "engines": {
     "node": ">=16.0.0"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "start": "node dist/index.js",
-    "exec": "tsx ./src/index"
+    "exec": "tsx ./src/index",
+    "prepublisOnly": "pnpm build",
+    "publish": "npm publish --tag alpha"
   },
   "dependencies": {
     "boxen": "^7.0.1",
