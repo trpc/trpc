@@ -4,7 +4,9 @@ import { Project } from 'ts-morph';
 import { promptAndInstallDeps, promptCode } from '../utils';
 import { writeFileSyncRecursive } from '../utils';
 import {
+  APP_ROUTER,
   NEXTJS_API_HANDLER,
+  NEXTJS_CONTEXT,
   NEXTJS_PAGES_APP,
   SERVER_TRPC_TS,
   UTILS_TRPC,
@@ -33,7 +35,7 @@ export async function nextjs(opts: { projectRoot: string }) {
     deps: [
       '@trpc/server',
       '@trpc/next',
-      '@trpc/react',
+      '@trpc/react-query',
       '@trpc/client',
       '@tanstack/react-query',
     ],
@@ -71,6 +73,26 @@ export async function nextjs(opts: { projectRoot: string }) {
       getPath('pages/api/trpc/[trpc].ts'),
       NEXTJS_API_HANDLER,
     );
+  }
+
+  if (
+    await promptCode({
+      code: APP_ROUTER,
+      path: getPath('server/routers/_app.ts'),
+      mode: 'CREATE',
+    })
+  ) {
+    writeFileSyncRecursive(getPath('server/routers/_app.ts'), APP_ROUTER);
+  }
+
+  if (
+    await promptCode({
+      code: NEXTJS_CONTEXT,
+      path: getPath('server/context.ts'),
+      mode: 'CREATE',
+    })
+  ) {
+    writeFileSyncRecursive(getPath('server/context.ts'), NEXTJS_CONTEXT);
   }
 
   // For files that may already exist, we just want to modify them using ts-morph

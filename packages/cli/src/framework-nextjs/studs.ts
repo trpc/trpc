@@ -55,13 +55,45 @@ export default createNextApiHandler({
 });`;
 
 // Path: src/server/routers/_app.ts
+export const APP_ROUTER = `const appRouter = router({
+  greeting: publicProcedure
+    .input(
+      z.object({
+        name: z.string().nullish(),
+      }),
+    )
+    .query(({ input }) => {
+      return {
+        text: \`hello \${input.name}\`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;`;
 
 // Path: src/server/context.ts
+export const NEXTJS_CONTEXT = `import * as trpc from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+
+interface CreateContextOptions {
+  // session: Session | null
+}
+
+export async function createContextInner(_opts: CreateContextOptions) {
+  return {};
+}
+
+export async function createContext(
+  opts: trpcNext.CreateNextContextOptions,
+): Promise<Context> {
+  return await createContextInner({});
+}`;
 
 // Path: src/server/trpc.ts
 export const SERVER_TRPC_TS = `import { initTRPC } from '@trpc/server';
+import { createContext } from './context';
 
-const t = initTRPC.create();
+const t = initTRPC.create<typeof createContext>();
 
 /**
  * Unprotected procedure
