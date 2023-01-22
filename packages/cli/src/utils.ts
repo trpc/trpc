@@ -8,13 +8,22 @@ import inquirer from 'inquirer';
 import path from 'path';
 import type { PackageJson } from 'type-fest';
 import { PKG_ROOT } from './consts';
-import { getPkgMgr } from './pkgMgr';
 
 export const logger = {
   info: (msg: string) =>
     console.log(chalk.cyanBright('[trpc-init] INFO:', msg)),
   error: (msg: string) =>
     console.log(chalk.redBright('[trpc-init] ERROR:', msg)),
+};
+
+export const getPkgMgr = () => {
+  const userAgent = process.env.npm_config_user_agent;
+  if (userAgent?.startsWith('yarn')) {
+    return 'yarn';
+  } else if (userAgent?.startsWith('pnpm')) {
+    return 'pnpm';
+  }
+  return 'npm';
 };
 
 export const getVersion = () => {
