@@ -4,6 +4,7 @@ dist
 .next
 .turbo
 .vercel
+next-env.d.ts
 
 node_modules
 package-lock.json
@@ -26,6 +27,8 @@ packages/*/*
 !packages/*/src
 !packages/tests/*
 packages/tests/node_modules
+
+!packages/cli/test-app
 
 examples/next-big-router/src/server/routers
 

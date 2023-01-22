@@ -31,9 +31,15 @@ export const highlightCode = (code: string, language = 'typescript') => {
   return highlight(code, { language, theme });
 };
 
-export const promptCode = async (opts: { code: string; path: string }) => {
+export const promptCode = async (opts: {
+  code: string;
+  path: string;
+  mode: 'EDIT' | 'CREATE';
+}) => {
   console.log('');
-  const message = `tRPC is about to create the following file:
+  const message = `tRPC is about to ${
+    opts.mode === 'EDIT' ? 'edit' : 'create'
+  } the following file:
 
 ${boxen(highlightCode(opts.code), { title: opts.path, padding: 1, width: 80 })}
 

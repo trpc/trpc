@@ -28,7 +28,7 @@
     "clipanion": "^3.2.0-rc.14",
     "find-up": "^6.3.0",
     "inquirer": "^9.1.4",
-    "next": "*"
+    "ts-morph": "^17.0.1"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.3",

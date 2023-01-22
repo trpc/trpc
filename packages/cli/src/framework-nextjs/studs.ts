@@ -32,6 +32,17 @@ export const trpc = createTRPCNext<AppRouter>({
   ssr: true,
 });`;
 
+// Path: src/pages/_app.tsx
+export const NEXTJS_PAGES_APP = `import type { AppType } from 'next/app';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
+`;
+
 // Path: src/pages/api/trpc/[trpc].ts
 export const NEXTJS_API_HANDLER = `import { createNextApiHandler } from '@trpc/server/adapters/next';
 import { appRouter } from "~/server/routers/_app";
