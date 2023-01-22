@@ -57,15 +57,23 @@ export const getCodeDiffString = (input: string, output: string) => {
   return diffed;
 };
 
-export const promptCode = async (opts: {
-  code: string;
-  path: string;
-  mode: 'EDIT' | 'CREATE';
-  input?: string /** only needed if mode = EDIT */;
-}) => {
+export const promptCode = async (
+  opts:
+    | {
+        code: string;
+        path: string;
+        mode: 'CREATE';
+      }
+    | {
+        code: string;
+        path: string;
+        mode: 'EDIT';
+        input: string /** only needed if mode = EDIT */;
+      },
+) => {
   const code =
     opts.mode === 'EDIT'
-      ? getCodeDiffString(opts.input as string, opts.code)
+      ? getCodeDiffString(opts.input, opts.code)
       : highlightCode(opts.code);
 
   console.log('');
