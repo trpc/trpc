@@ -26,11 +26,13 @@
     "chalk": "^5.2.0",
     "cli-highlight": "^2.1.11",
     "clipanion": "^3.2.0-rc.14",
+    "diff": "^5.1.0",
     "find-up": "^6.3.0",
     "inquirer": "^9.1.4",
     "ts-morph": "^17.0.1"
   },
   "devDependencies": {
+    "@types/diff": "^5.0.2",
     "@types/inquirer": "^9.0.3",
     "tsup": "^6.5.0",
     "type-fest": "^3.5.1",

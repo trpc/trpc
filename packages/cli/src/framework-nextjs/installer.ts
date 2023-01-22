@@ -67,6 +67,7 @@ export async function nextjs() {
       writeFileSyncRecursive(getPath('pages/_app.tsx'), NEXTJS_PAGES_APP);
     }
   } else {
+    const source = _app.getText();
     // Remove the `export default` and wrap compenent in `trpc.withTRPC`
     _app.addImportDeclaration({
       moduleSpecifier: '~/utils/trpc',
@@ -81,11 +82,11 @@ export async function nextjs() {
     _app.addStatements(`export default trpc.withTRPC(${defaultExport})`);
 
     if (
-      // TODO: Maybe format as diff?
       await promptCode({
         code: _app.getText(),
         path: _app.getFilePath(),
         mode: 'EDIT',
+        input: source,
       })
     )
       await _app.save();

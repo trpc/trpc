@@ -877,11 +877,13 @@ importers:
 
   packages/cli:
     specifiers:
+      '@types/diff': ^5.0.2
       '@types/inquirer': ^9.0.3
       boxen: ^7.0.1
       chalk: ^5.2.0
       cli-highlight: ^2.1.11
       clipanion: ^3.2.0-rc.14
+      diff: ^5.1.0
       find-up: ^6.3.0
       inquirer: ^9.1.4
       ts-morph: ^17.0.1
@@ -893,10 +895,12 @@ importers:
       chalk: 5.2.0
       cli-highlight: 2.1.11
       clipanion: 3.2.0-rc.14
+      diff: 5.1.0
       find-up: 6.3.0
       inquirer: 9.1.4
       ts-morph: 17.0.1
     devDependencies:
+      '@types/diff': 5.0.2
       '@types/inquirer': 9.0.3
       tsup: 6.5.0_typescript@4.9.4
       type-fest: 3.5.1
@@ -6897,6 +6901,10 @@ packages:
     resolution: {integrity: sha512-AbStKxNyWiMDQPGDguG2Kuhlq1Sv539pZSxYbx4UZeYkutpPwXCcgyiRrlV4YH64nIOsKx7XVnOMy9O7rJsXkg==}
     dev: false
 
+  /@types/diff/5.0.2:
+    resolution: {integrity: sha512-uw8eYMIReOwstQ0QKF0sICefSy8cNO/v7gOTiIy9SbwuHyEecJUm7qlgueOO5S1udZ5I/irVydHVwMchgzbKTg==}
+    dev: true
+
   /@types/eslint-scope/3.7.4:
     resolution: {integrity: sha512-9K4zoImiZc3HlIp6AVUDE4CWYx22a+lhSZMYNpbjW04+YF0KWj4pJXnEMjdnFTiQibFFmElcsasJXDbdI/EPhA==}
     dependencies:
@@ -10163,6 +10171,11 @@ packages:
   /diff-sequences/27.5.1:
     resolution: {integrity: sha512-k1gCAXAsNgLwEL+Y8Wvl+M6oEFj5bgazfZULpS5CneoPPXRaCCW7dm+q21Ky2VEE5X+VeRDBVg1Pcvvsr4TtNQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
+    dev: false
+
+  /diff/5.1.0:
+    resolution: {integrity: sha512-D+mk+qE8VC/PAUrlAU34N+VfXev0ghe5ywmpqrawphmVZc1bEfn56uo9qpyGp1p4xpzOHkSW4ztBd6L7Xx4ACw==}
+    engines: {node: '>=0.3.1'}
     dev: false
 
   /dir-glob/3.0.1:
