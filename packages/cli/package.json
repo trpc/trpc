@@ -1,6 +1,7 @@
 {
-  "name": "@trpc/cli",
-  "version": "0.0.1-alpha.0",
+  "name": "trpc-init",
+  "version": "0.0.1-alpha.6",
+  "private": false,
   "description": "CLI for adding tRPC to your current project",
   "repository": {
     "type": "git",
@@ -25,8 +26,8 @@
     "dev": "tsup --watch",
     "start": "node dist/index.js",
     "exec": "tsx ./src/index",
-    "prepublisOnly": "pnpm build",
-    "publish": "npm publish --tag alpha"
+    "prepublishOnly": "pnpm build",
+    "publish:alpha": "npm publish --tag alpha"
   },
   "dependencies": {
     "boxen": "^7.0.1",
@@ -34,6 +35,7 @@
     "cli-highlight": "^2.1.11",
     "clipanion": "^3.2.0-rc.14",
     "diff": "^5.1.0",
+    "execa": "^6.1.0",
     "find-up": "^6.3.0",
     "inquirer": "^9.1.4",
     "ts-morph": "^17.0.1"

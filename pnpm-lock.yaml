@@ -884,6 +884,7 @@ importers:
       cli-highlight: ^2.1.11
       clipanion: ^3.2.0-rc.14
       diff: ^5.1.0
+      execa: ^6.1.0
       find-up: ^6.3.0
       inquirer: ^9.1.4
       ts-morph: ^17.0.1
@@ -896,6 +897,7 @@ importers:
       cli-highlight: 2.1.11
       clipanion: 3.2.0-rc.14
       diff: 5.1.0
+      execa: 6.1.0
       find-up: 6.3.0
       inquirer: 9.1.4
       ts-morph: 17.0.1

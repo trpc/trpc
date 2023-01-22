@@ -1,8 +1,7 @@
-import { findUpSync } from 'find-up';
 import fs from 'fs';
 import path from 'path';
 import { Project } from 'ts-morph';
-import { promptCode } from '../utils';
+import { promptAndInstallDeps, promptCode } from '../utils';
 import { writeFileSyncRecursive } from '../utils';
 import {
   NEXTJS_API_HANDLER,
@@ -11,14 +10,38 @@ import {
   UTILS_TRPC,
 } from './studs';
 
-const getPath = (file: string, skipSrc?: boolean) => {
-  const projectRoot = path.parse(findUpSync('package.json') as string).dir;
-  const usingSrc = skipSrc ? false : fs.existsSync('src');
-  const fileName = (usingSrc ? 'src/' : '') + file;
-  return path.relative(projectRoot, fileName);
+const getPath = (opts: {
+  fileName: string;
+  skipSrc?: boolean;
+  projectRoot: string;
+}) => {
+  const usingSrc = opts.skipSrc
+    ? false
+    : fs.existsSync(path.join(opts.projectRoot, 'src'));
+  return path.relative(
+    opts.projectRoot,
+    path.join(opts.projectRoot, usingSrc ? 'src' : '', opts.fileName),
+  );
 };
 
-export async function nextjs() {
+const curriedGetPath =
+  (projectRoot: string) => (fileName: string, skipSrc?: boolean) =>
+    getPath({ fileName, projectRoot, skipSrc });
+
+export async function nextjs(opts: { projectRoot: string }) {
+  await promptAndInstallDeps({
+    deps: [
+      '@trpc/server',
+      '@trpc/next',
+      '@trpc/react',
+      '@trpc/client',
+      '@tanstack/react-query',
+    ],
+    projectRoot: opts.projectRoot,
+  });
+
+  const getPath = curriedGetPath(opts.projectRoot);
+
   if (
     await promptCode({
       code: SERVER_TRPC_TS,

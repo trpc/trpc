@@ -1,14 +1,12 @@
 import { findUpSync } from 'find-up';
 import { readFileSync } from 'fs';
+import path from 'path';
 import type { PackageJson } from 'type-fest';
-import { logger } from './utils';
+import { getVersion, logger } from './utils';
 
-const detectFramework = () => {
-  const packageJsonPath = findUpSync('package.json');
-  if (!packageJsonPath) {
-    logger.error('Failed to find package.json required to detect framework.');
-    process.exit(1);
-  }
+const detectFramework = (projectRoot: string) => {
+  const packageJsonPath = path.join(projectRoot, 'package.json');
+
   const packageJson = JSON.parse(
     readFileSync(packageJsonPath, 'utf-8'),
   ) as PackageJson;
@@ -28,11 +26,23 @@ const detectFramework = () => {
 };
 
 await (async () => {
-  const framework = detectFramework();
+  const pkgJsonPath = findUpSync('package.json');
+  if (!pkgJsonPath) {
+    logger.error('Could not find `package.json`.');
+    process.exit(1);
+  }
+  const projectRoot = path.parse(pkgJsonPath).dir;
+
+  console.log('');
+  logger.info(`v${getVersion()}`);
+  const framework = detectFramework(projectRoot);
+  console.log('');
 
   switch (framework) {
     case 'nextjs':
-      await import('./framework-nextjs/installer').then((m) => m.nextjs());
+      await import('./framework-nextjs/installer').then((m) =>
+        m.nextjs({ projectRoot }),
+      );
       break;
     case 'react':
       logger.error('Not implemented yet.');
