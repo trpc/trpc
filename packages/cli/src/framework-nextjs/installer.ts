@@ -72,10 +72,16 @@ export async function nextjs() {
       moduleSpecifier: '~/utils/trpc',
       namedImports: ['trpc'],
     });
+
+    const defaultExport = _app
+      .getDefaultExportSymbol()
+      ?.getFullyQualifiedName()
+      .split('.')[1];
     _app.removeDefaultExport();
-    _app.addStatements(`export default trpc.withTRPC(App)`); // FIXME: dont hardcode `App`
+    _app.addStatements(`export default trpc.withTRPC(${defaultExport})`);
 
     if (
+      // TODO: Maybe format as diff?
       await promptCode({
         code: _app.getText(),
         path: _app.getFilePath(),
