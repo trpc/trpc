@@ -28,8 +28,6 @@ packages/*/*
 !packages/tests/*
 packages/tests/node_modules
 
-!packages/cli/test-app
-
 examples/next-big-router/src/server/routers
 
 playwright
