@@ -1,29 +1,28 @@
 //
-// This file contains a useful pattern in tRPC,
-//  building factories which can produce common functionality over a homologous data source.
+// This file extends polymorphism.factory.tsx into a sub-typed router,
+//  which can be used with existing components, but has extra data for other use cases
 //
 import { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { AnyRootConfig, TRPCError } from '@trpc/server';
 import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
 import { createRouterFactory } from '@trpc/server/core/router';
 import z from 'zod';
+import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
 
 //
-// DTOs
+// DTO Subtypes
 //
 
-export const FileExportRequest = z.object({
-  name: z.string().min(0),
-  filter: z.string().min(0),
+const SubTypedFileExportRequest = FileExportRequest.extend({
+  description: z.string().min(0),
 });
 
-export const FileExportStatus = z.object({
-  id: z.number().min(0),
-  name: z.string().min(0),
-  downloadUri: z.string().optional(),
-  createdAt: z.date(),
+export const SubTypedFileExportStatus = FileExportStatus.extend({
+  description: z.string().min(0),
 });
-export type FileExportStatusType = z.infer<typeof FileExportStatus>;
+export type SubTypedFileExportStatusType = z.infer<
+  typeof SubTypedFileExportStatus
+>;
 
 //
 // Dependencies
@@ -36,7 +35,7 @@ type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
   typeof createBuilder<TConfig>
 >;
 
-export type DataProvider = FileExportStatusType[];
+export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 
 //
 // Set up a route factory which can be re-used for different data sources.
@@ -45,23 +44,24 @@ export type DataProvider = FileExportStatusType[];
 
 let COUNTER = 1;
 
-export function createExportRoute<
+export function createSubTypedExportRoute<
   TConfig extends AnyRootConfig,
   TRouterFactory extends RouterFactory<TConfig>,
   TBaseProcedure extends BaseProcedure<TConfig>,
 >(
   createRouter: TRouterFactory,
   baseProcedure: TBaseProcedure,
-  dataProvider: DataProvider,
+  dataProvider: SubTypedDataProvider,
 ) {
   return createRouter({
     start: baseProcedure
-      .input(FileExportRequest)
-      .output(FileExportStatus)
+      .input(SubTypedFileExportRequest)
+      .output(SubTypedFileExportStatus)
       .mutation(async (opts) => {
-        const exportInstance: FileExportStatusType = {
+        const exportInstance: SubTypedFileExportStatusType = {
           id: COUNTER++,
           name: opts.input.name,
+          description: opts.input.description,
           createdAt: new Date(),
           downloadUri: undefined,
         };
@@ -70,12 +70,14 @@ export function createExportRoute<
 
         return exportInstance;
       }),
-    list: baseProcedure.output(z.array(FileExportStatus)).query(async () => {
-      return dataProvider;
-    }),
+    list: baseProcedure
+      .output(z.array(SubTypedFileExportStatus))
+      .query(async () => {
+        return dataProvider;
+      }),
     status: baseProcedure
       .input(z.object({ id: z.number().min(0) }))
-      .output(FileExportStatus)
+      .output(SubTypedFileExportStatus)
       .query(async (opts) => {
         const index = dataProvider.findIndex(
           (item) => item.id === opts.input.id,
@@ -97,6 +99,21 @@ export function createExportRoute<
 
         return exportInstance;
       }),
+    delete: baseProcedure
+      .input(z.object({ id: z.number().min(0) }))
+      .mutation((opts) => {
+        const index = dataProvider.findIndex(
+          (item) => item.id === opts.input.id,
+        );
+
+        if (index < 0) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+          });
+        }
+
+        dataProvider.splice(index);
+      }),
   });
 }
 
@@ -104,8 +121,8 @@ export function createExportRoute<
 // Generate abstract types which can be used by the client
 //
 
-type ExportRouteType = ReturnType<typeof createExportRoute>;
+type SubTypedExportRouteType = ReturnType<typeof createSubTypedExportRoute>;
 
-export type ExportRouteLike = RouterLike<ExportRouteType>;
+export type ExportSubTypedRouteLike = RouterLike<SubTypedExportRouteType>;
 
-export type ExportUtilsLike = UtilsLike<ExportRouteType>;
+export type ExportSubTypesUtilsLike = UtilsLike<SubTypedExportRouteType>;
