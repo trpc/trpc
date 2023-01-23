@@ -35,7 +35,7 @@ import { trpc } from '~/utils/trpc';
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id }, { trpc: abortOnUnmount: true });
+  const postQuery = trpc.post.byId.useQuery({ id }, { trpc: { abortOnUnmount: true } });
 
   return (...)
 }
