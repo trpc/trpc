@@ -13,6 +13,7 @@ import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
+  DeepPartial,
   Filter,
   ProcedureOptions,
   ProtectedIntersection,
@@ -31,12 +32,6 @@ import {
 } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
-
-type DeepPartial<TObject> = TObject extends object
-  ? {
-      [P in keyof TObject]?: DeepPartial<TObject[P]>;
-    }
-  : TObject;
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
