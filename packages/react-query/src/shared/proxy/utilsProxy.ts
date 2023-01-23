@@ -32,6 +32,12 @@ import {
 import { TRPCContextState } from '../../internals/context';
 import { getQueryKey } from '../../internals/getQueryKey';
 
+type DeepPartial<TObject> = TObject extends object
+  ? {
+      [P in keyof TObject]?: DeepPartial<TObject[P]>;
+    }
+  : TObject;
+
 type DecorateProcedure<
   TRouter extends AnyRouter,
   TProcedure extends AnyQueryProcedure,
@@ -89,7 +95,7 @@ type DecorateProcedure<
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
-    input?: inferProcedureInput<TProcedure>,
+    input?: DeepPartial<inferProcedureInput<TProcedure>>,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
