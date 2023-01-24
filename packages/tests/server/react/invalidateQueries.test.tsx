@@ -233,8 +233,28 @@ describe('invalidateQueries()', () => {
   test('test invalidateQueries() with a partial input', async () => {
     const { trpc, client } = factory;
     function MyComponent() {
-      const mockPostQuery = trpc.getMockPostByContent.useQuery(
+      const mockPostQuery1 = trpc.getMockPostByContent.useQuery(
         { id: 'id', content: { language: 'eng', type: 'fun' }, title: 'title' },
+        {
+          staleTime: Infinity,
+        },
+      );
+      const mockPostQuery2 = trpc.getMockPostByContent.useQuery(
+        {
+          id: 'id',
+          content: { language: 'eng', type: 'boring' },
+          title: 'title',
+        },
+        {
+          staleTime: Infinity,
+        },
+      );
+      const mockPostQuery3 = trpc.getMockPostByContent.useQuery(
+        {
+          id: 'id',
+          content: { language: 'de', type: 'fun' },
+          title: 'title',
+        },
         {
           staleTime: Infinity,
         },
@@ -242,9 +262,17 @@ describe('invalidateQueries()', () => {
       const utils = trpc.useContext();
       return (
         <>
-          <pre>mockPostQuery:{mockPostQuery.status}</pre>
+          <pre>mockPostQuery1:{mockPostQuery1.status}</pre>
           <pre>
-            mockPostQuery:{mockPostQuery.isStale ? 'stale' : 'not-stale'}
+            mockPostQuery1:{mockPostQuery1.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <pre>mockPostQuery2:{mockPostQuery2.status}</pre>
+          <pre>
+            mockPostQuery2:{mockPostQuery2.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <pre>mockPostQuery3:{mockPostQuery3.status}</pre>
+          <pre>
+            mockPostQuery3:{mockPostQuery3.isStale ? 'stale' : 'not-stale'}
           </pre>
           <button
             data-testid="invalidate-with-partial-input"
@@ -271,15 +299,19 @@ describe('invalidateQueries()', () => {
     const utils = render(<App />);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent('mockPostQuery:success');
+      expect(utils.container).toHaveTextContent('mockPostQuery1:success');
+      expect(utils.container).toHaveTextContent('mockPostQuery2:success');
+      expect(utils.container).toHaveTextContent('mockPostQuery3:success');
     });
 
     // click button to invalidate
     utils.getByTestId('invalidate-with-partial-input').click();
 
-    // should become stale straight after the click by fuzzy matching the query
+    // 1 & 2 should become stale straight after the click by fuzzy matching the query, 3 should not
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`mockPostQuery:stale`);
+      expect(utils.container).toHaveTextContent(`mockPostQuery1:stale`);
+      expect(utils.container).toHaveTextContent(`mockPostQuery2:stale`);
+      expect(utils.container).toHaveTextContent(`mockPostQuery3:not-stale`);
     });
   });
 });
