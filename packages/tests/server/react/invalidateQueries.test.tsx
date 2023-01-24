@@ -230,4 +230,56 @@ describe('invalidateQueries()', () => {
       });
     }
   });
+  test('test invalidateQueries() with a partial input', async () => {
+    const { trpc, client } = factory;
+    function MyComponent() {
+      const mockPostQuery = trpc.getMockPostByContent.useQuery(
+        { id: 'id', content: { language: 'eng', type: 'fun' }, title: 'title' },
+        {
+          staleTime: Infinity,
+        },
+      );
+      const utils = trpc.useContext();
+      return (
+        <>
+          <pre>mockPostQuery:{mockPostQuery.status}</pre>
+          <pre>
+            mockPostQuery:{mockPostQuery.isStale ? 'stale' : 'not-stale'}
+          </pre>
+          <button
+            data-testid="invalidate-with-partial-input"
+            onClick={() => {
+              utils.getMockPostByContent.invalidate({
+                id: 'id',
+                content: { language: 'eng' },
+              });
+            }}
+          />
+        </>
+      );
+    }
+    function App() {
+      const [queryClient] = useState(() => createQueryClient());
+      return (
+        <trpc.Provider {...{ queryClient, client }}>
+          <QueryClientProvider client={queryClient}>
+            <MyComponent />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+    const utils = render(<App />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('mockPostQuery:success');
+    });
+
+    // click button to invalidate
+    utils.getByTestId('invalidate-with-partial-input').click();
+
+    // should become stale straight after the click by fuzzy matching the query
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`mockPostQuery:stale`);
+    });
+  });
 });
