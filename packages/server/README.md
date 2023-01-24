@@ -54,7 +54,7 @@ function createContext(opts: CreateHTTPContextOptions) {
 type Context = inferAsyncReturnType<typeof createContext>;
 
 // Initialize tRPC
-const t = initTRPC.context<Context>.create();
+const t = initTRPC.context<Context>().create();
 
 // Create main router
 const appRouter = t.router({
