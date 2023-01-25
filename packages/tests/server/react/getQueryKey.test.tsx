@@ -34,6 +34,11 @@ const ctx = konn()
           .query(({ input }) => {
             return posts.slice(input.cursor);
           }),
+        moreLists: t.procedure
+          .input(z.object({ anotherKey: z.number(), cursor: z.number() }))
+          .query(({ input }) => {
+            return posts.slice(input.cursor);
+          }),
         update: t.procedure
           .input(
             z.object({
@@ -132,7 +137,10 @@ describe('getQueryKeys', () => {
     const { proxy, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post.all, undefined, 'query');
+      const happy = getQueryKey(proxy.post.list, undefined, 'infinite');
+
+      // @ts-expect-error - cursor is not a valid input
+      const sad = getQueryKey(proxy.post.list, { cursor: 1 }, 'infinite');
 
       return (
         <>
@@ -154,6 +162,89 @@ describe('getQueryKeys', () => {
     });
   });
 
+  test('undefined input but type', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const happy = getQueryKey(proxy.post.list, undefined, 'infinite');
+
+      // @ts-expect-error - cursor is not a valid input
+      const sad = getQueryKey(proxy.post.list, { cursor: 1 }, 'infinite');
+
+      // @ts-expect-error - input is always invalid
+      const sad2 = getQueryKey(proxy.post.list, { anyKey: 1 }, 'infinite');
+
+      return (
+        <>
+          <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('qKey')).toHaveTextContent(
+        JSON.stringify([['post', 'list'], { type: 'infinite' }]),
+      );
+    });
+  });
+
+  test('extra key in input but type', async () => {
+    const { proxy, App } = ctx;
+
+    function MyComponent() {
+      const happy = getQueryKey(
+        proxy.post.moreLists,
+        { anotherKey: 1 },
+        'infinite',
+      );
+
+      // @ts-expect-error - undefined is not a valid input
+      const sad = getQueryKey(proxy.post.moreLists, undefined, 'infinite');
+
+      // @ts-expect-error - cursor is not a valid input
+      const sad2 = getQueryKey(proxy.post.moreLists, { cursor: 1 }, 'infinite');
+
+      // @ts-expect-error - input is always invalid
+      const sad3 = getQueryKey(proxy.post.moreLists, { anyKey: 1 }, 'infinite');
+
+      return (
+        <>
+          <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.getByTestId('qKey')).toHaveTextContent(
+        JSON.stringify([
+          ['post', 'moreLists'],
+          { input: { anotherKey: 1 }, type: 'infinite' },
+        ]),
+      );
+    });
+  });
+
+  /**
+   * getQueryKey(trpc.post.byId);
+    getQueryKey(trpc.post.byId, undefined);
+    getQueryKey(trpc.post.byId, {});
+    getQueryKey(trpc.post.byId, { id: 1 })
+
+    but not this 
+    getQueryKey(trpc.post.byId, { title: "blah" })
+   */
   test('infinite', async () => {
     const { proxy, App } = ctx;
 

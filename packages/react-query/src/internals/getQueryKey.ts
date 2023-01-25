@@ -37,7 +37,19 @@ export function getQueryKey<
         procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
         ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
           ? []
-          : [input: inferProcedureInput<TProcedureOrRouter>, type?: QueryType],
+          : [
+              input: inferProcedureInput<TProcedureOrRouter> extends {
+                cursor?: any;
+              }
+                ? Record<never, never> extends Omit<
+                    inferProcedureInput<TProcedureOrRouter>,
+                    'cursor'
+                  >
+                  ? undefined
+                  : Omit<inferProcedureInput<TProcedureOrRouter>, 'cursor'>
+                : inferProcedureInput<TProcedureOrRouter>,
+              type?: QueryType,
+            ],
       ]
     : TProcedureOrRouter extends AnyMutationProcedure
     ? [procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>]
