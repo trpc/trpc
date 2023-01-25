@@ -584,33 +584,13 @@ function __createHooksInternal<
 }
 
 /**
- * Hack to infer the type of `createReactQueryHooks`
- * @link https://stackoverflow.com/a/59072991
- */
-class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
-  fn() {
-    return __createHooksInternal<TRouter, TSSRContext>();
-  }
-}
-
-type returnTypeInferer<TType> = TType extends (
-  a: Record<string, string>,
-) => infer U
-  ? U
-  : never;
-type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
-  TRouter,
-  TSSRContext
->['fn'];
-
-/**
  * Infer the type of a `createReactQueryHooks` function
  * @internal
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
-> = returnTypeInferer<fooType<TRouter, TSSRContext>>;
+> = ReturnType<typeof __createHooksInternal<TRouter, TSSRContext>>;
 
 /**
  * Create strongly typed react hooks
