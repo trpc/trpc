@@ -157,7 +157,7 @@ describe('getQueryKeys', () => {
 
     await waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
-        JSON.stringify([['post', 'list'], { type: 'query' }]),
+        JSON.stringify([['post', 'list'], { type: 'infinite' }]),
       );
     });
   });
