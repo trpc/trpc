@@ -236,15 +236,6 @@ describe('getQueryKeys', () => {
     });
   });
 
-  /**
-   * getQueryKey(trpc.post.byId);
-    getQueryKey(trpc.post.byId, undefined);
-    getQueryKey(trpc.post.byId, {});
-    getQueryKey(trpc.post.byId, { id: 1 })
-
-    but not this 
-    getQueryKey(trpc.post.byId, { title: "blah" })
-   */
   test('infinite', async () => {
     const { proxy, App } = ctx;
 
