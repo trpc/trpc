@@ -4,7 +4,7 @@ import { env } from '../../utils/env';
 import { fetchFont } from '../../utils/fetchFont';
 
 export const config = {
-  runtime: 'experimental-edge',
+  runtime: 'edge',
 };
 
 const fetchGithubStars = async () => {
