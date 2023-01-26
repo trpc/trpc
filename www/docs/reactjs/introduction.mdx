@@ -161,6 +161,10 @@ export function App() {
 }
 ```
 
+:::note
+The usage of a useState for the creation of the query clients is there to prevent the client from being recreated on every render. This is exactly the same as using the `useMemo` hook.
+:::
+
 #### 4. Fetch data
 
 ```tsx title='pages/IndexPage.tsx'
