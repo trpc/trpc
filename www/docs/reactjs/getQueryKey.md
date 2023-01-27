@@ -7,25 +7,28 @@ slug: /getQueryKey
 
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
-:::note
-
-This works for mutations too.
-
-:::
-
 ```tsx
+// Queries
 function getQueryKey(
-  procedureOrRouter: AnyProcedure | AnyRouter,
-  input: TInput,
+  procedure: AnyQueryProcedure,
+  input?: DeepPartial<TInput>,
   type?: QueryType; /** @default 'any' */
+): TRPCQueryKey;
+
+// Routers
+function getQueryKey(
+  router: AnyRouter,
+): TRPCQueryKey;
+
+// Mutations
+function getMutationKey(
+  procedure: AnyMutationProcedure,
 ): TRPCQueryKey;
 
 type QueryType = "query" | "infinite" | "any";
 // for useQuery ──┘         │            │
 // for useInfiniteQuery ────┘            │
-// will match any ───────────────────────┘
-
-/** @note signature on router doesn't take any parameters */
+// will match all ───────────────────────┘
 ```
 
 ```tsx
@@ -43,7 +46,7 @@ function MyComponent() {
   const isFetching = useIsFetching(postListKey);
 
   // Set some query defaults for an entire router
-  const postKey = getQueryKey(trpc.post, undefined, 'any');
+  const postKey = getQueryKey(trpc.post);
   queryClient.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
 
   // ...
