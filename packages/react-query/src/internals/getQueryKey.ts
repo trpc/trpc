@@ -2,6 +2,7 @@ import {
   AnyMutationProcedure,
   AnyQueryProcedure,
   AnyRouter,
+  DeepPartial,
   inferProcedureInput,
 } from '@trpc/server';
 import { QueryType, getArrayQueryKey } from '../internals/getArrayQueryKey';
@@ -38,7 +39,7 @@ export function getQueryKey<
         ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
           ? []
           : [
-              input: inferProcedureInput<TProcedureOrRouter> extends {
+              input?: inferProcedureInput<TProcedureOrRouter> extends {
                 cursor?: any;
               }
                 ? Record<never, never> extends Omit<
@@ -46,8 +47,17 @@ export function getQueryKey<
                     'cursor'
                   >
                   ? undefined
-                  : Omit<inferProcedureInput<TProcedureOrRouter>, 'cursor'>
-                : inferProcedureInput<TProcedureOrRouter>,
+                  :
+                      | DeepPartial<
+                          Omit<
+                            inferProcedureInput<TProcedureOrRouter>,
+                            'cursor'
+                          >
+                        >
+                      | undefined
+                :
+                    | DeepPartial<inferProcedureInput<TProcedureOrRouter>>
+                    | undefined,
               type?: QueryType,
             ],
       ]

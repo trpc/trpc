@@ -102,17 +102,17 @@ describe('getQueryKeys', () => {
 
     function MyComponent() {
       const happy1 = getQueryKey(proxy.post.byId, { id: 1 }, 'query');
+      // input is fuzzy matched so should not be required
+      const happy2 = getQueryKey(proxy.post.byId, undefined, 'query');
 
       // doesn't really make sense but should still work
       const happyIsh = getQueryKey(proxy.post.byId, { id: 1 });
 
-      // @ts-expect-error - post.byId has required input
-      const sad = getQueryKey(proxy.post.byId, undefined, 'query');
-
       return (
         <>
           <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
-          <pre data-testid="qKey2">{JSON.stringify(happyIsh)}</pre>
+          <pre data-testid="qKey2">{JSON.stringify(happy2)}</pre>
+          <pre data-testid="qKey3">{JSON.stringify(happyIsh)}</pre>
         </>
       );
     }
@@ -128,6 +128,9 @@ describe('getQueryKeys', () => {
         JSON.stringify([['post', 'byId'], { input: { id: 1 }, type: 'query' }]),
       );
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
+        JSON.stringify([['post', 'byId']]),
+      );
+      expect(utils.getByTestId('qKey3')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { input: { id: 1 } }]),
       );
     });
@@ -204,8 +207,12 @@ describe('getQueryKeys', () => {
         'infinite',
       );
 
-      // @ts-expect-error - undefined is not a valid input
-      const sad = getQueryKey(proxy.post.moreLists, undefined, 'infinite');
+      // these should also be valid since the input is fuzzy matched
+      getQueryKey(proxy.post.moreLists, undefined, 'infinite');
+      getQueryKey(proxy.post.moreLists, undefined);
+      getQueryKey(proxy.post.moreLists);
+      getQueryKey(proxy.post.moreLists, {}, 'infinite');
+      getQueryKey(proxy.post.moreLists, { anotherKey: 1 });
 
       // @ts-expect-error - cursor is not a valid input
       const sad2 = getQueryKey(proxy.post.moreLists, { cursor: 1 }, 'infinite');
