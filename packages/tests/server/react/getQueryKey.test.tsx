@@ -132,7 +132,7 @@ describe('getQueryKeys', () => {
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { type: 'query' }]),
       );
-      expect(utils.getByTestId('qKey2')).toHaveTextContent(
+      expect(utils.getByTestId('qKey3')).toHaveTextContent(
         JSON.stringify([['post', 'byId']]),
       );
       expect(utils.getByTestId('qKey4')).toHaveTextContent(
