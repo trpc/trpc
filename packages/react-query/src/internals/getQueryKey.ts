@@ -20,8 +20,52 @@ export function getQueryKeyInternal(
   return [] as unknown as [string];
 }
 
+type GetQueryKeyParams<
+  TProcedureOrRouter extends
+    | AnyQueryProcedure
+    | AnyMutationProcedure
+    | AnyRouter,
+  TPath extends string,
+  TFlags,
+> = TProcedureOrRouter extends AnyQueryProcedure
+  ? [
+      procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
+      ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
+        ? []
+        : [
+            input?: inferProcedureInput<TProcedureOrRouter> extends {
+              cursor?: any;
+            }
+              ? Record<never, never> extends Omit<
+                  inferProcedureInput<TProcedureOrRouter>,
+                  'cursor'
+                >
+                ? undefined
+                :
+                    | DeepPartial<
+                        Omit<inferProcedureInput<TProcedureOrRouter>, 'cursor'>
+                      >
+                    | undefined
+              :
+                  | DeepPartial<inferProcedureInput<TProcedureOrRouter>>
+                  | undefined,
+            type?: QueryType,
+          ],
+    ]
+  : TProcedureOrRouter extends AnyMutationProcedure
+  ? [procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>]
+  : [
+      procedureOrRouter: DecoratedProcedureRecord<
+        TProcedureOrRouter['_def']['record'],
+        TFlags,
+        any
+      >,
+    ];
+
 /**
  * Method to extract the query key for a procedure
+ * @param procedureOrRouter - procedure or AnyRouter
+ * @param input - input to procedureOrRouter
  * @param type - defaults to `any`
  * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
  */
@@ -32,45 +76,7 @@ export function getQueryKey<
     | AnyRouter,
   TPath extends string,
   TFlags,
->(
-  ..._params: TProcedureOrRouter extends AnyQueryProcedure
-    ? [
-        procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
-        ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
-          ? []
-          : [
-              input?: inferProcedureInput<TProcedureOrRouter> extends {
-                cursor?: any;
-              }
-                ? Record<never, never> extends Omit<
-                    inferProcedureInput<TProcedureOrRouter>,
-                    'cursor'
-                  >
-                  ? undefined
-                  :
-                      | DeepPartial<
-                          Omit<
-                            inferProcedureInput<TProcedureOrRouter>,
-                            'cursor'
-                          >
-                        >
-                      | undefined
-                :
-                    | DeepPartial<inferProcedureInput<TProcedureOrRouter>>
-                    | undefined,
-              type?: QueryType,
-            ],
-      ]
-    : TProcedureOrRouter extends AnyMutationProcedure
-    ? [procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>]
-    : [
-        procedureOrRouter: DecoratedProcedureRecord<
-          TProcedureOrRouter['_def']['record'],
-          TFlags,
-          any
-        >,
-      ]
-) {
+>(..._params: GetQueryKeyParams<TProcedureOrRouter, TPath, TFlags>) {
   const [procedureOrRouter, input, type] = _params;
   // @ts-expect-error - we don't expose _def on the type layer
   const path = procedureOrRouter._def().path as string[];
