@@ -104,6 +104,7 @@ describe('getQueryKeys', () => {
       const happy1 = getQueryKey(proxy.post.byId, { id: 1 }, 'query');
       // input is fuzzy matched so should not be required
       const happy2 = getQueryKey(proxy.post.byId, undefined, 'query');
+      const happy3 = getQueryKey(proxy.post.byId);
 
       // doesn't really make sense but should still work
       const happyIsh = getQueryKey(proxy.post.byId, { id: 1 });
@@ -112,7 +113,8 @@ describe('getQueryKeys', () => {
         <>
           <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
           <pre data-testid="qKey2">{JSON.stringify(happy2)}</pre>
-          <pre data-testid="qKey3">{JSON.stringify(happyIsh)}</pre>
+          <pre data-testid="qKey3">{JSON.stringify(happy3)}</pre>
+          <pre data-testid="qKey4">{JSON.stringify(happyIsh)}</pre>
         </>
       );
     }
@@ -128,9 +130,12 @@ describe('getQueryKeys', () => {
         JSON.stringify([['post', 'byId'], { input: { id: 1 }, type: 'query' }]),
       );
       expect(utils.getByTestId('qKey2')).toHaveTextContent(
+        JSON.stringify([['post', 'byId'], { type: 'query' }]),
+      );
+      expect(utils.getByTestId('qKey2')).toHaveTextContent(
         JSON.stringify([['post', 'byId']]),
       );
-      expect(utils.getByTestId('qKey3')).toHaveTextContent(
+      expect(utils.getByTestId('qKey4')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { input: { id: 1 } }]),
       );
     });
