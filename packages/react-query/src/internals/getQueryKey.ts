@@ -20,7 +20,29 @@ export function getQueryKeyInternal(
   return [] as unknown as [string];
 }
 
-type GetQueryKeyParams<
+type GetInfinitQueryInput<TProcedureOrRouter extends AnyQueryProcedure> =
+  Record<never, never> extends Omit<
+    inferProcedureInput<TProcedureOrRouter>,
+    'cursor'
+  >
+    ? undefined
+    :
+        | DeepPartial<Omit<inferProcedureInput<TProcedureOrRouter>, 'cursor'>>
+        | undefined;
+
+type GetQueryProcedureInput<TProcedureOrRouter extends AnyQueryProcedure> =
+  inferProcedureInput<TProcedureOrRouter> extends {
+    cursor?: any;
+  }
+    ? GetInfinitQueryInput<TProcedureOrRouter>
+    : DeepPartial<inferProcedureInput<TProcedureOrRouter>> | undefined;
+
+type GetQueryParams<TProcedureOrRouter extends AnyQueryProcedure> =
+  inferProcedureInput<TProcedureOrRouter> extends undefined
+    ? []
+    : [input?: GetQueryProcedureInput<TProcedureOrRouter>, type?: QueryType];
+
+type GetParams<
   TProcedureOrRouter extends
     | AnyQueryProcedure
     | AnyMutationProcedure
@@ -30,27 +52,7 @@ type GetQueryKeyParams<
 > = TProcedureOrRouter extends AnyQueryProcedure
   ? [
       procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
-      ..._params: inferProcedureInput<TProcedureOrRouter> extends undefined
-        ? []
-        : [
-            input?: inferProcedureInput<TProcedureOrRouter> extends {
-              cursor?: any;
-            }
-              ? Record<never, never> extends Omit<
-                  inferProcedureInput<TProcedureOrRouter>,
-                  'cursor'
-                >
-                ? undefined
-                :
-                    | DeepPartial<
-                        Omit<inferProcedureInput<TProcedureOrRouter>, 'cursor'>
-                      >
-                    | undefined
-              :
-                  | DeepPartial<inferProcedureInput<TProcedureOrRouter>>
-                  | undefined,
-            type?: QueryType,
-          ],
+      ..._params: GetQueryParams<TProcedureOrRouter>,
     ]
   : TProcedureOrRouter extends AnyMutationProcedure
   ? [procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>]
@@ -61,6 +63,15 @@ type GetQueryKeyParams<
         any
       >,
     ];
+
+type GetQueryKeyParams<
+  TProcedureOrRouter extends
+    | AnyQueryProcedure
+    | AnyMutationProcedure
+    | AnyRouter,
+  TPath extends string,
+  TFlags,
+> = GetParams<TProcedureOrRouter, TPath, TFlags>;
 
 /**
  * Method to extract the query key for a procedure
