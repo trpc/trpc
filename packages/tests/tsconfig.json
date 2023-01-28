@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["server", "showcase"],
+  "include": ["server", "showcase", "setupTests.ts", "vitest.config.ts"],
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "target": "ES2020"
