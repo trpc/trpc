@@ -82,7 +82,7 @@ Let's start with the fun TypeScript magic to unlock the awesome autocompletion a
 
 We'll need to use recursive types so that we can infer arbitrary deep router structures. Also, we know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` methods on them respectively - in tRPC, we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions, so let's write some code!
 
-Let's consider what we want to achive to provide autocompletion on paths as well as inference of the procedures input and output types:
+Let's consider what we want to achieve to provide autocompletion on paths as well as inference of the procedures input and output types:
 
 - If we're on a router, we want to be able to access it's sub-routers and procedures. (we'll get to this in a little bit)
 - If we're on a query procedure, we want to be able to call `.query` on it.
