@@ -1078,8 +1078,6 @@ importers:
       superstruct: ^0.16.0
       tsx: ^3.9.0
       typescript: ^4.8.3
-      vitest: ^0.28.3
-      vitest-environment-miniflare: ^2.11.0
       yup: ^0.32.8
       zod: ^3.0.0
     dependencies:
@@ -1117,8 +1115,6 @@ importers:
       superstruct: 0.16.7
       tsx: 3.12.1
       typescript: 4.8.3
-      vitest: 0.28.3_jsdom@21.1.0
-      vitest-environment-miniflare: 2.11.0_vitest@0.28.3
       yup: 0.32.11
       zod: 3.20.2
 
@@ -19651,22 +19647,6 @@ packages:
       '@miniflare/shared': 2.11.0
       '@miniflare/shared-test-environment': 2.11.0
       vitest: 0.23.4_@vitest+ui@0.28.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: false
-
-  /vitest-environment-miniflare/2.11.0_vitest@0.28.3:
-    resolution: {integrity: sha512-SQESvpPVtY60WF70AJy4OCDbDvbrFE6xDsgss+Na5oCJK6SRMMkURKkoRLUbaCE66FsSlf8GivGV6IK6Fa5Cnw==}
-    engines: {node: '>=16.13'}
-    peerDependencies:
-      vitest: '>=0.23.0'
-    dependencies:
-      '@miniflare/queues': 2.11.0
-      '@miniflare/runner-vm': 2.11.0
-      '@miniflare/shared': 2.11.0
-      '@miniflare/shared-test-environment': 2.11.0
-      vitest: 0.28.3_jsdom@21.1.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
