@@ -1,5 +1,5 @@
 /**
- * @jest-environment miniflare
+ * @vitest-environment miniflare
  */
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';

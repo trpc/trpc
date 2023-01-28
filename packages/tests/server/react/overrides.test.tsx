@@ -14,7 +14,7 @@ describe('mutation override', () => {
       interface Post {
         title: string;
       }
-      const onSuccessSpy = jest.fn();
+      const onSuccessSpy = vi.fn();
 
       const posts: Post[] = [];
 

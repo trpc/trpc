@@ -108,6 +108,30 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
+    },
+    "./src": {
+      "default": "./src/index.ts"
+    },
+    "./src/*": {
+      "default": "./src/*"
+    },
+    "./src/core": {
+      "default": "./src/core/index.ts"
+    },
+    "./src/observable": {
+      "default": "./src/observable/index.ts"
+    },
+    "./src/adapters/fetch": {
+      "default": "./src/adapters/fetch/index.ts"
+    },
+    "./src/adapters/fastify": {
+      "default": "./src/adapters/fastify/index.ts"
+    },
+    "./src/adapters/lambda": {
+      "default": "./src/adapters/lambda/index.ts"
+    },
+    "./src/adapters/aws-lambda": {
+      "default": "./src/adapters/aws-lambda/index.ts"
     }
   },
   "files": [

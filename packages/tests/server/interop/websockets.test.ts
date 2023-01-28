@@ -16,8 +16,6 @@ import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 
-jest.retryTimes(3);
-
 type Message = {
   id: string;
 };
@@ -26,9 +24,9 @@ function factory(config?: { createContext: () => Promise<any> }) {
   const subRef: {
     current: Observer<Message, unknown>;
   } = {} as any;
-  const onNewMessageSubscription = jest.fn();
-  const subscriptionEnded = jest.fn();
-  const onNewClient = jest.fn();
+  const onNewMessageSubscription = vi.fn();
+  const subscriptionEnded = vi.fn();
+  const onNewClient = vi.fn();
   const oldRouter = trpc
     .router()
     .query('greeting', {
@@ -80,8 +78,8 @@ function factory(config?: { createContext: () => Promise<any> }) {
     })
     .interop();
 
-  const onOpenMock = jest.fn();
-  const onCloseMock = jest.fn();
+  const onOpenMock = vi.fn();
+  const onCloseMock = vi.fn();
 
   expectTypeOf(oldRouter).toMatchTypeOf<AnyRouter>();
   expectTypeOf<AnyRouter>().toMatchTypeOf<typeof oldRouter>();
@@ -156,8 +154,8 @@ test('basic subscription test', async () => {
       });
     });
   });
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
   const subscription = client.subscription('onMessage', undefined, {
     onStarted() {
       onStartedMock();
@@ -221,10 +219,10 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
       });
     });
   });
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
   client.subscription('onMessage', undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
@@ -292,10 +290,10 @@ test('server subscription ended', async () => {
       });
     });
   });
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
   client.subscription('onMessage', undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
@@ -330,12 +328,12 @@ test('sub emits errors', async () => {
       subRef.current.error(new Error('test'));
     });
   });
-  const onNewClient = jest.fn();
+  const onNewClient = vi.fn();
   wss.addListener('connection', onNewClient);
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
   client.subscription('onMessage', undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
@@ -382,11 +380,11 @@ test('subscriptions are automatically resumed', async () => {
     });
   });
   function createSub() {
-    const onStartedMock = jest.fn();
-    const onDataMock = jest.fn();
-    const onErrorMock = jest.fn();
-    const onStoppedMock = jest.fn();
-    const onCompleteMock = jest.fn();
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onStoppedMock = vi.fn();
+    const onCompleteMock = vi.fn();
     const unsub = client.subscription('onMessage', undefined, {
       onStarted: onStartedMock(),
       onData: onDataMock,
@@ -529,7 +527,7 @@ describe('regression test - slow createContext', () => {
   });
 
   test('createContext throws', async () => {
-    const createContext = jest.fn(async () => {
+    const createContext = vi.fn(async () => {
       await waitMs(20);
       throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
     });
@@ -852,7 +850,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
 test('wsClient stops reconnecting after .close()', async () => {
   const badWsUrl = 'ws://localhost:9999';
-  const retryDelayMsMock = jest.fn();
+  const retryDelayMsMock = vi.fn();
   retryDelayMsMock.mockReturnValue(100);
 
   const wsClient = createWSClient({

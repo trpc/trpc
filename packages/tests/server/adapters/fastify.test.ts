@@ -41,8 +41,8 @@ interface Message {
 
 function createAppRouter() {
   const ee = new EventEmitter();
-  const onNewMessageSubscription = jest.fn();
-  const onSubscriptionEnded = jest.fn();
+  const onNewMessageSubscription = vi.fn();
+  const onSubscriptionEnded = vi.fn();
 
   const t = initTRPC.context<Context>().create();
   const router = t.router;
@@ -266,8 +266,8 @@ describe('anonymous user', () => {
       });
     });
 
-    const onStartedMock = jest.fn();
-    const onDataMock = jest.fn();
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
     const sub = app.client.onMessage.subscribe('onMessage', {
       onStarted: onStartedMock,
       onData(data) {

@@ -17,7 +17,7 @@ test('basic', async () => {
       Object.setPrototypeOf(this, MyError.prototype);
     }
   }
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('err', {
       resolve() {
@@ -48,7 +48,7 @@ test('basic', async () => {
 });
 
 test('input error', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc.router().mutation('err', {
       input: z.string(),
@@ -93,7 +93,7 @@ test('input error', async () => {
 });
 
 test('unauthorized()', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('err', {
       resolve() {
@@ -123,7 +123,7 @@ test('getMessageFromUnkownError()', () => {
 });
 describe('formatError()', () => {
   test('simple', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
@@ -227,7 +227,7 @@ Object {
   });
   test('setting custom http response code', async () => {
     const TEAPOT_ERROR_CODE = 418;
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { close, httpUrl } = legacyRouterToServerAndClient(
       trpc
         .router()
@@ -265,7 +265,7 @@ Object {
 
   test('do not override response status set by middleware or resolver', async () => {
     const TEAPOT_ERROR_CODE = 418;
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { close, httpUrl } = legacyRouterToServerAndClient(
       trpc
         .router<CreateHTTPContextOptions>()
@@ -294,7 +294,7 @@ Object {
 });
 
 test('make sure object is ignoring prototype', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
@@ -355,7 +355,7 @@ test('retain stack trace', async () => {
 
   const onErrorFn: OnErrorFunction<any, any> = () => {};
 
-  const onError = jest.fn(onErrorFn);
+  const onError = vi.fn(onErrorFn);
 
   const { client, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {

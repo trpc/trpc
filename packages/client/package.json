@@ -58,6 +58,21 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
+    },
+    "./src": {
+      "default": "./src/index.ts"
+    },
+    "./src/links/internals/createChain": {
+      "default": "./src/links/internals/createChain.ts"
+    },
+    "./src/internals/fetchHelpers": {
+      "default": "./src/internals/fetchHelpers.ts"
+    },
+    "./src/internals/dataLoader": {
+      "default": "./src/internals/dataLoader.ts"
+    },
+    "./src/links/retryLink": {
+      "default": "./src/links/retryLink.ts"
     }
   },
   "files": [

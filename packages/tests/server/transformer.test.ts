@@ -21,7 +21,7 @@ import { z } from 'zod';
 test('superjson up and down', async () => {
   const transformer = superjson;
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const t = initTRPC.create({ transformer });
 
@@ -109,7 +109,7 @@ test('devalue up and down', async () => {
     deserialize: (object) => eval(`(${object})`),
   };
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const t = initTRPC.create({ transformer });
 
@@ -144,7 +144,7 @@ test('not batching: superjson up and devalue down', async () => {
     },
   };
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const t = initTRPC.create({ transformer });
 
@@ -179,7 +179,7 @@ test('batching: superjson up and devalue down', async () => {
     },
   };
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const t = initTRPC.create({ transformer });
 
@@ -214,7 +214,7 @@ test('batching: superjson up and f down', async () => {
     },
   };
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const t = initTRPC.create({ transformer });
 
@@ -240,7 +240,7 @@ test('batching: superjson up and f down', async () => {
 
 test('all transformers running in correct order', async () => {
   const world = 'foo';
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const transformer: CombinedDataTransformer = {
     input: {
@@ -297,7 +297,7 @@ describe('transformer on router', () => {
   test('http', async () => {
     const transformer = superjson;
     const date = new Date();
-    const fn = jest.fn();
+    const fn = vi.fn();
 
     const t = initTRPC.create({ transformer });
 
@@ -326,7 +326,7 @@ describe('transformer on router', () => {
   test('ws', async () => {
     let wsClient: any;
     const date = new Date();
-    const fn = jest.fn();
+    const fn = vi.fn();
     const transformer = superjson;
 
     const t = initTRPC.create({ transformer });
@@ -361,7 +361,7 @@ describe('transformer on router', () => {
   test('subscription', async () => {
     let wsClient: any;
     const date = new Date();
-    const fn = jest.fn();
+    const fn = vi.fn();
     const transformer = superjson;
 
     const t = initTRPC.create({ transformer });
@@ -421,7 +421,7 @@ describe('transformer on router', () => {
         Object.setPrototypeOf(this, MyError.prototype);
       }
     }
-    const onError = jest.fn();
+    const onError = vi.fn();
 
     const t = initTRPC.create({ transformer });
 
@@ -461,7 +461,7 @@ describe('transformer on router', () => {
 
 test('superjson - no input', async () => {
   const transformer = superjson;
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const t = initTRPC.create({ transformer });
 

@@ -8,7 +8,7 @@ import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 test('is called if def first', async () => {
-  const middleware = jest.fn((opts) => {
+  const middleware = vi.fn((opts) => {
     return opts.next();
   });
   const { client, close } = legacyRouterToServerAndClient(
@@ -42,7 +42,7 @@ test('is called if def first', async () => {
 });
 
 test('is not called if def last', async () => {
-  const middleware = jest.fn();
+  const middleware = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -61,7 +61,7 @@ test('is not called if def last', async () => {
 
 test('receives rawInput as param', async () => {
   const inputSchema = z.object({ userId: z.string() });
-  const middleware = jest.fn((opts) => {
+  const middleware = vi.fn((opts) => {
     const result = inputSchema.safeParse(opts.rawInput);
     if (!result.success) throw new TRPCError({ code: 'BAD_REQUEST' });
     const { userId } = result.data;
@@ -105,7 +105,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
       isAdmin: boolean;
     };
   };
-  const resolverMock = jest.fn();
+  const resolverMock = vi.fn();
 
   const headers: HTTPHeaders = {};
 
@@ -170,13 +170,13 @@ test('allows you to throw an error (e.g. auth)', async () => {
 });
 
 test('child routers + hook call order', async () => {
-  const middlewareInParent = jest.fn((opts) => {
+  const middlewareInParent = vi.fn((opts) => {
     return opts.next();
   });
-  const middlewareInChild = jest.fn((opts) => {
+  const middlewareInChild = vi.fn((opts) => {
     return opts.next();
   });
-  const middlewareInGrandChild = jest.fn((opts) => {
+  const middlewareInGrandChild = vi.fn((opts) => {
     return opts.next();
   });
   const { client, close } = legacyRouterToServerAndClient(
@@ -257,7 +257,7 @@ test('not returning next result is an error at compile-time', async () => {
 test('async hooks', async () => {
   const storage = new AsyncLocalStorage<{ requestId: number }>();
   let requestCount = 0;
-  const log = jest.fn();
+  const log = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -347,7 +347,7 @@ test('equiv', () => {
 
 test('measure time middleware', async () => {
   let durationMs = -1;
-  const logMock = jest.fn();
+  const logMock = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -397,7 +397,7 @@ test('middleware throwing should return a union', async () => {
       Object.setPrototypeOf(this, CustomError.prototype);
     }
   }
-  const fn = jest.fn((res: MiddlewareResult<unknown>) => {
+  const fn = vi.fn((res: MiddlewareResult<unknown>) => {
     return res;
   });
   const { client, close } = legacyRouterToServerAndClient(

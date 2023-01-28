@@ -139,7 +139,7 @@ describe('integration tests', () => {
   test('passing input to input w/o input', async () => {
     const t = initTRPC.create();
 
-    const snap = jest.fn();
+    const snap = vi.fn();
     const router = t.router({
       q: t.procedure.query(({ input }) => {
         snap(input);
@@ -493,7 +493,7 @@ describe('ObservableAbortError', () => {
     });
 
     const { close, proxy } = routerToServerAndClientNew(router);
-    const onReject = jest.fn();
+    const onReject = vi.fn();
     const ac = new AbortController();
     const req = proxy.slow.query(undefined, {
       signal: ac.signal,
@@ -544,7 +544,7 @@ describe('ObservableAbortError', () => {
     const ac = new AbortController();
     const req1 = proxy.slow1.query(undefined, { signal: ac.signal });
     const req2 = proxy.slow2.query();
-    const onReject1 = jest.fn();
+    const onReject1 = vi.fn();
     req1.catch(onReject1);
 
     await new Promise((resolve) => setTimeout(resolve, 5));
