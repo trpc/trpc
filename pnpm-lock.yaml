@@ -20,8 +20,6 @@ importers:
       '@types/node': ^18.7.20
       '@typescript-eslint/eslint-plugin': ^5.47.0
       '@typescript-eslint/parser': ^5.47.0
-      '@vitest/coverage-c8': ^0.28.3
-      '@vitest/ui': ^0.28.3
       eslint: ^8.30.0
       eslint-config-prettier: ^8.5.0
       eslint-plugin-no-only-tests: ^3.1.0
@@ -45,9 +43,6 @@ importers:
       tsx: ^3.9.0
       turbo: ^1.6.3
       typescript: ^4.8.3
-      vitest: ^0.23.4
-      vitest-environment-miniflare: ^2.11.0
-      ws: ^8.0.0
     dependencies:
       '@changesets/changelog-github': 0.4.7
       '@changesets/cli': 2.25.2
@@ -58,8 +53,6 @@ importers:
       '@types/node': 18.7.20
       '@typescript-eslint/eslint-plugin': 5.47.0_jhaguxqfxx2v4alxps2nzei754
       '@typescript-eslint/parser': 5.47.0_yvgxsonm4ikac5pm5z5getdq5e
-      '@vitest/coverage-c8': 0.28.3_@vitest+ui@0.28.3
-      '@vitest/ui': 0.28.3
       eslint: 8.30.0
       eslint-config-prettier: 8.5.0_eslint@8.30.0
       eslint-plugin-no-only-tests: 3.1.0
@@ -83,9 +76,6 @@ importers:
       tsx: 3.12.1
       turbo: 1.6.3
       typescript: 4.8.3
-      vitest: 0.23.4_@vitest+ui@0.28.3
-      vitest-environment-miniflare: 2.11.0_vitest@0.23.4
-      ws: 8.11.0
 
   examples/.interop/next-prisma-starter:
     specifiers:
@@ -1060,6 +1050,7 @@ importers:
       '@types/node-fetch': ^2.5.11
       '@types/testing-library__jest-dom': ^5.14.5
       '@vitest/coverage-c8': ^0.28.3
+      '@vitest/ui': ^0.28.3
       abort-controller: ^3.0.0
       devalue: ^2.0.1
       eslint: ^8.30.0
@@ -1078,6 +1069,9 @@ importers:
       superstruct: ^0.16.0
       tsx: ^3.9.0
       typescript: ^4.8.3
+      vitest: ^0.23.4
+      vitest-environment-miniflare: ^2.11.0
+      ws: ^8.11.0
       yup: ^0.32.8
       zod: ^3.0.0
     dependencies:
@@ -1096,7 +1090,8 @@ importers:
       '@types/node': 18.7.20
       '@types/node-fetch': 2.6.2
       '@types/testing-library__jest-dom': 5.14.5
-      '@vitest/coverage-c8': 0.28.3_jsdom@21.1.0
+      '@vitest/coverage-c8': 0.28.3_a7aimjszcawcicrmfep77vgtlm
+      '@vitest/ui': 0.28.3
       abort-controller: 3.0.0
       devalue: 2.0.1
       eslint: 8.30.0
@@ -1115,6 +1110,9 @@ importers:
       superstruct: 0.16.7
       tsx: 3.12.1
       typescript: 4.8.3
+      vitest: 0.23.4_a7aimjszcawcicrmfep77vgtlm
+      vitest-environment-miniflare: 2.11.0_vitest@0.23.4
+      ws: 8.11.0
       yup: 0.32.11
       zod: 3.20.2
 
@@ -7096,34 +7094,13 @@ packages:
       - supports-color
     dev: true
 
-  /@vitest/coverage-c8/0.28.3_@vitest+ui@0.28.3:
+  /@vitest/coverage-c8/0.28.3_a7aimjszcawcicrmfep77vgtlm:
     resolution: {integrity: sha512-3Toi4flNyxwSSYohhV3/euFSyrHjaD9vJVwFVcy84lcRHMEkv0W7pxlqZZeCvPdktN+WETbNazx3WWBs0jqhVQ==}
     dependencies:
       c8: 7.12.0
       picocolors: 1.0.0
       std-env: 3.3.1
-      vitest: 0.28.3_@vitest+ui@0.28.3
-    transitivePeerDependencies:
-      - '@edge-runtime/vm'
-      - '@vitest/browser'
-      - '@vitest/ui'
-      - happy-dom
-      - jsdom
-      - less
-      - sass
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-    dev: false
-
-  /@vitest/coverage-c8/0.28.3_jsdom@21.1.0:
-    resolution: {integrity: sha512-3Toi4flNyxwSSYohhV3/euFSyrHjaD9vJVwFVcy84lcRHMEkv0W7pxlqZZeCvPdktN+WETbNazx3WWBs0jqhVQ==}
-    dependencies:
-      c8: 7.12.0
-      picocolors: 1.0.0
-      std-env: 3.3.1
-      vitest: 0.28.3_jsdom@21.1.0
+      vitest: 0.28.3_a7aimjszcawcicrmfep77vgtlm
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@vitest/browser'
@@ -19646,7 +19623,7 @@ packages:
       '@miniflare/runner-vm': 2.11.0
       '@miniflare/shared': 2.11.0
       '@miniflare/shared-test-environment': 2.11.0
-      vitest: 0.23.4_@vitest+ui@0.28.3
+      vitest: 0.23.4_a7aimjszcawcicrmfep77vgtlm
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -19694,7 +19671,7 @@ packages:
       - terser
     dev: true
 
-  /vitest/0.23.4_@vitest+ui@0.28.3:
+  /vitest/0.23.4_a7aimjszcawcicrmfep77vgtlm:
     resolution: {integrity: sha512-iukBNWqQAv8EKDBUNntspLp9SfpaVFbmzmM0sNcnTxASQZMzRw3PsM6DMlsHiI+I6GeO5/sYDg3ecpC+SNFLrQ==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
@@ -19722,6 +19699,7 @@ packages:
       '@vitest/ui': 0.28.3
       chai: 4.3.7
       debug: 4.3.4
+      jsdom: 21.1.0
       local-pkg: 0.4.2
       strip-literal: 0.4.2
       tinybench: 2.3.1
@@ -19737,7 +19715,7 @@ packages:
       - terser
     dev: false
 
-  /vitest/0.28.3_@vitest+ui@0.28.3:
+  /vitest/0.28.3_a7aimjszcawcicrmfep77vgtlm:
     resolution: {integrity: sha512-N41VPNf3VGJlWQizGvl1P5MGyv3ZZA2Zvh+2V8L6tYBAAuqqDK4zExunT1Cdb6dGfZ4gr+IMrnG8d4Z6j9ctPw==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
@@ -19766,61 +19744,6 @@ packages:
       '@vitest/runner': 0.28.3
       '@vitest/spy': 0.28.3
       '@vitest/ui': 0.28.3
-      '@vitest/utils': 0.28.3
-      acorn: 8.8.1
-      acorn-walk: 8.2.0
-      cac: 6.7.14
-      chai: 4.3.7
-      debug: 4.3.4
-      local-pkg: 0.4.2
-      pathe: 1.1.0
-      picocolors: 1.0.0
-      source-map: 0.6.1
-      std-env: 3.3.1
-      strip-literal: 1.0.0
-      tinybench: 2.3.1
-      tinypool: 0.3.1
-      tinyspy: 1.0.2
-      vite: 3.2.4_@types+node@18.11.13
-      vite-node: 0.28.3_@types+node@18.11.13
-      why-is-node-running: 2.2.2
-    transitivePeerDependencies:
-      - less
-      - sass
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-    dev: false
-
-  /vitest/0.28.3_jsdom@21.1.0:
-    resolution: {integrity: sha512-N41VPNf3VGJlWQizGvl1P5MGyv3ZZA2Zvh+2V8L6tYBAAuqqDK4zExunT1Cdb6dGfZ4gr+IMrnG8d4Z6j9ctPw==}
-    engines: {node: '>=v14.16.0'}
-    hasBin: true
-    peerDependencies:
-      '@edge-runtime/vm': '*'
-      '@vitest/browser': '*'
-      '@vitest/ui': '*'
-      happy-dom: '*'
-      jsdom: '*'
-    peerDependenciesMeta:
-      '@edge-runtime/vm':
-        optional: true
-      '@vitest/browser':
-        optional: true
-      '@vitest/ui':
-        optional: true
-      happy-dom:
-        optional: true
-      jsdom:
-        optional: true
-    dependencies:
-      '@types/chai': 4.3.4
-      '@types/chai-subset': 1.3.3
-      '@types/node': 18.11.13
-      '@vitest/expect': 0.28.3
-      '@vitest/runner': 0.28.3
-      '@vitest/spy': 0.28.3
       '@vitest/utils': 0.28.3
       acorn: 8.8.1
       acorn-walk: 8.2.0
