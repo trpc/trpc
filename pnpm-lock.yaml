@@ -43,6 +43,7 @@ importers:
       tsx: ^3.9.0
       turbo: ^1.6.3
       typescript: ^4.8.3
+      vitest: ^0.23.4
     dependencies:
       '@changesets/changelog-github': 0.4.7
       '@changesets/cli': 2.25.2
@@ -76,6 +77,7 @@ importers:
       tsx: 3.12.1
       turbo: 1.6.3
       typescript: 4.8.3
+      vitest: 0.23.4
 
   examples/.interop/next-prisma-starter:
     specifiers:
@@ -18723,11 +18725,11 @@ packages:
   /tinypool/0.3.0:
     resolution: {integrity: sha512-NX5KeqHOBZU6Bc0xj9Vr5Szbb1j8tUHIeD18s41aDJaPeC5QTdEhK0SpdpUrZlj2nv5cctNcSjaKNanXlfcVEQ==}
     engines: {node: '>=14.0.0'}
+    dev: false
 
   /tinypool/0.3.1:
     resolution: {integrity: sha512-zLA1ZXlstbU2rlpA4CIeVaqvWq41MTWqLY3FfsAXgC8+f7Pk7zroaJQxDgxn1xNudKW6Kmj4808rPFShUlIRmQ==}
     engines: {node: '>=14.0.0'}
-    dev: false
 
   /tinyspy/1.0.2:
     resolution: {integrity: sha512-bSGlgwLBYf7PnUsQ6WOc6SJ3pGOcd+d8AA6EUnLDDM0kWEstC1JIlSZA3UNliDXhd9ABoS7hiRBDCu+XP/sf1Q==}
@@ -19659,7 +19661,7 @@ packages:
       local-pkg: 0.4.2
       strip-literal: 0.4.2
       tinybench: 2.3.1
-      tinypool: 0.3.0
+      tinypool: 0.3.1
       tinyspy: 1.0.2
       vite: 3.2.4_@types+node@18.11.13
     transitivePeerDependencies:
@@ -19669,7 +19671,6 @@ packages:
       - sugarss
       - supports-color
       - terser
-    dev: true
 
   /vitest/0.23.4_a7aimjszcawcicrmfep77vgtlm:
     resolution: {integrity: sha512-iukBNWqQAv8EKDBUNntspLp9SfpaVFbmzmM0sNcnTxASQZMzRw3PsM6DMlsHiI+I6GeO5/sYDg3ecpC+SNFLrQ==}
