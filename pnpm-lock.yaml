@@ -1071,7 +1071,7 @@ importers:
       typescript: ^4.8.3
       vitest: ^0.23.4
       vitest-environment-miniflare: ^2.11.0
-      ws: ^8.11.0
+      ws: ^8.0.0
       yup: ^0.32.8
       zod: ^3.0.0
     dependencies:
