@@ -7,10 +7,10 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
-} from '@trpc/client/src';
+} from '@trpc/client/src/index';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/retryLink';
-import { AnyRouter, initTRPC } from '@trpc/server/src';
+import { AnyRouter, initTRPC } from '@trpc/server/src/index';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
 

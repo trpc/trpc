@@ -1,5 +1,5 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import * as trpc from '@trpc/server/src';
+import * as trpc from '@trpc/server/src/index';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 

@@ -4,9 +4,9 @@
 /// <reference types="@cloudflare/workers-types" />
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
+import { createTRPCClient, httpBatchLink } from '@trpc/client/src/index';
 import * as trpcFetch from '@trpc/server/src/adapters/fetch';
+import * as trpc from '@trpc/server/src/index';
 import { Miniflare } from 'miniflare';
 
 // miniflare does an instanceof check

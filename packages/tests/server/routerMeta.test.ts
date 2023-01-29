@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { initTRPC } from '@trpc/server/src';
-import { inferRouterMeta } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
+import { inferRouterMeta } from '@trpc/server/src/index';
 import { observable } from '@trpc/server/src/observable';
 import { expectTypeOf } from 'expect-type';
 

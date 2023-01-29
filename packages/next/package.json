@@ -33,9 +33,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./src": {
-      "default": "./src/index.ts"
     }
   },
   "files": [

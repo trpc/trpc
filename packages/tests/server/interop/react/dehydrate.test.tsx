@@ -1,6 +1,6 @@
 import { createLegacyAppRouter } from './__testHelpers';
 import '@testing-library/jest-dom';
-import { createSSGHelpers } from '@trpc/react-query/src/ssg';
+import { createSSGHelpers } from '@trpc/react-query/src/ssg/index';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {

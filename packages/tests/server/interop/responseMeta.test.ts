@@ -1,6 +1,6 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import * as trpc from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
+import * as trpc from '@trpc/server/src/index';
 import fetch from 'node-fetch';
 
 test('set custom headers in beforeEnd', async () => {

@@ -35,15 +35,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./src": {
-      "default": "./src/index.ts"
-    },
-    "./src/*": {
-      "default": "./src/*"
-    },
-    "./src/ssg": {
-      "default": "./src/ssg/index.ts"
     }
   },
   "files": [

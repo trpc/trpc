@@ -2,7 +2,7 @@ import {
   DataTransformerOptions,
   DefaultDataTransformer,
   initTRPC,
-} from '@trpc/server/src';
+} from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 
 test('default transformer', () => {

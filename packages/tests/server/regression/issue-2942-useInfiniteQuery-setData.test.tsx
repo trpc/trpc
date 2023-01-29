@@ -5,7 +5,7 @@ import {
   dehydrate,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';

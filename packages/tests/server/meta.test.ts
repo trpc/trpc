@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 

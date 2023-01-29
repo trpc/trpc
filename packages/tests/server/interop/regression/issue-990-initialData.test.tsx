@@ -3,8 +3,8 @@ import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClien
 import { QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
-import * as trpcReact from '@trpc/react-query/src';
-import * as trpcServer from '@trpc/server/src';
+import * as trpcReact from '@trpc/react-query/src/index';
+import * as trpcServer from '@trpc/server/src/index';
 import React, { useState } from 'react';
 
 test('initialData type', async () => {

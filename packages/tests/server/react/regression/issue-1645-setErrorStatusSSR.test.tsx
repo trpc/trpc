@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from '../__testHelpers';
 import '@testing-library/jest-dom';
-import { withTRPC } from '@trpc/next/src';
+import { withTRPC } from '@trpc/next/src/index';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 

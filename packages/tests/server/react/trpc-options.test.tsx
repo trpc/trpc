@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';

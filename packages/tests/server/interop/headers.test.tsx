@@ -1,7 +1,7 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
-import { Dict } from '@trpc/server/src';
+import { createTRPCClient, httpBatchLink } from '@trpc/client/src/index';
+import * as trpc from '@trpc/server/src/index';
+import { Dict } from '@trpc/server/src/index';
 
 describe('pass headers', () => {
   type Context = {

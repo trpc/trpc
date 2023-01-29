@@ -1,10 +1,10 @@
 // import WebSocket from 'ws';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import { TRPCClientError } from '@trpc/client/src';
-import { createWSClient, wsLink } from '@trpc/client/src';
-import { AnyRouter, TRPCError, initTRPC } from '@trpc/server/src';
+import { TRPCClientError } from '@trpc/client/src/index';
+import { createWSClient, wsLink } from '@trpc/client/src/index';
 import { applyWSSHandler } from '@trpc/server/src/adapters/ws';
+import { AnyRouter, TRPCError, initTRPC } from '@trpc/server/src/index';
 import { Observer, observable } from '@trpc/server/src/observable';
 import {
   TRPCClientOutgoingMessage,

@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { observable } from '@trpc/server/src/observable';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';

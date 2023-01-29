@@ -1,5 +1,5 @@
-import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server/src/index';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import {

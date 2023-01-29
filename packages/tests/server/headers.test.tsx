@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
-import { Dict, initTRPC } from '@trpc/server/src';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src/index';
+import { Dict, initTRPC } from '@trpc/server/src/index';
 
 describe('pass headers', () => {
   type Context = {

@@ -1,7 +1,7 @@
 import { Context, router } from './__router';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src/index';
 import * as trpcExpress from '@trpc/server/src/adapters/express';
+import * as trpc from '@trpc/server/src/index';
 import AbortController from 'abort-controller';
 import express from 'express';
 import http from 'http';

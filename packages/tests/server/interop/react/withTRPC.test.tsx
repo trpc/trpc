@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createLegacyAppRouter } from './__testHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { withTRPC } from '@trpc/next/src';
+import { withTRPC } from '@trpc/next/src/index';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 

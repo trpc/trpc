@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/src/ssg/index';
 import { expectTypeOf } from 'expect-type';
 import React, { Fragment, useState } from 'react';
 

@@ -2,7 +2,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { inferReactQueryProcedureOptions } from '@trpc/react-query';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';

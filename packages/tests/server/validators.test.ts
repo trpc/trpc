@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import '@testing-library/jest-dom';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
 import * as st from 'superstruct';

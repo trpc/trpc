@@ -7,12 +7,12 @@ import {
   httpLink,
   splitLink,
   wsLink,
-} from '@trpc/client/src';
-import { inferAsyncReturnType, router } from '@trpc/server/src';
+} from '@trpc/client/src/index';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
+import { inferAsyncReturnType, router } from '@trpc/server/src/index';
 import { observable } from '@trpc/server/src/observable';
 import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';

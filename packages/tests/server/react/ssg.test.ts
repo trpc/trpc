@@ -1,6 +1,6 @@
 import { InfiniteData } from '@tanstack/react-query';
 import { createProxySSGHelpers } from '@trpc/react-query/src/ssg/ssgProxy';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 

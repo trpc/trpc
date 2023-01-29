@@ -2,9 +2,9 @@
  * @deprecated
  * TODO: remove in next major
  */
-import * as trpc from '@trpc/server/src';
-import { inferAsyncReturnType } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/lambda';
+import * as trpc from '@trpc/server/src/index';
+import { inferAsyncReturnType } from '@trpc/server/src/index';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import {

@@ -1,4 +1,4 @@
-import { TRPCError, initTRPC } from '@trpc/server/src';
+import { TRPCError, initTRPC } from '@trpc/server/src/index';
 import { expectTypeOf } from 'expect-type';
 
 test('decorate independently', () => {

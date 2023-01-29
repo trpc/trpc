@@ -7,10 +7,10 @@ import {
   createTRPCProxyClient,
   createWSClient,
   wsLink,
-} from '@trpc/client/src';
-import { httpBatchLink } from '@trpc/client/src';
-import { Maybe, TRPCError, initTRPC } from '@trpc/server/src';
+} from '@trpc/client/src/index';
+import { httpBatchLink } from '@trpc/client/src/index';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
+import { Maybe, TRPCError, initTRPC } from '@trpc/server/src/index';
 import { observable } from '@trpc/server/src/observable';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
