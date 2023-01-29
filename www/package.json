@@ -60,7 +60,7 @@
     "@babel/preset-env": "^7.18.6",
     "@docusaurus/module-type-aliases": "2.1.0",
     "@octokit/graphql": "^5.0.0",
-    "@octokit/graphql-schema": "^12.0.0",
+    "@octokit/graphql-schema": "^13.0.0",
     "@tsconfig/docusaurus": "^1.0.6",
     "@types/node": "^18.7.20",
     "@types/oauth": "^0.9.1",
