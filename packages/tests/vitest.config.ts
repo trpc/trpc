@@ -10,6 +10,10 @@ export default defineConfig({
       printBasicPrototype: true,
     },
     setupFiles: ['./tests/setupTests.ts'],
+    coverage: {
+      provider: 'istanbul',
+      include: ['./*/src/**/*.{ts,tsx,js,jsx}', '!**/deprecated/**'],
+    },
   },
   resolve: {
     alias: {
