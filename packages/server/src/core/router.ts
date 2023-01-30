@@ -206,7 +206,10 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         const newPath = `${path}${key}`;
 
         if (isRouter(procedureOrRouter)) {
-          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
+          recursiveGetPaths(
+            procedureOrRouter._def.procedures,
+            `${newPath}${config.namespaceDelimiter}`,
+          );
           continue;
         }
 
@@ -255,7 +258,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
             });
           }
 
-          const fullPath = path.join('.');
+          const fullPath = path.join(config.namespaceDelimiter);
           const procedure = _def.procedures[fullPath] as AnyProcedure;
 
           let type: ProcedureType = 'query';
