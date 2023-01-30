@@ -35,6 +35,9 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
       : object;
     errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
+    namespaceDelimiter: TTypes['namespaceDelimiter'] extends RootConfigTypes['namespaceDelimiter']
+      ? TTypes['namespaceDelimiter']
+      : string;
   }>;
 
 /**
@@ -96,12 +99,17 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       ? TOptions['transformer']
       : DefaultDataTransformer;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
+    type $NamespaceDelimiter = TOptions['namespaceDelimiter'] extends string
+      ? TOptions['namespaceDelimiter']
+      : // FIXME: should probably be defined as `DefaultNamespaceDelimiter`, but where?
+        '.';
 
     type $Config = RootConfig<{
       ctx: $Context;
       meta: $Meta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
+      namespaceDelimiter: $NamespaceDelimiter;
     }>;
 
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
@@ -116,6 +124,10 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
       errorFormatter,
       isServer: runtime?.isServer ?? isServerDefault,
+      namespaceDelimiter:
+        runtime?.namespaceDelimiter ||
+        // FIXME: should probably be defined as `defaultNamespaceDelimiter`, but where?
+        ('.' as any),
       /**
        * @internal
        */
