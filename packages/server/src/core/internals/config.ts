@@ -9,6 +9,7 @@ export interface RootConfigTypes {
   meta: object;
   errorShape: unknown;
   transformer: unknown;
+  namespaceDelimiter: string;
 }
 
 /**
@@ -53,6 +54,11 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    * @default process.env.NODE_ENV !== 'production'
    */
   isDev: boolean;
+  /**
+   * The delimiter used to separate namespaces and procedure names.
+   * @default '.'
+   */
+  namespaceDelimiter: TTypes['namespaceDelimiter'];
 }
 
 /**
@@ -79,4 +85,5 @@ export type AnyRootConfig = RootConfig<{
   meta: any;
   errorShape: any;
   transformer: any;
+  namespaceDelimiter: any;
 }>;
