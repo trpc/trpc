@@ -101,6 +101,7 @@ export type MigrateRouter<
   >,
   TErrorShape extends TRPCErrorShape<any>,
   TTransformer extends CombinedDataTransformer,
+  TTNamespaceDelimiter extends string = '.',
 > = NewRouter<
   RouterDef<
     RootConfig<{
@@ -108,6 +109,7 @@ export type MigrateRouter<
       errorShape: TErrorShape;
       meta: TMeta;
       transformer: TTransformer;
+      namespaceDelimiter: TTNamespaceDelimiter;
     }>,
     {},
     {
@@ -117,6 +119,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: TTransformer;
+          namespaceDelimiter: TTNamespaceDelimiter;
         }>,
         TQueries,
         'query'
@@ -127,6 +130,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: TTransformer;
+          namespaceDelimiter: TTNamespaceDelimiter;
         }>,
         TMutations,
         'mutation'
@@ -137,6 +141,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: TTransformer;
+          namespaceDelimiter: TTNamespaceDelimiter;
         }>,
         TSubscriptions,
         'subscription'
@@ -145,28 +150,31 @@ export type MigrateRouter<
   >
 >;
 
-export type MigrateOldRouter<TRouter extends AnyOldRouter> =
-  TRouter extends OldRouter<
-    infer TInputContext,
-    infer TContext,
-    infer TMeta,
-    infer TQueries,
-    infer TMutations,
-    infer TSubscriptions,
-    infer TErrorShape,
-    infer Transformer
-  >
-    ? MigrateRouter<
-        TInputContext,
-        TContext,
-        TMeta,
-        TQueries,
-        TMutations,
-        TSubscriptions,
-        TErrorShape,
-        Transformer
-      >
-    : never;
+export type MigrateOldRouter<
+  TRouter extends AnyOldRouter,
+  TNamespaceDelimiter extends string = '.',
+> = TRouter extends OldRouter<
+  infer TInputContext,
+  infer TContext,
+  infer TMeta,
+  infer TQueries,
+  infer TMutations,
+  infer TSubscriptions,
+  infer TErrorShape,
+  infer Transformer
+>
+  ? MigrateRouter<
+      TInputContext,
+      TContext,
+      TMeta,
+      TQueries,
+      TMutations,
+      TSubscriptions,
+      TErrorShape,
+      Transformer,
+      TNamespaceDelimiter
+    >
+  : never;
 
 function migrateProcedure<
   TProcedure extends AnyOldProcedure,
