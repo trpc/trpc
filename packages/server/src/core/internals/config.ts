@@ -66,7 +66,9 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    */
   isDev: boolean;
   /**
-   * The delimiter used to separate namespaces and procedure names.
+   * The delimiter used to separate namespaces and procedure names in router paths
+   * of child routers.
+   * @link https://trpc.io/docs/merging-routers
    * @default '.'
    */
   namespaceDelimiter: TTypes['namespaceDelimiter'];
