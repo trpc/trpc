@@ -15,9 +15,11 @@ import {
 import { FlatOverwrite, Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
+  DefaultNamespaceDelimiter,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
+  defaultNamespaceDelimiter,
   isServerDefault,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
@@ -101,8 +103,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
     type $NamespaceDelimiter = TOptions['namespaceDelimiter'] extends string
       ? TOptions['namespaceDelimiter']
-      : // FIXME: should probably be defined as `DefaultNamespaceDelimiter`, but where?
-        '.';
+      : DefaultNamespaceDelimiter;
 
     type $Config = RootConfig<{
       ctx: $Context;
@@ -125,9 +126,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       errorFormatter,
       isServer: runtime?.isServer ?? isServerDefault,
       namespaceDelimiter:
-        runtime?.namespaceDelimiter ||
-        // FIXME: should probably be defined as `defaultNamespaceDelimiter`, but where?
-        ('.' as any),
+        runtime?.namespaceDelimiter || (defaultNamespaceDelimiter as any),
       /**
        * @internal
        */
