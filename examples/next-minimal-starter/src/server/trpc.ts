@@ -8,8 +8,10 @@
  * @see https://trpc.io/docs/v10/procedures
  */
 import { initTRPC } from '@trpc/server';
+import { CreateNextContextOptions } from '@trpc/server/adapters/next';
 
-const t = initTRPC.create();
+type Context = CreateNextContextOptions;
+const t = initTRPC.context<Context>().create();
 
 /**
  * Unprotected procedure

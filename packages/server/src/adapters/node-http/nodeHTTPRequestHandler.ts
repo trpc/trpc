@@ -32,6 +32,7 @@ export async function nodeHTTPRequestHandler<
   };
   const { path, router } = opts;
 
+  console.log(opts);
   const bodyResult = await getPostBody(opts);
 
   const query = opts.req.query

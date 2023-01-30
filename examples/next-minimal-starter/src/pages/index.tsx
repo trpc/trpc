@@ -9,13 +9,13 @@ export default function IndexPage() {
 
   if (!result.data) {
     return (
-      <div style={styles}>
+      <div>
         <h1>Loading...</h1>
       </div>
     );
   }
   return (
-    <div style={styles}>
+    <div>
       {/**
        * The type is defined and can be autocompleted
        * 💡 Tip: Hover over `data` to see the result type
@@ -23,14 +23,19 @@ export default function IndexPage() {
        * 💡 Tip: Secondary click on `text` and "Rename Symbol" to rename it both on the client & server
        */}
       <h1>{result.data.text}</h1>
+      <div>
+        <form
+          method="post"
+          action="/api/trpc/mut"
+          encType="multipart/form-data"
+        >
+          <input name="hello" value="asd" />
+          <br />
+          <input type="file" name="file" />
+          <br />
+          <button>submit</button>
+        </form>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  width: '100vw',
-  height: '100vh',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-};

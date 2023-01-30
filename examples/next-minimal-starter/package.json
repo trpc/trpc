@@ -14,12 +14,14 @@
     "@trpc/next": "^10.9.0",
     "@trpc/react-query": "^10.9.0",
     "@trpc/server": "^10.9.0",
+    "formidable": "^2.1.1",
     "next": "^13.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@types/formidable": "^2.0.5",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",

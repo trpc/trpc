@@ -3,6 +3,8 @@
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
 import * as trpcNext from '@trpc/server/adapters/next';
+import formidable from 'formidable';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 import { publicProcedure, router } from '~/server/trpc';
 
@@ -26,6 +28,18 @@ const appRouter = router({
   // getUser: publicProcedure.query(() => {
   //   return { id: '1', name: 'bob' };
   // }),
+  mut: publicProcedure
+    .input(
+      z.object({
+        hello: z.string(),
+        file: z.unknown(),
+      }),
+    )
+    .mutation((opts) => {
+      console.log(opts.input);
+
+      return opts.input;
+    }),
 });
 
 // export only the type definition of the API
@@ -33,7 +47,15 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 // export API handler
-export default trpcNext.createNextApiHandler({
-  router: appRouter,
-  createContext: () => ({}),
-});
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  const form = formidable({});
+
+  return trpcNext.createNextApiHandler({
+    router: appRouter,
+    createContext: (opts) => {
+      console.log('hello');
+      console.log(opts.req.body);
+      return opts;
+    },
+  });
+};
