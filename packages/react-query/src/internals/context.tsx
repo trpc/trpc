@@ -16,9 +16,9 @@ import {
   Updater,
 } from '@tanstack/react-query';
 import {
+  CreateTRPCProxyClient,
   TRPCClient,
   TRPCRequestOptions,
-  inferRouterProxyClient,
 } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
@@ -70,7 +70,7 @@ export type DecoratedProxyTRPCContextProps<
   TRouter extends AnyRouter,
   TSSRContext,
 > = ProxyTRPCContextProps<TRouter, TSSRContext> & {
-  client: inferRouterProxyClient<TRouter>;
+  client: CreateTRPCProxyClient<TRouter>;
 };
 
 export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
