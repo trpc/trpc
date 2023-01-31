@@ -6,6 +6,7 @@ import {
   DataTransformerOptions,
   DefaultDataTransformer,
   DefaultNamespaceDelimiter,
+  defaultNamespaceDelimiter,
 } from '@trpc/server';
 import {
   Unsubscribable,
@@ -138,6 +139,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
 
     this.runtime = {
       transformer: getTransformer(),
+      namespaceDelimiter: opts.namespaceDelimiter || defaultNamespaceDelimiter,
     };
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));

@@ -47,6 +47,7 @@ export type TRPCFetch = (
 
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
+  namespaceDelimiter: string;
 }
 
 /**
