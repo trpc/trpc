@@ -1,7 +1,10 @@
 import { defaultFormatter } from '../../error/formatter';
 import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
-import { AnyRouter, createRouterFactory } from '../router';
-import { defaultNamespaceDelimiter } from './config';
+import {
+  AnyRouter,
+  createRouterFactory,
+  defaultNamespaceDelimiter,
+} from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
 // ts-prune-ignore-next -- Used in generated code

@@ -15,17 +15,19 @@ import {
 import { FlatOverwrite, Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
-  DefaultNamespaceDelimiter,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-  defaultNamespaceDelimiter,
   isServerDefault,
 } from './internals/config';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
-import { createRouterFactory } from './router';
+import {
+  DefaultNamespaceDelimiter,
+  createRouterFactory,
+  defaultNamespaceDelimiter,
+} from './router';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 

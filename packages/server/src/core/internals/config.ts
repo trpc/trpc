@@ -22,17 +22,6 @@ export const isServerDefault: boolean =
   !!globalThis.process?.env?.JEST_WORKER_ID;
 
 /**
- * The default namespace delimiter used in routes.
- */
-export const defaultNamespaceDelimiter = '.';
-
-/**
- * The default namespace delimiter used in routes.
- * @internal
- */
-export type DefaultNamespaceDelimiter = typeof defaultNamespaceDelimiter;
-
-/**
  * The runtime config that are used and actually represents real values underneath
  * @internal
  */

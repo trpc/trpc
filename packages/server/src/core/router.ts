@@ -321,3 +321,14 @@ export function callProcedure(
 
   return procedure(opts);
 }
+
+/**
+ * The default namespace delimiter used in routes.
+ */
+export const defaultNamespaceDelimiter = '.';
+
+/**
+ * The default namespace delimiter used in routes.
+ * @internal
+ */
+export type DefaultNamespaceDelimiter = typeof defaultNamespaceDelimiter;
