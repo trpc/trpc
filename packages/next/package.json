@@ -29,6 +29,7 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src"
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
@@ -38,7 +39,8 @@
   "files": [
     "dist",
     "src",
-    "README.md"
+    "README.md",
+    "package.json"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.3.8",
