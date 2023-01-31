@@ -134,16 +134,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Ethan Clark",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8572133?u=247a2ef2eb9bdba02076dfd8c6a25169a8ba3464&v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://yorick.sh/?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "ethangclark",
-    "createdAt": 1643215166000
-  },
-  {
-    "__typename": "User",
     "name": "Michał Kowieski",
     "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
     "monthlyPriceInDollars": 5,
@@ -374,10 +364,10 @@ export const sponsors = [
   },
   {
     "__typename": "Organization",
-    "name": "Fanvue",
+    "name": "fanvue",
     "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://github.com/fanvue",
+    "link": "https://www.fanvue.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "fanvue",
     "createdAt": 1661242015000
@@ -514,16 +504,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "SalihOsmankovic",
-    "imgSrc": "https://avatars.githubusercontent.com/u/45540328?v=4",
-    "monthlyPriceInDollars": 5,
-    "link": "https://github.com/SalihOsmankovic",
-    "privacyLevel": "PUBLIC",
-    "login": "SalihOsmankovic",
-    "createdAt": 1670622555000
-  },
-  {
-    "__typename": "User",
     "name": "Lucas Santos",
     "imgSrc": "https://avatars.githubusercontent.com/u/11416392?u=e1d9e059b8738791e80b18b7a976b921aa659c2a&v=4",
     "monthlyPriceInDollars": 5,
@@ -537,7 +517,7 @@ export const sponsors = [
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://ahoylabs.xyz/?ref=trpc",
+    "link": "https://pliny.app/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "ahoylabs",
     "createdAt": 1671157456000
@@ -561,5 +541,45 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "DavidTParks",
     "createdAt": 1673023326000
+  },
+  {
+    "__typename": "User",
+    "name": "matt",
+    "imgSrc": "https://avatars.githubusercontent.com/u/42226854?u=137b0ccb3e93c2373e3bc01997c46cac31265692&v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://github.com/0mjs",
+    "privacyLevel": "PUBLIC",
+    "login": "0mjs",
+    "createdAt": 1673311584000
+  },
+  {
+    "__typename": "User",
+    "name": "Ilko Kacharov",
+    "imgSrc": "https://avatars.githubusercontent.com/u/893608?v=4",
+    "monthlyPriceInDollars": 10,
+    "link": "https://stackoverflow.com/users/668245/kachar?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "kachar",
+    "createdAt": 1673326373000
+  },
+  {
+    "__typename": "User",
+    "name": "Daniel Burger",
+    "imgSrc": "https://avatars.githubusercontent.com/u/34251194?u=2cad4388c1544e539ecb732d656e42fb07b4ff2d&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "http://danielburger.online/?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "danburonline",
+    "createdAt": 1673457748000
+  },
+  {
+    "__typename": "User",
+    "name": "ry-animal",
+    "imgSrc": "https://avatars.githubusercontent.com/u/118958436?u=4b52a82c25af65ce2da86713521c75b303c1bede&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://github.com/ry-animal",
+    "privacyLevel": "PUBLIC",
+    "login": "ry-animal",
+    "createdAt": 1674673221000
   }
 ] as const

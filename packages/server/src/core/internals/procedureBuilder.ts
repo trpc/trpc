@@ -248,6 +248,10 @@ export function createBuilder<TConfig extends AnyRootConfig>(
         meta: meta as Record<string, unknown>,
       }) as AnyProcedureBuilder;
     },
+    /**
+     * @deprecated
+     * This functionality is deprecated and will be removed in the next major version.
+     */
     unstable_concat(builder) {
       return createNewBuilder(_def, builder._def) as any;
     },
