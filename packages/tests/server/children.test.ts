@@ -105,14 +105,12 @@ test('children, custom namespace delimiter', async () => {
     }
   `);
 
-  // TODO: fix this stuff...
+  const { close, proxy } = routerToServerAndClientNew(router);
 
-  // const { close, proxy } = routerToServerAndClientNew(router);
+  expect(await proxy.foo.query()).toBe('bar');
 
-  // expect(await proxy.foo.query()).toBe('bar');
+  expect(await proxy.child.grandchild.foo.query()).toBe('grandchild');
+  expect(await proxy.child.grandchild.mut.mutate()).toBe('mut');
 
-  // expect(await proxy.child.grandchild.foo.query()).toBe('grandchild');
-  // expect(await proxy.child.grandchild.mut.mutate()).toBe('mut');
-
-  // return close();
+  return close();
 });

@@ -76,6 +76,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
         ? opts.client({ httpUrl, wssUrl, wsClient })
         : opts.client
       : {}),
+    namespaceDelimiter: router._def._config.namespaceDelimiter,
   } as WithTRPCConfig<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
