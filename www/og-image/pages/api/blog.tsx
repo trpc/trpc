@@ -4,7 +4,7 @@ import { blogParams } from 'utils/zodParams';
 import { fetchFont } from '../../utils/fetchFont';
 
 export const config = {
-  runtime: 'experimental-edge',
+  runtime: 'edge',
 };
 
 export default async (req: Request) => {

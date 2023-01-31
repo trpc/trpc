@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server';
 import { fontParams } from 'utils/zodParams';
 
 export const config = {
-  runtime: 'experimental-edge',
+  runtime: 'edge',
 };
 
 export default async (req: NextRequest) => {

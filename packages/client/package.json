@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.9.0",
+  "version": "10.9.1",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -29,6 +29,7 @@
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
@@ -64,6 +65,7 @@
     "dist",
     "src",
     "README.md",
+    "package.json",
     "links"
   ],
   "peerDependencies": {
@@ -71,7 +73,7 @@
   },
   "devDependencies": {
     "@testing-library/dom": "^8.18.1",
-    "@trpc/server": "^10.9.0",
+    "@trpc/server": "^10.9.1",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",
     "rollup": "^2.79.1",
