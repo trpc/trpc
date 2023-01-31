@@ -42,7 +42,7 @@ function MyComponent() {
   const posts = trpc.post.list.useQuery();
 
   // See if a query is fetching
-  const postListKey = getQueryKey(trpc.post.list, undefined, 'infinite');
+  const postListKey = getQueryKey(trpc.post.list, undefined, 'query');
   const isFetching = useIsFetching(postListKey);
 
   // Set some query defaults for an entire router
