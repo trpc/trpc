@@ -21,6 +21,7 @@
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
@@ -41,6 +42,7 @@
     "dist",
     "src",
     "README.md",
+    "package.json",
     "ssg",
     "shared"
   ],
