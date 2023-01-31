@@ -7,6 +7,7 @@ import {
   UndefinedKeys,
 } from '../../types';
 import {
+  MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
   createInputMiddleware,
@@ -146,7 +147,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a middleware to the procedure.
    */
   use<$Params extends ProcedureParams>(
-    fn: MiddlewareFunction<TParams, $Params>,
+    fn:
+      | MiddlewareBuilder<TParams, $Params>
+      | MiddlewareFunction<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Query procedure
@@ -239,9 +242,15 @@ export function createBuilder<TConfig extends AnyRootConfig>(
         meta: meta as Record<string, unknown>,
       }) as AnyProcedureBuilder;
     },
-    use(middleware) {
+    use(middlewareBuilderOrFn) {
+      // Distinguish between a middleware builder and a middleware function
+      const middlewares =
+        '_middlewares' in middlewareBuilderOrFn
+          ? middlewareBuilderOrFn._middlewares
+          : [middlewareBuilderOrFn];
+
       return createNewBuilder(_def, {
-        middlewares: [middleware],
+        middlewares,
       }) as AnyProcedureBuilder;
     },
     query(resolver) {
