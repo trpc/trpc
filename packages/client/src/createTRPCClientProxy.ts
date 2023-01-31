@@ -119,7 +119,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
       const procedureType = clientCallTypeMap[clientCallType];
 
-      const fullPath = pathCopy.join('.');
+      const fullPath = pathCopy.join(client.runtime.namespaceDelimiter);
 
       return (client as any)[procedureType](fullPath, ...args);
     });
