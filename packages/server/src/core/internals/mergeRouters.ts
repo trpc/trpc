@@ -1,6 +1,7 @@
 import { defaultFormatter } from '../../error/formatter';
 import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
 import { AnyRouter, createRouterFactory } from '../router';
+import { defaultNamespaceDelimiter } from './config';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
 // ts-prune-ignore-next -- Used in generated code
@@ -44,6 +45,22 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
     return prev;
   }, defaultTransformer as CombinedDataTransformer);
 
+  const namespaceDelimiter = routerList.reduce((prev, current) => {
+    if (
+      current._def._config.namespaceDelimiter &&
+      current._def._config.namespaceDelimiter !== defaultNamespaceDelimiter
+    ) {
+      if (
+        prev !== defaultNamespaceDelimiter &&
+        prev !== current._def._config.namespaceDelimiter
+      ) {
+        throw new Error('You seem to have several namespace delimiters');
+      }
+      return current._def._config.namespaceDelimiter;
+    }
+    return prev;
+  }, defaultNamespaceDelimiter);
+
   const router = createRouterFactory({
     errorFormatter,
     transformer,
@@ -52,6 +69,7 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
       (r) => r._def._config.allowOutsideOfServer,
     ),
     isServer: routerList.some((r) => r._def._config.isServer),
+    namespaceDelimiter,
     $types: routerList[0]?._def._config.$types as any,
   })(record);
   return router;
