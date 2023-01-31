@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tests",
-  "version": "10.9.0",
+  "version": "10.9.1",
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
@@ -19,10 +19,10 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
-    "@trpc/client": "^10.9.0",
-    "@trpc/next": "^10.9.0",
-    "@trpc/react-query": "^10.9.0",
-    "@trpc/server": "^10.9.0",
+    "@trpc/client": "10.9.1",
+    "@trpc/next": "10.9.1",
+    "@trpc/react-query": "^10.9.1",
+    "@trpc/server": "10.9.1",
     "@types/jest": "^27.0.1",
     "@types/node": "^18.7.20",
     "@types/node-fetch": "^2.5.11",

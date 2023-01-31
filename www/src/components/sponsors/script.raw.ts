@@ -134,16 +134,6 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Ethan Clark",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8572133?u=247a2ef2eb9bdba02076dfd8c6a25169a8ba3464&v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://yorick.sh/?ref=trpc",
-    "privacyLevel": "PUBLIC",
-    "login": "ethangclark",
-    "createdAt": 1643215166000
-  },
-  {
-    "__typename": "User",
     "name": "Michał Kowieski",
     "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
     "monthlyPriceInDollars": 5,
@@ -374,10 +364,10 @@ export const sponsors = [
   },
   {
     "__typename": "Organization",
-    "name": "Fanvue",
+    "name": "fanvue",
     "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
     "monthlyPriceInDollars": 10,
-    "link": "https://github.com/fanvue",
+    "link": "https://www.fanvue.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "fanvue",
     "createdAt": 1661242015000
@@ -527,7 +517,7 @@ export const sponsors = [
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
     "monthlyPriceInDollars": 50,
-    "link": "https://ahoylabs.xyz/?ref=trpc",
+    "link": "https://pliny.app/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "ahoylabs",
     "createdAt": 1671157456000
@@ -581,5 +571,15 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "danburonline",
     "createdAt": 1673457748000
+  },
+  {
+    "__typename": "User",
+    "name": "ry-animal",
+    "imgSrc": "https://avatars.githubusercontent.com/u/118958436?u=4b52a82c25af65ce2da86713521c75b303c1bede&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://github.com/ry-animal",
+    "privacyLevel": "PUBLIC",
+    "login": "ry-animal",
+    "createdAt": 1674673221000
   }
 ] as const
