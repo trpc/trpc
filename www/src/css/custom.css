@@ -287,6 +287,12 @@ h5 {
   display: none;
 }
 
+/* Would be nice to have these displayed but they are veeerry long and noisy... */
+.shiki .error,
+.shiki .error-behind {
+  display: none;
+}
+
 .theme-doc-version-badge {
   margin-bottom: 1rem;
 }
