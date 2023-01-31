@@ -5,6 +5,7 @@ import {
   DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
+  DefaultNamespaceDelimiter,
 } from '@trpc/server';
 import {
   Unsubscribable,
@@ -22,7 +23,7 @@ import {
 } from '../links/types';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+  (TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
     ? {
         /**
          * Data transformer
@@ -52,7 +53,28 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * @link https://trpc.io/docs/data-transformers
          **/
         transformer?: ClientDataTransformerOptions;
-      };
+      }) &
+    (TRouter['_def']['_config']['namespaceDelimiter'] extends DefaultNamespaceDelimiter
+      ? {
+          /**
+           * The delimiter used to separate namespaces and procedure names in router paths
+           * of child routers.
+           *
+           * You must use the same namespaceDelimiter on the backend and frontend
+           * @link https://trpc.io/docs/merging-routers
+           */
+          namespaceDelimiter?: 'You must set a namespaceDelimiter on the backend router';
+        }
+      : {
+          /**
+           * The delimiter used to separate namespaces and procedure names in router paths
+           * of child routers.
+           *
+           * You must use the same namespaceDelimiter on the backend and frontend
+           * @link https://trpc.io/docs/merging-routers
+           */
+          namespaceDelimiter: TRouter['_def']['_config']['namespaceDelimiter'];
+        });
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
 export interface TRPCRequestOptions {
