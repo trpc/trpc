@@ -20,15 +20,13 @@ export function getQueryKeyInternal(
   return [] as unknown as [string];
 }
 
-type GetInfinitQueryInput<TProcedureOrRouter extends AnyQueryProcedure> =
-  Record<never, never> extends Omit<
+type GetInfinitQueryInput<TProcedureOrRouter extends AnyQueryProcedure, 
+TInputWithoutCursor = Omit<
     inferProcedureInput<TProcedureOrRouter>,
     'cursor'
-  >
+  >> =  keyof TInputWithoutCursor extends never
     ? undefined
-    :
-        | DeepPartial<Omit<inferProcedureInput<TProcedureOrRouter>, 'cursor'>>
-        | undefined;
+    : DeepPartial<TInputWithoutCursor> | undefined;
 
 type GetQueryProcedureInput<TProcedureOrRouter extends AnyQueryProcedure> =
   inferProcedureInput<TProcedureOrRouter> extends {
