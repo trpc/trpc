@@ -5,6 +5,7 @@ import type {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  IntersectionError,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
@@ -21,10 +22,8 @@ import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {
   TRPCSubscriptionObserver,
   TRPCUntypedClient,
+  UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
-
-export type inferRouterProxyClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
 
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
@@ -90,7 +89,14 @@ const clientCallTypeMap: Record<
 };
 
 export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
-  inferRouterProxyClient<TRouter>;
+  DecoratedProcedureRecord<
+    TRouter['_def']['record'],
+    TRouter
+  > extends infer TProcedureRecord
+    ? UntypedClientProperties & keyof TProcedureRecord extends never
+      ? TProcedureRecord
+      : IntersectionError<UntypedClientProperties & keyof TProcedureRecord>
+    : never;
 
 /**
  * @deprecated use `createTRPCProxyClient` instead

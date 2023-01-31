@@ -190,6 +190,25 @@ export function createAppRouter() {
           },
         });
       }),
+    getMockPostByContent: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          content: z.object({
+            type: z.string(),
+            language: z.string(),
+          }),
+        }),
+      )
+      .query(({ input }) => {
+        return {
+          id: input.id,
+          title: input.title,
+          content: input.content.type,
+          createdAt: 0,
+        };
+      }),
   });
 
   const linkSpy = {
