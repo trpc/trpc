@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.9.0",
+  "version": "10.9.1",
   "description": "tRPC Next lib",
   "author": "KATT",
   "license": "MIT",
@@ -29,6 +29,7 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src"
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
@@ -38,7 +39,8 @@
   "files": [
     "dist",
     "src",
-    "README.md"
+    "README.md",
+    "package.json"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.3.8",
@@ -54,9 +56,9 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.9.0",
-    "@trpc/react-query": "^10.9.0",
-    "@trpc/server": "^10.9.0",
+    "@trpc/client": "^10.9.1",
+    "@trpc/react-query": "^10.9.1",
+    "@trpc/server": "^10.9.1",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",

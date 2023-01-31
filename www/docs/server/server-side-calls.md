@@ -7,6 +7,17 @@ slug: /server-side-calls
 
 You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
 
+:::info
+
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to (potentially) create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
+
+<div className="flex gap-2 w-full justify-between pt-2">
+  <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />
+  <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" className="w-[49.5%]" />
+</div>
+
+:::
+
 ## Create caller
 
 With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
@@ -64,7 +75,7 @@ const result = await caller.post.add('Four');
 
 We create a middleware to check the context before executing the `secret` procedure. Below are two examples: the former fails because the context doesn't fit the middleware logic, and the latter works correctly.
 
-<br/>
+<br />
 
 :::info
 
@@ -72,7 +83,7 @@ Middlewares are performed before any procedure(s) are called.
 
 :::
 
-<br/>
+<br />
 
 ```ts twoslash
 // @target: esnext
