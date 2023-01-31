@@ -25,6 +25,10 @@ import {
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
 
+/** @public */
+export type inferRouterProxyClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
+
 type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferTransformedProcedureOutput<TProcedure>>;
