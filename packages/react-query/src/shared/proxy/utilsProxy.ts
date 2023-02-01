@@ -13,6 +13,7 @@ import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
+  DeepPartial,
   Filter,
   ProcedureOptions,
   ProtectedIntersection,
@@ -89,7 +90,7 @@ type DecorateProcedure<
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
-    input?: inferProcedureInput<TProcedure>,
+    input?: DeepPartial<inferProcedureInput<TProcedure>>,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
