@@ -6,7 +6,6 @@ import { z } from 'zod';
 
 function createContext({
   event,
-  context,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) {
   return {
     event: event,
@@ -16,7 +15,9 @@ function createContext({
 }
 type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  namespaceDelimiter: '/',
+});
 
 const publicProcedure = t.procedure;
 const router = t.router;
@@ -27,6 +28,13 @@ const appRouter = router({
     .query(({ input, ctx }) => {
       return `Greetings, ${input.name}. x-user?: ${ctx.user}.`;
     }),
+  admin: router({
+    dropTableUsers: publicProcedure
+      .input(z.object({ doIt: z.literal(true) }))
+      .mutation(({ ctx }) => {
+        return `${ctx.user} has just dropped users table. what a legend!`;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
