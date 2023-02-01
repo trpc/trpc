@@ -17,7 +17,7 @@ export type Post = {
 const ctx = konn()
   .beforeEach(() => {
     /**
-     * An object of jest functions we can use to track how many times things
+     * An object of Vitest functions we can use to track how many times things
      * have been called during invalidation etc.
      */
     const resolvers = {
