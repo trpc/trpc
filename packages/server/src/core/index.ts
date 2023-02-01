@@ -3,12 +3,9 @@ export type {
   ProcedureRecord,
   ProcedureRouterRecord,
   CreateRouterInner,
-} from './router';
-export {
   DefaultNamespaceDelimiter,
-  callProcedure,
-  defaultNamespaceDelimiter,
 } from './router';
+export { callProcedure, defaultNamespaceDelimiter } from './router';
 export type {
   Procedure,
   AnyProcedure,
