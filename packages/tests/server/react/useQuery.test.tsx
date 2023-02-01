@@ -8,7 +8,7 @@ import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 
-const fixtureData = ['1', '2'];
+const fixtureData = ['1', '2', '3', '4'];
 
 const ctx = konn()
   .beforeEach(() => {
@@ -222,6 +222,63 @@ test('useInfiniteQuery()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
+  });
+});
+
+test('useInfiniteQuery() initialCursor', async () => {
+  const { App, proxy } = ctx;
+  function MyComponent() {
+    const query1 = proxy.post.list.useInfiniteQuery(
+      {},
+      {
+        getNextPageParam(lastPage) {
+          return lastPage.next;
+        },
+        initialCursor: 2,
+      },
+    );
+    expect(query1.trpc.path).toBe('post.list');
+
+    if (query1.isLoading || query1.isFetching || !query1.data) {
+      return <>...</>;
+    }
+
+    type TData = typeof query1['data'];
+    expectTypeOf<TData>().toMatchTypeOf<
+      InfiniteData<{
+        items: typeof fixtureData;
+        next?: number | undefined;
+      }>
+    >();
+
+    return (
+      <>
+        <button
+          data-testid="fetchMore"
+          onClick={() => {
+            query1.fetchNextPage();
+          }}
+        >
+          Fetch more
+        </button>
+        <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`[ "3" ]`);
+  });
+  utils.getByTestId('fetchMore').click();
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`[ "3" ]`);
+    expect(utils.container).toHaveTextContent(`[ "4" ]`);
   });
 });
 

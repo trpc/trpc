@@ -1,9 +1,14 @@
 import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
+import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
-import { MiddlewareMarker } from './internals/utils';
+import {
+  DefaultValue as FallbackValue,
+  MiddlewareMarker,
+  Overwrite,
+} from './internals/utils';
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
@@ -47,12 +52,84 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
 /**
  * @internal
  */
+export interface MiddlewareBuilder<
+  TRoot extends ProcedureParams,
+  TNewParams extends ProcedureParams,
+> {
+  /**
+   * Create a new builder based on the current middleware builder
+   */
+  unstable_pipe<$Params extends ProcedureParams>(
+    fn: {
+      _config: TRoot['_config'];
+      _meta: TRoot['_meta'];
+      _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
+      _input_in: FallbackValue<TRoot['_input_in'], TNewParams['_input_in']>;
+      _input_out: FallbackValue<TRoot['_input_out'], TNewParams['_input_out']>;
+      _output_in: FallbackValue<TRoot['_output_in'], TNewParams['_output_in']>;
+      _output_out: FallbackValue<
+        TRoot['_output_out'],
+        TNewParams['_output_out']
+      >;
+    } extends infer OParams extends ProcedureParams
+      ?
+          | MiddlewareBuilder<OParams, $Params>
+          | MiddlewareFunction<OParams, $Params>
+      : never,
+  ): CreateMiddlewareReturnInput<
+    TRoot,
+    TNewParams,
+    Overwrite<TNewParams, $Params>
+  >;
+
+  /**
+   * List of middlewares within this middleware builder
+   */
+  _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
+}
+
+/**
+ * @internal
+ * FIXME: there must be a nicer way of doing this, it's hard to maintain when we have several structures like this
+ */
+type CreateMiddlewareReturnInput<
+  TRoot extends ProcedureParams,
+  TPrev extends ProcedureParams,
+  TNext extends ProcedureParams,
+> = MiddlewareBuilder<
+  TRoot,
+  {
+    _config: TPrev['_config'];
+    _meta: TPrev['_meta'];
+    _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
+    _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
+    _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
+    _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
+    _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+  }
+>;
+
+/**
+ * @internal
+ */
+type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
+  _config: TConfig;
+  _ctx_out: TConfig['$types']['ctx'];
+  _input_out: unknown;
+  _input_in: unknown;
+  _output_in: unknown;
+  _output_out: unknown;
+  _meta: TConfig['$types']['meta'];
+};
+/**
+ * @internal
+ */
 export type MiddlewareFunction<
   TParams extends ProcedureParams,
   TParamsAfter extends ProcedureParams,
 > = {
   (opts: {
-    ctx: TParams['_ctx_out'];
+    ctx: Simplify<TParams['_ctx_out']>;
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
@@ -79,24 +156,33 @@ export type MiddlewareFunction<
 /**
  * @internal
  */
-// FIXME this should use RootConfig
 export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
-  return function createMiddleware<TNewParams extends ProcedureParams>(
-    fn: MiddlewareFunction<
-      {
-        _config: TConfig;
-        _ctx_out: TConfig['$types']['ctx'];
-        _input_out: unknown;
-        _input_in: unknown;
-        _output_in: unknown;
-        _output_out: unknown;
-        _meta: TConfig['$types']['meta'];
+  function createMiddlewareInner<TNewParams extends ProcedureParams>(
+    middlewares: MiddlewareFunction<any, any>[],
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+    return {
+      _middlewares: middlewares,
+      unstable_pipe(middlewareBuilderOrFn) {
+        const pipedMiddleware =
+          '_middlewares' in middlewareBuilderOrFn
+            ? middlewareBuilderOrFn._middlewares
+            : [middlewareBuilderOrFn];
+
+        return createMiddlewareInner([
+          ...(middlewares as any),
+          ...pipedMiddleware,
+        ]);
       },
-      TNewParams
-    >,
-  ) {
-    return fn;
-  };
+    };
+  }
+
+  function createMiddleware<TNewParams extends ProcedureParams>(
+    fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+    return createMiddlewareInner([fn]);
+  }
+
+  return createMiddleware;
 }
 
 function isPlainObject(obj: unknown) {

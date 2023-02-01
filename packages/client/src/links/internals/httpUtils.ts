@@ -2,6 +2,11 @@ import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/fetchHelpers';
+import {
+  AbortControllerEsque,
+  FetchEsque,
+  ResponseEsque,
+} from '../../internals/types';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 export interface HTTPLinkOptions {
@@ -9,11 +14,11 @@ export interface HTTPLinkOptions {
   /**
    * Add ponyfill for fetch
    */
-  fetch?: typeof fetch;
+  fetch?: FetchEsque;
   /**
    * Add ponyfill for AbortController
    */
-  AbortController?: typeof AbortController | null;
+  AbortController?: AbortControllerEsque | null;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
@@ -23,8 +28,8 @@ export interface HTTPLinkOptions {
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
-  fetch: typeof fetch;
-  AbortController: typeof AbortController | null;
+  fetch: FetchEsque;
+  AbortController: AbortControllerEsque | null;
   /**
    * Headers to be set on outgoing request
    * @link http://trpc.io/docs/v10/header
@@ -62,7 +67,7 @@ const METHOD = {
 export interface HTTPResult {
   json: TRPCResponse;
   meta: {
-    response: Response;
+    response: ResponseEsque;
   };
 }
 
@@ -145,7 +150,7 @@ export function httpRequest(
       })
       .then((json) => {
         resolve({
-          json,
+          json: json as TRPCResponse,
           meta,
         });
       })

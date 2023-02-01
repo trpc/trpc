@@ -2,6 +2,7 @@ import { AnyRouter, DataTransformer } from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
 import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
+import { ResponseEsque } from '../internals/types';
 
 /**
  * @internal
@@ -43,7 +44,7 @@ export type HTTPHeaders = Record<string, string | string[] | undefined>;
 export type TRPCFetch = (
   url: string,
   options?: RequestInit,
-) => Promise<Response>;
+) => Promise<ResponseEsque>;
 
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
