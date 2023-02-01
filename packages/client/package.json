@@ -86,5 +86,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1"
   }
 }
