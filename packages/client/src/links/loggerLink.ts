@@ -57,7 +57,7 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
 }
 
 // maybe this should be moved to it's own package
-const defaultLogger =
+export const defaultLogger =
   <TRouter extends AnyRouter>(
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
