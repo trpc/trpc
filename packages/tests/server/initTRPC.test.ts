@@ -1,6 +1,7 @@
 import {
   DataTransformerOptions,
   DefaultDataTransformer,
+  DefaultNamespaceDelimiter,
   initTRPC,
 } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
@@ -22,6 +23,7 @@ test('default transformer', () => {
     router._def._config.transformer,
   ).toMatchTypeOf<DefaultDataTransformer>();
 });
+
 test('custom transformer', () => {
   const transformer: DataTransformerOptions = {
     deserialize: (v) => v,
@@ -31,12 +33,53 @@ test('custom transformer', () => {
     transformer,
   });
   const router = t.router({});
+
+  expectTypeOf(t._config.transformer).toMatchTypeOf<DataTransformerOptions>();
+  expectTypeOf(
+    t._config.transformer,
+  ).not.toMatchTypeOf<DefaultDataTransformer>();
   expectTypeOf(
     router._def._config.transformer,
   ).toMatchTypeOf<DataTransformerOptions>();
   expectTypeOf(
     router._def._config.transformer,
   ).not.toMatchTypeOf<DefaultDataTransformer>();
+});
+
+test('default namespace delimiter', () => {
+  const t = initTRPC
+    .context<{
+      foo: 'bar';
+    }>()
+    .create();
+  const router = t.router({});
+
+  expectTypeOf<typeof router._def._config.$types.ctx>().toMatchTypeOf<{
+    foo: 'bar';
+  }>();
+
+  expectTypeOf(
+    t._config.namespaceDelimiter,
+  ).toMatchTypeOf<DefaultNamespaceDelimiter>();
+  expectTypeOf(
+    router._def._config.namespaceDelimiter,
+  ).toMatchTypeOf<DefaultNamespaceDelimiter>();
+});
+
+test('custom namespace delimiter', () => {
+  const t = initTRPC.create({
+    namespaceDelimiter: '/',
+  } as const);
+  const router = t.router({});
+
+  expectTypeOf(t._config.namespaceDelimiter).toMatchTypeOf<'/'>();
+  expectTypeOf(
+    t._config.namespaceDelimiter,
+  ).not.toMatchTypeOf<DefaultNamespaceDelimiter>();
+  expectTypeOf(router._def._config.namespaceDelimiter).toMatchTypeOf<'/'>();
+  expectTypeOf(
+    router._def._config.namespaceDelimiter,
+  ).not.toMatchTypeOf<DefaultNamespaceDelimiter>();
 });
 
 test('meta typings', () => {
