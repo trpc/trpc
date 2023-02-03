@@ -110,6 +110,7 @@ module.exports = {
         'reactjs/useInfiniteQuery',
         'reactjs/useContext',
         'reactjs/useQueries',
+        'reactjs/getQueryKey',
       ],
     },
     {
