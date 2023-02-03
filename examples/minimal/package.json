@@ -1,7 +1,7 @@
 {
   "name": "@examples/minimal",
   "private": true,
-  "version": "10.9.0",
+  "version": "10.9.1",
   "scripts": {
     "build": "tsc",
     "dev:server": "tsx watch server",

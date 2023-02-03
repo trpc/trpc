@@ -1,6 +1,6 @@
 {
   "name": "@examples/vercel-edge-runtime",
-  "version": "10.9.0",
+  "version": "10.9.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,8 +9,8 @@
     "test-dev": "start-server-and-test 'pnpm dev' http://127.0.0.1:3000 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.9.0",
-    "@trpc/server": "^10.9.0",
+    "@trpc/client": "^10.9.1",
+    "@trpc/server": "^10.9.1",
     "zod": "^3.0.0"
   },
   "devDependencies": {
