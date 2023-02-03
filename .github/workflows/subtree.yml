@@ -30,11 +30,9 @@ jobs:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v2.2.4
-
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 18.x
 
       - name: Set `shared-workspace-lockfile` to false
         run: |
