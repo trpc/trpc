@@ -1,10 +1,13 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
+  },
+  "files.exclude": {
+    "packages/client/{links}": true,
+    "packages/react-query/{shared,ssg}": true,
+    "packages/server/{adapters,http,observable,rpc,shared,subscription}": true
   },
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#2596be",
@@ -16,5 +19,7 @@
   "tailwindCSS.classAttributes": ["class", "className", "ngClass", "tw"],
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
-  ]
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
 }
