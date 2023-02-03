@@ -97,7 +97,7 @@ test('simple query', async () => {
   `);
 });
 
-test('', async () => {
+test('request info from context should include both calls', async () => {
   const res = await Promise.all([
     t.client.hello.query({
       who: 'test',
