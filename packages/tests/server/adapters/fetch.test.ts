@@ -200,7 +200,7 @@ test('request info', async () => {
   const res = await Promise.all([
     client.hello.query(),
     client.hello.query({ who: 'test' }),
-    client.foo.query(),
+    client.request.info.query(),
   ]);
 
   expect(res).toMatchInlineSnapshot(`
