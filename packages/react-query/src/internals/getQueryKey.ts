@@ -20,28 +20,25 @@ export function getQueryKeyInternal(
   return [] as unknown as [string];
 }
 
-type GetInfinitQueryInput<TProcedureInput, 
-TInputWithoutCursor = Omit<
-    TProcedureInput,
-    'cursor'
-  >> =  keyof TInputWithoutCursor extends never
-    ? undefined
-    : DeepPartial<TInputWithoutCursor> | undefined;
+type GetInfiniteQueryInput<
+  TProcedureInput,
+  TInputWithoutCursor = Omit<TProcedureInput, 'cursor'>,
+> = keyof TInputWithoutCursor extends never
+  ? undefined
+  : DeepPartial<TInputWithoutCursor> | undefined;
 
-type GetQueryProcedureInput<TProcedureInput> =
-  TProcedureInput extends {
-    cursor?: any;
-  }
-    ? GetInfinitQueryInput<TProcedureInput>
-    : DeepPartial<TProcedureInput> | undefined;
+type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
+  cursor?: any;
+}
+  ? GetInfiniteQueryInput<TProcedureInput>
+  : DeepPartial<TProcedureInput> | undefined;
 
 type GetQueryParams<
-          TProcedureOrRouter extends AnyQueryProcedure,
-          TProcedureInput = inferProcedureInput<TProcedureOrRouter>
-        > =
-   TProcedureInput extends undefined
-    ? []
-    : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
+  TProcedureOrRouter extends AnyQueryProcedure,
+  TProcedureInput = inferProcedureInput<TProcedureOrRouter>,
+> = TProcedureInput extends undefined
+  ? []
+  : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
 
 type GetParams<
   TProcedureOrRouter extends
