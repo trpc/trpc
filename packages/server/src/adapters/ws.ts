@@ -140,7 +140,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       });
     }
 
-    const ctxPromise = createContext?.({ req, res: client });
+    // FIXME: info not set
+    const ctxPromise = createContext?.({ req, res: client, info: {} as any });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {

@@ -51,3 +51,25 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
    */
   responseMeta?: ResponseMetaFn<TRouter>;
 }
+
+/** @internal */
+export type ProcedureCall = {
+  type: ProcedureType;
+  input?: unknown;
+  path: string;
+};
+
+/**
+ * Information about the incoming request
+ * @internal
+ */
+export type TRPCRequestInfo = {
+  calls: ProcedureCall[];
+};
+
+/**
+ * Inner createContext function for `resolveHTTPResponse` used to forward `TRPCRequestInfo` to `createContext`
+ * @internal
+ */
+export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
+  (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;

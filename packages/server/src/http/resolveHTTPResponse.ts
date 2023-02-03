@@ -17,6 +17,8 @@ import {
   HTTPHeaders,
   HTTPRequest,
   HTTPResponse,
+  ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
 } from './internals/types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -52,7 +54,7 @@ interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
@@ -140,7 +142,14 @@ export async function resolveHTTPResponse<
     const rawInput = getRawProcedureInputOrThrow(req);
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await createContext();
+    const requestInfo: TRPCRequestInfo = {
+      calls: paths.map((path, idx) => ({
+        path,
+        type,
+        input: rawInput?.[idx] ?? undefined,
+      })),
+    };
+    ctx = await createContext({ info: requestInfo });
 
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'

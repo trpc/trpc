@@ -1,6 +1,9 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http/internals/types';
+import {
+  HTTPBaseHandlerOptions,
+  TRPCRequestInfo,
+} from '../../http/internals/types';
 import { MaybePromise } from '../../types';
 
 interface ParsedQs {
@@ -42,6 +45,7 @@ export type NodeHTTPHandlerOptions<
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
+  info: TRPCRequestInfo;
 };
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,

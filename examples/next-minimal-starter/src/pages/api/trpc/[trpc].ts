@@ -7,6 +7,16 @@ import { z } from 'zod';
 import { publicProcedure, router } from '~/server/trpc';
 
 const appRouter = router({
+  post: router({
+    list: publicProcedure.query(() => {
+      return [{ id: '1', title: 'hello' }];
+    }),
+    byId: publicProcedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        return { id: input.id, title: 'hello' };
+      }),
+  }),
   greeting: publicProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away
@@ -35,5 +45,8 @@ export type AppRouter = typeof appRouter;
 // export API handler
 export default trpcNext.createNextApiHandler({
   router: appRouter,
-  createContext: () => ({}),
+  createContext: (opts) => {
+    console.log(opts.info);
+    return {};
+  },
 });

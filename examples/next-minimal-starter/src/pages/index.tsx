@@ -6,6 +6,8 @@ import { trpc } from '../utils/trpc';
 export default function IndexPage() {
   // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
   const result = trpc.greeting.useQuery({ name: 'client' });
+  trpc.post.list.useQuery();
+  trpc.post.byId.useQuery({ id: '1' });
 
   if (!result.data) {
     return (
