@@ -21,7 +21,7 @@ function getQueryKey(
 ): TRPCQueryKey;
 
 // Mutations
-function getMutationKey(
+function getQueryKey(
   procedure: AnyMutationProcedure,
 ): TRPCQueryKey;
 
