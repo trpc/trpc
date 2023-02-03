@@ -20,25 +20,28 @@ export function getQueryKeyInternal(
   return [] as unknown as [string];
 }
 
-type GetInfinitQueryInput<TProcedureOrRouter extends AnyQueryProcedure, 
+type GetInfinitQueryInput<TProcedureInput, 
 TInputWithoutCursor = Omit<
-    inferProcedureInput<TProcedureOrRouter>,
+    TProcedureInput,
     'cursor'
   >> =  keyof TInputWithoutCursor extends never
     ? undefined
     : DeepPartial<TInputWithoutCursor> | undefined;
 
-type GetQueryProcedureInput<TProcedureOrRouter extends AnyQueryProcedure> =
-  inferProcedureInput<TProcedureOrRouter> extends {
+type GetQueryProcedureInput<TProcedureInput> =
+  TProcedureInput extends {
     cursor?: any;
   }
-    ? GetInfinitQueryInput<TProcedureOrRouter>
-    : DeepPartial<inferProcedureInput<TProcedureOrRouter>> | undefined;
+    ? GetInfinitQueryInput<TProcedureInput>
+    : DeepPartial<TProcedureInput> | undefined;
 
-type GetQueryParams<TProcedureOrRouter extends AnyQueryProcedure> =
-  inferProcedureInput<TProcedureOrRouter> extends undefined
+type GetQueryParams<
+          TProcedureOrRouter extends AnyQueryProcedure,
+          TProcedureInput = inferProcedureInput<TProcedureOrRouter>
+        > =
+   TProcedureInput extends undefined
     ? []
-    : [input?: GetQueryProcedureInput<TProcedureOrRouter>, type?: QueryType];
+    : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
 
 type GetParams<
   TProcedureOrRouter extends
@@ -76,7 +79,7 @@ type GetQueryKeyParams<
  * @param procedureOrRouter - procedure or AnyRouter
  * @param input - input to procedureOrRouter
  * @param type - defaults to `any`
- * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
+ * @link https://trpc.io/docs/getQueryKey
  */
 export function getQueryKey<
   TProcedureOrRouter extends
