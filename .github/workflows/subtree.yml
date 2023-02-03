@@ -29,7 +29,42 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: nxtlvlsoftware/git-subtree-action@1.1
+      - uses: pnpm/action-setup@v2.2.4
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-trpc-main-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-trpc-main-
+
+      - name: Set `shared-workspace-lockfile` to false
+        run: |
+          echo "shared-workspace-lockfile=false" >> .npmrc
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "email-here"
+          git config --global user.name "trpc-bot"
+          git add . && git commit -m "chore: sync lockfile"
+
+      - name: Sync downstream
+        uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
           repo: 'trpc/examples-${{ matrix.path }}'
           path: 'examples/${{ matrix.path }}'
