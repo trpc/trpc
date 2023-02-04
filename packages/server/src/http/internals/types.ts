@@ -64,6 +64,7 @@ export type ProcedureCall = {
  * @internal
  */
 export type TRPCRequestInfo = {
+  isBatchCall: boolean;
   calls: ProcedureCall[];
 };
 

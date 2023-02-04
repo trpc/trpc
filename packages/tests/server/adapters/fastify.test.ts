@@ -351,6 +351,7 @@ describe('authorized user', () => {
             "type": "query",
           },
         ],
+        "isBatchCall": false,
       }
   `);
   });

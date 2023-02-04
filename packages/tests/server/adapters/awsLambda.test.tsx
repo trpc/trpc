@@ -139,6 +139,7 @@ test('v1 request info', async () => {
               "type": "query",
             },
           ],
+          "isBatchCall": false,
         },
       },
     }

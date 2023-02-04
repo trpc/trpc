@@ -229,6 +229,7 @@ test('request info', async () => {
             "type": "query",
           },
         ],
+        "isBatchCall": true,
       },
     ]
   `);

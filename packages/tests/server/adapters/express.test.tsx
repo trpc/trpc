@@ -124,6 +124,7 @@ test('request info from context should include both calls', async () => {
             "type": "query",
           },
         ],
+        "isBatchCall": true,
       },
     ]
   `);

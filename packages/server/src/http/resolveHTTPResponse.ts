@@ -141,16 +141,6 @@ export async function resolveHTTPResponse<
     }
     const rawInput = getRawProcedureInputOrThrow(req);
 
-    paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    const requestInfo: TRPCRequestInfo = {
-      calls: paths.map((path, idx) => ({
-        path,
-        type,
-        input: rawInput?.[idx] ?? undefined,
-      })),
-    };
-    ctx = await createContext({ info: requestInfo });
-
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'
         ? router._def._config.transformer.input.deserialize(rawValue)
@@ -186,6 +176,17 @@ export async function resolveHTTPResponse<
       return input;
     };
     const inputs = getInputs();
+
+    paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    const requestInfo: TRPCRequestInfo = {
+      isBatchCall,
+      calls: paths.map((path, idx) => ({
+        path,
+        type,
+        input: inputs[idx] ?? undefined,
+      })),
+    };
+    ctx = await createContext({ info: requestInfo });
 
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
