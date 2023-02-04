@@ -35,19 +35,16 @@ jobs:
         with:
           node-version: 18.x
 
-      - name: Set `shared-workspace-lockfile` to false
+      - name: Install dependencies (create separate lockfiles)
         run: |
           echo "shared-workspace-lockfile=false" >> .npmrc
           echo "link-workspace-packages=false" >> .npmrc
-
-      - name: Install dependencies (create separate lockfiles)
-        run: |
           cp ./pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
           pnpm install --filter ./examples/${{ matrix.path }} --no-frozen-lockfile
 
       - name: Commit changes
         run: |
-          # git config --global user.email "email-here"
+          git config --global user.email "<>"
           git config --global user.name "trpc-bot"
           git add . && git commit -m "chore: sync lockfile"
 
