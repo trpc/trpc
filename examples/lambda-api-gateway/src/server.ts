@@ -16,7 +16,7 @@ function createContext({
 type Context = inferAsyncReturnType<typeof createContext>;
 
 const t = initTRPC.context<Context>().create({
-  namespaceDelimiter: '/',
+  namespaceDelimiter: '/' as const,
 });
 
 const publicProcedure = t.procedure;
