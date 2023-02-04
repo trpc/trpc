@@ -11,7 +11,7 @@ import {
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/retryLink';
 import * as trpc from '@trpc/server/src';
-import { AnyRouter } from '@trpc/server/src';
+import { AnyRouter, defaultNamespaceDelimiter } from '@trpc/server/src';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
@@ -20,6 +20,7 @@ const mockRuntime: TRPCClientRuntime = {
     serialize: (v) => v,
     deserialize: (v) => v,
   },
+  namespaceDelimiter: defaultNamespaceDelimiter,
 };
 test('chainer', async () => {
   let attempt = 0;
