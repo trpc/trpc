@@ -29,7 +29,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: nxtlvlsoftware/git-subtree-action@1.1
+      - uses: pnpm/action-setup@v2.2.4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'pnpm'
+
+      - name: Install dependencies and create separate lockfile
+        run: |
+          echo "shared-workspace-lockfile=false" >> .npmrc
+          echo "link-workspace-packages=false" >> .npmrc
+          cp ./pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
+          pnpm install --no-frozen-lockfile
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "<>"
+          git config --global user.name "trpc-bot"
+          git add .
+          git commit -m "chore: sync lockfile"
+
+      - name: Sync downstream
+        uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
           repo: 'trpc/examples-${{ matrix.path }}'
           path: 'examples/${{ matrix.path }}'
