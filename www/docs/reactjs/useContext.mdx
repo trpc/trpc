@@ -99,42 +99,7 @@ These are the helpers you'll get access to via `useContext`. The table below wil
 
 `@tanstack/react-query` has a lot of functions that we haven't put in the tRPC context yet. If you need a function that isn't here, feel free to [open a feature request](https://github.com/trpc/trpc/issues/new/choose) requesting it.
 
-In the meantime, you can import and use the function directly from `@tanstack/react-query`. We provide a `getQueryKey` helper on routers and procedures so that you can easily provide the native function the correct query key.
-
-```tsx
-function getQueryKey(
-  input: TInput,
-  type?: QueryType; /** @default 'any' */
-)
-
-type QueryType = "query" | "infinite" | "any";
-// for useQuery ──┘         │            │
-// for useInfinitQuery ─────┘            │
-// will match any ───────────────────────┘
-
-/** @note signature on router doesn't take any parameters */
-```
-
-```tsx
-import { useIsFetching, useQueryClient } from '@tanstack/react-query';
-import { trpc } from '~/utils/trpc';
-
-function MyComponent() {
-  const queryClient = useQueryClient();
-
-  const posts = trpc.post.list.useQuery();
-
-  // See if a query is fetching
-  const postListKey = trpc.post.list.getQueryKey(undefined, 'infinite');
-  const isFetching = useIsFetching(postListKey);
-
-  // Set some query defaults for an entire router
-  const postKey = trpc.post.getQueryKey(undefined, 'any');
-  queryClient.setQueryDefaults(postKey, { staleTime: 30 * 60 * 1000 });
-
-  // ...
-}
-```
+In the meantime, you can import and use the function directly from `@tanstack/react-query`. We also provide a [getQueryKey](https://trpc.io/docs/getQueryKey) which you can use to get the correct queryKey on the filters when using these functions.
 
 ## Proxy client
 
