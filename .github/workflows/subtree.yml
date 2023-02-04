@@ -42,7 +42,7 @@ jobs:
 
       - name: Install dependencies (create separate lockfiles)
         run: |
-          pnpm install
+          cd examples/${{ matrix.path }} && pnpm install
 
       - name: Commit changes
         run: |
