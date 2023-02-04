@@ -46,7 +46,8 @@ jobs:
         run: |
           git config --global user.email "<>"
           git config --global user.name "trpc-bot"
-          git add . && git commit -m "chore: sync lockfile"
+          git add .
+          git commit -m "chore: sync lockfile"
 
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
