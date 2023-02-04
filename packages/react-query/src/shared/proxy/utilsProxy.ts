@@ -31,7 +31,7 @@ import {
   contextProps,
 } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
-import { QueryType, getQueryKey } from '../../internals/getQueryKey';
+import { QueryType, getQueryKeyInternal } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
@@ -256,7 +256,7 @@ export function createReactQueryUtilsProxy<
       >;
       const input = args.shift(); // args can now be spread when input removed
       const queryType = getQueryType(utilName);
-      const queryKey = getQueryKey(path, input, queryType);
+      const queryKey = getQueryKeyInternal(path, input, queryType);
 
       const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
         fetch: () => context.fetchQuery(queryKey, ...args),

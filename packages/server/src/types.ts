@@ -30,7 +30,7 @@ export type FlatOverwrite<TType, TWith> = InferOptional<
  * @internal
  */
 export type IntersectionError<TKey extends string> =
-  `${TKey} collides with a built-in method, you should rename this router or procedure on your backend`;
+  `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
 
 /**
  * @internal
