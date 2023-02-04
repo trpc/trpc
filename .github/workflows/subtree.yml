@@ -41,7 +41,7 @@ jobs:
           echo "shared-workspace-lockfile=false" >> .npmrc
           echo "link-workspace-packages=false" >> .npmrc
           cp ./pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
-          pnpm install --filter "./examples/${{ matrix.path }}" --filter root --no-frozen-lockfile
+          pnpm install --filter "./examples/${{ matrix.path }}" --filter root --no-frozen-lockfile --ignore-scripts
 
       - name: Commit changes
         run: |
