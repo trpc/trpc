@@ -1,7 +1,7 @@
 import {
   InferQueryOptions,
   InferQueryResult,
-} from '@trpc/react-query/utils/inferReactQueryProcedure';
+} from '../../utils/inferReactQueryProcedure';
 import { AnyProcedure, inferProcedureInput } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 
