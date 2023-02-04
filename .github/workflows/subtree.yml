@@ -45,7 +45,7 @@ jobs:
 
       - name: Commit changes
         run: |
-          git config --global user.email "email-here"
+          # git config --global user.email "email-here"
           git config --global user.name "trpc-bot"
           git add . && git commit -m "chore: sync lockfile"
 
