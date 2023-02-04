@@ -35,6 +35,9 @@ jobs:
         with:
           node-version: 18.x
 
+      - run: |
+          echo "link-workspace-packages=false" >> .npmrc
+
       - name: Install dependencies and create lockfile
         run: |
           rm pnpm-workspace.yaml
