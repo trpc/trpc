@@ -64,7 +64,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
            * You must use the same namespaceDelimiter on the backend and frontend
            * @link https://trpc.io/docs/merging-routers
            */
-          namespaceDelimiter?: 'You must set a namespaceDelimiter on the backend router';
+          namespaceDelimiter?: DefaultNamespaceDelimiter;
         }
       : {
           /**
