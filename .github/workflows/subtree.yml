@@ -35,6 +35,8 @@ jobs:
         with:
           node-version: 18.x
 
+      - run: echo "link-workspace-packages=false" >> .npmrc
+
       - name: Install dependencies (create separate lockfiles)
         run: |
           cp pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
