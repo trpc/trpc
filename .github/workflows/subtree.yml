@@ -41,7 +41,7 @@ jobs:
 
       - name: Install dependencies (create separate lockfiles)
         run: |
-          cp pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
+          cp ./pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
           cd ./examples/${{ matrix.path }} && pnpm install
 
       - name: Commit changes
