@@ -17,7 +17,7 @@ import {
   TRPCContextState,
 } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
-import { TRPCQueryKey, getQueryKey } from '../../internals/getQueryKey';
+import { TRPCQueryKey, getQueryKeyInternal } from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
 import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
@@ -233,7 +233,7 @@ export function createRootHooks<
   ): UseTRPCQueryResult<unknown, TError> {
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       useContext();
-    const queryKey = getQueryKey(path, input, 'query');
+    const queryKey = getQueryKeyInternal(path, input, 'query');
 
     if (
       typeof window === 'undefined' &&
@@ -313,7 +313,7 @@ export function createRootHooks<
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
-    const queryKey = hashQueryKey(getQueryKey(path, input, 'any'));
+    const queryKey = hashQueryKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 
     return useEffect(() => {
@@ -362,7 +362,7 @@ export function createRootHooks<
       queryClient,
       abortOnUnmount,
     } = useContext();
-    const queryKey = getQueryKey(path, input, 'infinite');
+    const queryKey = getQueryKeyInternal(path, input, 'infinite');
 
     if (
       typeof window === 'undefined' &&
@@ -397,7 +397,7 @@ export function createRootHooks<
           ...getClientArgs(
             queryKey,
             actualOpts,
-            queryFunctionContext.pageParam,
+            queryFunctionContext.pageParam ?? opts?.initialCursor,
           ),
         );
       },

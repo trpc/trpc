@@ -90,15 +90,6 @@ export type DecorateProcedure<
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      /**
-       * Method to extract the query key for a procedure
-       * @param type - defaults to `any`
-       * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
-       */
-      getQueryKey: (
-        input: inferProcedureInput<TProcedure>,
-        type?: QueryType,
-      ) => TRPCQueryKey;
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
     } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
@@ -203,9 +194,7 @@ export type DecoratedProcedureRecord<
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? {
-        getQueryKey: () => TRPCQueryKey;
-      } & DecoratedProcedureRecord<
+    ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TFlags,
         `${TPath}${TKey & string}.`

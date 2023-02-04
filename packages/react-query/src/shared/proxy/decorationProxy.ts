@@ -1,6 +1,5 @@
 import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
-import { getQueryKey } from '../../internals/getQueryKey';
 import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 
 /**
@@ -21,14 +20,16 @@ export function createReactProxyDecoration<
     if (lastArg === 'useMutation') {
       return (hooks as any)[lastArg](pathCopy, ...args);
     }
-    const [input, ...rest] = args;
 
-    // Expose queryKey helper
-    if (lastArg === 'getQueryKey') {
-      return getQueryKey(pathCopy, input, (rest[0] as any) ?? 'any');
+    if (lastArg === '_def') {
+      return {
+        path: pathCopy,
+      };
     }
 
+    const [input, ...rest] = args;
     const opts = rest[0] || {};
+
     if (lastArg.startsWith('useSuspense')) {
       const fn =
         lastArg === 'useSuspenseQuery' ? 'useQuery' : 'useInfiniteQuery';
