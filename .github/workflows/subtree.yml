@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - subtree-lockfiles
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -17,10 +16,10 @@ jobs:
         path: [
             #
             next-prisma-starter,
-            # next-prisma-websockets-starter,
-            # next-prisma-todomvc,
-            # next-minimal-starter,
-            # next-big-router,
+            next-prisma-websockets-starter,
+            next-prisma-todomvc,
+            next-minimal-starter,
+            next-big-router,
           ]
 
     name: Update downstream ${{ matrix.path }} package
