@@ -35,13 +35,14 @@ jobs:
         with:
           node-version: 18.x
 
-      - run: |
+      - name: Set `shared-workspace-lockfile` to false
+        run: |
+          echo "shared-workspace-lockfile=false" >> .npmrc
           echo "link-workspace-packages=false" >> .npmrc
 
-      - name: Install dependencies and create lockfile
+      - name: Install dependencies (create separate lockfiles)
         run: |
-          rm pnpm-workspace.yaml
-          cd ./examples/${{ matrix.path }} && mv ../../pnpm-lock.yaml . && pnpm install --no-frozen-lockfile
+          pnpm install --filter ./examples/${{ matrix.path }}
 
       - name: Commit changes
         run: |
