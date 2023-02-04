@@ -80,7 +80,7 @@ You can also configure a custom namespace delimiter:
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create({
-  namespaceDelimiter: '/',
+  namespaceDelimiter: '/' as const,
 });
 
 export const middleware = t.middleware;
