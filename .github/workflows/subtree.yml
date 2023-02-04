@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: 18.x
 
-      - name: Install dependencies (create separate lockfiles)
+      - name: Install dependencies and create separate lockfile
         run: |
           echo "shared-workspace-lockfile=false" >> .npmrc
           echo "link-workspace-packages=false" >> .npmrc
