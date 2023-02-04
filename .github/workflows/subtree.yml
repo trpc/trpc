@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies and create lockfile
         run: |
           rm pnpm-workspace.yaml
-          cd ./examples/${{ matrix.path }} && cp ../../pnpm-lock.yaml . && pnpm install --no-frozen-lockfile
+          cd ./examples/${{ matrix.path }} && mv ../../pnpm-lock.yaml . && pnpm install --no-frozen-lockfile
 
       - name: Commit changes
         run: |
