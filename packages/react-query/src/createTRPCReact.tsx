@@ -94,6 +94,7 @@ export type DecorateProcedure<
        * Method to extract the query key for a procedure
        * @param type - defaults to `any`
        * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
+       * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
        */
       getQueryKey: (
         input: inferProcedureInput<TProcedure>,
@@ -204,6 +205,9 @@ export type DecoratedProcedureRecord<
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? {
+        /**
+         * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
+         */
         getQueryKey: () => QueryKey;
       } & DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
