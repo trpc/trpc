@@ -325,7 +325,7 @@ export function callProcedure(
 /**
  * The default namespace delimiter used in routes.
  */
-export const defaultNamespaceDelimiter = '.';
+export const defaultNamespaceDelimiter = '.' as const;
 
 /**
  * The default namespace delimiter used in routes.
