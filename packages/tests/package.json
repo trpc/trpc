@@ -11,8 +11,6 @@
     "test-ci": "jest --ci --maxWorkers=2 --coverage"
   },
   "dependencies": {
-    "@babel/core": "^7.18.6",
-    "@babel/plugin-proposal-decorators": "^7.20.13",
     "@cloudflare/workers-types": "^3.14.1",
     "@fastify/websocket": "^5.0.0",
     "@miniflare/core": "^2.9.0",
@@ -44,12 +42,10 @@
     "node-fetch": "^2.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "reflect-metadata": "^0.1.13",
     "superjson": "^1.7.4",
     "superstruct": "^0.16.0",
     "ts-jest": "^27.0.5",
     "tsx": "^3.9.0",
-    "tsyringe": "^4.7.0",
     "typescript": "^4.8.3",
     "yup": "^0.32.8",
     "zod": "^3.0.0"

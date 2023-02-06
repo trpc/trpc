@@ -145,7 +145,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     }
     const router = createRouterFactory<$Config>(config);
 
-    type ObjToProcRouterRecord<TRouter extends object> = Router<
+    type ClassToProcRouterRecord<TRouter extends object> = Router<
       RouterDef<
         $Config,
         {
@@ -188,35 +188,19 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
     function toRouter<TObj extends object>(
       obj: TObj,
-    ): ObjToProcRouterRecord<TObj> {
+    ): ClassToProcRouterRecord<TObj> {
       const record: ProcedureRouterRecord = {};
       for (const key in obj) {
-        const value = obj[key];
-        if (value instanceof RouterBase) {
-          (record as any)[key as unknown as string] = value.toRouter();
-        } else if (isRouterOrProcedure(value)) {
-          (record as any)[key as unknown as string] = value;
+        if (isRouterOrProcedure(obj[key])) {
+          (record as any)[key as unknown as string] = obj[key];
         }
       }
-      return router(record) as unknown as ObjToProcRouterRecord<TObj>;
+      return router(record) as unknown as ClassToProcRouterRecord<TObj>;
     }
 
-    type ClassToRouter<TRouter extends RouterBase> = Router<
-      RouterDef<
-        $Config,
-        {
-          [TKey in keyof TRouter]: TRouter[TKey] extends RouterBase
-            ? never
-            : TRouter[TKey] extends AnyProcedure | AnyRouter
-            ? TRouter[TKey]
-            : never;
-        }
-      >
-    >;
-
     class RouterBase {
-      public toRouter(): ClassToRouter<this> {
-        return toRouter(this) as ClassToRouter<this>;
+      public toRouter() {
+        return toRouter(this);
       }
     }
     return {
