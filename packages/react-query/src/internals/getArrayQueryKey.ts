@@ -9,7 +9,7 @@ export type QueryKey = [
 
 export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
   string[],
-  { input?: GetQueryProcedureInput<TInput>; type: TType },
+  { input?: GetQueryProcedureInput<TInput>; type: TType }?,
 ];
 
 /**

@@ -319,14 +319,14 @@ describe('invalidateQueries()', () => {
 
 test('predicate type should be narrowed', () => {
   const { trpc } = factory;
-  function _MyComponent() {
+  () => {
     const utils = trpc.useContext();
 
     // simple
     utils.postById.invalidate('123', {
       predicate: (query) => {
         expectTypeOf(query.queryKey).toEqualTypeOf<
-          [string[], { input?: string; type: 'query' }]
+          [string[], { input?: string; type: 'query' }?]
         >();
 
         return true;
@@ -342,7 +342,7 @@ test('predicate type should be narrowed', () => {
             {
               input?: { limit?: number | null };
               type: 'infinite';
-            },
+            }?,
           ]
         >();
 
@@ -363,7 +363,7 @@ test('predicate type should be narrowed', () => {
                 title?: string;
               };
               type: 'query';
-            },
+            }?,
           ]
         >();
 
@@ -372,5 +372,5 @@ test('predicate type should be narrowed', () => {
     });
 
     return null;
-  }
+  };
 });
