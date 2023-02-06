@@ -1,10 +1,9 @@
-import { ignoreErrors, routerToServerAndClientNew } from '../___testHelpers';
+import { routerToServerAndClientNew } from '../___testHelpers';
 import { httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
 import { IncomingMessage, ServerResponse } from 'http';
 import { konn } from 'konn';
-import { z } from 'zod';
 
 describe('undefined headers sent to server', () => {
   const ctx = konn()
