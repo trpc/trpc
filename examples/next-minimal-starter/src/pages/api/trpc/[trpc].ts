@@ -18,7 +18,7 @@ class MyAppRouter {
   }
 
   private commonMethod() {
-    return 'hello';
+    return 'i am a private method';
   }
 
   public greeting = publicProcedure
@@ -27,8 +27,12 @@ class MyAppRouter {
         name: z.string().nullish(),
       }),
     )
-    .query(() => {
-      return 'hello';
+    .query(({ input }) => {
+      return {
+        text: `hello ${input?.name ?? 'world'}`,
+        // Try calling private method
+        privateMethodResult: this.commonMethod(),
+      };
     });
 }
 

@@ -24,7 +24,13 @@ import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { AnyProcedure } from './procedure';
-import { AnyRouter, Router, RouterDef, createRouterFactory } from './router';
+import {
+  AnyRouter,
+  ProcedureRouterRecord,
+  Router,
+  RouterDef,
+  createRouterFactory,
+} from './router';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
@@ -137,6 +143,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
         );
       }
     }
+    const router = createRouterFactory<$Config>(config);
 
     type ClassToProcRouterRecord<TRouter extends object> = Router<
       RouterDef<
@@ -151,10 +158,42 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       >
     >;
 
+    function isObjectOrFunction(
+      value: unknown,
+    ): value is Record<string, unknown> | ((...args: unknown[]) => unknown) {
+      // check that value is object
+      return (
+        !!value &&
+        !Array.isArray(value) &&
+        (typeof value === 'object' || typeof value === 'function')
+      );
+    }
+
+    function isRouterOrProcedure(
+      value: unknown,
+    ): value is AnyRouter | AnyProcedure {
+      if (!isObjectOrFunction(value)) {
+        return false;
+      }
+      const routerOrProcedure = value as AnyRouter | AnyProcedure;
+      if (!routerOrProcedure._def) {
+        return false;
+      }
+
+      // This would be better if we had a Symbol
+      return routerOrProcedure._def.router || routerOrProcedure._def.procedure;
+    }
+
     function toRouter<TObj extends object>(
-      _obj: TObj,
+      obj: TObj,
     ): ClassToProcRouterRecord<TObj> {
-      throw new Error('Unimplemented');
+      const record: ProcedureRouterRecord = {};
+      for (const key in obj) {
+        if (isRouterOrProcedure(obj[key])) {
+          (record as any)[key as unknown as string] = obj[key];
+        }
+      }
+      return router(record) as unknown as ClassToProcRouterRecord<TObj>;
     }
 
     class RouterBase {
@@ -181,7 +220,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Create a router
        */
-      router: createRouterFactory<$Config>(config),
+      router,
       /**
        * Merge Routers
        */
