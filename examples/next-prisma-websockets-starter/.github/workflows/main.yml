@@ -16,9 +16,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.2
+      - uses: pnpm/action-setup@v2.2.4
         with:
-          version: 7.12.0
+          version: 7.26.0
 
       - name: Use Node ${{ matrix.node }}
         uses: actions/setup-node@v3
@@ -39,7 +39,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
       - name: Build and test
-        run: pnpm build-sqlite && pnpm test-start && pnpm test-dev
+        run: pnpm prep-sqlite && pnpm build-sqlite && pnpm test-start && pnpm test-dev
 
       - name: Upload test results
         if: ${{ always() }}
