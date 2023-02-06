@@ -158,15 +158,14 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       >
     >;
 
+    function isObject(value: unknown): value is Record<string, unknown> {
+      return !!value && !Array.isArray(value) && typeof value === 'object';
+    }
+
     function isObjectOrFunction(
       value: unknown,
     ): value is Record<string, unknown> | ((...args: unknown[]) => unknown) {
-      // check that value is object
-      return (
-        !!value &&
-        !Array.isArray(value) &&
-        (typeof value === 'object' || typeof value === 'function')
-      );
+      return isObject(value) || typeof value === 'function';
     }
 
     function isRouterOrProcedure(
@@ -176,12 +175,15 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
         return false;
       }
       const routerOrProcedure = value as AnyRouter | AnyProcedure;
-      if (!routerOrProcedure._def) {
+      if (!isObject(routerOrProcedure._def)) {
         return false;
       }
 
       // This would be better if we had a Symbol
-      return routerOrProcedure._def.router || routerOrProcedure._def.procedure;
+      return (
+        routerOrProcedure._def.router === true ||
+        routerOrProcedure._def.procedure === true
+      );
     }
 
     function toRouter<TObj extends object>(
