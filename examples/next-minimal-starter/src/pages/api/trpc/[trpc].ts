@@ -4,14 +4,9 @@
  */
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
-import {
-  publicProcedure,
-  router,
-  unstable_RouterBase,
-  unstable_toRouter,
-} from '~/server/trpc';
+import { publicProcedure, unstable_toRouter } from '~/server/trpc';
 
-class PostRouter extends unstable_RouterBase {
+class PostRouter {
   public allPosts = publicProcedure.query(() => {
     return 'hello';
   });
@@ -25,6 +20,7 @@ class MyAppRouter {
   private commonMethod() {
     return 'hello';
   }
+
   public greeting = publicProcedure
     .input(
       z.object({
