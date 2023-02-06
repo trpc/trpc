@@ -189,27 +189,3 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     };
   };
 }
-
-const t = initTRPC.create();
-
-class PostRouter extends t.unstable_RouterBase {
-  public allPosts = t.procedure.query(() => {
-    return 'hello';
-  });
-}
-class MyAppRouter extends t.unstable_RouterBase {
-  public post;
-  constructor() {
-    super();
-    this.post = new PostRouter().toRouter();
-  }
-  public greeting = t.procedure.query(() => {
-    return 'hello';
-  });
-}
-
-const myAppRouter = new MyAppRouter();
-const router = myAppRouter.toRouter();
-
-router._def.record.greeting;
-router._def.record.post;
