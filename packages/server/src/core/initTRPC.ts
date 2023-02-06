@@ -24,7 +24,7 @@ import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { AnyProcedure } from './procedure';
-import { CreateRouterInner, createRouterFactory } from './router';
+import { AnyRouter, Router, RouterDef, createRouterFactory } from './router';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
@@ -138,15 +138,17 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       }
     }
 
-    type ClassToProcRouterRecord<TDef extends RouterBase> = CreateRouterInner<
-      $Config,
-      {
-        [TKey in keyof TDef]: TDef[TKey] extends RouterBase
-          ? ClassToProcRouterRecord<TDef[TKey]>
-          : TDef[TKey] extends AnyProcedure
-          ? TDef[TKey]
-          : never;
-      }
+    type ClassToProcRouterRecord<TRouter extends RouterBase> = Router<
+      RouterDef<
+        $Config,
+        {
+          [TKey in keyof TRouter]: //   : //   ? ClassToProcRouterRecord<TRouter[TKey]> //  TRouter[TKey] extends RouterBase
+
+          TRouter[TKey] extends AnyProcedure | AnyRouter
+            ? TRouter[TKey]
+            : never;
+        }
+      >
     >;
 
     class RouterBase {
@@ -192,7 +194,7 @@ class MyAppRouter extends t.unstable_RouterBase {
   public post;
   constructor() {
     super();
-    this.post = new PostRouter();
+    this.post = new PostRouter().toRouter();
   }
   public greeting = t.procedure.query(() => {
     return 'hello';
@@ -200,4 +202,7 @@ class MyAppRouter extends t.unstable_RouterBase {
 }
 
 const myAppRouter = new MyAppRouter();
-myAppRouter.toRouter();
+const router = myAppRouter.toRouter();
+
+router._def.record.greeting;
+router._def.record.post;
