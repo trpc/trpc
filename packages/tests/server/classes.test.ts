@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { ignoreErrors, routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z } from 'zod';
@@ -61,5 +61,13 @@ describe('basic', () => {
         "text": "hello bob",
       }
     `);
+  });
+
+  test('common methods should not be exposed', () => {
+    ignoreErrors(() => {
+      // FIXME
+      // // @ts-expect-error this should not exist even if defined
+      ctx.proxy.commonMethod;
+    });
   });
 });
