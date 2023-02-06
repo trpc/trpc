@@ -1,8 +1,18 @@
 import { Parser } from '../parser';
 
-export type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
+export type ParseFnOptions<TContext> = {
+  ctx: TContext;
+};
+export type ParseFn<TType, TContext> = (
+  value: unknown,
+  opts: {
+    ctx: TContext;
+  },
+) => TType | Promise<TType>;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export function getParseFn<TType>(
+  procedureParser: Parser<unknown>,
+): ParseFn<TType, unknown> {
   const parser = procedureParser as any;
 
   if (typeof parser === 'function') {
@@ -38,8 +48,8 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
  * @internal
  */
 export function getParseFnOrPassThrough<TType>(
-  procedureParser: Parser | undefined,
-): ParseFn<TType> {
+  procedureParser: Parser<any> | undefined,
+): ParseFn<TType, undefined> {
   if (!procedureParser) {
     return (v) => v as TType;
   }

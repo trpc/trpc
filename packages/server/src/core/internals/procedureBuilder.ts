@@ -100,7 +100,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
    */
-  input<$Parser extends Parser>(
+  input<$Parser extends Parser<TParams['_ctx_out']>>(
     schema: TParams['_input_out'] extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown>
@@ -127,7 +127,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an output parser to the procedure.
    */
-  output<$Parser extends Parser>(
+  output<$Parser extends Parser<any>>(
     schema: $Parser,
   ): ProcedureBuilder<{
     _config: TParams['_config'];

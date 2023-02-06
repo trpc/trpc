@@ -4,16 +4,6 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
-  const result = trpc.greeting.useQuery({ name: 'client' });
-
-  if (!result.data) {
-    return (
-      <div>
-        <h1>Loading...</h1>
-      </div>
-    );
-  }
   return (
     <div>
       {/**
@@ -22,20 +12,36 @@ export default function IndexPage() {
        * 💡 Tip: CMD+Click (or CTRL+Click) on `text` to go to the server definition
        * 💡 Tip: Secondary click on `text` and "Rename Symbol" to rename it both on the client & server
        */}
-      <h1>{result.data.text}</h1>
-      <div>
+      <h1>Form!</h1>
+      <fieldset>
+        <legend>Form with file upload</legend>
         <form
           method="post"
           action="/api/trpc/mut"
           encType="multipart/form-data"
         >
-          <input name="hello" value="asd" />
+          <input name="hello" defaultValue="haz upload" />
           <br />
-          <input type="file" name="file" />
+          <input type="file" name="file1" />
+          <br />
+          <input type="file" name="file2" />
           <br />
           <button>submit</button>
         </form>
-      </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Form with w/o upload</legend>
+        <form
+          method="post"
+          action="/api/trpc/mut"
+          encType="multipart/form-data"
+        >
+          <input name="hello" defaultValue="no upload" />
+          <br />
+          <button>submit</button>
+        </form>
+      </fieldset>
     </div>
   );
 }
