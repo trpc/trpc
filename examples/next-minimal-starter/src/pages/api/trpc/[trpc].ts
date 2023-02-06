@@ -4,25 +4,39 @@
  */
 import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
-import { publicProcedure, router, unstable_RouterBase } from '~/server/trpc';
+import {
+  publicProcedure,
+  router,
+  unstable_RouterBase,
+  unstable_toRouter,
+} from '~/server/trpc';
 
 class PostRouter extends unstable_RouterBase {
   public allPosts = publicProcedure.query(() => {
     return 'hello';
   });
 }
-class MyAppRouter extends unstable_RouterBase {
+class MyAppRouter {
   public post;
   constructor() {
-    super();
-    this.post = new PostRouter().toRouter();
+    this.post = unstable_toRouter(new PostRouter());
   }
-  public greeting = publicProcedure.query(() => {
+
+  private commonMethod() {
     return 'hello';
-  });
+  }
+  public greeting = publicProcedure
+    .input(
+      z.object({
+        name: z.string().nullish(),
+      }),
+    )
+    .query(() => {
+      return 'hello';
+    });
 }
 
-const appRouter = new MyAppRouter().toRouter();
+const appRouter = unstable_toRouter(new MyAppRouter());
 
 // export only the type definition of the API
 // None of the actual implementation is exposed to the client

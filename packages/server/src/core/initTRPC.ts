@@ -138,26 +138,33 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       }
     }
 
-    type ClassToProcRouterRecord<TRouter extends RouterBase> = Router<
+    type ClassToProcRouterRecord<TRouter extends object> = Router<
       RouterDef<
         $Config,
         {
-          [TKey in keyof TRouter]: //   : //   ? ClassToProcRouterRecord<TRouter[TKey]> //  TRouter[TKey] extends RouterBase
-
-          TRouter[TKey] extends AnyProcedure | AnyRouter
+          [TKey in keyof TRouter]: TRouter[TKey] extends
+            | AnyProcedure
+            | AnyRouter
             ? TRouter[TKey]
             : never;
         }
       >
     >;
 
+    function toRouter<TObj extends object>(
+      _obj: TObj,
+    ): ClassToProcRouterRecord<TObj> {
+      throw new Error('Unimplemented');
+    }
+
     class RouterBase {
-      public toRouter(): ClassToProcRouterRecord<this> {
-        return null as any;
+      public toRouter() {
+        return toRouter(this);
       }
     }
     return {
       unstable_RouterBase: RouterBase,
+      unstable_toRouter: toRouter,
       /**
        * These are just types, they can't be used
        * @internal
