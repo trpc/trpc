@@ -1,3 +1,4 @@
+import { Simplify } from '../../types';
 import { ProcedureParams } from '../procedure';
 
 /**
@@ -42,8 +43,10 @@ export type UnsetMarker = typeof unsetMarker;
  * @internal
  */
 export interface ResolveOptions<TParams extends ProcedureParams> {
-  ctx: TParams['_ctx_out'];
-  input: TParams['_input_out'];
+  ctx: Simplify<TParams['_ctx_out']>;
+  input: TParams['_input_out'] extends UnsetMarker
+    ? undefined
+    : TParams['_input_out'];
 }
 
 /**

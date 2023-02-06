@@ -5,7 +5,10 @@ import prettier from 'prettier';
 // minimal version of PackageJson type necessary
 export type PackageJson = {
   name: string;
-  exports: Record<string, { import: string; require: string; default: string }>;
+  exports: Record<
+    string,
+    { import: string; require: string; default: string } | string
+  >;
   files: string[];
   dependencies: Record<string, string>;
   pnpm: {
@@ -30,6 +33,7 @@ export function generateEntrypoints(inputs: string[]) {
 
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
+    './package.json': './package.json',
     '.': {
       import: './dist/index.mjs',
       require: './dist/index.js',

@@ -37,12 +37,17 @@
     },
     {
       "source": "/docs/v10/invalidateQueries",
-      "destination": "/docs/query-invalidation",
+      "destination": "/docs/useContext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/v10/publicProcedures",
       "destination": "/docs/procedures",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/query-invalidation",
+      "destination": "/docs/useContext#query-invalidation",
       "permanent": true
     },
     {
@@ -68,6 +73,21 @@
     {
       "source": "/sponsor",
       "destination": "https://github.com/sponsors/KATT",
+      "permanent": false
+    },
+    {
+      "source": "/docs/aborting-procedures",
+      "destination": "/docs/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/edge-runtimes",
+      "destination": "/docs/fetch",
+      "permanent": true
+    },
+    {
+      "source": "/faq",
+      "destination": "/docs/faq",
       "permanent": false
     }
   ]

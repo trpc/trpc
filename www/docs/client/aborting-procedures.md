@@ -1,13 +1,13 @@
 ---
-id: aborting-procedures
-title: Aborting Procedures
-sidebar_label: Aborting Procedures
-slug: /aborting-procedures
+id: aborting-procedure-calls
+title: Aborting Procedure Calls
+sidebar_label: Aborting Procedure Calls
+slug: /aborting-procedure-calls
 ---
 
 ## @trpc/react-query
 
-By default, TRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
+By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
 
 ```ts twoslash title="client.ts"
 // @target: esnext
@@ -35,7 +35,7 @@ import { trpc } from '~/utils/trpc';
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id }, { trpc: abortOnUnmount: true });
+  const postQuery = trpc.post.byId.useQuery({ id }, { trpc: { abortOnUnmount: true } });
 
   return (...)
 }

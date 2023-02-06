@@ -15,7 +15,7 @@ slug: /rpc
 
 ## Batching
 
-When batching, we combine all parallel procedure calls of the same type in one request using a data loader.
+When batching, we combine all parallel procedure calls of the same HTTP method in one request using a data loader.
 
 - The called procedures' names are combined by a comma (`,`) in the `pathname`
 - Input parameters are sent as a query parameter called `input` which has the shape `Record<number, unknown>`.

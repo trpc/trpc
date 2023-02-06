@@ -269,6 +269,14 @@ h5 {
   @apply list-decimal list-inside;
 }
 
+.markdown ol li {
+  @apply my-4;
+}
+
+.markdown li > p {
+  display: inline;
+}
+
 /** Hide noisy shiki stuff */
 
 .shiki data-lsp {
@@ -276,6 +284,12 @@ h5 {
 }
 
 .shiki data-lsp::before {
+  display: none;
+}
+
+/* Would be nice to have these displayed but they are veeerry long and noisy... */
+.shiki .error,
+.shiki .error-behind {
   display: none;
 }
 
