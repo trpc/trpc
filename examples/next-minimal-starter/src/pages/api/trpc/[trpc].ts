@@ -6,15 +6,20 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 import { publicProcedure, unstable_toRouter } from '~/server/trpc';
 
-class PostRouter {
+class PostService {
   public allPosts = publicProcedure.query(() => {
-    return 'hello';
+    return [
+      {
+        id: 1,
+        title: 'hello world',
+      },
+    ];
   });
 }
-class MyAppRouter {
+class RootService {
   public post;
   constructor() {
-    this.post = unstable_toRouter(new PostRouter());
+    this.post = unstable_toRouter(new PostService());
   }
 
   public commonMethod() {
@@ -36,7 +41,7 @@ class MyAppRouter {
     });
 }
 
-const appRouter = unstable_toRouter(new MyAppRouter());
+const appRouter = unstable_toRouter(new RootService());
 
 // export only the type definition of the API
 // None of the actual implementation is exposed to the client
