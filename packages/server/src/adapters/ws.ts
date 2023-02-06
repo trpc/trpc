@@ -92,11 +92,18 @@ function parseMessage(
   };
 }
 
+/**
+ * @public
+ */
 export type CreateWSSContextFnOptions = Omit<
   NodeHTTPCreateContextFnOptions<IncomingMessage, ws>,
   'info'
 >;
-export type WSCreateContextFn<TRouter extends AnyRouter> = (
+
+/**
+ * @public
+ */
+export type CreateWSSContextFn<TRouter extends AnyRouter> = (
   opts: CreateWSSContextFnOptions,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
@@ -114,13 +121,13 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
         /**
          * @link https://trpc.io/docs/context
          **/
-        createContext?: WSCreateContextFn<TRouter>;
+        createContext?: CreateWSSContextFn<TRouter>;
       }
     : {
         /**
          * @link https://trpc.io/docs/context
          **/
-        createContext: WSCreateContextFn<TRouter>;
+        createContext: CreateWSSContextFn<TRouter>;
       });
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
