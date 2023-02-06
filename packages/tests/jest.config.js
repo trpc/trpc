@@ -12,6 +12,8 @@ module.exports = {
     // './server/jest.setup.js',
     '@testing-library/jest-dom/extend-expect',
   ],
+  "plugins": ["@babel/plugin-proposal-decorators"],
+
   globals: {
     'ts-jest': {
       tsconfig: {
@@ -19,6 +21,8 @@ module.exports = {
         target: 'ES2020',
         noUnusedLocals: false,
         noUnusedParameters: false,
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true
       },
     },
   },
