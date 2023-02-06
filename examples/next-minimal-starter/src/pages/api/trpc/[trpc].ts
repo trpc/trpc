@@ -17,8 +17,8 @@ class MyAppRouter {
     this.post = unstable_toRouter(new PostRouter());
   }
 
-  private commonMethod() {
-    return 'i am a private method';
+  public commonMethod() {
+    return 'i am a shared method but not exposed to the client as a procedure';
   }
 
   public greeting = publicProcedure
@@ -30,8 +30,8 @@ class MyAppRouter {
     .query(({ input }) => {
       return {
         text: `hello ${input?.name ?? 'world'}`,
-        // Try calling private method
-        privateMethodResult: this.commonMethod(),
+        // Try calling class method
+        commonMethodResult: this.commonMethod(),
       };
     });
 }
