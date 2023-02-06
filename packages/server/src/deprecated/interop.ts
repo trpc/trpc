@@ -191,6 +191,7 @@ function migrateProcedure<
     mutation: type === 'mutation',
     query: type === 'query',
     subscription: type === 'subscription',
+    procedure: true,
   });
 
   const proc = builder[type]((opts) => def.resolver(opts as any));

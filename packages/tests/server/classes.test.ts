@@ -3,7 +3,7 @@ import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z } from 'zod';
 
-describe('basic', async () => {
+describe('basic', () => {
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create();
@@ -55,6 +55,11 @@ describe('basic', async () => {
     .done();
   test('should work', async () => {
     const result = await ctx.proxy.greeting.query({ name: 'bob' });
-    expect(result).toMatchInlineSnapshot();
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "commonMethodResult": "i am a shared method but not exposed to the client as a procedure",
+        "text": "hello bob",
+      }
+    `);
   });
 });
