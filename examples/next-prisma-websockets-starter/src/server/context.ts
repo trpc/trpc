@@ -1,6 +1,6 @@
-import * as trpc from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
-import { WSCreateContextFnOptions } from '@trpc/server/adapters/ws';
+import type { inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 import { getSession } from 'next-auth/react';
 
 /**
@@ -8,7 +8,7 @@ import { getSession } from 'next-auth/react';
  * @link https://trpc.io/docs/context
  */
 export const createContext = async (
-  opts: trpcNext.CreateNextContextOptions | WSCreateContextFnOptions,
+  opts: CreateNextContextOptions | CreateWSSContextFnOptions,
 ) => {
   const session = await getSession(opts);
 
@@ -19,4 +19,4 @@ export const createContext = async (
   };
 };
 
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;
+export type Context = inferAsyncReturnType<typeof createContext>;

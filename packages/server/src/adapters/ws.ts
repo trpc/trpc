@@ -92,12 +92,12 @@ function parseMessage(
   };
 }
 
-export type WSCreateContextFnOptions = Omit<
+export type CreateWSSContextFnOptions = Omit<
   NodeHTTPCreateContextFnOptions<IncomingMessage, ws>,
   'info'
 >;
 export type WSCreateContextFn<TRouter extends AnyRouter> = (
-  opts: WSCreateContextFnOptions,
+  opts: CreateWSSContextFnOptions,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
 /**
