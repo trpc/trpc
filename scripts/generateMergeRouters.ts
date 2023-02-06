@@ -22,9 +22,6 @@ const TEMPLATE = `
  ): Router<{
   _config: RP0['_config'];
   router: true;
-  queries: __queries__;
-  mutations: __mutations__;
-  subscriptions: __subscriptions__;
   procedures: __procedures__;
   record: __records__;
   isDev: boolean;
@@ -46,18 +43,12 @@ const partList: string[] = [];
 for (let index = 0; index < NUM_ARGS; index++) {
   const generics: string[] = [];
   const args: string[] = [];
-  const queries: string[] = [];
-  const mutations: string[] = [];
-  const subscriptions: string[] = [];
   const procedures: string[] = [];
   const records: string[] = [];
 
   for (let j = 0; j < index + 1; j++) {
     generics.push(`RP${j} extends AnyRouterDef`);
     args.push(`router${j}: Router<RP${j}>`);
-    queries.push(`RP${j}['queries']`);
-    mutations.push(`RP${j}['mutations']`);
-    subscriptions.push(`RP${j}['subscriptions']`);
     procedures.push(`RP${j}['procedures']`);
     records.push(`RP${j}['record']`);
   }
@@ -65,9 +56,6 @@ for (let index = 0; index < NUM_ARGS; index++) {
   const part = TEMPLATE.replace('', '')
     .replace(/__generics__/g, generics.join(', '))
     .replace(/__args__/g, args.join(', '))
-    .replace(/__queries__/g, queries.join(' & '))
-    .replace(/__mutations__/g, mutations.join(' & '))
-    .replace(/__subscriptions__/g, subscriptions.join(' & '))
     .replace(/__procedures__/g, procedures.join(' & '))
     .replace(/__records__/g, records.join(' & '));
 

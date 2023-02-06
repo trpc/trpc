@@ -16,9 +16,6 @@
     "codegen:bigBoi": {
       "outputs": ["server/__generated__/bigBoi/**"]
     },
-    "codegen:bigLegacyRouter": {
-      "outputs": ["server/__generated__/bigLegacyRouter/**"]
-    },
     "codegen:mergeRouters": {
       "outputs": ["src/core/internals/__generated__/**"]
     },
@@ -52,11 +49,11 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
+      "dependsOn": ["^build", "codegen:bigBoi"],
       "cache": false
     },
     "test-ci": {
-      "dependsOn": ["^build", "codegen:bigBoi", "codegen:bigLegacyRouter"],
+      "dependsOn": ["^build", "codegen:bigBoi"],
       "cache": false
     },
     "test-dev": {

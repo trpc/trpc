@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { ProcedureType } from '../deprecated/router';
+import { ProcedureType } from '../core';
 import { TRPC_ERROR_CODE_NUMBER } from './codes';
 
 /**
@@ -63,11 +63,6 @@ export interface TRPCSuccessResponse<TData>
       type?: 'data';
     }
   > {}
-
-/**
- * @deprecated use `TRPCSuccessResponse` instead
- */
-export type TRPCResultResponse<TData = unknown> = TRPCSuccessResponse<TData>;
 
 export interface TRPCErrorResponse<
   TError extends TRPCErrorShape = TRPCErrorShape,

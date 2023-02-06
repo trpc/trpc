@@ -11,8 +11,7 @@ import {
 import { createTRPCReact } from '@trpc/react-query';
 import { OutputWithCursor } from '@trpc/react-query/shared';
 import { TRPCError, initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/src/observable';
-import { subscriptionPullFactory } from '@trpc/server/src/subscription';
+import { Observable, Observer, observable } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
 import { ZodError, z } from 'zod';
@@ -22,6 +21,41 @@ export type Post = {
   title: string;
   createdAt: number;
 };
+
+function subscriptionPullFactory<TOutput>(opts: {
+  /**
+   * The interval of how often the function should run
+   */
+  intervalMs: number;
+  pull(emit: Observer<TOutput, unknown>): void | Promise<void>;
+}): Observable<TOutput, unknown> {
+  let timer: any;
+  let stopped = false;
+  async function _pull(emit: Observer<TOutput, unknown>) {
+    /* istanbul ignore next */
+    if (stopped) {
+      return;
+    }
+    try {
+      await opts.pull(emit);
+    } catch (err /* istanbul ignore next */) {
+      emit.error(err as Error);
+    }
+
+    /* istanbul ignore else */
+    if (!stopped) {
+      timer = setTimeout(() => _pull(emit), opts.intervalMs);
+    }
+  }
+
+  return observable<TOutput>((emit) => {
+    _pull(emit).catch((err) => emit.error(err as Error));
+    return () => {
+      clearTimeout(timer);
+      stopped = true;
+    };
+  });
+}
 
 export function createAppRouter() {
   const db: {
