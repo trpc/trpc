@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { httpBatchLink } from '@trpc/client';
+import { httpBatchLink, httpLink, splitLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -19,19 +19,25 @@ describe('undefined headers sent to server', () => {
           return opts.ctx.req.headers;
         }),
       });
+      const headers = {
+        undef: undefined,
+        notUndef: 'not undefined',
+      };
 
       const opts = routerToServerAndClientNew(appRouter, {
         client(clientOpts) {
           return {
             links: [
-              httpBatchLink({
-                url: clientOpts.httpUrl,
-                headers() {
-                  return {
-                    undef: undefined,
-                    notUndef: 'not undefined',
-                  };
-                },
+              splitLink({
+                condition: (op) => !!op.context?.batch,
+                true: httpBatchLink({
+                  url: clientOpts.httpUrl,
+                  headers,
+                }),
+                false: httpLink({
+                  url: clientOpts.httpUrl,
+                  headers,
+                }),
               }),
             ],
           };
@@ -45,10 +51,28 @@ describe('undefined headers sent to server', () => {
     })
     .done();
   test('should work', async () => {
-    const res = await ctx.proxy.headers.query();
-    expect(res).not.toHaveProperty('undef');
-    expect(res).toHaveProperty('notUndef');
-    expect(res.notUndef).toBe('not undefined');
-    expect(res).toMatchInlineSnapshot();
+    {
+      const res = await ctx.proxy.headers.query(undefined, {
+        context: {
+          batch: true,
+        },
+      });
+      expect(res).not.toHaveProperty('undef');
+      expect(res).toHaveProperty('notUndef');
+      expect(res.notUndef).toBe('not undefined');
+      expect(res).toMatchInlineSnapshot();
+    }
+
+    {
+      const res = await ctx.proxy.headers.query(undefined, {
+        context: {
+          batch: false,
+        },
+      });
+      expect(res).not.toHaveProperty('undef');
+      expect(res).toHaveProperty('notUndef');
+      expect(res.notUndef).toBe('not undefined');
+      expect(res).toMatchInlineSnapshot();
+    }
   });
 });
