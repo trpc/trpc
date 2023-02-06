@@ -21,7 +21,7 @@ import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
-import { getQueryKey } from '../internals/getQueryKey';
+import { getQueryKeyInternal } from '../internals/getQueryKey';
 import {
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
@@ -130,7 +130,11 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           type: 'query',
         });
 
-      const queryKey = getQueryKey(arrayPath, input, getQueryType(utilName));
+      const queryKey = getQueryKeyInternal(
+        arrayPath,
+        input,
+        getQueryType(utilName),
+      );
 
       const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
         fetch: () => queryClient.fetchQuery({ queryKey, queryFn }),

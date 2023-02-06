@@ -1,18 +1,21 @@
-import { getQueryKey } from './getQueryKey';
+import { getQueryKeyInternal } from './getQueryKey';
 
 test('getArrayQueryKey', () => {
   // empty path should not nest an extra array
-  expect(getQueryKey([], undefined, 'any')).toMatchInlineSnapshot(`Array []`);
+  expect(getQueryKeyInternal([], undefined, 'any')).toMatchInlineSnapshot(
+    `Array []`,
+  );
 
   // should not nest an empty object
-  expect(getQueryKey(['foo'], undefined, 'any')).toMatchInlineSnapshot(`
+  expect(getQueryKeyInternal(['foo'], undefined, 'any')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
       ],
     ]
   `);
-  expect(getQueryKey(['foo'], undefined, 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKeyInternal(['foo'], undefined, 'query'))
+    .toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
@@ -22,7 +25,8 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getQueryKey(['foo'], undefined, 'infinite')).toMatchInlineSnapshot(`
+  expect(getQueryKeyInternal(['foo'], undefined, 'infinite'))
+    .toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
@@ -34,7 +38,7 @@ test('getArrayQueryKey', () => {
   `);
 
   // some proc may have dot separated parts
-  expect(getQueryKey(['foo', 'bar.baz'], 'bar', 'query'))
+  expect(getQueryKeyInternal(['foo', 'bar.baz'], 'bar', 'query'))
     .toMatchInlineSnapshot(`
     Array [
       Array [
@@ -49,7 +53,7 @@ test('getArrayQueryKey', () => {
     ]
   `);
 
-  expect(getQueryKey(['foo'], 'bar', 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKeyInternal(['foo'], 'bar', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [
         "foo",
@@ -60,7 +64,7 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getQueryKey([], 'bar', 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKeyInternal([], 'bar', 'query')).toMatchInlineSnapshot(`
     Array [
       Array [],
       Object {
@@ -69,7 +73,8 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
-  expect(getQueryKey(['post', 'byId'], '1', 'query')).toMatchInlineSnapshot(`
+  expect(getQueryKeyInternal(['post', 'byId'], '1', 'query'))
+    .toMatchInlineSnapshot(`
     Array [
       Array [
         "post",
