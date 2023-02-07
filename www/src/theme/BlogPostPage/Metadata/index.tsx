@@ -1,12 +1,8 @@
 import { PageMetadata } from '@docusaurus/theme-common';
-import { useBlogPost as ubp } from '@docusaurus/theme-common/internal';
-import { useBlogPost as typedUbp } from '@docusaurus/theme-common/internal';
+import { useBlogPost } from '@docusaurus/theme-common/internal';
 import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
 import { useEnv } from '../../../utils/useEnv';
-
-// /lib doesn't actually export but actual export has import error in vscode
-const useBlogPost = ubp as unknown as typeof typedUbp;
 
 export default function BlogPostPageMetadata(): JSX.Element {
   const { metadata } = useBlogPost();
