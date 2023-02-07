@@ -1,6 +1,8 @@
 {
   "extends": "@tsconfig/docusaurus/tsconfig.json",
   "compilerOptions": {
-    "strict": true
-  }
+    "strict": true,
+    "moduleResolution": "node16"
+  },
+  "include": ["src", "*.js", ".eslintrc.js"]
 }
