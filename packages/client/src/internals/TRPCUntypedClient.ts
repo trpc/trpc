@@ -77,6 +77,17 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
       links: TRPCLink<TRouter>[];
     };
 
+/** @internal */
+export type UntypedClientProperties =
+  | 'links'
+  | 'runtime'
+  | 'requestId'
+  | '$request'
+  | 'requestAsPromise'
+  | 'query'
+  | 'mutation'
+  | 'subscription';
+
 export class TRPCUntypedClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
