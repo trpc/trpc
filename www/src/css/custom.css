@@ -94,7 +94,7 @@ a {
   text-decoration: var(--ifm-link-decoration);
 }
 /**
- * Initialiazing a `footnotes` counter on the wrapper
+ * Initializing a `footnotes` counter on the wrapper
  */
 article {
   counter-reset: footnotes;

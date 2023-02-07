@@ -59,7 +59,7 @@ export const appRouter = trpc.router().transformer(superjson);
 
 ## Different transformers for upload and download
 
-If a transformer should only be used for one directon or different transformers should be used for upload and download (e.g. for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
+If a transformer should only be used for one direction or different transformers should be used for upload and download (e.g. for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
 
 ### How to
 
