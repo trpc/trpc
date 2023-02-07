@@ -16,7 +16,7 @@ export type PackageJson = {
   };
 };
 
-// create directories on the way if they dont exist
+// create directories on the way if they don't exist
 function writeFileSyncRecursive(filePath: string, content: string) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
@@ -57,7 +57,7 @@ export function generateEntrypoints(inputs: string[]) {
       const pathWithoutSrc = parts.join('/');
 
       // if filename is index.ts, importPath is path until index.ts,
-      // otherwise, importPath is the path without the fileextension
+      // otherwise, importPath is the path without the file extension
       const importPath =
         parts.at(-1) === 'index.ts'
           ? parts.slice(0, -1).join('/')

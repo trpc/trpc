@@ -31,7 +31,7 @@ test('chainer', async () => {
         attempt++;
         serverCall();
         if (attempt < 3) {
-          throw new Error('Errr ' + attempt);
+          throw new Error('Err ' + attempt);
         }
         return 'world';
       },
@@ -228,7 +228,7 @@ describe('batching', () => {
       createContextFn.mockClear();
     }
     {
-      // queries should be sent and indivdual requests
+      // queries should be sent and individual requests
       // url length: 2146 > 2083
       const res = await Promise.all([
         client.query('big-input', '*'.repeat(1024)),
@@ -303,7 +303,7 @@ test('create client with links', async () => {
           attempt++;
           serverCall();
           if (attempt < 3) {
-            throw new Error('Errr ' + attempt);
+            throw new Error('Err ' + attempt);
           }
           return 'world';
         },
