@@ -1,8 +1,6 @@
 import { PageMetadata } from '@docusaurus/theme-common';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import { useBlogPost as ubp } from '@docusaurus/theme-common/internal';
-import { useBlogPost as typedUbp } from '@docusaurus/theme-common/lib/internal';
+import { useBlogPost as typedUbp } from '@docusaurus/theme-common/internal';
 import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
 import { useEnv } from '../../../utils/useEnv';

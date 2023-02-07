@@ -1,3 +1,15 @@
+// TODO: fix ESLint errors and typesafety
+
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 /**
  * Script to generate a JSON file of tweets from the Twitter API.
  * Fetches the tweets from this timeline: https://twitter.com/alexdotjs/timelines/1441435105910796291

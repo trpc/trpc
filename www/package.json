@@ -16,13 +16,15 @@
     "sponsors-sync:pull": "tsx ./src/components/sponsors/script.pull.ts",
     "sponsors-sync:push": "tsx ./src/components/sponsors/script.push.ts",
     "sponsors-sync": "run-s sponsors-sync:*",
-    "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts"
+    "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../.gitignore --report-unused-disable-directives src"
   },
   "dependencies": {
     "@algolia/client-search": "^4.9.1",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/plugin-content-docs": "2.3.1",
     "@docusaurus/preset-classic": "2.3.1",
+    "@docusaurus/theme-classic": "^2.3.1",
     "@docusaurus/theme-common": "2.3.1",
     "@docusaurus/types": "2.3.1",
     "@mdx-js/react": "^1.6.22",
