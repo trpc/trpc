@@ -371,7 +371,7 @@ describe('anonymous user with fastify-plugin', () => {
       },
       body: JSON.stringify(data),
     });
-    // body shoul be string
+    // body should be string
     expect(await req.json()).toMatchInlineSnapshot(`
       Object {
         "body": "{\\"text\\":\\"life\\",\\"life\\":42}",

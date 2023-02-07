@@ -57,22 +57,22 @@ test('react', () => {
   try {
     const { data } = trpc.useQuery(['oldProc100']);
     if (!data) {
-      throw new Error('Whaever');
+      throw new Error('Whatever');
     }
     expectTypeOf(data).toEqualTypeOf<'100'>();
   } catch {
-    // whatev
+    // whatever
   }
 
   try {
     const { data } = trpc.proxy.r499.greeting.useQuery({ who: 'KATT' });
     if (!data) {
-      throw new Error('Whaever');
+      throw new Error('Whatever');
     }
     expectTypeOf(data).not.toBeAny();
     expectTypeOf(data).toMatchTypeOf<string>();
   } catch {
-    // whatev
+    // whatever
   }
   console.error = prevConsoleError;
 });

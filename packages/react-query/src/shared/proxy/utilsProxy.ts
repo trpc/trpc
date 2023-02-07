@@ -13,6 +13,7 @@ import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
+  DeepPartial,
   Filter,
   ProcedureOptions,
   ProtectedIntersection,
@@ -30,7 +31,7 @@ import {
   contextProps,
 } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
-import { getQueryKey } from '../../internals/getQueryKey';
+import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
   TRouter extends AnyRouter,
@@ -89,7 +90,7 @@ type DecorateProcedure<
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
-    input?: inferProcedureInput<TProcedure>,
+    input?: DeepPartial<inferProcedureInput<TProcedure>>,
     filters?: InvalidateQueryFilters,
     options?: InvalidateOptions,
   ): Promise<void>;
@@ -234,7 +235,7 @@ export function createReactQueryUtilsProxy<
           const [input, updater, ...rest] = args as Parameters<
             AnyDecoratedProcedure[typeof utilName]
           >;
-          const queryKey = getQueryKey(fullPath, input);
+          const queryKey = getQueryKeyInternal(fullPath, input);
           return {
             queryKey,
             updater,
@@ -245,7 +246,7 @@ export function createReactQueryUtilsProxy<
         const [input, ...rest] = args as Parameters<
           AnyDecoratedProcedure[typeof utilName]
         >;
-        const queryKey = getQueryKey(fullPath, input);
+        const queryKey = getQueryKeyInternal(fullPath, input);
         return {
           queryKey,
           rest,

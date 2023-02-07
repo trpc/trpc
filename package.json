@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.26.0",
+  "packageManager": "pnpm@7.26.3",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
@@ -69,10 +69,10 @@
   "pnpm": {
     "overrides": {
       "@tanstack/react-query": "4.6.0",
-      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
-      "@examples/next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Fnext-websockets-starter",
-      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
-      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.7.1.tgz?id=%40examples%2Flegacy-next-starter"
+      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
+      "@examples/next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Fnext-websockets-starter",
+      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
+      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Flegacy-next-starter"
     }
   }
 }

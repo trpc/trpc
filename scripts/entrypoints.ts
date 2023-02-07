@@ -5,7 +5,10 @@ import prettier from 'prettier';
 // minimal version of PackageJson type necessary
 export type PackageJson = {
   name: string;
-  exports: Record<string, { import: string; require: string; default: string }>;
+  exports: Record<
+    string,
+    { import: string; require: string; default: string } | string
+  >;
   files: string[];
   dependencies: Record<string, string>;
   pnpm: {
@@ -13,7 +16,7 @@ export type PackageJson = {
   };
 };
 
-// create directories on the way if they dont exist
+// create directories on the way if they don't exist
 function writeFileSyncRecursive(filePath: string, content: string) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
@@ -30,6 +33,7 @@ export function generateEntrypoints(inputs: string[]) {
 
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
+    './package.json': './package.json',
     '.': {
       import: './dist/index.mjs',
       require: './dist/index.js',
@@ -53,7 +57,7 @@ export function generateEntrypoints(inputs: string[]) {
       const pathWithoutSrc = parts.join('/');
 
       // if filename is index.ts, importPath is path until index.ts,
-      // otherwise, importPath is the path without the fileextension
+      // otherwise, importPath is the path without the file extension
       const importPath =
         parts.at(-1) === 'index.ts'
           ? parts.slice(0, -1).join('/')

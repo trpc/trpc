@@ -30,7 +30,7 @@ export type FlatOverwrite<TType, TWith> = InferOptional<
  * @internal
  */
 export type IntersectionError<TKey extends string> =
-  `${TKey} collides with a built-in method, you should rename this router or procedure on your backend`;
+  `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
 
 /**
  * @internal
@@ -104,3 +104,13 @@ export type Filter<TObj extends object, TFilter> = Pick<
 export type Unwrap<TType> = TType extends (...args: any[]) => infer R
   ? ThenArg<R>
   : TType;
+
+/**
+ * Makes the object recursively optional
+ * @internal
+ */
+export type DeepPartial<TObject> = TObject extends object
+  ? {
+      [P in keyof TObject]?: DeepPartial<TObject[P]>;
+    }
+  : TObject;
