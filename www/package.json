@@ -68,6 +68,7 @@
     "@types/oauth": "^0.9.1",
     "autoprefixer": "^10.4.7",
     "dotenv": "^16.0.1",
+    "eslint": "^8.30.0",
     "next": "^13.0.0",
     "next-auth": "^4.14.0",
     "npm-run-all": "^4.1.5",
