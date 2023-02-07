@@ -18,10 +18,8 @@ import {
   TRPCResponseMessage,
 } from '../rpc';
 import { CombinedDataTransformer } from '../transformer';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPCreateContextOption,
-} from './node-http';
+import { MaybePromise } from '../types';
+import { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /* istanbul ignore next */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
@@ -95,6 +93,21 @@ function parseMessage(
 }
 
 /**
+ * @public
+ */
+export type CreateWSSContextFnOptions = Omit<
+  NodeHTTPCreateContextFnOptions<IncomingMessage, ws>,
+  'info'
+>;
+
+/**
+ * @public
+ */
+export type CreateWSSContextFn<TRouter extends AnyRouter> = (
+  opts: CreateWSSContextFnOptions,
+) => MaybePromise<inferRouterContext<TRouter>>;
+
+/**
  * Web socket server handler
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
@@ -103,12 +116,19 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
 > & {
   wss: ws.Server;
   process?: NodeJS.Process;
-} & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
-
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  ws
->;
+} & (object extends inferRouterContext<TRouter>
+    ? {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext?: CreateWSSContextFn<TRouter>;
+      }
+    : {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext: CreateWSSContextFn<TRouter>;
+      });
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,

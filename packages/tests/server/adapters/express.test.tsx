@@ -22,6 +22,7 @@ async function startServer() {
 
     return {
       user: getUser(),
+      info: _opts.info,
     };
   };
 
@@ -93,5 +94,38 @@ test('simple query', async () => {
     Object {
       "text": "hello world",
     }
+  `);
+});
+
+test('request info from context should include both calls', async () => {
+  const res = await Promise.all([
+    t.client.hello.query({
+      who: 'test',
+    }),
+    t.client.request.info.query(),
+  ]);
+
+  expect(res).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "text": "hello test",
+      },
+      Object {
+        "calls": Array [
+          Object {
+            "input": Object {
+              "who": "test",
+            },
+            "path": "hello",
+            "type": "query",
+          },
+          Object {
+            "path": "request.info",
+            "type": "query",
+          },
+        ],
+        "isBatchCall": true,
+      },
+    ]
   `);
 });

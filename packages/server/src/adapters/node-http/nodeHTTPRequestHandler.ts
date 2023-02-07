@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../core';
-import { inferRouterContext } from '../../core/types';
-import { HTTPRequest } from '../../http/internals/types';
+import {
+  HTTPRequest,
+  ResolveHTTPRequestOptionsContextFn,
+} from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { getPostBody } from './internals/getPostBody';
 import {
@@ -25,10 +27,13 @@ export async function nodeHTTPRequestHandler<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const createContext = async function _createContext(): Promise<
-    inferRouterContext<TRouter>
-  > {
-    return await opts.createContext?.(opts);
+  const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+    innerOpts,
+  ) => {
+    return await opts.createContext?.({
+      ...opts,
+      ...innerOpts,
+    });
   };
   const { path, router } = opts;
 

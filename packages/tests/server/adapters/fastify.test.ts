@@ -28,9 +28,9 @@ const config = {
   prefix: '/trpc',
 };
 
-function createContext({ req, res }: CreateFastifyContextOptions) {
+function createContext({ req, res, info }: CreateFastifyContextOptions) {
   const user = { name: req.headers.username ?? 'anonymous' };
-  return { req, res, user };
+  return { req, res, user, info };
 }
 
 type Context = inferAsyncReturnType<typeof createContext>;
@@ -94,6 +94,11 @@ function createAppRouter() {
       ee.emit('subscription:created');
       onNewMessageSubscription();
       return sub;
+    }),
+    request: router({
+      info: publicProcedure.query(({ ctx }) => {
+        return ctx.info;
+      }),
     }),
   });
 
@@ -333,6 +338,22 @@ describe('authorized user', () => {
         "text": "hello nyan",
       }
     `);
+  });
+
+  test('request info', async () => {
+    const info = await app.client.request.info.query();
+
+    expect(info).toMatchInlineSnapshot(`
+      Object {
+        "calls": Array [
+          Object {
+            "path": "request.info",
+            "type": "query",
+          },
+        ],
+        "isBatchCall": false,
+      }
+  `);
   });
 
   test('mutation', async () => {
