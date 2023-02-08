@@ -25,7 +25,10 @@ import {
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
 export interface ProcedureRouterRecord {
-  [key: string]: AnyProcedure | AnyRouter;
+  [key: string]:
+    | AnyProcedure
+    | AnyRouter
+    | Record<string, AnyProcedure | AnyRouter>;
 }
 
 /**
@@ -140,7 +143,10 @@ export interface Router<TDef extends AnyRouterDef> {
 export type AnyRouter = Router<AnyRouterDef>;
 
 function isRouter(
-  procedureOrRouter: AnyProcedure | AnyRouter,
+  procedureOrRouter:
+    | AnyProcedure
+    | AnyRouter
+    | Record<string, AnyProcedure | AnyRouter>,
 ): procedureOrRouter is AnyRouter {
   return 'router' in procedureOrRouter._def;
 }
@@ -295,6 +301,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         return this._def._config.errorFormatter({ ...opts, shape });
       },
     };
+
     return router as any;
   };
 }
