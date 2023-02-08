@@ -34,4 +34,15 @@ describe('router', () => {
       }),
     ).toThrow('Duplicate key: foo..bar');
   });
+
+  test('nestedRouter', async () => {
+    const router = t.router({
+      foo: {
+        bar: t.procedure.query(() => 'Hello I am recursive'),
+      },
+    });
+
+    const caller = router.createCaller({});
+    expect(() => caller.foo.bar());
+  });
 });
