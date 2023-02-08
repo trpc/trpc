@@ -27,6 +27,7 @@
   --ifm-footer-background-color: #171717;
   --ifm-navbar-background-color: #111111;
   --ifm-background-color: #111111;
+  --ifm-toc-border-color: rgb(39, 39, 42);
 }
 
 html {
@@ -409,4 +410,8 @@ details p {
 
 .footer__item svg {
   display: none;
+}
+
+.pagination-nav__link {
+  @apply border-none;
 }
