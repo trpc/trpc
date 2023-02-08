@@ -27,6 +27,7 @@
   --ifm-footer-background-color: #171717;
   --ifm-navbar-background-color: #111111;
   --ifm-background-color: #111111;
+  --ifm-toc-border-color: rgb(39, 39, 42);
 }
 
 html {
@@ -253,12 +254,37 @@ h5 {
 }
 
 /* https://github.com/shikijs/twoslash/tree/main/packages/docusaurus-preset-shiki-twoslash */
-[data-theme='light'] .shiki.nord {
+[data-theme='light'] .shiki.github-dark {
   display: none;
 }
 
 [data-theme='dark'] .shiki.min-light-with-diff {
   display: none;
+}
+
+[data-theme='dark'] .shiki.github-dark {
+  background-color: rgba(39, 39, 42, 0.5) !important;
+  @apply border-zinc-700;
+}
+
+[data-theme='dark'] .shiki.github-dark .popover {
+  @apply bg-zinc-800 border-[1px] border-zinc-700 elevation-4;
+}
+
+[data-theme='dark'] .shiki.github-dark .popover .arrow {
+  @apply bg-zinc-800 border-zinc-700;
+}
+
+[data-theme='dark'] .shiki .code-title {
+  @apply border-zinc-700;
+}
+
+[data-theme='light'] .shiki.min-light-with-diff .popover {
+  @apply bg-zinc-100 border-[1px] border-zinc-300;
+}
+
+[data-theme='light'] .shiki.min-light-with-diff .popover .arrow {
+  @apply bg-zinc-100 border-zinc-300;
 }
 
 .markdown ul {
@@ -384,4 +410,8 @@ details p {
 
 .footer__item svg {
   display: none;
+}
+
+.pagination-nav__link {
+  @apply border-none;
 }
