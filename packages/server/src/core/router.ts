@@ -151,6 +151,15 @@ function isRouter(
   return 'router' in procedureOrRouter._def;
 }
 
+function isNestedRouter(
+  procedureOrRouter:
+    | AnyProcedure
+    | AnyRouter
+    | Record<string, AnyProcedure | AnyRouter>,
+): procedureOrRouter is Record<string, AnyRouter | AnyProcedure> {
+  return 'router' in procedureOrRouter._def;
+}
+
 const emptyRouter = {
   _ctx: null as any,
   _errorShape: null as any,
@@ -213,6 +222,18 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
 
         if (isRouter(procedureOrRouter)) {
           recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
+          continue;
+        }
+
+        if (isNestedRouter(procedureOrRouter)) {
+          Object.entries(procedureOrRouter).map(([_key, routerOrProcedure]) => {
+            if (isRouter(routerOrProcedure)) {
+              recursiveGetPaths(
+                routerOrProcedure._def.procedures,
+                `${newPath}.`,
+              );
+            }
+          });
           continue;
         }
 
