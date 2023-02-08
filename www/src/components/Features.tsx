@@ -62,7 +62,7 @@ export const Features: FC = () => {
               {feature.icon}
             </h2>
             <h3 className="text-lg font-bold md:text-xl">{feature.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 md:text-base">
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 md:text-base">
               {feature.description}
             </p>
           </div>

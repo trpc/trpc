@@ -53,7 +53,7 @@ import { TRPCError } from '@trpc/server';
 // ---cut---
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
-// Example error you might get if your input valdidation fails
+// Example error you might get if your input validation fails
 const error: TRPCError = {
   name: 'TRPCError',
   code: 'BAD_REQUEST',

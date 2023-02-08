@@ -1,6 +1,13 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": ["packages", "types", "scripts", "examples", "rollup.config.ts"],
+  "include": [
+    "packages",
+    "types",
+    "scripts",
+    "examples",
+    "rollup.config.ts",
+    ".eslintrc.js"
+  ],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
