@@ -171,3 +171,99 @@ function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
   return trpc.post.byId.useQuery(input, options);
 }
 ```
+
+You can also infer abstract types for router interfaces which you share around an application via a router factory. For example:
+
+```tsx twoslash filename='trpc.ts'
+// @module: esnext
+// @include: server
+// ---cut---
+// @filename: factory.ts
+
+import { t, publicProcedure } from './trpc';
+
+// @trpc/react-query/shared exports several **Like types which can be used to generate abstract types
+import { RouterLike, UtilsLike } from '@trpc/react-query/shared';
+
+// Factory function written by you, however you need,
+// so long as you can infer the resulting type of t.router() later
+export function createMyRouter() {
+  return t.router({
+    createThing: publicProcedure
+      .input(ThingRequest)
+      .output(Thing)
+      .mutation(/* do work */),
+    listThings: publicProcedure
+      .input(ThingQuery)
+      .output(ThingArray)
+      .query(/* do work */),
+  })
+}
+
+// Infer the type of your router, and then generate the abstract types for use in the client
+type MyRouterType = ReturnType<typeof createRouter>
+export MyRouterLike = RouterLike<MyRouterType>
+export MyRouterUtilsLike = UtilsLike<MyRouterType>
+
+
+// @filename: server.ts
+
+export type AppRouter = typeof appRouter
+
+// Export your MyRouter types to the client
+export type { MyRouterLike, MyRouterUtilsLike } from './factory'
+
+
+// @filename: usePostCreate.tsx
+// @noErrors
+import type { trpc, useContext, MyRouterLike, MyRouterUtilsLike } from './trpc';
+
+type MyGenericComponentProps = {
+  route: MyRouterLike
+  utils: MyRouterUtilsLike
+}
+
+function MyGenericComponent({ route, utils }: MyGenericComponentProps) {
+  const thing = route.listThings.useQuery({
+    filter: "qwerty"
+  })
+
+  const mutation = route.doThing.useMutation({
+    onSuccess() {
+      utils.listThings.invalidate()
+    }
+  })
+
+  function handleClick() {
+    mutation.mutate({
+      name: "Thing 1"
+    })
+  }
+
+  return /* ui */
+}
+
+function MyPageComponent() {
+  const utils = useContext()
+
+  return (
+    <MyGenericComponent
+      route={trpc.deep.route.things}
+      utils={utils.deep.route.things}
+    />
+  )
+}
+
+function MyOtherPageComponent() {
+  const utils = useContext()
+
+  return (
+    <MyGenericComponent
+      route={trpc.different.things}
+      utils={utils.different.things}
+    />
+  )
+}
+```
+
+A more complete working example [can be found here](https://github.com/trpc/trpc/tree/main/packages/tests/server/react/polymorphism.test.tsx)
