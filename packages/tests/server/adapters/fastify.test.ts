@@ -7,7 +7,7 @@ import {
   httpLink,
   splitLink,
   wsLink,
-} from '@trpc/client/src/index';
+} from '@trpc/client/src';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,

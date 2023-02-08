@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client/src/index';
-import { initTRPC } from '@trpc/server/src/index';
+import { TRPCClientError } from '@trpc/client/src';
+import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 
 const createTestContext = (opts: { isDev: boolean }) =>

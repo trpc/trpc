@@ -1,4 +1,4 @@
-import * as trpc from '@trpc/server/src/index';
+import * as trpc from '@trpc/server/src';
 import { z } from 'zod';
 
 export type Context = {

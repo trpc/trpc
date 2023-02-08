@@ -3,7 +3,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { useIsFetching } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { initTRPC } from '@trpc/server/src/index';
+import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';

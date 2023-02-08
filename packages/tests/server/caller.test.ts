@@ -1,5 +1,5 @@
 import { waitError } from './___testHelpers';
-import { TRPCError, initTRPC } from '@trpc/server/src/index';
+import { TRPCError, initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 

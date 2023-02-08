@@ -1,5 +1,5 @@
 import { ignoreErrors } from './___testHelpers';
-import { createTRPCUntypedClient } from '@trpc/client/src/index';
+import { createTRPCUntypedClient } from '@trpc/client/src';
 import { Unsubscribable } from '@trpc/server/src/observable';
 import { expectTypeOf } from 'expect-type';
 

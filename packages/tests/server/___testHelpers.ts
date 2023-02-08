@@ -6,8 +6,9 @@ import {
   createTRPCClientProxy,
   createWSClient,
   httpBatchLink,
-} from '@trpc/client/src/index';
-import { WithTRPCConfig } from '@trpc/next/src/index';
+} from '@trpc/client/src';
+import { WithTRPCConfig } from '@trpc/next/src';
+import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
@@ -16,7 +17,6 @@ import {
   WSSHandlerOptions,
   applyWSSHandler,
 } from '@trpc/server/src/adapters/ws';
-import { AnyRouter as AnyNewRouter } from '@trpc/server/src/index';
 import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';

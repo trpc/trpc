@@ -11,11 +11,11 @@ import {
   httpBatchLink,
   splitLink,
   wsLink,
-} from '@trpc/client/src/index';
+} from '@trpc/client/src';
 import { OutputWithCursor } from '@trpc/react-query/shared';
 import { createReactQueryHooks } from '@trpc/react-query/src/interop';
-import { TRPCError } from '@trpc/server/src/index';
-import * as trpcServer from '@trpc/server/src/index';
+import { TRPCError } from '@trpc/server/src';
+import * as trpcServer from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';

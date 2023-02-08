@@ -1,8 +1,8 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import { HTTPHeaders, httpBatchLink } from '@trpc/client/src/index';
+import { HTTPHeaders, httpBatchLink } from '@trpc/client/src';
+import { TRPCError, inferProcedureOutput } from '@trpc/server/src';
+import * as trpc from '@trpc/server/src';
 import { MiddlewareResult } from '@trpc/server/src/deprecated/internals/middlewares';
-import { TRPCError, inferProcedureOutput } from '@trpc/server/src/index';
-import * as trpc from '@trpc/server/src/index';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';

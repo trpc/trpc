@@ -6,9 +6,9 @@ import {
   httpBatchLink,
   httpLink,
   wsLink,
-} from '@trpc/client/src/index';
+} from '@trpc/client/src';
+import * as trpc from '@trpc/server/src';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
-import * as trpc from '@trpc/server/src/index';
 import { observable } from '@trpc/server/src/observable';
 import devalue from 'devalue';
 import fetch from 'node-fetch';

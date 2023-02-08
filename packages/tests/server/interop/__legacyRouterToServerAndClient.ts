@@ -1,8 +1,5 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-} from '@trpc/client/src/index';
+import { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client/src';
 import { WithTRPCConfig } from '@trpc/next';
 import { CreateHTTPHandlerOptions } from '@trpc/server/src/adapters/standalone';
 import { WSSHandlerOptions } from '@trpc/server/src/adapters/ws';

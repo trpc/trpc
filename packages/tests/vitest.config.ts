@@ -17,18 +17,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@trpc/next/src/index': join(__dirname, '../next/src/index.ts'),
-      '@trpc/react-query/src/index': join(
-        __dirname,
-        '../react-query/src/index.ts',
-      ),
-      '@trpc/react-query/src/ssg/index': join(
-        __dirname,
-        '../react-query/src/ssg/index.ts',
-      ),
+      '@trpc/next/src': join(__dirname, '../next/src/index.ts'),
       '@trpc/react-query/src/ssg/ssgProxy': join(
         __dirname,
         '../react-query/src/ssg/ssgProxy.ts',
+      ),
+      '@trpc/react-query/src/ssg': join(
+        __dirname,
+        '../react-query/src/ssg/index.ts',
       ),
       '@trpc/react-query/src/interop': join(
         __dirname,
@@ -38,7 +34,7 @@ export default defineConfig({
         __dirname,
         '../react-query/src/createTRPCReact.tsx',
       ),
-      '@trpc/server/src/index': join(__dirname, '../server/src/index.ts'),
+      '@trpc/react-query/src': join(__dirname, '../react-query/src/index.ts'),
       '@trpc/server/src/core': join(__dirname, '../server/src/core/index.ts'),
       '@trpc/server/src/error/TRPCError': join(
         __dirname,
@@ -96,7 +92,7 @@ export default defineConfig({
         __dirname,
         '../server/src/adapters/express.ts',
       ),
-      '@trpc/client/src/index': join(__dirname, '../client/src/index.ts'),
+      '@trpc/server/src': join(__dirname, '../server/src/index.ts'),
       '@trpc/client/src/links/internals/createChain': join(
         __dirname,
         '../client/src/links/internals/createChain.ts',
@@ -113,6 +109,7 @@ export default defineConfig({
         __dirname,
         '../client/src/links/retryLink.ts',
       ),
+      '@trpc/client/src': join(__dirname, '../client/src/index.ts'),
     },
   },
 });

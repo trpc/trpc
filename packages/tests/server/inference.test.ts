@@ -2,7 +2,7 @@ import {
   inferProcedureInput,
   inferProcedureOutput,
   initTRPC,
-} from '@trpc/server/src/index';
+} from '@trpc/server/src';
 import { Observable, observable } from '@trpc/server/src/observable';
 import { z } from 'zod';
 import { expectTypeOf } from './inferenceUtils';

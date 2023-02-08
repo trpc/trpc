@@ -2,9 +2,9 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createTRPCReact, httpBatchLink } from '@trpc/react-query/src/index';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg/index';
-import { initTRPC } from '@trpc/server/src/index';
+import { createTRPCReact, httpBatchLink } from '@trpc/react-query/src';
+import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
+import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
 

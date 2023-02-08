@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { initTRPC } from '@trpc/server/src/index';
+import { initTRPC } from '@trpc/server/src';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 
