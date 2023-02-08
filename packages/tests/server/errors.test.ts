@@ -116,7 +116,7 @@ test('unauthorized()', async () => {
   close();
 });
 
-test('getMessageFromUnkownError()', () => {
+test('getMessageFromUnknownError()', () => {
   expect(getMessageFromUnknownError('test', 'nope')).toBe('test');
   expect(getMessageFromUnknownError(1, 'test')).toBe('test');
   expect(getMessageFromUnknownError({}, 'test')).toBe('test');
@@ -349,7 +349,7 @@ test('retain stack trace', async () => {
         throw new CustomError();
       }
 
-      return 'toSringValue';
+      return 'toStringValue';
     }),
   });
 

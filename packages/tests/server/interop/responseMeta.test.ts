@@ -22,7 +22,7 @@ test('set custom headers in beforeEnd', async () => {
       server: {
         onError,
         responseMeta({ ctx, paths, type, errors }) {
-          // assuming you have all your public routes with the kewyord `public` in them
+          // assuming you have all your public routes with the keyword `public` in them
           const allPublic =
             paths && paths.every((path) => path.includes('public'));
           // checking that no procedures errored

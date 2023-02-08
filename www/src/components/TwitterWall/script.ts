@@ -1,6 +1,6 @@
 /**
  * Script to generate a JSON file of tweets from the Twitter API.
- * Fetches the tweeets from this timeline: https://twitter.com/alexdotjs/timelines/1441435105910796291
+ * Fetches the tweets from this timeline: https://twitter.com/alexdotjs/timelines/1441435105910796291
  *
  * Script has shitty typesafety but hey, it works :)
  */

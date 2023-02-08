@@ -3,7 +3,7 @@ services:
   postgres:
     image: postgres:13
     ports:
-      - '5932:5432' # expose pg on port 5932 to not collide with pg from elswhere
+      - '5932:5432' # expose pg on port 5932 to not collide with pg from elsewhere
     restart: always
     volumes:
       - db_data:/var/lib/postgresql/data

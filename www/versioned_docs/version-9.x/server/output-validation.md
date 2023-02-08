@@ -7,7 +7,7 @@ slug: /output-validation
 
 tRPC gives you automatic type-safety of outputs without the need of adding a validator; however, it can be useful at times to strictly define the output type in order to prevent sensitive data of being leaked.
 
-Similarily to `input:`, an `output:` validation to the `query()` and `mutation()` router methods. The output validator is invoked with the payload returned by the `resolve()` function.
+Similar to `input:`, an `output:` validation to the `query()` and `mutation()` router methods. The output validator is invoked with the payload returned by the `resolve()` function.
 
 When an `output` validator is defined, its inferred type is expected as the return type of the `resolve()` function.
 

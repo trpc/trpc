@@ -34,7 +34,7 @@ const InfoCard = (props: {
       <div className="absolute bottom-0 m-2 text-xl flex w-full">
         <p>{props.title}</p>
         <button
-          onClick={() => navigator.clipboard.writeText(props.value)}
+          onClick={() => void navigator.clipboard.writeText(props.value)}
           className={`ml-auto mr-4 hover:text-gray-300`}
           style={{
             fontFamily: props.value,

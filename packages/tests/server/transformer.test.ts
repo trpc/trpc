@@ -496,7 +496,7 @@ Object {
   close();
 });
 
-describe('required tranformers', () => {
+describe('required transformers', () => {
   test('works without transformer', () => {
     const t = initTRPC.create({});
     const router = t.router({});
