@@ -415,3 +415,7 @@ details p {
 .pagination-nav__link {
   @apply border-none;
 }
+
+.shiki .code-container {
+  @apply text-xs lg:text-base;
+}
