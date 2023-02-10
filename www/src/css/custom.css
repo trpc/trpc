@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,7 +22,6 @@
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
   --ifm-navbar-shadow: none;
-  --ifm-font-family-base: 'Inter', sans-serif;
 }
 :root[data-theme='dark'] {
   --ifm-footer-background-color: #171717;
@@ -420,14 +418,6 @@ details p {
 
 .shiki .code-container {
   @apply text-xs lg:text-base;
-}
-
-.theme-doc-sidebar-menu {
-  @apply text-sm;
-}
-
-.clean-btn.menu__caret {
-  @apply scale-75;
 }
 
 .DocSearch.DocSearch-Button {
