@@ -3,10 +3,10 @@ import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
 import {
   AnyRouter,
   AnyRouterDef,
-  createRouterFactory,
-  defaultNamespaceDelimiter,
   Router,
   RouterDef,
+  createRouterFactory,
+  defaultNamespaceDelimiter,
 } from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
