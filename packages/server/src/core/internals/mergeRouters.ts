@@ -9,6 +9,9 @@ import {
 } from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
+/**
+ * @internal
+ */
 export type MergeRouters<
   TRouters extends AnyRouter[],
   TRouterDef extends AnyRouterDef = RouterDef<
