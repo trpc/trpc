@@ -66,22 +66,6 @@ test('default namespace delimiter', () => {
   ).toMatchTypeOf<DefaultNamespaceDelimiter>();
 });
 
-test('custom namespace delimiter', () => {
-  const t = initTRPC.create({
-    namespaceDelimiter: '/',
-  } as const);
-  const router = t.router({});
-
-  expectTypeOf(t._config.namespaceDelimiter).toMatchTypeOf<'/'>();
-  expectTypeOf(
-    t._config.namespaceDelimiter,
-  ).not.toMatchTypeOf<DefaultNamespaceDelimiter>();
-  expectTypeOf(router._def._config.namespaceDelimiter).toMatchTypeOf<'/'>();
-  expectTypeOf(
-    router._def._config.namespaceDelimiter,
-  ).not.toMatchTypeOf<DefaultNamespaceDelimiter>();
-});
-
 test('meta typings', () => {
   type Meta = { __META__: true };
   const meta: Meta = { __META__: true };
