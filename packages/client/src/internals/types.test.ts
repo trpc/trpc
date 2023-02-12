@@ -19,10 +19,6 @@ describe('AbortController', () => {
       getAbortController,
     ).returns.toEqualTypeOf<AbortControllerEsque | null>();
 
-    getAbortController(
-      null as unknown as typeof import('abort-controller')['AbortController'],
-    );
-
     expectTypeOf(() => {
       const AbortController = getAbortController(undefined)!;
       return new AbortController();

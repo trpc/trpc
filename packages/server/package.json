@@ -138,7 +138,6 @@
     "@types/node-fetch": "^2.5.11",
     "@types/react": "^18.0.9",
     "@types/ws": "^8.2.0",
-    "abort-controller": "^3.0.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^2.0.1",
     "eslint": "^8.30.0",
