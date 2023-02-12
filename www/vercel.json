@@ -26,11 +26,6 @@
       "permanent": false
     },
     {
-      "source": "/docs/v10/:path*",
-      "destination": "/docs/:path*",
-      "permanent": true
-    },
-    {
       "source": "/blog/hello-trpc",
       "destination": "/blog/introducing-trpc",
       "permanent": true
@@ -52,6 +47,11 @@
     },
     {
       "source": "/docs/v10/query-invalidation",
+      "destination": "/docs/useContext#query-invalidation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/query-invalidation",
       "destination": "/docs/useContext#query-invalidation",
       "permanent": true
     },
@@ -89,6 +89,11 @@
       "source": "/faq",
       "destination": "/docs/faq",
       "permanent": false
+    },
+    {
+      "source": "/docs/v10/:path*",
+      "destination": "/docs/:path*",
+      "permanent": true
     }
   ]
 }
