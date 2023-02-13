@@ -883,7 +883,6 @@ importers:
       '@trpc/server': ^10.11.1
       '@types/isomorphic-fetch': ^0.0.36
       '@types/node': ^18.7.20
-      abort-controller: ^3.0.0
       eslint: ^8.30.0
       expect-type: ^0.15.0
       isomorphic-fetch: ^3.0.0
@@ -895,7 +894,6 @@ importers:
       '@trpc/server': link:../server
       '@types/isomorphic-fetch': 0.0.36
       '@types/node': 18.7.20
-      abort-controller: 3.0.0
       eslint: 8.30.0
       expect-type: 0.15.0
       isomorphic-fetch: 3.0.0
@@ -7592,13 +7590,6 @@ packages:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
     dev: false
 
-  /abort-controller/3.0.0:
-    resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
-    engines: {node: '>=6.5'}
-    dependencies:
-      event-target-shim: 5.0.1
-    dev: true
-
   /abstract-logging/2.0.1:
     resolution: {integrity: sha512-2BjRTZxTPvheOvGbBslFSYOUkr+SjPtOnrLP33f+VIWLzezQpZcqVg7ja3L4dBXmzzgwT+a029jRx5PCi3JuiA==}
 
@@ -11370,11 +11361,6 @@ packages:
       split: 0.3.3
       stream-combiner: 0.0.4
       through: 2.3.8
-    dev: true
-
-  /event-target-shim/5.0.1:
-    resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
-    engines: {node: '>=6'}
     dev: true
 
   /eventemitter3/4.0.7:
