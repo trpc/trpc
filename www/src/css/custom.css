@@ -22,12 +22,24 @@
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
   --ifm-navbar-shadow: none;
+  --docsearch-key-shadow: none !important;
+  --docsearch-footer-shadow: none !important;
+  --docsearch-key-gradient: #f4f4f5 !important;
 }
+
 :root[data-theme='dark'] {
   --ifm-footer-background-color: #171717;
   --ifm-navbar-background-color: #111111;
   --ifm-background-color: #111111;
   --ifm-toc-border-color: rgb(39, 39, 42);
+  --docsearch-modal-background: #18181b;
+  --docsearch-footer-background: #18181b;
+  --docsearch-searchbox-focus-background: #18181b;
+  --docsearch-key-gradient: #27272a;
+  --docsearch-key-shadow: none;
+  --docsearch-key-gradient: #27272a !important;
+  --docsearch-footer-shadow: none;
+  --docsearch-hit-background: #27272a;
 }
 
 html {
@@ -438,4 +450,11 @@ details p {
 
 .DocSearch-Button-Container span {
   @apply text-sm;
+}
+
+.DocSearch-Logo a {
+  @apply text-xs items-center;
+}
+.DocSearch-Logo a svg {
+  @apply w-16;
 }
