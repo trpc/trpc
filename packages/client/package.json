@@ -76,7 +76,6 @@
     "@trpc/server": "^10.11.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
-    "abort-controller": "^3.0.0",
     "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
     "isomorphic-fetch": "^3.0.0",

@@ -2,7 +2,9 @@ import { expectTypeOf } from 'expect-type';
 import isomorphicFetch from 'isomorphic-fetch';
 import nodeFetch from 'node-fetch';
 import type { fetch as undiciFetch } from 'undici';
+import { createTRPCProxyClient } from '../createTRPCClientProxy';
 import { getFetch } from '../getFetch';
+import { httpBatchLink } from '../links/httpBatchLink';
 import { getAbortController } from './fetchHelpers';
 import {
   AbortControllerEsque,
@@ -17,10 +19,6 @@ describe('AbortController', () => {
       getAbortController,
     ).returns.toEqualTypeOf<AbortControllerEsque | null>();
 
-    getAbortController(
-      null as unknown as typeof import('abort-controller')['AbortController'],
-    );
-
     expectTypeOf(() => {
       const AbortController = getAbortController(undefined)!;
       return new AbortController();
@@ -29,6 +27,19 @@ describe('AbortController', () => {
 });
 
 describe('fetch', () => {
+  test('parameters', () => {
+    createTRPCProxyClient({
+      links: [
+        httpBatchLink({
+          url: 'YOUR_SERVER_URL',
+          fetch(url, options) {
+            return fetch(url, options);
+          },
+        }),
+      ],
+    });
+  });
+
   test('FetchEsque', () => {
     expectTypeOf(getFetch).returns.toEqualTypeOf<FetchEsque>();
 
