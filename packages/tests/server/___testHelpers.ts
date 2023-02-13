@@ -17,12 +17,10 @@ import {
   WSSHandlerOptions,
   applyWSSHandler,
 } from '@trpc/server/src/adapters/ws';
-import AbortController from 'abort-controller';
 import fetch from 'node-fetch';
 import ws from 'ws';
 
 (global as any).fetch = fetch;
-(global as any).AbortController = AbortController;
 (global as any).WebSocket = ws;
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
