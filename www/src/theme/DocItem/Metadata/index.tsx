@@ -1,6 +1,4 @@
 import { PageMetadata } from '@docusaurus/theme-common';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import { useDoc } from '@docusaurus/theme-common/internal';
 import React from 'react';
 import { docsParams } from '../../../../og-image/utils/zodParams';

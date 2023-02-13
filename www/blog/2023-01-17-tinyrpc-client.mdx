@@ -82,7 +82,7 @@ Let's start with the fun TypeScript magic to unlock the awesome autocompletion a
 
 We'll need to use recursive types so that we can infer arbitrary deep router structures. Also, we know that we want our procedures `post.byId` and `post.create` to have the `.query` and `.mutate` methods on them respectively - in tRPC, we call this decorating the procedures. In `@trpc/server`, we have some inference helpers that will infer the input and output types of our procedures with these resolved methods, which we'll use to infer the types for these functions, so let's write some code!
 
-Let's consider what we want to achive to provide autocompletion on paths as well as inference of the procedures input and output types:
+Let's consider what we want to achieve to provide autocompletion on paths as well as inference of the procedures input and output types:
 
 - If we're on a router, we want to be able to access it's sub-routers and procedures. (we'll get to this in a little bit)
 - If we're on a query procedure, we want to be able to call `.query` on it.
@@ -307,7 +307,7 @@ Most notably here is that our path is `.`-separated instead of `/`. This allows 
 
 We also have a `TRPCResponse` type annotation on the `fetch`-request. This determines the JSONRPC-compliant response format that the server responds with. You can read more on that [here](https://trpc.io/docs/rpc). TL;DR, we get back either a `result` or an `error` object, which we can use to determine if the request was successful or not and do appropriate error handling if something went wrong.
 
-And that's it! This is all the code you'll need to call your tRPC procedures on your client as if they were local functions. On the surface, it looks like we're just calling the `publicProcedure.query / mutation`'s resolver function via normal property accesses, but we're actaully crossing a network boundary so we can use server-side libraries such as Prisma without leaking database credentials.
+And that's it! This is all the code you'll need to call your tRPC procedures on your client as if they were local functions. On the surface, it looks like we're just calling the `publicProcedure.query / mutation`'s resolver function via normal property accesses, but we're actually crossing a network boundary so we can use server-side libraries such as Prisma without leaking database credentials.
 
 ## Trying it out!
 

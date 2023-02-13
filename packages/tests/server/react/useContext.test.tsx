@@ -756,7 +756,7 @@ describe('cancel', () => {
   });
 });
 
-describe('query keys are stored separtely', () => {
+describe('query keys are stored separately', () => {
   test('getInfiniteData() does not data from useQuery()', async () => {
     const { proxy, App } = ctx;
 
