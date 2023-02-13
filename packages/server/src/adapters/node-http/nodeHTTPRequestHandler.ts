@@ -32,8 +32,12 @@ export async function nodeHTTPRequestHandler<
   };
   const { path, router } = opts;
 
-  console.log(opts);
-  const bodyResult = await getPostBody(opts);
+  let body: any;
+
+  if (opts.req.headers['content-type'] === 'application/json') {
+    const bodyResult = await getPostBody(opts);
+    body = bodyResult.ok ? bodyResult.data : undefined;
+  }
 
   const query = opts.req.query
     ? new URLSearchParams(opts.req.query as any)
@@ -42,7 +46,7 @@ export async function nodeHTTPRequestHandler<
     method: opts.req.method!,
     headers: opts.req.headers,
     query,
-    body: bodyResult.ok ? bodyResult.data : undefined,
+    body,
   };
   const result = await resolveHTTPResponse({
     batching: opts.batching,
@@ -51,7 +55,7 @@ export async function nodeHTTPRequestHandler<
     createContext,
     router,
     req,
-    error: bodyResult.ok ? null : bodyResult.error,
+    error: null,
     onError(o) {
       opts?.onError?.({
         ...o,

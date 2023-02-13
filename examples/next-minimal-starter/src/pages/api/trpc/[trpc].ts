@@ -4,11 +4,58 @@
  */
 import { TRPCError } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-import formidable, { VolatileFile, errors } from 'formidable';
+import busboy from 'busboy';
 import { NextApiRequest, NextApiResponse } from 'next';
-import stream from 'stream';
+import { File } from 'undici';
 import { z } from 'zod';
-import { publicProcedure, router } from '~/server/trpc';
+import { zfd } from 'zod-form-data';
+import { middleware, publicProcedure, router } from '~/server/trpc';
+
+// @ts-expect-error - globalThis.File is not defined for some reason
+globalThis.File = File;
+
+export const getFormData = async (req: NextApiRequest) => {
+  const bb = busboy({ headers: req.headers });
+  const form = new FormData();
+
+  await new Promise<void>((resolve) => {
+    bb.on('file', async (name, file, info) => {
+      const { filename, encoding, mimeType } = info;
+
+      const chunks = [];
+      for await (const chunk of file) {
+        chunks.push(chunk);
+      }
+
+      if (chunks.length === 0) {
+        return;
+      }
+      const buffer = Buffer.concat(chunks);
+
+      form.append(
+        name,
+        new File([buffer], filename, { type: mimeType }) as Blob,
+      );
+    });
+
+    bb.on('field', (name, value) => {
+      form.append(name, value);
+    });
+
+    bb.on('close', () => {
+      resolve();
+    });
+
+    req.pipe(bb);
+  });
+
+  return form;
+};
+
+const multipartParser = middleware(async ({ ctx, next }) => {
+  const formData = await getFormData(ctx.req);
+  return next({ rawInput: formData } as any);
+});
 
 const appRouter = router({
   greeting: publicProcedure
@@ -31,14 +78,16 @@ const appRouter = router({
   //   return { id: '1', name: 'bob' };
   // }),
   mut: publicProcedure
+    .use(multipartParser)
     .input(
-      z.object({
-        hello: z.string(),
-        file1: z.custom<typeof VolatileFile>(),
+      zfd.formData({
+        hello: zfd.text().optional(),
+        file1: zfd.file(),
+        file2: zfd.file().optional(),
       }),
     )
     .mutation((opts) => {
-      console.log(opts.input);
+      console.log('input', opts.input);
 
       return opts.input;
     }),
@@ -48,47 +97,15 @@ const appRouter = router({
 // None of the actual implementation is exposed to the client
 export type AppRouter = typeof appRouter;
 
-const trpcHandler = trpcNext.createNextApiHandler({
+const handler = trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: (opts) => {
-    console.log('hello');
-    console.log(opts.req.body);
     return opts;
   },
 });
 // export API handler
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  // await trpcHandler(req, res);
-  const form = formidable({
-    allowEmptyFiles: true,
-    fileWriteStreamHandler(...args) {
-      const [file] = args as unknown as [typeof VolatileFile];
-      console.log('stream created');
-      return new stream.Duplex();
-    },
-  });
-
-  console.log('parsing');
-  const [err, fields, files] = await new Promise<
-    [null, formidable.Fields, files] | [unknown, null]
-  >((resolve, reject) => {
-    console.log('papapapa');
-    form.parse(req, (err, fields, files) => {
-      console.log('callback');
-      err ? reject([err, null]) : resolve([null, fields, files]);
-    });
-  });
-  console.log('parsed', { err, fields, files });
-  if (fields) {
-    // yay
-    console.log({ fields }, req.body);
-    res.send('waaa');
-    return;
-  }
-  res.status(500).json({
-    TODO: 'handle error',
-    message: err instanceof Error ? err.message : undefined,
-  });
+  await handler(req, res);
 };
 
 export const config = {

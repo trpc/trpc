@@ -137,7 +137,11 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = getRawProcedureInputOrThrow(req);
+
+    let rawInput: any;
+    if (req.headers['Content-Type'] == 'application/json') {
+      rawInput = getRawProcedureInputOrThrow(req);
+    }
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext();
