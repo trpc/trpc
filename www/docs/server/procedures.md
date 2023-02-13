@@ -5,11 +5,11 @@ sidebar_label: Define Procedures
 slug: /procedures
 ---
 
-Procedures in tRPC is a very flexible primitive to create backend functions; they use a builder pattern which means you can create reusable base procedures for different parts of your backend application.
+Procedures in tRPC are very flexible primitives to create backend functions; they use a builder pattern which means you can create reusable base procedures for different parts of your backend application.
 
 :::tip
 
-- A publicProcedure can be viewed as the equivalent of a REST-endpoint or a function.
+- A procedure can be viewed as the equivalent of a REST-endpoint or a function.
 - There's no internal difference between queries and mutations apart from semantics.
 - Defining publicProcedure is the same for queries, mutations, and subscription with the exception that subscriptions need to return an `observable` instance.
 

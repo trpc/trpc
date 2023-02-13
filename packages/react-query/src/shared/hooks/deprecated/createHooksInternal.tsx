@@ -464,7 +464,7 @@ function __createHooksInternal<
     ],
     opts?: UseTRPCInfiniteQueryOptions<
       TPath,
-      Omit<TQueryValues[TPath]['input'], 'cursor'>,
+      TQueryValues[TPath]['input'],
       TQueryValues[TPath]['output'],
       TError
     >,
@@ -510,7 +510,7 @@ function __createHooksInternal<
 
         const actualInput = {
           ...((input as any) ?? {}),
-          cursor: queryFunctionContext.pageParam,
+          cursor: queryFunctionContext.pageParam ?? opts?.initialCursor,
         };
 
         return (client as any).query(

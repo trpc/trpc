@@ -7,6 +7,7 @@ import {
   UndefinedKeys,
 } from '../../types';
 import {
+  MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
   createInputMiddleware,
@@ -146,7 +147,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a middleware to the procedure.
    */
   use<$Params extends ProcedureParams>(
-    fn: MiddlewareFunction<TParams, $Params>,
+    fn:
+      | MiddlewareBuilder<TParams, $Params>
+      | MiddlewareFunction<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -255,9 +258,15 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     unstable_concat(builder) {
       return createNewBuilder(_def, builder._def) as any;
     },
-    use(middleware) {
+    use(middlewareBuilderOrFn) {
+      // Distinguish between a middleware builder and a middleware function
+      const middlewares =
+        '_middlewares' in middlewareBuilderOrFn
+          ? middlewareBuilderOrFn._middlewares
+          : [middlewareBuilderOrFn];
+
       return createNewBuilder(_def, {
-        middlewares: [middleware],
+        middlewares,
       }) as AnyProcedureBuilder;
     },
     query(resolver) {
@@ -334,7 +343,12 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
 
     // run the middlewares recursively with the resolver as the last one
     const callRecursive = async (
-      callOpts: { ctx: any; index: number; input?: unknown } = {
+      callOpts: {
+        ctx: any;
+        index: number;
+        input?: unknown;
+        rawInput?: unknown;
+      } = {
         index: 0,
         ctx: opts.ctx,
       },
@@ -346,10 +360,14 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: opts.rawInput,
+          rawInput: callOpts.rawInput ?? opts.rawInput,
           meta: _def.meta,
           input: callOpts.input,
-          next: async (nextOpts?: { ctx: any; input?: any }) => {
+          next: async (nextOpts?: {
+            ctx: any;
+            input?: any;
+            rawInput?: any;
+          }) => {
             return await callRecursive({
               index: callOpts.index + 1,
               ctx:
@@ -360,6 +378,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
+              rawInput:
+                nextOpts && 'rawInput' in nextOpts
+                  ? nextOpts.rawInput
+                  : callOpts.rawInput,
             });
           },
         });
