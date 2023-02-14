@@ -35,6 +35,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./shared": {
+      "import": "./dist/shared.mjs",
+      "require": "./dist/shared.js",
+      "default": "./dist/shared.js"
+    },
     "./links/httpLink": {
       "import": "./dist/links/httpLink.mjs",
       "require": "./dist/links/httpLink.js",
@@ -66,6 +71,7 @@
     "src",
     "README.md",
     "package.json",
+    "shared",
     "links"
   ],
   "peerDependencies": {

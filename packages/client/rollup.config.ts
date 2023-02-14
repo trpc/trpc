@@ -3,6 +3,7 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
+  'src/shared.ts',
   'src/links/httpLink.ts',
   'src/links/httpBatchLink.ts',
   'src/links/splitLink.ts',

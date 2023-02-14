@@ -6,7 +6,7 @@ import {
   HTTPLinkOptions,
   HTTPResult,
   getUrl,
-  httpRequest,
+  jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
@@ -49,7 +49,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        const { promise, cancel } = httpRequest({
+        const { promise, cancel } = jsonHttpRequester({
           ...resolvedOpts,
           runtime,
           type,

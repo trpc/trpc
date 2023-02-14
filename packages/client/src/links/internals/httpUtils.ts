@@ -5,6 +5,7 @@ import { getAbortController } from '../../internals/fetchHelpers';
 import {
   AbortControllerEsque,
   FetchEsque,
+  RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
@@ -83,13 +84,26 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
+export type HTTPBaseRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
   };
 
-export function getUrl(opts: HTTPRequestOptions) {
+export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+export type GetBody = (
+  opts: HTTPBaseRequestOptions,
+) => RequestInitEsque['body'];
+
+export type ContentOptions = {
+  contentTypeHeader?: string;
+  getUrl: GetUrl;
+  getBody: GetBody;
+};
+
+export type HTTPRequestOptions = HTTPBaseRequestOptions & ContentOptions;
+
+export const getUrl: GetUrl = (opts) => {
   let url = opts.url + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
@@ -105,17 +119,28 @@ export function getUrl(opts: HTTPRequestOptions) {
     url += '?' + queryParts.join('&');
   }
   return url;
-}
+};
 
-type GetBodyOptions = { type: ProcedureType } & GetInputOptions;
-
-export function getBody(opts: GetBodyOptions) {
+export const getBody: GetBody = (opts) => {
   if (opts.type === 'query') {
     return undefined;
   }
   const input = getInput(opts);
   return input !== undefined ? JSON.stringify(input) : undefined;
-}
+};
+
+export type Requester = (
+  opts: HTTPBaseRequestOptions,
+) => PromiseAndCancel<HTTPResult>;
+
+export const jsonHttpRequester: Requester = (opts) => {
+  return httpRequest({
+    ...opts,
+    contentTypeHeader: 'application/json',
+    getUrl,
+    getBody,
+  });
+};
 
 export function httpRequest(
   opts: HTTPRequestOptions,
@@ -124,8 +149,8 @@ export function httpRequest(
   const ac = opts.AbortController ? new opts.AbortController() : null;
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
-    const url = getUrl(opts);
-    const body = getBody(opts);
+    const url = opts.getUrl(opts);
+    const body = opts.getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
     Promise.resolve(opts.headers())
@@ -134,12 +159,15 @@ export function httpRequest(
         if (type === 'subscription') {
           throw new Error('Subscriptions should use wsLink');
         }
+
         return opts.fetch(url, {
           method: METHOD[type],
           signal: ac?.signal,
           body: body,
           headers: {
-            'content-type': 'application/json',
+            ...(opts.contentTypeHeader
+              ? { 'content-type': opts.contentTypeHeader }
+              : {}),
             ...headers,
           },
         });

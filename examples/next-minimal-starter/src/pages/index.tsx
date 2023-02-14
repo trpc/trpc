@@ -4,6 +4,8 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
+  const mutation = trpc.mut.useMutation();
+
   return (
     <div>
       {/**
@@ -19,6 +21,12 @@ export default function IndexPage() {
           method="post"
           action="/api/trpc/mut"
           encType="multipart/form-data"
+          onSubmit={(e) => {
+            const formData = new FormData(e.currentTarget);
+
+            mutation.mutate(formData as any);
+            e.preventDefault();
+          }}
         >
           <input name="hello" defaultValue="haz upload" />
           <br />
@@ -26,7 +34,7 @@ export default function IndexPage() {
           <br />
           <input type="file" name="file2" />
           <br />
-          <button>submit</button>
+          <button type="submit">submit</button>
         </form>
       </fieldset>
 

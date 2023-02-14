@@ -2,7 +2,11 @@
  * This is the API-handler of your app that contains all your API routes.
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
-import { TRPCError } from '@trpc/server';
+import {
+  MiddlewareBuilder,
+  MiddlewareFunction,
+  ProcedureParams,
+} from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import busboy from 'busboy';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -14,22 +18,36 @@ import { middleware, publicProcedure, router } from '~/server/trpc';
 // @ts-expect-error - globalThis.File is not defined for some reason
 globalThis.File = File;
 
-export const getFormData = async (req: NextApiRequest) => {
+export function createFormDataMiddleware<
+  TParams extends {
+    _ctx_out: {
+      req: NextApiRequest;
+    };
+  } & ProcedureParams,
+>(
+  builder: (fn: MiddlewareFunction<TParams, any>) => any,
+): MiddlewareBuilder<TParams, TParams> {
+  return builder(async ({ ctx, next }) => {
+    const formData = await getFormData(ctx.req);
+    return next({ rawInput: formData } as any);
+  });
+}
+
+const multipartFormDataParser = createFormDataMiddleware(middleware);
+
+export async function getFormData(req: NextApiRequest) {
   const bb = busboy({ headers: req.headers });
   const form = new FormData();
 
-  await new Promise<void>((resolve) => {
+  await new Promise((resolve, reject) => {
     bb.on('file', async (name, file, info) => {
-      const { filename, encoding, mimeType } = info;
+      const { filename, mimeType } = info;
 
       const chunks = [];
       for await (const chunk of file) {
         chunks.push(chunk);
       }
 
-      if (chunks.length === 0) {
-        return;
-      }
       const buffer = Buffer.concat(chunks);
 
       form.append(
@@ -42,20 +60,14 @@ export const getFormData = async (req: NextApiRequest) => {
       form.append(name, value);
     });
 
-    bb.on('close', () => {
-      resolve();
-    });
+    bb.on('error', reject);
+    bb.on('close', resolve);
 
     req.pipe(bb);
   });
 
   return form;
-};
-
-const multipartParser = middleware(async ({ ctx, next }) => {
-  const formData = await getFormData(ctx.req);
-  return next({ rawInput: formData } as any);
-});
+}
 
 const appRouter = router({
   greeting: publicProcedure
@@ -78,12 +90,12 @@ const appRouter = router({
   //   return { id: '1', name: 'bob' };
   // }),
   mut: publicProcedure
-    .use(multipartParser)
+    .use(multipartFormDataParser)
     .input(
       zfd.formData({
         hello: zfd.text().optional(),
         file1: zfd.file(),
-        file2: zfd.file().optional(),
+        file2: zfd.file(),
       }),
     )
     .mutation((opts) => {
@@ -103,6 +115,7 @@ const handler = trpcNext.createNextApiHandler({
     return opts;
   },
 });
+
 // export API handler
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   await handler(req, res);
