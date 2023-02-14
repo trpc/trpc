@@ -16,6 +16,11 @@ Some of these runtimes includes, but not limited to:
 - Deno Deploy
 - Vercel Edge Runtime (& Next.js Edge Runtime)
 
+This also makes it easy to integrate into frameworks that uses the web platform APIs to represent requests and responses, such as:
+
+- Astro (SSR mode)
+- Remix
+
 ## Example apps
 
 <table>
@@ -196,6 +201,24 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 ## Runtimes-specific setup
 
+### Astro
+
+```ts title='src/pages/trpc/[...action].ts'
+import type { APIRoute } from 'astro';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+export const all: APIRoute = ({ params, request }) => {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: request,
+    router: appRouter,
+    createContext,
+  });
+};
+```
+
 ### Cloudflare Worker
 
 #### Install dependencies
@@ -316,6 +339,30 @@ Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will
 ### Next.js Edge Runtime
 
 See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime).
+
+### Remix
+
+```ts title='app/routes/trpc/$action.ts'
+import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+export const loader = async (args: LoaderArgs) => {
+  return handleRequest(args)
+}
+export const action = async (args: ActionArgs) => {
+  return handleRequest(args)
+}
+function handleRequest(args: LoaderArgs | ActionArgs) {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: args.request,
+    router: appRouter,
+    createContext,
+  });
+};
+```
 
 ### Vercel Edge Runtime
 
