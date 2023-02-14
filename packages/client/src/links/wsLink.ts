@@ -128,12 +128,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   function createWS() {
-    let urlString: string;
-    if (typeof url === 'function'){
-      urlString = url();
-    } else{
-      urlString = url;
-    }
+    const urlString = typeof url === 'function' ? url() : url;
     const conn = new WebSocketImpl(urlString);
     clearTimeout(connectTimer as any);
     connectTimer = null;
