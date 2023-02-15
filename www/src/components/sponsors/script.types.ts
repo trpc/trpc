@@ -38,7 +38,3 @@ export interface SponsorshipsAsMaintainer {
 export interface SponsorEsque {
   sponsorshipsAsMaintainer: SponsorshipsAsMaintainer;
 }
-
-export interface RootObject {
-  viewer: SponsorEsque;
-}
