@@ -37,6 +37,42 @@ function flattenSponsor(node: Node) {
     createdAt: Date.parse(node.createdAt),
   };
 }
+
+const sponsorEsqueFragment = `
+sponsorshipsAsMaintainer(first: 100, after: $cursor, includePrivate: true) {
+  pageInfo {
+    hasNextPage
+    endCursor
+  }
+  edges {
+    node {
+      createdAt
+      sponsorEntity {
+        __typename
+        ... on User {
+          id
+          name
+          login
+          websiteUrl
+          avatarUrl
+        }
+        ... on Organization {
+          id
+          name
+          login
+          websiteUrl
+          avatarUrl
+        }
+      }
+      tier {
+        id
+        monthlyPriceInDollars
+      }
+      privacyLevel
+    }
+  }
+}
+`;
 async function getViewerGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
 
@@ -47,39 +83,7 @@ async function getViewerGithubSponsors() {
       `
       query ($cursor: String) {
         viewer {
-          sponsorshipsAsMaintainer(first: 100, after: $cursor, includePrivate: true) {
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-            edges {
-              node {
-                createdAt
-                sponsorEntity {
-                  __typename
-                  ... on User {
-                    id
-                    name
-                    login
-                    websiteUrl
-                    avatarUrl
-                  }
-                  ... on Organization {
-                    id
-                    name
-                    login
-                    websiteUrl
-                    avatarUrl
-                  }
-                }
-                tier {
-                  id
-                  monthlyPriceInDollars
-                }
-                privacyLevel
-              }
-            }
-          }
+          ${sponsorEsqueFragment}
         }
       }
       `,
@@ -122,39 +126,7 @@ async function getOrgGithubSponsors() {
       query ($cursor: String) {
         viewer {
           organization(login: "trpc") {
-            sponsorshipsAsMaintainer(first: 100, after: $cursor, includePrivate: true) {
-              pageInfo {
-                hasNextPage
-                endCursor
-              }
-              edges {
-                node {
-                  createdAt
-                  sponsorEntity {
-                    __typename
-                    ... on User {
-                      id
-                      name
-                      login
-                      websiteUrl
-                      avatarUrl
-                    }
-                    ... on Organization {
-                      id
-                      name
-                      login
-                      websiteUrl
-                      avatarUrl
-                    }
-                  }
-                  tier {
-                    id
-                    monthlyPriceInDollars
-                  }
-                  privacyLevel
-                }
-              }
-            }
+            ${sponsorEsqueFragment}
           }
         }
       }
