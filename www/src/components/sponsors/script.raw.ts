@@ -155,7 +155,7 @@ export const sponsors = [
   {
     "__typename": "User",
     "name": "Christian",
-    "imgSrc": "https://avatars.githubusercontent.com/u/30244485?u=70f85b684ede25d672974d81a42049b718fd33af&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/30244485?u=88d793f7f4ec20591238e8d338f15fb9c143de7a&v=4",
     "monthlyPriceInDollars": 5,
     "link": "https://lindeneg.org/?ref=trpc",
     "privacyLevel": "PUBLIC",
@@ -384,9 +384,9 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "Thomas Ballinger",
+    "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "monthlyPriceInDollars": 10,
+    "monthlyPriceInDollars": 20,
     "link": "http://ballingt.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
     "login": "thomasballinger",
@@ -534,23 +534,13 @@ export const sponsors = [
   },
   {
     "__typename": "User",
-    "name": "David Parks",
-    "imgSrc": "https://avatars.githubusercontent.com/u/5482124?u=aaab3112e3b81e45eb9bc4a1de5f6df57e6bf6c8&v=4",
-    "monthlyPriceInDollars": 20,
-    "link": "https://davidparks.dev/?ref=trpc",
+    "name": "Jordy",
+    "imgSrc": "https://avatars.githubusercontent.com/u/39324973?u=38ba70c6775135f0abfdd79834243cc877cdb2a4&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://frontj.com/?ref=trpc",
     "privacyLevel": "PUBLIC",
-    "login": "DavidTParks",
-    "createdAt": 1673023326000
-  },
-  {
-    "__typename": "User",
-    "name": "matt",
-    "imgSrc": "https://avatars.githubusercontent.com/u/42226854?u=137b0ccb3e93c2373e3bc01997c46cac31265692&v=4",
-    "monthlyPriceInDollars": 10,
-    "link": "https://github.com/0mjs",
-    "privacyLevel": "PUBLIC",
-    "login": "0mjs",
-    "createdAt": 1673311584000
+    "login": "JonghwanWon",
+    "createdAt": 1672846478000
   },
   {
     "__typename": "User",
@@ -581,5 +571,35 @@ export const sponsors = [
     "privacyLevel": "PUBLIC",
     "login": "ry-animal",
     "createdAt": 1674673221000
+  },
+  {
+    "__typename": "User",
+    "name": "Alex",
+    "imgSrc": "https://avatars.githubusercontent.com/u/326163?u=48cf187a295d35aa552ca95ae8b7cb4bac065ae8&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://piscis.io/?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "piscis",
+    "createdAt": 1675802381000
+  },
+  {
+    "__typename": "User",
+    "name": "Alex",
+    "imgSrc": "https://avatars.githubusercontent.com/u/326163?u=48cf187a295d35aa552ca95ae8b7cb4bac065ae8&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://piscis.io/?ref=trpc",
+    "privacyLevel": "PUBLIC",
+    "login": "piscis",
+    "createdAt": 1675802615000
+  },
+  {
+    "__typename": "User",
+    "name": "John Shahawy",
+    "imgSrc": "https://avatars.githubusercontent.com/u/13843114?u=9604e985cff42b118d16c17d94701b33920f515e&v=4",
+    "monthlyPriceInDollars": 5,
+    "link": "https://github.com/JohnShahawy",
+    "privacyLevel": "PUBLIC",
+    "login": "JohnShahawy",
+    "createdAt": 1676389422000
   }
 ] as const

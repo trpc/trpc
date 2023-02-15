@@ -1,6 +1,6 @@
 import { graphql } from '@octokit/graphql';
 import fs from 'fs';
-import { Node, RootObject } from './script.types';
+import { Node, RootObject, SponsorEsque } from './script.types';
 
 const { TRPC_GITHUB_TOKEN } = process.env;
 if (!TRPC_GITHUB_TOKEN) {
@@ -37,11 +37,13 @@ function flattenSponsor(node: Node) {
     createdAt: Date.parse(node.createdAt),
   };
 }
-async function getGithubSponsors() {
+async function getViewerGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
 
   const fetchPage = async (cursor = '') => {
-    const res: RootObject = await graphqlWithAuth(
+    const res: {
+      viewer: SponsorEsque;
+    } = await graphqlWithAuth(
       `
       query ($cursor: String) {
         viewer {
@@ -104,13 +106,97 @@ async function getGithubSponsors() {
 
   await fetchPage();
 
-  return sponsors
-    .filter((it) => it.privacyLevel === 'PUBLIC')
-    .sort((a, b) => a.createdAt - b.createdAt);
+  return sponsors;
+}
+
+async function getOrgGithubSponsors() {
+  let sponsors: ReturnType<typeof flattenSponsor>[] = [];
+
+  const fetchPage = async (cursor = '') => {
+    const res: {
+      viewer: {
+        organization: SponsorEsque;
+      };
+    } = await graphqlWithAuth(
+      `
+      query ($cursor: String) {
+        viewer {
+          organization(login: "trpc") {
+            sponsorshipsAsMaintainer(first: 100, after: $cursor, includePrivate: true) {
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              edges {
+                node {
+                  createdAt
+                  sponsorEntity {
+                    __typename
+                    ... on User {
+                      id
+                      name
+                      login
+                      websiteUrl
+                      avatarUrl
+                    }
+                    ... on Organization {
+                      id
+                      name
+                      login
+                      websiteUrl
+                      avatarUrl
+                    }
+                  }
+                  tier {
+                    id
+                    monthlyPriceInDollars
+                  }
+                  privacyLevel
+                }
+              }
+            }
+          }
+        }
+      }
+      `,
+      {
+        cursor,
+      },
+    );
+
+    const {
+      viewer: {
+        organization: {
+          sponsorshipsAsMaintainer: {
+            pageInfo: { hasNextPage, endCursor },
+            edges,
+          },
+        },
+      },
+    } = res;
+
+    sponsors = [...sponsors, ...edges.map((edge) => flattenSponsor(edge.node))];
+
+    if (hasNextPage) {
+      await fetchPage(endCursor);
+    }
+  };
+
+  await fetchPage();
+
+  return sponsors;
 }
 
 async function main() {
-  const sponsors = await getGithubSponsors();
+  const sponsors = await Promise.all([
+    getViewerGithubSponsors(),
+    getOrgGithubSponsors(),
+  ]).then((parts) =>
+    parts
+      .flat()
+      .filter((it) => it.privacyLevel === 'PUBLIC')
+      .sort((a, b) => a.createdAt - b.createdAt),
+  );
 
   const json = JSON.stringify(sponsors, null, 2);
 
