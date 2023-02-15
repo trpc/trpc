@@ -39,39 +39,39 @@ function flattenSponsor(node: Node) {
 }
 
 const sponsorEsqueFragment = `
-sponsorshipsAsMaintainer(first: 100, after: $cursor, includePrivate: true) {
-  pageInfo {
-    hasNextPage
-    endCursor
-  }
-  edges {
-    node {
-      createdAt
-      sponsorEntity {
-        __typename
-        ... on User {
-          id
-          name
-          login
-          websiteUrl
-          avatarUrl
+  sponsorshipsAsMaintainer(first: 100, after: $cursor, includePrivate: true) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        createdAt
+        sponsorEntity {
+          __typename
+          ... on User {
+            id
+            name
+            login
+            websiteUrl
+            avatarUrl
+          }
+          ... on Organization {
+            id
+            name
+            login
+            websiteUrl
+            avatarUrl
+          }
         }
-        ... on Organization {
+        tier {
           id
-          name
-          login
-          websiteUrl
-          avatarUrl
+          monthlyPriceInDollars
         }
+        privacyLevel
       }
-      tier {
-        id
-        monthlyPriceInDollars
-      }
-      privacyLevel
     }
   }
-}
 `;
 async function getViewerGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
