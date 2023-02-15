@@ -2,7 +2,7 @@ import { Pack, hierarchy } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { sponsors } from './script.raw';
+import { sponsors } from './script.output';
 
 const pack = {
   children: sponsors,
