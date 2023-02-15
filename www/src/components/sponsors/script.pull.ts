@@ -1,6 +1,6 @@
 import { graphql } from '@octokit/graphql';
 import fs from 'fs';
-import { Node, RootObject, SponsorEsque } from './script.types';
+import { Node, SponsorEsque } from './script.types';
 
 const { TRPC_GITHUB_TOKEN } = process.env;
 if (!TRPC_GITHUB_TOKEN) {

@@ -35,10 +35,10 @@ export interface SponsorshipsAsMaintainer {
   edges: Edge[];
 }
 
-export interface Viewer {
+export interface SponsorEsque {
   sponsorshipsAsMaintainer: SponsorshipsAsMaintainer;
 }
 
 export interface RootObject {
-  viewer: Viewer;
+  viewer: SponsorEsque;
 }
