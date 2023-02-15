@@ -278,7 +278,7 @@ async function main() {
     '',
   ].join('\n');
 
-  fs.writeFileSync(__dirname + '/script.raw.ts', text);
+  fs.writeFileSync(__dirname + '/script.output.ts', text);
 }
 
 void main();

@@ -1,7 +1,7 @@
 import Link from '@docusaurus/Link';
 import React from 'react';
 import { FiArrowRightCircle } from 'react-icons/fi';
-import { sponsors } from './script.raw';
+import { sponsors } from './script.output';
 
 const topSponsors = sponsors.slice(0, 5);
 

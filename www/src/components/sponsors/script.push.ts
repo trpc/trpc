@@ -1,6 +1,6 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors } from './script.raw';
+import { sponsors } from './script.output';
 
 type Sponsor = typeof sponsors[number];
 type ValidLogins = Sponsor['login'];
