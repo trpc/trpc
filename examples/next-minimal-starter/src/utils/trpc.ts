@@ -21,15 +21,14 @@ function getBaseUrl() {
 }
 
 export const getUrl: GetUrl = (opts) => {
-  const url = opts.url + '/' + opts.path;
-  const queryParts: string[] = [];
+  let url = opts.url + '/' + opts.path;
 
-  const input = 'input' in opts ? opts.input : undefined;
+  const input = ('input' in opts ? opts.input : undefined) as
+    | FormData
+    | undefined;
 
-  if (opts.type === 'query') {
-    if (input !== undefined) {
-      queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
-    }
+  if (opts.type === 'query' && input !== undefined) {
+    url += '?' + new URLSearchParams(input as URLSearchParams).toString();
   }
 
   return url;

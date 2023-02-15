@@ -36,6 +36,16 @@ export function createFormDataMiddleware<
 const multipartFormDataParser = createFormDataMiddleware(middleware);
 
 export async function getFormData(req: NextApiRequest) {
+  if (req.method === 'GET') {
+    const form = new FormData();
+
+    for (const [key, value] of Object.entries(req.query)) {
+      form.append(key, value as any);
+    }
+
+    return form;
+  }
+
   const bb = busboy({ headers: req.headers });
   const form = new FormData();
 
@@ -84,6 +94,18 @@ const appRouter = router({
         text: `hello ${input?.name ?? 'world'}`,
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
       };
+    }),
+  que: publicProcedure
+    .use(multipartFormDataParser)
+    .input(
+      zfd.formData({
+        hello: zfd.text().optional(),
+      }),
+    )
+    .query((opts) => {
+      console.log('input', opts.input);
+
+      return opts.input;
     }),
   // 💡 Tip: Try adding a new procedure here and see if you can use it in the client!
   // getUser: publicProcedure.query(() => {
