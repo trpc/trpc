@@ -1,5 +1,5 @@
 import React from 'react';
-import { tweets } from './script.output';
+import { tweets } from './script.raw';
 
 const knownGithubProfiles: Record<string, string> = {
   t3dotgg: 't3dotgg',
