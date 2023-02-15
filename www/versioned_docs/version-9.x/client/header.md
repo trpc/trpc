@@ -21,17 +21,20 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-    config({ ctx }) {
-      /**
-      * Headers will be called on each request.
-      */
-        headers() {
+  config({ ctx }) {
+    return {
+      links: [
+        httpBatchLink({
+          headers: () => {
             return {
-                Authorization: token
-              }
-          }
-      }
-  })(MyApp)
+              'Authorization': token,
+            };
+          },
+        }),
+      ],
+    };
+  },
+})(MyApp)
 ```
 
 ### Example with auth login
