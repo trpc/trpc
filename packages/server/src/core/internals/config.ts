@@ -1,3 +1,4 @@
+import type { TRPCErrorShape } from '../../rpc';
 import { ErrorFormatter } from '../../error/formatter';
 
 /**
@@ -34,7 +35,10 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    * Use custom error formatting
    * @link https://trpc.io/docs/error-formatting
    */
-  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
+  errorFormatter: ErrorFormatter<
+    TTypes['ctx'],
+    TRPCErrorShape<number> & { [key: string]: any }
+  >;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.
