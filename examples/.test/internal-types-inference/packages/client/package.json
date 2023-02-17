@@ -1,0 +1,17 @@
+{
+  "name": "@acme/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "devDependencies": {
+    "@tsconfig/node-lts-strictest-esm": "18.12.1",
+    "@types/node": "18.13.0",
+    "typescript": "4.9.5"
+  },
+  "dependencies": {
+    "@acme/server": "workspace:*",
+    "@trpc/client": "10.11.1",
+    "@trpc/server": "10.11.1"
+  }
+}

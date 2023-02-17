@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/client",
+    },
+    {
+      "path": "packages/server",
+    },
+  ],
+}

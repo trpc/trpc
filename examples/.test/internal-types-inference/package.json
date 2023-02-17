@@ -1,0 +1,22 @@
+{
+  "name": "acme",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@7.27.0",
+  "scripts": {
+    "build": "tsc --build --force"
+  },
+  "devDependencies": {
+    "typescript": "4.9.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "@trpc/client": "link:../../../packages/client",
+      "@trpc/server": "link:../../../packages/server"
+    }
+  },
+  "dependencies": {
+    "@trpc/client": "*",
+    "@trpc/server": "*"
+  }
+}

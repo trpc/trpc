@@ -1,0 +1,26 @@
+{
+  "extends": "@tsconfig/node-lts-strictest-esm/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmitOnError": true,
+    "outDir": "dist",
+    "paths": {
+      "~/*": [
+        "src/*",
+      ],
+    },
+    "rootDir": "src",
+  },
+  "include": [
+    "src",
+  ],
+  "references": [
+    {
+      "path": "../server",
+    },
+  ],
+}
