@@ -1,5 +1,5 @@
-import type { TRPCErrorShape } from '../../rpc';
 import { ErrorFormatter } from '../../error/formatter';
+import type { TRPCErrorShape } from '../../rpc';
 
 /**
  * The initial generics that are used in the init function

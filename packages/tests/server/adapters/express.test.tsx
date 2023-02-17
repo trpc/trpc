@@ -103,6 +103,6 @@ test('error query', async () => {
   try {
     await t.client.exampleError.query();
   } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError("Unexpected error"));
+    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
   }
 });
