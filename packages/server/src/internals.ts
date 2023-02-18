@@ -9,4 +9,4 @@ export type {
   BuildProcedure,
 } from './core/internals/procedureBuilder';
 export type { unsetMarker } from './core/internals/utils';
-export type { MiddlewareFunction, MiddlewareBuilder } from './core/middleware';
+// export type { MiddlewareFunction, MiddlewareBuilder } from './core/middleware';
