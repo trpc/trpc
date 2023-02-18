@@ -27,6 +27,7 @@ export const publicProcedure = t.procedure;
 
 You'll notice we are exporting certain methods of the `t` variable here rather than `t` itself. This is to establish a certain set of procedures that we will use idiomatically in our codebase.
 
+
 ## Defining a router
 
 Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
@@ -61,11 +62,11 @@ export type AppRouter = typeof appRouter;
 
 When initializing your router, tRPC allows you to:
 
-- setup [request contexts](/docs/context)
-- assign [metadata](/docs/metadata) to procedures
-- [format](/docs/error-formatting) and [handle](/docs/error-handling) errors
-- [transform data](/docs/data-transformers) as needed
-- customize the [runtime configuration](#runtime-configuration)
+- Setup [request contexts](/docs/context)
+- Assign [metadata](/docs/metadata) to procedures
+- [Format](/docs/error-formatting) and [handle](/docs/error-handling) errors
+- [Transform data](/docs/data-transformers) as needed
+- Customize the [runtime configuration](#runtime-configuration)
 
 You can use method chaining to customize your `t`-object on initialization. For example:
 
