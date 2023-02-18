@@ -101,7 +101,7 @@ jobs:
 
       # Run test-dev & test-start separately so ports don't clash
       - name: Run build & test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build test-dev
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - name: Once done, run test-start

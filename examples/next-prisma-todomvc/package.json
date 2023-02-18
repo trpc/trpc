@@ -5,7 +5,7 @@
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
-    "dx:next": "run-s migrate-dev generate && next dev",
+    "dx:next": "run-s migrate-dev && next dev",
     "dx:prisma-studio": "pnpm prisma-studio",
     "dx": "run-p dx:* --print-label",
     "dev": "pnpm dx:next",
