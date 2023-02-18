@@ -177,13 +177,15 @@ importers:
       tsx: 3.12.1
       typescript: 4.8.3
 
-  examples/.test/internal-types-inference:
+  examples/.test/internal-types-export:
     specifiers:
-      '@trpc/server': 10.11.1
-      '@tsconfig/node-lts-strictest-esm': 18.12.1
-      '@types/node': 18.13.0
-      typescript: 4.9.5
+      '@trpc/client': ^10.11.1
+      '@trpc/server': ^10.11.1
+      '@tsconfig/node-lts-strictest-esm': ^18.12.1
+      '@types/node': ^18.13.0
+      typescript: ^4.9.5
     dependencies:
+      '@trpc/client': link:../../../packages/client
       '@trpc/server': link:../../../packages/server
     devDependencies:
       '@tsconfig/node-lts-strictest-esm': 18.12.1
@@ -20525,7 +20527,7 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /vite/3.2.4_@types+node@18.11.13:
+  /vite/3.2.4_@types+node@18.13.0:
     resolution: {integrity: sha512-Z2X6SRAffOUYTa+sLy3NQ7nlHFU100xwanq1WDwqaiFiCe+25zdxP1TfCS5ojPV2oDDcXudHIoPnI1Z/66B7Yw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -20550,7 +20552,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 18.11.13
+      '@types/node': 18.13.0
       esbuild: 0.15.15
       postcss: 8.4.19
       resolve: 1.22.1
@@ -20617,7 +20619,7 @@ packages:
     dependencies:
       '@types/chai': 4.3.4
       '@types/chai-subset': 1.3.3
-      '@types/node': 18.11.13
+      '@types/node': 18.13.0
       chai: 4.3.7
       debug: 4.3.4
       local-pkg: 0.4.2
@@ -20625,7 +20627,7 @@ packages:
       tinybench: 2.3.1
       tinypool: 0.3.0
       tinyspy: 1.0.2
-      vite: 3.2.4_@types+node@18.11.13
+      vite: 3.2.4_@types+node@18.13.0
     transitivePeerDependencies:
       - less
       - sass
