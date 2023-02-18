@@ -39,7 +39,6 @@ jobs:
             express-server,
             express-minimal,
             .interop/next-prisma-starter,
-            .interop/next-prisma-websockets-starter,
             next-minimal-starter,
             minimal-react,
             fastify-server,
