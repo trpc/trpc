@@ -1,20 +1,6 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors as _sponsors } from './script.raw';
-
-const sponsors = [
-  ..._sponsors,
-  {
-    __typename: 'Organization',
-    name: 'Ping.gg',
-    imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
-    monthlyPriceInDollars: 250,
-    link: 'https://ping.gg/',
-    privacyLevel: 'PUBLIC',
-    login: 'pingdotgg',
-    createdAt: 1645488994000,
-  } as const,
-];
+import { sponsors } from './script.output';
 
 type Sponsor = typeof sponsors[number];
 type ValidLogins = Sponsor['login'];
@@ -25,15 +11,6 @@ interface Def {
   bronze: ValidLogins[];
 }
 
-const yearlySponsors: ValidLogins[] = [
-  //
-  'flightcontrolhq',
-  'ahoylabs',
-  'Wyatt-SG',
-  'pingdotgg',
-  'nihinihi01',
-  'newfront-insurance',
-];
 const sections: Def = {
   gold: [
     //
@@ -72,84 +49,7 @@ const buckets: Buckets = {
   other: [],
 };
 
-const sortedSponsors = sponsors
-  // overrides
-  .map((sponsor) => {
-    switch (sponsor.login) {
-      case 't3dotgg':
-        return {
-          ...sponsor,
-          monthlyPriceInDollars: 5,
-        };
-    }
-    return sponsor;
-  })
-  // calculate total value
-  .map((sponsor) => {
-    const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
-    const YEAR_MS = 12 * MONTH_MS;
-
-    const yearly = yearlySponsors.includes(sponsor.login);
-    const cycles = Math.ceil(
-      (Date.now() - sponsor.createdAt) / (yearly ? YEAR_MS : MONTH_MS),
-    );
-
-    const base = yearly ? 12 : 1;
-    const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
-    const value =
-      base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
-
-    return {
-      ...sponsor,
-      value,
-      weight: 0,
-    };
-  })
-  .sort((a, b) => b.value - a.value);
-
-function groupedSponsors(sponsors: typeof sortedSponsors) {
-  // this fn is a mess, don't judge
-  const min = Math.min(...sponsors.map((sponsors) => sponsors.value));
-  const max = Math.max(...sponsors.map((sponsors) => sponsors.value));
-
-  const nGroups = 100;
-
-  const groupDiff = (max - min) / nGroups;
-
-  const groups: Array<typeof sortedSponsors> = [];
-  for (let index = 0; index < sponsors.length; index++) {
-    let pos = 0;
-    const sponsor = sponsors[index];
-    while (sponsor.value > min + groupDiff * pos) {
-      pos++;
-    }
-    groups[pos] ||= [];
-    groups[pos].push({ ...sponsor, weight: pos + 1 });
-  }
-
-  return groups
-    .flatMap((group) => group.reverse())
-    .reverse()
-    .map((sponsor) => {
-      const { name, imgSrc, weight, login, link } = sponsor;
-      return { name, imgSrc, weight, login, link };
-    });
-}
-
-fs.writeFileSync(
-  __dirname + '/script.output.ts',
-  [
-    '// prettier-ignore',
-    '// eslint-disable',
-    `export const sponsors =  ${JSON.stringify(
-      groupedSponsors(sortedSponsors),
-      null,
-      2,
-    )} as const;`,
-    '',
-  ].join('\n'),
-);
-for (const sponsor of sortedSponsors) {
+for (const sponsor of sponsors) {
   const { login } = sponsor;
   const section = sections.gold.includes(login)
     ? 'gold'
@@ -159,7 +59,7 @@ for (const sponsor of sortedSponsors) {
     ? 'bronze'
     : 'other';
 
-  buckets[section].push(sponsor as Sponsor);
+  buckets[section].push(sponsor);
 }
 
 const bucketConfig: Record<

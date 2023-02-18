@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.27.0",
+  "packageManager": "pnpm@7.27.1",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
@@ -49,7 +49,7 @@
     "eslint-plugin-no-only-tests": "^3.1.0",
     "eslint-plugin-react": "^7.31.11",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-turbo": "^0.0.7",
+    "eslint-plugin-turbo": "^0.0.8",
     "eslint-plugin-unicorn": "45.0.2",
     "fast-glob": "^3.2.12",
     "lerna": "^5.5.1",

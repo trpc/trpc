@@ -61,11 +61,11 @@ export type AppRouter = typeof appRouter;
 
 When initializing your router, tRPC allows you to:
 
-- setup [request contexts](/docs/context)
-- assign [metadata](/docs/metadata) to procedures
-- [format](/docs/error-formatting) and [handle](/docs/error-handling) errors
-- [transform data](/docs/data-transformers) as needed
-- customize the [runtime configuration](#runtime-configuration)
+- Setup [request contexts](/docs/context)
+- Assign [metadata](/docs/metadata) to procedures
+- [Format](/docs/error-formatting) and [handle](/docs/error-handling) errors
+- [Transform data](/docs/data-transformers) as needed
+- Customize the [runtime configuration](#runtime-configuration)
 
 You can use method chaining to customize your `t`-object on initialization. For example:
 

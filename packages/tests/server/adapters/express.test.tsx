@@ -1,5 +1,9 @@
 import { Context, router } from './__router';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
+import {
+  TRPCClientError,
+  createTRPCProxyClient,
+  httpBatchLink,
+} from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
 import * as trpcExpress from '@trpc/server/src/adapters/express';
 import express from 'express';
@@ -93,4 +97,12 @@ test('simple query', async () => {
       "text": "hello world",
     }
   `);
+});
+
+test('error query', async () => {
+  try {
+    await t.client.exampleError.query();
+  } catch (e) {
+    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+  }
 });
