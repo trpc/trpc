@@ -154,6 +154,73 @@ test('only allow double input validator for object-like inputs', () => {
   }
 });
 
+describe('multiple input validators with optionals', () => {
+  const t = initTRPC.create();
+
+  const webhookProc = t.procedure.input(
+    z
+      .object({
+        id: z.string(),
+        eventTypeId: z.number(),
+      })
+      .optional(),
+  );
+
+  test('2nd parser optional', async () => {
+    const webhookRouter = t.router({
+      byId: webhookProc
+        .input(
+          z
+            .object({
+              webhookId: z.string(),
+            })
+            .optional(),
+        )
+        .query(({ input }) => {
+          expectTypeOf(input).toEqualTypeOf<{
+            id?: string;
+            eventTypeId?: number;
+            webhookId?: string;
+          }>();
+          return input;
+        }),
+    });
+
+    const opts = routerToServerAndClientNew(webhookRouter);
+    const res = await opts.proxy.byId.query();
+    expect(res).toBeUndefined();
+  });
+
+  test('2nd parser required', async () => {
+    const webhookRouter = t.router({
+      byId: webhookProc
+        .input(
+          z.object({
+            webhookId: z.string(),
+          }),
+        )
+        .query(({ input }) => {
+          expectTypeOf(input).toEqualTypeOf<{
+            id?: string;
+            eventTypeId?: number;
+            webhookId: string;
+          }>();
+          return input;
+        }),
+    });
+
+    const opts = routerToServerAndClientNew(webhookRouter);
+    const res = await opts.proxy.byId.query({
+      id: '12345',
+      webhookId: '123',
+    });
+    expect(res).toEqual({
+      id: '12345',
+      webhookId: '123',
+    });
+  });
+});
+
 test('no input', async () => {
   const t = initTRPC.create();
 
