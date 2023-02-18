@@ -63,7 +63,7 @@
     "rollup-plugin-typescript2": "^0.32.1",
     "ts-prune": "^0.10.3",
     "tsx": "^3.9.0",
-    "turbo": "^1.6.3",
+    "turbo": "^1.8.1",
     "typescript": "^4.8.3"
   },
   "pnpm": {
