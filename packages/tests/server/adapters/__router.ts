@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 import { TRPCRequestInfo } from '@trpc/server/http/internals/types';
 import { z } from 'zod';
 
@@ -27,5 +27,11 @@ export const router = t.router({
     info: t.procedure.query(({ ctx }) => {
       return ctx.info;
     }),
+  }),
+  exampleError: t.procedure.query(() => {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Unexpected error',
+    });
   }),
 });

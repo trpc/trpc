@@ -1,10 +1,42 @@
 import { defaultFormatter } from '../../error/formatter';
 import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
-import { AnyRouter, createRouterFactory } from '../router';
+import {
+  AnyRouter,
+  AnyRouterDef,
+  Router,
+  RouterDef,
+  createRouterFactory,
+} from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
-// ts-prune-ignore-next -- Used in generated code
-export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
+/**
+ * @internal
+ */
+export type MergeRouters<
+  TRouters extends AnyRouter[],
+  TRouterDef extends AnyRouterDef = RouterDef<
+    TRouters[0]['_def']['_config'],
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    {}
+  >,
+> = TRouters extends [
+  infer Head extends AnyRouter,
+  ...infer Tail extends AnyRouter[],
+]
+  ? MergeRouters<
+      Tail,
+      {
+        _config: TRouterDef['_config'];
+        router: true;
+        procedures: TRouterDef['procedures'] & Head['_def']['procedures'];
+        record: TRouterDef['record'] & Head['_def']['record'];
+      }
+    >
+  : Router<TRouterDef> & TRouterDef['record'];
+
+export function mergeRouters<TRouters extends AnyRouter[]>(
+  ...routerList: [...TRouters]
+): MergeRouters<TRouters> {
   const record = mergeWithoutOverrides(
     {},
     ...routerList.map((r) => r._def.record),
@@ -54,5 +86,5 @@ export function mergeRouters(...routerList: AnyRouter[]): AnyRouter {
     isServer: routerList.some((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types as any,
   })(record);
-  return router;
+  return router as any;
 }

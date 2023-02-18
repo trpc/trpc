@@ -12,7 +12,7 @@ export const GithubStarsButton = ({ className }: Props) => {
 
   const fetchStars = async () => {
     const res = await fetch('https://api.github.com/repos/tRPC/tRPC');
-    const data = await res.json();
+    const data = (await res.json()) as { stargazers_count: number };
     if (typeof data?.stargazers_count === 'number') {
       setStars(new Intl.NumberFormat().format(data.stargazers_count));
     }

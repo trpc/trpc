@@ -44,7 +44,7 @@ const HomeContent: React.FC = () => {
         <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
           {siteConfig.tagline}
         </h1>
-        <p className="pt-3 text-sm font-medium text-center max-w-[60ch] text-gray-600 md:text-lg dark:text-gray-400 mx-auto">
+        <p className="pt-3 text-sm font-medium text-center max-w-[60ch] text-zinc-600 md:text-lg dark:text-zinc-300 mx-auto">
           Experience the full power of{' '}
           <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
             TypeScript
@@ -75,11 +75,7 @@ const HomeContent: React.FC = () => {
         <Features />
       </section>
 
-      <section
-        className={clsx(
-          'border border-gray-100 rounded-xl p-4 md:p-8 shadow-lg dark:shadow-lg dark:shadow-gray-900 dark:border-gray-900',
-        )}
-      >
+      <section className="py-4 md:py-8">
         <QuickIntro />
       </section>
 
@@ -96,10 +92,10 @@ const HomeContent: React.FC = () => {
         />
         <div
           className={clsx(
-            'h-[600px] w-full rounded-xl overflow-hidden z-10 relative my-4',
+            'h-[800px] w-full rounded-xl overflow-hidden z-10 relative my-0 md:my-4 lg:my-8',
           )}
         >
-          <div className="absolute inset-0 bg-gray-900 animate-pulse" />
+          <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
           <Iframe
             src={
               `https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?` +
@@ -147,14 +143,15 @@ const HomeContent: React.FC = () => {
         />
         <blockquote
           cite="https://twitter.com/alexdotjs"
-          className="py-2 mt-3 space-y-2 italic"
+          className="py-2 mt-3 space-y-2 border-none italic"
         >
-          <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
-            I built tRPC to allow people to <strong>move faster</strong> by
-            removing the need of a traditional API-layer, while still having
-            confidence that our apps won&apos;t break as we rapidly iterate.
+          <p className="text-sm text-zinc-600 md:text-base dark:text-zinc-300">
+            &quot;I built tRPC to allow people to <strong>move faster</strong>{' '}
+            by removing the need of a traditional API-layer, while still having
+            confidence that our apps won&apos;t break as we rapidly
+            iterate.&quot;
           </p>
-          <p className="text-sm text-gray-600 md:text-base dark:text-gray-400">
+          <p className="text-sm text-zinc-600 md:text-base dark:text-zinc-300">
             Try it out for yourself and let us know what you think!
           </p>
         </blockquote>
@@ -170,7 +167,7 @@ const HomeContent: React.FC = () => {
           />
           <div>
             <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
-            <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
+            <p className="text-xs text-zinc-600 md:text-sm dark:text-zinc-300">
               Creator of tRPC
             </p>
           </div>
