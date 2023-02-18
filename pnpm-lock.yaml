@@ -182,8 +182,8 @@ importers:
       '@trpc/client': ^10.11.1
       '@trpc/server': ^10.11.1
       '@tsconfig/node-lts-strictest-esm': ^18.12.1
-      '@types/node': ^18.13.0
-      typescript: ^4.9.5
+      '@types/node': ^18.7.20
+      typescript: ^4.8.3
     dependencies:
       '@trpc/client': link:../../../packages/client
       '@trpc/server': link:../../../packages/server
