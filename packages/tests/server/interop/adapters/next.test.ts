@@ -23,6 +23,7 @@ function mockReq({
 
   req.method = method;
   req.query = query;
+  req.headers = {};
 
   const socket = {
     destroy: jest.fn(),
