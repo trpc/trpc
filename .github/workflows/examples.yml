@@ -13,6 +13,7 @@ jobs:
       postgres:
         image: postgres
         env:
+          POSTGRES_DATABASE: trpcdb
           POSTGRES_USER: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
         options: >-

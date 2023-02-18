@@ -13,6 +13,7 @@
     "build:4-migrate": "prisma migrate deploy",
     "build": "run-s build:*",
     "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
+    "dev:db": "pnpm migrate-dev",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
     "db-up": "docker-compose up -d",
