@@ -72,5 +72,8 @@ jobs:
 
       - run: node -v
 
-      - name: if exists, run build, test-start & test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build test-start test-dev
+      # Run test-dev & test-start separately so ports don't clash
+      - name: Run build & test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build test-dev
+      - name: Once done, run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
