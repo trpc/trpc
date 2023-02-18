@@ -16,11 +16,6 @@ jobs:
           POSTGRES_DATABASE: trpcdb
           POSTGRES_USER: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
         ports:
           - 5432:5432
     env:
@@ -98,6 +93,13 @@ jobs:
           cache: 'pnpm'
 
       - run: node -v
+
+      - name: Make sure postgres is up
+        run: |
+          until nc -z localhost 5432; do
+            echo "Waiting for postgres..."
+            sleep 1
+          done
 
       # Run test-dev & test-start separately so ports don't clash
       - name: Run build & test-dev
