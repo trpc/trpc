@@ -70,9 +70,9 @@
       "default": "./dist/adapters/node-http/index.js"
     },
     "./adapters/node-http/content-type/json": {
-      "import": "./dist/adapters/node-http/content-type/json/index.mjs",
-      "require": "./dist/adapters/node-http/content-type/json/index.js",
-      "default": "./dist/adapters/node-http/content-type/json/index.js"
+      "import": "./dist/adapters/node-http/content-type/json.mjs",
+      "require": "./dist/adapters/node-http/content-type/json.js",
+      "default": "./dist/adapters/node-http/content-type/json.js"
     },
     "./adapters/node-http/content-type/form-data": {
       "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
@@ -113,6 +113,11 @@
       "import": "./dist/subscription.mjs",
       "require": "./dist/subscription.js",
       "default": "./dist/subscription.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -124,7 +129,8 @@
     "http",
     "rpc",
     "observable",
-    "subscription"
+    "subscription",
+    "shared"
   ],
   "publishConfig": {
     "access": "public"
