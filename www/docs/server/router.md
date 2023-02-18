@@ -27,7 +27,6 @@ export const publicProcedure = t.procedure;
 
 You'll notice we are exporting certain methods of the `t` variable here rather than `t` itself. This is to establish a certain set of procedures that we will use idiomatically in our codebase.
 
-
 ## Defining a router
 
 Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
