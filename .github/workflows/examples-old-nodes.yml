@@ -21,7 +21,6 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-      DATABASE_URL: postgresql://postgres:@postgres:5432/trpcdb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
