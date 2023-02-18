@@ -85,8 +85,8 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 type ErrorMessage<TMessage extends string> = TMessage;
 
 export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
-  inputs: Parser<any>[];
-  output?: Parser<any>;
+  inputs: Parser[];
+  output?: Parser;
   meta?: TParams['_meta'];
   resolver?: ProcedureBuilderResolver;
   middlewares: ProcedureBuilderMiddleware[];
@@ -101,7 +101,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an input parser to the procedure.
    */
-  input<$Parser extends Parser<TParams['_ctx_out']>>(
+  input<$Parser extends Parser>(
     schema: TParams['_input_out'] extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown>
@@ -128,7 +128,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add an output parser to the procedure.
    */
-  output<$Parser extends Parser<any>>(
+  output<$Parser extends Parser>(
     schema: $Parser,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
@@ -239,7 +239,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
         middlewares: [createInputMiddleware(parser)],
       }) as AnyProcedureBuilder;
     },
-    output(output: Parser<any>) {
+    output(output: Parser) {
       const parseOutput = getParseFn(output);
       return createNewBuilder(_def, {
         output,

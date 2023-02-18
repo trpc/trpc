@@ -11,17 +11,17 @@ export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ParserCustomValidatorEsque<TInput, TContext> = (
+export type ParserCustomValidatorEsque<TInput> = (
   input: unknown,
 ) => TInput | Promise<TInput>;
 
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
-export type ParserWithoutInput<TInput, TContext> =
+export type ParserWithoutInput<TInput> =
   | ParserYupEsque<TInput>
   | ParserSuperstructEsque<TInput>
-  | ParserCustomValidatorEsque<TInput, TContext>
+  | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>;
 
 export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
@@ -29,17 +29,15 @@ export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
   TParsedInput
 >;
 
-export type Parser<TContext> =
-  | ParserWithoutInput<any, TContext>
-  | ParserWithInputOutput<any, any>;
+export type Parser = ParserWithoutInput<any> | ParserWithInputOutput<any, any>;
 
-export type inferParser<TParser extends Parser<any>> =
+export type inferParser<TParser extends Parser> =
   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
         out: $TOut;
       }
-    : TParser extends ParserWithoutInput<infer $InOut, infer $Context>
+    : TParser extends ParserWithoutInput<infer $InOut>
     ? {
         in: $InOut;
         out: $InOut;
