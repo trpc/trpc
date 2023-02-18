@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../../core';
 import { BaseContentTypeHandler } from '../../../http/contentType';
 import {

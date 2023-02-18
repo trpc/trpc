@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getJsonContentTypeInputs } from '../../../../http/contentType';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { getPostBody } from './getPostBody';
