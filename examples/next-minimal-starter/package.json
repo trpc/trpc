@@ -14,7 +14,6 @@
     "@trpc/next": "^10.11.1",
     "@trpc/react-query": "^10.11.1",
     "@trpc/server": "^10.11.1",
-    "busboy": "^1.6.0",
     "next": "^13.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -23,7 +22,6 @@
     "zod-form-data": "^1.3.1"
   },
   "devDependencies": {
-    "@types/busboy": "^1.5.0",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",

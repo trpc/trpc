@@ -1,6 +1,5 @@
 import { httpBatchLink, splitLink } from '@trpc/client';
-import { httpLinkFactory } from '@trpc/client/links/httpLink';
-import { GetBody, GetUrl, Requester, httpRequest } from '@trpc/client/shared';
+import { unstable_formDataLink } from '@trpc/client/links/formDataLink';
 import { createTRPCNext } from '@trpc/next';
 import { AppRouter } from '../pages/api/trpc/[trpc]';
 
@@ -20,53 +19,20 @@ function getBaseUrl() {
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
-export const getUrl: GetUrl = (opts) => {
-  let url = opts.url + '/' + opts.path;
-
-  const input = ('input' in opts ? opts.input : undefined) as
-    | FormData
-    | undefined;
-
-  if (opts.type === 'query' && input !== undefined) {
-    url += '?' + new URLSearchParams(input as URLSearchParams).toString();
-  }
-
-  return url;
-};
-
-export const getBody: GetBody = (opts) => {
-  if (opts.type === 'query') {
-    return undefined;
-  }
-  const input = ('input' in opts ? opts.input : undefined) as
-    | FormData
-    | undefined;
-  return input;
-};
-
-export const formDataRequester: Requester = (opts) => {
-  return httpRequest({
-    ...opts,
-    getUrl,
-    getBody,
-  });
-};
-
-export const formDataLink = httpLinkFactory({ requester: formDataRequester });
-
 export const trpc = createTRPCNext<AppRouter>({
   config() {
+    const url = getBaseUrl() + '/api/trpc';
     return {
       links: [
         splitLink({
           condition(op) {
             return op.input instanceof FormData;
           },
-          true: formDataLink({
-            url: getBaseUrl() + '/api/trpc',
+          true: unstable_formDataLink({
+            url,
           }),
           false: httpBatchLink({
-            url: getBaseUrl() + '/api/trpc',
+            url,
           }),
         }),
       ],

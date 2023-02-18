@@ -556,11 +556,9 @@ importers:
       '@trpc/next': ^10.11.1
       '@trpc/react-query': ^10.11.1
       '@trpc/server': ^10.11.1
-      '@types/busboy': ^1.5.0
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
-      busboy: ^1.6.0
       eslint: ^8.30.0
       next: ^13.0.0
       react: ^18.2.0
@@ -575,7 +573,6 @@ importers:
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
-      busboy: 1.6.0
       next: 13.0.5_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -583,7 +580,6 @@ importers:
       zod: 3.20.2
       zod-form-data: 1.3.1_zod@3.20.2
     devDependencies:
-      '@types/busboy': 1.5.0
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/react-dom': 18.0.9
@@ -969,6 +965,7 @@ importers:
   packages/server:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
+      '@fastify/busboy': ^1.2.1
       '@fastify/websocket': ^5.0.0
       '@miniflare/core': ^2.9.0
       '@tanstack/react-query': 4.6.0
@@ -1003,6 +1000,7 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@cloudflare/workers-types': 3.18.0
+      '@fastify/busboy': 1.2.1
       '@fastify/websocket': 5.0.1
       '@miniflare/core': 2.11.0
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
@@ -3830,6 +3828,13 @@ packages:
     resolution: {integrity: sha512-gvCOUNpXsWrIQ3A4aXCLIdblL0tDq42BG/2Xw7oxbil9h11uow10ztS2GuFazNBfjbrsZ5nl+nPl5jDSjj5TSg==}
     dependencies:
       ajv: 6.12.6
+
+  /@fastify/busboy/1.2.1:
+    resolution: {integrity: sha512-7PQA7EH43S0CxcOa9OeAnaeA0oQ+e/DHNPZwSQM9CQHW76jle5+OvLdibRp/Aafs9KXbLhxyjOTkRjWUbQEd3Q==}
+    engines: {node: '>=14'}
+    dependencies:
+      text-decoding: 1.0.0
+    dev: true
 
   /@fastify/deepmerge/1.2.0:
     resolution: {integrity: sha512-pfBLfEykO5uqw5cIzGD24sPfbsLfjESIQSe8oqbcMpodUwO2swPQGvuhdD137+n/1WiSH24vq3z3th2ErFbxVg==}
@@ -6899,12 +6904,6 @@ packages:
     dependencies:
       '@types/node': 18.11.13
     dev: false
-
-  /@types/busboy/1.5.0:
-    resolution: {integrity: sha512-ncOOhwmyFDW76c/Tuvv9MA9VGYUCn8blzyWmzYELcNGDb0WXWLSmFi7hJq25YdRBYJrmMBB5jZZwUjlJe9HCjQ==}
-    dependencies:
-      '@types/node': 18.11.13
-    dev: true
 
   /@types/cacheable-request/6.0.3:
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
@@ -19603,6 +19602,10 @@ packages:
       glob: 7.2.3
       minimatch: 3.1.2
     dev: false
+
+  /text-decoding/1.0.0:
+    resolution: {integrity: sha512-/0TJD42KDnVwKmDK6jj3xP7E2MG7SHAOG4tyTgyUCRPdHwvkquYNLEQltmdMa3owq3TkddCVcTsoctJI8VQNKA==}
+    dev: true
 
   /text-extensions/1.9.0:
     resolution: {integrity: sha512-wiBrwC1EhBelW12Zy26JeOUkQ5mRu+5o8rpsJk5+2t+Y5vE7e842qtZDQ2g1NpX/29HdyFeJ4nSIhI47ENSxlQ==}

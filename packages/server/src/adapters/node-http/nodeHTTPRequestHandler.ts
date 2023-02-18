@@ -3,22 +3,15 @@ import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
 import { HTTPRequest } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { getPostBody } from './internals/getPostBody';
+import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
+import { NodeHTTPContentTypeHandler } from './internals/contentType';
 import {
-  NodeHTTPHandlerOptions,
   NodeHTTPRequest,
+  NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
 
-type NodeHTTPRequestHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest extends NodeHTTPRequest,
-  TResponse extends NodeHTTPResponse,
-> = {
-  req: TRequest;
-  res: TResponse;
-  path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -32,12 +25,22 @@ export async function nodeHTTPRequestHandler<
   };
   const { path, router } = opts;
 
-  let body: any;
+  const jsonContentTypeHandler =
+    defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
+      TRequest,
+      TResponse
+    >;
 
-  if (opts.req.headers['content-type'] === 'application/json') {
-    const bodyResult = await getPostBody(opts);
-    body = bodyResult.ok ? bodyResult.data : undefined;
-  }
+  const contentTypeHandlers = opts.unstable_contentTypeHandlers ?? [
+    jsonContentTypeHandler,
+  ];
+
+  const contentTypeHandler =
+    contentTypeHandlers.find((handler) => handler.isMatch(opts)) ??
+    // fallback to json
+    jsonContentTypeHandler;
+
+  const bodyResult = await contentTypeHandler.getBody(opts);
 
   const query = opts.req.query
     ? new URLSearchParams(opts.req.query as any)
@@ -46,8 +49,9 @@ export async function nodeHTTPRequestHandler<
     method: opts.req.method!,
     headers: opts.req.headers,
     query,
-    body,
+    body: bodyResult.ok ? bodyResult.data : undefined,
   };
+
   const result = await resolveHTTPResponse({
     batching: opts.batching,
     responseMeta: opts.responseMeta,
@@ -55,13 +59,14 @@ export async function nodeHTTPRequestHandler<
     createContext,
     router,
     req,
-    error: null,
+    error: bodyResult.ok ? null : bodyResult.error,
     onError(o) {
       opts?.onError?.({
         ...o,
         req: opts.req,
       });
     },
+    contentTypeHandler,
   });
 
   const { res } = opts;

@@ -1,9 +1,11 @@
 import { EventEmitter } from 'events';
-import { getPostBody } from './getPostBody';
+import { nodeHTTPJSONContentTypeHandler } from './contentType';
 
 test('has body', async () => {
   const body = {};
-  const resolvedBody = await getPostBody({ req: { body } } as any);
+  const resolvedBody = await nodeHTTPJSONContentTypeHandler.getBody({
+    req: { body },
+  } as any);
   expect(resolvedBody).toMatchInlineSnapshot(`
     Object {
       "data": Object {},
@@ -23,7 +25,9 @@ test('req as eventemitter', async () => {
     );
     events.emit('end');
   }, 5);
-  const result = await getPostBody({ req: events } as any);
+  const result = await nodeHTTPJSONContentTypeHandler.getBody({
+    req: events,
+  } as any);
 
   expect(result.ok).toBeTruthy();
   expect((result as any).data).toBeTruthy();

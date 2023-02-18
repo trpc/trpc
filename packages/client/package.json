@@ -64,6 +64,11 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
+    },
+    "./links/formDataLink": {
+      "import": "./dist/links/formDataLink.mjs",
+      "require": "./dist/links/formDataLink.js",
+      "default": "./dist/links/formDataLink.js"
     }
   },
   "files": [

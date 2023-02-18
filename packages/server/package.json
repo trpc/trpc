@@ -69,6 +69,16 @@
       "require": "./dist/adapters/node-http/index.js",
       "default": "./dist/adapters/node-http/index.js"
     },
+    "./adapters/node-http/content-type/json": {
+      "import": "./dist/adapters/node-http/content-type/json.mjs",
+      "require": "./dist/adapters/node-http/content-type/json.js",
+      "default": "./dist/adapters/node-http/content-type/json.js"
+    },
+    "./adapters/node-http/content-type/form-data": {
+      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
+      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
+      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
+    },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
@@ -127,6 +137,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.14.1",
+    "@fastify/busboy": "^1.2.1",
     "@fastify/websocket": "^5.0.0",
     "@miniflare/core": "^2.9.0",
     "@tanstack/react-query": "^4.3.8",

@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http/internals/types';
 import { MaybePromise } from '../../types';
+import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
   [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
@@ -37,7 +38,21 @@ export type NodeHTTPHandlerOptions<
   TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   maxBodySize?: number;
+  unstable_contentTypeHandlers?: NodeHTTPContentTypeHandler<
+    TRequest,
+    TResponse
+  >[];
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
+
+export type NodeHTTPRequestHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+> = {
+  req: TRequest;
+  res: TResponse;
+  path: string;
+} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;

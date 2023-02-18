@@ -2,82 +2,17 @@
  * This is the API-handler of your app that contains all your API routes.
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
-import {
-  MiddlewareBuilder,
-  MiddlewareFunction,
-  ProcedureParams,
-} from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-import busboy from 'busboy';
+import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
+import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { File } from 'undici';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
-import { middleware, publicProcedure, router } from '~/server/trpc';
+import { publicProcedure, router } from '~/server/trpc';
 
 // @ts-expect-error - globalThis.File is not defined for some reason
 globalThis.File = File;
-
-export function createFormDataMiddleware<
-  TParams extends {
-    _ctx_out: {
-      req: NextApiRequest;
-    };
-  } & ProcedureParams,
->(
-  builder: (fn: MiddlewareFunction<TParams, any>) => any,
-): MiddlewareBuilder<TParams, TParams> {
-  return builder(async ({ ctx, next }) => {
-    const formData = await getFormData(ctx.req);
-    return next({ rawInput: formData } as any);
-  });
-}
-
-const multipartFormDataParser = createFormDataMiddleware(middleware);
-
-export async function getFormData(req: NextApiRequest) {
-  if (req.method === 'GET') {
-    const form = new FormData();
-
-    for (const [key, value] of Object.entries(req.query)) {
-      form.append(key, value as any);
-    }
-
-    return form;
-  }
-
-  const bb = busboy({ headers: req.headers });
-  const form = new FormData();
-
-  await new Promise((resolve, reject) => {
-    bb.on('file', async (name, file, info) => {
-      const { filename, mimeType } = info;
-
-      const chunks = [];
-      for await (const chunk of file) {
-        chunks.push(chunk);
-      }
-
-      const buffer = Buffer.concat(chunks);
-
-      form.append(
-        name,
-        new File([buffer], filename, { type: mimeType }) as Blob,
-      );
-    });
-
-    bb.on('field', (name, value) => {
-      form.append(name, value);
-    });
-
-    bb.on('error', reject);
-    bb.on('close', resolve);
-
-    req.pipe(bb);
-  });
-
-  return form;
-}
 
 const appRouter = router({
   greeting: publicProcedure
@@ -96,10 +31,9 @@ const appRouter = router({
       };
     }),
   que: publicProcedure
-    .use(multipartFormDataParser)
     .input(
       zfd.formData({
-        hello: zfd.text().optional(),
+        hello: zfd.text(),
       }),
     )
     .query((opts) => {
@@ -112,7 +46,6 @@ const appRouter = router({
   //   return { id: '1', name: 'bob' };
   // }),
   mut: publicProcedure
-    .use(multipartFormDataParser)
     .input(
       zfd.formData({
         hello: zfd.text().optional(),
@@ -136,6 +69,10 @@ const handler = trpcNext.createNextApiHandler({
   createContext: (opts) => {
     return opts;
   },
+  unstable_contentTypeHandlers: [
+    nodeHTTPFormDataContentTypeHandler(),
+    nodeHTTPJSONContentTypeHandler(),
+  ],
 });
 
 // export API handler

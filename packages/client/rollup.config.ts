@@ -9,6 +9,7 @@ export const input = [
   'src/links/splitLink.ts',
   'src/links/loggerLink.ts',
   'src/links/wsLink.ts',
+  'src/links/formDataLink.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
