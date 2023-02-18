@@ -113,11 +113,6 @@
       "import": "./dist/subscription.mjs",
       "require": "./dist/subscription.js",
       "default": "./dist/subscription.js"
-    },
-    "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -129,8 +124,7 @@
     "http",
     "rpc",
     "observable",
-    "subscription",
-    "shared"
+    "subscription"
   ],
   "publishConfig": {
     "access": "public"

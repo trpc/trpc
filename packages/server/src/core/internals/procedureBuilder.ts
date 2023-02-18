@@ -85,8 +85,8 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 type ErrorMessage<TMessage extends string> = TMessage;
 
 export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
-  inputs: Parser[];
-  output?: Parser;
+  inputs: Parser<any>[];
+  output?: Parser<any>;
   meta?: TParams['_meta'];
   resolver?: ProcedureBuilderResolver;
   middlewares: ProcedureBuilderMiddleware[];
@@ -239,7 +239,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
         middlewares: [createInputMiddleware(parser)],
       }) as AnyProcedureBuilder;
     },
-    output(output: Parser) {
+    output(output: Parser<any>) {
       const parseOutput = getParseFn(output);
       return createNewBuilder(_def, {
         output,
@@ -343,12 +343,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
 
     // run the middlewares recursively with the resolver as the last one
     const callRecursive = async (
-      callOpts: {
-        ctx: any;
-        index: number;
-        input?: unknown;
-        rawInput?: unknown;
-      } = {
+      callOpts: { ctx: any; index: number; input?: unknown } = {
         index: 0,
         ctx: opts.ctx,
       },
@@ -360,14 +355,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: callOpts.rawInput ?? opts.rawInput,
+          rawInput: opts.rawInput,
           meta: _def.meta,
           input: callOpts.input,
-          next: async (nextOpts?: {
-            ctx: any;
-            input?: any;
-            rawInput?: any;
-          }) => {
+          next: async (nextOpts?: { ctx: any; input?: any }) => {
             return await callRecursive({
               index: callOpts.index + 1,
               ctx:
@@ -378,10 +369,6 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
-              rawInput:
-                nextOpts && 'rawInput' in nextOpts
-                  ? nextOpts.rawInput
-                  : callOpts.rawInput,
             });
           },
         });
