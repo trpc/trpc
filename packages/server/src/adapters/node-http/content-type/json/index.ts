@@ -1,0 +1,12 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { getJsonContentTypeInputs } from '../../../../http/contentType';
+import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
+import { getPostBody } from './getPostBody';
+
+export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
+  isMatch(opts) {
+    return opts.req.headers['content-type'] === 'application/json';
+  },
+  getBody: getPostBody,
+  getInputs: getJsonContentTypeInputs,
+});

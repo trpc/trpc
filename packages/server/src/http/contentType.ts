@@ -12,7 +12,9 @@ type GetInputs = (opts: {
   router: AnyRouter;
 }) => MaybePromise<Record<number, unknown>>;
 
-type BodyResult = { ok: true; data: unknown } | { ok: false; error: TRPCError };
+export type BodyResult =
+  | { ok: true; data: unknown }
+  | { ok: false; error: TRPCError };
 
 export type BaseContentTypeHandler<TOptions> = {
   isMatch(opts: TOptions): boolean;
