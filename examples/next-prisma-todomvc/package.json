@@ -9,7 +9,7 @@
     "dx:prisma-studio": "pnpm prisma-studio",
     "dx": "run-p dx:* --print-label",
     "dev": "pnpm dx:next",
-    "build": "prun-s generate migrate && next build",
+    "build": "run-s generate migrate && next build",
     "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "next start",
     "studio": "prisma studio",
