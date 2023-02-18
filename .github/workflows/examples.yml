@@ -22,6 +22,7 @@ jobs:
         dir:
           [
             .test/ssg,
+            .test/internal-types-export,
             express-server,
             express-minimal,
             .interop/next-prisma-starter,
