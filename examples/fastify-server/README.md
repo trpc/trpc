@@ -7,7 +7,7 @@
 
 If you want to test this example locally, follow the steps below.
 
-### Clone, Install and build main projet
+### Clone, Install and build main project
 
 ```bash
 git clone git@github.com:trpc/trpc.git

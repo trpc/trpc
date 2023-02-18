@@ -1,8 +1,11 @@
 import { Context, router } from './__router';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
+import {
+  TRPCClientError,
+  createTRPCProxyClient,
+  httpBatchLink,
+} from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
 import * as trpcExpress from '@trpc/server/src/adapters/express';
-import AbortController from 'abort-controller';
 import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
@@ -52,7 +55,7 @@ async function startServer() {
     links: [
       httpBatchLink({
         url: `http://localhost:${port}/trpc`,
-        AbortController: AbortController as any,
+        AbortController,
         fetch: fetch as any,
       }),
     ],
@@ -128,4 +131,12 @@ test('request info from context should include both calls', async () => {
       },
     ]
   `);
+});
+
+test('error query', async () => {
+  try {
+    await t.client.exampleError.query();
+  } catch (e) {
+    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+  }
 });

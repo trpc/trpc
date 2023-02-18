@@ -248,6 +248,7 @@ export async function resolveHTTPResponse<
     // - `createContext()` throws
     // - post body is too large
     // - input deserialization fails
+    // - `errorFormatter` return value is malformed
     const error = getTRPCErrorFromUnknown(cause);
 
     onError?.({

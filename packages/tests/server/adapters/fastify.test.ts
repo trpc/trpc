@@ -14,7 +14,6 @@ import {
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
-import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import fastify from 'fastify';
@@ -170,7 +169,7 @@ function createClient(opts: ClientOptions = {}) {
         false: httpLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController: AbortController as any,
+          AbortController,
           fetch: fetch as any,
         }),
       }),
@@ -395,7 +394,7 @@ describe('anonymous user with fastify-plugin', () => {
       },
       body: JSON.stringify(data),
     });
-    // body shoul be string
+    // body should be string
     expect(await req.json()).toMatchInlineSnapshot(`
       Object {
         "body": "{\\"text\\":\\"life\\",\\"life\\":42}",
