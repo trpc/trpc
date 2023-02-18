@@ -94,13 +94,6 @@ jobs:
 
       - run: node -v
 
-      - name: Make sure postgres is up
-        run: |
-          until nc -z localhost 5432; do
-            echo "Waiting for postgres..."
-            sleep 1
-          done
-
       # Run test-dev & test-start separately so ports don't clash
       - name: Run build & test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} build test-dev
