@@ -1,4 +1,4 @@
-/* istanbul ignore file */
+/* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
 import {
   CreateReactUtilsProxy,

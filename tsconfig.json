@@ -22,6 +22,7 @@
       "@trpc/next": ["packages/next/src"],
       "@trpc/next/*": ["packages/next/src/*"],
       "$test/*": ["test/*"]
-    }
+    },
+    "types": ["node", "vitest/globals"]
   }
 }

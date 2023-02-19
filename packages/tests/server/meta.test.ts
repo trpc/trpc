@@ -24,7 +24,7 @@ describe('meta', () => {
 
   const ctx = konn()
     .beforeEach(() => {
-      const middlewareCalls = jest.fn((_opts: Meta | undefined) => {
+      const middlewareCalls = vi.fn((_opts: Meta | undefined) => {
         // noop
       });
       const baseProc = t.procedure.use(({ next, meta }) => {

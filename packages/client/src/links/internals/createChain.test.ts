@@ -38,7 +38,7 @@ describe('chain', () => {
       },
     });
 
-    const next = jest.fn();
+    const next = vi.fn();
 
     result$.subscribe({ next });
     // console.log(next.mock.calls);
@@ -85,7 +85,7 @@ describe('chain', () => {
       },
     });
 
-    const next = jest.fn();
+    const next = vi.fn();
 
     result$.subscribe({ next });
 

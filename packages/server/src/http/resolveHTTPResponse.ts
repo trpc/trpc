@@ -126,7 +126,7 @@ export async function resolveHTTPResponse<
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
-    /* istanbul ignore if  */
+    /* istanbul ignore if -- @preserve */
     if (type === 'subscription') {
       throw new TRPCError({
         message: 'Subscriptions should use wsLink',
@@ -153,7 +153,7 @@ export async function resolveHTTPResponse<
         };
       }
 
-      /* istanbul ignore if  */
+      /* istanbul ignore if -- @preserve */
       if (
         rawInput == null ||
         typeof rawInput !== 'object' ||

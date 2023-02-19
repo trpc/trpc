@@ -21,19 +21,19 @@ import { CombinedDataTransformer } from '../transformer';
 import { MaybePromise } from '../types';
 import { NodeHTTPCreateContextFnOptions } from './node-http';
 
-/* istanbul ignore next */
+/* istanbul ignore next -- @preserve */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
   if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
     throw new Error('Not an object');
   }
 }
-/* istanbul ignore next */
+/* istanbul ignore next -- @preserve */
 function assertIsProcedureType(obj: unknown): asserts obj is ProcedureType {
   if (obj !== 'query' && obj !== 'subscription' && obj !== 'mutation') {
     throw new Error('Invalid procedure type');
   }
 }
-/* istanbul ignore next */
+/* istanbul ignore next -- @preserve */
 function assertIsRequestId(
   obj: unknown,
 ): asserts obj is number | string | null {
@@ -46,13 +46,13 @@ function assertIsRequestId(
     throw new Error('Invalid request id');
   }
 }
-/* istanbul ignore next */
+/* istanbul ignore next -- @preserve */
 function assertIsString(obj: unknown): asserts obj is string {
   if (typeof obj !== 'string') {
     throw new Error('Invalid string');
   }
 }
-/* istanbul ignore next */
+/* istanbul ignore next -- @preserve */
 function assertIsJSONRPC2OrUndefined(
   obj: unknown,
 ): asserts obj is '2.0' | undefined {
@@ -165,7 +165,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
-      /* istanbul ignore next */
+      /* istanbul ignore next -- @preserve */
       if (id === null) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -250,7 +250,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             });
           },
         });
-        /* istanbul ignore next */
+        /* istanbul ignore next -- @preserve */
         if (client.readyState !== client.OPEN) {
           // if the client got disconnected whilst initializing the subscription
           // no need to send stopped message if the client is disconnected
@@ -258,7 +258,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        /* istanbul ignore next */
+        /* istanbul ignore next -- @preserve */
         if (clientSubscriptions.has(id)) {
           // duplicate request ids for client
           stopSubscription(sub, { id, jsonrpc });
@@ -276,7 +276,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             type: 'started',
           },
         });
-      } catch (cause) /* istanbul ignore next */ {
+      } catch (cause) /* istanbul ignore next -- @preserve */ {
         // procedure threw an error
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({ error, path, type, ctx, req, input });
