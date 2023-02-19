@@ -177,11 +177,14 @@ describe('multiple input validators with optionals', () => {
             .optional(),
         )
         .query(({ input }) => {
-          // expectTypeOf(input).toEqualTypeOf<{
-          //   id: string;
-          //   eventTypeId?: number;
-          //   webhookId: string;
-          // }?>();
+          expectTypeOf(input).toEqualTypeOf<
+            | {
+                id: string;
+                eventTypeId?: number;
+                webhookId: string;
+              }
+            | undefined
+          >();
           return input;
         }),
     });
