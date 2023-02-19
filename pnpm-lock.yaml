@@ -1059,7 +1059,7 @@ importers:
       '@fastify/websocket': ^5.0.0
       '@miniflare/core': ^2.9.0
       '@tanstack/react-query': 4.6.0
-      '@testing-library/dom': ^8.18.1
+      '@testing-library/dom': ^9.0.0
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^13.4.0
       '@testing-library/user-event': ^14.4.3
@@ -1101,10 +1101,10 @@ importers:
       '@fastify/websocket': 5.0.1
       '@miniflare/core': 2.11.0
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@testing-library/dom': 8.19.0
+      '@testing-library/dom': 9.0.0
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
-      '@testing-library/user-event': 14.4.3_aaq3sbffpfe3jnxzm2zngsddei
+      '@testing-library/user-event': 14.4.3_@testing-library+dom@9.0.0
       '@trpc/client': link:../client
       '@trpc/next': link:../next
       '@trpc/react-query': link:../react-query
@@ -6675,7 +6675,6 @@ packages:
       dom-accessibility-api: 0.5.14
       lz-string: 1.4.4
       pretty-format: 27.5.1
-    dev: true
 
   /@testing-library/jest-dom/5.16.5:
     resolution: {integrity: sha512-N5ixQ2qKpi5OLYfwQmUb/5mSV9LneAcaUfp32pn4yCnpb8r/Yz0pXFPck21dIicKmi+ta5WRAknkZCfA8refMA==}
@@ -6706,13 +6705,13 @@ packages:
       react-dom: 18.2.0_react@18.2.0
     dev: false
 
-  /@testing-library/user-event/14.4.3_aaq3sbffpfe3jnxzm2zngsddei:
+  /@testing-library/user-event/14.4.3_@testing-library+dom@9.0.0:
     resolution: {integrity: sha512-kCUc5MEwaEMakkO5x7aoD+DLi02ehmEM2QCGWvNqAS1dV/fAvORWEjnjsEIvml59M7Y5kCkWN6fCCyPOe8OL6Q==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
     dependencies:
-      '@testing-library/dom': 8.19.0
+      '@testing-library/dom': 9.0.0
     dev: false
 
   /@tokenizer/token/0.3.0:
@@ -6770,7 +6769,6 @@ packages:
 
   /@types/aria-query/5.0.1:
     resolution: {integrity: sha512-XTIieEY+gvJ39ChLcB4If5zHtPxt3Syj5rgZR+e1ctpmK8NjPf0zFqsz4JpLJT0xla9GFDKjy8Cpu331nrmE1Q==}
-    dev: true
 
   /@types/aws-lambda/8.10.109:
     resolution: {integrity: sha512-/ME92FneNyXQzrAfcnQQlW1XkCZGPDlpi2ao1MJwecN+6SbeonKeggU8eybv1DfKli90FAVT1MlIZVXfwVuCyg==}
