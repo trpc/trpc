@@ -25,6 +25,10 @@ export async function nodeHTTPRequestHandler<
   };
   const { path, router } = opts;
 
+  const query = opts.req.query
+    ? new URLSearchParams(opts.req.query as any)
+    : new URLSearchParams(opts.req.url!.split('?')[1]);
+
   const jsonContentTypeHandler =
     defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
       TRequest,
@@ -36,15 +40,20 @@ export async function nodeHTTPRequestHandler<
   ];
 
   const contentTypeHandler =
-    contentTypeHandlers.find((handler) => handler.isMatch(opts)) ??
+    contentTypeHandlers.find((handler) =>
+      handler.isMatch({
+        ...opts,
+        query,
+      }),
+    ) ??
     // fallback to json
     jsonContentTypeHandler;
 
-  const bodyResult = await contentTypeHandler.getBody(opts);
+  const bodyResult = await contentTypeHandler.getBody({
+    ...opts,
+    query,
+  });
 
-  const query = opts.req.query
-    ? new URLSearchParams(opts.req.query as any)
-    : new URLSearchParams(opts.req.url!.split('?')[1]);
   const req: HTTPRequest = {
     method: opts.req.method!,
     headers: opts.req.headers,

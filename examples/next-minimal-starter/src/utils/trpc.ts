@@ -25,9 +25,7 @@ export const trpc = createTRPCNext<AppRouter>({
     return {
       links: [
         splitLink({
-          condition(op) {
-            return op.input instanceof FormData;
-          },
+          condition: (op) => op.input instanceof FormData,
           true: unstable_formDataLink({
             url,
           }),

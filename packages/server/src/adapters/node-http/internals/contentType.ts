@@ -10,7 +10,9 @@ export interface NodeHTTPContentTypeHandler<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > extends BaseContentTypeHandler<
-    NodeHTTPRequestHandlerOptions<AnyRouter, TRequest, TResponse>
+    NodeHTTPRequestHandlerOptions<AnyRouter, TRequest, TResponse> & {
+      query: URLSearchParams;
+    }
   > {}
 
 export function createNodeHTTPContentTypeHandler(
