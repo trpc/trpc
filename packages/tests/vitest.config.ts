@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   root: '../',
+  clearScreen: false,
   test: {
     environment: 'jsdom',
     globals: true,
@@ -12,27 +13,17 @@ export default defineConfig({
     setupFiles: ['./tests/setupTests.ts'],
     coverage: {
       provider: 'istanbul',
-      include: ['./*/src/**/*.{ts,tsx,js,jsx}', '!**/deprecated/**'],
+      all: true,
+      include: ['./*/src/**/*.{ts,tsx,js,jsx}'],
+      exclude: ['**/deprecated/**'],
     },
   },
   resolve: {
-    alias: [
-      {
-        find: /^@trpc\/server\/src(.*)/,
-        replacement: join(__dirname, '../server/src$1'),
-      },
-      {
-        find: /^@trpc\/client\/src(.*)/,
-        replacement: join(__dirname, '../client/src$1'),
-      },
-      {
-        find: /^@trpc\/react-query\/src(.*)/,
-        replacement: join(__dirname, '../react-query/src$1'),
-      },
-      {
-        find: /^@trpc\/next\/src(.*)/,
-        replacement: join(__dirname, '../next/src$1'),
-      },
-    ],
+    alias: {
+      '@trpc/server/src/': join(__dirname, '../server/src/'),
+      '@trpc/client/src/': join(__dirname, '../client/src/'),
+      '@trpc/react-query/src/': join(__dirname, '../react-query/src/'),
+      '@trpc/next/src/': join(__dirname, '../next/src/'),
+    },
   },
 });

@@ -19,7 +19,7 @@ test('undefined input query', async () => {
   const caller = router.createCaller({});
   const result = await caller.hello();
 
-  expectTypeOf<string>(result);
+  expectTypeOf<number>(result);
 });
 
 test('input query', async () => {

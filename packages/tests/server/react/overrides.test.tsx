@@ -127,7 +127,7 @@ describe('mutation override', () => {
       expect(ctx.onSuccessSpy).toHaveBeenCalledTimes(1);
     });
 
-    expect(ctx.onSuccessSpy.mock.calls[0][0].meta).toMatchInlineSnapshot(`
+    expect(ctx.onSuccessSpy.mock.calls[0]![0]!.meta).toMatchInlineSnapshot(`
       Object {
         "skipInvalidate": true,
       }

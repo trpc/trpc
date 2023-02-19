@@ -83,7 +83,7 @@ describe('custom error formatter', () => {
       expect(queryErrorCallback).toHaveBeenCalled();
     });
 
-    const errorDataResult = queryErrorCallback.mock.calls[0][0];
+    const errorDataResult = queryErrorCallback.mock.calls[0]![0]!;
 
     expect(errorDataResult).toBeInstanceOf(TRPCClientError);
     expect(errorDataResult).toMatchInlineSnapshot(`
@@ -166,7 +166,7 @@ describe('no custom formatter', () => {
       expect(queryErrorCallback).toHaveBeenCalled();
     });
 
-    const errorDataResult = queryErrorCallback.mock.calls[0][0];
+    const errorDataResult = queryErrorCallback.mock.calls[0]![0]!;
 
     expect(errorDataResult).toBeInstanceOf(TRPCClientError);
     expect(errorDataResult).toMatchInlineSnapshot(`

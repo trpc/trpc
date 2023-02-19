@@ -318,8 +318,8 @@ test('all transformers running in correct order', async () => {
   expect(fn.mock.calls[0]![0]!).toBe('client:serialized');
   expect(fn.mock.calls[1]![0]!).toBe('server:deserialized');
   expect(fn.mock.calls[2]![0]!).toBe(world);
-  expect(fn.mock.calls[3][0]).toBe('server:serialized');
-  expect(fn.mock.calls[4][0]).toBe('client:deserialized');
+  expect(fn.mock.calls[3]![0]!).toBe('server:serialized');
+  expect(fn.mock.calls[4]![0]!).toBe('client:deserialized');
 
   close();
 });

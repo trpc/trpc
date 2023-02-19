@@ -357,8 +357,6 @@ test('double validators with undefined', async () => {
       .mutation(({ input }) => {
         return input;
       });
-    type Input = inferProcedureInput<typeof proc>;
-    //    ^?
 
     const router = t.router({
       proc,
@@ -389,8 +387,6 @@ test('double validators with undefined', async () => {
       .mutation(({ input }) => {
         return input;
       });
-    type Input = inferProcedureInput<typeof proc>;
-    //    ^?
 
     const router = t.router({
       proc,

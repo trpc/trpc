@@ -370,7 +370,7 @@ describe('loggerLink', () => {
     expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[0][1]).toMatchInlineSnapshot(`
+    expect(logger.log.mock.calls[0]![1]!).toMatchInlineSnapshot(`
       "
           background-color: #72e3ff; 
           color: black;
