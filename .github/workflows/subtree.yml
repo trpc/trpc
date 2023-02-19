@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - types-react2
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
