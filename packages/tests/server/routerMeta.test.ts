@@ -49,7 +49,7 @@ test('route meta in middleware', async () => {
       data: string;
     }>()
     .create();
-  const middleware = jest.fn((opts) => {
+  const middleware = vi.fn((opts) => {
     return opts.next();
   });
 

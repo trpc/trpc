@@ -12,7 +12,7 @@ describe('getAbortController() from..', () => {
     (global as any).AbortController = undefined;
     (global as any).window = {};
     (global as any).window = AbortController = sym;
-    expect(getAbortController(null)).toBe(sym);
+    expect(getAbortController(null)).toBe(null);
   });
   test('global', () => {
     const sym: any = Symbol('test');

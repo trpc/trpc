@@ -39,8 +39,8 @@ const ctx = konn()
 
 test('invalidate with filter', async () => {
   const { proxy, App } = ctx;
-  const greetingSpy = jest.fn();
-  const postSpy = jest.fn();
+  const greetingSpy = vi.fn();
+  const postSpy = vi.fn();
 
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery(undefined, {

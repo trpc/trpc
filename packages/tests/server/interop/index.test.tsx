@@ -532,7 +532,7 @@ describe('ObservableAbortError', () => {
         },
       }),
     );
-    const onReject = jest.fn();
+    const onReject = vi.fn();
     const ac = new AbortController();
     const req = client.query('slow', undefined, {
       signal: ac.signal,
@@ -587,7 +587,7 @@ describe('ObservableAbortError', () => {
     const ac = new AbortController();
     const req1 = client.query('slow1', undefined, { signal: ac.signal });
     const req2 = client.query('slow2');
-    const onReject1 = jest.fn();
+    const onReject1 = vi.fn();
     req1.catch(onReject1);
 
     await new Promise((resolve) => setTimeout(resolve, 5));

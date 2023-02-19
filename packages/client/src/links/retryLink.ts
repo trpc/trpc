@@ -1,4 +1,4 @@
-/* istanbul ignore file */
+/* istanbul ignore file -- @preserve */
 // We're not actually exporting this link
 import { AnyRouter } from '@trpc/server';
 import { Unsubscribable, observable } from '@trpc/server/observable';
@@ -21,7 +21,7 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
           next$?.unsubscribe();
           next$ = next(op).subscribe({
             error(error) {
-              /* istanbul ignore if  */
+              /* istanbul ignore if -- @preserve */
               if (attempts >= opts.attempts) {
                 observer.error(error);
                 return;
