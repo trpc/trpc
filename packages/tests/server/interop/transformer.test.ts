@@ -19,7 +19,7 @@ test('superjson up and down', async () => {
   const transformer = superjson;
 
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -126,7 +126,7 @@ test('devalue up and down', async () => {
   };
 
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -164,7 +164,7 @@ test('not batching: superjson up and devalue down', async () => {
   };
 
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -202,7 +202,7 @@ test('batching: superjson up and devalue down', async () => {
   };
 
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -240,7 +240,7 @@ test('batching: superjson up and f down', async () => {
   };
 
   const date = new Date();
-  const fn = jest.fn();
+  const fn = vi.fn();
   const { client, close } = legacyRouterToServerAndClient(
     trpc
       .router()
@@ -268,7 +268,7 @@ test('batching: superjson up and f down', async () => {
 
 test('all transformers running in correct order', async () => {
   const world = 'foo';
-  const fn = jest.fn();
+  const fn = vi.fn();
 
   const transformer: trpc.CombinedDataTransformer = {
     input: {
@@ -318,8 +318,8 @@ test('all transformers running in correct order', async () => {
   expect(fn.mock.calls[0]![0]!).toBe('client:serialized');
   expect(fn.mock.calls[1]![0]!).toBe('server:deserialized');
   expect(fn.mock.calls[2]![0]!).toBe(world);
-  expect(fn.mock.calls[3][0]).toBe('server:serialized');
-  expect(fn.mock.calls[4][0]).toBe('client:deserialized');
+  expect(fn.mock.calls[3]![0]!).toBe('server:serialized');
+  expect(fn.mock.calls[4]![0]!).toBe('client:deserialized');
 
   close();
 });
@@ -329,7 +329,7 @@ describe('transformer on router', () => {
     const transformer = superjson;
 
     const date = new Date();
-    const fn = jest.fn();
+    const fn = vi.fn();
     const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
@@ -360,7 +360,7 @@ describe('transformer on router', () => {
   test('ws', async () => {
     let wsClient: any;
     const date = new Date();
-    const fn = jest.fn();
+    const fn = vi.fn();
     const transformer = superjson;
     const { client, close } = legacyRouterToServerAndClient(
       trpc
@@ -397,7 +397,7 @@ describe('transformer on router', () => {
   test('subscription', async () => {
     let wsClient: any;
     const date = new Date();
-    const fn = jest.fn();
+    const fn = vi.fn();
     const transformer = superjson;
     const { client, close } = routerToServerAndClientNew(
       trpc
@@ -468,7 +468,7 @@ describe('transformer on router', () => {
         Object.setPrototypeOf(this, MyError.prototype);
       }
     }
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { client, close } = legacyRouterToServerAndClient(
       trpc
         .router()
@@ -510,7 +510,7 @@ describe('transformer on router', () => {
 test('superjson - no input', async () => {
   const transformer = superjson;
 
-  const fn = jest.fn();
+  const fn = vi.fn();
   const { close, httpUrl } = legacyRouterToServerAndClient(
     trpc
       .router()

@@ -1,7 +1,6 @@
 import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';
 import {
-  QueryClient,
   QueryClientProvider,
   dehydrate,
   useQueryClient,

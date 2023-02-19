@@ -160,10 +160,10 @@ test('flat router', async () => {
 test('subscriptions', async () => {
   const ee = new EventEmitter();
 
-  const subscriptionMock = jest.fn();
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const subscriptionMock = vi.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onCompleteMock = vi.fn();
 
   const router = t.router({
     onEvent: t.procedure.input(z.number()).subscription(({ input }) => {

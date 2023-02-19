@@ -10,9 +10,9 @@ test('share', () => {
   );
 
   {
-    const next = jest.fn();
-    const error = jest.fn();
-    const complete = jest.fn();
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
     var subscription1 = obs.subscribe({
       next,
       error,
@@ -26,9 +26,9 @@ test('share', () => {
 
   {
     // subscribe again - it's shared so should not propagate any results
-    const next = jest.fn();
-    const error = jest.fn();
-    const complete = jest.fn();
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
     var subscription2 = obs.subscribe({
       next,
       error,
@@ -43,9 +43,9 @@ test('share', () => {
   subscription2.unsubscribe();
   // now it should be reset so we can do a new subscription
   {
-    const next = jest.fn();
-    const error = jest.fn();
-    const complete = jest.fn();
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
     var subscription3 = obs.subscribe({
       next,
       error,

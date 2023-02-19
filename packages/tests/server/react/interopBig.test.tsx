@@ -44,7 +44,7 @@ test('vanilla', async () => {
 });
 
 test('react', async () => {
-  const { react, client, appRouter } = ctx;
+  const { react, client } = ctx;
 
   function MyComponent() {
     const query1 = react.proxy.r499.greeting.useQuery({ who: 'KATT' });
