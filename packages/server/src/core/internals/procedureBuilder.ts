@@ -91,7 +91,11 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
       ? TParams['_input_out'] extends Record<string, unknown> | undefined
-        ? $Parser
+        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+          ? undefined extends TParams['_input_out']
+            ? $Parser
+            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
+          : $Parser
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
