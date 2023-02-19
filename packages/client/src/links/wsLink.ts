@@ -23,7 +23,7 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 >;
 
 export interface WebSocketClientOptions {
-  url: string;
+  url: string | (() => string);
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
   onOpen?: () => void;
@@ -128,7 +128,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   function createWS() {
-    const conn = new WebSocketImpl(url);
+    const urlString = typeof url === 'function' ? url() : url;
+    const conn = new WebSocketImpl(urlString);
     clearTimeout(connectTimer as any);
     connectTimer = null;
 

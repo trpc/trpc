@@ -9,29 +9,13 @@ export interface AbortControllerInstanceEsque {
   /**
    * The AbortSignal object associated with this object.
    */
-  readonly signal: AbortSignalEsque;
+  readonly signal: AbortSignal;
 
   /**
    * Sets this object's AbortSignal's aborted flag and signals to
    * any observers that the associated activity is to be aborted.
    */
   abort(): void;
-}
-
-/**
- * Allows you to communicate with a request and abort it if required via an AbortController.
- */
-export interface AbortSignalEsque {
-  /**
-   * Whether this signal's AbortController has signaled to abort.
-   */
-  readonly aborted: boolean;
-
-  addEventListener<TEvent extends keyof AbortSignalEventMap>(
-    type: TEvent,
-    listener: (this: AbortSignal, ev: AbortSignalEventMap[TEvent]) => any,
-    options?: boolean | AddEventListenerOptions,
-  ): void;
 }
 
 /**
@@ -112,7 +96,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's signal.
    */
-  signal?: AbortSignalEsque | null;
+  signal?: AbortSignal | null;
 }
 
 /**

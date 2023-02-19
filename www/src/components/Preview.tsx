@@ -2,7 +2,7 @@ import React from 'react';
 
 export const Preview = () => {
   return (
-    <div className="flex justify-center pt-12">
+    <div className="flex justify-center pt-12 lg:pt-16">
       <figure>
         <video
           autoPlay

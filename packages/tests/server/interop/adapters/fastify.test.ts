@@ -14,7 +14,6 @@ import {
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
-import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import fastify from 'fastify';
@@ -162,7 +161,7 @@ function createClient(opts: ClientOptions = {}) {
         false: httpLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController: AbortController as any,
+          AbortController,
           fetch: fetch as any,
         }),
       }),

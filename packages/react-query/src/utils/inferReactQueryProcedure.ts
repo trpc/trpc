@@ -7,9 +7,17 @@ import {
   inferProcedureInput,
 } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import { UseTRPCMutationOptions, UseTRPCQueryOptions } from '../shared';
+import {
+  UseTRPCMutationOptions,
+  UseTRPCMutationResult,
+  UseTRPCQueryOptions,
+  UseTRPCQueryResult,
+} from '../shared';
 
-type InferQueryOptions<
+/**
+ * @internal
+ */
+export type InferQueryOptions<
   TProcedure extends AnyProcedure,
   TPath extends string,
 > = Omit<
@@ -23,12 +31,37 @@ type InferQueryOptions<
   'select'
 >;
 
-type InferMutationOptions<TProcedure extends AnyProcedure> =
+/**
+ * @internal
+ */
+export type InferMutationOptions<TProcedure extends AnyProcedure> =
   UseTRPCMutationOptions<
     inferProcedureInput<TProcedure>,
     TRPCClientErrorLike<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>
   >;
+
+/**
+ * @internal
+ */
+export type InferQueryResult<TProcedure extends AnyProcedure> =
+  UseTRPCQueryResult<
+    inferTransformedProcedureOutput<TProcedure>,
+    TRPCClientErrorLike<TProcedure>
+  >;
+
+/**
+ * @internal
+ */
+export type InferMutationResult<
+  TProcedure extends AnyProcedure,
+  TContext = unknown,
+> = UseTRPCMutationResult<
+  inferTransformedProcedureOutput<TProcedure>,
+  TRPCClientErrorLike<TProcedure>,
+  inferProcedureInput<TProcedure>,
+  TContext
+>;
 
 export type inferReactQueryProcedureOptions<
   TRouter extends AnyRouter,
