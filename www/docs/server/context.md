@@ -42,7 +42,7 @@ t2.procedure.use(({ ctx }) => { ... });
 
 ## Creating the context
 
-The `createContext()` function must be passed to whichever handler is hosting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or by using our [SSG helper](ssg-helpers).
+The `createContext()` function must be passed to whichever handler is mounting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or by using our [SSG helper](ssg-helpers).
 
 `createContext()` is called for each call to a procedure.
 
