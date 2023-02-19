@@ -42,27 +42,36 @@ t2.procedure.use(({ ctx }) => { ... });
 
 ## Creating the context
 
-The `createContext()` function is called for each call to a procedure, which either comes via HTTP, a [server-side call](server-side-calls) or by using our [SSG helper](ssg-helpers):
+The `createContext()` function must be passed to whichever handler is hosting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or by using our [SSG helper](ssg-helpers).
+
+`createContext()` is called for each call to a procedure.
 
 ```ts
 // 1. HTTP request
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { appRouter } from './router';
 import { createContext } from './context';
+
 const handler = createHTTPHandler({
   router: appRouter,
   createContext,
 });
+```
 
+```ts
 // 2. Server-side call
 import { appRouter } from './router';
 import { createContext } from './context';
-const caller = appRouter.createCaller(await createContext());
 
+const caller = appRouter.createCaller(await createContext());
+```
+
+```ts
 // 3. SSG helper
 import { createProxySSGHelpers } from '@trpc/react-query/ssg';
 import { appRouter } from './router';
 import { createContext } from './context';
+
 const ssg = createProxySSGHelpers({
   router: appRouter,
   ctx: await createContext(),
