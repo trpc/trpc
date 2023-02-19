@@ -1,11 +1,6 @@
 import { TRPCError } from '../../error/TRPCError';
 import { getTRPCErrorFromUnknown } from '../../error/utils';
-import {
-  InferOptional,
-  MaybePromise,
-  Simplify,
-  UndefinedKeys,
-} from '../../types';
+import { MaybePromise, Simplify } from '../../types';
 import {
   MiddlewareBuilder,
   MiddlewareFunction,
@@ -68,19 +63,9 @@ export interface BuildProcedure<
       : TParams
   > {}
 
-type Merge<TType, TWith> = {
-  [TKey in keyof TType | keyof TWith]: TKey extends keyof TType
-    ? TKey extends keyof TWith
-      ? TType[TKey] & TWith[TKey]
-      : TType[TKey]
-    : TWith[TKey & keyof TWith];
-};
-
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
-  : Simplify<
-      InferOptional<Merge<TType, TWith>, UndefinedKeys<Merge<TType, TWith>>>
-    >;
+  : Simplify<TType & TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
@@ -104,8 +89,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   input<$Parser extends Parser>(
     schema: TParams['_input_out'] extends UnsetMarker
       ? $Parser
-      : inferParser<$Parser>['out'] extends Record<string, unknown>
-      ? TParams['_input_out'] extends Record<string, unknown>
+      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
+      ? TParams['_input_out'] extends Record<string, unknown> | undefined
         ? $Parser
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
