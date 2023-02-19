@@ -5,7 +5,7 @@ import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
@@ -314,7 +314,9 @@ test('useSuspenseInfiniteQuery()', async () => {
 
   const utils = render(
     <App>
-      <MyComponent />
+      <Suspense fallback="loading">
+        <MyComponent />
+      </Suspense>
     </App>,
   );
   await waitFor(() => {

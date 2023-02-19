@@ -1,4 +1,3 @@
-import { waitError } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
 
 test('mergeRouters', async () => {

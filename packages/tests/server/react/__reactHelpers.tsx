@@ -10,7 +10,7 @@ import React, { ReactNode } from 'react';
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
 ) {
-  const spyLink = jest.fn((_op: Operation<unknown>) => {
+  const spyLink = vi.fn((_op: Operation<unknown>) => {
     // noop
   });
 

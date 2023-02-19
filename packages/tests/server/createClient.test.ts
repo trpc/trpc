@@ -1,7 +1,7 @@
 import './___packages';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
-global.fetch = jest.fn();
+global.fetch = vi.fn() as any;
 
 describe('typedefs on createClient', () => {
   test('ok to pass only links', () => {

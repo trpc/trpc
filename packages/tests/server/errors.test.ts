@@ -24,7 +24,7 @@ test('basic', async () => {
     }),
   });
 
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { close, proxy } = routerToServerAndClientNew(router, {
     server: {
       onError,
@@ -48,7 +48,7 @@ test('basic', async () => {
 });
 
 test('input error', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -92,7 +92,7 @@ test('input error', async () => {
 });
 
 test('unauthorized()', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -122,7 +122,7 @@ test('getMessageFromUnknownError()', () => {
 });
 describe('formatError()', () => {
   test('simple', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const t = initTRPC.create({
       errorFormatter({ shape, error }) {
         if (error.cause instanceof ZodError) {
@@ -211,7 +211,7 @@ Object {
 
   test('setting custom http response code', async () => {
     const TEAPOT_ERROR_CODE = 418;
-    const onError = jest.fn();
+    const onError = vi.fn();
     const t = initTRPC.create({
       errorFormatter: ({ error, shape }) => {
         if (!(error.cause instanceof ZodError)) {
@@ -246,7 +246,7 @@ Object {
 
   test('do not override response status set by middleware or resolver', async () => {
     const TEAPOT_ERROR_CODE = 418;
-    const onError = jest.fn();
+    const onError = vi.fn();
     const t = initTRPC.context<CreateHTTPContextOptions>().create({});
     const middleware = t.middleware(({ ctx }) => {
       ctx.res.statusCode = TEAPOT_ERROR_CODE;
@@ -272,7 +272,7 @@ Object {
 });
 
 test('make sure object is ignoring prototype', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -325,7 +325,7 @@ test('retain stack trace', async () => {
 
   const onErrorFn: OnErrorFunction<any, any> = () => {};
 
-  const onError = jest.fn(onErrorFn);
+  const onError = vi.fn(onErrorFn);
 
   const t = initTRPC.create();
   const router = t.router({

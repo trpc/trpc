@@ -306,7 +306,7 @@ export function createRootHooks<
     return hook;
   }
 
-  /* istanbul ignore next */
+  /* istanbul ignore next -- @preserve */
   function useSubscription(
     path: string[],
     input: unknown,

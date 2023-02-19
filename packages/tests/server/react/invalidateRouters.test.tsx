@@ -17,34 +17,34 @@ export type Post = {
 const ctx = konn()
   .beforeEach(() => {
     /**
-     * An object of jest functions we can use to track how many times things
+     * An object of Vitest functions we can use to track how many times things
      * have been called during invalidation etc.
      */
     const resolvers = {
       user: {
-        listAll: jest.fn(),
+        listAll: vi.fn(),
         byId: {
-          '1': jest.fn(),
-          '2': jest.fn(),
+          '1': vi.fn(),
+          '2': vi.fn(),
         },
         details: {
           getByUserId: {
-            '1': jest.fn(),
-            '2': jest.fn(),
+            '1': vi.fn(),
+            '2': vi.fn(),
           },
         },
       },
-      'user.current.email.getMain': jest.fn(),
+      'user.current.email.getMain': vi.fn(),
       posts: {
-        getAll: jest.fn(),
-        getAllInfinite: jest.fn(),
+        getAll: vi.fn(),
+        getAllInfinite: vi.fn(),
         byId: {
-          '1': jest.fn(),
-          '2': jest.fn(),
+          '1': vi.fn(),
+          '2': vi.fn(),
         },
         'comments.getById': {
-          1: jest.fn(),
-          2: jest.fn(),
+          1: vi.fn(),
+          2: vi.fn(),
         },
       },
     };

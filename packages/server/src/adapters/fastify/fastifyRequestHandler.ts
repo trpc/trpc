@@ -68,7 +68,7 @@ export async function fastifyRequestHandler<
     res.statusCode = result.status;
   }
   for (const [key, value] of Object.entries(result.headers ?? {})) {
-    /* istanbul ignore if  */
+    /* istanbul ignore if -- @preserve */
     if (typeof value === 'undefined') {
       continue;
     }

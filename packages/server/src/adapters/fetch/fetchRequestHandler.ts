@@ -44,7 +44,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   });
 
   for (const [key, value] of Object.entries(result.headers ?? {})) {
-    /* istanbul ignore if  */
+    /* istanbul ignore if -- @preserve */
     if (typeof value === 'undefined') {
       continue;
     }

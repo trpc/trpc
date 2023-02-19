@@ -22,7 +22,7 @@ const mockRuntime: TRPCClientRuntime = {
 };
 test('chainer', async () => {
   let attempt = 0;
-  const serverCall = jest.fn();
+  const serverCall = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -75,7 +75,7 @@ test('chainer', async () => {
 });
 
 test('cancel request', async () => {
-  const onDestroyCall = jest.fn();
+  const onDestroyCall = vi.fn();
 
   const chain = createChain({
     links: [
@@ -102,7 +102,7 @@ test('cancel request', async () => {
 
 describe('batching', () => {
   test('query batching', async () => {
-    const metaCall = jest.fn();
+    const metaCall = vi.fn();
 
     const t = initTRPC.create();
 
@@ -187,7 +187,7 @@ describe('batching', () => {
   });
 
   test('batching on maxURLLength', async () => {
-    const createContextFn = jest.fn();
+    const createContextFn = vi.fn();
 
     const t = initTRPC.create();
 
@@ -264,7 +264,7 @@ describe('batching', () => {
   });
 
   test('server not configured for batching', async () => {
-    const serverCall = jest.fn();
+    const serverCall = vi.fn();
 
     const t = initTRPC.create();
 
@@ -302,7 +302,7 @@ describe('batching', () => {
 });
 test('create client with links', async () => {
   let attempt = 0;
-  const serverCall = jest.fn();
+  const serverCall = vi.fn();
 
   const t = initTRPC.create();
 
@@ -339,8 +339,8 @@ test('create client with links', async () => {
 
 describe('loggerLink', () => {
   const logger = {
-    error: jest.fn(),
-    log: jest.fn(),
+    error: vi.fn(),
+    log: vi.fn(),
   };
   const logLink = loggerLink({
     console: logger,
@@ -382,7 +382,7 @@ describe('loggerLink', () => {
     expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[0][1]).toMatchInlineSnapshot(`
+    expect(logger.log.mock.calls[0]![1]!).toMatchInlineSnapshot(`
       "
           background-color: #72e3ff; 
           color: black;
@@ -457,7 +457,7 @@ describe('loggerLink', () => {
   });
 
   test('custom logger', () => {
-    const logFn = jest.fn();
+    const logFn = vi.fn();
     createChain({
       links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
       op: {
@@ -499,10 +499,10 @@ describe('loggerLink', () => {
 });
 
 test('chain makes unsub', async () => {
-  const firstLinkUnsubscribeSpy = jest.fn();
-  const firstLinkCompleteSpy = jest.fn();
+  const firstLinkUnsubscribeSpy = vi.fn();
+  const firstLinkCompleteSpy = vi.fn();
 
-  const secondLinkUnsubscribeSpy = jest.fn();
+  const secondLinkUnsubscribeSpy = vi.fn();
 
   const t = initTRPC.create();
 
