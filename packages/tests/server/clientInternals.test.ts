@@ -1,6 +1,3 @@
-/**
- * @vitest-environment node
- */
 import { getFetch } from '@trpc/client/src';
 import { getAbortController } from '@trpc/client/src/internals/fetchHelpers';
 

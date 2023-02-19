@@ -19,6 +19,7 @@ export const isServerDefault: boolean =
   typeof window === 'undefined' ||
   'Deno' in window ||
   globalThis.process?.env?.NODE_ENV === 'test' ||
+  !!globalThis.process?.env?.JEST_WORKER_ID ||
   !!globalThis.process?.env?.VITEST_WORKER_ID;
 
 /**
