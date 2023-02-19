@@ -5,7 +5,7 @@ import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
@@ -157,61 +157,6 @@ test('useSuspenseQuery()', async () => {
   );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
-  });
-});
-
-test('useSuspenseInfiniteQuery()', async () => {
-  const { App, proxy } = ctx;
-  function MyComponent() {
-    const [data, query1] = proxy.post.list.useSuspenseInfiniteQuery(
-      {},
-      {
-        getNextPageParam(lastPage) {
-          return lastPage.next;
-        },
-      },
-    );
-    expect(query1.trpc.path).toBe('post.list');
-
-    expect(query1.data).not.toBeFalsy();
-    expect(data).not.toBeFalsy();
-
-    type TData = typeof query1['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
-
-    return (
-      <>
-        <button
-          data-testid="fetchMore"
-          onClick={() => {
-            query1.fetchNextPage();
-          }}
-        >
-          Fetch more
-        </button>
-        <pre>{JSON.stringify(data, null, 4)}</pre>
-      </>
-    );
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`[ "1" ]`);
-  });
-  utils.getByTestId('fetchMore').click();
-
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`[ "1" ]`);
-    expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });
 });
 
@@ -369,7 +314,9 @@ test('useSuspenseInfiniteQuery()', async () => {
 
   const utils = render(
     <App>
-      <MyComponent />
+      <Suspense fallback="loading">
+        <MyComponent />
+      </Suspense>
     </App>,
   );
   await waitFor(() => {
