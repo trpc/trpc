@@ -49,8 +49,8 @@ The `createContext()` function must be passed to whichever handler is mounting y
 ```ts
 // 1. HTTP request
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 const handler = createHTTPHandler({
   router: appRouter,
@@ -60,8 +60,8 @@ const handler = createHTTPHandler({
 
 ```ts
 // 2. Server-side call
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 const caller = appRouter.createCaller(await createContext());
 ```
@@ -69,8 +69,8 @@ const caller = appRouter.createCaller(await createContext());
 ```ts
 // 3. SSG helper
 import { createProxySSGHelpers } from '@trpc/react-query/ssg';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 const ssg = createProxySSGHelpers({
   router: appRouter,
