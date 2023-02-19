@@ -127,7 +127,7 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-Or do it in a per query basis 
+Or do it on a per query basis 
 ```typescript
 const data = trpc.myQuery.useQuery({}, { refetchOnMount: false, refetchOnWindowFocus: false })
 ```
