@@ -130,7 +130,7 @@ export function httpRequest(
     const meta = {} as HTTPResult['meta'];
     Promise.resolve(opts.headers())
       .then((headers) => {
-        /* istanbul ignore if  */
+        /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
           throw new Error('Subscriptions should use wsLink');
         }

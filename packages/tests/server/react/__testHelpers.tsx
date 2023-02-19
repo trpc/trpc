@@ -67,9 +67,9 @@ export function createAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
-  const createContext = jest.fn(() => ({}));
-  const allPosts = jest.fn();
-  const postById = jest.fn();
+  const createContext = vi.fn(() => ({}));
+  const allPosts = vi.fn();
+  const postById = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   const t = initTRPC.create({
@@ -212,8 +212,8 @@ export function createAppRouter() {
   });
 
   const linkSpy = {
-    up: jest.fn(),
-    down: jest.fn(),
+    up: vi.fn(),
+    down: vi.fn(),
   };
   const { client, trpcClientOptions, close } = routerToServerAndClientNew(
     appRouter,

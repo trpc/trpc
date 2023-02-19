@@ -57,7 +57,7 @@ yarn dev        # starts next.js
 yarn dx         # starts postgres db + runs migrations + seeds + starts next.js
 yarn test-dev   # runs e2e tests on dev
 yarn test-start # runs e2e tests on `next start` - build required before
-yarn test:unit  # runs normal jest unit tests
+yarn test:unit  # runs normal Vitest unit tests
 yarn test:e2e   # runs e2e tests
 ```
 

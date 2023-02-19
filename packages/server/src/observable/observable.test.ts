@@ -6,9 +6,9 @@ test('vanilla observable - complete()', () => {
     observer.complete();
   });
 
-  const next = jest.fn();
-  const error = jest.fn();
-  const complete = jest.fn();
+  const next = vi.fn();
+  const error = vi.fn();
+  const complete = vi.fn();
   obs.subscribe({
     next,
     error,
@@ -25,9 +25,9 @@ test('vanilla observable - unsubscribe()', () => {
     observer.next(1);
   });
 
-  const next = jest.fn();
-  const error = jest.fn();
-  const complete = jest.fn();
+  const next = vi.fn();
+  const error = vi.fn();
+  const complete = vi.fn();
   const sub = obs$.subscribe({
     next,
     error,
@@ -42,9 +42,9 @@ test('vanilla observable - unsubscribe()', () => {
 
 test('pipe - combine operators', () => {
   const taps = {
-    next: jest.fn(),
-    complete: jest.fn(),
-    error: jest.fn(),
+    next: vi.fn(),
+    complete: vi.fn(),
+    error: vi.fn(),
   };
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
@@ -54,9 +54,9 @@ test('pipe - combine operators', () => {
     tap(taps),
   );
   {
-    const next = jest.fn();
-    const error = jest.fn();
-    const complete = jest.fn();
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
     obs.subscribe({
       next,
       error,
@@ -69,9 +69,9 @@ test('pipe - combine operators', () => {
   }
 
   {
-    const next = jest.fn();
-    const error = jest.fn();
-    const complete = jest.fn();
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
     obs.subscribe({
       next,
       error,

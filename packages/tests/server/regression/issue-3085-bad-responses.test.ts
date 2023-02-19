@@ -1,7 +1,7 @@
 import '../___packages';
 import { waitError } from '../___testHelpers';
 import { TRPCClientError, createTRPCProxyClient, httpLink } from '@trpc/client';
-import { observable, observableToPromise } from '@trpc/server/observable';
+import { observable } from '@trpc/server/observable';
 import http from 'http';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
