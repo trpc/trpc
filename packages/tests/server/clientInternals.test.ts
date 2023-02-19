@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment node
+ */
 import { getFetch } from '@trpc/client/src';
 import { getAbortController } from '@trpc/client/src/internals/fetchHelpers';
 
@@ -11,8 +14,8 @@ describe('getAbortController() from..', () => {
 
     (global as any).AbortController = undefined;
     (global as any).window = {};
-    (global as any).window = AbortController = sym;
-    expect(getAbortController(null)).toBe(null);
+    (global as any).window.AbortController = sym;
+    expect(getAbortController(null)).toBe(sym);
   });
   test('global', () => {
     const sym: any = Symbol('test');
