@@ -179,10 +179,10 @@ describe('multiple input validators with optionals', () => {
         )
         .query(({ input }) => {
           expectTypeOf(input).toEqualTypeOf<{
-            id?: string;
-            eventTypeId?: number;
-            webhookId?: string;
-          }>();
+            id: string;
+            eventTypeId: number;
+            webhookId: string;
+          }?>();
           return input;
         }),
     });
@@ -202,8 +202,8 @@ describe('multiple input validators with optionals', () => {
         )
         .query(({ input }) => {
           expectTypeOf(input).toEqualTypeOf<{
-            id?: string;
-            eventTypeId?: number;
+            id: string;
+            eventTypeId: number;
             webhookId: string;
           }>();
           return input;
@@ -213,10 +213,12 @@ describe('multiple input validators with optionals', () => {
     const opts = routerToServerAndClientNew(webhookRouter);
     const res = await opts.proxy.byId.query({
       id: '12345',
+      eventTypeId: 1,
       webhookId: '123',
     });
     expect(res).toEqual({
       id: '12345',
+      eventTypeId: 1,
       webhookId: '123',
     });
   });
