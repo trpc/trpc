@@ -17,7 +17,10 @@ import {
   HTTPHeaders,
   HTTPRequest,
   HTTPResponse,
+  InputDecoder,
 } from './internals/types';
+
+const defaultInputDecoder: InputDecoder = (input) => JSON.parse(input);
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -26,14 +29,17 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   GET: 'query',
   POST: 'mutation',
 };
-function getRawProcedureInputOrThrow(req: HTTPRequest) {
+function getRawProcedureInputOrThrow(
+  req: HTTPRequest,
+  inputDecoder: InputDecoder,
+) {
   try {
     if (req.method === 'GET') {
       if (!req.query.has('input')) {
         return undefined;
       }
       const raw = req.query.get('input');
-      return JSON.parse(raw!);
+      return inputDecoder(raw!);
     }
     if (typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''
@@ -137,7 +143,12 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = getRawProcedureInputOrThrow(req);
+
+    const inputDecoder: InputDecoder =
+      typeof opts.inputDecoder === 'function'
+        ? opts.inputDecoder
+        : defaultInputDecoder;
+    const rawInput = getRawProcedureInputOrThrow(req, inputDecoder);
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext();

@@ -26,6 +26,43 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
+## Using a custom input encoder/decoder pair
+
+This option can be helpful when your server has a hard limits on the URL length, yet you want to sqeeze as much data as possible.
+It supports any string-based format like Base64, [Zipson](https://jgranstrom.github.io/zipson/) or [JSURL2](https://github.com/wmertens/jsurl2).
+
+### 1. Configure `inputDecoder` on your server:
+
+```ts title="server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
+createHTTPServer({
+  inputDecoder: (input) => {
+    const decoded = decompress(input);
+    return JSON.parse(decoded);
+  },
+});
+```
+
+### 2. Configure `inputEncoder` with [`httpLink`](./httpLink.md) in your tRPC Client
+
+```ts title="client/index.ts"
+import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
+const client = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+      inputEncoder: (input) => {
+        const encoded = JSON.stringify(input);
+        return compress(encoded);
+      },
+    }),
+  ],
+});
+```
+
 ## `httpLink` Options
 
 The `httpLink` function takes an options object that has the `HTTPLinkOptions` shape.
@@ -46,6 +83,10 @@ export interface HTTPLinkOptions {
    * @link http://trpc.io/docs/v10/header
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Custom encoder to be used when serializing the input into a query string entry.
+   */
+  inputEncoder?: InputEncoder;
 }
 ```
 

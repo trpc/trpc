@@ -52,6 +52,7 @@ export async function fastifyRequestHandler<
     path: opts.path,
     router: opts.router,
     batching: opts.batching,
+    inputDecoder: opts.inputDecoder,
     responseMeta: opts.responseMeta,
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });

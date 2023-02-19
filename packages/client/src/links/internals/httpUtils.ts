@@ -9,6 +9,11 @@ import {
 } from '../../internals/types';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
+type InputEncoder = (input: unknown) => string;
+
+const defaultInputEncoder: InputEncoder = (input) =>
+  encodeURIComponent(JSON.stringify(input));
+
 export interface HTTPLinkOptions {
   url: string;
   /**
@@ -24,6 +29,10 @@ export interface HTTPLinkOptions {
    * @link http://trpc.io/docs/v10/header
    */
   headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Custom encoder to be used when serializing the input into a query string entry.
+   */
+  inputEncoder?: InputEncoder;
 }
 
 export interface ResolvedHTTPLinkOptions {
@@ -35,6 +44,7 @@ export interface ResolvedHTTPLinkOptions {
    * @link http://trpc.io/docs/v10/header
    */
   headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+  inputEncoder: InputEncoder;
 }
 
 export function resolveHTTPLinkOptions(
@@ -46,6 +56,10 @@ export function resolveHTTPLinkOptions(
     fetch: getFetch(opts.fetch),
     AbortController: getAbortController(opts.AbortController),
     headers: typeof headers === 'function' ? headers : () => headers,
+    inputEncoder:
+      typeof opts.inputEncoder === 'function'
+        ? opts.inputEncoder
+        : defaultInputEncoder,
   };
 }
 
@@ -98,7 +112,7 @@ export function getUrl(opts: HTTPRequestOptions) {
   if (opts.type === 'query') {
     const input = getInput(opts);
     if (input !== undefined) {
-      queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
+      queryParts.push(`input=${opts.inputEncoder(input)}`);
     }
   }
   if (queryParts.length) {

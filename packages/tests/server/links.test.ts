@@ -20,6 +20,7 @@ const mockRuntime: TRPCClientRuntime = {
     deserialize: (v) => v,
   },
 };
+
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
@@ -300,6 +301,7 @@ describe('batching', () => {
     close();
   });
 });
+
 test('create client with links', async () => {
   let attempt = 0;
   const serverCall = jest.fn();
@@ -558,4 +560,141 @@ test('chain makes unsub', async () => {
   expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   close();
+});
+
+describe('custom input encoder/decoder', () => {
+  test('using base64 as encoder/decoder in httpLink', async () => {
+    const t = initTRPC.create();
+
+    const appRouter = t.router({
+      hello: t.procedure.input(z.string().nullish()).query(({ input }) => {
+        if (input === 'wat') {
+          return 'encoded-correctly';
+        }
+        return 'encoded-incorrectly';
+      }),
+    });
+
+    const { close, router, httpPort, trpcClientOptions } =
+      routerToServerAndClientNew(appRouter, {
+        server: {
+          inputDecoder: (input) => {
+            const decoded = Buffer.from(input, 'base64').toString();
+            return JSON.parse(decoded);
+          },
+        },
+      });
+
+    const client = createTRPCProxyClient<typeof router>({
+      ...trpcClientOptions,
+      links: [
+        httpLink({
+          url: `http://localhost:${httpPort}`,
+          inputEncoder: (input) => {
+            const encoded = JSON.stringify(input);
+            return Buffer.from(encoded).toString('base64');
+          },
+        }),
+      ],
+    });
+
+    const result = await client.hello.query('wat');
+    expect(result).toBe('encoded-correctly');
+
+    close();
+  });
+
+  test('setting defaults using custom encoder in httpBatchLink', async () => {
+    const metaCall = jest.fn();
+
+    const t = initTRPC.create();
+
+    const router = t.router({
+      hello: t.procedure.input(z.string().nullish()).query(({ input }) => {
+        return `hello ${input ?? 'world'}`;
+      }),
+    });
+
+    const { httpPort, close } = routerToServerAndClientNew(router, {
+      server: {
+        createContext() {
+          metaCall();
+          return {};
+        },
+        batching: {
+          enabled: true,
+        },
+      },
+    });
+    const links = [
+      httpBatchLink({
+        url: `http://localhost:${httpPort}`,
+        inputEncoder: (input) => {
+          const encoded = JSON.stringify(input, (_key, value) => {
+            if (value === null) {
+              return 'default';
+            }
+            return value;
+          });
+          return encodeURIComponent(encoded);
+        },
+      })(mockRuntime),
+    ];
+    const chain1 = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'hello',
+        input: null,
+        context: {},
+      },
+    });
+
+    const chain2 = createChain({
+      links,
+      op: {
+        id: 2,
+        type: 'query',
+        path: 'hello',
+        input: 'alexdotjs',
+        context: {},
+      },
+    });
+
+    const results = await Promise.all([
+      observableToPromise(chain1).promise,
+      observableToPromise(chain2).promise,
+    ]);
+    for (const res of results) {
+      expect(res?.context?.response).toBeTruthy();
+      res.context!.response = '[redacted]';
+    }
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "result": Object {
+            "data": "hello default",
+            "type": "data",
+          },
+        },
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "result": Object {
+            "data": "hello alexdotjs",
+            "type": "data",
+          },
+        },
+      ]
+    `);
+
+    expect(metaCall).toHaveBeenCalledTimes(1);
+
+    close();
+  });
 });

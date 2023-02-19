@@ -11,6 +11,7 @@ import { Dict } from '../../types';
 import { ResponseMeta } from '../types';
 
 export type HTTPHeaders = Dict<string | string[]>;
+export type InputDecoder = (input: string) => unknown;
 
 export interface HTTPResponse {
   status: number;
@@ -50,4 +51,8 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
    * @link https://trpc.io/docs/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
+  /**
+   * Custom encoder to be used for the input.
+   */
+  inputDecoder?: InputDecoder;
 }
