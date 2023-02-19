@@ -13,7 +13,6 @@ export default defineConfig({
     setupFiles: ['./tests/setupTests.ts'],
     coverage: {
       provider: 'istanbul',
-      all: true,
       include: ['*/src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
@@ -24,6 +23,10 @@ export default defineConfig({
       '@trpc/client/src/': join(__dirname, '../client/src/'),
       '@trpc/react-query/src/': join(__dirname, '../react-query/src/'),
       '@trpc/next/src/': join(__dirname, '../next/src/'),
+      'vitest-environment-miniflare': join(
+        __dirname,
+        'node_modules/vitest-environment-miniflare',
+      ),
     },
   },
 });

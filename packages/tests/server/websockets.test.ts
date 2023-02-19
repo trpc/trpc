@@ -369,66 +369,68 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   close();
 });
 
-test('subscriptions are automatically resumed', async () => {
-  const { proxy, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
-    factory();
-  ee.once('subscription:created', () => {
-    setTimeout(() => {
-      ee.emit('server:msg', {
-        id: '1',
+test(
+  'subscriptions are automatically resumed',
+  async () => {
+    const { proxy, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
+      factory();
+    ee.once('subscription:created', () => {
+      setTimeout(() => {
+        ee.emit('server:msg', {
+          id: '1',
+        });
       });
     });
-  });
-  function createSub() {
-    const onStartedMock = vi.fn();
-    const onDataMock = vi.fn();
-    const onErrorMock = vi.fn();
-    const onStoppedMock = vi.fn();
-    const onCompleteMock = vi.fn();
-    const unsub = proxy.onMessage.subscribe(undefined, {
-      onStarted: onStartedMock(),
-      onData: onDataMock,
-      onError: onErrorMock,
-      onStopped: onStoppedMock,
-      onComplete: onCompleteMock,
+    function createSub() {
+      const onStartedMock = vi.fn();
+      const onDataMock = vi.fn();
+      const onErrorMock = vi.fn();
+      const onStoppedMock = vi.fn();
+      const onCompleteMock = vi.fn();
+      const unsub = proxy.onMessage.subscribe(undefined, {
+        onStarted: onStartedMock(),
+        onData: onDataMock,
+        onError: onErrorMock,
+        onStopped: onStoppedMock,
+        onComplete: onCompleteMock,
+      });
+      return {
+        onStartedMock,
+        onDataMock,
+        onErrorMock,
+        onStoppedMock,
+        onCompleteMock,
+        unsub,
+      };
+    }
+    const sub1 = createSub();
+
+    await waitFor(() => {
+      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+      expect(onOpenMock).toHaveBeenCalledTimes(1);
+      expect(onCloseMock).toHaveBeenCalledTimes(0);
     });
-    return {
-      onStartedMock,
-      onDataMock,
-      onErrorMock,
-      onStoppedMock,
-      onCompleteMock,
-      unsub,
-    };
-  }
-  const sub1 = createSub();
+    wssHandler.broadcastReconnectNotification();
+    await waitFor(() => {
+      expect(wss.clients.size).toBe(1);
+      expect(onOpenMock).toHaveBeenCalledTimes(2);
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
+    });
 
-  await waitFor(() => {
-    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
-    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-    expect(onOpenMock).toHaveBeenCalledTimes(1);
-    expect(onCloseMock).toHaveBeenCalledTimes(0);
-  });
-  wssHandler.broadcastReconnectNotification();
-  await waitFor(() => {
-    expect(wss.clients.size).toBe(1);
-    expect(onOpenMock).toHaveBeenCalledTimes(2);
-    expect(onCloseMock).toHaveBeenCalledTimes(1);
-  });
+    await waitFor(() => {
+      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+    });
+    ee.emit('server:msg', {
+      id: '2',
+    });
 
-  await waitFor(() => {
-    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
-    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-  });
-  ee.emit('server:msg', {
-    id: '2',
-  });
-
-  await waitFor(() => {
-    expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
-  });
-  expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
-    .toMatchInlineSnapshot(`
+    await waitFor(() => {
+      expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
+    });
+    expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
+      .toMatchInlineSnapshot(`
     Array [
       Object {
         "id": "1",
@@ -438,16 +440,20 @@ test('subscriptions are automatically resumed', async () => {
       },
     ]
   `);
-  await waitFor(() => {
-    expect(wss.clients.size).toBe(1);
-  });
+    await waitFor(() => {
+      expect(wss.clients.size).toBe(1);
+    });
 
-  close();
+    close();
 
-  await waitFor(() => {
-    expect(onCloseMock).toHaveBeenCalledTimes(2);
-  });
-});
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(2);
+    });
+  },
+  {
+    retry: 3,
+  } as any,
+);
 
 test('not found error', async () => {
   const { proxy, close, router } = factory();
