@@ -142,7 +142,7 @@
     "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
     "express": "^4.17.1",
-    "fastify": "^3.27.1",
+    "fastify": "^4.0.0",
     "fastify-plugin": "^3.0.1",
     "hash-sum": "^2.0.0",
     "miniflare": "^2.4.0",

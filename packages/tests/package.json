@@ -38,7 +38,7 @@
     "devalue": "^2.0.1",
     "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
-    "fastify": "^3.27.1",
+    "fastify": "^4.0.0",
     "fastify-plugin": "^3.0.1",
     "jsdom": "^21.1.0",
     "konn": "^0.7.0",
