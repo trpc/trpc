@@ -4,6 +4,7 @@ import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -189,9 +190,9 @@ describe('invalidateQueries()', () => {
               utils.invalidate(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
-                  const [path, input] = queryKey;
+                  const [path, data] = queryKey as QueryKey;
 
-                  return path === 'count' && input === 'test';
+                  return path[0] === 'count' && data?.input === 'test';
                 },
               });
             }}
@@ -216,18 +217,17 @@ describe('invalidateQueries()', () => {
       expect(utils.container).toHaveTextContent('count:test:0');
     });
 
-    for (const testId of [
+    for (const [index, testId] of [
       'invalidate-1-string',
       'invalidate-2-exact',
       'invalidate-3-all',
       'invalidate-4-predicate',
-    ]) {
+    ].entries()) {
+      await userEvent.click(utils.getByTestId(testId));
       await waitFor(async () => {
         // click button to invalidate
-        await userEvent.click(utils.getByTestId(testId));
-
         // should become stale straight after the click
-        expect(utils.container).toHaveTextContent(`count:test:1`);
+        expect(utils.container).toHaveTextContent(`count:test:${index + 1}`);
       });
     }
   });
