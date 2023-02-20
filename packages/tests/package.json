@@ -12,7 +12,7 @@
     "test-watch": "concurrently -c \"green,blue\" npm:test-watch:*",
     "test-watch:vitest": "vitest",
     "test-watch:tsc": "tsc --noEmit --pretty --watch",
-    "test-ci": "CI=true concurrently \"vitest --coverage\" npm:test-run:tsc",
+    "test-ci": "concurrently \"CI=true vitest --coverage\" npm:test-run:tsc",
     "test-ui": "vitest --ui"
   },
   "dependencies": {
