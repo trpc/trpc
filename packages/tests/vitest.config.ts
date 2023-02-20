@@ -17,7 +17,6 @@ export default defineConfig({
       exclude: ['**/deprecated/**'],
     },
     useAtomics: true,
-    reporters: ['default', 'hanging-process'],
   },
   resolve: {
     alias: {
