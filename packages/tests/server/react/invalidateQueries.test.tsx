@@ -155,7 +155,7 @@ describe('invalidateQueries()', () => {
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
   });
 
-  test('test invalidateQueries() with different args - flaky', async () => {
+  test('test invalidateQueries() with different args', async () => {
     // ref  https://github.com/trpc/trpc/issues/1383
     const { trpc, client } = factory;
     function MyComponent() {
