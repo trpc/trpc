@@ -9,7 +9,7 @@ import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-h
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
-import { FormData, fetch } from 'undici';
+import fetch, { FormData } from 'node-fetch';
 import { zfd } from 'zod-form-data';
 
 globalThis.FormData = FormData as any;
