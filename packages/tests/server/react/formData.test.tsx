@@ -16,8 +16,6 @@ import { ReactNode, useState } from 'react';
 import React from 'react';
 import { zfd } from 'zod-form-data';
 
-globalThis.FormData = FormData as any;
-
 type User = {
   name: string;
   age: number;
