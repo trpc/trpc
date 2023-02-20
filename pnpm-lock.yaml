@@ -1003,7 +1003,7 @@ importers:
       expect-type: ^0.15.0
       express: ^4.17.1
       fastify: ^3.27.1
-      fastify-plugin: ^3.0.1
+      fastify-plugin: ^4.0.0
       hash-sum: ^2.0.0
       miniflare: ^2.4.0
       myzod: ^1.3.1
@@ -1037,7 +1037,7 @@ importers:
       expect-type: 0.15.0
       express: 4.18.2
       fastify: 3.29.4
-      fastify-plugin: 3.0.1
+      fastify-plugin: 4.5.0
       hash-sum: 2.0.0
       miniflare: 2.11.0
       myzod: 1.8.8
@@ -1079,7 +1079,7 @@ importers:
       eslint: ^8.30.0
       expect-type: ^0.15.0
       fastify: ^3.27.1
-      fastify-plugin: ^3.0.1
+      fastify-plugin: ^4.0.0
       jsdom: ^21.1.0
       konn: ^0.7.0
       miniflare: ^2.4.0
@@ -1121,7 +1121,7 @@ importers:
       eslint: 8.30.0
       expect-type: 0.15.0
       fastify: 3.29.4
-      fastify-plugin: 3.0.1
+      fastify-plugin: 4.5.0
       jsdom: 21.1.0
       konn: 0.7.0
       miniflare: 2.11.0
@@ -11202,6 +11202,9 @@ packages:
 
   /fastify-plugin/3.0.1:
     resolution: {integrity: sha512-qKcDXmuZadJqdTm6vlCqioEbyewF60b/0LOFCcYN1B6BIZGlYJumWWOYs70SFYLDAH4YqdE1cxH/RKMG7rFxgA==}
+
+  /fastify-plugin/4.5.0:
+    resolution: {integrity: sha512-79ak0JxddO0utAXAQ5ccKhvs6vX2MGyHHMMsmZkBANrq3hXc1CHzvNPHOcvTsVMEPl5I+NT+RO4YKMGehOfSIg==}
 
   /fastify/3.29.4:
     resolution: {integrity: sha512-BEyKidZQvscNaiF1BLh+YLE7AzHH03NexhPzrwZP6KBQ+jG2czdgq72X+RFB5rK9hbqdaafVb5yiWN+hCvHfYg==}
