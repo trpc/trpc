@@ -998,7 +998,7 @@ importers:
       '@types/react': ^18.0.9
       '@types/ws': ^8.2.0
       aws-lambda: ^1.0.7
-      devalue: ^2.0.1
+      devalue: ^4.0.0
       eslint: ^8.30.0
       expect-type: ^0.15.0
       express: ^4.17.1
@@ -1032,7 +1032,7 @@ importers:
       '@types/react': 18.0.25
       '@types/ws': 8.5.3
       aws-lambda: 1.0.7
-      devalue: 2.0.1
+      devalue: 4.3.0
       eslint: 8.30.0
       expect-type: 0.15.0
       express: 4.18.2
@@ -1075,7 +1075,7 @@ importers:
       '@vitest/ui': ^0.28.5
       abort-controller: ^3.0.0
       concurrently: ^7.6.0
-      devalue: ^2.0.1
+      devalue: ^4.0.0
       eslint: ^8.30.0
       expect-type: ^0.15.0
       fastify: ^4.13.0
@@ -1117,7 +1117,7 @@ importers:
       '@vitest/ui': 0.28.5
       abort-controller: 3.0.0
       concurrently: 7.6.0
-      devalue: 2.0.1
+      devalue: 4.3.0
       eslint: 8.30.0
       expect-type: 0.15.0
       fastify: 4.13.0
@@ -10094,8 +10094,8 @@ packages:
       defined: 1.0.1
       minimist: 1.2.7
 
-  /devalue/2.0.1:
-    resolution: {integrity: sha512-I2TiqT5iWBEyB8GRfTDP0hiLZ0YeDJZ+upDxjBfOC2lebO5LezQMv7QvIUTzdb64jQyAKLf1AHADtGN+jw6v8Q==}
+  /devalue/4.3.0:
+    resolution: {integrity: sha512-n94yQo4LI3w7erwf84mhRUkUJfhLoCZiLyoOZ/QFsDbcWNZePrLwbQpvZBUG2TNxwV3VjCKPxkiiQA6pe3TrTA==}
 
   /dezalgo/1.0.3:
     resolution: {integrity: sha512-K7i4zNfT2kgQz3GylDw40ot9GAE47sFZ9EXHFSPP6zONLgH6kWXE0KWJchkbQJLBkRazq4APwZ4OwiFFlT95OQ==}

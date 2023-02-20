@@ -35,7 +35,7 @@
     "@vitest/ui": "^0.28.5",
     "abort-controller": "^3.0.0",
     "concurrently": "^7.6.0",
-    "devalue": "^2.0.1",
+    "devalue": "^4.0.0",
     "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
     "fastify": "^4.13.0",
