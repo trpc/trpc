@@ -16,6 +16,8 @@ export default defineConfig({
       include: ['*/src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
+    useAtomics: true,
+    reporters: ['default', 'hanging-process'],
   },
   resolve: {
     alias: {
