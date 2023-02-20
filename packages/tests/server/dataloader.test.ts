@@ -3,8 +3,8 @@ import { waitError, waitMs } from './___testHelpers';
 import { dataLoader } from '@trpc/client/src/internals/dataLoader';
 
 describe('basic', () => {
-  const fetchFn = jest.fn();
-  const validateFn = jest.fn();
+  const fetchFn = vi.fn();
+  const validateFn = vi.fn();
   const loader = dataLoader<number, number>({
     validate: () => {
       validateFn();
@@ -51,9 +51,9 @@ describe('basic', () => {
 });
 
 describe('cancellation', () => {
-  const fetchFn = jest.fn();
-  const validateFn = jest.fn();
-  const cancelFn = jest.fn();
+  const fetchFn = vi.fn();
+  const validateFn = vi.fn();
+  const cancelFn = vi.fn();
   const loader = dataLoader<number, number>({
     validate: () => {
       return true;
@@ -171,8 +171,8 @@ test('errors', async () => {
 });
 
 describe('validation', () => {
-  const validateFn = jest.fn();
-  const fetchFn = jest.fn();
+  const validateFn = vi.fn();
+  const fetchFn = vi.fn();
   const loader = dataLoader<number, number>({
     validate: (keys) => {
       validateFn(keys);

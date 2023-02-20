@@ -43,8 +43,8 @@ const ctx = konn()
   .done();
 
 test('useSubscription', async () => {
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
 
   const { App, proxy } = ctx;
 

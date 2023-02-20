@@ -72,16 +72,18 @@
     "@trpc/server": "^10.8.0"
   },
   "devDependencies": {
-    "@testing-library/dom": "^8.18.1",
+    "@testing-library/dom": "^9.0.0",
     "@trpc/server": "^10.12.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
     "isomorphic-fetch": "^3.0.0",
+    "node-fetch": "^2.6.1",
     "rollup": "^2.79.1",
     "tsx": "^3.9.0",
-    "undici": "^5.14.0"
+    "undici": "^5.14.0",
+    "vitest": "^0.28.5"
   },
   "publishConfig": {
     "access": "public"

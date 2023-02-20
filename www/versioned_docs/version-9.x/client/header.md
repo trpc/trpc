@@ -10,9 +10,9 @@ The headers option can be customized in config when using `withTRPC` in nextjs o
 `headers` can be both an object or a function. If it's a function it will gets called dynamically every http request.
 
 ```ts title='_app.tsx'
-import { AppType } from "next/dist/shared/lib/utils";
-import { withTRPC } from "@trpc/next";
-import type { AppRouter } from "@/server/routers/app";
+import type { AppRouter } from '@/server/routers/app';
+import { withTRPC } from '@trpc/next';
+import { AppType } from 'next/dist/shared/lib/utils';
 
 export let token: string;
 
@@ -21,17 +21,21 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-    config({ ctx }) {
-      /**
-      * Headers will be called on each request.
-      */
-        headers() {
+  config({ ctx }) {
+    return {
+      links: [
+        httpBatchLink({
+          /** headers are called on every request */
+          headers: () => {
             return {
-                Authorization: token
-              }
-          }
-      }
-  })(MyApp)
+              Authorization: token,
+            };
+          },
+        }),
+      ],
+    };
+  },
+})(MyApp);
 ```
 
 ### Example with auth login

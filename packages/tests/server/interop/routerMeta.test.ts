@@ -56,7 +56,7 @@ test('route meta types', async () => {
 });
 
 test('route meta in middleware', async () => {
-  const middleware = jest.fn((opts) => {
+  const middleware = vi.fn((opts) => {
     return opts.next();
   });
   const { client, close } = legacyRouterToServerAndClient(
@@ -95,5 +95,5 @@ test('route meta in middleware', async () => {
   });
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  close();
+  await close();
 });

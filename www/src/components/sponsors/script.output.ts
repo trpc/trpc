@@ -10,13 +10,6 @@ export const sponsors = [
     "link": "https://cal.com/?ref=trpc"
   },
   {
-    "name": "Render",
-    "imgSrc": "https://avatars.githubusercontent.com/u/36424661?v=4",
-    "weight": 83,
-    "login": "renderinc",
-    "link": "https://render.com/?ref=trpc"
-  },
-  {
     "name": "Flightcontrol",
     "imgSrc": "https://avatars.githubusercontent.com/u/87621213?v=4",
     "weight": 76,
@@ -24,23 +17,23 @@ export const sponsors = [
     "link": "https://flightcontrol.dev/?ref=trpc"
   },
   {
-    "name": "Jason Docton",
-    "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 43,
-    "login": "JasonDocton",
-    "link": "http://youarerad.org/?ref=trpc"
-  },
-  {
     "name": "Ping.gg",
     "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "weight": 39,
+    "weight": 76,
     "login": "pingdotgg",
     "link": "https://ping.gg/"
   },
   {
+    "name": "Jason Docton",
+    "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
+    "weight": 47,
+    "login": "JasonDocton",
+    "link": "http://youarerad.org/?ref=trpc"
+  },
+  {
     "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
-    "weight": 23,
+    "weight": 26,
     "login": "prisma",
     "link": "https://www.prisma.io/?ref=trpc"
   },
@@ -57,6 +50,13 @@ export const sponsors = [
     "weight": 16,
     "login": "newfront-insurance",
     "link": "https://www.newfront.com/?ref=trpc"
+  },
+  {
+    "name": "Interval",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
+    "weight": 14,
+    "login": "interval",
+    "link": "https://interval.com/?ref=trpc"
   },
   {
     "name": "Ryan",
@@ -80,13 +80,6 @@ export const sponsors = [
     "link": "https://snaplet.dev/?ref=trpc"
   },
   {
-    "name": "Interval",
-    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 11,
-    "login": "interval",
-    "link": "https://interval.com/?ref=trpc"
-  },
-  {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
     "weight": 9,
@@ -108,15 +101,8 @@ export const sponsors = [
     "link": "http://flylance.com/?ref=trpc"
   },
   {
-    "name": "Ron Mizrahi",
-    "imgSrc": "https://avatars.githubusercontent.com/u/50079487?u=a5c77b3b68319a8447e6a5a3d4d0f944d2b66c05&v=4",
-    "weight": 5,
-    "login": "rondered",
-    "link": "https://github.com/rondered"
-  },
-  {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=63152744638f6b5df34941244016fa1a4b4a67bb&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=b4c6ff29bddd7f807146231ab3a88aee1a16c5dd&v=4",
     "weight": 4,
     "login": "sam3d",
     "link": "https://samholmes.net/?ref=trpc"
@@ -185,6 +171,13 @@ export const sponsors = [
     "link": "https://github.com/dmaykov"
   },
   {
+    "name": "Lori Karikari",
+    "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
+    "weight": 3,
+    "login": "LoriKarikari",
+    "link": "https://github.com/LoriKarikari"
+  },
+  {
     "name": "Chris Bradley",
     "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
     "weight": 3,
@@ -227,13 +220,6 @@ export const sponsors = [
     "link": "http://francisprovost.com/?ref=trpc"
   },
   {
-    "name": "Lori Karikari",
-    "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
-    "weight": 2,
-    "login": "LoriKarikari",
-    "link": "https://github.com/LoriKarikari"
-  },
-  {
     "name": "SchlagerKhan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
     "weight": 2,
@@ -262,6 +248,13 @@ export const sponsors = [
     "link": "https://hampuskraft.com/?ref=trpc"
   },
   {
+    "name": "fanvue",
+    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
+    "weight": 2,
+    "login": "fanvue",
+    "link": "https://www.fanvue.com/?ref=trpc"
+  },
+  {
     "name": "Daniel Yogel",
     "imgSrc": "https://avatars.githubusercontent.com/u/2037064?u=625c1b7bf16f83a378545126927aebed2db86bac&v=4",
     "weight": 2,
@@ -274,13 +267,6 @@ export const sponsors = [
     "weight": 2,
     "login": "malcolmstill",
     "link": "https://mstill.dev/blog?ref=trpc"
-  },
-  {
-    "name": "Lars Karbo",
-    "imgSrc": "https://avatars.githubusercontent.com/u/10865165?v=4",
-    "weight": 2,
-    "login": "larskarbo",
-    "link": "https://larskarbo.no/?ref=trpc"
   },
   {
     "name": "Jared Wyce",
@@ -302,13 +288,6 @@ export const sponsors = [
     "weight": 2,
     "login": "jzimmek",
     "link": "https://github.com/jzimmek"
-  },
-  {
-    "name": "fanvue",
-    "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
-    "weight": 2,
-    "login": "fanvue",
-    "link": "https://www.fanvue.com/?ref=trpc"
   },
   {
     "name": "Simon Flack",
@@ -339,18 +318,18 @@ export const sponsors = [
     "link": "https://github.com/andrew-werdna"
   },
   {
-    "name": "Michal Malota",
-    "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=3eba1b12a74987d406a98dbcb7f1d4fc2efe0390&v=4",
-    "weight": 2,
-    "login": "michalmalota",
-    "link": "https://jobsinjs.com/?ref=trpc"
-  },
-  {
     "name": "Jirka Svoboda",
     "imgSrc": "https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4",
     "weight": 2,
     "login": "svobik7",
     "link": "https://github.com/svobik7"
+  },
+  {
+    "name": "Michal Malota",
+    "imgSrc": "https://avatars.githubusercontent.com/u/141704?u=3eba1b12a74987d406a98dbcb7f1d4fc2efe0390&v=4",
+    "weight": 2,
+    "login": "michalmalota",
+    "link": "https://jobsinjs.com/?ref=trpc"
   },
   {
     "name": "Joseph Lozano",
@@ -393,6 +372,13 @@ export const sponsors = [
     "weight": 2,
     "login": "piscis",
     "link": "https://piscis.io/?ref=trpc"
+  },
+  {
+    "name": "Steven Yung",
+    "imgSrc": "https://avatars.githubusercontent.com/u/7261258?u=7f598524167766006eefe6585b7e91e162e3f45d&v=4",
+    "weight": 2,
+    "login": "xstevenyung",
+    "link": "https://xstevenyung.com/?ref=trpc"
   },
   {
     "name": "Daniel Burger",

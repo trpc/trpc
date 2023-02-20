@@ -497,8 +497,6 @@ test('double validators with undefined', async () => {
       .mutation(({ input }) => {
         return input;
       });
-    type Input = inferProcedureInput<typeof proc>;
-    //    ^?
 
     expectTypeOf<Input>().toEqualTypeOf<{
       roomId: string;
@@ -534,8 +532,6 @@ test('double validators with undefined', async () => {
       .mutation(({ input }) => {
         return input;
       });
-    type Input = inferProcedureInput<typeof proc>;
-    //    ^?
 
     expectTypeOf<Input>().toEqualTypeOf<{
       roomId?: string;
