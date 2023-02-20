@@ -15,10 +15,10 @@
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
-    "@fastify/websocket": "^5.0.0",
+    "@fastify/websocket": "^7.1.2",
     "@trpc/client": "^10.12.0",
     "@trpc/server": "^10.12.0",
-    "fastify": "^3.27.1",
+    "fastify": "^4.13.0",
     "node-fetch": "^2.6.1",
     "superjson": "^1.7.4",
     "tslib": "^2.1.0",
