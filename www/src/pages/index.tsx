@@ -4,16 +4,18 @@ import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import React, { ComponentPropsWithoutRef, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
-import { Button } from '../components/Button';
-import { Features } from '../components/Features';
-import { GithubSponsorButton } from '../components/GithubSponsorButton';
-import { GithubStarsButton } from '../components/GithubStarsButton';
-import { Preview } from '../components/Preview';
-import { QuickIntro } from '../components/QuickIntro';
-import { SectionTitle } from '../components/SectionTitle';
-import { TwitterWall } from '../components/TwitterWall';
-import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
-import { TopSponsors } from '../components/sponsors/TopSponsors';
+import {
+  Button,
+  Features,
+  GithubSponsorButton,
+  GithubStarsButton,
+  Preview,
+  QuickIntro,
+  SectionTitle,
+  SponsorBubbles,
+  TopSponsors,
+  TwitterWall,
+} from '../components';
 import { searchParams } from '../utils/searchParams';
 
 const Iframe = (
