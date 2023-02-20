@@ -4,7 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import fetch from 'node-fetch';
 
 test('set custom headers in beforeEnd', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
 
   interface Context {
     req: IncomingMessage;

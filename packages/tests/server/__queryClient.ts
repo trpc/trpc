@@ -7,9 +7,9 @@ export function createQueryClientConfig(config: Config | undefined) {
     // noop
   };
   const logger = {
-    error: jest.fn(noopLogFn),
-    warn: jest.fn(noopLogFn),
-    log: jest.fn(noopLogFn),
+    error: vi.fn(noopLogFn),
+    warn: vi.fn(noopLogFn),
+    log: vi.fn(noopLogFn),
   };
   return {
     ...config,

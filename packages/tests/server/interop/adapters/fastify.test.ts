@@ -40,8 +40,8 @@ interface Message {
 
 function createAppRouter() {
   const ee = new EventEmitter();
-  const onNewMessageSubscription = jest.fn();
-  const onSubscriptionEnded = jest.fn();
+  const onNewMessageSubscription = vi.fn();
+  const onSubscriptionEnded = vi.fn();
   const appRouter = router<Context>()
     .query('ping', {
       resolve() {
@@ -262,8 +262,8 @@ describe('anonymous user', () => {
       });
     });
 
-    const onStartedMock = jest.fn();
-    const onDataMock = jest.fn();
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
     const sub = app.client.subscription('onMessage', undefined, {
       onStarted: onStartedMock,
       onData(data) {
