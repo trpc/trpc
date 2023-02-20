@@ -19,7 +19,11 @@ function createServer(handler: Handler) {
 
   return {
     url: `http://localhost:${port}`,
-    close: () => server.close(),
+    async close() {
+      await new Promise((resolve) => {
+        server.close(resolve);
+      });
+    },
   };
 }
 
@@ -43,7 +47,7 @@ test('badly formatted response', async () => {
     `[TRPCClientError: Unable to transform response from server]`,
   );
 
-  server.close();
+  await server.close();
 });
 
 test('badly formatted superjson response', async () => {
@@ -71,7 +75,7 @@ test('badly formatted superjson response', async () => {
     `[TRPCClientError: Unable to transform response from server]`,
   );
 
-  server.close();
+  await server.close();
 });
 
 test('badly formatted superjson response', async () => {
@@ -99,7 +103,7 @@ test('badly formatted superjson response', async () => {
     `[TRPCClientError: Unable to transform response from server]`,
   );
 
-  server.close();
+  await server.close();
 });
 
 test('bad link', async () => {
@@ -134,5 +138,5 @@ test('bad link', async () => {
   const error = await waitError(client.test.query(), TRPCClientError);
   expect(error).toMatchInlineSnapshot(`[TRPCClientError: whoops]`);
 
-  server.close();
+  await server.close();
 });

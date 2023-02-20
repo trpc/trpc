@@ -95,5 +95,5 @@ test('route meta in middleware', async () => {
   });
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  close();
+  await close();
 });

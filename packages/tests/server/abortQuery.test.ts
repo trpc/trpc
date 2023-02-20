@@ -26,7 +26,7 @@ describe('vanilla client procedure abortion', () => {
     abortController.abort();
 
     expect(promise).rejects.toThrowError(/aborted/);
-    close();
+    await close();
   });
 
   test('mutation', async () => {
@@ -39,6 +39,6 @@ describe('vanilla client procedure abortion', () => {
     abortController.abort();
 
     expect(promise).rejects.toThrowError(/aborted/);
-    close();
+    await close();
   });
 });

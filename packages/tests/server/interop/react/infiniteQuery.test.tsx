@@ -12,8 +12,8 @@ let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
   factory = createLegacyAppRouter();
 });
-afterEach(() => {
-  factory.close();
+afterEach(async () => {
+  await factory.close();
 });
 
 describe('Infinite Query', () => {
