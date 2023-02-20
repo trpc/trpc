@@ -25,9 +25,10 @@ export default withTRPC<AppRouter>({
     return {
       links: [
         httpBatchLink({
+          /** headers are called on every request */
           headers: () => {
             return {
-              'Authorization': token,
+              Authorization: token,
             };
           },
         }),
