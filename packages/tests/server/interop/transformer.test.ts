@@ -10,7 +10,7 @@ import {
 import * as trpc from '@trpc/server/src';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
 import { observable } from '@trpc/server/src/observable';
-import devalue from 'devalue';
+import { uneval } from 'devalue';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -121,7 +121,7 @@ test('wsLink: empty superjson up and down', async () => {
 
 test('devalue up and down', async () => {
   const transformer: trpc.DataTransformer = {
-    serialize: (object) => devalue(object),
+    serialize: (object) => uneval(object),
     deserialize: (object) => eval(`(${object})`),
   };
 
@@ -158,7 +158,7 @@ test('not batching: superjson up and devalue down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {
-      serialize: (object) => devalue(object),
+      serialize: (object) => uneval(object),
       deserialize: (object) => eval(`(${object})`),
     },
   };
@@ -192,11 +192,11 @@ test('not batching: superjson up and devalue down', async () => {
   close();
 });
 
-test('batching: superjson up and devalue down', async () => {
+test('batching: superjson up and uneval down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {
-      serialize: (object) => devalue(object),
+      serialize: (object) => uneval(object),
       deserialize: (object) => eval(`(${object})`),
     },
   };
@@ -234,7 +234,7 @@ test('batching: superjson up and f down', async () => {
   const transformer: trpc.CombinedDataTransformer = {
     input: superjson,
     output: {
-      serialize: (object) => devalue(object),
+      serialize: (object) => uneval(object),
       deserialize: (object) => eval(`(${object})`),
     },
   };
@@ -453,11 +453,11 @@ describe('transformer on router', () => {
     );
   });
 
-  test('superjson up and devalue down: transform errors correctly', async () => {
+  test('superjson up and uneval down: transform errors correctly', async () => {
     const transformer: trpc.CombinedDataTransformer = {
       input: superjson,
       output: {
-        serialize: (object) => devalue(object),
+        serialize: (object) => uneval(object),
         deserialize: (object) => eval(`(${object})`),
       },
     };
