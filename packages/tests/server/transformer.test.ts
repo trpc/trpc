@@ -14,7 +14,7 @@ import {
   initTRPC,
 } from '@trpc/server';
 import { observable } from '@trpc/server/src/observable';
-import devalue from 'devalue';
+import { uneval } from 'devalue';
 import superjson from 'superjson';
 import { z } from 'zod';
 
@@ -105,7 +105,7 @@ test('wsLink: empty superjson up and down', async () => {
 
 test('devalue up and down', async () => {
   const transformer: DataTransformer = {
-    serialize: (object) => devalue(object),
+    serialize: (object) => uneval(object),
     deserialize: (object) => eval(`(${object})`),
   };
   const date = new Date();
@@ -139,7 +139,7 @@ test('not batching: superjson up and devalue down', async () => {
   const transformer: CombinedDataTransformer = {
     input: superjson,
     output: {
-      serialize: (object) => devalue(object),
+      serialize: (object) => uneval(object),
       deserialize: (object) => eval(`(${object})`),
     },
   };
@@ -174,7 +174,7 @@ test('batching: superjson up and devalue down', async () => {
   const transformer: CombinedDataTransformer = {
     input: superjson,
     output: {
-      serialize: (object) => devalue(object),
+      serialize: (object) => uneval(object),
       deserialize: (object) => eval(`(${object})`),
     },
   };
@@ -209,7 +209,7 @@ test('batching: superjson up and f down', async () => {
   const transformer: CombinedDataTransformer = {
     input: superjson,
     output: {
-      serialize: (object) => devalue(object),
+      serialize: (object) => uneval(object),
       deserialize: (object) => eval(`(${object})`),
     },
   };
@@ -410,7 +410,7 @@ describe('transformer on router', () => {
     const transformer: CombinedDataTransformer = {
       input: superjson,
       output: {
-        serialize: (object) => devalue(object),
+        serialize: (object) => uneval(object),
         deserialize: (object) => eval(`(${object})`),
       },
     };
