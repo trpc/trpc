@@ -38,7 +38,7 @@ test('is called if def first', async () => {
   expect(calls[1]![0]!.type).toBe('mutation');
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  close();
+  await close();
 });
 
 test('is not called if def last', async () => {
@@ -56,7 +56,7 @@ test('is not called if def last', async () => {
 
   expect(await client.query('foo')).toBe('bar');
   expect(middleware).toHaveBeenCalledTimes(0);
-  close();
+  await close();
 });
 
 test('receives rawInput as param', async () => {
@@ -94,7 +94,7 @@ test('receives rawInput as param', async () => {
   );
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  close();
+  await close();
 });
 
 test('allows you to throw an error (e.g. auth)', async () => {
@@ -166,7 +166,7 @@ test('allows you to throw an error (e.g. auth)', async () => {
   headers.authorization = 'meow';
   expect(await client.query('admin.secretPlace')).toBe('a key');
   expect(resolverMock).toHaveBeenCalledTimes(1);
-  close();
+  await close();
 });
 
 test('child routers + hook call order', async () => {
@@ -229,7 +229,7 @@ test('child routers + hook call order', async () => {
   expect(await client.query('child.name')).toBe('Child');
   expect(await client.query('child.child.name')).toBe('GrandChild');
 
-  close();
+  await close();
 });
 
 test('not returning next result is an error at compile-time', async () => {
@@ -251,7 +251,7 @@ test('not returning next result is an error at compile-time', async () => {
     `[TRPCClientError: No result from middlewares - did you forget to \`return next()\`?]`,
   );
 
-  close();
+  await close();
 });
 
 test('async hooks', async () => {
@@ -286,7 +286,7 @@ test('async hooks', async () => {
   expect(log).toHaveBeenCalledWith({ input: 'one', requestId: 1 });
   expect(log).toHaveBeenCalledWith({ input: 'two', requestId: 2 });
 
-  close();
+  await close();
 });
 
 test('equiv', () => {
@@ -387,7 +387,7 @@ Array [
   ],
 ]
 `);
-  close();
+  await close();
 });
 
 test('middleware throwing should return a union', async () => {
@@ -432,7 +432,7 @@ test('middleware throwing should return a union', async () => {
   const cause = res.error.cause as CustomError;
   expect(cause).toBeInstanceOf(CustomError);
 
-  close();
+  await close();
 });
 
 test('omitting ctx in next() does not affect the actual ctx', async () => {
@@ -469,7 +469,7 @@ test('omitting ctx in next() does not affect the actual ctx', async () => {
 
   expect(await client.query('test')).toMatchInlineSnapshot(`"alexdotjs"`);
 
-  close();
+  await close();
 });
 
 test('omitting ctx in next() does not affect a previous middleware', async () => {
@@ -521,7 +521,7 @@ test('omitting ctx in next() does not affect a previous middleware', async () =>
 
   expect(await client.query('test')).toMatchInlineSnapshot(`"alexdotjs"`);
 
-  close();
+  await close();
 });
 
 test('mutate context in middleware', async () => {
@@ -585,7 +585,7 @@ test('mutate context in middleware', async () => {
     `"id: alexdotjs, email: false"`,
   );
 
-  close();
+  await close();
 });
 
 test('mutate context and combine with other routes', async () => {
