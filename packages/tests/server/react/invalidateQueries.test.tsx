@@ -3,6 +3,7 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -69,7 +70,7 @@ describe('invalidateQueries()', () => {
     expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
     expect(resolvers.postById).toHaveBeenCalledTimes(1);
 
-    utils.getByTestId('refetch').click();
+    await userEvent.click(utils.getByTestId('refetch'));
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:stale');
@@ -138,7 +139,7 @@ describe('invalidateQueries()', () => {
     expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
     expect(resolvers.postById).toHaveBeenCalledTimes(1);
 
-    utils.getByTestId('refetch').click();
+    await userEvent.click(utils.getByTestId('refetch'));
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:stale');
@@ -222,7 +223,7 @@ describe('invalidateQueries()', () => {
       'invalidate-4-predicate',
     ]) {
       // click button to invalidate
-      utils.getByTestId(testId).click();
+      await userEvent.click(utils.getByTestId(testId));
 
       // should become stale straight after the click
       await waitFor(() => {
@@ -305,7 +306,7 @@ describe('invalidateQueries()', () => {
     });
 
     // click button to invalidate
-    utils.getByTestId('invalidate-with-partial-input').click();
+    await userEvent.click(utils.getByTestId('invalidate-with-partial-input'));
 
     // 1 & 2 should become stale straight after the click by fuzzy matching the query, 3 should not
     await waitFor(() => {

@@ -3,6 +3,7 @@ import { createLegacyAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;
@@ -79,7 +80,7 @@ describe('setQueryData()', () => {
 
     const utils = render(<App />);
 
-    utils.getByTestId('setQueryData').click();
+    await userEvent.click(utils.getByTestId('setQueryData'));
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('allPost.title');
