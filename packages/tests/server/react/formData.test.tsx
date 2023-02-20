@@ -54,7 +54,6 @@ const ctx = konn()
         )
         .mutation(({ input }) => {
           users.push(input);
-          console.log(input);
 
           return input;
         }),
@@ -124,7 +123,6 @@ test('POST form submission', async () => {
 
     const createUserMutation = proxy.createUser.useMutation({
       onSuccess(data) {
-        console.log('user', data);
         setUser(data);
       },
     });

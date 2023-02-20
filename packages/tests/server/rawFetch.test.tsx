@@ -40,7 +40,7 @@ test('batching with raw batch', async () => {
         '0': { name: 'alexdotjs' },
       })}`,
     );
-    const json = await res.json();
+    const json: any = await res.json();
 
     expect(json[0]).toHaveProperty('result');
     expect(json[0].result).toMatchInlineSnapshot(`

@@ -6,7 +6,6 @@ export const nodeHTTPFormDataContentTypeHandler =
     isMatch(opts) {
       const contentTypeHeader = opts.req.headers['content-type'];
 
-      console.log('contentTypeHeader', contentTypeHeader);
       return (
         contentTypeHeader?.startsWith('multipart/form-data') ||
         contentTypeHeader === 'application/x-www-form-urlencoded'
@@ -24,8 +23,6 @@ export const nodeHTTPFormDataContentTypeHandler =
 
         return { ok: true, data: form };
       }
-
-      console.log(req);
 
       const bb = busboy({ headers: req.headers as BusboyHeaders });
       const form = new FormData();
@@ -59,7 +56,6 @@ export const nodeHTTPFormDataContentTypeHandler =
         req.pipe(bb);
       });
 
-      console.log(form, form.get('name'), form.get('age'));
       return { ok: true, data: form };
     },
     getInputs({ req }) {
