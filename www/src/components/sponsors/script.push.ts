@@ -14,7 +14,6 @@ interface Def {
 const sections: Def = {
   gold: [
     //
-    'renderinc',
     'calcom',
   ],
   silver: [

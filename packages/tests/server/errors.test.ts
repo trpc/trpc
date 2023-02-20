@@ -44,7 +44,7 @@ test('basic', async () => {
 
   expect(serverError.cause).toBeInstanceOf(MyError);
 
-  close();
+  await close();
 });
 
 test('input error', async () => {
@@ -88,7 +88,7 @@ test('input error', async () => {
 
   expect(serverError.cause).toBeInstanceOf(ZodError);
 
-  close();
+  await close();
 });
 
 test('unauthorized()', async () => {
@@ -112,7 +112,7 @@ test('unauthorized()', async () => {
 
   expect(serverError).toBeInstanceOf(TRPCError);
 
-  close();
+  await close();
 });
 
 test('getMessageFromUnknownError()', () => {
@@ -206,7 +206,7 @@ Object {
 
     expect(serverError.cause).toBeInstanceOf(ZodError);
 
-    close();
+    await close();
   });
 
   test('setting custom http response code', async () => {
@@ -241,7 +241,7 @@ Object {
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
 
-    close();
+    await close();
   });
 
   test('do not override response status set by middleware or resolver', async () => {
@@ -267,7 +267,7 @@ Object {
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
 
-    close();
+    await close();
   });
 });
 
@@ -296,7 +296,7 @@ test('make sure object is ignoring prototype', async () => {
   const serverError = onError.mock.calls[0]![0]!.error;
   expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
-  close();
+  await close();
 });
 
 test('allow using built-in Object-properties', async () => {
@@ -310,7 +310,7 @@ test('allow using built-in Object-properties', async () => {
 
   expect(await proxy.toString.query()).toBe('toStringValue');
   expect(await proxy.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
-  close();
+  await close();
 });
 
 test('retain stack trace', async () => {
@@ -360,5 +360,5 @@ test('retain stack trace', async () => {
   // first line of stack trace
   expect(stackParts[1]).toContain(__filename);
 
-  close();
+  await close();
 });
