@@ -70,7 +70,7 @@ test('chainer', async () => {
 
   expect(serverCall).toHaveBeenCalledTimes(3);
 
-  close();
+  await close();
 });
 
 test('cancel request', async () => {
@@ -181,7 +181,7 @@ describe('batching', () => {
 
     expect(metaCall).toHaveBeenCalledTimes(1);
 
-    close();
+    await close();
   });
 
   test('batching on maxURLLength', async () => {
@@ -254,7 +254,7 @@ describe('batching', () => {
       expect(createContextFn).toBeCalledTimes(1);
     }
 
-    close();
+    await close();
   });
 
   test('server not configured for batching', async () => {
@@ -289,7 +289,7 @@ describe('batching', () => {
       `[TRPCClientError: Batching is not enabled on the server]`,
     );
 
-    close();
+    await close();
   });
 });
 test('create client with links', async () => {
@@ -322,7 +322,7 @@ test('create client with links', async () => {
   const result = await client.query('hello');
   expect(result).toBe('world');
 
-  close();
+  await close();
 });
 
 describe('loggerLink', () => {
@@ -542,5 +542,5 @@ test('chain makes unsub', async () => {
   expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
   expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
-  close();
+  await close();
 });

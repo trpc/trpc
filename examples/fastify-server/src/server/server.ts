@@ -27,7 +27,9 @@ export function createServer(opts: ServerOptions) {
     return { hello: 'wait-on 💨' };
   });
 
-  const stop = () => server.close();
+  const stop = async () => {
+    await server.close();
+  };
   const start = async () => {
     try {
       await server.listen(port);

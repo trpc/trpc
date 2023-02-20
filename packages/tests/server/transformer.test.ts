@@ -45,7 +45,7 @@ test('superjson up and down', async () => {
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
-  close();
+  await close();
 });
 
 test('empty superjson up and down', async () => {
@@ -71,7 +71,7 @@ test('empty superjson up and down', async () => {
   const res2 = await proxy.emptyDown.query('');
   expect(res2).toBe('hello world');
 
-  close();
+  await close();
 });
 
 test('wsLink: empty superjson up and down', async () => {
@@ -99,7 +99,7 @@ test('wsLink: empty superjson up and down', async () => {
   const res2 = await proxy.emptyDown.query('');
   expect(res2).toBe('hello world');
 
-  close();
+  await close();
   ws.close();
 });
 
@@ -132,7 +132,7 @@ test('devalue up and down', async () => {
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
-  close();
+  await close();
 });
 
 test('not batching: superjson up and devalue down', async () => {
@@ -167,7 +167,7 @@ test('not batching: superjson up and devalue down', async () => {
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
-  close();
+  await close();
 });
 
 test('batching: superjson up and devalue down', async () => {
@@ -202,7 +202,7 @@ test('batching: superjson up and devalue down', async () => {
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
-  close();
+  await close();
 });
 
 test('batching: superjson up and f down', async () => {
@@ -235,7 +235,7 @@ test('batching: superjson up and f down', async () => {
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
-  close();
+  await close();
 });
 
 test('all transformers running in correct order', async () => {
@@ -290,7 +290,7 @@ test('all transformers running in correct order', async () => {
   expect(fn.mock.calls[3]![0]!).toBe('server:serialized');
   expect(fn.mock.calls[4]![0]!).toBe('client:deserialized');
 
-  close();
+  await close();
 });
 
 describe('transformer on router', () => {
@@ -320,7 +320,7 @@ describe('transformer on router', () => {
     expect(res.getTime()).toBe(date.getTime());
     expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
-    close();
+    await close();
   });
 
   test('ws', async () => {
@@ -355,7 +355,7 @@ describe('transformer on router', () => {
     expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
     wsClient.close();
-    close();
+    await close();
   });
 
   test('subscription', async () => {
@@ -403,7 +403,7 @@ describe('transformer on router', () => {
     expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 
     wsClient.close();
-    close();
+    await close();
   });
 
   test('superjson up and devalue down: transform errors correctly', async () => {
@@ -455,7 +455,7 @@ describe('transformer on router', () => {
     }
     expect(serverError.cause).toBeInstanceOf(MyError);
 
-    close();
+    await close();
   });
 });
 
@@ -493,7 +493,7 @@ Object {
 }
 `);
 
-  close();
+  await close();
 });
 
 describe('required transformers', () => {
