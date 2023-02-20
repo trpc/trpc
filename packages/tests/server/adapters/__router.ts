@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 export type Context = {
@@ -21,4 +21,10 @@ export const router = t.router({
     .query(({ input, ctx }) => ({
       text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
     })),
+  exampleError: t.procedure.query(() => {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Unexpected error',
+    });
+  }),
 });

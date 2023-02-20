@@ -6,8 +6,8 @@ import { dedupeLink } from './dedupeLink';
 import { createChain } from './internals/createChain';
 
 test('dedupeLink', async () => {
-  const endingLinkTriggered = jest.fn();
-  const timerTriggered = jest.fn();
+  const endingLinkTriggered = vi.fn();
+  const timerTriggered = vi.fn();
   const links: OperationLink<AnyRouter, any, any>[] = [
     // "dedupe link"
     dedupeLink()(null as any),
@@ -52,7 +52,7 @@ test('dedupeLink', async () => {
         context: {},
       },
     });
-    const next = jest.fn();
+    const next = vi.fn();
     call1.subscribe({ next });
     call2.subscribe({ next });
 
@@ -66,8 +66,8 @@ test('dedupeLink', async () => {
 });
 
 test('dedupe - cancel one does not cancel the other', async () => {
-  const endingLinkTriggered = jest.fn();
-  const timerTriggered = jest.fn();
+  const endingLinkTriggered = vi.fn();
+  const timerTriggered = vi.fn();
   const links: OperationLink<AnyRouter, any, any>[] = [
     // "dedupe link"
     dedupeLink()(null as any),
@@ -113,7 +113,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         context: {},
       },
     });
-    const next = jest.fn();
+    const next = vi.fn();
     const call1$ = call1.subscribe({ next });
     call2.subscribe({ next });
     call1$.unsubscribe();
