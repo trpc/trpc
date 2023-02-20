@@ -223,9 +223,10 @@ describe('invalidateQueries()', () => {
       'invalidate-3-all',
       'invalidate-4-predicate',
     ].entries()) {
+      // click button to invalidate
       await userEvent.click(utils.getByTestId(testId));
+
       await waitFor(async () => {
-        // click button to invalidate
         // should become stale straight after the click
         expect(utils.container).toHaveTextContent(`count:test:${index + 1}`);
       });
