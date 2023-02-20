@@ -68,7 +68,7 @@ describe('mutation keys', () => {
     });
 
     // should be mutating after button press
-    userEvent.click(utils.getByTestId('mutate'));
+    await userEvent.click(utils.getByTestId('mutate'));
     await waitFor(() => {
       expect(utils.getByTestId('status')).toHaveTextContent('1');
     });

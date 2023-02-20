@@ -34,7 +34,7 @@ test('old client - happy path w/o input', async () => {
   const res = await client.query('hello');
   expect(res).toBe('world');
   expectTypeOf(res).toBeUnknown();
-  close();
+  await close();
 });
 
 test('old client - happy path with input', async () => {
@@ -46,7 +46,7 @@ test('old client - happy path with input', async () => {
   const { client, close } = routerToServerAndClientNew(router);
 
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
-  close();
+  await close();
 });
 
 test('very happy path', async () => {
@@ -76,7 +76,7 @@ test('very happy path', async () => {
   }
   const { proxy, close } = routerToServerAndClientNew(router);
   expect(await proxy.greeting.query('KATT')).toBe('hello KATT');
-  close();
+  await close();
 });
 
 test('middleware', async () => {
@@ -100,7 +100,7 @@ test('middleware', async () => {
   });
   const { proxy, close } = routerToServerAndClientNew(router);
   expect(await proxy.greeting.query()).toBe('hello KATT');
-  close();
+  await close();
 });
 
 test('sad path', async () => {
@@ -114,7 +114,7 @@ test('sad path', async () => {
   expect(result).toMatchInlineSnapshot(
     `[TRPCClientError: No "query"-procedure on path "not.found"]`,
   );
-  close();
+  await close();
 });
 
 test('call a mutation as a query', async () => {
@@ -127,7 +127,7 @@ test('call a mutation as a query', async () => {
     `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
   );
 
-  close();
+  await close();
 });
 
 test('flat router', async () => {
@@ -207,5 +207,5 @@ test('subscriptions', async () => {
   subscription.unsubscribe();
   await waitFor(() => expect(onCompleteMock).toBeCalledTimes(1));
 
-  close();
+  await close();
 });

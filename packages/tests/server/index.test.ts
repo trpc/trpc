@@ -23,7 +23,7 @@ test('smoke test', async () => {
   const { close, proxy } = routerToServerAndClientNew(router);
 
   expect(await proxy.hello.query()).toBe('world');
-  close();
+  await close();
 });
 
 test('mix query and mutation', async () => {
@@ -97,7 +97,7 @@ describe('integration tests', () => {
     expect(err.shape?.message).toMatchInlineSnapshot(
       `"No \\"query\\"-procedure on path \\"notfound\\""`,
     );
-    close();
+    await close();
   });
 
   test('invalid input', async () => {
@@ -133,7 +133,7 @@ describe('integration tests', () => {
           }
         ]"
       `);
-    close();
+    await close();
   });
 
   test('passing input to input w/o input', async () => {
@@ -166,7 +166,7 @@ describe('integration tests', () => {
     await proxy.m.mutate('not-nullish' as any);
 
     expect(snap.mock.calls.every((call) => call[0] === undefined)).toBe(true);
-    close();
+    await close();
   });
 
   describe('type testing', () => {
@@ -196,7 +196,7 @@ describe('integration tests', () => {
 
       expect(res.text).toEqual('hello katt');
 
-      close();
+      await close();
     });
 
     test('mixed response', async () => {
@@ -225,7 +225,7 @@ describe('integration tests', () => {
         title: 'helloo',
       });
 
-      close();
+      await close();
     });
 
     test('propagate ctx', async () => {
@@ -292,7 +292,7 @@ describe('integration tests', () => {
         });
       }
 
-      close();
+      await close();
     });
 
     test('optional input', async () => {
@@ -325,7 +325,7 @@ describe('integration tests', () => {
         expectTypeOf(res.input).not.toBeAny();
       }
 
-      close();
+      await close();
     });
 
     test('mutation', async () => {
@@ -357,7 +357,7 @@ describe('integration tests', () => {
       expectTypeOf(res.input).toMatchTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
       expect(res.text).toBe('hello katt');
-      close();
+      await close();
     });
   });
 });
@@ -477,7 +477,7 @@ test('void mutation response', async () => {
   expect(await wsClient.undefined.mutate()).toMatchInlineSnapshot(`undefined`);
   expect(await wsClient.null.mutate()).toMatchInlineSnapshot(`null`);
   ws.close();
-  close();
+  await close();
 });
 
 // https://github.com/trpc/trpc/issues/559
@@ -511,7 +511,7 @@ describe('ObservableAbortError', () => {
     expect(err.name).toBe('TRPCClientError');
     expect(err.cause?.name).toBe('ObservableAbortError');
 
-    close();
+    await close();
   });
 
   test('cancelling batch request should throw AbortError', async () => {
@@ -559,7 +559,7 @@ describe('ObservableAbortError', () => {
 
     expect(await req2).toBe('slow2');
 
-    close();
+    await close();
   });
 });
 
@@ -591,5 +591,5 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
     }
   `);
   expect(await proxy.q.query()).toMatchInlineSnapshot(`Object {}`);
-  close();
+  await close();
 });

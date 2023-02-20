@@ -16,7 +16,7 @@ export default defineConfig({
       include: ['*/src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
-    // useAtomics: true,
+    useAtomics: !!process.env.CI,
   },
   resolve: {
     alias: {

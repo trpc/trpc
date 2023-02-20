@@ -33,7 +33,7 @@ test('children', async () => {
   expect(await proxy.child.grandchild.foo.query()).toBe('grandchild');
   expect(await proxy.child.grandchild.mut.mutate()).toBe('mut');
 
-  return close();
+  await close();
 });
 
 test('w/o children', async () => {
