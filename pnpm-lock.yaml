@@ -987,7 +987,7 @@ importers:
   packages/server:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@fastify/websocket': ^5.0.0
+      '@fastify/websocket': ^7.1.2
       '@miniflare/core': ^2.9.0
       '@tanstack/react-query': 4.6.0
       '@types/aws-lambda': ^8.10.97
@@ -1002,8 +1002,8 @@ importers:
       eslint: ^8.30.0
       expect-type: ^0.15.0
       express: ^4.17.1
-      fastify: ^4.0.0
-      fastify-plugin: ^3.0.1
+      fastify: ^4.13.0
+      fastify-plugin: ^4.5.0
       hash-sum: ^2.0.0
       miniflare: ^2.4.0
       myzod: ^1.3.1
@@ -1021,7 +1021,7 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@cloudflare/workers-types': 3.18.0
-      '@fastify/websocket': 5.0.1
+      '@fastify/websocket': 7.1.2
       '@miniflare/core': 2.11.0
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@types/aws-lambda': 8.10.109
@@ -1037,7 +1037,7 @@ importers:
       expect-type: 0.15.0
       express: 4.18.2
       fastify: 4.13.0
-      fastify-plugin: 3.0.1
+      fastify-plugin: 4.5.0
       hash-sum: 2.0.0
       miniflare: 2.11.0
       myzod: 1.8.8
@@ -1057,7 +1057,7 @@ importers:
   packages/tests:
     specifiers:
       '@cloudflare/workers-types': ^3.14.1
-      '@fastify/websocket': ^5.0.0
+      '@fastify/websocket': ^7.1.2
       '@miniflare/core': ^2.9.0
       '@tanstack/react-query': 4.6.0
       '@testing-library/dom': ^9.0.0
@@ -1078,8 +1078,8 @@ importers:
       devalue: ^2.0.1
       eslint: ^8.30.0
       expect-type: ^0.15.0
-      fastify: ^4.0.0
-      fastify-plugin: ^3.0.1
+      fastify: ^4.13.0
+      fastify-plugin: ^4.5.0
       jsdom: ^21.1.0
       konn: ^0.7.0
       miniflare: ^2.4.0
@@ -1099,7 +1099,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@cloudflare/workers-types': 3.18.0
-      '@fastify/websocket': 5.0.1
+      '@fastify/websocket': 7.1.2
       '@miniflare/core': 2.11.0
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/dom': 9.0.0
@@ -1121,7 +1121,7 @@ importers:
       eslint: 8.30.0
       expect-type: 0.15.0
       fastify: 4.13.0
-      fastify-plugin: 3.0.1
+      fastify-plugin: 4.5.0
       jsdom: 21.1.0
       konn: 0.7.0
       miniflare: 2.11.0
@@ -4012,15 +4012,6 @@ packages:
     dependencies:
       fast-json-stringify: 5.5.0
 
-  /@fastify/websocket/5.0.1:
-    resolution: {integrity: sha512-voOrfqhj9TIEnviQ9lzGBXdCIpIJpK69HLgvPPv7m9JNQ7GfSJAbG2y6YRuoYk8u6zpDuleHoLCmaJBDl5Chtw==}
-    dependencies:
-      fastify-plugin: 3.0.1
-      ws: 8.11.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
   /@fastify/websocket/7.1.2:
     resolution: {integrity: sha512-OBaPR3KVkDmhJpCy+RtM8CwwV67ieRRbvWtpHqRNoMt+AnHLBiNmrTwHs3/DKjmnI1cqdGTaQ+NhKtDtkk1l/Q==}
     dependencies:
@@ -4029,7 +4020,6 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
-    dev: false
 
   /@gar/promisify/1.1.3:
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
@@ -11233,12 +11223,8 @@ packages:
     engines: {node: '>= 4.9.1'}
     dev: true
 
-  /fastify-plugin/3.0.1:
-    resolution: {integrity: sha512-qKcDXmuZadJqdTm6vlCqioEbyewF60b/0LOFCcYN1B6BIZGlYJumWWOYs70SFYLDAH4YqdE1cxH/RKMG7rFxgA==}
-
   /fastify-plugin/4.5.0:
     resolution: {integrity: sha512-79ak0JxddO0utAXAQ5ccKhvs6vX2MGyHHMMsmZkBANrq3hXc1CHzvNPHOcvTsVMEPl5I+NT+RO4YKMGehOfSIg==}
-    dev: false
 
   /fastify/4.13.0:
     resolution: {integrity: sha512-p9ibdFWH3pZ7KPgmfHPKGUy2W4EWU2TEpwlcu58w4CwGyU3ARFfh2kwq6zpZ5W2ZGVbufi4tZbqHIHAlX/9Z/A==}
