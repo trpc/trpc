@@ -43,7 +43,6 @@ importers:
       tsx: ^3.9.0
       turbo: ^1.6.3
       typescript: ^4.8.3
-      vitest: ^0.28.5
     dependencies:
       '@changesets/changelog-github': 0.4.7
       '@changesets/cli': 2.25.2
@@ -77,7 +76,6 @@ importers:
       tsx: 3.12.1
       turbo: 1.6.3
       typescript: 4.8.3
-      vitest: 0.28.5
 
   examples/.interop/next-prisma-starter:
     specifiers:
@@ -903,6 +901,7 @@ importers:
       rollup: ^2.79.1
       tsx: ^3.9.0
       undici: ^5.14.0
+      vitest: ^0.28.5
     devDependencies:
       '@testing-library/dom': 9.0.0
       '@trpc/server': link:../server
@@ -915,6 +914,7 @@ importers:
       rollup: 2.79.1
       tsx: 3.12.1
       undici: 5.16.0
+      vitest: 0.28.5
 
   packages/next:
     specifiers:
@@ -1014,6 +1014,7 @@ importers:
       superstruct: ^0.16.0
       tsx: ^3.9.0
       typescript: ^4.8.3
+      vitest: ^0.28.5
       ws: ^8.0.0
       yup: ^1.0.0
       zod: ^3.0.0
@@ -1045,6 +1046,7 @@ importers:
       superstruct: 0.16.7
       tsx: 3.12.1
       typescript: 4.8.3
+      vitest: 0.28.5
       ws: 8.11.0
       yup: 1.0.0
       zod: 3.20.2
@@ -21764,6 +21766,7 @@ packages:
       - sugarss
       - supports-color
       - terser
+    dev: true
 
   /vitest/0.28.5_itn5mhdgoxdt6nk7zeh5bmcq5a:
     resolution: {integrity: sha512-pyCQ+wcAOX7mKMcBNkzDwEHRGqQvHUl0XnoHR+3Pb1hytAHISgSxv9h0gUiSiYtISXUU3rMrKiKzFYDrI6ZIHA==}
