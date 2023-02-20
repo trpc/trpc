@@ -498,6 +498,7 @@ test('double validators with undefined', async () => {
         return input;
       });
 
+    type Input = inferProcedureParams<typeof proc>['_input_in'];
     expectTypeOf<Input>().toEqualTypeOf<{
       roomId: string;
       optionalKey?: string;
@@ -533,6 +534,7 @@ test('double validators with undefined', async () => {
         return input;
       });
 
+    type Input = inferProcedureParams<typeof proc>['_input_in'];
     expectTypeOf<Input>().toEqualTypeOf<{
       roomId?: string;
       key: string;
