@@ -67,7 +67,11 @@ function createServer() {
 
   return {
     port: port!,
-    close: () => app.server.close(),
+    async close() {
+      await new Promise((resolve) => {
+        app.server.close(resolve);
+      });
+    },
   };
 }
 
@@ -97,5 +101,5 @@ test('tinytrpc', async () => {
 
   expect(await trpc.listPosts.query()).toHaveLength(posts.length + 1);
 
-  server.close();
+  await server.close();
 });

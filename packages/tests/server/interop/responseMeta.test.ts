@@ -73,5 +73,5 @@ Object {
     expect(res.headers.get('cache-control')).toBeNull();
   }
 
-  close();
+  await close();
 });

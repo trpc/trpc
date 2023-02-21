@@ -50,5 +50,5 @@ Object {
 `);
   }
 
-  close();
+  await close();
 });

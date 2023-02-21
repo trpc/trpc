@@ -5,6 +5,7 @@ import {
   dehydrate,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
@@ -105,7 +106,8 @@ test('with input', async () => {
   const before: DehydratedState['queries'] = JSON.parse(
     JSON.stringify(dehydrate(ctx.queryClient).queries),
   );
-  utils.getByTestId('setInfinite').click();
+
+  await userEvent.click(utils.getByTestId('setInfinite'));
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   const after: DehydratedState['queries'] = JSON.parse(
@@ -178,7 +180,7 @@ test('w/o input', async () => {
   const before: DehydratedState['queries'] = JSON.parse(
     JSON.stringify(dehydrate(ctx.queryClient).queries),
   );
-  utils.getByTestId('setInfinite').click();
+  await userEvent.click(utils.getByTestId('setInfinite'));
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   const after: DehydratedState['queries'] = JSON.parse(
