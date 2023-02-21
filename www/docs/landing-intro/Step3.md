@@ -36,6 +36,6 @@ const trpc = createTRPCProxyClient<AppRouter>({
   ],
 });
 
-const res = await trpc.greeting.query({ name: 'John' });
+const res = await trpc.greeting.query({ name: 'Johnny' });
 //    ^?
 ```
