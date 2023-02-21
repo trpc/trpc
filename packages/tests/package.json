@@ -34,7 +34,6 @@
     "@types/testing-library__jest-dom": "^5.14.5",
     "@vitest/coverage-istanbul": "^0.28.5",
     "@vitest/ui": "^0.28.5",
-    "abort-controller": "^3.0.0",
     "concurrently": "^7.6.0",
     "devalue": "^4.0.0",
     "eslint": "^8.30.0",

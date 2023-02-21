@@ -1077,7 +1077,6 @@ importers:
       '@types/testing-library__jest-dom': ^5.14.5
       '@vitest/coverage-istanbul': ^0.28.5
       '@vitest/ui': ^0.28.5
-      abort-controller: ^3.0.0
       concurrently: ^7.6.0
       devalue: ^4.0.0
       eslint: ^8.30.0
@@ -1122,7 +1121,6 @@ importers:
       '@types/testing-library__jest-dom': 5.14.5
       '@vitest/coverage-istanbul': 0.28.5_itn5mhdgoxdt6nk7zeh5bmcq5a
       '@vitest/ui': 0.28.5
-      abort-controller: 3.0.0
       concurrently: 7.6.0
       devalue: 4.3.0
       eslint: 8.30.0
