@@ -301,6 +301,7 @@ const trpc = createTRPCProxyClient<AppRouter>({
 // @noErrors
 // Inferred types
 const user = await trpc.userById.query('1');
+//    ^?
 user.id;
 //   ^?
 user.name;
