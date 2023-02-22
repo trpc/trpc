@@ -44,19 +44,6 @@ export default function IndexPage() {
           <button type="submit">submit</button>
         </form>
       </fieldset>
-
-      <fieldset>
-        <legend>Form with w/o upload</legend>
-        <form
-          method="post"
-          action="/api/trpc/mut"
-          encType="multipart/form-data"
-        >
-          <input name="hello" defaultValue="no upload" />
-          <br />
-          <button>submit</button>
-        </form>
-      </fieldset>
     </div>
   );
 }
