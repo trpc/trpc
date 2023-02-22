@@ -6,15 +6,17 @@ export function Greeting() {
   const { data, refetch } = trpc.greeting.useQuery();
 
   const onUpdateToken = useCallback(() => {
-    console.log('onUpdateToken')
-    setToken("custom-token")
+    console.log('onUpdateToken');
+    setToken('custom-token');
     refetch();
-  }, [refetch])
+  }, [refetch]);
 
-  return <div>
-    <p>{data?.text}</p>
+  return (
     <div>
-      <button onClick={onUpdateToken}>Update token, and refetch</button>
+      <p>{data?.text}</p>
+      <div>
+        <button onClick={onUpdateToken}>Update token, and refetch</button>
+      </div>
     </div>
-  </div>;
+  );
 }
