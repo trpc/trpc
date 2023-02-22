@@ -1,4 +1,4 @@
-import { Test } from '../../___tsHelpers';
+import { expectTypeOf } from 'expect-type'
 import { Serialize } from '@trpc/server/shared/internal/serialize';
 
 interface MixedKnownAndUnknownKeys {
@@ -7,6 +7,5 @@ interface MixedKnownAndUnknownKeys {
 }
 
 test('it serializes objects with known and unknown keys', () => {
-    const serializeIsTheSame: Test<MixedKnownAndUnknownKeys, Serialize<MixedKnownAndUnknownKeys>> = 1;
-    expect(serializeIsTheSame).toEqual(1);
+    expectTypeOf<MixedKnownAndUnknownKeys>().toMatchTypeOf<Serialize<MixedKnownAndUnknownKeys>>()
 })
