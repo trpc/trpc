@@ -28,6 +28,7 @@ jobs:
             .interop/next-prisma-websockets-starter,
             next-minimal-starter,
             minimal-react,
+            minimal-react-with-custom-headers,
             fastify-server,
             cloudflare-workers,
             next-prisma-starter,
