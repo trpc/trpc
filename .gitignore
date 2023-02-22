@@ -4,6 +4,7 @@ dist
 .next
 .turbo
 .vercel
+.idea
 
 node_modules
 package-lock.json
