@@ -132,7 +132,7 @@ type MismatchArgs<B extends boolean, C extends boolean> = Eq<B, C> extends true
   ? []
   : [never];
 type Mismatch<T> = (BrandSpecial<T> | T) & {
-  [secret]: 'Type should be satisified';
+  [secret]: 'Type should be satisfied';
 };
 
 export interface ExpectTypeOf<Actual, B extends boolean> {
@@ -259,7 +259,7 @@ export type _ExpectTypeOf = {
 };
 
 /**
- * Similar to Jest's `expect`, but with type-awareness.
+ * Similar to Vitest's `expect`, but with type-awareness.
  * Gives you access to a number of type-matchers that let you make assertions about the
  * form of a reference or generic type parameter.
  *

@@ -23,14 +23,14 @@ const mockRuntime: TRPCClientRuntime = {
 };
 test('chainer', async () => {
   let attempt = 0;
-  const serverCall = jest.fn();
+  const serverCall = vi.fn();
   const { httpPort, close } = legacyRouterToServerAndClient(
     trpc.router().query('hello', {
       resolve() {
         attempt++;
         serverCall();
         if (attempt < 3) {
-          throw new Error('Errr ' + attempt);
+          throw new Error('Err ' + attempt);
         }
         return 'world';
       },
@@ -70,11 +70,11 @@ test('chainer', async () => {
 
   expect(serverCall).toHaveBeenCalledTimes(3);
 
-  close();
+  await close();
 });
 
 test('cancel request', async () => {
-  const onDestroyCall = jest.fn();
+  const onDestroyCall = vi.fn();
 
   const chain = createChain({
     links: [
@@ -101,7 +101,7 @@ test('cancel request', async () => {
 
 describe('batching', () => {
   test('query batching', async () => {
-    const metaCall = jest.fn();
+    const metaCall = vi.fn();
     const { httpPort, close } = legacyRouterToServerAndClient(
       trpc.router().query('hello', {
         input: z.string().nullish(),
@@ -181,11 +181,11 @@ describe('batching', () => {
 
     expect(metaCall).toHaveBeenCalledTimes(1);
 
-    close();
+    await close();
   });
 
   test('batching on maxURLLength', async () => {
-    const createContextFn = jest.fn();
+    const createContextFn = vi.fn();
     const { client, httpUrl, close, router } = legacyRouterToServerAndClient(
       trpc.router().query('big-input', {
         input: z.string(),
@@ -227,7 +227,7 @@ describe('batching', () => {
       createContextFn.mockClear();
     }
     {
-      // queries should be sent and indivdual requests
+      // queries should be sent and individual requests
       // url length: 2146 > 2083
       const res = await Promise.all([
         client.query('big-input', '*'.repeat(1024)),
@@ -254,11 +254,11 @@ describe('batching', () => {
       expect(createContextFn).toBeCalledTimes(1);
     }
 
-    close();
+    await close();
   });
 
   test('server not configured for batching', async () => {
-    const serverCall = jest.fn();
+    const serverCall = vi.fn();
     const { close, router, httpPort, trpcClientOptions } =
       legacyRouterToServerAndClient(
         trpc.router().query('hello', {
@@ -289,12 +289,12 @@ describe('batching', () => {
       `[TRPCClientError: Batching is not enabled on the server]`,
     );
 
-    close();
+    await close();
   });
 });
 test('create client with links', async () => {
   let attempt = 0;
-  const serverCall = jest.fn();
+  const serverCall = vi.fn();
   const { close, router, httpPort, trpcClientOptions } =
     legacyRouterToServerAndClient(
       trpc.router().query('hello', {
@@ -302,7 +302,7 @@ test('create client with links', async () => {
           attempt++;
           serverCall();
           if (attempt < 3) {
-            throw new Error('Errr ' + attempt);
+            throw new Error('Err ' + attempt);
           }
           return 'world';
         },
@@ -322,13 +322,13 @@ test('create client with links', async () => {
   const result = await client.query('hello');
   expect(result).toBe('world');
 
-  close();
+  await close();
 });
 
 describe('loggerLink', () => {
   const logger = {
-    error: jest.fn(),
-    log: jest.fn(),
+    error: vi.fn(),
+    log: vi.fn(),
   };
   const logLink = loggerLink({
     console: logger,
@@ -370,7 +370,7 @@ describe('loggerLink', () => {
     expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[0][1]).toMatchInlineSnapshot(`
+    expect(logger.log.mock.calls[0]![1]!).toMatchInlineSnapshot(`
       "
           background-color: #72e3ff; 
           color: black;
@@ -445,7 +445,7 @@ describe('loggerLink', () => {
   });
 
   test('custom logger', () => {
-    const logFn = jest.fn();
+    const logFn = vi.fn();
     createChain({
       links: [loggerLink({ logger: logFn })(mockRuntime), errorLink],
       op: {
@@ -487,10 +487,10 @@ describe('loggerLink', () => {
 });
 
 test('chain makes unsub', async () => {
-  const firstLinkUnsubscribeSpy = jest.fn();
-  const firstLinkCompleteSpy = jest.fn();
+  const firstLinkUnsubscribeSpy = vi.fn();
+  const firstLinkCompleteSpy = vi.fn();
 
-  const secondLinkUnsubscribeSpy = jest.fn();
+  const secondLinkUnsubscribeSpy = vi.fn();
 
   const router = trpc.router().query('hello', {
     resolve() {
@@ -542,5 +542,5 @@ test('chain makes unsub', async () => {
   expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
   expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
-  close();
+  await close();
 });

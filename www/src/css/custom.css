@@ -22,11 +22,24 @@
   --ifm-container-width: 1140px;
   --ifm-container-width-xl: 1320px;
   --ifm-navbar-shadow: none;
+  --docsearch-key-shadow: none !important;
+  --docsearch-footer-shadow: none !important;
+  --docsearch-key-gradient: #f4f4f5 !important;
 }
+
 :root[data-theme='dark'] {
   --ifm-footer-background-color: #171717;
   --ifm-navbar-background-color: #111111;
   --ifm-background-color: #111111;
+  --ifm-toc-border-color: rgb(39, 39, 42);
+  --docsearch-modal-background: #18181b;
+  --docsearch-footer-background: #18181b;
+  --docsearch-searchbox-focus-background: #18181b;
+  --docsearch-key-gradient: #27272a;
+  --docsearch-key-shadow: none;
+  --docsearch-key-gradient: #27272a !important;
+  --docsearch-footer-shadow: none;
+  --docsearch-hit-background: #27272a;
 }
 
 html {
@@ -94,7 +107,7 @@ a {
   text-decoration: var(--ifm-link-decoration);
 }
 /**
- * Initialiazing a `footnotes` counter on the wrapper
+ * Initializing a `footnotes` counter on the wrapper
  */
 article {
   counter-reset: footnotes;
@@ -253,12 +266,37 @@ h5 {
 }
 
 /* https://github.com/shikijs/twoslash/tree/main/packages/docusaurus-preset-shiki-twoslash */
-[data-theme='light'] .shiki.nord {
+[data-theme='light'] .shiki.github-dark {
   display: none;
 }
 
 [data-theme='dark'] .shiki.min-light-with-diff {
   display: none;
+}
+
+[data-theme='dark'] .shiki.github-dark {
+  background-color: rgba(39, 39, 42, 0.5) !important;
+  @apply border-zinc-700;
+}
+
+[data-theme='dark'] .shiki.github-dark .popover {
+  @apply bg-zinc-800 border-[1px] border-zinc-700 elevation-4;
+}
+
+[data-theme='dark'] .shiki.github-dark .popover .arrow {
+  @apply bg-zinc-800 border-zinc-700;
+}
+
+[data-theme='dark'] .shiki .code-title {
+  @apply border-zinc-700;
+}
+
+[data-theme='light'] .shiki.min-light-with-diff .popover {
+  @apply bg-zinc-100 border-[1px] border-zinc-300;
+}
+
+[data-theme='light'] .shiki.min-light-with-diff .popover .arrow {
+  @apply bg-zinc-100 border-zinc-300;
 }
 
 .markdown ul {
@@ -384,4 +422,39 @@ details p {
 
 .footer__item svg {
   display: none;
+}
+
+.pagination-nav__link {
+  @apply border-none;
+}
+
+.shiki .code-container {
+  @apply text-xs lg:text-base;
+}
+
+.DocSearch.DocSearch-Button {
+  @apply dark:bg-zinc-800 bg-zinc-100 rounded-md;
+}
+
+.DocSearch-Button-Keys {
+  @apply min-w-[auto] gap-1 dark:bg-zinc-700/50 mr-1 px-1 rounded-sm border-[1px] dark:border-zinc-600/50 !important;
+}
+.DocSearch-Button-Key {
+  background: transparent !important;
+  @apply mr-0 border-none shadow-none p-0 w-auto h-auto top-0 text-sm !important;
+}
+
+.DocSearch-Button-Container svg {
+  @apply w-4 h-4 mr-1 ml-1;
+}
+
+.DocSearch-Button-Container span {
+  @apply text-sm;
+}
+
+.DocSearch-Logo a {
+  @apply text-xs items-center;
+}
+.DocSearch-Logo a svg {
+  @apply w-16;
 }

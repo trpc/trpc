@@ -1,6 +1,13 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": ["packages", "types", "scripts", "examples", "rollup.config.ts"],
+  "include": [
+    "packages",
+    "types",
+    "scripts",
+    "examples",
+    "rollup.config.ts",
+    ".eslintrc.js"
+  ],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
@@ -15,6 +22,7 @@
       "@trpc/next": ["packages/next/src"],
       "@trpc/next/*": ["packages/next/src/*"],
       "$test/*": ["test/*"]
-    }
+    },
+    "types": ["node"]
   }
 }

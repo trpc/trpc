@@ -14,7 +14,6 @@ import {
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
-import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import fastify from 'fastify';
@@ -41,8 +40,8 @@ interface Message {
 
 function createAppRouter() {
   const ee = new EventEmitter();
-  const onNewMessageSubscription = jest.fn();
-  const onSubscriptionEnded = jest.fn();
+  const onNewMessageSubscription = vi.fn();
+  const onSubscriptionEnded = vi.fn();
   const appRouter = router<Context>()
     .query('ping', {
       resolve() {
@@ -131,12 +130,12 @@ function createServer(opts: ServerOptions) {
     return { hello: 'POST', body };
   });
 
-  const stop = () => {
-    instance.close();
+  const stop = async () => {
+    await instance.close();
   };
   const start = async () => {
     try {
-      await instance.listen(config.port);
+      await instance.listen({ port: config.port });
     } catch (err) {
       instance.log.error(err);
     }
@@ -162,7 +161,7 @@ function createClient(opts: ClientOptions = {}) {
         false: httpLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController: AbortController as any,
+          AbortController,
           fetch: fetch as any,
         }),
       }),
@@ -196,7 +195,9 @@ describe('anonymous user', () => {
     await app.start();
   });
 
-  afterEach(() => app.stop());
+  afterEach(async () => {
+    await app.stop();
+  });
 
   test('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
@@ -263,8 +264,8 @@ describe('anonymous user', () => {
       });
     });
 
-    const onStartedMock = jest.fn();
-    const onDataMock = jest.fn();
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
     const sub = app.client.subscription('onMessage', undefined, {
       onStarted: onStartedMock,
       onData(data) {
@@ -322,7 +323,9 @@ describe('authorized user', () => {
     await app.start();
   });
 
-  afterEach(() => app.stop());
+  afterEach(async () => {
+    await app.stop();
+  });
 
   test('query', async () => {
     expect(await app.client.query('hello')).toMatchInlineSnapshot(`
@@ -354,7 +357,9 @@ describe('anonymous user with fastify-plugin', () => {
     await app.start();
   });
 
-  afterEach(() => app.stop());
+  afterEach(async () => {
+    await app.stop();
+  });
 
   test('fetch GET', async () => {
     const req = await fetch(`http://localhost:${config.port}/hello`);
@@ -371,7 +376,7 @@ describe('anonymous user with fastify-plugin', () => {
       },
       body: JSON.stringify(data),
     });
-    // body shoul be string
+    // body should be string
     expect(await req.json()).toMatchInlineSnapshot(`
       Object {
         "body": "{\\"text\\":\\"life\\",\\"life\\":42}",

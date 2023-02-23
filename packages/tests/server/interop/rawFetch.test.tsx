@@ -46,5 +46,5 @@ Object {
 `);
   }
 
-  close();
+  await close();
 });

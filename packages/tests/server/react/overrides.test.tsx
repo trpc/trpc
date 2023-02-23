@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -14,7 +15,7 @@ describe('mutation override', () => {
       interface Post {
         title: string;
       }
-      const onSuccessSpy = jest.fn();
+      const onSuccessSpy = vi.fn();
 
       const posts: Post[] = [];
 
@@ -87,7 +88,7 @@ describe('mutation override', () => {
       </ctx.App>,
     );
 
-    $.getByTestId('add').click();
+    await userEvent.click($.getByTestId('add'));
 
     await waitFor(() => {
       expect($.container).toHaveTextContent(nonce);
@@ -121,13 +122,13 @@ describe('mutation override', () => {
       </ctx.App>,
     );
 
-    $.getByTestId('add').click();
+    await userEvent.click($.getByTestId('add'));
 
     await waitFor(() => {
       expect(ctx.onSuccessSpy).toHaveBeenCalledTimes(1);
     });
 
-    expect(ctx.onSuccessSpy.mock.calls[0][0].meta).toMatchInlineSnapshot(`
+    expect(ctx.onSuccessSpy.mock.calls[0]![0]!.meta).toMatchInlineSnapshot(`
       Object {
         "skipInvalidate": true,
       }

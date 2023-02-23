@@ -15,17 +15,17 @@ export function subscriptionPullFactory<TOutput>(opts: {
   let timer: any;
   let stopped = false;
   async function _pull(emit: Observer<TOutput, unknown>) {
-    /* istanbul ignore next */
+    /* istanbul ignore next -- @preserve */
     if (stopped) {
       return;
     }
     try {
       await opts.pull(emit);
-    } catch (err /* istanbul ignore next */) {
+    } catch (err /* istanbul ignore next -- @preserve */) {
       emit.error(getTRPCErrorFromUnknown(err));
     }
 
-    /* istanbul ignore else */
+    /* istanbul ignore else -- @preserve */
     if (!stopped) {
       timer = setTimeout(() => _pull(emit), opts.intervalMs);
     }
