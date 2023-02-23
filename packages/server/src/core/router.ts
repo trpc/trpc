@@ -25,10 +25,7 @@ import {
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
 export interface ProcedureRouterRecord {
-  [key: string]:
-    | AnyProcedure
-    | AnyRouter
-    | Record<string, AnyProcedure | AnyRouter>;
+  [key: string]: AnyProcedure | AnyRouter | ProcedureRouterRecord;
 }
 
 /**
@@ -143,20 +140,14 @@ export interface Router<TDef extends AnyRouterDef> {
 export type AnyRouter = Router<AnyRouterDef>;
 
 function isRouter(
-  procedureOrRouter:
-    | AnyProcedure
-    | AnyRouter
-    | Record<string, AnyProcedure | AnyRouter>,
+  procedureOrRouter: AnyProcedure | AnyRouter | ProcedureRouterRecord,
 ): procedureOrRouter is AnyRouter {
   return 'router' in procedureOrRouter._def;
 }
 
 function isNestedRouter(
-  procedureOrRouter:
-    | AnyProcedure
-    | AnyRouter
-    | Record<string, AnyProcedure | AnyRouter>,
-): procedureOrRouter is Record<string, AnyRouter | AnyProcedure> {
+  procedureOrRouter: AnyProcedure | AnyRouter | ProcedureRouterRecord,
+): procedureOrRouter is ProcedureRouterRecord {
   return 'router' in procedureOrRouter._def;
 }
 
@@ -226,14 +217,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         }
 
         if (isNestedRouter(procedureOrRouter)) {
-          Object.entries(procedureOrRouter).map(([_key, routerOrProcedure]) => {
-            if (isRouter(routerOrProcedure)) {
-              recursiveGetPaths(
-                routerOrProcedure._def.procedures,
-                `${newPath}.`,
-              );
-            }
-          });
+          recursiveGetPaths(procedureOrRouter, `${newPath}.`);
           continue;
         }
 
