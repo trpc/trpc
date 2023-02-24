@@ -38,7 +38,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     onOpen,
     onClose,
   } = opts;
-  /* istanbul ignore next */
+  /* istanbul ignore next -- @preserve */
   if (!WebSocketImpl) {
     throw new Error(
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
@@ -134,7 +134,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     connectTimer = null;
 
     conn.addEventListener('open', () => {
-      /* istanbul ignore next */
+      /* istanbul ignore next -- @preserve */
       if (conn !== activeConnection) {
         return;
       }

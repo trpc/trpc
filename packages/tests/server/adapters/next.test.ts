@@ -25,7 +25,7 @@ function mockReq({
   req.query = query;
 
   const socket = {
-    destroy: jest.fn(),
+    destroy: vi.fn(),
   };
   req.socket = socket;
 
@@ -41,9 +41,9 @@ function mockReq({
 function mockRes() {
   const res = new EventEmitter() as any;
 
-  const json = jest.fn(() => res);
-  const setHeader = jest.fn(() => res);
-  const end = jest.fn(() => res);
+  const json = vi.fn(() => res);
+  const setHeader = vi.fn(() => res);
+  const end = vi.fn(() => res);
   res.json = json;
   res.setHeader = setHeader;
   res.end = end;

@@ -16,8 +16,6 @@ import { expectTypeOf } from 'expect-type';
 import { default as WebSocket, default as ws } from 'ws';
 import { z } from 'zod';
 
-jest.retryTimes(3);
-
 type Message = {
   id: string;
 };
@@ -26,9 +24,9 @@ function factory(config?: { createContext: () => Promise<any> }) {
   const subRef: {
     current: Observer<Message, unknown>;
   } = {} as any;
-  const onNewMessageSubscription = jest.fn();
-  const subscriptionEnded = jest.fn();
-  const onNewClient = jest.fn();
+  const onNewMessageSubscription = vi.fn();
+  const subscriptionEnded = vi.fn();
+  const onNewClient = vi.fn();
   const oldRouter = trpc
     .router()
     .query('greeting', {
@@ -80,8 +78,8 @@ function factory(config?: { createContext: () => Promise<any> }) {
     })
     .interop();
 
-  const onOpenMock = jest.fn();
-  const onCloseMock = jest.fn();
+  const onOpenMock = vi.fn();
+  const onCloseMock = vi.fn();
 
   expectTypeOf(oldRouter).toMatchTypeOf<AnyRouter>();
   expectTypeOf<AnyRouter>().toMatchTypeOf<typeof oldRouter>();
@@ -123,7 +121,7 @@ test('query', async () => {
   expect(await client.query('greeting', null)).toBe('hello world');
   expect(await client.query('greeting', 'alexdotjs')).toBe('hello alexdotjs');
 
-  close();
+  await close();
 });
 
 test('mutation', async () => {
@@ -141,7 +139,7 @@ test('mutation', async () => {
     }
   `);
 
-  close();
+  await close();
 });
 
 test('basic subscription test', async () => {
@@ -156,8 +154,8 @@ test('basic subscription test', async () => {
       });
     });
   });
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
   const subscription = client.subscription('onMessage', undefined, {
     onStarted() {
       onStartedMock();
@@ -206,7 +204,7 @@ test('basic subscription test', async () => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
   });
-  close();
+  await close();
 });
 
 test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
@@ -221,10 +219,10 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
       });
     });
   });
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
   client.subscription('onMessage', undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
@@ -292,10 +290,10 @@ test('server subscription ended', async () => {
       });
     });
   });
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
   client.subscription('onMessage', undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
@@ -316,7 +314,7 @@ test('server subscription ended', async () => {
   expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
   );
-  close();
+  await close();
 });
 
 test('sub emits errors', async () => {
@@ -330,12 +328,12 @@ test('sub emits errors', async () => {
       subRef.current.error(new Error('test'));
     });
   });
-  const onNewClient = jest.fn();
+  const onNewClient = vi.fn();
   wss.addListener('connection', onNewClient);
-  const onStartedMock = jest.fn();
-  const onDataMock = jest.fn();
-  const onErrorMock = jest.fn();
-  const onCompleteMock = jest.fn();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
   client.subscription('onMessage', undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
@@ -350,7 +348,7 @@ test('sub emits errors', async () => {
     expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
 
-  close();
+  await close();
 });
 
 test('wait for slow queries/mutations before disconnecting', async () => {
@@ -362,13 +360,13 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   const promise = client.mutation('slow');
   wsClient.close();
   expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
-  close();
+  await close();
   await waitFor(() => {
     expect((wsClient.getConnection() as any as WebSocket).readyState).toBe(
       WebSocket.CLOSED,
     );
   });
-  close();
+  await close();
 });
 
 test('subscriptions are automatically resumed', async () => {
@@ -382,11 +380,11 @@ test('subscriptions are automatically resumed', async () => {
     });
   });
   function createSub() {
-    const onStartedMock = jest.fn();
-    const onDataMock = jest.fn();
-    const onErrorMock = jest.fn();
-    const onStoppedMock = jest.fn();
-    const onCompleteMock = jest.fn();
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onStoppedMock = vi.fn();
+    const onCompleteMock = vi.fn();
     const unsub = client.subscription('onMessage', undefined, {
       onStarted: onStartedMock(),
       onData: onDataMock,
@@ -444,7 +442,7 @@ test('subscriptions are automatically resumed', async () => {
     expect(wss.clients.size).toBe(1);
   });
 
-  close();
+  await close();
 
   await waitFor(() => {
     expect(onCloseMock).toHaveBeenCalledTimes(2);
@@ -465,7 +463,7 @@ test('not found error', async () => {
   expect(error.name).toBe('TRPCClientError');
   expect(error.shape?.data.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
-  close();
+  await close();
 });
 
 test('batching', async () => {
@@ -485,7 +483,7 @@ test('batching', async () => {
       },
     ]
   `);
-  t.close();
+  await t.close();
 });
 
 describe('regression test - slow createContext', () => {
@@ -525,11 +523,11 @@ describe('regression test - slow createContext', () => {
       }
     `);
     rawClient.close();
-    t.close();
+    await t.close();
   });
 
   test('createContext throws', async () => {
-    const createContext = jest.fn(async () => {
+    const createContext = vi.fn(async () => {
       await waitMs(20);
       throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
     });
@@ -604,7 +602,7 @@ describe('regression test - slow createContext', () => {
     `);
 
     expect(createContext).toHaveBeenCalledTimes(1);
-    t.close();
+    await t.close();
   });
 });
 
@@ -644,7 +642,7 @@ test('malformatted JSON', async () => {
       "id": null,
     }
   `);
-  t.close();
+  await t.close();
 });
 
 test('regression - badly shaped request', async () => {
@@ -686,7 +684,7 @@ test('regression - badly shaped request', async () => {
     }
   `);
   rawClient.close();
-  t.close();
+  await t.close();
 });
 
 describe('include "jsonrpc" in response if sent with message', () => {
@@ -759,7 +757,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     `);
 
     rawClient.close();
-    t.close();
+    await t.close();
   });
 
   test('subscriptions', async () => {
@@ -846,13 +844,13 @@ describe('include "jsonrpc" in response if sent with message', () => {
     `);
 
     rawClient.close();
-    t.close();
+    await t.close();
   });
 });
 
-test('wsClient stops reconnecting after .close()', async () => {
+test('wsClient stops reconnecting after .await close()', async () => {
   const badWsUrl = 'ws://localhost:9999';
-  const retryDelayMsMock = jest.fn();
+  const retryDelayMsMock = vi.fn();
   retryDelayMsMock.mockReturnValue(100);
 
   const wsClient = createWSClient({

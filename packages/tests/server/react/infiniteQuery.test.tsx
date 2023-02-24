@@ -12,8 +12,8 @@ let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
   factory = createAppRouter();
 });
-afterEach(() => {
-  factory.close();
+afterEach(async () => {
+  await factory.close();
 });
 
 describe('Infinite Query', () => {
@@ -86,7 +86,7 @@ describe('Infinite Query', () => {
       expect(utils.container).not.toHaveTextContent('second post');
       expect(utils.container).toHaveTextContent('Load More');
     });
-    userEvent.click(utils.getByTestId('loadMore'));
+    await userEvent.click(utils.getByTestId('loadMore'));
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('Loading more...');
     });
@@ -197,7 +197,7 @@ describe('Infinite Query', () => {
       expect(utils.container).not.toHaveTextContent('second post');
       expect(utils.container).toHaveTextContent('Load More');
     });
-    userEvent.click(utils.getByTestId('loadMore'));
+    await userEvent.click(utils.getByTestId('loadMore'));
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('Loading more...');
     });
@@ -234,7 +234,7 @@ describe('Infinite Query', () => {
     </div>
   `);
 
-    userEvent.click(utils.getByTestId('prefetch'));
+    await userEvent.click(utils.getByTestId('prefetch'));
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('Fetching...');
     });
@@ -326,7 +326,7 @@ describe('Infinite Query', () => {
       expect(utils.container).not.toHaveTextContent('second post');
       expect(utils.container).toHaveTextContent('Load More');
     });
-    userEvent.click(utils.getByTestId('loadMore'));
+    await userEvent.click(utils.getByTestId('loadMore'));
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('Loading more...');
     });
@@ -363,7 +363,7 @@ describe('Infinite Query', () => {
     </div>
   `);
 
-    userEvent.click(utils.getByTestId('fetch'));
+    await userEvent.click(utils.getByTestId('fetch'));
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('Fetching...');
     });

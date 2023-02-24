@@ -3,14 +3,15 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
   factory = createAppRouter();
 });
-afterEach(() => {
-  factory.close();
+afterEach(async () => {
+  await factory.close();
 });
 
 describe('setInfiniteQueryData()', () => {
@@ -102,7 +103,7 @@ describe('setInfiniteQueryData()', () => {
 
     const utils = render(<App />);
 
-    utils.getByTestId('setInfiniteQueryData').click();
+    await userEvent.click(utils.getByTestId('setInfiniteQueryData'));
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('infinitePosts.title1');
