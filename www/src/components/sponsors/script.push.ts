@@ -81,7 +81,7 @@ const bucketConfig: Record<
   diamond: {
     title: '💎 Diamond Sponsors',
     numCols: 2,
-    imgSize: 200,
+    imgSize: 180,
   },
   gold: {
     title: '🥇 Gold Sponsors',
