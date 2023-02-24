@@ -191,16 +191,28 @@ async function main() {
       });
 
     // add manual sponsors
-    rawList.push({
-      __typename: 'Organization',
-      name: 'Ping.gg',
-      imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
-      monthlyPriceInDollars: 250,
-      link: 'https://ping.gg/',
-      privacyLevel: 'PUBLIC',
-      login: 'pingdotgg',
-      createdAt: 1645488994000,
-    });
+    rawList.push(
+      {
+        __typename: 'Organization',
+        name: 'Ping.gg',
+        imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
+        monthlyPriceInDollars: 250,
+        link: 'https://ping.gg/?ref=trpc',
+        privacyLevel: 'PUBLIC',
+        login: 'pingdotgg',
+        createdAt: 1645488994_000,
+      },
+      {
+        __typename: 'Organization',
+        name: 'Tola',
+        imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
+        monthlyPriceInDollars: 2110,
+        link: 'https://tolahq.com/?ref=trpc',
+        privacyLevel: 'PUBLIC',
+        login: 'tolahq',
+        createdAt: 1659304800_000,
+      },
+    );
     const list = rawList.map((sponsor) => {
       // calculate total value
       const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
@@ -264,7 +276,7 @@ async function main() {
       .reverse()
       .map((sponsor) => {
         const { name, imgSrc, weight, login, link } = sponsor;
-        return { name, imgSrc, weight, login, link };
+        return { name, imgSrc, weight, login, link, value: sponsor.value };
       });
   };
 
