@@ -12,8 +12,6 @@ interface Def {
   bronze: ValidLogins[];
 }
 
-type BucketNames = keyof Def;
-
 const sections: Def = {
   diamond: [
     //
@@ -59,7 +57,9 @@ const buckets: Buckets = {
 
 for (const sponsor of sponsors) {
   const { login } = sponsor;
-  const section = sections.gold.includes(login)
+  const section = sections.diamond.includes(login)
+    ? 'diamond'
+    : sections.gold.includes(login)
     ? 'gold'
     : sections.silver.includes(login)
     ? 'silver'
