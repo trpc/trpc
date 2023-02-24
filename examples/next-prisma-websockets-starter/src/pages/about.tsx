@@ -12,7 +12,7 @@ export default function AboutPage() {
 
   return (
     <div>
-      Here&apos;s a random number from a subb: {num} <br />
+      Here&apos;s a random number from a sub: {num} <br />
       <Link href="/">Index</Link>
     </div>
   );
