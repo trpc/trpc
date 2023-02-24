@@ -133,6 +133,13 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
+### 💎 Diamond Sponsors
+
+<table>
+  <tr>
+  </tr>
+</table>
+
 ### 🥇 Gold Sponsors
 
 <table>
@@ -146,7 +153,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <table>
   <tr>
    <td align="center"><a href="https://flightcontrol.dev/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/87621213?v=4&s=150" width="150" alt="Flightcontrol"/><br />Flightcontrol</a></td>
-   <td align="center"><a href="https://ping.gg/"><img src="https://avatars.githubusercontent.com/u/89191727?v=4&s=150" width="150" alt="Ping.gg"/><br />Ping.gg</a></td>
+   <td align="center"><a href="https://ping.gg/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/89191727?v=4&s=150" width="150" alt="Ping.gg"/><br />Ping.gg</a></td>
    <td align="center"><a href="http://youarerad.org/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4&s=150" width="150" alt="Jason%20Docton"/><br />Jason Docton</a></td>
    <td align="center"><a href="https://www.prisma.io/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/17219288?v=4&s=150" width="150" alt="prisma"/><br />prisma</a></td>
   </tr>
@@ -168,7 +175,7 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 <table>
   <tr>
-   <td align="center"><a href="https://tolahq.com"><img src="https://avatars.githubusercontent.com/u/92736868?v=4&s=100" width="100" alt="Tola"/><br />Tola</a></td>
+   <td align="center"><a href="https://tolahq.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/92736868?v=4&s=100" width="100" alt="Tola"/><br />Tola</a></td>
    <td align="center"><a href="https://pliny.app/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/95662801?v=4&s=100" width="100" alt="Ahoy%20Labs"/><br />Ahoy Labs</a></td>
    <td align="center"><a href="http://solberg.is/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4&s=100" width="100" alt="J%C3%B6kull%20S%C3%B3lberg%20Au%C3%B0unsson"/><br />Jökull Sólberg Auðunsson</a></td>
    <td align="center"><a href="https://samholmes.net/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/8385528?u=b4c6ff29bddd7f807146231ab3a88aee1a16c5dd&v=4&s=100" width="100" alt="Sam%20Holmes"/><br />Sam Holmes</a></td>

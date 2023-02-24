@@ -275,8 +275,14 @@ async function main() {
       .flatMap((group) => group.reverse())
       .reverse()
       .map((sponsor) => {
-        const { name, imgSrc, weight, login, link } = sponsor;
-        return { name, imgSrc, weight, login, link, value: sponsor.value };
+        return {
+          name: sponsor.name,
+          imgSrc: sponsor.imgSrc,
+          weight: sponsor.weight,
+          login: sponsor.login,
+          link: sponsor.link,
+          // value: sponsor.value,
+        };
       });
   };
 
