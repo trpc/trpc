@@ -5,7 +5,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.18.2",
+  "packageManager": "pnpm@7.27.1",
   "scripts": {
     "build:1-generate": "prisma generate",
     "build:2-next": "cross-env NODE_ENV=production next build",
