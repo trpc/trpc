@@ -21,14 +21,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^4.9.0",
+    "@prisma/client": "^4.10.1",
     "@tanstack/react-query": "^4.3.8",
     "@trpc/client": "^10.12.0",
     "@trpc/next": "^10.12.0",
     "@trpc/react-query": "^10.12.0",
     "@trpc/server": "^10.12.0",
     "clsx": "^1.1.1",
-    "next": "^13.0.0",
+    "next": "^13.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "superjson": "^1.7.4",
@@ -43,7 +43,7 @@
     "@types/react": "^18.0.9",
     "eslint": "^8.30.0",
     "npm-run-all": "^4.1.5",
-    "prisma": "^4.9.0",
+    "prisma": "^4.10.1",
     "start-server-and-test": "^1.12.0",
     "typescript": "^4.8.3"
   },

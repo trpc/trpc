@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@vercel/og": "^1.0.0",
-    "next": "latest",
+    "next": "13.2.1",
     "react": "latest",
     "react-dom": "latest",
     "zod": "^3.0.0"
