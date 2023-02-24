@@ -97,7 +97,9 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  * @internal
  */
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends
+    | AnyRouter
+    | ProcedureRouterRecord
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
@@ -206,6 +208,23 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       );
     }
 
+    let newProcedures: ProcedureRouterRecord = {};
+    for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
+      const value = procedures[key] ?? {};
+
+      if (isRouter(value)) {
+        newProcedures[key] = procedureOrRouter;
+        continue;
+      }
+
+      if (isNestedRouter(value)) {
+        newProcedures[key] = createRouterInner(value);
+        continue;
+      }
+
+      newProcedures[key] = procedureOrRouter;
+    }
+
     const routerProcedures: ProcedureRecord = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
@@ -228,14 +247,14 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         routerProcedures[newPath] = procedureOrRouter;
       }
     }
-    recursiveGetPaths(procedures);
+    recursiveGetPaths(newProcedures);
 
     const _def: AnyRouterDef<TConfig> = {
       _config: config,
       router: true,
       procedures: routerProcedures,
       ...emptyRouter,
-      record: procedures,
+      record: newProcedures,
       queries: Object.entries(routerProcedures)
         .filter((pair) => (pair[1] as any)._def.query)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
@@ -248,7 +267,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     };
 
     const router: AnyRouter = {
-      ...procedures,
+      ...newProcedures,
       _def,
       createCaller(ctx) {
         const proxy = createRecursiveProxy(({ path, args }) => {
