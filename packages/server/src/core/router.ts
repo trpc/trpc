@@ -150,7 +150,10 @@ function isRouter(
 function isNestedRouter(
   procedureOrRouter: AnyProcedure | AnyRouter | ProcedureRouterRecord,
 ): procedureOrRouter is ProcedureRouterRecord {
-  return 'router' in procedureOrRouter._def;
+  return (
+    !('router' in procedureOrRouter._def) &&
+    !procedureOrRouter.hasOwnProperty('_procedure')
+  );
 }
 
 const emptyRouter = {
@@ -208,7 +211,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       );
     }
 
-    let newProcedures: ProcedureRouterRecord = {};
+    const newProcedures: ProcedureRouterRecord = {};
     for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
       const value = procedures[key] ?? {};
 
