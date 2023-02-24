@@ -2,10 +2,10 @@ lockfileVersion: 5.4
 
 overrides:
   '@tanstack/react-query': 4.6.0
-  '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-starter
-  '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Fnext-websockets-starter
-  '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
-  '@examples/legacy-next-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Flegacy-next-starter
+  '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
+  '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
+  '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
+  '@examples/legacy-next-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Flegacy-next-starter
 
 importers:
 
@@ -80,7 +80,7 @@ importers:
   examples/.interop/next-prisma-starter:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Flegacy-next-starter
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.12.0
@@ -112,7 +112,7 @@ importers:
       vitest: ^0.28.5
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.10.1'
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.10.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
@@ -604,7 +604,7 @@ importers:
   examples/next-prisma-starter:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-starter
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
       '@trpc/client': ^10.12.0
       '@trpc/next': ^10.12.0
@@ -635,7 +635,7 @@ importers:
       vitest: ^0.28.5
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1'
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -671,7 +671,7 @@ importers:
   examples/next-prisma-todomvc:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.12.0
@@ -694,7 +694,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.10.1'
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.10.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -722,7 +722,7 @@ importers:
   examples/next-prisma-websockets-starter:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Fnext-websockets-starter
+      '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': ^10.12.0
@@ -761,7 +761,7 @@ importers:
       ws: ^8.0.0
       zod: ^3.0.0
     dependencies:
-      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.10.1'
+      '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.10.1'
       '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -7301,8 +7301,8 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: false
 
-  /@prisma/engines-version/4.9.0-42.ceb5c99003b99c9ee2c1d2e618e359c14aef2ea5:
-    resolution: {integrity: sha512-M16aibbxi/FhW7z1sJCX8u+0DriyQYY5AyeTH7plQm9MLnURoiyn3CZBqAyIoQ+Z1pS77usCIibYJWSgleBMBA==}
+  /@prisma/engines-version/4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19:
+    resolution: {integrity: sha512-tsjTho7laDhf9EJ9EnDxAPEf7yrigSMDhniXeU4YoWc7azHAs4GPxRi2P9LTFonmHkJLMOLjR77J1oIP8Ife1w==}
     dev: false
 
   /@prisma/engines/4.10.1:
@@ -22328,11 +22328,11 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.10.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Flegacy-next-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Flegacy-next-starter'
+  '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.10.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Flegacy-next-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Flegacy-next-starter'
     name: '@prisma/client'
-    version: 4.9.0
+    version: 4.10.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -22341,15 +22341,15 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.9.0-42.ceb5c99003b99c9ee2c1d2e618e359c14aef2ea5
+      '@prisma/engines-version': 4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19
       prisma: 4.10.1
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.10.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Fnext-websockets-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Fnext-websockets-starter'
+  '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.10.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Fnext-websockets-starter'
     name: '@prisma/client'
-    version: 4.9.0
+    version: 4.10.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -22358,15 +22358,15 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.9.0-42.ceb5c99003b99c9ee2c1d2e618e359c14aef2ea5
+      '@prisma/engines-version': 4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19
       prisma: 4.10.1
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Ftrpc-next-prisma-starter'
+  '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter'
     name: '@prisma/client'
-    version: 4.9.0
+    version: 4.10.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -22375,15 +22375,15 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.9.0-42.ceb5c99003b99c9ee2c1d2e618e359c14aef2ea5
+      '@prisma/engines-version': 4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19
       prisma: 4.10.1
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.10.1':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.9.0.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc'
+  '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.10.1':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc'
     name: '@prisma/client'
-    version: 4.9.0
+    version: 4.10.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -22392,6 +22392,6 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.9.0-42.ceb5c99003b99c9ee2c1d2e618e359c14aef2ea5
+      '@prisma/engines-version': 4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19
       prisma: 4.10.1
     dev: false
