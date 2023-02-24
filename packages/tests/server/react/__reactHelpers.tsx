@@ -2,7 +2,7 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Operation, httpBatchLink, splitLink, wsLink } from '@trpc/client/src';
-import { createTRPCReact } from '@trpc/react-query/src';
+import { createTRPCReact } from '@trpc/react-query/src/createTRPCReact';
 import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
 import { AnyRouter } from '@trpc/server/src';
 import React, { ReactNode } from 'react';
@@ -10,7 +10,7 @@ import React, { ReactNode } from 'react';
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
 ) {
-  const spyLink = jest.fn((_op: Operation<unknown>) => {
+  const spyLink = vi.fn((_op: Operation<unknown>) => {
     // noop
   });
 

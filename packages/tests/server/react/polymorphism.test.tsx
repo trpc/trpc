@@ -11,6 +11,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createTRPCReact } from '@trpc/react-query';
 import { InferQueryLikeData } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
@@ -171,7 +172,7 @@ describe('polymorphism', () => {
         </ctx.App>,
       );
 
-      $.getByTestId('startExportBtn').click();
+      await userEvent.click($.getByTestId('startExportBtn'));
 
       await waitFor(() => {
         expect($.container).toHaveTextContent(
@@ -179,7 +180,7 @@ describe('polymorphism', () => {
         );
       });
 
-      $.getByTestId('refreshBtn').click();
+      await userEvent.click($.getByTestId('refreshBtn'));
 
       await waitFor(() => {
         expect($.container).toHaveTextContent(
@@ -245,7 +246,7 @@ describe('polymorphism', () => {
         </ctx.App>,
       );
 
-      $.getByTestId('startExportBtn').click();
+      await userEvent.click($.getByTestId('startExportBtn'));
 
       await waitFor(() => {
         expect($.container).toHaveTextContent(
@@ -253,7 +254,7 @@ describe('polymorphism', () => {
         );
       });
 
-      $.getByTestId('refreshBtn').click();
+      await userEvent.click($.getByTestId('refreshBtn'));
 
       await waitFor(() => {
         expect($.container).toHaveTextContent(

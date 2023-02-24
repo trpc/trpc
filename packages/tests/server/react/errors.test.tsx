@@ -7,8 +7,6 @@ import { konn } from 'konn';
 import React from 'react';
 import { ZodError, z } from 'zod';
 
-jest.retryTimes(3);
-
 describe('custom error formatter', () => {
   const ctx = konn()
     .beforeEach(() => {
@@ -48,7 +46,7 @@ describe('custom error formatter', () => {
 
   test('query that fails', async () => {
     const { proxy, App, appRouter } = ctx;
-    const queryErrorCallback = jest.fn();
+    const queryErrorCallback = vi.fn();
     function MyComponent() {
       const query1 = proxy.post.byId.useQuery({
         id: 0,
@@ -85,7 +83,7 @@ describe('custom error formatter', () => {
       expect(queryErrorCallback).toHaveBeenCalled();
     });
 
-    const errorDataResult = queryErrorCallback.mock.calls[0][0];
+    const errorDataResult = queryErrorCallback.mock.calls[0]![0]!;
 
     expect(errorDataResult).toBeInstanceOf(TRPCClientError);
     expect(errorDataResult).toMatchInlineSnapshot(`
@@ -134,7 +132,7 @@ describe('no custom formatter', () => {
 
   test('query that fails', async () => {
     const { proxy, App, appRouter } = ctx;
-    const queryErrorCallback = jest.fn();
+    const queryErrorCallback = vi.fn();
     function MyComponent() {
       const query1 = proxy.post.byId.useQuery({
         id: 0,
@@ -168,7 +166,7 @@ describe('no custom formatter', () => {
       expect(queryErrorCallback).toHaveBeenCalled();
     });
 
-    const errorDataResult = queryErrorCallback.mock.calls[0][0];
+    const errorDataResult = queryErrorCallback.mock.calls[0]![0]!;
 
     expect(errorDataResult).toBeInstanceOf(TRPCClientError);
     expect(errorDataResult).toMatchInlineSnapshot(`
