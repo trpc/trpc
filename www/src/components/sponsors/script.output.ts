@@ -3,123 +3,109 @@
 
 export const sponsors = [
   {
+    "name": "Tola",
+    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
+    "weight": 101,
+    "login": "tolahq",
+    "link": "https://tolahq.com/?ref=trpc"
+  },
+  {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 101,
+    "weight": 56,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc"
   },
   {
     "name": "Flightcontrol",
     "imgSrc": "https://avatars.githubusercontent.com/u/87621213?v=4",
-    "weight": 76,
+    "weight": 42,
     "login": "flightcontrolhq",
     "link": "https://flightcontrol.dev/?ref=trpc"
   },
   {
     "name": "Ping.gg",
     "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "weight": 76,
+    "weight": 42,
     "login": "pingdotgg",
-    "link": "https://ping.gg/"
+    "link": "https://ping.gg/?ref=trpc"
   },
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 47,
+    "weight": 26,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc"
   },
   {
     "name": "prisma",
     "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
-    "weight": 26,
+    "weight": 15,
     "login": "prisma",
     "link": "https://www.prisma.io/?ref=trpc"
   },
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 17,
+    "weight": 10,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc"
   },
   {
-    "name": "Newfront",
-    "imgSrc": "https://avatars.githubusercontent.com/u/44950377?v=4",
-    "weight": 16,
-    "login": "newfront-insurance",
-    "link": "https://www.newfront.com/?ref=trpc"
-  },
-  {
     "name": "Interval",
     "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 14,
+    "weight": 8,
     "login": "interval",
     "link": "https://interval.com/?ref=trpc"
   },
   {
-    "name": "Ryan",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6907797?u=71aca5cb761c401b4abbf100057978a76f2f5e22&v=4",
-    "weight": 13,
-    "login": "chimon2000",
-    "link": "https://standardresume.co/r/ryan-edge?ref=trpc"
-  },
-  {
     "name": "Dr. B",
     "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
-    "weight": 12,
+    "weight": 8,
     "login": "hidrb",
     "link": "https://github.com/hidrb"
   },
   {
     "name": "Snaplet",
     "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
-    "weight": 11,
+    "weight": 7,
     "login": "snaplet",
     "link": "https://snaplet.dev/?ref=trpc"
   },
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 9,
+    "weight": 6,
     "login": "ahoylabs",
     "link": "https://pliny.app/?ref=trpc"
   },
   {
-    "name": "Jökull Sólberg Auðunsson",
-    "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
-    "weight": 8,
-    "login": "jokull",
-    "link": "http://solberg.is/?ref=trpc"
-  },
-  {
     "name": "Flylance",
     "imgSrc": "https://avatars.githubusercontent.com/u/67534310?v=4",
-    "weight": 8,
+    "weight": 5,
     "login": "flylance-apps",
     "link": "http://flylance.com/?ref=trpc"
   },
   {
+    "name": "Jökull Sólberg Auðunsson",
+    "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
+    "weight": 5,
+    "login": "jokull",
+    "link": "http://solberg.is/?ref=trpc"
+  },
+  {
     "name": "Sam Holmes",
     "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=b4c6ff29bddd7f807146231ab3a88aee1a16c5dd&v=4",
-    "weight": 4,
+    "weight": 3,
     "login": "sam3d",
     "link": "https://samholmes.net/?ref=trpc"
   },
   {
     "name": "Max Greenwald",
     "imgSrc": "https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4",
-    "weight": 4,
+    "weight": 3,
     "login": "mgreenw",
     "link": "https://maxgreenwald.me/?ref=trpc"
-  },
-  {
-    "name": "Beier (Bill)",
-    "imgSrc": "https://avatars.githubusercontent.com/u/10513364?u=a129aade5f9a7a92cf06172b47d67ccefc736933&v=4",
-    "weight": 4,
-    "login": "bluebill1049",
-    "link": "https://www.beekai.com/?ref=trpc"
   },
   {
     "name": "Timothy Cole",
@@ -131,77 +117,77 @@ export const sponsors = [
   {
     "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc"
   },
   {
     "name": "Faraz Patankar",
     "imgSrc": "https://avatars.githubusercontent.com/u/10681116?u=694385b48756c6be01f289f8c419e95b3103fa84&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "FarazPatankar",
     "link": "https://farazpatankar.com/?ref=trpc"
   },
   {
     "name": "PatrickJS",
     "imgSrc": "https://avatars.githubusercontent.com/u/1016365?u=47d964a94849ae3bd59cc1a66e5f4aad0c43d2a2&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "PatrickJS",
     "link": "https://patrickjs.com/?ref=trpc"
   },
   {
     "name": "Theo Browne",
     "imgSrc": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "t3dotgg",
     "link": "http://t3.gg/?ref=trpc"
   },
   {
     "name": "aslaker",
     "imgSrc": "https://avatars.githubusercontent.com/u/51129804?u=72424dea624e663c5df731ad9852636f5c4471e5&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "aslaker",
     "link": "https://github.com/aslaker"
   },
   {
     "name": "Dmitry Maykov",
     "imgSrc": "https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "dmaykov",
     "link": "https://github.com/dmaykov"
   },
   {
     "name": "Lori Karikari",
     "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "LoriKarikari",
     "link": "https://github.com/LoriKarikari"
   },
   {
     "name": "Chris Bradley",
     "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "chrisbradleydev",
     "link": "https://chrisbradley.dev/?ref=trpc"
   },
   {
     "name": "Isaac Way",
     "imgSrc": "https://avatars.githubusercontent.com/u/12774588?u=e664ed8bd364b3e9103d080d72087e25904c6cab&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "iway1",
     "link": "https://github.com/iway1"
   },
   {
     "name": "Ahmed Elsakaan",
     "imgSrc": "https://avatars.githubusercontent.com/u/20271968?u=ab95f47bb661569e9b4ab1dadfdb802b77f9d1c6&v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "ixahmedxi",
     "link": "https://elsakaan.dev/?ref=trpc"
   },
   {
     "name": "Svend Aage Roperos Nielsen",
     "imgSrc": "https://avatars.githubusercontent.com/u/28002895?v=4",
-    "weight": 3,
+    "weight": 2,
     "login": "Sven1106",
     "link": "https://github.com/Sven1106"
   },
@@ -220,6 +206,13 @@ export const sponsors = [
     "link": "http://francisprovost.com/?ref=trpc"
   },
   {
+    "name": "Michał Kowieski",
+    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
+    "weight": 2,
+    "login": "utevo",
+    "link": "https://github.com/utevo"
+  },
+  {
     "name": "SchlagerKhan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
     "weight": 2,
@@ -227,11 +220,11 @@ export const sponsors = [
     "link": "https://iamkhan.io/?ref=trpc"
   },
   {
-    "name": "Michał Kowieski",
-    "imgSrc": "https://avatars.githubusercontent.com/u/29740731?u=8582d7cf3bee56a610b6db878a7627cbdf32d8de&v=4",
+    "name": "Jared Wyce",
+    "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
     "weight": 2,
-    "login": "utevo",
-    "link": "https://github.com/utevo"
+    "login": "jwyce",
+    "link": "http://jwyce.gg/?ref=trpc"
   },
   {
     "name": "Christian",
@@ -267,13 +260,6 @@ export const sponsors = [
     "weight": 2,
     "login": "malcolmstill",
     "link": "https://mstill.dev/blog?ref=trpc"
-  },
-  {
-    "name": "Jared Wyce",
-    "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
-    "weight": 2,
-    "login": "jwyce",
-    "link": "http://jwyce.gg/?ref=trpc"
   },
   {
     "name": "Wyatt Schulte",
@@ -318,6 +304,13 @@ export const sponsors = [
     "link": "https://github.com/andrew-werdna"
   },
   {
+    "name": "Joseph Lozano",
+    "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
+    "weight": 2,
+    "login": "joseph-lozano",
+    "link": "https://josephlozano.dev/?ref=trpc"
+  },
+  {
     "name": "Jirka Svoboda",
     "imgSrc": "https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4",
     "weight": 2,
@@ -330,13 +323,6 @@ export const sponsors = [
     "weight": 2,
     "login": "michalmalota",
     "link": "https://jobsinjs.com/?ref=trpc"
-  },
-  {
-    "name": "Joseph Lozano",
-    "imgSrc": "https://avatars.githubusercontent.com/u/12260694?u=ff3b7d8dd83573506fc866e4581d916544ee15e8&v=4",
-    "weight": 2,
-    "login": "joseph-lozano",
-    "link": "https://josephlozano.dev/?ref=trpc"
   },
   {
     "name": "Ascent Factory",
