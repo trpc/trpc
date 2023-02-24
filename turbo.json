@@ -19,8 +19,11 @@
     "codegen:bigLegacyRouter": {
       "outputs": ["server/__generated__/bigLegacyRouter/**"]
     },
+    "prebuild": {
+      "cache": false
+    },
     "build": {
-      "dependsOn": ["^build", "codegen:entrypoints"],
+      "dependsOn": ["^build", "codegen:entrypoints", "prebuild"],
       "outputs": [".next/**", "dist/**", "build/**"]
     },
     "@examples/minimal-react#build": {

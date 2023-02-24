@@ -7,10 +7,9 @@
   },
   "packageManager": "pnpm@7.27.1",
   "scripts": {
-    "build:1-generate": "prisma generate",
-    "build:2-next": "cross-env NODE_ENV=production next build",
-    "build:3-server": "tsc --project tsconfig.server.json",
-    "build:4-migrate": "prisma migrate deploy",
+    "prebuild": "prisma generate && prisma migrate deploy",
+    "build:1-next": "cross-env NODE_ENV=production next build",
+    "build:2-server": "tsc --project tsconfig.server.json",
     "build": "run-s build:*",
     "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
     "dev:next": "next dev",
