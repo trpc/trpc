@@ -50,6 +50,7 @@
       "cache": false
     },
     "test-dev": {
+      "dependsOn": ["^build"],
       "cache": false
     },
     "test-start": {
