@@ -1,9 +1,5 @@
 import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
-import fetch from 'node-fetch';
 import type { AppRouter } from './router';
-
-// polyfill
-globalThis.fetch = fetch as any;
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 

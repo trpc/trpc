@@ -2,28 +2,29 @@
   "name": "@examples/lambda-api-gateway",
   "private": true,
   "version": "10.12.0",
+  "type": "module",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "type-check": "tsc",
+    "start-server": "serverless offline --httpPort 4050",
+    "start-client": "tsx src/client.ts",
+    "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
+  },
   "dependencies": {
     "@trpc/client": "^10.12.0",
     "@trpc/server": "^10.12.0",
-    "node-fetch": "^2.6.1",
     "tsx": "^3.9.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
+    "esbuild": "^0.17.10",
     "eslint": "^8.30.0",
     "serverless": "^3.18.1",
-    "serverless-offline": "^8.8.0",
-    "serverless-plugin-typescript": "^2.1.2",
+    "serverless-esbuild": "^1.39.0",
+    "serverless-offline": "^12.0.4",
     "typescript": "^4.8.3"
-  },
-  "scripts": {
-    "build": "tsc",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
-    "start-server": "serverless offline --httpPort 4050",
-    "start-client": "tsx src/client.ts",
-    "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   }
 }
