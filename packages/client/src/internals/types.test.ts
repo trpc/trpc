@@ -57,7 +57,7 @@ describe('fetch', () => {
 
   test('NativeFetchEsque', () => {
     getFetch(isomorphicFetch);
-    getFetch(nodeFetch);
+    getFetch(nodeFetch as any);
 
     // Passing in undiciFetch directly in Node v18.7.0 gives:
     // ReferenceError: TextEncoder is not defined

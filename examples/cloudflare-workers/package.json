@@ -16,9 +16,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "@types/node": "^18.7.20",
-    "@types/node-fetch": "^2.5.11",
     "eslint": "^8.30.0",
-    "node-fetch": "^2.6.1",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.9.0",
     "typescript": "^4.8.3",

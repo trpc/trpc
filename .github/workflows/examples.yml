@@ -98,7 +98,7 @@ jobs:
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"build-sqlite"'; 
             then pnpm turbo --filter ./examples/${{ matrix.dir }} build-sqlite; 
-            else pnpm turbo --filter ./examples/${{ matrix.dir }} build;
+            else pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check;
           fi
 
       - name: if exists, run test-start
