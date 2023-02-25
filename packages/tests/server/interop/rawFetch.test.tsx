@@ -1,6 +1,5 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import * as trpc from '@trpc/server/src';
-import fetch from 'node-fetch';
 import { z } from 'zod';
 
 const factory = () =>

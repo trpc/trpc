@@ -67,6 +67,11 @@
     },
     "test-watch": {
       "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     }
   }
 }
