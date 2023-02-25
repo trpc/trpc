@@ -9,7 +9,7 @@
     "dev": "run-p dev:* --print-label",
     "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "type-check": "tsc",
-    "build": "pnpm type-check && esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
+    "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "start": "pnpm dev",
     "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"

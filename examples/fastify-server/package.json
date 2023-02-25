@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm type-check && esbuild src/server/index.ts src/client/index.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
+    "build": "esbuild src/server/index.ts src/client/index.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",

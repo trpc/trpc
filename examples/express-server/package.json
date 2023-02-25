@@ -8,7 +8,7 @@
     "dev:client": "wait-port 2021 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
     "type-check": "tsc",
-    "build": "pnpm type-check && esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
+    "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "pnpm dev",
     "test-dev": "start-server-and-test 'tsx src/server' 2021 'tsx src/client'",
