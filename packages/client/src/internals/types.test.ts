@@ -5,7 +5,7 @@ import type { fetch as undiciFetch } from 'undici';
 import { createTRPCProxyClient } from '../createTRPCClientProxy';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links/httpBatchLink';
-import { getAbortController } from './fetchHelpers';
+import { getAbortController } from './getAbortController';
 import {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
