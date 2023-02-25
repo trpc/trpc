@@ -86,7 +86,7 @@ export const transformer = {
   input: superjson,
   output: {
     serialize: (object) => uneval(object),
-    deserialize: (object) => eval(`(${object})`),
+    deserialize: (object) => JSON.parse(object),
   },
 };
 ```
