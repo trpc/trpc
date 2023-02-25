@@ -44,7 +44,6 @@ export const GithubStarsButton = ({ className }: Props) => {
 
   useEffect(() => {
     if (stars) {
-      setStars('22,000');
       const currentNumber = Number(stars.replace(/,/g, ''));
       const nearestThousand =
         Math.floor(Number(stars.replace(/,/g, '')) / 1000) * 1000;
