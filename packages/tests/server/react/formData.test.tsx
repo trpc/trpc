@@ -36,11 +36,6 @@ const zodFile = zodFileObject.transform(
   },
 );
 
-type User = {
-  name: string;
-  age: number;
-};
-
 const createUserSchema = z.object({
   name: z.string(),
   age: z.string().transform(Number).pipe(z.number()),
@@ -49,12 +44,8 @@ const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.create();
 
-    const users: User[] = [];
-
     const appRouter = t.router({
       createUser: t.procedure.input(createUserSchema).mutation(({ input }) => {
-        users.push(input);
-
         return input;
       }),
       uploadFile: t.procedure
