@@ -13,7 +13,7 @@ import { initTRPC } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { konn } from 'konn';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { Readable } from 'stream';
 import { z } from 'zod';
 
@@ -41,6 +41,10 @@ type User = {
   age: number;
 };
 
+const createUserSchema = z.object({
+  name: z.string(),
+  age: z.string().transform(Number).pipe(z.number()),
+});
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.create();
@@ -48,18 +52,11 @@ const ctx = konn()
     const users: User[] = [];
 
     const appRouter = t.router({
-      createUser: t.procedure
-        .input(
-          z.object({
-            name: z.string(),
-            age: z.string().transform(Number).pipe(z.number()),
-          }),
-        )
-        .mutation(({ input }) => {
-          users.push(input);
+      createUser: t.procedure.input(createUserSchema).mutation(({ input }) => {
+        users.push(input);
 
-          return input;
-        }),
+        return input;
+      }),
       uploadFile: t.procedure
         .input(
           z.object({
@@ -141,16 +138,10 @@ const ctx = konn()
   })
   .done();
 
-test('POST form submission', async () => {
+test('react basic', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const [user, setUser] = useState<User>();
-
-    const createUserMutation = proxy.createUser.useMutation({
-      onSuccess(data) {
-        setUser(data);
-      },
-    });
+    const createUserMutation = proxy.createUser.useMutation();
 
     return (
       <div>
@@ -166,10 +157,10 @@ test('POST form submission', async () => {
           <input name="age" defaultValue={42} />
           <button type="submit">Submit</button>
         </form>
-        {user && (
+        {createUserMutation.data && (
           <div>
-            <p>Name: {user.name}</p>
-            <p>Age: {user.age}</p>
+            <p>Name: {createUserMutation.data.name}</p>
+            <p>Age: {createUserMutation.data.age}</p>
           </div>
         )}
       </div>
