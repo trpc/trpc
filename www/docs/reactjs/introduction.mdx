@@ -162,7 +162,7 @@ export function App() {
 ```
 
 :::note
-The reason behind the useState calls for the creation of the queryClient and the trpcClient in the example above as opposed to declaring them outside of the component is to ensure that each request gets a unique client while using SSR so that request caches aren't shared between them.
+The reason behind the `useState` calls for the creation of the `queryClient` and the `TRPCClient` in the example above as opposed to declaring them outside of the component is to ensure that each request gets a unique client while using SSR so that request caches aren't shared between them.
 :::
 
 #### 4. Fetch data
