@@ -46,8 +46,8 @@ export interface CombinedDataTransformer {
  * @public
  */
 export type CombinedDataTransformerClient = {
-  input: Pick<DataTransformer, 'serialize'>;
-  output: Pick<DataTransformer, 'deserialize'>;
+  input: CombinedDataTransformer['input']['serialize'];
+  output: CombinedDataTransformer['output']['deserialize'];
 };
 
 /**
