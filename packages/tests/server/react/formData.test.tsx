@@ -25,12 +25,12 @@ const zodFileObject = z.object({
 
 const zodFile = zodFileObject.transform(
   async ({ file, filename, mimeType }) => {
-    const chunks = [];
+    const chunks: Buffer[] = [];
     for await (const chunk of file) {
       chunks.push(chunk);
     }
 
-    return new File([Buffer.concat(chunks)], filename, {
+    return new File(chunks, filename, {
       type: mimeType,
     });
   },
@@ -39,6 +39,7 @@ const zodFile = zodFileObject.transform(
 const createUserSchema = z.object({
   name: z.string(),
   age: z.string().transform(Number).pipe(z.number()),
+  image: zodFile.optional(),
 });
 const ctx = konn()
   .beforeEach(() => {
