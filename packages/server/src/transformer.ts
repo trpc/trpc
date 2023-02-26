@@ -73,7 +73,7 @@ export type ClientDataTransformerOptions =
 /**
  * @internal
  */
-export type DefaultDataTransformer = CombinedDataTransformer & {
+export type DefaultDataTransformer = DataTransformer & {
   _default: true;
 };
 
@@ -82,6 +82,6 @@ export type DefaultDataTransformer = CombinedDataTransformer & {
  */
 export const defaultTransformer: DefaultDataTransformer = {
   _default: true,
-  input: { serialize: (obj) => obj, deserialize: (obj) => obj },
-  output: { serialize: (obj) => obj, deserialize: (obj) => obj },
+  serialize: (obj) => obj,
+  deserialize: (obj) => obj,
 };

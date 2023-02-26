@@ -1,3 +1,4 @@
+import { ignoreErrors } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
 
 test('mergeRouters', async () => {
@@ -66,7 +67,7 @@ test('bad merge: error formatter', async () => {
   });
 
   const t2 = initTRPC.create({
-    errorFormatter: (fmt) => fmt.shape,
+    errorFormatter: (fmt) => ({ ...fmt.shape, foo: 'bar' }),
   });
 
   const router1 = t1.router({
@@ -76,20 +77,14 @@ test('bad merge: error formatter', async () => {
     bar: t1.procedure.query(() => 'bar'),
   });
 
-  expect(() =>
-    t1.mergeRouters(router1, router2),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have several error formatters"`,
-  );
+  ignoreErrors(() => {
+    // @ts-expect-error should not be allowed
+    t1.mergeRouters(router1, router2);
+  });
 });
 
 test('bad merge: transformer', async () => {
-  const t1 = initTRPC.create({
-    transformer: {
-      deserialize: (v) => v,
-      serialize: (v) => v,
-    },
-  });
+  const t1 = initTRPC.create({});
 
   const t2 = initTRPC.create({
     transformer: {
@@ -105,9 +100,8 @@ test('bad merge: transformer', async () => {
     bar: t1.procedure.query(() => 'bar'),
   });
 
-  expect(() =>
-    t1.mergeRouters(router1, router2),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have several transformers"`,
-  );
+  ignoreErrors(() => {
+    // @ts-expect-error should not be allowed
+    t1.mergeRouters(router1, router2);
+  });
 });

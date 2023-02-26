@@ -1,5 +1,4 @@
-import { defaultFormatter } from '../../error/formatter';
-import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
+import { initTRPC } from '../initTRPC';
 import {
   AnyRouter,
   AnyRouterDef,
@@ -7,6 +6,7 @@ import {
   RouterDef,
   createRouterFactory,
 } from '../router';
+import { AnyRootConfig } from './config';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
 /**
@@ -41,50 +41,10 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     {},
     ...routerList.map((r) => r._def.record),
   );
-  const errorFormatter = routerList.reduce(
-    (currentErrorFormatter, nextRouter) => {
-      if (
-        nextRouter._def._config.errorFormatter &&
-        nextRouter._def._config.errorFormatter !== defaultFormatter
-      ) {
-        if (
-          currentErrorFormatter !== defaultFormatter &&
-          currentErrorFormatter !== nextRouter._def._config.errorFormatter
-        ) {
-          throw new Error('You seem to have several error formatters');
-        }
-        return nextRouter._def._config.errorFormatter;
-      }
-      return currentErrorFormatter;
-    },
-    defaultFormatter,
-  );
+  // assume all routers have the same config
+  const _config: AnyRootConfig =
+    routerList[0]?._def._config ?? initTRPC.create().router({})._def._config;
 
-  const transformer = routerList.reduce((prev, current) => {
-    if (
-      current._def._config.transformer &&
-      current._def._config.transformer !== defaultTransformer
-    ) {
-      if (
-        prev !== defaultTransformer &&
-        prev !== current._def._config.transformer
-      ) {
-        throw new Error('You seem to have several transformers');
-      }
-      return current._def._config.transformer;
-    }
-    return prev;
-  }, defaultTransformer as CombinedDataTransformer);
-
-  const router = createRouterFactory({
-    errorFormatter,
-    transformer,
-    isDev: routerList.some((r) => r._def._config.isDev),
-    allowOutsideOfServer: routerList.some(
-      (r) => r._def._config.allowOutsideOfServer,
-    ),
-    isServer: routerList.some((r) => r._def._config.isServer),
-    $types: routerList[0]?._def._config.$types as any,
-  })(record);
+  const router = createRouterFactory(_config)(record);
   return router as any;
 }
