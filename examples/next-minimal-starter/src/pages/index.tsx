@@ -1,16 +1,10 @@
 /**
  * This is a Next.js page.
  */
-import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   const mutation = trpc.mut.useMutation();
-
-  const [formData, setFormData] = useState<FormData>();
-  const query = trpc.que.useQuery(formData as any, {
-    enabled: !!formData,
-  });
 
   return (
     <div>
