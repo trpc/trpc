@@ -196,7 +196,7 @@ test('POST form submission', async () => {
   });
 });
 
-test('GET form submission', async () => {
+test('upload file', async () => {
   const { client } = ctx;
   const proxyClient = createTRPCClientProxy(client);
 
