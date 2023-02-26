@@ -47,7 +47,14 @@ const ctx = konn()
 
     const appRouter = t.router({
       createUser: t.procedure.input(createUserSchema).mutation(({ input }) => {
-        return input;
+        return {
+          ...input,
+          image: input.image && {
+            filename: input.image.name,
+            size: input.image.size,
+            type: input.image.type,
+          },
+        };
       }),
       uploadFile: t.procedure
         .input(
