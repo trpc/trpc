@@ -2,10 +2,10 @@ import { Pack, hierarchy } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { sponsors } from './script.output';
+import { allSponsors } from './script.output';
 
 const pack = {
-  children: sponsors,
+  children: allSponsors,
   name: 'root',
   radius: 0,
   distance: 0,
