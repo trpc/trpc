@@ -16,7 +16,6 @@ import {
   AnyRouter,
   DeepPartial,
   Filter,
-  ProcedureOptions,
   ProtectedIntersection,
   inferProcedureInput,
 } from '@trpc/server';
@@ -80,7 +79,6 @@ type DecorateProcedure<
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
-    procedureOpts?: ProcedureOptions,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       TRPCClientError<TRouter>,
