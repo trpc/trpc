@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
+import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -316,4 +317,62 @@ describe('invalidateQueries()', () => {
       expect(utils.container).toHaveTextContent(`mockPostQuery3:not-stale`);
     });
   });
+});
+
+test('predicate type should be narrowed', () => {
+  const { trpc } = factory;
+  () => {
+    const utils = trpc.useContext();
+
+    // simple
+    utils.postById.invalidate('123', {
+      predicate: (query) => {
+        expectTypeOf(query.queryKey).toEqualTypeOf<
+          [string[], { input?: string; type: 'query' }?]
+        >();
+
+        return true;
+      },
+    });
+
+    // no cursor on infinite
+    utils.paginatedPosts.invalidate(undefined, {
+      predicate: (query) => {
+        expectTypeOf(query.queryKey).toEqualTypeOf<
+          [
+            string[],
+            {
+              input?: { limit?: number | null };
+              type: 'infinite';
+            }?,
+          ]
+        >();
+
+        return true;
+      },
+    });
+
+    // nested deep partial
+    utils.getMockPostByContent.invalidate(undefined, {
+      predicate: (query) => {
+        expectTypeOf(query.queryKey).toEqualTypeOf<
+          [
+            string[],
+            {
+              input?: {
+                id?: string;
+                content?: { language?: string; type?: string };
+                title?: string;
+              };
+              type: 'query';
+            }?,
+          ]
+        >();
+
+        return true;
+      },
+    });
+
+    return null;
+  };
 });

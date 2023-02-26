@@ -1,9 +1,5 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import fetch from 'node-fetch';
 import type { AppRouter } from './router';
-
-// polyfill
-global.fetch = fetch as any;
 
 async function main() {
   const client = createTRPCProxyClient<AppRouter>({
