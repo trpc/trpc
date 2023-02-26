@@ -6,12 +6,17 @@ type Sponsor = typeof sponsors[number];
 type ValidLogins = Sponsor['login'];
 
 interface Def {
+  diamond: ValidLogins[];
   gold: ValidLogins[];
   silver: ValidLogins[];
   bronze: ValidLogins[];
 }
 
 const sections: Def = {
+  diamond: [
+    //
+    'tolahq',
+  ],
   gold: [
     //
     'calcom',
@@ -35,6 +40,7 @@ const sections: Def = {
 };
 
 interface Buckets {
+  diamond: Sponsor[];
   gold: Sponsor[];
   silver: Sponsor[];
   bronze: Sponsor[];
@@ -42,6 +48,7 @@ interface Buckets {
 }
 
 const buckets: Buckets = {
+  diamond: [],
   gold: [],
   silver: [],
   bronze: [],
@@ -50,7 +57,9 @@ const buckets: Buckets = {
 
 for (const sponsor of sponsors) {
   const { login } = sponsor;
-  const section = sections.gold.includes(login)
+  const section = sections.diamond.includes(login)
+    ? 'diamond'
+    : sections.gold.includes(login)
     ? 'gold'
     : sections.silver.includes(login)
     ? 'silver'
@@ -69,6 +78,11 @@ const bucketConfig: Record<
     imgSize: number;
   }
 > = {
+  diamond: {
+    title: '💎 Diamond Sponsors',
+    numCols: 2,
+    imgSize: 180,
+  },
   gold: {
     title: '🥇 Gold Sponsors',
     numCols: 3,
