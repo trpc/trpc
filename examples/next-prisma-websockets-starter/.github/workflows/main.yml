@@ -39,7 +39,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
 
       - name: Build and test
-        run: pnpm prep-sqlite && pnpm build-sqlite && pnpm test-start && pnpm test-dev
+        run: pnpm build && pnpm test-start && pnpm test-dev
 
       - name: Upload test results
         if: ${{ always() }}

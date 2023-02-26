@@ -143,7 +143,7 @@ function createServer(opts: ServerOptions) {
   };
   const start = async () => {
     try {
-      await instance.listen(config.port);
+      await instance.listen({ port: config.port });
     } catch (err) {
       instance.log.error(err);
     }

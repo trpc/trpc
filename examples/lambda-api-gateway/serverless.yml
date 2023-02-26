@@ -7,16 +7,20 @@ provider:
 
 functions:
   http-api:
-    handler: .build/src/server.handler
+    handler: src/server.handler
     events:
       - httpApi: '*'
   rest-api:
-    handler: .build/src/server.handler
+    handler: src/server.handler
     events:
       - http:
           path: /{proxy+}
           method: any
 
 plugins:
-  - serverless-plugin-typescript
+  - serverless-esbuild
   - serverless-offline
+
+custom:
+  esbuild:
+    platform: neutral
