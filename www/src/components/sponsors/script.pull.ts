@@ -286,13 +286,25 @@ async function main() {
       });
   };
 
-  const json = JSON.stringify(calculateWeight(sortedSponsors), null, 2);
+  const sortedSponsorsJSON = JSON.stringify(
+    calculateWeight(sortedSponsors),
+    null,
+    2,
+  );
+  const allSponsorsJSON = JSON.stringify(
+    sortedSponsors.map((sponsor) => sponsor.login).sort(),
+    null,
+    2,
+  );
 
   const text = [
     '// prettier-ignore',
     '// eslint-disable',
     '',
-    `export const sponsors = ${json} as const`,
+    `export const allSponsors = ${allSponsorsJSON} as const`,
+    '',
+    `export const sponsors = ${sortedSponsorsJSON} as const`,
+
     '',
   ].join('\n');
 
