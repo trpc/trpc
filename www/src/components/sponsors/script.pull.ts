@@ -291,15 +291,16 @@ async function main() {
   const topSponsors = withWeights.slice(0, 5);
 
   const text = [
-    '// prettier-ignore',
     '// eslint-disable',
     '',
+    '// prettier-ignore',
     `export const topSponsors = ${JSON.stringify(
       topSponsors,
       null,
       2,
     )} as const;`,
     '',
+    '// prettier-ignore',
     `export const allSponsors = ${JSON.stringify(
       withWeights.sort((a, b) => a.createdAt - b.createdAt),
       null,
