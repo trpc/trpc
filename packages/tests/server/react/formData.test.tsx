@@ -3,6 +3,7 @@ import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/dom';
 import { render } from '@testing-library/react';
+import { createTRPCClientProxy } from '@trpc/client';
 import { unstable_formDataLink } from '@trpc/client/links/formDataLink';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { splitLink } from '@trpc/client/links/splitLink';
@@ -14,7 +15,28 @@ import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/
 import { konn } from 'konn';
 import { ReactNode, useState } from 'react';
 import React from 'react';
+import { Readable } from 'stream';
+import { z } from 'zod';
 import { zfd } from 'zod-form-data';
+
+const zodFileObject = z.object({
+  file: z.instanceof(Readable),
+  filename: z.string(),
+  mimeType: z.string(),
+});
+
+const zodFile = zodFileObject.transform(
+  async ({ file, filename, mimeType }) => {
+    const chunks = [];
+    for await (const chunk of file) {
+      chunks.push(chunk);
+    }
+
+    return new File([Buffer.concat(chunks)], filename, {
+      type: mimeType,
+    });
+  },
+);
 
 type User = {
   name: string;
@@ -55,6 +77,21 @@ const ctx = konn()
 
           return input;
         }),
+      uploadFile: t.procedure
+        .input(
+          z.object({
+            bobfile: zodFile,
+            joefile: zodFileObject,
+          }),
+        )
+        .mutation(async ({ input }) => {
+          const [bobfileContents] = await Promise.all([input.bobfile.text()]);
+
+          return {
+            bob: bobfileContents,
+            joeFilename: input.joefile.filename,
+          };
+        }),
     });
 
     type TRouter = typeof appRouter;
@@ -72,11 +109,9 @@ const ctx = konn()
             condition: (op) => op.input instanceof FormData,
             true: unstable_formDataLink({
               url: httpUrl,
-              fetch: fetch as any,
             }),
             false: httpBatchLink({
               url: httpUrl,
-              fetch: fetch as any,
             }),
           }),
         ],
@@ -158,5 +193,35 @@ test('POST form submission', async () => {
   utils.getByText('Submit').click();
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('bob');
+  });
+});
+
+test('GET form submission', async () => {
+  const { client } = ctx;
+  const proxyClient = createTRPCClientProxy(client);
+
+  const { FormData, File } = await import('node-fetch');
+  globalThis.FormData = FormData;
+  globalThis.File = File;
+
+  const form = new FormData();
+  form.append(
+    'bobfile',
+    new File(['hi bob'], 'bob.txt', {
+      type: 'text/plain',
+    }),
+  );
+  form.append(
+    'joefile',
+    new File(['hi joe'], 'joe.txt', {
+      type: 'text/plain',
+    }),
+  );
+
+  const fileContents = await proxyClient.uploadFile.mutate(form as any);
+
+  expect(fileContents).toStrictEqual({
+    bob: 'hi bob',
+    joeFilename: 'joe.txt',
   });
 });
