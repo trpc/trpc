@@ -150,10 +150,9 @@ test('react basic', async () => {
           <button type="submit">Submit</button>
         </form>
         {createUserMutation.data && (
-          <div>
-            <p>Name: {createUserMutation.data.name}</p>
-            <p>Age: {createUserMutation.data.age}</p>
-          </div>
+          <pre data-testid={'result'}>
+            {JSON.stringify(createUserMutation.data, null, 4)}
+          </pre>
         )}
       </div>
     );
@@ -166,9 +165,17 @@ test('react basic', async () => {
   );
 
   utils.getByText('Submit').click();
+
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('bob');
+    utils.getByTestId('result');
   });
+
+  expect(utils.getByTestId('result').textContent).toMatchInlineSnapshot(`
+    "{
+        \\"name\\": \\"bob\\",
+        \\"age\\": 42
+    }"
+  `);
 });
 
 test('upload file', async () => {
