@@ -5,16 +5,10 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client';
-import AbortController from 'abort-controller';
-import fetch from 'node-fetch';
 import ws from 'ws';
 import type { AppRouter } from './server';
 
-// polyfill fetch & websocket
-const globalAny = global as any;
-globalAny.AbortController = AbortController;
-globalAny.fetch = fetch;
-globalAny.WebSocket = ws;
+globalThis.WebSocket = ws as any;
 
 const wsClient = createWSClient({
   url: `ws://localhost:2022`,

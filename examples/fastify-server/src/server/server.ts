@@ -27,10 +27,12 @@ export function createServer(opts: ServerOptions) {
     return { hello: 'wait-on 💨' };
   });
 
-  const stop = () => server.close();
+  const stop = async () => {
+    await server.close();
+  };
   const start = async () => {
     try {
-      await server.listen(port);
+      await server.listen({ port });
       console.log('listening on port', port);
     } catch (err) {
       server.log.error(err);

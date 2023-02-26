@@ -1,4 +1,3 @@
-import { mergeRoutersGeneric } from './internals/__generated__/mergeRoutersGeneric';
 import {
   DefaultErrorShape,
   ErrorFormatter,
@@ -20,6 +19,7 @@ import {
   RuntimeConfig,
   isServerDefault,
 } from './internals/config';
+import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
@@ -157,7 +157,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Merge Routers
        */
-      mergeRouters: mergeRoutersGeneric,
+      mergeRouters,
     };
   };
 }

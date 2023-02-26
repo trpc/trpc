@@ -53,7 +53,7 @@ test('input mutation', async () => {
 });
 
 test('input subscription', async () => {
-  const onDelete = jest.fn();
+  const onDelete = vi.fn();
   const router = t.router({
     onDelete: t.procedure.subscription(onDelete),
   });

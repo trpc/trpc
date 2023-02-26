@@ -1,6 +1,4 @@
-/**
- * @jest-environment miniflare
- */
+// @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 import { Response as MiniflareResponse } from '@miniflare/core';
 import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';

@@ -75,7 +75,7 @@ const HomeContent: React.FC = () => {
         <Features />
       </section>
 
-      <section className={clsx('p-4 md:p-8')}>
+      <section className="py-4 md:py-8">
         <QuickIntro />
       </section>
 

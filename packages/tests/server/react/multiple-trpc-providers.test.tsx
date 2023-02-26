@@ -1,15 +1,11 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { createTRPCReact } from '@trpc/react-query/src';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
-import React, { createContext, useState } from 'react';
+import React, { createContext } from 'react';
 
 const ctx = konn()
   .beforeEach(() => {

@@ -32,8 +32,8 @@ describe('pass headers', () => {
     },
   });
 
-  afterAll(() => {
-    close();
+  afterAll(async () => {
+    await close();
   });
 
   test('no headers', async () => {

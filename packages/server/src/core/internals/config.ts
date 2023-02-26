@@ -1,4 +1,5 @@
 import { ErrorFormatter } from '../../error/formatter';
+import type { TRPCErrorShape } from '../../rpc';
 
 /**
  * The initial generics that are used in the init function
@@ -18,7 +19,8 @@ export const isServerDefault: boolean =
   typeof window === 'undefined' ||
   'Deno' in window ||
   globalThis.process?.env?.NODE_ENV === 'test' ||
-  !!globalThis.process?.env?.JEST_WORKER_ID;
+  !!globalThis.process?.env?.JEST_WORKER_ID ||
+  !!globalThis.process?.env?.VITEST_WORKER_ID;
 
 /**
  * The runtime config that are used and actually represents real values underneath
@@ -34,7 +36,10 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    * Use custom error formatting
    * @link https://trpc.io/docs/error-formatting
    */
-  errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
+  errorFormatter: ErrorFormatter<
+    TTypes['ctx'],
+    TRPCErrorShape<number> & { [key: string]: any }
+  >;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.

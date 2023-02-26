@@ -1,19 +1,17 @@
 import { createQueryClient } from '../../__queryClient';
 import { Post, createLegacyAppRouter } from './__testHelpers';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
-jest.retryTimes(3);
-
 let factory: ReturnType<typeof createLegacyAppRouter>;
 beforeEach(() => {
   factory = createLegacyAppRouter();
 });
-afterEach(() => {
-  factory.close();
+afterEach(async () => {
+  await factory.close();
 });
 
 describe('useQuery()', () => {

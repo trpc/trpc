@@ -13,9 +13,9 @@ import {
   wsLink,
 } from '@trpc/client/src';
 import { OutputWithCursor } from '@trpc/react-query/shared';
-import { createReactQueryHooks } from '@trpc/react-query/src';
-import * as trpcServer from '@trpc/server/src';
+import { createReactQueryHooks } from '@trpc/react-query/src/interop';
 import { TRPCError } from '@trpc/server/src';
+import * as trpcServer from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';
@@ -40,9 +40,9 @@ export function createLegacyAppRouter() {
     ],
   };
   const postLiveInputs: unknown[] = [];
-  const createContext = jest.fn(() => ({}));
-  const allPosts = jest.fn();
-  const postById = jest.fn();
+  const createContext = vi.fn(() => ({}));
+  const allPosts = vi.fn();
+  const postById = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   let count = 0;
@@ -170,8 +170,8 @@ export function createLegacyAppRouter() {
     .interop();
 
   const linkSpy = {
-    up: jest.fn(),
-    down: jest.fn(),
+    up: vi.fn(),
+    down: vi.fn(),
   };
   const { client, trpcClientOptions, close } = routerToServerAndClientNew(
     appRouter,

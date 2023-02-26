@@ -14,7 +14,6 @@ import {
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
-import AbortController from 'abort-controller';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
 import fastify from 'fastify';
@@ -41,8 +40,8 @@ interface Message {
 
 function createAppRouter() {
   const ee = new EventEmitter();
-  const onNewMessageSubscription = jest.fn();
-  const onSubscriptionEnded = jest.fn();
+  const onNewMessageSubscription = vi.fn();
+  const onSubscriptionEnded = vi.fn();
 
   const t = initTRPC.context<Context>().create();
   const router = t.router;
@@ -134,12 +133,12 @@ function createServer(opts: ServerOptions) {
     return { hello: 'POST', body };
   });
 
-  const stop = () => {
-    instance.close();
+  const stop = async () => {
+    await instance.close();
   };
   const start = async () => {
     try {
-      await instance.listen(config.port);
+      await instance.listen({ port: config.port });
     } catch (err) {
       instance.log.error(err);
     }
@@ -165,7 +164,7 @@ function createClient(opts: ClientOptions = {}) {
         false: httpLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController: AbortController as any,
+          AbortController,
           fetch: fetch as any,
         }),
       }),
@@ -199,7 +198,9 @@ describe('anonymous user', () => {
     await app.start();
   });
 
-  afterEach(() => app.stop());
+  afterEach(async () => {
+    await app.stop();
+  });
 
   test('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
@@ -266,8 +267,8 @@ describe('anonymous user', () => {
       });
     });
 
-    const onStartedMock = jest.fn();
-    const onDataMock = jest.fn();
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
     const sub = app.client.onMessage.subscribe('onMessage', {
       onStarted: onStartedMock,
       onData(data) {
@@ -325,7 +326,9 @@ describe('authorized user', () => {
     await app.start();
   });
 
-  afterEach(() => app.stop());
+  afterEach(async () => {
+    await app.stop();
+  });
 
   test('query', async () => {
     expect(await app.client.hello.query()).toMatchInlineSnapshot(`
@@ -357,7 +360,9 @@ describe('anonymous user with fastify-plugin', () => {
     await app.start();
   });
 
-  afterEach(() => app.stop());
+  afterEach(async () => {
+    await app.stop();
+  });
 
   test('fetch GET', async () => {
     const req = await fetch(`http://localhost:${config.port}/hello`);

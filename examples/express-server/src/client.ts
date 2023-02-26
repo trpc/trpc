@@ -1,13 +1,6 @@
 import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/server/observable';
-import AbortController from 'abort-controller';
-import fetch from 'node-fetch';
 import type { AppRouter } from './server';
-
-// polyfill
-const globalAny = global as any;
-globalAny.AbortController = AbortController;
-globalAny.fetch = fetch as any;
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
