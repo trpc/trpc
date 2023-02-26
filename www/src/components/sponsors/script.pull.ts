@@ -297,13 +297,13 @@ async function main() {
     `export const topSponsors = ${JSON.stringify(
       topSponsors,
       null,
-      4,
+      2,
     )} as const;`,
     '',
     `export const allSponsors = ${JSON.stringify(
       withWeights.sort((a, b) => a.createdAt - b.createdAt),
       null,
-      4,
+      2,
     )} as const;`,
     '',
   ].join('\n');
