@@ -1,9 +1,7 @@
 import Link from '@docusaurus/Link';
 import React from 'react';
 import { FiArrowRightCircle } from 'react-icons/fi';
-import { top10Sponsors } from './script.output';
-
-const topSponsors = top10Sponsors.slice(0, 5);
+import { allSponsors, topSponsors } from './script.output';
 
 export const TopSponsors = () => {
   return (
@@ -37,7 +35,7 @@ export const TopSponsors = () => {
         >
           <div className="grid content-center w-20 h-20 grid-flow-row p-2 font-bold tracking-tight text-center transition duration-300 opacity-50 justify-items-center grayscale hover:grayscale-0 hover:opacity-100">
             <FiArrowRightCircle size={20} />
-            <span>{sponsors.length - topSponsors.length} more</span>
+            <span>{allSponsors.length - topSponsors.length} more</span>
           </div>
         </Link>
       </div>

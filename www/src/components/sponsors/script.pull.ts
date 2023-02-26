@@ -288,13 +288,17 @@ async function main() {
   };
 
   const withWeights = calculateWeight(sortedSponsors);
-  const top10 = sortedSponsors.slice(0, 10);
+  const topSponsors = sortedSponsors.slice(0, 5);
 
   const text = [
     '// prettier-ignore',
     '// eslint-disable',
     '',
-    `export const top10Sponsors = ${JSON.stringify(top10, null, 4)} as const;`,
+    `export const topSponsors = ${JSON.stringify(
+      topSponsors,
+      null,
+      4,
+    )} as const;`,
     '',
     `export const allSponsors = ${JSON.stringify(
       withWeights.sort((a, b) => a.createdAt - b.createdAt),

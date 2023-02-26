@@ -1,7 +1,7 @@
 // prettier-ignore
 // eslint-disable
 
-export const top10Sponsors = [
+export const topSponsors = [
     {
         "__typename": "Organization",
         "name": "Tola",
@@ -60,66 +60,6 @@ export const top10Sponsors = [
         "login": "JasonDocton",
         "createdAt": 1645479378000,
         "value": 3250,
-        "weight": 0
-    },
-    {
-        "__typename": "Organization",
-        "name": "prisma",
-        "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
-        "monthlyPriceInDollars": 250,
-        "link": "https://www.prisma.io/?ref=trpc",
-        "privacyLevel": "PUBLIC",
-        "login": "prisma",
-        "createdAt": 1658485707000,
-        "value": 1800,
-        "weight": 0
-    },
-    {
-        "__typename": "Organization",
-        "name": "Echobind",
-        "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-        "monthlyPriceInDollars": 250,
-        "link": "http://echobind.com/?ref=trpc",
-        "privacyLevel": "PUBLIC",
-        "login": "echobind",
-        "createdAt": 1665438965000,
-        "value": 1125,
-        "weight": 0
-    },
-    {
-        "__typename": "Organization",
-        "name": "Interval",
-        "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-        "monthlyPriceInDollars": 250,
-        "link": "https://interval.com/?ref=trpc",
-        "privacyLevel": "PUBLIC",
-        "login": "interval",
-        "createdAt": 1668779128000,
-        "value": 900,
-        "weight": 0
-    },
-    {
-        "__typename": "Organization",
-        "name": "Dr. B",
-        "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
-        "monthlyPriceInDollars": 50,
-        "link": "https://github.com/hidrb",
-        "privacyLevel": "PUBLIC",
-        "login": "hidrb",
-        "createdAt": 1633034677000,
-        "value": 810,
-        "weight": 0
-    },
-    {
-        "__typename": "Organization",
-        "name": "Snaplet",
-        "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
-        "monthlyPriceInDollars": 50,
-        "link": "https://snaplet.dev/?ref=trpc",
-        "privacyLevel": "PUBLIC",
-        "login": "snaplet",
-        "createdAt": 1636827585000,
-        "value": 720,
         "weight": 0
     }
 ] as const;
