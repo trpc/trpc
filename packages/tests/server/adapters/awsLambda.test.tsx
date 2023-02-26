@@ -11,9 +11,11 @@ import {
 
 const createContext = async ({
   event,
+  info,
 }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) => {
   return {
     user: event.headers['X-USER'],
+    info,
   };
 };
 
@@ -53,6 +55,9 @@ const router = t.router({
         counter: input.counter + 1,
       };
     }),
+  request: t.router({
+    info: t.procedure.query(({ ctx }) => ctx.info),
+  }),
 });
 
 const tC = initTRPC.create();
@@ -97,6 +102,44 @@ test('basic test', async () => {
       "result": Object {
         "data": Object {
           "text": "hello Lilja",
+        },
+      },
+    }
+  `);
+});
+
+test('v1 request info', async () => {
+  const { body, ...result } = await handler(
+    mockAPIGatewayProxyEventV1({
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: 'request.info',
+      queryStringParameters: {},
+      resource: '/request/info',
+    }),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body || '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "calls": Array [
+            Object {
+              "path": "request.info",
+              "type": "query",
+            },
+          ],
+          "isBatchCall": false,
         },
       },
     }
@@ -186,9 +229,11 @@ test('bad type', async () => {
 test('test v2 format', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -229,9 +274,11 @@ test('test v2 format', async () => {
 test('test v2 format with multiple / in query key', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -272,9 +319,11 @@ test('test v2 format with multiple / in query key', async () => {
 test('test v2 format with non default routeKey', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -315,9 +364,11 @@ test('test v2 format with non default routeKey', async () => {
 test('test v2 format with non default routeKey and nested router', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({

@@ -33,7 +33,6 @@ jobs:
             .test/internal-types-export,
             express-server,
             express-minimal,
-            .interop/next-prisma-starter,
             next-minimal-starter,
             minimal-react,
             fastify-server,

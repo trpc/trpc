@@ -1,8 +1,9 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { AnyRouter, inferRouterContext } from '../../core';
+import { AnyRouter } from '../../core';
 import {
   HTTPBaseHandlerOptions,
   HTTPRequest,
+  ResolveHTTPRequestOptionsContextFn,
 } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
@@ -29,10 +30,13 @@ export async function fastifyRequestHandler<
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
 >(opts: FastifyRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const createContext = async function _createContext(): Promise<
-    inferRouterContext<TRouter>
-  > {
-    return opts.createContext?.(opts);
+  const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+    innerOpts,
+  ) => {
+    return await opts.createContext?.({
+      ...opts,
+      ...innerOpts,
+    });
   };
 
   const query = opts.req.query

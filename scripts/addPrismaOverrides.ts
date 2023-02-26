@@ -9,7 +9,7 @@ async function main() {
     [
       //
       'examples/*',
-      'examples/.interop/*',
+      // 'examples/.interop/*',
       'examples/.test/*',
     ],
     {

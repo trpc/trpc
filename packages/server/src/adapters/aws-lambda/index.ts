@@ -6,9 +6,12 @@ import type {
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
 import { TRPCError } from '../..';
-import { AnyRouter, inferRouterContext } from '../../core';
+import { AnyRouter } from '../../core';
 import { resolveHTTPResponse } from '../../http';
-import { HTTPRequest } from '../../http/internals/types';
+import {
+  HTTPRequest,
+  ResolveHTTPRequestOptionsContextFn,
+} from '../../http/internals/types';
 import type { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,
@@ -93,10 +96,10 @@ export function awsLambdaRequestHandler<
   return async (event, context) => {
     const req = lambdaEventToHTTPRequest(event);
     const path = getPath(event);
-    const createContext = async function _createContext(): Promise<
-      inferRouterContext<TRouter>
-    > {
-      return await opts.createContext?.({ event, context });
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({ event, context, ...innerOpts });
     };
 
     const response = await resolveHTTPResponse({

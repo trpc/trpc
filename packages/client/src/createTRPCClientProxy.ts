@@ -18,7 +18,6 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { TRPCClientError } from './TRPCClientError';
-import { TRPCClient } from './createTRPCClient';
 import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {
   TRPCSubscriptionObserver,
@@ -108,7 +107,7 @@ export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
-  client: TRPCClient<TRouter>,
+  client: TRPCUntypedClient<TRouter>,
 ) {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
     if (client.hasOwnProperty(key)) {
@@ -134,6 +133,6 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
   const client = new TRPCUntypedClient(opts);
-  const proxy = createTRPCClientProxy(client as TRPCClient<TRouter>);
-  return proxy;
+  const proxy = createTRPCClientProxy(client);
+  return proxy as CreateTRPCProxyClient<TRouter>;
 }

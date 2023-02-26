@@ -4,9 +4,9 @@ import {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
   TRPCUseQueries,
-  createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
+  createRootHooks,
 } from '@trpc/react-query/shared';
 import { AnyRouter, ProtectedIntersection } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
@@ -45,7 +45,7 @@ export function createTRPCNext<
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
 ): CreateTRPCNext<TRouter, TSSRContext, TFlags> {
-  const hooks = createHooksInternal<TRouter, TSSRContext>({
+  const hooks = createRootHooks<TRouter, TSSRContext>({
     unstable_overrides: opts.unstable_overrides,
   });
 

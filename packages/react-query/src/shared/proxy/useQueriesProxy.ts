@@ -1,5 +1,5 @@
 import { QueryOptions } from '@tanstack/react-query';
-import { TRPCClient, TRPCClientError } from '@trpc/client';
+import { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import {
   AnyProcedure,
   AnyQueryProcedure,
@@ -62,18 +62,17 @@ export type UseQueriesProcedureRecord<
  * @internal
  */
 export function createUseQueriesProxy<TRouter extends AnyRouter>(
-  client: TRPCClient<TRouter>,
+  client: TRPCUntypedClient<TRouter>,
 ) {
   return createRecursiveProxy((opts) => {
-    const path = opts.path.join('.');
+    const arrayPath = opts.path;
+    const dotPath = arrayPath.join('.');
     const [input, ...rest] = opts.args;
 
-    const queryKey = getQueryKeyInternal(path, input);
-
     const options: QueryOptions = {
-      queryKey,
+      queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
       queryFn: () => {
-        return client.query(path, input);
+        return client.query(dotPath, input);
       },
       ...(rest[0] as any),
     };

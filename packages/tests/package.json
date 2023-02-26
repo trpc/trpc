@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
-    "codegen:bigLegacyRouter": "tsx ../../scripts/generateBigLegacyRouter.ts",
     "lint": "eslint --ext .ts,.tsx --ignore-path ../../.gitignore --report-unused-disable-directives .",
     "test": "concurrently -P -c \"green,blue\" \"npm:test-run:vitest -- {@}\" npm:test-run:tsc",
     "test-run:vitest": "vitest --run",
