@@ -86,6 +86,7 @@ export const transformer = {
   input: superjson,
   output: {
     serialize: (object) => uneval(object),
+    // This `eval` only ever happens on the **client**
     deserialize: (object) => eval(`(${object})`),
   },
 };
