@@ -16,29 +16,19 @@
     "codegen:bigBoi": {
       "outputs": ["server/__generated__/bigBoi/**"]
     },
-    "codegen:mergeRouters": {
-      "outputs": ["src/core/internals/__generated__/**"]
+    "prebuild": {
+      "cache": false
     },
     "build": {
-      "dependsOn": ["^build", "codegen:entrypoints", "codegen:mergeRouters"],
+      "dependsOn": ["^build", "codegen:entrypoints", "prebuild"],
       "outputs": [".next/**", "dist/**", "build/**"]
     },
     "@examples/minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },
-    "@examples/next-websockets-starter#build-sqlite": {
-      "dependsOn": ["^build", "prep-sqlite"],
-      "cache": false
-    },
-    "prep-sqlite": {
-      "cache": false
-    },
-    "build-sqlite": {
-      "dependsOn": ["^build", "prep-sqlite"],
-      "outputs": [".next/**", "dist/**"]
-    },
     "dev": {
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "lint": {
       "dependsOn": ["^build"],
@@ -57,13 +47,21 @@
       "cache": false
     },
     "test-dev": {
+      "dependsOn": ["^build"],
       "cache": false
     },
     "test-start": {
+      "dependsOn": ["^build", "build"],
       "cache": false
     },
     "test-watch": {
-      "cache": false
+      "cache": false,
+      "persistent": true
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     }
   }
 }

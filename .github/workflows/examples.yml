@@ -9,11 +9,19 @@ concurrency:
 
 jobs:
   e2e:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
     env:
       NEXTAUTH_SECRET: supersecret
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-      # TURBO_REMOTE_ONLY: true
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     continue-on-error: true
@@ -78,12 +86,6 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - name: Next.js cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/examples/${{ matrix.dir }}/.next/cache
-          key: ${{ matrix.dir }}-${{ runner.os }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
-
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-start }}
@@ -91,18 +93,14 @@ jobs:
 
       - run: node -v
 
-      - name: if exists, run build-sqlite, else run build
-        run: |
-          cat ./examples/${{ matrix.dir }}/package.json | 
-          if grep --silent '"build-sqlite"'; 
-            then pnpm turbo --filter ./examples/${{ matrix.dir }} build-sqlite; 
-            else pnpm turbo --filter ./examples/${{ matrix.dir }} build;
-          fi
-
-      - name: if exists, run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
-      - name: if exists, run test-dev
+      # Run test-dev & test-start separately so ports don't clash
+      - name: Run build & test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+
   e2e-deno:
     env:
       NEXTAUTH_SECRET: supersecret
