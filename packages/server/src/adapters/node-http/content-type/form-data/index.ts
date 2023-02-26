@@ -34,8 +34,8 @@ export const nodeHTTPFormDataContentTypeHandler =
 
       await new Promise((resolve, reject) => {
         bb.on('file', async (name, file, filename, _, mimeType) => {
-          file.emit('end');
           fields[name] = { file, filename, mimeType };
+          file.emit('end');
         });
 
         bb.on('field', (name, value) => {
