@@ -3,7 +3,7 @@ import { FetchEsque, NativeFetchEsque } from './internals/types';
 export function getFetch(
   customFetchImpl?: FetchEsque | NativeFetchEsque,
 ): FetchEsque {
-  if (typeof customFetchImpl === 'function') {
+  if (customFetchImpl) {
     return customFetchImpl as FetchEsque;
   }
 
