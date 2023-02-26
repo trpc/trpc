@@ -1,4 +1,4 @@
-import busboy, { BusboyHeaders } from '@fastify/busboy';
+import busboy, { BusboyFileStream, BusboyHeaders } from '@fastify/busboy';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 
 export const nodeHTTPFormDataContentTypeHandler =
@@ -15,39 +15,33 @@ export const nodeHTTPFormDataContentTypeHandler =
       const { req } = opts;
 
       if (req.method === 'GET') {
-        const form = new FormData();
+        const fields: Record<string, string> = {};
 
         opts.query.forEach((value, key) => {
-          form.append(key, value);
+          fields[key] = value;
         });
 
-        return { ok: true, data: form };
+        return { ok: true, data: fields };
       }
 
       const bb = busboy({ headers: req.headers as BusboyHeaders });
-      const form = new FormData();
+      // const form = new FormData();
+
+      const fields: Record<
+        string,
+        string | { file: BusboyFileStream; filename: string; mimeType: string }
+      > = {};
 
       await new Promise((resolve, reject) => {
         bb.on('file', async (name, file, filename, _, mimeType) => {
-          const chunks: any[] = [];
-          await new Promise((resolve, reject) => {
-            file.on('data', (chunk) => {
-              chunks.push(chunk);
-            });
-            file.on('error', reject);
-            file.on('end', resolve);
-          });
-
-          const buffer = Buffer.concat(chunks);
-
-          form.append(
-            name,
-            new File([buffer], filename, { type: mimeType }) as Blob,
-          );
+          file.emit('end');
+          new Blob([file], { type: mimeType });
+          new File([file], filename, { type: mimeType });
+          fields[name] = { file, filename, mimeType };
         });
 
         bb.on('field', (name, value) => {
-          form.append(name, value);
+          fields[name] = value;
         });
 
         bb.on('error', reject);
@@ -56,7 +50,7 @@ export const nodeHTTPFormDataContentTypeHandler =
         req.pipe(bb);
       });
 
-      return { ok: true, data: form };
+      return { ok: true, data: fields };
     },
     getInputs({ req }) {
       return {

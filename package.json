@@ -10,7 +10,7 @@
     "build-www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",
-    "test": "turbo --filter \"@trpc/tests\" test",
+    "test": "FORCE_COLOR=1 turbo --filter \"@trpc/tests\" test",
     "test-watch": "cd packages/tests && pnpm test-watch",
     "oldlint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore . --report-unused-disable-directives",
     "lint": "turbo lint",
