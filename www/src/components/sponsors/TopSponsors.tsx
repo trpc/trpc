@@ -1,9 +1,9 @@
 import Link from '@docusaurus/Link';
 import React from 'react';
 import { FiArrowRightCircle } from 'react-icons/fi';
-import { sponsors } from './script.output';
+import { top10Sponsors } from './script.output';
 
-const topSponsors = sponsors.slice(0, 5);
+const topSponsors = top10Sponsors.slice(0, 5);
 
 export const TopSponsors = () => {
   return (
