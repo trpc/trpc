@@ -3,6 +3,7 @@ import {
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
+  Query,
   RefetchOptions,
   RefetchQueryFilters,
   ResetOptions,
@@ -31,6 +32,7 @@ import {
   contextProps,
 } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
+import { QueryKeyKnown } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
 type DecorateProcedure<
@@ -91,7 +93,21 @@ type DecorateProcedure<
    */
   invalidate(
     input?: DeepPartial<inferProcedureInput<TProcedure>>,
-    filters?: InvalidateQueryFilters,
+    filters?: Omit<InvalidateQueryFilters, 'predicate'> & {
+      predicate?: (
+        query: Query<
+          inferProcedureInput<TProcedure>,
+          TRPCClientError<TRouter>,
+          inferProcedureInput<TProcedure>,
+          QueryKeyKnown<
+            inferProcedureInput<TProcedure>,
+            inferProcedureInput<TProcedure> extends { cursor?: any }
+              ? 'infinite'
+              : 'query'
+          >
+        >,
+      ) => boolean;
+    },
     options?: InvalidateOptions,
   ): Promise<void>;
 
