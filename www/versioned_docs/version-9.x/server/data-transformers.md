@@ -118,6 +118,7 @@ type DataTransformer = {
   serialize(object: any): any;
   deserialize(object: any): any;
 };
+
 type CombinedDataTransformer = {
   input: DataTransformer;
   output: DataTransformer;
