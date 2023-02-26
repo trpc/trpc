@@ -9,7 +9,7 @@ import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-h
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
-import { zfd } from 'zod-form-data';
+import { z } from 'zod';
 
 const t = konn()
   .beforeAll(() => {
@@ -19,8 +19,8 @@ const t = konn()
     const router = t.router({
       getUser: t.procedure
         .input(
-          zfd.formData({
-            name: zfd.text(),
+          z.object({
+            name: z.string(),
           }),
         )
         .query(({ input }) => {
@@ -34,9 +34,9 @@ const t = konn()
         }),
       createUser: t.procedure
         .input(
-          zfd.formData({
-            name: zfd.text(),
-            age: zfd.numeric(),
+          z.object({
+            name: z.string(),
+            age: z.string().transform(Number).pipe(z.number()),
           }),
         )
         .mutation(({ input }) => {

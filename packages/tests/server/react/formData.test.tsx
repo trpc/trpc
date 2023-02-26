@@ -3,21 +3,19 @@ import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/dom';
 import { render } from '@testing-library/react';
-import { createTRPCClientProxy } from '@trpc/client';
+import { createTRPCClientProxy, loggerLink } from '@trpc/client';
 import { unstable_formDataLink } from '@trpc/client/links/formDataLink';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { splitLink } from '@trpc/client/links/splitLink';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { konn } from 'konn';
-import { ReactNode, useState } from 'react';
-import React from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Readable } from 'stream';
 import { z } from 'zod';
-import { zfd } from 'zod-form-data';
 
 const zodFileObject = z.object({
   file: z.instanceof(Readable),
@@ -50,26 +48,11 @@ const ctx = konn()
     const users: User[] = [];
 
     const appRouter = t.router({
-      getUser: t.procedure
-        .input(
-          zfd.formData({
-            name: zfd.text(),
-          }),
-        )
-        .query(({ input }) => {
-          const user = users.find((user) => user.name === input.name);
-
-          if (!user) {
-            throw new TRPCError({ code: 'NOT_FOUND' });
-          }
-
-          return user;
-        }),
       createUser: t.procedure
         .input(
-          zfd.formData({
-            name: zfd.text(),
-            age: zfd.numeric(),
+          z.object({
+            name: z.string(),
+            age: z.string().transform(Number).pipe(z.number()),
           }),
         )
         .mutation(({ input }) => {
@@ -96,6 +79,10 @@ const ctx = konn()
 
     type TRouter = typeof appRouter;
 
+    const loggerLinkConsole = {
+      log: vi.fn(),
+      error: vi.fn(),
+    };
     const opts = routerToServerAndClientNew(appRouter, {
       server: {
         unstable_contentTypeHandlers: [
@@ -105,6 +92,10 @@ const ctx = konn()
       },
       client: ({ httpUrl }) => ({
         links: [
+          loggerLink({
+            enabled: () => true,
+            console: loggerLinkConsole,
+          }),
           splitLink({
             condition: (op) => op.input instanceof FormData,
             true: unstable_formDataLink({
@@ -142,6 +133,7 @@ const ctx = konn()
       App,
       appRouter,
       opts,
+      loggerLinkConsole,
     };
   })
   .afterEach(async (ctx) => {
