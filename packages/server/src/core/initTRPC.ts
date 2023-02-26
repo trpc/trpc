@@ -6,10 +6,10 @@ import {
 } from '../error/formatter';
 import { createFlatProxy } from '../shared';
 import {
+  CombinedDataTransformerServer,
   DataTransformerOptions,
   DefaultDataTransformer,
   defaultTransformer,
-  getDataTransformer,
 } from '../transformer';
 import { FlatOverwrite, Unwrap } from '../types';
 import {
@@ -24,6 +24,30 @@ import { createBuilder } from './internals/procedureBuilder';
 import { PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
+
+/**
+ * Gets the server's data transformer.
+ * Masks the client's data transformer so we don't accidentally use it
+ * @internal
+ */
+function getDataTransformerServer(
+  transformer: DataTransformerOptions,
+): CombinedDataTransformerServer {
+  if ('input' in transformer) {
+    return {
+      input: {
+        deserialize: transformer.input.deserialize.bind(transformer.input),
+      },
+      output: {
+        serialize: transformer.output.serialize.bind(transformer.output),
+      },
+    };
+  }
+  return {
+    input: transformer,
+    output: transformer,
+  };
+}
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
@@ -105,7 +129,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     }>;
 
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
+    const transformer = getDataTransformerServer(
       runtime?.transformer ?? defaultTransformer,
     ) as $Transformer;
 

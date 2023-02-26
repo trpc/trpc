@@ -53,6 +53,14 @@ export type CombinedDataTransformerClient = {
 /**
  * @public
  */
+export type CombinedDataTransformerServer = {
+  input: Pick<CombinedDataTransformer['input'], 'deserialize'>;
+  output: Pick<CombinedDataTransformer['output'], 'serialize'>;
+};
+
+/**
+ * @public
+ */
 export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
 
 /**
@@ -61,18 +69,6 @@ export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
 export type ClientDataTransformerOptions =
   | DataTransformer
   | CombinedDataTransformerClient;
-
-/**
- * @internal
- */
-export function getDataTransformer(
-  transformer: DataTransformerOptions,
-): CombinedDataTransformer {
-  if ('input' in transformer) {
-    return transformer;
-  }
-  return { input: transformer, output: transformer };
-}
 
 /**
  * @internal
