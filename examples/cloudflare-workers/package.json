@@ -1,6 +1,6 @@
 {
   "name": "@examples/cloudflare-workers",
-  "version": "10.12.0",
+  "version": "10.13.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,8 +9,8 @@
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.12.0",
-    "@trpc/server": "^10.12.0",
+    "@trpc/client": "^10.13.0",
+    "@trpc/server": "^10.13.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
