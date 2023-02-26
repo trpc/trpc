@@ -114,9 +114,6 @@ export const appRouter = trpc.router().transformer(transformer);
 ## `DataTransformer` interface
 
 ```ts
-/**
- * @public
- */
 export interface DataTransformer {
   serialize(object: any): any;
   deserialize(object: any): any;
@@ -144,9 +141,6 @@ interface OutputDataTransformer extends DataTransformer {
   deserialize(object: any): any;
 }
 
-/**
- * @public
- */
 export interface CombinedDataTransformer {
   /**
    * Specify how the data sent from the client to the server should be transformed.
