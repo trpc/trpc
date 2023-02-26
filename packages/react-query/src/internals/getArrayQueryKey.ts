@@ -1,8 +1,15 @@
+import { GetQueryProcedureInput } from './getQueryKey';
+
 export type QueryType = 'query' | 'infinite' | 'any';
 
 export type QueryKey = [
   string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
+];
+
+export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
+  string[],
+  { input?: GetQueryProcedureInput<TInput>; type: TType }?,
 ];
 
 /**
