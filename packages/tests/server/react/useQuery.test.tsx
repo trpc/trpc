@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
@@ -216,7 +217,7 @@ test('useSuspenseInfiniteQuery()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
-  utils.getByTestId('fetchMore').click();
+  await userEvent.click(utils.getByTestId('fetchMore'));
 
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
@@ -272,7 +273,7 @@ test('useInfiniteQuery()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
-  utils.getByTestId('fetchMore').click();
+  await userEvent.click(utils.getByTestId('fetchMore'));
 
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
@@ -329,7 +330,7 @@ test('useInfiniteQuery() initialCursor', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "3" ]`);
   });
-  utils.getByTestId('fetchMore').click();
+  await userEvent.click(utils.getByTestId('fetchMore'));
 
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "3" ]`);

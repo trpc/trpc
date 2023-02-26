@@ -3,14 +3,17 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
+import { expectTypeOf } from 'expect-type';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
   factory = createAppRouter();
 });
-afterEach(() => {
-  factory.close();
+afterEach(async () => {
+  await factory.close();
 });
 
 describe('invalidateQueries()', () => {
@@ -69,7 +72,7 @@ describe('invalidateQueries()', () => {
     expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
     expect(resolvers.postById).toHaveBeenCalledTimes(1);
 
-    utils.getByTestId('refetch').click();
+    await userEvent.click(utils.getByTestId('refetch'));
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:stale');
@@ -138,7 +141,7 @@ describe('invalidateQueries()', () => {
     expect(resolvers.allPosts).toHaveBeenCalledTimes(1);
     expect(resolvers.postById).toHaveBeenCalledTimes(1);
 
-    utils.getByTestId('refetch').click();
+    await userEvent.click(utils.getByTestId('refetch'));
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:stale');
@@ -153,7 +156,7 @@ describe('invalidateQueries()', () => {
     expect(resolvers.postById).toHaveBeenCalledTimes(2);
   });
 
-  test('test invalidateQueries() with different args - flaky', async () => {
+  test('test invalidateQueries() with different args', async () => {
     // ref  https://github.com/trpc/trpc/issues/1383
     const { trpc, client } = factory;
     function MyComponent() {
@@ -188,9 +191,9 @@ describe('invalidateQueries()', () => {
               utils.invalidate(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
-                  const [path, input] = queryKey;
+                  const [path, data] = queryKey as QueryKey;
 
-                  return path === 'count' && input === 'test';
+                  return path[0] === 'count' && data?.input === 'test';
                 },
               });
             }}
@@ -215,18 +218,18 @@ describe('invalidateQueries()', () => {
       expect(utils.container).toHaveTextContent('count:test:0');
     });
 
-    for (const testId of [
+    for (const [index, testId] of [
       'invalidate-1-string',
       'invalidate-2-exact',
       'invalidate-3-all',
       'invalidate-4-predicate',
-    ]) {
+    ].entries()) {
       // click button to invalidate
-      utils.getByTestId(testId).click();
+      await userEvent.click(utils.getByTestId(testId));
 
-      // should become stale straight after the click
-      await waitFor(() => {
-        expect(utils.container).toHaveTextContent(`count:test:1`);
+      await waitFor(async () => {
+        // should become stale straight after the click
+        expect(utils.container).toHaveTextContent(`count:test:${index + 1}`);
       });
     }
   });
@@ -305,7 +308,7 @@ describe('invalidateQueries()', () => {
     });
 
     // click button to invalidate
-    utils.getByTestId('invalidate-with-partial-input').click();
+    await userEvent.click(utils.getByTestId('invalidate-with-partial-input'));
 
     // 1 & 2 should become stale straight after the click by fuzzy matching the query, 3 should not
     await waitFor(() => {
@@ -314,4 +317,62 @@ describe('invalidateQueries()', () => {
       expect(utils.container).toHaveTextContent(`mockPostQuery3:not-stale`);
     });
   });
+});
+
+test('predicate type should be narrowed', () => {
+  const { trpc } = factory;
+  () => {
+    const utils = trpc.useContext();
+
+    // simple
+    utils.postById.invalidate('123', {
+      predicate: (query) => {
+        expectTypeOf(query.queryKey).toEqualTypeOf<
+          [string[], { input?: string; type: 'query' }?]
+        >();
+
+        return true;
+      },
+    });
+
+    // no cursor on infinite
+    utils.paginatedPosts.invalidate(undefined, {
+      predicate: (query) => {
+        expectTypeOf(query.queryKey).toEqualTypeOf<
+          [
+            string[],
+            {
+              input?: { limit?: number | null };
+              type: 'infinite';
+            }?,
+          ]
+        >();
+
+        return true;
+      },
+    });
+
+    // nested deep partial
+    utils.getMockPostByContent.invalidate(undefined, {
+      predicate: (query) => {
+        expectTypeOf(query.queryKey).toEqualTypeOf<
+          [
+            string[],
+            {
+              input?: {
+                id?: string;
+                content?: { language?: string; type?: string };
+                title?: string;
+              };
+              type: 'query';
+            }?,
+          ]
+        >();
+
+        return true;
+      },
+    });
+
+    return null;
+  };
 });

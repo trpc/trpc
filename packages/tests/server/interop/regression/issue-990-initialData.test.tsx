@@ -45,5 +45,5 @@ test('initialData type', async () => {
     expect(utils.container).toHaveTextContent('alexdotjs');
   });
 
-  close();
+  await close();
 });
