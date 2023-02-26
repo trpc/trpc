@@ -288,7 +288,7 @@ async function main() {
   };
 
   const withWeights = calculateWeight(sortedSponsors);
-  const topSponsors = sortedSponsors.slice(0, 5);
+  const topSponsors = withWeights.slice(0, 5);
 
   const text = [
     '// prettier-ignore',

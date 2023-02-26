@@ -3,64 +3,44 @@
 
 export const topSponsors = [
   {
-    "__typename": "Organization",
     "name": "Tola",
     "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
-    "monthlyPriceInDollars": 2110,
-    "link": "https://tolahq.com/?ref=trpc",
-    "privacyLevel": "PUBLIC",
+    "weight": 101,
     "login": "tolahq",
-    "createdAt": 1659304800000,
-    "value": 15192,
-    "weight": 0
+    "link": "https://tolahq.com/?ref=trpc",
+    "createdAt": 1659304800000
   },
   {
-    "__typename": "Organization",
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "monthlyPriceInDollars": 1000,
-    "link": "https://cal.com/?ref=trpc",
-    "privacyLevel": "PUBLIC",
+    "weight": 55,
     "login": "calcom",
-    "createdAt": 1656581731000,
-    "value": 8100,
-    "weight": 0
+    "link": "https://cal.com/?ref=trpc",
+    "createdAt": 1656581731000
   },
   {
-    "__typename": "Organization",
     "name": "Flightcontrol",
     "imgSrc": "https://avatars.githubusercontent.com/u/87621213?v=4",
-    "monthlyPriceInDollars": 500,
-    "link": "https://flightcontrol.dev/?ref=trpc",
-    "privacyLevel": "PUBLIC",
+    "weight": 37,
     "login": "flightcontrolhq",
-    "createdAt": 1671304160000,
-    "value": 5400,
-    "weight": 0
+    "link": "https://flightcontrol.dev/?ref=trpc",
+    "createdAt": 1671304160000
   },
   {
-    "__typename": "Organization",
     "name": "Ping.gg",
     "imgSrc": "https://avatars.githubusercontent.com/u/89191727?v=4",
-    "monthlyPriceInDollars": 250,
-    "link": "https://ping.gg/?ref=trpc",
-    "privacyLevel": "PUBLIC",
+    "weight": 37,
     "login": "pingdotgg",
-    "createdAt": 1645488994000,
-    "value": 5400,
-    "weight": 0
+    "link": "https://ping.gg/?ref=trpc",
+    "createdAt": 1645488994000
   },
   {
-    "__typename": "User",
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "monthlyPriceInDollars": 250,
-    "link": "http://youarerad.org/?ref=trpc",
-    "privacyLevel": "PUBLIC",
+    "weight": 23,
     "login": "JasonDocton",
-    "createdAt": 1645479378000,
-    "value": 3250,
-    "weight": 0
+    "link": "http://youarerad.org/?ref=trpc",
+    "createdAt": 1645479378000
   }
 ] as const;
 
