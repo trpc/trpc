@@ -62,8 +62,13 @@ const defaultLogger =
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
   (props) => {
-    const { direction, input, type, path, context, id } = props;
+    const { direction, type, path, context, id } = props;
     const [light, dark] = palette[type];
+
+    const input =
+      props.input instanceof FormData
+        ? Object.fromEntries(props.input)
+        : props.input;
 
     const css = `
     background-color: #${direction === 'up' ? light : dark}; 
