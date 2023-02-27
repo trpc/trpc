@@ -33,17 +33,21 @@ export async function nodeHTTPRequestHandler<
   const { path, router } = opts;
 
   if (opts.cors) {
-    await new Promise<void>((resolve, reject) => {
-      opts.cors!(opts.req, opts.res, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
+    const corsStatus = await new Promise<'continue' | 'handled'>(
+      (resolve, reject) => {
+        opts.cors!(opts.req, opts.res, (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve('continue');
+          }
+        });
 
-    if (opts.res.writableEnded) {
+        resolve('handled');
+      },
+    );
+
+    if (corsStatus === 'handled') {
       // cors handled the request
       return;
     }
