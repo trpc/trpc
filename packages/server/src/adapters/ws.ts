@@ -6,8 +6,8 @@ import {
   callProcedure,
   inferRouterContext,
 } from '../core';
-import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getTRPCErrorFromUnknown } from '../error/utils';
+import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { getCauseFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
