@@ -281,18 +281,31 @@ async function main() {
           weight: sponsor.weight,
           login: sponsor.login,
           link: sponsor.link,
+          createdAt: sponsor.createdAt,
           // value: sponsor.value,
         };
       });
   };
 
-  const json = JSON.stringify(calculateWeight(sortedSponsors), null, 2);
+  const withWeights = calculateWeight(sortedSponsors);
+  const topSponsors = withWeights.slice(0, 5);
 
   const text = [
-    '// prettier-ignore',
     '// eslint-disable',
     '',
-    `export const sponsors = ${json} as const`,
+    '// prettier-ignore',
+    `export const topSponsors = ${JSON.stringify(
+      topSponsors,
+      null,
+      2,
+    )} as const;`,
+    '',
+    '// prettier-ignore',
+    `export const allSponsors = ${JSON.stringify(
+      withWeights.sort((a, b) => a.createdAt - b.createdAt),
+      null,
+      2,
+    )} as const;`,
     '',
   ].join('\n');
 
