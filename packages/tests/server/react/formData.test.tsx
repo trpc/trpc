@@ -21,13 +21,13 @@ import React, { ReactNode } from 'react';
 import { Readable } from 'stream';
 import { z } from 'zod';
 
-const zodFileObject = z.object({
+const zodFileStream = z.object({
   file: z.instanceof(Readable),
   filename: z.string(),
   mimeType: z.string(),
 });
 
-const zodFile = zodFileObject.transform(
+const zodFile = zodFileStream.transform(
   async ({ file, filename, mimeType }) => {
     const chunks: Buffer[] = [];
     for await (const chunk of file) {
@@ -65,18 +65,27 @@ const ctx = konn()
           };
         }),
       uploadFile: t.procedure
+        .use(async (opts) => {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          return opts.next();
+        })
         .input(
           z.object({
             bobfile: zodFile,
-            joefile: zodFileObject,
+            joefile: zodFileStream,
           }),
         )
         .mutation(async ({ input }) => {
-          const [bobfileContents] = await Promise.all([input.bobfile.text()]);
-
           return {
-            bob: bobfileContents,
-            joeFilename: input.joefile.filename,
+            bob: {
+              name: input.bobfile.name,
+              type: input.bobfile.type,
+              file: await input.bobfile.text(),
+            },
+            joeFilename: {
+              ...input.joefile,
+              file: '[redacted-stream]',
+            },
           };
         }),
     });
@@ -293,8 +302,18 @@ test('upload file', async () => {
 
   const fileContents = await proxyClient.uploadFile.mutate(form as any);
 
-  expect(fileContents).toStrictEqual({
-    bob: 'hi bob',
-    joeFilename: 'joe.txt',
-  });
+  expect(fileContents).toMatchInlineSnapshot(`
+    Object {
+      "bob": Object {
+        "file": "hi bob",
+        "name": "bob.txt",
+        "type": "text/plain",
+      },
+      "joeFilename": Object {
+        "file": "[redacted-stream]",
+        "filename": "joe.txt",
+        "mimeType": "text/plain",
+      },
+    }
+  `);
 });
