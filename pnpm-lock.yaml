@@ -29,7 +29,7 @@ importers:
       eslint-plugin-no-only-tests: ^3.1.0
       eslint-plugin-react: ^7.31.11
       eslint-plugin-react-hooks: ^4.6.0
-      eslint-plugin-turbo: ^0.0.8
+      eslint-plugin-turbo: ^0.0.9
       eslint-plugin-unicorn: 45.0.2
       express: ^4.17.1
       fast-glob: ^3.2.12
@@ -62,7 +62,7 @@ importers:
       eslint-plugin-no-only-tests: 3.1.0
       eslint-plugin-react: 7.31.11_eslint@8.30.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.30.0
-      eslint-plugin-turbo: 0.0.8_eslint@8.30.0
+      eslint-plugin-turbo: 0.0.9_eslint@8.30.0
       eslint-plugin-unicorn: 45.0.2_eslint@8.30.0
       express: 4.18.2
       fast-glob: 3.2.12
@@ -10105,7 +10105,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2
+      follow-redirects: 1.15.2_debug@4.3.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -13296,8 +13296,8 @@ packages:
       semver: 6.3.0
       string.prototype.matchall: 4.0.8
 
-  /eslint-plugin-turbo/0.0.8_eslint@8.30.0:
-    resolution: {integrity: sha512-pExSCmjWw/KFKb3/0PVqxiWb30FbcwDEf6kKv3alvNBSVEzDHalyAGHc9klbLSG+nFmbkfNE3Ky/UHDryCqt8g==}
+  /eslint-plugin-turbo/0.0.9_eslint@8.30.0:
+    resolution: {integrity: sha512-fEsuSnYU3GLtT+s66mUuzDL1LaSieIx5uk3tPO0ToGv7hI2XzOfP24aPkQItTBGl7kq2JaVkRzPwcnfz8hkp0w==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
@@ -14021,6 +14021,18 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+
+  /follow-redirects/1.15.2_debug@4.3.2:
+    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.2
+    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
