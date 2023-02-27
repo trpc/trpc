@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@trpc/server": "^10.13.2",
+    "cors": "^2.8.5",
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.13",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",
     "tsx": "^3.12.3",
