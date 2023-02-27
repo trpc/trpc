@@ -4,10 +4,13 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/dom';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createTRPCClientProxy, loggerLink } from '@trpc/client';
-import { unstable_formDataLink } from '@trpc/client/links/formDataLink';
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { splitLink } from '@trpc/client/links/splitLink';
+import {
+  createTRPCClientProxy,
+  httpBatchLink,
+  loggerLink,
+  splitLink,
+  unstable_formDataLink,
+} from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { initTRPC } from '@trpc/server';
