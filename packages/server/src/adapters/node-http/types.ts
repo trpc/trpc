@@ -36,6 +36,20 @@ export type NodeHTTPHandlerOptions<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
+  /**
+   * By default options requests are not handled and CORS headers are not returned.
+   *
+   * This can be used to handle them manually or via the `cors` npm package: https://www.npmjs.com/package/cors
+   *
+   * ```ts
+   * import cors from 'cors'
+   *
+   * nodeHTTPRequestHandler({
+   *   cors: cors()
+   * })
+   * ```
+   */
+  cors?: (req: TRequest, res: TResponse, next: (err?: any) => any) => void;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 

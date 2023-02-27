@@ -32,6 +32,23 @@ export async function nodeHTTPRequestHandler<
   };
   const { path, router } = opts;
 
+  if (opts.cors) {
+    await new Promise<void>((resolve, reject) => {
+      opts.cors!(opts.req, opts.res, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    if (opts.res.writableEnded) {
+      // cors handled the request
+      return;
+    }
+  }
+
   const bodyResult = await getPostBody(opts);
 
   const query = opts.req.query
