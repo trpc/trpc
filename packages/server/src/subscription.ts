@@ -1,4 +1,4 @@
-import { getTRPCErrorFromUnknown } from './error/utils';
+import { getTRPCErrorFromUnknown } from './error/TRPCError';
 import { Observable, Observer, observable } from './observable';
 
 /**
