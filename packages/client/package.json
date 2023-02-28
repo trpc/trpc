@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.12.0",
+  "version": "10.13.0",
   "description": "tRPC Client lib",
   "author": "KATT",
   "license": "MIT",
@@ -69,11 +69,11 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "^10.8.0"
+    "@trpc/server": "10.13.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "^10.12.0",
+    "@trpc/server": "^10.13.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",
@@ -81,7 +81,7 @@
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
-    "tsx": "^3.9.0",
+    "tsx": "^3.12.3",
     "undici": "^5.14.0",
     "vitest": "^0.28.5"
   },

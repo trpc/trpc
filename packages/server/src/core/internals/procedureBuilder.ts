@@ -1,5 +1,4 @@
-import { TRPCError } from '../../error/TRPCError';
-import { getTRPCErrorFromUnknown } from '../../error/utils';
+import { TRPCError, getTRPCErrorFromUnknown } from '../../error/TRPCError';
 import { MaybePromise, Simplify } from '../../types';
 import {
   MiddlewareBuilder,
