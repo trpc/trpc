@@ -9,7 +9,7 @@
   <h1>tRPC</h1>
   <h3>Move fast and break nothing.<br />End-to-end typesafe APIs made easy.</h3>
   <a href="https://codecov.io/gh/trpc/trpc">
-    <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G">
+    <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G" />
   </a>
   <a href="https://github.com/trpc/trpc/blob/main/LICENSE">
     <img alt="MIT License" src="https://img.shields.io/github/license/trpc/trpc" />
@@ -92,6 +92,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 <table>
   <tbody>
+    <tr>
       <td align="center"><a href="https://twitter.com/s4chinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
       <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex / KATT</b></sub></a></td>
     </tr>
@@ -258,6 +259,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 <a href="https://vercel.com/?utm_source=trpc&utm_campaign=oss">
   <p align="center">
-    <img src="./images/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
+    <img src="./images/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel" />
   </p>
 </a>

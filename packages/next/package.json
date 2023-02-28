@@ -62,6 +62,7 @@
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.5",
     "eslint": "^8.30.0",
     "express": "^4.17.1",
     "next": "^13.2.1",

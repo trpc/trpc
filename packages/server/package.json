@@ -133,6 +133,7 @@
     "@types/hash-sum": "^1.0.0",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.5",
     "@types/ws": "^8.2.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^4.0.0",
