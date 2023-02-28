@@ -1,6 +1,11 @@
 import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/server/observable';
+import fetch from 'node-fetch';
 import type { AppRouter } from './server';
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+globalThis.fetch = fetch;
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
