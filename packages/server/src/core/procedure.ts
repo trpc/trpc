@@ -35,35 +35,9 @@ type AnyProcedureParams = {
 /**
  * @internal
  */
-export interface ProcedureParams<
+export type ProcedureParams<
   TParams extends AnyProcedureParams = AnyProcedureParams,
-> {
-  _config: TParams['_config'];
-  /**
-   * @internal
-   */
-  _meta: TParams['_meta'];
-  /**
-   * @internal
-   */
-  _ctx_out: TParams['_ctx_out'];
-  /**
-   * @internal
-   */
-  _input_in: TParams['_input_in'];
-  /**
-   * @internal
-   */
-  _input_out: TParams['_input_out'];
-  /**
-   * @internal
-   */
-  _output_in: TParams['_output_in'];
-  /**
-   * @internal
-   */
-  _output_out: TParams['_output_out'];
-}
+> = TParams;
 
 /**
  * @internal
