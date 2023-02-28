@@ -20,43 +20,49 @@ export interface ProcedureOptions {
 }
 
 /**
- * FIXME: this should only take 1 generic argument instead of a list
+ * @internal
+ */
+type AnyProcedureParams = {
+  _config: AnyRootConfig;
+  _meta: unknown;
+  _ctx_out: unknown;
+  _input_in: unknown;
+  _input_out: unknown;
+  _output_in: unknown;
+  _output_out: unknown;
+};
+
+/**
  * @internal
  */
 export interface ProcedureParams<
-  TConfig extends AnyRootConfig = AnyRootConfig,
-  TContextOut = unknown,
-  TInputIn = unknown,
-  TInputOut = unknown,
-  TOutputIn = unknown,
-  TOutputOut = unknown,
-  TMeta = unknown,
+  TParams extends AnyProcedureParams = AnyProcedureParams,
 > {
-  _config: TConfig;
+  _config: TParams['_config'];
   /**
    * @internal
    */
-  _meta: TMeta;
+  _meta: TParams['_meta'];
   /**
    * @internal
    */
-  _ctx_out: TContextOut;
+  _ctx_out: TParams['_ctx_out'];
   /**
    * @internal
    */
-  _input_in: TInputIn;
+  _input_in: TParams['_input_in'];
   /**
    * @internal
    */
-  _input_out: TInputOut;
+  _input_out: TParams['_input_out'];
   /**
    * @internal
    */
-  _output_in: TOutputIn;
+  _output_in: TParams['_output_in'];
   /**
    * @internal
    */
-  _output_out: TOutputOut;
+  _output_out: TParams['_output_out'];
 }
 
 /**
