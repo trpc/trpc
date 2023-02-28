@@ -39,15 +39,15 @@ type convertProcedureParams<
   infer _TParsedOutput,
   infer TFinalInput
 >
-  ? ProcedureParams<
-      TConfig,
-      TContext,
-      TInput,
-      TParsedInput,
-      TOutput,
-      TFinalInput,
-      TMeta
-    >
+  ? ProcedureParams<{
+      _config: TConfig;
+      _meta: TMeta;
+      _ctx_out: TContext;
+      _input_in: TInput;
+      _input_out: TParsedInput;
+      _output_in: TFinalInput;
+      _output_out: TOutput;
+    }>
   : never;
 
 type MigrateProcedure<
