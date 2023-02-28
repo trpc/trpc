@@ -31,6 +31,13 @@ export type NodeHTTPCreateContextOption<
       createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
     };
 
+export interface NodeMiddlewareLike<
+  TRequest extends NodeHTTPRequest = NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse = NodeHTTPResponse,
+> {
+  (req: TRequest, res: TResponse, next: (err?: any) => any): void;
+}
+
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -49,7 +56,7 @@ export type NodeHTTPHandlerOptions<
    * })
    * ```
    */
-  cors?: (req: TRequest, res: TResponse, next: (err?: any) => any) => void;
+  cors?: NodeMiddlewareLike;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
