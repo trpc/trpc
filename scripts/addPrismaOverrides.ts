@@ -7,7 +7,6 @@ import type { PackageJson } from './entrypoints';
 async function main() {
   const examples = await fg(
     [
-      //
       'examples/*',
       'examples/.interop/*',
       'examples/.test/*',
