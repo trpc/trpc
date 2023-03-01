@@ -55,6 +55,7 @@ module.exports = {
           },
           items: [
             'server/adapter/aws-lambda',
+            'server/adapter/standalone',
             'server/adapter/express',
             'server/adapter/fastify',
             'server/adapter/fetch',
