@@ -56,7 +56,7 @@ export type NodeHTTPHandlerOptions<
    * })
    * ```
    */
-  cors?: NodeMiddlewareLike;
+  middleware?: NodeMiddlewareLike;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 

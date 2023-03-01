@@ -107,7 +107,7 @@ import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 
 createHTTPServer({
-  cors: cors(),
+  middleware: cors(),
   router: appRouter,
   createContext() {
     console.log('context 3');
@@ -115,6 +115,12 @@ createHTTPServer({
   },
 }).listen(3333);
 ```
+
+The `middleware` option will accept any function which resembles a node.js middleware, so it can be used for more than `cors` handling if you wish. It is, however, intended to be a simple escape hatch and as such won't on its own allow you to compose multiple middlewares together. If you want to do this then you could:
+
+1. Use an alternate adapter with more comprehensive middleware support, like the [Express adapter](/docs/express)
+2. Use a solution to compose middlewares such as [connect](https://github.com/senchalabs/connect)
+3. Extend the Standalone `createHTTPHandler` with a custom http server (see below)
 
 ## Going further
 
@@ -134,7 +140,7 @@ const handler = createHTTPHandler({
 
 createServer((req, res) => {
   /**
-   * Handle the request however you like here, 
+   * Handle the request however you like, 
    * just call the tRPC handler when you're ready
    */
 

@@ -38,7 +38,7 @@ export type AppRouter = typeof appRouter;
 
 // create server
 createHTTPServer({
-  cors: cors(),
+  middleware: cors(),
   router: appRouter,
   createContext() {
     console.log('context 3');

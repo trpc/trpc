@@ -26,7 +26,7 @@ export async function nodeHTTPRequestHandler<
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
   const handleViaMiddleware =
-    opts.cors ??
+    opts.middleware ??
     ((_req, _res, next) => {
       next();
     });
