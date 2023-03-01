@@ -28,7 +28,7 @@ export async function nodeHTTPRequestHandler<
   const handleViaMiddleware =
     opts.middleware ??
     ((_req, _res, next) => {
-      next();
+      return next();
     });
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
