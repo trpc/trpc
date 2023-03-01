@@ -68,7 +68,7 @@ The Standalone adapter runs a simple Node.js HTTP server.
 ```ts title='server.ts'
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { appRouter } from './appRouter.ts'
+import { appRouter } from './appRouter.ts';
 
 createHTTPServer({
   router: appRouter,
@@ -95,7 +95,6 @@ yarn add -D @types/cors
 ```
 
 For full information on how to configure this package, [check the docs](https://github.com/expressjs/cors#readme)
-
 
 ### 2. Configure the Standalone server
 
@@ -129,7 +128,7 @@ If `createHTTPServer` isn't enough you can also use the standalone adapter's `cr
 ```ts title='server.ts'
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import { createServer } from 'http'
+import { createServer } from 'http';
 
 const handler = createHTTPHandler({
   router: appRouter,
@@ -140,12 +139,12 @@ const handler = createHTTPHandler({
 
 createServer((req, res) => {
   /**
-   * Handle the request however you like, 
+   * Handle the request however you like,
    * just call the tRPC handler when you're ready
    */
 
-  handler(req, res)
-})
+  handler(req, res);
+});
 
-server.listen(3333)
+server.listen(3333);
 ```
