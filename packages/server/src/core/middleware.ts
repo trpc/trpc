@@ -137,7 +137,7 @@ export type MiddlewareFunction<
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      <$Context>(opts: { ctx: $Context }): Promise<
+      <$Context>(opts: { ctx?: $Context; input?: unknown }): Promise<
         MiddlewareResult<{
           _config: TParams['_config'];
           _ctx_out: $Context;
@@ -218,8 +218,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
           }
         : parsedInput;
 
-    // TODO fix this typing?
-    return next({ input: combinedInput } as any);
+    return next({ input: combinedInput });
   };
   inputMiddleware._type = 'input';
   return inputMiddleware;
