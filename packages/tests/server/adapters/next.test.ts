@@ -244,7 +244,7 @@ test('middleware intercepts request', async () => {
     middleware: (_req, res, _next) => {
       res.statusCode = 419;
       res.end();
-      return
+      return;
     },
     router,
   });
@@ -260,7 +260,7 @@ test('middleware intercepts request', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(419);
-})
+});
 
 test('middleware passes the request', async () => {
   const t = initTRPC.create();
@@ -271,7 +271,7 @@ test('middleware passes the request', async () => {
 
   const handler = trpcNext.createNextApiHandler({
     middleware: (_req, _res, next) => {
-      return next()
+      return next();
     },
     router,
   });
@@ -287,4 +287,4 @@ test('middleware passes the request', async () => {
   await handler(req, res);
 
   expect(res.statusCode).toBe(405);
-})
+});
