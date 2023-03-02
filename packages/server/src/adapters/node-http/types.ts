@@ -31,7 +31,10 @@ export type NodeHTTPCreateContextOption<
       createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
     };
 
-export interface NodeMiddlewareLike<
+/**
+ * @internal
+ */
+interface ConnectMiddleware<
   TRequest extends NodeHTTPRequest = NodeHTTPRequest,
   TResponse extends NodeHTTPResponse = NodeHTTPResponse,
 > {
@@ -56,7 +59,7 @@ export type NodeHTTPHandlerOptions<
    * })
    * ```
    */
-  middleware?: NodeMiddlewareLike;
+  middleware?: ConnectMiddleware;
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
