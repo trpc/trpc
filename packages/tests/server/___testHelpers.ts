@@ -20,8 +20,8 @@ import {
 import fetch from 'node-fetch';
 import ws from 'ws';
 
-(global as any).fetch = fetch;
-(global as any).WebSocket = ws;
+globalThis.fetch = fetch as any;
+globalThis.WebSocket = ws as any;
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {

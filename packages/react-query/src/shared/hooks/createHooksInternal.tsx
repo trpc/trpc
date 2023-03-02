@@ -512,9 +512,3 @@ export function createRootHooks<
     useInfiniteQuery,
   };
 }
-
-/**
- * @deprecated
- * DELETE ME
- */
-export * from './deprecated/createHooksInternal';

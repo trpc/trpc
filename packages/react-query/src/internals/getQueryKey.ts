@@ -27,7 +27,8 @@ type GetInfiniteQueryInput<
   ? undefined
   : DeepPartial<TInputWithoutCursor> | undefined;
 
-type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
+/** @internal */
+export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
   cursor?: any;
 }
   ? GetInfiniteQueryInput<TProcedureInput>

@@ -39,6 +39,11 @@ async function main() {
         ] = `https://registry.npmjs.com/@prisma/client/-/client-${version}.tgz?id=${encodeURIComponent(
           pkgJson.name,
         )}`;
+        rootPkgJson.pnpm.overrides[
+          `${pkgJson.name}>prisma`
+        ] = `https://registry.npmjs.com/prisma/-/prisma-${version}.tgz?id=${encodeURIComponent(
+          pkgJson.name,
+        )}`;
       }
     }),
   );

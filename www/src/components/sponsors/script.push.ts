@@ -1,8 +1,10 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors } from './script.output';
+import { allSponsors } from './script.output';
 
-type Sponsor = typeof sponsors[number];
+const sponsors = [...allSponsors].sort((a, b) => b.weight - a.weight);
+
+type Sponsor = typeof allSponsors[number];
 type ValidLogins = Sponsor['login'];
 
 interface Def {
@@ -29,9 +31,8 @@ const sections: Def = {
     'flightcontrolhq',
   ],
   bronze: [
-    'newfront-insurance',
+    //
     'hidrb',
-    'chimon2000',
     'snaplet',
     'flylance-apps',
     'echobind',
