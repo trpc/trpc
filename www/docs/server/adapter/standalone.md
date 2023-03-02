@@ -11,18 +11,25 @@ slug: /standalone
   <thead>
     <tr>
       <th>Description</th>
-      <th>URL</th>
       <th>Links</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Standalone tRPC Server with Node.js</td>
-      <td><em>n/a</em></td>
+      <td>Standalone tRPC Server</td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/blob/main/examples/minimal">CodeSandbox</a></li>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal">CodeSandbox</a></li>
           <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal/server/index.ts">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Standalone tRPC Server with CORS handling</td>
+      <td>
+        <ul>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal-react">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal-react/server/index.ts">Source</a></li>
         </ul>
       </td>
     </tr>
