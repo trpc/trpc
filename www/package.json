@@ -77,7 +77,7 @@
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
     "tailwindcss": "^3.1.6",
-    "tailwindcss-elevation": "^1.0.1",
+    "tailwindcss-elevation": "^2.0.0",
     "tsx": "^3.12.3",
     "typescript": "^4.8.3"
   }

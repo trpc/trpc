@@ -1157,7 +1157,7 @@ importers:
       react-icons: ^4.4.0
       tailwind-merge: ^1.5.1
       tailwindcss: ^3.1.6
-      tailwindcss-elevation: ^1.0.1
+      tailwindcss-elevation: ^2.0.0
       tsx: ^3.12.3
       typescript: ^4.8.3
       zod: ^3.0.0
@@ -1206,7 +1206,7 @@ importers:
       postcss: 8.4.14
       prettier: 2.8.0
       tailwindcss: 3.2.4_postcss@8.4.14
-      tailwindcss-elevation: 1.0.1_tailwindcss@3.2.4
+      tailwindcss-elevation: 2.0.0_tailwindcss@3.2.4
       tsx: 3.12.3
       typescript: 4.8.3
 
@@ -10184,7 +10184,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2
+      follow-redirects: 1.15.2_debug@4.3.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -14100,6 +14100,18 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+
+  /follow-redirects/1.15.2_debug@4.3.2:
+    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.2
+    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -21435,10 +21447,10 @@ packages:
     resolution: {integrity: sha512-tER/2SbYRdfPYg6m4pDWZSlbymLTmDi+dx4iCsJmgmz4UDGzgnVelOvBe3GNtGCw9Bmc4MiObfJJbKeVL+KnMQ==}
     dev: false
 
-  /tailwindcss-elevation/1.0.1_tailwindcss@3.2.4:
-    resolution: {integrity: sha512-XlUwumrKirdXUrBUMq2zZJryy9sRmkFeScR04RB1u5MNv8/qBqnKaOM0EdSNQRDvR0ZI21reKVSNGcAFD0B47w==}
+  /tailwindcss-elevation/2.0.0_tailwindcss@3.2.4:
+    resolution: {integrity: sha512-ejQ9bCTiilb/aOF2l9fLF9sWGc2QvxepePTGlLIxGZzJpRYKODf1tJlIN51W9ho4tXD2GKbBb10jd3bKm3THKQ==}
     peerDependencies:
-      tailwindcss: ^2.0.1
+      tailwindcss: ^3.0.1
     dependencies:
       hex-rgb: 4.3.0
       tailwindcss: 3.2.4_postcss@8.4.14
