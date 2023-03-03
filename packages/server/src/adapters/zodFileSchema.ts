@@ -28,19 +28,20 @@ export const fileEsqueSchema = z.custom<File>((value) => {
   return false;
 });
 
-export const fileListEsqueSchema = z.custom<FileList>((value) => {
-  if (!isObject(value)) {
+export const fileListEsqueSchema = z
+  .custom<FileList>((value) => {
+    if (!isObject(value)) {
+      return false;
+    }
+    if (
+      typeof (value as unknown as FileList).item === 'function' &&
+      (value as unknown as FileList).item(0)
+    ) {
+      return true;
+    }
     return false;
-  }
-  if (
-    typeof (value as unknown as FileList).item === 'function' &&
-    (value as unknown as FileList).item(0)
-  ) {
-    return true;
-  }
-  return false;
-});
-// .transform((value) => value.item(0) as File);
+  })
+  .transform((value) => value.item(0) as File);
 
 export const zodFileStreamSchema = z.object({
   stream: readableEsqueSchema,
