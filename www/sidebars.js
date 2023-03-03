@@ -58,6 +58,7 @@ module.exports = {
             'server/adapter/express',
             'server/adapter/fastify',
             'server/adapter/fetch',
+            'server/adapter/standalone',
           ],
         },
       ],
