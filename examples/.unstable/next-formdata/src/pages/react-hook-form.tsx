@@ -54,25 +54,24 @@ export default function Page() {
               await mutation.mutateAsync(new FormData(event?.target) as any);
             })}
           >
-            <p>
+            <div>
               <input {...form.register('hello')} />
               {form.formState.errors.hello && (
                 <div>{form.formState.errors.hello.message}</div>
               )}
-            </p>
-            <p>
-              <input type="file" {...form.register('file1')} />
+            </div>
 
-              {form.formState.errors.file1 && (
-                <div>{form.formState.errors.file1.message}</div>
-              )}
-            </p>
+            <input type="file" {...form.register('file1')} />
 
-            <p>
+            {form.formState.errors.file1 && (
+              <div>{form.formState.errors.file1.message}</div>
+            )}
+
+            <div>
               <button type="submit" disabled={form.formState.isSubmitting}>
                 submit
               </button>
-            </p>
+            </div>
           </form>
         </fieldset>
       </FormProvider>
