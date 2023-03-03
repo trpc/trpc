@@ -18,27 +18,11 @@ import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-h
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
-import { Readable } from 'stream';
 import { z } from 'zod';
-
-const zodFileStream = z.object({
-  file: z.instanceof(Readable),
-  filename: z.string(),
-  mimeType: z.string(),
-});
-
-const zodFile = zodFileStream.transform(
-  async ({ file, filename, mimeType }) => {
-    const chunks: Buffer[] = [];
-    for await (const chunk of file) {
-      chunks.push(chunk);
-    }
-
-    return new File(chunks, filename, {
-      type: mimeType,
-    });
-  },
-);
+import {
+  zodFile,
+  zodFileStream,
+} from '../../../../examples/next-formdata/src/server/zodFile';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -201,12 +185,7 @@ test('react', async () => {
     expect(utils.getByTestId('result').textContent).toMatchInlineSnapshot(`
       "{
           \\"name\\": \\"bob\\",
-          \\"age\\": 42,
-          \\"image\\": {
-              \\"filename\\": \\"\\",
-              \\"size\\": 13,
-              \\"type\\": \\"application/octet-stream\\"
-          }
+          \\"age\\": 42
       }"
     `);
     utils.unmount();
@@ -267,12 +246,7 @@ test('react upload file', async () => {
     expect(utils.getByTestId('result').textContent).toMatchInlineSnapshot(`
       "{
           \\"name\\": \\"bob\\",
-          \\"age\\": 42,
-          \\"image\\": {
-              \\"filename\\": \\"\\",
-              \\"size\\": 13,
-              \\"type\\": \\"application/octet-stream\\"
-          }
+          \\"age\\": 42
       }"
     `);
   }
