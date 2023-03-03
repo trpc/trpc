@@ -2,8 +2,10 @@ import Head from '@docusaurus/Head';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
+import { Variants, motion } from 'framer-motion';
 import React, { ComponentPropsWithoutRef, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
+import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
 import { GithubSponsorButton } from '../components/GithubSponsorButton';
@@ -35,45 +37,92 @@ const Iframe = (
   );
 };
 
+const headerVariant: Variants = {
+  hidden: {
+    opacity: 0,
+    transition: {
+      when: 'afterChildren',
+    },
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      type: 'tween',
+      when: 'beforeChildren',
+      staggerChildren: 0.5,
+    },
+  },
+};
+
+const itemVariant: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 48,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 1,
+    },
+  },
+};
+
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
   return (
     <main className="container px-6 mx-auto space-y-28">
-      <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24">
-        <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
-          {siteConfig.tagline}
-        </h1>
-        <p className="pt-3 text-sm font-medium text-center max-w-[60ch] text-zinc-600 md:text-lg dark:text-zinc-300 mx-auto">
-          Experience the full power of{' '}
-          <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
-            TypeScript
-          </span>{' '}
-          inference to boost productivity <br /> for your full-stack
-          application.
-        </p>
-        <div className="flex items-center justify-center gap-4 mt-6">
-          <div className="flex justify-end flex-1">
-            <GithubStarsButton className="lg:text-lg" />
+      <motion.header
+        variants={headerVariant}
+        initial="hidden"
+        animate="visible"
+        className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24"
+      >
+        <motion.div variants={itemVariant}>
+          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
+            {siteConfig.tagline}
+          </h1>
+          <p className="pt-3 text-sm font-medium text-center max-w-[60ch] text-zinc-600 md:text-lg dark:text-zinc-300 mx-auto">
+            Experience the full power of{' '}
+            <span className="underline text-slate-900 dark:text-slate-100 decoration-rose-500 underline-offset-2 decoration-wavy decoration-from-font">
+              TypeScript
+            </span>{' '}
+            inference to boost productivity <br /> for your full-stack
+            application.
+          </p>
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <div className="flex justify-end flex-1">
+              <GithubStarsButton className="lg:text-lg" />
+            </div>
+            <div className="flex justify-start flex-1">
+              <Button
+                variant="primary"
+                href="/docs/quickstart"
+                className="lg:text-lg"
+              >
+                Quickstart
+                <FiArrowRight size={20} strokeWidth={3} />
+              </Button>
+            </div>
           </div>
-          <div className="flex justify-start flex-1">
-            <Button
-              variant="primary"
-              href="/docs/quickstart"
-              className="lg:text-lg"
-            >
-              Quickstart
-              <FiArrowRight size={20} strokeWidth={3} />
-            </Button>
-          </div>
-        </div>
-        <Preview />
-        <TopSponsors />
-      </header>
+        </motion.div>
+        <motion.div variants={itemVariant}>
+          <Preview />
+        </motion.div>
+        <motion.div variants={itemVariant}>
+          <TopSponsors />
+        </motion.div>
+      </motion.header>
 
-      <section>
+      <motion.section
+        variants={popIn}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
         <Features />
-      </section>
+      </motion.section>
 
       <section className="py-4 md:py-8">
         <QuickIntro />
@@ -90,7 +139,11 @@ const HomeContent: React.FC = () => {
             </>
           }
         />
-        <div
+        <motion.div
+          variants={popIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
           className={clsx(
             'h-[800px] w-full rounded-xl overflow-hidden z-10 relative my-0 md:my-4 lg:my-8',
           )}
@@ -114,8 +167,14 @@ const HomeContent: React.FC = () => {
             }
             frameBorder="0"
           />
-        </div>
-        <div className="flex justify-center">
+        </motion.div>
+        <motion.div
+          variants={popIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="flex justify-center"
+        >
           <Button
             variant="tertiary"
             href="https://github.com/trpc/next-minimal-starter/generate"
@@ -133,7 +192,7 @@ const HomeContent: React.FC = () => {
               Use this template
             </span>
           </Button>
-        </div>
+        </motion.div>
       </section>
 
       <section className="max-w-[80ch] px-6 mx-auto md:px-0">
@@ -141,37 +200,44 @@ const HomeContent: React.FC = () => {
           id="quote"
           title={<>You may not need a traditional API</>}
         />
-        <blockquote
-          cite="https://twitter.com/alexdotjs"
-          className="py-2 mt-3 space-y-2 border-none italic"
+        <motion.div
+          variants={popIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
         >
-          <p className="text-sm text-zinc-600 md:text-base dark:text-zinc-300">
-            &quot;I built tRPC to allow people to <strong>move faster</strong>{' '}
-            by removing the need of a traditional API-layer, while still having
-            confidence that our apps won&apos;t break as we rapidly
-            iterate.&quot;
-          </p>
-          <p className="text-sm text-zinc-600 md:text-base dark:text-zinc-300">
-            Try it out for yourself and let us know what you think!
-          </p>
-        </blockquote>
-        <a
-          className="flex items-center gap-3 pt-6 group hover:no-underline"
-          href="http://twitter.com/alexdotjs"
-        >
-          <img
-            src="https://avatars.githubusercontent.com/u/459267?v=4"
-            alt="Alex/KATT"
-            loading="lazy"
-            className="w-12 h-12 mr-2 rounded-full md:w-14 md:h-14"
-          />
-          <div>
-            <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
-            <p className="text-xs text-zinc-600 md:text-sm dark:text-zinc-300">
-              Creator of tRPC
+          <blockquote
+            cite="https://twitter.com/alexdotjs"
+            className="py-2 mt-3 space-y-2 border-none italic"
+          >
+            <p className="text-sm text-zinc-600 md:text-base dark:text-zinc-300">
+              &quot;I built tRPC to allow people to <strong>move faster</strong>{' '}
+              by removing the need of a traditional API-layer, while still
+              having confidence that our apps won&apos;t break as we rapidly
+              iterate.&quot;
             </p>
-          </div>
-        </a>
+            <p className="text-sm text-zinc-600 md:text-base dark:text-zinc-300">
+              Try it out for yourself and let us know what you think!
+            </p>
+          </blockquote>
+          <a
+            className="flex items-center gap-3 pt-6 group hover:no-underline"
+            href="http://twitter.com/alexdotjs"
+          >
+            <img
+              src="https://avatars.githubusercontent.com/u/459267?v=4"
+              alt="Alex/KATT"
+              loading="lazy"
+              className="w-12 h-12 mr-2 rounded-full md:w-14 md:h-14"
+            />
+            <div>
+              <h3 className="mb-0 text-base font-bold md:text-lg">Alex/KATT</h3>
+              <p className="text-xs text-zinc-600 md:text-sm dark:text-zinc-300">
+                Creator of tRPC
+              </p>
+            </div>
+          </a>
+        </motion.div>
       </section>
       <section>
         <SectionTitle
@@ -200,12 +266,24 @@ const HomeContent: React.FC = () => {
           }
         />
         <div className="max-w-screen-md mx-auto">
-          <div className="my-3 aspect-square">
+          <motion.div
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="my-3 aspect-square"
+          >
             <SponsorBubbles />
-          </div>
-          <div className="flex justify-center">
+          </motion.div>
+          <motion.div
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="flex justify-center"
+          >
             <GithubSponsorButton />
-          </div>
+          </motion.div>
         </div>
       </section>
     </main>
