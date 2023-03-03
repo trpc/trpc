@@ -33,7 +33,9 @@ test('optional', async () => {
       return null;
     },
   };
-
+ 
   await optional.parseAsync(undefined);
+  
+  // ❌❌❌❌❌ this fails:
   await optional.parseAsync(fileListEsque);
 });
