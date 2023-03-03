@@ -18,7 +18,10 @@ const readableEsqueSchema = z.custom<Readable>((value) => {
   return false;
 });
 
-export const fileEsqueSchema = z.custom<File>((value) => {
+/**
+ * This is a hack to check if a value is a File in the browser
+ */
+const fileEsqueSchema = z.custom<File>((value) => {
   if (!isObject(value)) {
     return false;
   }
@@ -28,7 +31,11 @@ export const fileEsqueSchema = z.custom<File>((value) => {
   return false;
 });
 
-export const fileListEsqueSchema = z
+/**
+ * This is a hack to check if a value is a FileList in the browser
+ * Returns the first item file 🤷‍♂️
+ */
+const fileListEsqueSchema = z
   .custom<FileList>((value) => {
     if (!isObject(value)) {
       return false;
@@ -49,6 +56,10 @@ export const zodFileStreamSchema = z.object({
   type: z.string(),
 });
 
+/**
+ * Isomorphic File schema.
+ * It will accept a File, FileList, or a ReadableStream and return a File
+ */
 export const zodFileSchema = z.union([
   fileEsqueSchema,
   fileListEsqueSchema,
