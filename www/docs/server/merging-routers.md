@@ -127,8 +127,6 @@ const users = await client.user.list.query(); // => [];
 // underlying path is "user/list"
 ```
 
-**Note**: Choosing a custom namespace delimiter is a must when using AWS HTTP APIs since dots are not allowed in paths.
-
 ## Merging with `t.mergeRouters`
 
 If you prefer having all procedures flat in one single namespace, you can instead use `t.mergeRouters`
