@@ -1,6 +1,21 @@
 import busboy, { BusboyFileStream, BusboyHeaders } from '@fastify/busboy';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 
+export interface FormDataFileStream {
+  /**
+   * The stream of the file
+   */
+  stream: BusboyFileStream;
+  /**
+   * The name of the file
+   */
+  name: string;
+  /**
+   * The MIME type of the file
+   */
+  type: string;
+}
+
 export const nodeHTTPFormDataContentTypeHandler =
   createNodeHTTPContentTypeHandler({
     isMatch(opts) {
@@ -27,19 +42,20 @@ export const nodeHTTPFormDataContentTypeHandler =
       const bb = busboy({ headers: req.headers as BusboyHeaders });
       // const form = new FormData();
 
-      const fields: Record<
-        string,
-        string | { file: BusboyFileStream; filename: string; mimeType: string }
-      > = {};
+      const fields: Record<string, string | FormDataFileStream> = {};
 
       await new Promise((resolve, reject) => {
-        bb.on('file', async (name, file, filename, _, mimeType) => {
-          if (filename) {
+        bb.on('file', async (inputName, stream, fileName, _, type) => {
+          if (fileName) {
             // Assumes files without filenames are not files
             // This avoids the case where you have an input without a file selected in the browser
-            fields[name] = { file, filename, mimeType };
+            fields[inputName] = {
+              stream,
+              name: fileName,
+              type,
+            };
           }
-          file.emit('end');
+          stream.emit('end');
         });
 
         bb.on('field', (name, value) => {

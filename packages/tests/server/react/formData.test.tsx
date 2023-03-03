@@ -13,16 +13,38 @@ import {
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
-import { initTRPC } from '@trpc/server';
+import {
+  inferProcedureOutput,
+  inferRouterOutputs,
+  initTRPC,
+} from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
+// import {
+//   zodFile,
+//   zodFileStream,
+// } from '../../../../examples/.unstable/next-formdata/src/server/zodFile';
+import { Readable } from 'stream';
 import { z } from 'zod';
-import {
-  zodFile,
-  zodFileStream,
-} from '../../../../examples/next-formdata/src/server/zodFile';
+
+export const zodFileStream = z.object({
+  stream: z.instanceof(Readable),
+  name: z.string(),
+  type: z.string(),
+});
+
+export const zodFile = zodFileStream.transform(async (input) => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of input.stream) {
+    chunks.push(chunk);
+  }
+
+  return new File(chunks, input.name, {
+    type: input.type,
+  });
+});
 
 const ctx = konn()
   .beforeEach(() => {
@@ -37,7 +59,8 @@ const ctx = konn()
             image: zodFile.optional(),
           }),
         )
-        .mutation(({ input }) => {
+        .mutation((opts) => {
+          const { input } = opts;
           return {
             ...input,
             image: input.image && {
@@ -138,11 +161,20 @@ const ctx = konn()
   })
   .done();
 
-test('react', async () => {
-  const { proxy, App } = ctx;
+function createReactComponent(_ctx: typeof ctx) {
+  const { proxy, App } = _ctx;
+
+  type RouterOutput = inferRouterOutputs<typeof _ctx['appRouter']>;
+  const mutationResponse: {
+    current: RouterOutput['createUser'] | null;
+  } = { current: null };
 
   function MyComponent() {
-    const createUserMutation = proxy.createUser.useMutation();
+    const createUserMutation = proxy.createUser.useMutation({
+      onSuccess: (data) => {
+        mutationResponse.current = data;
+      },
+    });
 
     return (
       <div>
@@ -159,97 +191,61 @@ test('react', async () => {
           <input name="image" type="file" data-testid="image-input" />
           <button type="submit">Submit</button>
         </form>
-        {createUserMutation.data && (
-          <pre data-testid={'result'}>
-            {JSON.stringify(createUserMutation.data, null, 4)}
-          </pre>
-        )}
       </div>
     );
   }
 
-  {
-    //upload w/o file
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
 
-    utils.getByText('Submit').click();
+  return { utils, mutationResponse };
+}
 
-    await waitFor(() => {
-      utils.getByTestId('result');
-    });
+test('react', async () => {
+  const opts = createReactComponent(ctx);
+  const { utils, mutationResponse } = opts;
 
-    expect(utils.getByTestId('result').textContent).toMatchInlineSnapshot(`
-      "{
-          \\"name\\": \\"bob\\",
-          \\"age\\": 42
-      }"
-    `);
-    utils.unmount();
-  }
+  utils.getByText('Submit').click();
+
+  await waitFor(() => {
+    assert(mutationResponse.current);
+  });
+  assert(mutationResponse.current);
+
+  expect(mutationResponse.current).toMatchInlineSnapshot(`
+    Object {
+      "age": 42,
+      "name": "bob",
+    }
+  `);
+  utils.unmount();
 });
 
 test('react upload file', async () => {
-  const { proxy, App } = ctx;
+  const opts = createReactComponent(ctx);
+  const { utils, mutationResponse } = opts;
 
-  function MyComponent() {
-    const createUserMutation = proxy.createUser.useMutation();
+  // get the upload button
+  const uploader = utils.getByTestId('image-input');
 
-    return (
-      <div>
-        <form
-          onSubmit={(e) => {
-            const formData = new FormData(e.currentTarget);
-            createUserMutation.mutate(formData as any);
+  const file = new File(['hi bob'], 'bob.txt', {
+    type: 'text/plain',
+  });
 
-            e.preventDefault();
-          }}
-        >
-          <input name="name" defaultValue="bob" />
-          <input name="age" defaultValue={42} />
-          <input name="image" type="file" data-testid="image-input" />
-          <button type="submit">Submit</button>
-        </form>
-        {createUserMutation.data && (
-          <pre data-testid={'result'}>
-            {JSON.stringify(createUserMutation.data, null, 4)}
-          </pre>
-        )}
-      </div>
-    );
-  }
-  {
-    // upload with file
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-    // get the upload button
-    const uploader = utils.getByTestId('image-input');
+  await userEvent.upload(uploader, file);
 
-    const file = new File(['hi bob'], 'bob.txt', {
-      type: 'text/plain',
-    });
+  utils.getByText('Submit').click();
 
-    await userEvent.upload(uploader, file);
+  await waitFor(() => {
+    assert(mutationResponse.current);
+  });
 
-    utils.getByText('Submit').click();
-
-    await waitFor(() => {
-      utils.getByTestId('result');
-    });
-
-    expect(utils.getByTestId('result').textContent).toMatchInlineSnapshot(`
-      "{
-          \\"name\\": \\"bob\\",
-          \\"age\\": 42
-      }"
-    `);
-  }
+  assert(mutationResponse.current);
+  expect(mutationResponse.current.image).not.toBeFalsy();
+  expect(mutationResponse.current).toMatchInlineSnapshot();
 });
 
 test('upload file', async () => {
@@ -285,8 +281,75 @@ test('upload file', async () => {
       },
       "joeFilename": Object {
         "file": "[redacted-stream]",
-        "filename": "joe.txt",
-        "mimeType": "text/plain",
+        "name": "joe.txt",
+        "stream": Object {
+          "_events": Object {},
+          "_eventsCount": 1,
+          "_readableState": Object {
+            "autoDestroy": true,
+            "awaitDrainWriters": null,
+            "buffer": Object {
+              "head": Object {
+                "data": Object {
+                  "data": Array [
+                    104,
+                    105,
+                    32,
+                    106,
+                    111,
+                    101,
+                  ],
+                  "type": "Buffer",
+                },
+                "next": null,
+              },
+              "length": 1,
+              "tail": Object {
+                "data": Object {
+                  "data": Array [
+                    104,
+                    105,
+                    32,
+                    106,
+                    111,
+                    101,
+                  ],
+                  "type": "Buffer",
+                },
+                "next": null,
+              },
+            },
+            "closeEmitted": false,
+            "closed": false,
+            "constructed": true,
+            "dataEmitted": false,
+            "decoder": null,
+            "defaultEncoding": "utf8",
+            "destroyed": false,
+            "emitClose": true,
+            "emittedReadable": false,
+            "encoding": null,
+            "endEmitted": false,
+            "ended": true,
+            "errorEmitted": false,
+            "errored": null,
+            "flowing": null,
+            "highWaterMark": 16384,
+            "length": 6,
+            "multiAwaitDrain": false,
+            "needReadable": false,
+            "objectMode": false,
+            "pipes": Array [],
+            "readableListening": false,
+            "reading": false,
+            "readingMore": false,
+            "resumeScheduled": false,
+            "sync": false,
+          },
+          "bytesRead": 6,
+          "truncated": false,
+        },
+        "type": "text/plain",
       },
     }
   `);
