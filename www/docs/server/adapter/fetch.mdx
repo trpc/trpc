@@ -203,11 +203,11 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 ### Astro
 
-```ts title='src/pages/trpc/[...action].ts'
-import type { APIRoute } from 'astro';
+```ts title='src/pages/trpc/[trpc].ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { createContext } from './context';
-import { appRouter } from './router';
+import type { APIRoute } from 'astro';
+import { createContext } from '../../server/context';
+import { appRouter } from '../../server/router';
 
 export const all: APIRoute = ({ params, request }) => {
   return fetchRequestHandler({
@@ -342,18 +342,18 @@ See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-e
 
 ### Remix
 
-```ts title='app/routes/trpc/$action.ts'
+```ts title='app/routes/trpc/$trpc.ts'
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { createContext } from './context';
-import { appRouter } from './router';
+import { createContext } from '~/server/context';
+import { appRouter } from '~/server/router';
 
 export const loader = async (args: LoaderArgs) => {
-  return handleRequest(args)
-}
+  return handleRequest(args);
+};
 export const action = async (args: ActionArgs) => {
-  return handleRequest(args)
-}
+  return handleRequest(args);
+};
 function handleRequest(args: LoaderArgs | ActionArgs) {
   return fetchRequestHandler({
     endpoint: '/trpc',
@@ -361,7 +361,7 @@ function handleRequest(args: LoaderArgs | ActionArgs) {
     router: appRouter,
     createContext,
   });
-};
+}
 ```
 
 ### Vercel Edge Runtime
