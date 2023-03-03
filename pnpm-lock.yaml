@@ -239,6 +239,43 @@ importers:
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
+  examples/.unstable/next-formdata:
+    specifiers:
+      '@tanstack/react-query': 4.6.0
+      '@trpc/client': ^10.13.2
+      '@trpc/next': ^10.13.2
+      '@trpc/react-query': ^10.13.2
+      '@trpc/server': ^10.13.2
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      '@types/react-dom': ^18.0.5
+      eslint: ^8.30.0
+      next: ^13.2.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      typescript: ^4.8.3
+      undici: ^5.14.0
+      zod: ^3.0.0
+      zod-form-data: ^1.3.1
+    dependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
+      next: 13.2.1_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      undici: 5.14.0
+      zod: 3.20.2
+      zod-form-data: 1.3.1_zod@3.20.2
+    devDependencies:
+      '@types/node': 18.13.0
+      '@types/react': 18.0.25
+      '@types/react-dom': 18.0.9
+      eslint: 8.30.0
+      typescript: 4.9.5
+
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^4.0.0
@@ -561,43 +598,6 @@ importers:
       '@types/react-dom': 18.0.9
       eslint: 8.30.0
       typescript: 4.8.3
-
-  examples/next-formdata:
-    specifiers:
-      '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.13.2
-      '@trpc/next': ^10.13.2
-      '@trpc/react-query': ^10.13.2
-      '@trpc/server': ^10.13.2
-      '@types/node': ^18.7.20
-      '@types/react': ^18.0.9
-      '@types/react-dom': ^18.0.5
-      eslint: ^8.30.0
-      next: ^13.2.1
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      typescript: ^4.8.3
-      undici: ^5.14.0
-      zod: ^3.0.0
-      zod-form-data: ^1.3.1
-    dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
-      '@trpc/client': link:../../packages/client
-      '@trpc/next': link:../../packages/next
-      '@trpc/react-query': link:../../packages/react-query
-      '@trpc/server': link:../../packages/server
-      next: 13.2.1_biqbaboplfbrettd7655fr4n2y
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      undici: 5.14.0
-      zod: 3.20.2
-      zod-form-data: 1.3.1_zod@3.20.2
-    devDependencies:
-      '@types/node': 18.13.0
-      '@types/react': 18.0.25
-      '@types/react-dom': 18.0.9
-      eslint: 8.30.0
-      typescript: 4.9.5
 
   examples/next-minimal-starter:
     specifiers:
@@ -1032,6 +1032,7 @@ importers:
       rollup: ^2.79.1
       superjson: ^1.7.4
       superstruct: ^1.0.0
+      tslib: ^2.1.0
       tsx: ^3.12.3
       typescript: ^4.8.3
       vitest: ^0.28.5
@@ -1063,6 +1064,7 @@ importers:
       rollup: 2.79.1
       superjson: 1.11.0
       superstruct: 1.0.3
+      tslib: 2.4.1
       tsx: 3.12.3
       typescript: 4.8.3
       vitest: 0.28.5
@@ -16017,7 +16019,7 @@ packages:
       graphql: 15.8.0
       lodash: 4.17.21
       playwright: 1.28.1
-      tslib: 2.4.0
+      tslib: 2.4.1
     dev: false
 
   /language-subtag-registry/0.3.22:
@@ -20244,7 +20246,7 @@ packages:
       fs-extra: 10.1.0
       resolve: 1.22.1
       rollup: 2.79.1
-      tslib: 2.4.0
+      tslib: 2.4.1
       typescript: 4.8.3
     dev: false
 

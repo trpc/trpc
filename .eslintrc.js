@@ -15,8 +15,7 @@ const config = {
     sourceType: 'module', // Allows for the use of import
     tsconfigRootDir: __dirname,
     project: [
-      './examples/.interop/*/tsconfig.json',
-      './examples/.test/*/tsconfig.json',
+      './examples/.*/*/tsconfig.json',
       './examples/*/tsconfig.json',
       './packages/*/tsconfig.json',
       './tsconfig.json',

@@ -20,6 +20,10 @@ import {
 } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
+import {
+  zodFileSchema,
+  zodFileStreamSchema,
+} from '@trpc/server/adapters/zodFileSchema';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
 // import {
@@ -28,23 +32,6 @@ import React, { ReactNode } from 'react';
 // } from '../../../../examples/.unstable/next-formdata/src/server/zodFile';
 import { Readable } from 'stream';
 import { z } from 'zod';
-
-export const zodFileStream = z.object({
-  stream: z.instanceof(Readable),
-  name: z.string(),
-  type: z.string(),
-});
-
-export const zodFile = zodFileStream.transform(async (input) => {
-  const chunks: Buffer[] = [];
-  for await (const chunk of input.stream) {
-    chunks.push(chunk);
-  }
-
-  return new File(chunks, input.name, {
-    type: input.type,
-  });
-});
 
 const ctx = konn()
   .beforeEach(() => {
@@ -56,7 +43,7 @@ const ctx = konn()
           z.object({
             name: z.string(),
             age: z.coerce.number(),
-            image: zodFile.optional(),
+            image: zodFileSchema.optional(),
           }),
         )
         .mutation((opts) => {
@@ -78,8 +65,8 @@ const ctx = konn()
         })
         .input(
           z.object({
-            bobfile: zodFile,
-            joefile: zodFileStream,
+            bobfile: zodFileSchema,
+            joefile: zodFileStreamSchema,
           }),
         )
         .mutation(async ({ input }) => {

@@ -31,8 +31,11 @@ export default function IndexPage() {
           onSubmit={(e) => {
             const formData = new FormData(e.currentTarget);
             if (formData.get('nojs')) {
+              // Submit the form the oldschool way
               return;
             }
+
+            const file = formData.get('file1');
 
             // setFormData(formData);
             mutation.mutate(formData as any);

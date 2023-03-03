@@ -5,12 +5,11 @@
 import * as trpcNext from '@trpc/server/adapters/next';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
+import { zodFileSchema } from '@trpc/server/adapters/zodFileSchema';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { File } from 'undici';
 import { z } from 'zod';
-import { zfd } from 'zod-form-data';
 import { publicProcedure, router } from '~/server/trpc';
-import { zodFile } from '~/server/zodFile';
 
 // @ts-expect-error - globalThis.File is not defined for some reason
 globalThis.File = File;
@@ -24,7 +23,7 @@ const appRouter = router({
     .input(
       z.object({
         hello: z.string(),
-        file1: zodFile,
+        file1: zodFileSchema,
       }),
     )
     .mutation((opts) => {

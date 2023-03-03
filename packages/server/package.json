@@ -79,6 +79,11 @@
       "require": "./dist/adapters/node-http/content-type/form-data/index.js",
       "default": "./dist/adapters/node-http/content-type/form-data/index.js"
     },
+    "./adapters/zodFileSchema": {
+      "import": "./dist/adapters/zodFileSchema.mjs",
+      "require": "./dist/adapters/zodFileSchema.js",
+      "default": "./dist/adapters/zodFileSchema.js"
+    },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
@@ -160,6 +165,7 @@
     "rollup": "^2.79.1",
     "superjson": "^1.7.4",
     "superstruct": "^1.0.0",
+    "tslib": "^2.1.0",
     "tsx": "^3.12.3",
     "typescript": "^4.8.3",
     "vitest": "^0.28.5",
