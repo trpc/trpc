@@ -484,21 +484,22 @@ test('setData', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('setData1');
     expect(utils.container).toHaveTextContent('setData2');
+
+    expect(utils.container).toMatchInlineSnapshot(`
+      <div>
+        [
+          {
+              "id": 0,
+              "text": "setData1"
+          },
+          {
+              "id": 1,
+              "text": "setData2"
+          }
+      ]
+      </div>
+    `);
   });
-  expect(utils.container).toMatchInlineSnapshot(`
-    <div>
-      [
-        {
-            "id": 0,
-            "text": "setData1"
-        },
-        {
-            "id": 1,
-            "text": "setData2"
-        }
-    ]
-    </div>
-  `);
 });
 
 test('setInfiniteData', async () => {
@@ -561,8 +562,7 @@ test('setInfiniteData', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('setInfiniteData1');
     expect(utils.container).toHaveTextContent('setInfiniteData2');
-  });
-  expect(utils.container).toMatchInlineSnapshot(`
+    expect(utils.container).toMatchInlineSnapshot(`
     <div>
       {
         "pageParams": [
@@ -588,6 +588,7 @@ test('setInfiniteData', async () => {
     }
     </div>
   `);
+  });
 });
 
 test('getData', async () => {

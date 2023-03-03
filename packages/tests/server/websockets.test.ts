@@ -121,7 +121,7 @@ test('query', async () => {
   expect(await proxy.greeting.query(null)).toBe('hello world');
   expect(await proxy.greeting.query('alexdotjs')).toBe('hello alexdotjs');
 
-  close();
+  await close();
 });
 
 test('mutation', async () => {
@@ -139,7 +139,7 @@ test('mutation', async () => {
     }
   `);
 
-  close();
+  await close();
 });
 
 test('basic subscription test', async () => {
@@ -204,7 +204,7 @@ test('basic subscription test', async () => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
   });
-  close();
+  await close();
 });
 
 test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
@@ -275,7 +275,9 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     ]
   `);
 
-  wss.close();
+  await new Promise((resolve) => {
+    wss.close(resolve);
+  });
 });
 
 test('server subscription ended', async () => {
@@ -314,7 +316,7 @@ test('server subscription ended', async () => {
   expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
     `[TRPCClientError: Operation ended prematurely]`,
   );
-  close();
+  await close();
 });
 
 test('sub emits errors', async () => {
@@ -348,7 +350,7 @@ test('sub emits errors', async () => {
     expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
 
-  close();
+  await close();
 });
 
 test('wait for slow queries/mutations before disconnecting', async () => {
@@ -360,13 +362,13 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   const promise = proxy.slow.mutate();
   wsClient.close();
   expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
-  close();
+  await close();
   await waitFor(() => {
     expect((wsClient.getConnection() as any as WebSocket).readyState).toBe(
       WebSocket.CLOSED,
     );
   });
-  close();
+  await close();
 });
 
 test(
@@ -444,7 +446,7 @@ test(
       expect(wss.clients.size).toBe(1);
     });
 
-    close();
+    await close();
 
     await waitFor(() => {
       expect(onCloseMock).toHaveBeenCalledTimes(2);
@@ -467,7 +469,7 @@ test('not found error', async () => {
   expect(error.name).toBe('TRPCClientError');
   expect(error.shape?.data.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
-  close();
+  await close();
 });
 
 test('batching', async () => {
@@ -487,7 +489,7 @@ test('batching', async () => {
       },
     ]
   `);
-  t.close();
+  await t.close();
 });
 
 describe('regression test - slow createContext', () => {
@@ -527,7 +529,7 @@ describe('regression test - slow createContext', () => {
       }
     `);
     rawClient.close();
-    t.close();
+    await t.close();
   });
 
   test('createContext throws', async () => {
@@ -606,7 +608,7 @@ describe('regression test - slow createContext', () => {
     `);
 
     expect(createContext).toHaveBeenCalledTimes(1);
-    t.close();
+    await t.close();
   });
 });
 
@@ -646,7 +648,7 @@ test('malformatted JSON', async () => {
       "id": null,
     }
   `);
-  t.close();
+  await t.close();
 });
 
 test('regression - badly shaped request', async () => {
@@ -688,7 +690,7 @@ test('regression - badly shaped request', async () => {
     }
   `);
   rawClient.close();
-  t.close();
+  await t.close();
 });
 
 describe('include "jsonrpc" in response if sent with message', () => {
@@ -761,7 +763,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     `);
 
     rawClient.close();
-    t.close();
+    await t.close();
   });
 
   test('subscriptions', async () => {
@@ -848,7 +850,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     `);
 
     rawClient.close();
-    t.close();
+    await t.close();
   });
 });
 

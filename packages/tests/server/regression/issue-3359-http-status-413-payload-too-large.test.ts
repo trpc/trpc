@@ -24,7 +24,11 @@ function createServer(handler: Handler) {
 
   return {
     url: `http://localhost:${port}`,
-    close: () => server.close(),
+    async close() {
+      await new Promise((resolve) => {
+        server.close(resolve);
+      });
+    },
   };
 }
 
@@ -63,7 +67,7 @@ describe('server responds with 413 Payload Too Large', () => {
       `"Badly formatted response from server"`,
     );
 
-    server.close();
+    await server.close();
   });
 
   test('batchLink', async () => {
@@ -99,6 +103,6 @@ describe('server responds with 413 Payload Too Large', () => {
       `"Badly formatted response from server"`,
     );
 
-    server.close();
+    await server.close();
   });
 });

@@ -8,5 +8,5 @@ export type {
   ProcedureBuilder,
   BuildProcedure,
 } from './core/internals/procedureBuilder';
-export type { unsetMarker } from './core/internals/utils';
+export type { Overwrite, unsetMarker } from './core/internals/utils';
 export type { MiddlewareFunction, MiddlewareBuilder } from './core/middleware';
