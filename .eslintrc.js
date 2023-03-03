@@ -88,8 +88,7 @@ const config = {
     {
       files: ['examples/**/*'],
       rules: {
-        // Todo: enable these for even stronger linting! 💪
-        '@typescript-eslint/no-floating-promises': 'off',
+        '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-unused-vars': 'off',
       },
     },

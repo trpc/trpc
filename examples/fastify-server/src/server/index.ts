@@ -3,4 +3,4 @@ import { createServer } from './server';
 
 const server = createServer(serverConfig);
 
-server.start();
+void server.start();
