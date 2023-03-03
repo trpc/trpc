@@ -3,6 +3,7 @@ export type {
   ProcedureRecord,
   ProcedureRouterRecord,
   CreateRouterInner,
+  Router,
 } from './router';
 export { callProcedure } from './router';
 export type {

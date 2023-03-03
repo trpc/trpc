@@ -8,7 +8,7 @@ const restApiProxy = createTRPCProxyClient<AppRouter>({
   links: [httpBatchLink({ url: 'http://localhost:4050/dev' })],
 });
 
-(async () => {
+void (async () => {
   try {
     // A Very simple client to test showcase both APIGW v1(Rest API) and v2(HTTP API) support with serverless-offline
     const queryForVersion2 = await httpApiProxy.greet.query({
