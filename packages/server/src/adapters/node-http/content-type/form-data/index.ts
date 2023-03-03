@@ -34,7 +34,11 @@ export const nodeHTTPFormDataContentTypeHandler =
 
       await new Promise((resolve, reject) => {
         bb.on('file', async (name, file, filename, _, mimeType) => {
-          fields[name] = { file, filename, mimeType };
+          if (filename) {
+            // Assumes files without filenames are not files
+            // This avoids the case where you have an input without a file selected in the browser
+            fields[name] = { file, filename, mimeType };
+          }
           file.emit('end');
         });
 
