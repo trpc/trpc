@@ -74,7 +74,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
                   setEnterToPostMessage(false);
                 }
                 if (e.key === 'Enter' && enterToPostMessage) {
-                  postMessage();
+                  void postMessage();
                 }
                 isTyping.mutate({ typing: true });
               }}

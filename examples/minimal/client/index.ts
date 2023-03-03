@@ -16,4 +16,4 @@ async function main() {
   console.log(result.greeting.toUpperCase());
 }
 
-main();
+void main();

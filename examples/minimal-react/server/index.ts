@@ -54,7 +54,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200);
     return res.end();
   }
-  handler(req, res);
+  void handler(req, res);
 });
 
 server.listen(2022);
