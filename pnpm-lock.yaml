@@ -462,15 +462,19 @@ importers:
   examples/minimal-react/server:
     specifiers:
       '@trpc/server': ^10.13.2
+      '@types/cors': ^2.8.13
       '@types/node': ^18.7.20
+      cors: ^2.8.5
       eslint: ^8.30.0
       tsx: ^3.12.3
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
       '@trpc/server': link:../../../packages/server
+      cors: 2.8.5
       zod: 3.20.2
     devDependencies:
+      '@types/cors': 2.8.13
       '@types/node': 18.7.20
       eslint: 8.30.0
       tsx: 3.12.3
@@ -8912,6 +8916,12 @@ packages:
     dependencies:
       '@types/node': 18.13.0
 
+  /@types/cors/2.8.13:
+    resolution: {integrity: sha512-RG8AStHlUiV5ysZQKq97copd2UmVYw3/pRMLefISZ3S1hK104Cwm7iLQ3fTKx+lsUH2CE8FlLaYeEA2LSeqYUA==}
+    dependencies:
+      '@types/node': 18.13.0
+    dev: true
+
   /@types/d3-hierarchy/1.1.8:
     resolution: {integrity: sha512-AbStKxNyWiMDQPGDguG2Kuhlq1Sv539pZSxYbx4UZeYkutpPwXCcgyiRrlV4YH64nIOsKx7XVnOMy9O7rJsXkg==}
     dev: false
@@ -11381,6 +11391,14 @@ packages:
 
   /core-util-is/1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
+
+  /cors/2.8.5:
+    resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
+    engines: {node: '>= 0.10'}
+    dependencies:
+      object-assign: 4.1.1
+      vary: 1.1.2
+    dev: false
 
   /cosmiconfig/6.0.0:
     resolution: {integrity: sha512-xb3ZL6+L8b9JLLCx3ZdoZy4+2ECphCMo2PwqgP1tlfVq6M6YReyzBJtvWWtbDSpNr9hn96pkCiZqUcFEc+54Qg==}
