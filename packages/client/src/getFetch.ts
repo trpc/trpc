@@ -7,15 +7,12 @@ export function getFetch(
     return customFetchImpl as FetchEsque;
   }
 
-  if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+  if (typeof window !== 'undefined' && window.fetch) {
     return window.fetch.bind(window) as FetchEsque;
   }
 
-  if (
-    typeof globalThis !== 'undefined' &&
-    typeof globalThis.fetch === 'function'
-  ) {
-    return globalThis.fetch.bind(globalThis) as FetchEsque;
+  if (typeof globalThis !== 'undefined' && typeof globalThis.fetch) {
+    return globalThis.fetch as FetchEsque;
   }
 
   throw new Error('No fetch implementation found');
