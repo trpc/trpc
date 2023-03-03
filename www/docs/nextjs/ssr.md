@@ -106,7 +106,7 @@ Since we rely on `@tanstack/react-query`, there are some [options](https://tanst
 
 If you want to avoid any client-side request, you can either change the behavior for all queries on the `queryClientConfig`
 
-```typescript title='utils/trpc.ts'
+```ts title='utils/trpc.ts'
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     return {
@@ -127,8 +127,8 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-Or do it on a per query basis 
-```typescript
+Or do it on a per query basis: 
+
+```ts
 const data = trpc.myQuery.useQuery({}, { refetchOnMount: false, refetchOnWindowFocus: false })
 ```
-
