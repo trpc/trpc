@@ -10,11 +10,11 @@ import { File } from 'undici';
 import { publicProcedure, router } from '~/server/trpc';
 import { uploadFileSchema } from '~/utils/schemas';
 
-// @ts-expect-error - globalThis.File is not defined for some reason
-globalThis.File = File;
-
 const appRouter = router({
   upload: publicProcedure.input(uploadFileSchema).mutation((opts) => {
+    if (!opts.input.file1) {
+      throw new Error('No file uploaded');
+    }
     return {
       ...opts.input,
       file1: {

@@ -3,5 +3,5 @@ import { z } from 'zod';
 
 export const uploadFileSchema = z.object({
   hello: z.string(),
-  file1: zodFileSchema,
+  file1: zodFileSchema.optional(),
 });
