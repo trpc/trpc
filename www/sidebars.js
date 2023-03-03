@@ -148,7 +148,7 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'TypeDoc',
+      label: 'API Reference (Auto-generated)',
       collapsed: false,
       items: [
         {
