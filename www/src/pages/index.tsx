@@ -2,7 +2,7 @@ import Head from '@docusaurus/Head';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import { Variants, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import React, { ComponentPropsWithoutRef, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
@@ -37,50 +37,13 @@ const Iframe = (
   );
 };
 
-const headerVariant: Variants = {
-  hidden: {
-    opacity: 0,
-    transition: {
-      when: 'afterChildren',
-    },
-  },
-  visible: {
-    opacity: 1,
-    transition: {
-      type: 'tween',
-      when: 'beforeChildren',
-      staggerChildren: 0.5,
-    },
-  },
-};
-
-const itemVariant: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 48,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 1,
-    },
-  },
-};
-
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
 
   return (
     <main className="container px-6 mx-auto space-y-28">
-      <motion.header
-        variants={headerVariant}
-        initial="hidden"
-        layout
-        whileInView="visible"
-        className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24"
-      >
-        <motion.div variants={itemVariant}>
+      <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24 animate-pop-in">
+        <div>
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
             {siteConfig.tagline}
           </h1>
@@ -107,14 +70,14 @@ const HomeContent: React.FC = () => {
               </Button>
             </div>
           </div>
-        </motion.div>
-        <motion.div variants={itemVariant}>
+        </div>
+        <div>
           <Preview />
-        </motion.div>
-        <motion.div variants={itemVariant}>
+        </div>
+        <div>
           <TopSponsors />
-        </motion.div>
-      </motion.header>
+        </div>
+      </header>
 
       <motion.section
         variants={popIn}
