@@ -4,7 +4,7 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const mutation = trpc.mut.useMutation({
+  const mutation = trpc.upload.useMutation({
     onSuccess() {
       alert('success!');
     },
@@ -34,8 +34,6 @@ export default function IndexPage() {
               // Submit the form the oldschool way
               return;
             }
-
-            const file = formData.get('file1');
 
             // setFormData(formData);
             mutation.mutate(formData as any);
