@@ -76,7 +76,7 @@ const HomeContent: React.FC = () => {
       <motion.header
         variants={headerVariant}
         initial="hidden"
-        animate="visible"
+        whileInView="visible"
         className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24"
       >
         <motion.div variants={itemVariant}>
