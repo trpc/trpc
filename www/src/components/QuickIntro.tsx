@@ -1,9 +1,11 @@
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
+import { motion } from 'framer-motion';
 import React, { FC, ReactNode } from 'react';
 import Step1 from '../../docs/landing-intro/Step1.md';
 import Step2 from '../../docs/landing-intro/Step2.md';
 import Step3 from '../../docs/landing-intro/Step3.md';
+import { popIn } from '../animations/popIn';
 import { SectionTitle } from './SectionTitle';
 
 type StepProps = {
@@ -16,7 +18,13 @@ type StepProps = {
 
 const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
   return (
-    <div className="flex flex-col justify-between gap-12 lg:flex-row">
+    <motion.div
+      variants={popIn}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      className="flex flex-col justify-between gap-12 lg:flex-row"
+    >
       <div
         className={clsx('flex-1 order-1 lg:order-[0]', {
           'lg:order-1': rightSide,
@@ -35,7 +43,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
           {description}
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

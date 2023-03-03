@@ -6,7 +6,7 @@ const client = createTRPCProxyClient<AppRouter>({
   namespaceDelimiter: '/',
 });
 
-(async () => {
+void (async () => {
   try {
     const q = await client.greet.query({ name: 'Erik' });
     console.log(q);
