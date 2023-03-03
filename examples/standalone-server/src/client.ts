@@ -64,4 +64,4 @@ async function main() {
   wsClient.close();
 }
 
-main();
+void main();

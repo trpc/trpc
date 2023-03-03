@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion';
 import React from 'react';
+import { popIn } from '../../animations/popIn';
 import { tweets } from './script.output';
 
 const knownGithubProfiles: Record<string, string> = {
@@ -51,7 +53,11 @@ export const TwitterWall = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl">
       {latestTweets.map((tweet) => (
-        <a
+        <motion.a
+          variants={popIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
           href={tweet.url}
           key={tweet.id}
           className="p-6 transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-700/50 hover:no-underline"
@@ -93,7 +99,7 @@ export const TwitterWall = () => {
               {tweet.text}
             </blockquote>
           </figure>
-        </a>
+        </motion.a>
       ))}
     </div>
   );
