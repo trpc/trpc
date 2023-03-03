@@ -42,7 +42,7 @@ const HomeContent: React.FC = () => {
 
   return (
     <main className="container px-6 mx-auto space-y-28">
-      <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24 animate-pop-in">
+      <header className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24">
         <div>
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
             {siteConfig.tagline}
