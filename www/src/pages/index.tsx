@@ -76,6 +76,7 @@ const HomeContent: React.FC = () => {
       <motion.header
         variants={headerVariant}
         initial="hidden"
+        layout
         whileInView="visible"
         className="pt-12 mx-auto text-center lg:pt-16 xl:pt-24"
       >
