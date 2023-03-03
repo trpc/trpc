@@ -205,9 +205,7 @@ test('types', async () => {
   });
 
   type TRouterError = TRPCClientErrorLike<typeof appRouter>;
-  type TProcedureError = TRPCClientErrorLike<
-    (typeof appRouter)['post']['byId']
-  >;
+  type TProcedureError = TRPCClientErrorLike<typeof appRouter['post']['byId']>;
 
   type TRouterError__data = TRouterError['data'];
   //      ^?
