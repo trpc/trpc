@@ -26,7 +26,7 @@ for (const name of packages) {
   const version = JSON.parse(content).version;
   // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "${version}""`
   const newContent = content.replace(
-    /\"@trpc\/(\w+)\": "([^"]|\\")*"/g,
+    /\"@trpc\/((\w|-)+)\": "([^"]|\\")*"/g,
     `"@trpc/$1": "${version}"`,
   );
   fs.writeFileSync(packageJSON, newContent);

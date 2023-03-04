@@ -1,17 +1,24 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors } from './script.output';
+import { allSponsors } from './script.output';
 
-type Sponsor = typeof sponsors[number];
+const sponsors = [...allSponsors].sort((a, b) => b.weight - a.weight);
+
+type Sponsor = typeof allSponsors[number];
 type ValidLogins = Sponsor['login'];
 
 interface Def {
+  diamond: ValidLogins[];
   gold: ValidLogins[];
   silver: ValidLogins[];
   bronze: ValidLogins[];
 }
 
 const sections: Def = {
+  diamond: [
+    //
+    'tolahq',
+  ],
   gold: [
     //
     'calcom',
@@ -24,9 +31,8 @@ const sections: Def = {
     'flightcontrolhq',
   ],
   bronze: [
-    'newfront-insurance',
+    //
     'hidrb',
-    'chimon2000',
     'snaplet',
     'flylance-apps',
     'echobind',
@@ -35,6 +41,7 @@ const sections: Def = {
 };
 
 interface Buckets {
+  diamond: Sponsor[];
   gold: Sponsor[];
   silver: Sponsor[];
   bronze: Sponsor[];
@@ -42,6 +49,7 @@ interface Buckets {
 }
 
 const buckets: Buckets = {
+  diamond: [],
   gold: [],
   silver: [],
   bronze: [],
@@ -50,7 +58,9 @@ const buckets: Buckets = {
 
 for (const sponsor of sponsors) {
   const { login } = sponsor;
-  const section = sections.gold.includes(login)
+  const section = sections.diamond.includes(login)
+    ? 'diamond'
+    : sections.gold.includes(login)
     ? 'gold'
     : sections.silver.includes(login)
     ? 'silver'
@@ -69,6 +79,11 @@ const bucketConfig: Record<
     imgSize: number;
   }
 > = {
+  diamond: {
+    title: '💎 Diamond Sponsors',
+    numCols: 2,
+    imgSize: 180,
+  },
   gold: {
     title: '🥇 Gold Sponsors',
     numCols: 3,

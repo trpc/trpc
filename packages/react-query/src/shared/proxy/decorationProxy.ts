@@ -2,7 +2,7 @@ import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { getArrayQueryKey } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
-import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
+import { CreateReactQueryHooks } from '../hooks/createRootHooks';
 
 /**
  * Create proxy for decorating procedures
