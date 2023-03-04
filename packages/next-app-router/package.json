@@ -1,0 +1,80 @@
+{
+  "name": "@trpc/next-app-router",
+  "version": "10.14.0",
+  "description": "tRPC Next RSC lib",
+  "author": "KATT",
+  "license": "MIT",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/next-app-router"
+  },
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/next"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen:entrypoints": "tsx entrypoints.script.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./react-server": {
+      "import": "./dist/react-server/index.mjs",
+      "require": "./dist/react-server/index.js",
+      "default": "./dist/react-server/index.js"
+    },
+    "./client": {
+      "import": "./dist/client/index.mjs",
+      "require": "./dist/client/index.js",
+      "default": "./dist/client/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "react-server",
+    "client"
+  ],
+  "peerDependencies": {
+    "@tanstack/react-query": "^4.3.8",
+    "@trpc/client": "10.14.0",
+    "@trpc/react-query": "10.14.0",
+    "@trpc/server": "10.14.0",
+    "next": "^13.0.0",
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^4.3.8",
+    "@trpc/client": "^10.14.0",
+    "@trpc/react-query": "^10.14.0",
+    "@trpc/server": "^10.14.0",
+    "@types/node": "^18.7.20",
+    "@types/react": "^18.0.9",
+    "eslint": "^8.30.0",
+    "next": "^13.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rollup": "^2.79.1",
+    "tsx": "^3.12.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

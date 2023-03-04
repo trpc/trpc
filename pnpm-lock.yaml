@@ -498,6 +498,34 @@ importers:
     devDependencies:
       '@types/node': 18.7.20
 
+  examples/next-app-router:
+    specifiers:
+      '@trpc/client': ^10.14.0
+      '@trpc/next-app-router': ^10.14.0
+      '@trpc/server': ^10.14.0
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      '@types/react-dom': ^18.0.5
+      next: ^13.2.1
+      react: 18.2.0
+      react-dom: 18.2.0
+      trpc-api: link:./src/trpc
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@trpc/client': link:../../packages/client
+      '@trpc/next-app-router': link:../../packages/next-app-router
+      '@trpc/server': link:../../packages/server
+      '@types/node': 18.13.0
+      '@types/react': 18.0.25
+      '@types/react-dom': 18.0.9
+      next: 13.2.1_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      trpc-api: link:src/trpc
+      typescript: 4.9.5
+      zod: 3.20.2
+
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
@@ -936,6 +964,34 @@ importers:
       rollup: 2.79.1
       tsx: 3.12.3
       zod: 3.20.2
+
+  packages/next-app-router:
+    specifiers:
+      '@tanstack/react-query': 4.6.0
+      '@trpc/client': ^10.14.0
+      '@trpc/react-query': ^10.14.0
+      '@trpc/server': ^10.14.0
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      eslint: ^8.30.0
+      next: ^13.2.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      rollup: ^2.79.1
+      tsx: ^3.12.3
+    devDependencies:
+      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../client
+      '@trpc/react-query': link:../react-query
+      '@trpc/server': link:../server
+      '@types/node': 18.13.0
+      '@types/react': 18.0.25
+      eslint: 8.30.0
+      next: 13.2.1_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      rollup: 2.79.1
+      tsx: 3.12.3
 
   packages/react-query:
     specifiers:
@@ -10130,7 +10186,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2
+      follow-redirects: 1.15.2_debug@4.3.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -14054,6 +14110,18 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+
+  /follow-redirects/1.15.2_debug@4.3.2:
+    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.2
+    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
