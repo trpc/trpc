@@ -1,16 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { cache, use } from 'react';
 import { api } from 'trpc-api';
 
+const greetingCache = cache(() => api.greeting.query({ text: 'from client' }));
+
 export const Greeting = () => {
-  const [greeting, setGreeting] = useState('loading...');
+  const greeting = use(greetingCache());
 
-  useEffect(() => {
-    api.greeting.query({ text: 'from client' }).then((data) => {
-      setGreeting(data);
-    });
-  }, []);
-
-  return <div>{greeting}</div>;
+  return <>{greeting}</>;
 };
