@@ -20,6 +20,7 @@ This also makes it easy to integrate into frameworks that uses the web platform 
 
 - Astro (SSR mode)
 - Remix
+- SolidStart
 
 ## Example apps
 
@@ -217,6 +218,24 @@ export const all: APIRoute = ({ params, request }) => {
     createContext,
   });
 };
+```
+
+### SolidStart
+
+```ts title='src/routes/api/trpc/[trpc].ts'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { APIEvent } from 'solid-start';
+import { createContext } from '../../server/context';
+import { appRouter } from '../../server/router';
+
+const handler = (event: APIEvent) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req: event.request,
+    router: appRouter,
+    createContext,
+  });
+export { handler as GET, handler as POST };
 ```
 
 ### Cloudflare Worker
