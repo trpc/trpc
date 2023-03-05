@@ -3,7 +3,7 @@ import {
   unstable_zodFileSchemaOptional as zodFileSchemaOptional,
 } from './zodFileSchema';
 
-type Input = typeof unstable_zodFileSchema['_input'];
+type Input = typeof zodFileSchema['_input'];
 
 type FileListEsque = {
   item(item: number): File | null;
