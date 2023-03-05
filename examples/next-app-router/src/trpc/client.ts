@@ -8,7 +8,7 @@ function getBaseUrl() {
   return 'http://localhost:3000';
 }
 
-export const api = createTRPCNextAppRouter<AppRouter>({
+const client = createTRPCNextAppRouter<AppRouter>({
   config() {
     return {
       links: [
@@ -19,3 +19,5 @@ export const api = createTRPCNextAppRouter<AppRouter>({
     };
   },
 });
+
+export const api = () => client;

@@ -4,8 +4,8 @@ import { Greeting } from '~/components/Greeting';
 
 export default async function Home() {
   const [result, result2] = await Promise.all([
-    api.greeting.query({ text: 'from server' }),
-    api.greeting.query({ text: 'from server2' }),
+    api().greeting.query({ text: 'from server' }),
+    api().greeting.query({ text: 'from server2' }),
   ]);
 
   return (
