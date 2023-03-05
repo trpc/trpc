@@ -3,14 +3,12 @@
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [
-        "client/**",
         "links/**",
         "shared/**",
         "ssg/**",
         "adapters/**",
         "http/**",
         "observable/**",
-        "react-server/**",
         "rpc/**",
         "subscription/**"
       ]
