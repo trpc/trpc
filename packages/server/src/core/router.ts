@@ -97,9 +97,9 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  * @internal
  */
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends
-    | AnyRouter
-    | ProcedureRouterRecord
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends ProcedureRouterRecord
+    ? DecoratedProcedureRecord<TProcedures[TKey]>
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
@@ -150,10 +150,7 @@ function isRouter(
 function isNestedRouter(
   procedureOrRouter: AnyProcedure | AnyRouter | ProcedureRouterRecord,
 ): procedureOrRouter is ProcedureRouterRecord {
-  return (
-    !('router' in procedureOrRouter._def) &&
-    !procedureOrRouter.hasOwnProperty('_procedure')
-  );
+  return !('_def' in procedureOrRouter);
 }
 
 const emptyRouter = {
@@ -215,13 +212,13 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
       const value = procedures[key] ?? {};
 
-      if (isRouter(value)) {
-        newProcedures[key] = procedureOrRouter;
+      if (isNestedRouter(value)) {
+        newProcedures[key] = createRouterInner(value);
         continue;
       }
 
-      if (isNestedRouter(value)) {
-        newProcedures[key] = createRouterInner(value);
+      if (isRouter(value)) {
+        newProcedures[key] = procedureOrRouter;
         continue;
       }
 
@@ -233,13 +230,13 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
-        if (isRouter(procedureOrRouter)) {
-          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
+        if (isNestedRouter(procedureOrRouter)) {
+          recursiveGetPaths(procedureOrRouter, `${newPath}.`);
           continue;
         }
 
-        if (isNestedRouter(procedureOrRouter)) {
-          recursiveGetPaths(procedureOrRouter, `${newPath}.`);
+        if (isRouter(procedureOrRouter)) {
+          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
           continue;
         }
 
