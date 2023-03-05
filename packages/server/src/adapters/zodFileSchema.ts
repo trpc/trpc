@@ -31,22 +31,19 @@ const fileEsqueSchema = z.custom<File>((value) => {
   return false;
 });
 
+function isFileListEsque(value: unknown): value is FileList {
+  return (
+    isObject(value) && typeof (value as unknown as FileList).item === 'function'
+  );
+}
+
 /**
  * This is a hack to check if a value is a FileList in the browser
  * Returns the first item file 🤷‍♂️
  */
 const fileListEsqueSchema = z
   .custom<FileList>((value) => {
-    if (!isObject(value)) {
-      return false;
-    }
-    if (
-      typeof (value as unknown as FileList).item === 'function' &&
-      (value as unknown as FileList).item(0)
-    ) {
-      return true;
-    }
-    return false;
+    return isFileListEsque(value) && value.item(0);
   })
   .transform((value) => value.item(0) as File);
 
@@ -74,3 +71,12 @@ export const zodFileSchema = z.union([
     });
   }),
 ]);
+
+export const zodFileSchemaOptional = z
+  .union([
+    zodFileSchema,
+    z
+      .custom<FileList>(isFileListEsque)
+      .transform((value) => value.item(0) ?? undefined),
+  ])
+  .optional();

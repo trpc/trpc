@@ -1,4 +1,4 @@
-import { zodFileSchema } from './zodFileSchema';
+import { zodFileSchema, zodFileSchemaOptional } from './zodFileSchema';
 
 type Input = typeof zodFileSchema['_input'];
 
@@ -22,20 +22,22 @@ test('FileList', async () => {
     },
   };
 
-  await zodFileSchema.parseAsync(fileListEsque);
+  expect(await zodFileSchema.parseAsync(fileListEsque)).toMatchInlineSnapshot(
+    'File {}',
+  );
 });
 
 test('optional', async () => {
-  const optional = zodFileSchema.optional();
-
   const fileListEsque: FileListEsque = {
     item() {
       return null;
     },
   };
- 
-  await optional.parseAsync(undefined);
-  
-  // ❌❌❌❌❌ this fails:
-  await optional.parseAsync(fileListEsque);
+
+  expect(
+    await zodFileSchemaOptional.parseAsync(undefined),
+  ).toMatchInlineSnapshot('undefined');
+  expect(
+    await zodFileSchemaOptional.parseAsync(fileListEsque),
+  ).toMatchInlineSnapshot('undefined');
 });
