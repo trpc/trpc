@@ -4,40 +4,33 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const mutation = trpc.mut.useMutation();
+  // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
+  const result = trpc.greeting.useQuery({ name: 'client' });
 
+  if (!result.data) {
+    return (
+      <div style={styles}>
+        <h1>Loading...</h1>
+      </div>
+    );
+  }
   return (
-    <div>
+    <div style={styles}>
       {/**
        * The type is defined and can be autocompleted
        * 💡 Tip: Hover over `data` to see the result type
        * 💡 Tip: CMD+Click (or CTRL+Click) on `text` to go to the server definition
        * 💡 Tip: Secondary click on `text` and "Rename Symbol" to rename it both on the client & server
        */}
-      <h1>Form!</h1>
-      <fieldset>
-        <legend>Form with file upload</legend>
-        <form
-          method="post"
-          action="/api/trpc/mut"
-          encType="multipart/form-data"
-          onSubmit={(e) => {
-            const formData = new FormData(e.currentTarget);
-
-            // setFormData(formData);
-            mutation.mutate(formData as any);
-            e.preventDefault();
-          }}
-        >
-          <input name="hello" defaultValue="haz upload" />
-          <br />
-          <input type="file" name="file1" />
-          <br />
-          <input type="file" name="file2" />
-          <br />
-          <button type="submit">submit</button>
-        </form>
-      </fieldset>
+      <h1>{result.data.text}</h1>
     </div>
   );
 }
+
+const styles = {
+  width: '100vw',
+  height: '100vh',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+};

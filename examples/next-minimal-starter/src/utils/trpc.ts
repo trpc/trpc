@@ -1,11 +1,6 @@
-import {
-  httpBatchLink,
-  loggerLink,
-  splitLink,
-  unstable_formDataLink,
-} from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { AppRouter } from '../pages/api/trpc/[trpc]';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
@@ -25,25 +20,13 @@ function getBaseUrl() {
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {
-    const url = getBaseUrl() + '/api/trpc';
     return {
       links: [
-        loggerLink({
-          enabled: (op) =>
-            process.env.NODE_ENV === 'development' ||
-            (op.direction === 'down' && op.result instanceof Error),
-        }),
-        splitLink({
-          condition: (op) => op.input instanceof FormData,
-          true: unstable_formDataLink({
-            url,
-          }),
-          false: httpBatchLink({
-            url,
-          }),
+        httpBatchLink({
+          url: getBaseUrl() + '/api/trpc',
         }),
       ],
     };
   },
-  ssr: false,
+  ssr: true,
 });
