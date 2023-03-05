@@ -3,6 +3,7 @@ export type {
   ProcedureRecord,
   ProcedureRouterRecord,
   CreateRouterInner,
+  Router,
 } from './router';
 export { callProcedure } from './router';
 export type {
@@ -15,6 +16,7 @@ export type {
   ProcedureArgs,
   ProcedureOptions,
 } from './procedure';
+export type { inferParser } from './parser';
 export { createInputMiddleware, createOutputMiddleware } from './middleware';
 
 export { initTRPC } from './initTRPC';

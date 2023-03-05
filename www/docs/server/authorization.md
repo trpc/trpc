@@ -38,14 +38,14 @@ export async function createContext({
     user,
   };
 }
-type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = inferAsyncReturnType<typeof createContext>;
 ```
 
 ## Option 1: Authorize using resolver
 
 ```ts title='server/routers/_app.ts'
 import { TRPCError, initTRPC } from '@trpc/server';
-import { Context } from '../context';
+import type { Context } from '../context';
 
 export const t = initTRPC.context<Context>().create();
 

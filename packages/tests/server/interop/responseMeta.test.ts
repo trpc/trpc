@@ -4,7 +4,7 @@ import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import fetch from 'node-fetch';
 
 test('set custom headers in beforeEnd', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { close, httpUrl } = legacyRouterToServerAndClient(
     trpc
       .router<CreateHTTPContextOptions>()
@@ -73,5 +73,5 @@ Object {
     expect(res.headers.get('cache-control')).toBeNull();
   }
 
-  close();
+  await close();
 });

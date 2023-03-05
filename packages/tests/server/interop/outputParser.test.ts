@@ -31,7 +31,7 @@ test('zod', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('zod async', async () => {
@@ -60,7 +60,7 @@ test('zod async', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('zod transform', async () => {
@@ -87,7 +87,7 @@ test('zod transform', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('superstruct', async () => {
@@ -114,7 +114,7 @@ test('superstruct', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('yup', async () => {
@@ -152,7 +152,7 @@ test('yup', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('myzod', async () => {
@@ -179,7 +179,7 @@ test('myzod', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('validator fn', async () => {
@@ -209,7 +209,7 @@ test('validator fn', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });
 
 test('async validator fn', async () => {
@@ -239,5 +239,5 @@ test('async validator fn', async () => {
     `[TRPCClientError: Output validation failed]`,
   );
 
-  close();
+  await close();
 });

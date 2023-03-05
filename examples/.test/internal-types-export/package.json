@@ -1,0 +1,18 @@
+{
+  "name": "@examples/internal-types-export",
+  "version": "10.14.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf build && tsc"
+  },
+  "devDependencies": {
+    "@tsconfig/node-lts-strictest-esm": "^18.12.1",
+    "@types/node": "^18.7.20",
+    "typescript": "^4.8.3"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.14.0",
+    "@trpc/server": "^10.14.0"
+  }
+}
