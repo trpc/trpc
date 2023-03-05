@@ -18,24 +18,14 @@ export async function nodeHTTPRequestHandler<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const handleViaMiddleware =
-    opts.middleware ??
-    ((_req, _res, next) => {
-      return next();
-    });
+  const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
-    if (err) {
-      console.log('Error here???');
-      throw err;
-    }
+    if (err) throw err;
 
-    const createContext = async function _createContext(): Promise<
-      inferRouterContext<TRouter>
-    > {
+    const createContext = async (): Promise<inferRouterContext<TRouter>> => {
       return await opts.createContext?.(opts);
     };
-    const { path, router } = opts;
 
     const query = opts.req.query
       ? new URLSearchParams(opts.req.query as any)
@@ -76,9 +66,9 @@ export async function nodeHTTPRequestHandler<
     const result = await resolveHTTPResponse({
       batching: opts.batching,
       responseMeta: opts.responseMeta,
-      path,
+      path: opts.path,
       createContext,
-      router,
+      router: opts.router,
       req,
       error: bodyResult.ok ? null : bodyResult.error,
       onError(o) {
