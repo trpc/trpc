@@ -7,7 +7,6 @@ const handler = (req: Request) =>
     req,
     router: appRouter,
     async createContext() {
-      console.log('context');
       return {};
     },
   });

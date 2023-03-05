@@ -1,4 +1,4 @@
-import { httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import { createTRPCNextAppRouter } from '@trpc/next-app-router/client';
 import { AppRouter } from '~/server/router';
 
@@ -8,16 +8,10 @@ function getBaseUrl() {
   return 'http://localhost:3000';
 }
 
-const client = createTRPCNextAppRouter<AppRouter>({
-  config() {
-    return {
-      links: [
-        httpBatchLink({
-          url: getBaseUrl() + '/api/trpc',
-        }),
-      ],
-    };
-  },
+export const api = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: getBaseUrl() + '/api/trpc',
+    }),
+  ],
 });
-
-export const api = () => client;
