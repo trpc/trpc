@@ -26,6 +26,7 @@ export async function nodeHTTPRequestHandler<
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
     if (err) {
+      console.log('Error here???");
       throw err;
     }
 
