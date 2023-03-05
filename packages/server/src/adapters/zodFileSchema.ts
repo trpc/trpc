@@ -80,3 +80,40 @@ export const unstable_zodFileSchemaOptional = z
       .transform((value) => value.item(0) ?? undefined),
   ])
   .optional();
+
+// export function unstable_createZodFileSchema<
+//   TStream extends boolean = false,
+//   TMimeType extends string,
+// >(opts: {
+//   /**
+//    * @default false
+//    */
+//   stream?: TStream;
+
+//   /**
+//    * Mime types
+//    */
+//   types?: TMimeType[];
+// }): z.ZodType<
+//   // output
+//   {
+//     name: string;
+//     mime: TMimeType;
+//   } & TStream extends true
+//     ? {
+//         stream: Readable;
+//       }
+//     : {
+//         file: File;
+//       },
+//   // input
+//   z.ZodTypeDef,
+//   | File
+//   | FileList
+//   | {
+//       stream: Readable;
+//       name: string;
+//       type: string;
+//     }
+// > {
+// }
