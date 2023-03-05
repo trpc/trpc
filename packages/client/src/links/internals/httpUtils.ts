@@ -1,7 +1,7 @@
 import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { getFetch } from '../../getFetch';
-import { getAbortController } from '../../internals/fetchHelpers';
+import { getAbortController } from '../../internals/getAbortController';
 import {
   AbortControllerEsque,
   FetchEsque,
@@ -130,7 +130,7 @@ export function httpRequest(
     const meta = {} as HTTPResult['meta'];
     Promise.resolve(opts.headers())
       .then((headers) => {
-        /* istanbul ignore if  */
+        /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
           throw new Error('Subscriptions should use wsLink');
         }

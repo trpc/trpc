@@ -39,7 +39,7 @@ test('map', () => {
       ee.off('data', callback);
     };
   });
-  const pipeCalls = jest.fn();
+  const pipeCalls = vi.fn();
   const piped = eventObservable.pipe(
     map((...args) => {
       pipeCalls(...args);
@@ -48,7 +48,7 @@ test('map', () => {
     }),
   );
 
-  const next = jest.fn();
+  const next = vi.fn();
   const subscription = piped.subscribe({
     next(value) {
       expectTypeOf<number>(value);

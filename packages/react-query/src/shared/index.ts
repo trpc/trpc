@@ -6,10 +6,11 @@ export type {
   DecorateProcedure,
 } from '../createTRPCReact';
 export type { TRPCUseQueries } from '../internals/useQueries';
-export * from './hooks/createHooksInternal';
+export * from './hooks/createRootHooks';
 export * from './queryClient';
 export * from './types';
 export * from './hooks/types';
+export * from './polymorphism';
 
 export {
   /**

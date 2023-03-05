@@ -25,7 +25,7 @@ function mockReq({
   req.query = query;
 
   const socket = {
-    destroy: jest.fn(),
+    destroy: vi.fn(),
   };
   req.socket = socket;
 
@@ -41,9 +41,9 @@ function mockReq({
 function mockRes() {
   const res = new EventEmitter() as any;
 
-  const json = jest.fn(() => res);
-  const setHeader = jest.fn(() => res);
-  const end = jest.fn(() => res);
+  const json = vi.fn(() => res);
+  const setHeader = vi.fn(() => res);
+  const end = vi.fn(() => res);
   res.json = json;
   res.setHeader = setHeader;
   res.end = end;
@@ -217,6 +217,62 @@ test('PUT request (fails)', async () => {
   });
 
   const handler = trpcNext.createNextApiHandler({
+    router,
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: [],
+    },
+    method: 'PUT',
+  });
+  const { res } = mockRes();
+
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(405);
+});
+
+test('middleware intercepts request', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    middleware: (_req, res, _next) => {
+      res.statusCode = 419;
+      res.end();
+      return;
+    },
+    router,
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: [],
+    },
+    method: 'PUT',
+  });
+  const { res } = mockRes();
+
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(419);
+});
+
+test('middleware passes the request', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    middleware: (_req, _res, next) => {
+      return next();
+    },
     router,
   });
 

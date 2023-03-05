@@ -23,7 +23,7 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 >;
 
 export interface WebSocketClientOptions {
-  url: string;
+  url: string | (() => string);
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
   onOpen?: () => void;
@@ -38,7 +38,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     onOpen,
     onClose,
   } = opts;
-  /* istanbul ignore next */
+  /* istanbul ignore next -- @preserve */
   if (!WebSocketImpl) {
     throw new Error(
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
@@ -128,12 +128,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   function createWS() {
-    const conn = new WebSocketImpl(url);
+    const urlString = typeof url === 'function' ? url() : url;
+    const conn = new WebSocketImpl(urlString);
     clearTimeout(connectTimer as any);
     connectTimer = null;
 
     conn.addEventListener('open', () => {
-      /* istanbul ignore next */
+      /* istanbul ignore next -- @preserve */
       if (conn !== activeConnection) {
         return;
       }

@@ -1,43 +1,26 @@
 // Don't judge me on this code
 import fs from 'fs';
-import { sponsors as _sponsors } from './script.raw';
+import { allSponsors } from './script.output';
 
-const sponsors = [
-  ..._sponsors,
-  {
-    __typename: 'Organization',
-    name: 'Ping.gg',
-    imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
-    monthlyPriceInDollars: 250,
-    link: 'https://ping.gg/',
-    privacyLevel: 'PUBLIC',
-    login: 'pingdotgg',
-    createdAt: 1645488994000,
-  } as const,
-];
+const sponsors = [...allSponsors].sort((a, b) => b.weight - a.weight);
 
-type Sponsor = typeof sponsors[number];
+type Sponsor = typeof allSponsors[number];
 type ValidLogins = Sponsor['login'];
 
 interface Def {
+  diamond: ValidLogins[];
   gold: ValidLogins[];
   silver: ValidLogins[];
   bronze: ValidLogins[];
 }
 
-const yearlySponsors: ValidLogins[] = [
-  //
-  'flightcontrolhq',
-  'ahoylabs',
-  'Wyatt-SG',
-  'pingdotgg',
-  'nihinihi01',
-  'newfront-insurance',
-];
 const sections: Def = {
+  diamond: [
+    //
+    'tolahq',
+  ],
   gold: [
     //
-    'renderinc',
     'calcom',
   ],
   silver: [
@@ -48,9 +31,8 @@ const sections: Def = {
     'flightcontrolhq',
   ],
   bronze: [
-    'newfront-insurance',
+    //
     'hidrb',
-    'chimon2000',
     'snaplet',
     'flylance-apps',
     'echobind',
@@ -59,6 +41,7 @@ const sections: Def = {
 };
 
 interface Buckets {
+  diamond: Sponsor[];
   gold: Sponsor[];
   silver: Sponsor[];
   bronze: Sponsor[];
@@ -66,92 +49,18 @@ interface Buckets {
 }
 
 const buckets: Buckets = {
+  diamond: [],
   gold: [],
   silver: [],
   bronze: [],
   other: [],
 };
 
-const sortedSponsors = sponsors
-  // overrides
-  .map((sponsor) => {
-    switch (sponsor.login) {
-      case 't3dotgg':
-        return {
-          ...sponsor,
-          monthlyPriceInDollars: 5,
-        };
-    }
-    return sponsor;
-  })
-  // calculate total value
-  .map((sponsor) => {
-    const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
-    const YEAR_MS = 12 * MONTH_MS;
-
-    const yearly = yearlySponsors.includes(sponsor.login);
-    const cycles = Math.ceil(
-      (Date.now() - sponsor.createdAt) / (yearly ? YEAR_MS : MONTH_MS),
-    );
-
-    const base = yearly ? 12 : 1;
-    const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
-    const value =
-      base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
-
-    return {
-      ...sponsor,
-      value,
-      weight: 0,
-    };
-  })
-  .sort((a, b) => b.value - a.value);
-
-function groupedSponsors(sponsors: typeof sortedSponsors) {
-  // this fn is a mess, don't judge
-  const min = Math.min(...sponsors.map((sponsors) => sponsors.value));
-  const max = Math.max(...sponsors.map((sponsors) => sponsors.value));
-
-  const nGroups = 100;
-
-  const groupDiff = (max - min) / nGroups;
-
-  const groups: Array<typeof sortedSponsors> = [];
-  for (let index = 0; index < sponsors.length; index++) {
-    let pos = 0;
-    const sponsor = sponsors[index];
-    while (sponsor.value > min + groupDiff * pos) {
-      pos++;
-    }
-    groups[pos] ||= [];
-    groups[pos].push({ ...sponsor, weight: pos + 1 });
-  }
-
-  return groups
-    .flatMap((group) => group.reverse())
-    .reverse()
-    .map((sponsor) => {
-      const { name, imgSrc, weight, login, link } = sponsor;
-      return { name, imgSrc, weight, login, link };
-    });
-}
-
-fs.writeFileSync(
-  __dirname + '/script.output.ts',
-  [
-    '// prettier-ignore',
-    '// eslint-disable',
-    `export const sponsors =  ${JSON.stringify(
-      groupedSponsors(sortedSponsors),
-      null,
-      2,
-    )} as const;`,
-    '',
-  ].join('\n'),
-);
-for (const sponsor of sortedSponsors) {
+for (const sponsor of sponsors) {
   const { login } = sponsor;
-  const section = sections.gold.includes(login)
+  const section = sections.diamond.includes(login)
+    ? 'diamond'
+    : sections.gold.includes(login)
     ? 'gold'
     : sections.silver.includes(login)
     ? 'silver'
@@ -159,7 +68,7 @@ for (const sponsor of sortedSponsors) {
     ? 'bronze'
     : 'other';
 
-  buckets[section].push(sponsor as Sponsor);
+  buckets[section].push(sponsor);
 }
 
 const bucketConfig: Record<
@@ -170,6 +79,11 @@ const bucketConfig: Record<
     imgSize: number;
   }
 > = {
+  diamond: {
+    title: '💎 Diamond Sponsors',
+    numCols: 2,
+    imgSize: 180,
+  },
   gold: {
     title: '🥇 Gold Sponsors',
     numCols: 3,

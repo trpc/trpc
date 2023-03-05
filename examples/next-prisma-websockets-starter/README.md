@@ -18,10 +18,10 @@ Try demo http://websockets.trpc.io/
 ## Setup
 
 ```bash
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
-cd trpc-prisma-starter-websockets
-yarn
-yarn dx
+pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+cd trpc-prisma-websockets-starter
+pnpm i
+pnpm dx
 ```
 
 ## Deployment
@@ -70,7 +70,7 @@ pnpm dev        # starts next.js + WebSocket server
 pnpm dx         # starts postgres db + runs migrations + seeds + starts next.js
 pnpm test-dev   # runs e2e tests on dev
 pnpm test-start # runs e2e tests on `next start` - build required before
-pnpm test:unit  # runs normal jest unit tests
+pnpm test:unit  # runs normal Vitest unit tests
 pnpm test:e2e   # runs e2e tests
 ```
 

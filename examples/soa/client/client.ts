@@ -1,10 +1,6 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import fetch from 'node-fetch';
 import { AppRouter } from '../faux-gateway/index';
 
-if (!global.fetch) {
-  (global as any).fetch = fetch;
-}
 export const client = createTRPCProxyClient<AppRouter>({
   links: [
     // create a custom ending link

@@ -25,7 +25,7 @@ test('basic', async () => {
     }),
   });
 
-  const onError = jest.fn();
+  const onError = vi.fn();
   const { close, proxy } = routerToServerAndClientNew(router, {
     server: {
       onError,
@@ -45,11 +45,11 @@ test('basic', async () => {
 
   expect(serverError.cause).toBeInstanceOf(MyError);
 
-  close();
+  await close();
 });
 
 test('input error', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -89,11 +89,11 @@ test('input error', async () => {
 
   expect(serverError.cause).toBeInstanceOf(ZodError);
 
-  close();
+  await close();
 });
 
 test('unauthorized()', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -113,7 +113,7 @@ test('unauthorized()', async () => {
 
   expect(serverError).toBeInstanceOf(TRPCError);
 
-  close();
+  await close();
 });
 
 test('getMessageFromUnknownError()', () => {
@@ -123,7 +123,7 @@ test('getMessageFromUnknownError()', () => {
 });
 describe('formatError()', () => {
   test('simple', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const t = initTRPC.create({
       errorFormatter({ shape, error }) {
         if (error.cause instanceof ZodError) {
@@ -207,7 +207,7 @@ Object {
 
     expect(serverError.cause).toBeInstanceOf(ZodError);
 
-    close();
+    await close();
   });
 
   test('double errors', async () => {
@@ -226,7 +226,7 @@ Object {
   });
   test('setting custom http response code', async () => {
     const TEAPOT_ERROR_CODE = 418;
-    const onError = jest.fn();
+    const onError = vi.fn();
     const t = initTRPC.create({
       errorFormatter: ({ error, shape }) => {
         if (!(error.cause instanceof ZodError)) {
@@ -256,12 +256,12 @@ Object {
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
 
-    close();
+    await close();
   });
 
   test('do not override response status set by middleware or resolver', async () => {
     const TEAPOT_ERROR_CODE = 418;
-    const onError = jest.fn();
+    const onError = vi.fn();
     const t = initTRPC.context<CreateHTTPContextOptions>().create({});
     const middleware = t.middleware(({ ctx }) => {
       ctx.res.statusCode = TEAPOT_ERROR_CODE;
@@ -282,12 +282,12 @@ Object {
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
 
-    close();
+    await close();
   });
 });
 
 test('make sure object is ignoring prototype', async () => {
-  const onError = jest.fn();
+  const onError = vi.fn();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -311,7 +311,7 @@ test('make sure object is ignoring prototype', async () => {
   const serverError = onError.mock.calls[0]![0]!.error;
   expect(serverError.code).toMatchInlineSnapshot(`"NOT_FOUND"`);
 
-  close();
+  await close();
 });
 
 test('allow using built-in Object-properties', async () => {
@@ -325,7 +325,7 @@ test('allow using built-in Object-properties', async () => {
 
   expect(await proxy.toString.query()).toBe('toStringValue');
   expect(await proxy.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
-  close();
+  await close();
 });
 
 test('retain stack trace', async () => {
@@ -340,7 +340,7 @@ test('retain stack trace', async () => {
 
   const onErrorFn: OnErrorFunction<any, any> = () => {};
 
-  const onError = jest.fn(onErrorFn);
+  const onError = vi.fn(onErrorFn);
 
   const t = initTRPC.create();
   const router = t.router({
@@ -375,5 +375,5 @@ test('retain stack trace', async () => {
   // first line of stack trace
   expect(stackParts[1]).toContain(__filename);
 
-  close();
+  await close();
 });

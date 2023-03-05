@@ -8,7 +8,7 @@ import {
   applyWSSHandler,
 } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
-import ws from 'ws';
+import { WebSocketServer } from 'ws';
 import { z } from 'zod';
 
 // This is how you initialize a context for the server
@@ -78,7 +78,7 @@ const { server, listen } = createHTTPServer({
 });
 
 // ws server
-const wss = new ws.Server({ server });
+const wss = new WebSocketServer({ server });
 applyWSSHandler<AppRouter>({
   wss,
   router: appRouter,

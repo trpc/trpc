@@ -340,7 +340,7 @@ export function createRootHooks<
     return hook;
   }
 
-  /* istanbul ignore next */
+  /* istanbul ignore next -- @preserve */
   function useSubscription(
     pathAndInput: [
       // FIXME: tuple me in next major
@@ -512,9 +512,3 @@ export function createRootHooks<
     useInfiniteQuery,
   };
 }
-
-/**
- * @deprecated
- * DELETE ME
- */
-export * from './deprecated/createHooksInternal';

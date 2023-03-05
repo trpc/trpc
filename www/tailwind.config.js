@@ -1,6 +1,6 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    //
     './src/**/*.{js,jsx,ts,tsx,md,mdx}',
     './docs/**/*.{js,jsx,ts,tsx,md,mdx}',
   ],
@@ -17,8 +17,27 @@ module.exports = {
           lightest: 'var(--ifm-color-primary-lightest)',
         },
       },
+      keyframes: {
+        'pop-in': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(48px)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0)',
+          },
+        },
+      },
+      animation: {
+        'pop-in': 'pop-in 1s ease-out',
+      },
     },
   },
   darkMode: ['class', '[data-theme="dark"]'],
-  plugins: [require('@tailwindcss/line-clamp')],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+    /* eslint-disable-next-line */
+    require('tailwindcss-elevation')(['responsive']),
+  ],
 };

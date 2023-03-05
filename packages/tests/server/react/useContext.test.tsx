@@ -8,8 +8,6 @@ import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
 
-jest.retryTimes(3);
-
 type Post = {
   id: number;
   text: string;
@@ -198,7 +196,7 @@ test('fetch', async () => {
 
 test('prefetch', async () => {
   const { proxy, App } = ctx;
-  const renderProxy = jest.fn();
+  const renderProxy = vi.fn();
 
   function Posts() {
     const allPosts = proxy.post.all.useQuery();
@@ -237,7 +235,7 @@ test('prefetch', async () => {
 
 test('invalidate', async () => {
   const { proxy, App } = ctx;
-  const stableProxySpy = jest.fn();
+  const stableProxySpy = vi.fn();
 
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery(undefined, {
@@ -301,8 +299,8 @@ test('invalidate', async () => {
 
 test('invalidate procedure for both query and infinite', async () => {
   const { proxy, App } = ctx;
-  const invalidateQuerySpy = jest.fn();
-  const invalidateInfiniteSpy = jest.fn();
+  const invalidateQuerySpy = vi.fn();
+  const invalidateInfiniteSpy = vi.fn();
 
   function MyComponent() {
     const allPostsList = proxy.post.list.useQuery(
@@ -368,7 +366,7 @@ test('invalidate procedure for both query and infinite', async () => {
 
 test('reset', async () => {
   const { proxy, App } = ctx;
-  const stableProxySpy = jest.fn();
+  const stableProxySpy = vi.fn();
 
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery();
@@ -422,7 +420,7 @@ test('reset', async () => {
 
 test('refetch', async () => {
   const { proxy, App } = ctx;
-  const querySuccessSpy = jest.fn();
+  const querySuccessSpy = vi.fn();
 
   function MyComponent() {
     const utils = proxy.useContext();
@@ -486,21 +484,22 @@ test('setData', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('setData1');
     expect(utils.container).toHaveTextContent('setData2');
+
+    expect(utils.container).toMatchInlineSnapshot(`
+      <div>
+        [
+          {
+              "id": 0,
+              "text": "setData1"
+          },
+          {
+              "id": 1,
+              "text": "setData2"
+          }
+      ]
+      </div>
+    `);
   });
-  expect(utils.container).toMatchInlineSnapshot(`
-    <div>
-      [
-        {
-            "id": 0,
-            "text": "setData1"
-        },
-        {
-            "id": 1,
-            "text": "setData2"
-        }
-    ]
-    </div>
-  `);
 });
 
 test('setInfiniteData', async () => {
@@ -563,8 +562,7 @@ test('setInfiniteData', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('setInfiniteData1');
     expect(utils.container).toHaveTextContent('setInfiniteData2');
-  });
-  expect(utils.container).toMatchInlineSnapshot(`
+    expect(utils.container).toMatchInlineSnapshot(`
     <div>
       {
         "pageParams": [
@@ -590,6 +588,7 @@ test('setInfiniteData', async () => {
     }
     </div>
   `);
+  });
 });
 
 test('getData', async () => {

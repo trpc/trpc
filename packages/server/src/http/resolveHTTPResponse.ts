@@ -6,8 +6,8 @@ import {
   inferRouterContext,
   inferRouterError,
 } from '../core';
-import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown, getTRPCErrorFromUnknown } from '../error/utils';
+import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { getCauseFromUnknown } from '../error/utils';
 import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
 import { Maybe } from '../types';
@@ -124,7 +124,7 @@ export async function resolveHTTPResponse<
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
     }
-    /* istanbul ignore if  */
+    /* istanbul ignore if -- @preserve */
     if (type === 'subscription') {
       throw new TRPCError({
         message: 'Subscriptions should use wsLink',
@@ -154,7 +154,7 @@ export async function resolveHTTPResponse<
         };
       }
 
-      /* istanbul ignore if  */
+      /* istanbul ignore if -- @preserve */
       if (
         rawInput == null ||
         typeof rawInput !== 'object' ||
@@ -238,6 +238,7 @@ export async function resolveHTTPResponse<
     // - `createContext()` throws
     // - post body is too large
     // - input deserialization fails
+    // - `errorFormatter` return value is malformed
     const error = getTRPCErrorFromUnknown(cause);
 
     onError?.({
