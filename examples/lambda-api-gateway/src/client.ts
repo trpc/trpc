@@ -5,7 +5,7 @@ const client = createTRPCProxyClient<AppRouter>({
   links: [httpBatchLink({ url: 'http://localhost:4050' })],
 });
 
-(async () => {
+void (async () => {
   try {
     const q = await client.greet.query({ name: 'Erik' });
     console.log(q);
