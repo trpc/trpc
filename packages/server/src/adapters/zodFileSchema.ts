@@ -47,7 +47,7 @@ const fileListEsqueSchema = z
   })
   .transform((value) => value.item(0) as File);
 
-export const zodFileStreamSchema = z.object({
+export const unstable_zodFileStreamSchema = z.object({
   stream: readableEsqueSchema,
   name: z.string(),
   type: z.string(),
@@ -57,10 +57,10 @@ export const zodFileStreamSchema = z.object({
  * Isomorphic File schema.
  * It will accept a File, FileList, or a ReadableStream and return a File
  */
-export const zodFileSchema = z.union([
+export const unstable_zodFileSchema = z.union([
   fileEsqueSchema,
   fileListEsqueSchema,
-  zodFileStreamSchema.transform(async (input) => {
+  unstable_zodFileStreamSchema.transform(async (input) => {
     const chunks: Buffer[] = [];
     for await (const chunk of input.stream) {
       chunks.push(chunk);
@@ -72,9 +72,9 @@ export const zodFileSchema = z.union([
   }),
 ]);
 
-export const zodFileSchemaOptional = z
+export const unstable_zodFileSchemaOptional = z
   .union([
-    zodFileSchema,
+    unstable_zodFileSchema,
     z
       .custom<FileList>(isFileListEsque)
       .transform((value) => value.item(0) ?? undefined),

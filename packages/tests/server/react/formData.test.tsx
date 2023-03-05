@@ -13,24 +13,15 @@ import {
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
-import {
-  inferProcedureOutput,
-  inferRouterOutputs,
-  initTRPC,
-} from '@trpc/server';
+import { inferRouterOutputs, initTRPC } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import {
-  zodFileSchema,
-  zodFileStreamSchema,
+  unstable_zodFileSchema as zodFileSchema,
+  unstable_zodFileStreamSchema as zodFileStreamSchema,
 } from '@trpc/server/adapters/zodFileSchema';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
-// import {
-//   zodFile,
-//   zodFileStream,
-// } from '../../../../examples/.unstable/next-formdata/src/server/zodFile';
-import { Readable } from 'stream';
 import { z } from 'zod';
 
 const ctx = konn()

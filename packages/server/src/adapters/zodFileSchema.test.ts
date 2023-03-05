@@ -1,6 +1,9 @@
-import { zodFileSchema, zodFileSchemaOptional } from './zodFileSchema';
+import {
+  unstable_zodFileSchema as zodFileSchema,
+  unstable_zodFileSchemaOptional as zodFileSchemaOptional,
+} from './zodFileSchema';
 
-type Input = typeof zodFileSchema['_input'];
+type Input = typeof unstable_zodFileSchema['_input'];
 
 type FileListEsque = {
   item(item: number): File | null;
