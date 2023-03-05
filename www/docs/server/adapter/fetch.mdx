@@ -220,24 +220,6 @@ export const all: APIRoute = ({ params, request }) => {
 };
 ```
 
-### SolidStart
-
-```ts title='src/routes/api/trpc/[trpc].ts'
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import type { APIEvent } from 'solid-start';
-import { createContext } from '../../server/context';
-import { appRouter } from '../../server/router';
-
-const handler = (event: APIEvent) =>
-  fetchRequestHandler({
-    endpoint: '/api/trpc',
-    req: event.request,
-    router: appRouter,
-    createContext,
-  });
-export { handler as GET, handler as POST };
-```
-
 ### Cloudflare Worker
 
 #### Install dependencies
@@ -381,6 +363,24 @@ function handleRequest(args: LoaderArgs | ActionArgs) {
     createContext,
   });
 }
+```
+
+### SolidStart
+
+```ts title='src/routes/api/trpc/[trpc].ts'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { APIEvent } from 'solid-start';
+import { createContext } from '../../server/context';
+import { appRouter } from '../../server/router';
+
+const handler = (event: APIEvent) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req: event.request,
+    router: appRouter,
+    createContext,
+  });
+export { handler as GET, handler as POST };
 ```
 
 ### Vercel Edge Runtime
