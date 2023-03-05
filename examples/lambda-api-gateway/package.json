@@ -13,8 +13,8 @@
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
     "tsx": "^3.12.3",
     "zod": "^3.0.0"
   },

@@ -9,8 +9,8 @@
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
     "zod": "^3.0.0"
   },
   "devDependencies": {

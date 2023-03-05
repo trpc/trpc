@@ -3,7 +3,7 @@
   "version": "10.14.0",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.14.0"
+    "@trpc/server": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^18.7.20"

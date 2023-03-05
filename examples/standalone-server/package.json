@@ -15,9 +15,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/react-query": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "workspace:*",
+    "@trpc/react-query": "workspace:*",
+    "@trpc/server": "workspace:*",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
   },

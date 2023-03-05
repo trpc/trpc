@@ -34,7 +34,7 @@ importers:
       express: ^4.17.1
       fast-glob: ^3.2.12
       hash-sum: ^2.0.0
-      lerna: ^5.5.1
+      lerna: ^6.5.1
       npm-run-all: ^4.1.5
       prettier: ^2.7.1
       rollup: ^2.79.1
@@ -67,7 +67,7 @@ importers:
       express: 4.18.2
       fast-glob: 3.2.12
       hash-sum: 2.0.0
-      lerna: 5.6.2_@swc+core@1.3.20
+      lerna: 6.5.1_@swc+core@1.3.20
       npm-run-all: 4.1.5
       prettier: 2.8.0
       rollup: 2.79.1
@@ -87,10 +87,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.47.0
@@ -153,10 +153,10 @@ importers:
   examples/.test/big-router-declaration:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -187,8 +187,8 @@ importers:
 
   examples/.test/internal-types-export:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       '@tsconfig/node-lts-strictest-esm': ^18.12.1
       '@types/node': ^18.7.20
       typescript: ^4.8.3
@@ -204,10 +204,10 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -242,8 +242,8 @@ importers:
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^4.0.0
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       eslint: ^8.30.0
       start-server-and-test: ^1.12.0
@@ -266,9 +266,9 @@ importers:
 
   examples/express-minimal:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -301,9 +301,9 @@ importers:
 
   examples/express-server:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -337,8 +337,8 @@ importers:
   examples/fastify-server:
     specifiers:
       '@fastify/websocket': ^7.1.2
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/ws': ^8.2.0
       esbuild: ^0.17.10
@@ -375,8 +375,8 @@ importers:
 
   examples/lambda-api-gateway:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       esbuild: ^0.17.10
       eslint: ^8.30.0
@@ -433,9 +433,9 @@ importers:
   examples/minimal-react/client:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
       '@vitejs/plugin-react': ^3.1.0
@@ -461,7 +461,7 @@ importers:
 
   examples/minimal-react/server:
     specifiers:
-      '@trpc/server': ^10.14.0
+      '@trpc/server': workspace:*
       '@types/cors': ^2.8.13
       '@types/node': ^18.7.20
       cors: ^2.8.5
@@ -482,7 +482,7 @@ importers:
 
   examples/minimal/client:
     specifiers:
-      '@trpc/client': ^10.14.0
+      '@trpc/client': workspace:*
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/client': link:../../../packages/client
@@ -491,7 +491,7 @@ importers:
 
   examples/minimal/server:
     specifiers:
-      '@trpc/server': ^10.14.0
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
     dependencies:
       '@trpc/server': link:../../../packages/server
@@ -501,10 +501,10 @@ importers:
   examples/next-big-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -536,10 +536,10 @@ importers:
   examples/next-edge-runtime:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -569,10 +569,10 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -604,10 +604,10 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@typescript-eslint/eslint-plugin': ^5.47.0
@@ -672,10 +672,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       clsx: ^1.1.1
@@ -723,10 +723,10 @@ importers:
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
       '@tanstack/react-query': 4.6.0
       '@tanstack/react-query-devtools': ^4.3.8
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/ws': ^8.2.0
@@ -798,8 +798,8 @@ importers:
 
   examples/soa:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       npm-run-all: ^4.1.5
       start-server-and-test: ^1.12.0
@@ -818,9 +818,9 @@ importers:
 
   examples/standalone-server:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/ws': ^8.2.0
       esbuild: ^0.17.10
@@ -852,8 +852,8 @@ importers:
   examples/vercel-edge-runtime:
     specifiers:
       '@edge-runtime/types': ^2.0.2
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       edge-runtime: ^2.0.2
       esbuild: ^0.17.10
       start-server-and-test: ^1.12.0
@@ -875,7 +875,7 @@ importers:
   packages/client:
     specifiers:
       '@testing-library/dom': ^9.0.0
-      '@trpc/server': ^10.14.0
+      '@trpc/server': workspace:*
       '@types/isomorphic-fetch': ^0.0.36
       '@types/node': ^18.7.20
       eslint: ^8.30.0
@@ -903,9 +903,9 @@ importers:
   packages/next:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -940,8 +940,8 @@ importers:
   packages/react-query:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/server': workspace:*
       '@types/express': ^4.17.12
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
@@ -1041,10 +1041,10 @@ importers:
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^14.0.0
       '@testing-library/user-event': ^14.4.3
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@types/node': ^18.7.20
       '@types/testing-library__jest-dom': ^5.14.5
       '@vitest/coverage-istanbul': ^0.28.5
@@ -1133,10 +1133,10 @@ importers:
       '@octokit/graphql': ^5.0.0
       '@octokit/graphql-schema': ^13.0.0
       '@tailwindcss/line-clamp': ^0.4.2
-      '@trpc/client': ^10.14.0
-      '@trpc/next': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': workspace:*
+      '@trpc/next': workspace:*
+      '@trpc/react-query': workspace:*
+      '@trpc/server': workspace:*
       '@tsconfig/docusaurus': ^1.0.6
       '@types/node': ^18.7.20
       '@types/oauth': ^0.9.1
@@ -6418,77 +6418,8 @@ packages:
     resolution: {integrity: sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==}
     dev: false
 
-  /@lerna/add/5.6.2:
-    resolution: {integrity: sha512-NHrm7kYiqP+EviguY7/NltJ3G9vGmJW6v2BASUOhP9FZDhYbq3O+rCDlFdoVRNtcyrSg90rZFMOWHph4KOoCQQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/bootstrap': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/filter-options': 5.6.2
-      '@lerna/npm-conf': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      dedent: 0.7.0
-      npm-package-arg: 8.1.1
-      p-map: 4.0.0
-      pacote: 13.6.2
-      semver: 7.3.8
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-    dev: false
-
-  /@lerna/bootstrap/5.6.2:
-    resolution: {integrity: sha512-S2fMOEXbef7nrybQhzBywIGSLhuiQ5huPp1sU+v9Y6XEBsy/2IA+lb0gsZosvPqlRfMtiaFstL+QunaBhlWECA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/command': 5.6.2
-      '@lerna/filter-options': 5.6.2
-      '@lerna/has-npm-version': 5.6.2
-      '@lerna/npm-install': 5.6.2
-      '@lerna/package-graph': 5.6.2
-      '@lerna/pulse-till-done': 5.6.2
-      '@lerna/rimraf-dir': 5.6.2
-      '@lerna/run-lifecycle': 5.6.2
-      '@lerna/run-topologically': 5.6.2
-      '@lerna/symlink-binary': 5.6.2
-      '@lerna/symlink-dependencies': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      '@npmcli/arborist': 5.3.0
-      dedent: 0.7.0
-      get-port: 5.1.1
-      multimatch: 5.0.0
-      npm-package-arg: 8.1.1
-      npmlog: 6.0.2
-      p-map: 4.0.0
-      p-map-series: 2.1.0
-      p-waterfall: 2.1.1
-      semver: 7.3.8
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-    dev: false
-
-  /@lerna/changed/5.6.2:
-    resolution: {integrity: sha512-uUgrkdj1eYJHQGsXXlpH5oEAfu3x0qzeTjgvpdNrxHEdQWi7zWiW59hRadmiImc14uJJYIwVK5q/QLugrsdGFQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/collect-updates': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/listable': 5.6.2
-      '@lerna/output': 5.6.2
-    dev: false
-
-  /@lerna/check-working-tree/5.6.2:
-    resolution: {integrity: sha512-6Vf3IB6p+iNIubwVgr8A/KOmGh5xb4SyRmhFtAVqe33yWl2p3yc+mU5nGoz4ET3JLF1T9MhsePj0hNt6qyOTLQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/collect-uncommitted': 5.6.2
-      '@lerna/describe-ref': 5.6.2
-      '@lerna/validation-error': 5.6.2
-    dev: false
-
-  /@lerna/child-process/5.6.2:
-    resolution: {integrity: sha512-QIOQ3jIbWdduHd5892fbo3u7/dQgbhzEBB7cvf+Ys/iCPP8UQrBECi1lfRgA4kcTKC2MyMz0SoyXZz/lFcXc3A==}
+  /@lerna/child-process/6.5.1:
+    resolution: {integrity: sha512-QfyleXSD9slh4qM54wDaqKVPvtUH1NJMgsFc9BabqSHO1Ttpandv1EAvTCN9Lu73RbCX3LJpn+BfJmnjHbjCyw==}
     engines: {node: ^14.15.0 || >=16.0.0}
     dependencies:
       chalk: 4.1.2
@@ -6496,99 +6427,11 @@ packages:
       strong-log-transformer: 2.1.0
     dev: false
 
-  /@lerna/clean/5.6.2:
-    resolution: {integrity: sha512-A7j8r0Hk2pGyLUyaCmx4keNHen1L/KdcOjb4nR6X8GtTJR5AeA47a8rRKOCz9wwdyMPlo2Dau7d3RV9viv7a5g==}
+  /@lerna/create/6.5.1:
+    resolution: {integrity: sha512-ejERJnfA36jEuKrfM+94feLiyf2/hF2NoG923N0rE4rsmvRFPr1XLVPvAKleXW+Gdi/t1p410lJ7NKaLRMYCYw==}
     engines: {node: ^14.15.0 || >=16.0.0}
     dependencies:
-      '@lerna/command': 5.6.2
-      '@lerna/filter-options': 5.6.2
-      '@lerna/prompt': 5.6.2
-      '@lerna/pulse-till-done': 5.6.2
-      '@lerna/rimraf-dir': 5.6.2
-      p-map: 4.0.0
-      p-map-series: 2.1.0
-      p-waterfall: 2.1.1
-    dev: false
-
-  /@lerna/cli/5.6.2:
-    resolution: {integrity: sha512-w0NRIEqDOmYKlA5t0iyqx0hbY7zcozvApmfvwF0lhkuhf3k6LRAFSamtimGQWicC779a7J2NXw4ASuBV47Fs1Q==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/global-options': 5.6.2
-      dedent: 0.7.0
-      npmlog: 6.0.2
-      yargs: 16.2.0
-    dev: false
-
-  /@lerna/collect-uncommitted/5.6.2:
-    resolution: {integrity: sha512-i0jhxpypyOsW2PpPwIw4xg6EPh7/N3YuiI6P2yL7PynZ8nOv8DkIdoyMkhUP4gALjBfckH8Bj94eIaKMviqW4w==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      chalk: 4.1.2
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/collect-updates/5.6.2:
-    resolution: {integrity: sha512-DdTK13X6PIsh9HINiMniFeiivAizR/1FBB+hDVe6tOhsXFBfjHMw1xZhXlE+mYIoFmDm1UFK7zvQSexoaxRqFA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/describe-ref': 5.6.2
-      minimatch: 3.1.2
-      npmlog: 6.0.2
-      slash: 3.0.0
-    dev: false
-
-  /@lerna/command/5.6.2:
-    resolution: {integrity: sha512-eLVGI9TmxcaGt1M7TXGhhBZoeWOtOedMiH7NuCGHtL6TMJ9k+SCExyx+KpNmE6ImyNOzws6EvYLPLjftiqmoaA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/package-graph': 5.6.2
-      '@lerna/project': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      '@lerna/write-log-file': 5.6.2
-      clone-deep: 4.0.1
-      dedent: 0.7.0
-      execa: 5.1.1
-      is-ci: 2.0.0
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/conventional-commits/5.6.2:
-    resolution: {integrity: sha512-fPrJpYJhxCgY2uyOCTcAAC6+T6lUAtpEGxLbjWHWTb13oKKEygp9THoFpe6SbAD0fYMb3jeZCZCqNofM62rmuA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/validation-error': 5.6.2
-      conventional-changelog-angular: 5.0.13
-      conventional-changelog-core: 4.2.4
-      conventional-recommended-bump: 6.1.0
-      fs-extra: 9.1.0
-      get-stream: 6.0.1
-      npm-package-arg: 8.1.1
-      npmlog: 6.0.2
-      pify: 5.0.0
-      semver: 7.3.8
-    dev: false
-
-  /@lerna/create-symlink/5.6.2:
-    resolution: {integrity: sha512-0WIs3P6ohPVh2+t5axrLZDE5Dt7fe3Kv0Auj0sBiBd6MmKZ2oS76apIl0Bspdbv8jX8+TRKGv6ib0280D0dtEw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      cmd-shim: 5.0.0
-      fs-extra: 9.1.0
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/create/5.6.2:
-    resolution: {integrity: sha512-+Y5cMUxMNXjTTU9IHpgRYIwKo39w+blui1P+s+qYlZUSCUAew0xNpOBG8iN0Nc5X9op4U094oIdHxv7Dyz6tWQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/npm-conf': 5.6.2
-      '@lerna/validation-error': 5.6.2
+      '@lerna/child-process': 6.5.1
       dedent: 0.7.0
       fs-extra: 9.1.0
       init-package-json: 3.0.2
@@ -6604,538 +6447,6 @@ packages:
     transitivePeerDependencies:
       - bluebird
       - supports-color
-    dev: false
-
-  /@lerna/describe-ref/5.6.2:
-    resolution: {integrity: sha512-UqU0N77aT1W8duYGir7R+Sk3jsY/c4lhcCEcnayMpFScMbAp0ETGsW04cYsHK29sgg+ZCc5zEwebBqabWhMhnA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/diff/5.6.2:
-    resolution: {integrity: sha512-aHKzKvUvUI8vOcshC2Za/bdz+plM3r/ycqUrPqaERzp+kc1pYHyPeXezydVdEmgmmwmyKI5hx4+2QNnzOnun2A==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/exec/5.6.2:
-    resolution: {integrity: sha512-meZozok5stK7S0oAVn+kdbTmU+kHj9GTXjW7V8kgwG9ld+JJMTH3nKK1L3mEKyk9TFu9vFWyEOF7HNK6yEOoVg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/filter-options': 5.6.2
-      '@lerna/profiler': 5.6.2
-      '@lerna/run-topologically': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      p-map: 4.0.0
-    dev: false
-
-  /@lerna/filter-options/5.6.2:
-    resolution: {integrity: sha512-4Z0HIhPak2TabTsUqEBQaQeOqgqEt0qyskvsY0oviYvqP/nrJfJBZh4H93jIiNQF59LJCn5Ce3KJJrLExxjlzw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/collect-updates': 5.6.2
-      '@lerna/filter-packages': 5.6.2
-      dedent: 0.7.0
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/filter-packages/5.6.2:
-    resolution: {integrity: sha512-el9V2lTEG0Bbz+Omo45hATkRVnChCTJhcTpth19cMJ6mQ4M5H4IgbWCJdFMBi/RpTnOhz9BhJxDbj95kuIvvzw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/validation-error': 5.6.2
-      multimatch: 5.0.0
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/get-npm-exec-opts/5.6.2:
-    resolution: {integrity: sha512-0RbSDJ+QC9D5UWZJh3DN7mBIU1NhBmdHOE289oHSkjDY+uEjdzMPkEUy+wZ8fCzMLFnnNQkAEqNaOAzZ7dmFLA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/get-packed/5.6.2:
-    resolution: {integrity: sha512-pp5nNDmtrtd21aKHjwwOY5CS7XNIHxINzGa+Jholn1jMDYUtdskpN++ZqYbATGpW831++NJuiuBVyqAWi9xbXg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      fs-extra: 9.1.0
-      ssri: 9.0.1
-      tar: 6.1.12
-    dev: false
-
-  /@lerna/github-client/5.6.2:
-    resolution: {integrity: sha512-pjALazZoRZtKqfwLBwmW3HPptVhQm54PvA8s3qhCQ+3JkqrZiIFwkkxNZxs3jwzr+aaSOzfhSzCndg0urb0GXA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@octokit/plugin-enterprise-rest': 6.0.1
-      '@octokit/rest': 19.0.5
-      git-url-parse: 13.1.0
-      npmlog: 6.0.2
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
-  /@lerna/gitlab-client/5.6.2:
-    resolution: {integrity: sha512-TInJmbrsmYIwUyrRxytjO82KjJbRwm67F7LoZs1shAq6rMvNqi4NxSY9j+hT/939alFmEq1zssoy/caeLXHRfQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      node-fetch: 2.6.7
-      npmlog: 6.0.2
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
-  /@lerna/global-options/5.6.2:
-    resolution: {integrity: sha512-kaKELURXTlczthNJskdOvh6GGMyt24qat0xMoJZ8plYMdofJfhz24h1OFcvB/EwCUwP/XV1+ohE5P+vdktbrEg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dev: false
-
-  /@lerna/has-npm-version/5.6.2:
-    resolution: {integrity: sha512-kXCnSzffmTWsaK0ol30coyCfO8WH26HFbmJjRBzKv7VGkuAIcB6gX2gqRRgNLLlvI+Yrp+JSlpVNVnu15SEH2g==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      semver: 7.3.8
-    dev: false
-
-  /@lerna/import/5.6.2:
-    resolution: {integrity: sha512-xQUE49mtcP0z3KUdXBsyvp8rGDz6phuYUoQbhcFRJ7WPcQKzMvtm0XYrER6c2YWEX7QOuDac6tU82P8zTrTBaA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/prompt': 5.6.2
-      '@lerna/pulse-till-done': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      dedent: 0.7.0
-      fs-extra: 9.1.0
-      p-map-series: 2.1.0
-    dev: false
-
-  /@lerna/info/5.6.2:
-    resolution: {integrity: sha512-MPjY5Olj+fiZHgfEdwXUFRKamdEuLr9Ob/qut8JsB/oQSQ4ALdQfnrOcMT8lJIcC2R67EA5yav2lHPBIkezm8A==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/command': 5.6.2
-      '@lerna/output': 5.6.2
-      envinfo: 7.8.1
-    dev: false
-
-  /@lerna/init/5.6.2:
-    resolution: {integrity: sha512-ahU3/lgF+J8kdJAQysihFJROHthkIDXfHmvhw7AYnzf94HjxGNXj7nz6i3At1/dM/1nQhR+4/uNR1/OU4tTYYQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/project': 5.6.2
-      fs-extra: 9.1.0
-      p-map: 4.0.0
-      write-json-file: 4.3.0
-    dev: false
-
-  /@lerna/link/5.6.2:
-    resolution: {integrity: sha512-hXxQ4R3z6rUF1v2x62oIzLyeHL96u7ZBhxqYMJrm763D1VMSDcHKF9CjJfc6J9vH5Z2ZbL6CQg50Hw5mUpJbjg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/command': 5.6.2
-      '@lerna/package-graph': 5.6.2
-      '@lerna/symlink-dependencies': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      p-map: 4.0.0
-      slash: 3.0.0
-    dev: false
-
-  /@lerna/list/5.6.2:
-    resolution: {integrity: sha512-WjE5O2tQ3TcS+8LqXUaxi0YdldhxUhNihT5+Gg4vzGdIlrPDioO50Zjo9d8jOU7i3LMIk6EzCma0sZr2CVfEGg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/command': 5.6.2
-      '@lerna/filter-options': 5.6.2
-      '@lerna/listable': 5.6.2
-      '@lerna/output': 5.6.2
-    dev: false
-
-  /@lerna/listable/5.6.2:
-    resolution: {integrity: sha512-8Yp49BwkY/5XqVru38Zko+6Wj/sgbwzJfIGEPy3Qu575r1NA/b9eI1gX22aMsEeXUeGOybR7nWT5ewnPQHjqvA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/query-graph': 5.6.2
-      chalk: 4.1.2
-      columnify: 1.6.0
-    dev: false
-
-  /@lerna/log-packed/5.6.2:
-    resolution: {integrity: sha512-O9GODG7tMtWk+2fufn2MOkIDBYMRoKBhYMHshO5Aw/VIsH76DIxpX1koMzWfUngM/C70R4uNAKcVWineX4qzIw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      byte-size: 7.0.1
-      columnify: 1.6.0
-      has-unicode: 2.0.1
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/npm-conf/5.6.2:
-    resolution: {integrity: sha512-gWDPhw1wjXYXphk/PAghTLexO5T6abVFhXb+KOMCeem366mY0F5bM88PiorL73aErTNUoR8n+V4X29NTZzDZpQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      config-chain: 1.1.13
-      pify: 5.0.0
-    dev: false
-
-  /@lerna/npm-dist-tag/5.6.2:
-    resolution: {integrity: sha512-t2RmxV6Eog4acXkUI+EzWuYVbeVVY139pANIWS9qtdajfgp4GVXZi1S8mAIb70yeHdNpCp1mhK0xpCrFH9LvGQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/otplease': 5.6.2
-      npm-package-arg: 8.1.1
-      npm-registry-fetch: 13.3.1
-      npmlog: 6.0.2
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-    dev: false
-
-  /@lerna/npm-install/5.6.2:
-    resolution: {integrity: sha512-AT226zdEo+uGENd37jwYgdALKJAIJK4pNOfmXWZWzVb9oMOr8I2YSjPYvSYUNG7gOo2YJQU8x5Zd7OShv2924Q==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/get-npm-exec-opts': 5.6.2
-      fs-extra: 9.1.0
-      npm-package-arg: 8.1.1
-      npmlog: 6.0.2
-      signal-exit: 3.0.7
-      write-pkg: 4.0.0
-    dev: false
-
-  /@lerna/npm-publish/5.6.2:
-    resolution: {integrity: sha512-ldSyewCfv9fAeC5xNjL0HKGSUxcC048EJoe/B+KRUmd+IPidvZxMEzRu08lSC/q3V9YeUv9ZvRnxATXOM8CffA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/otplease': 5.6.2
-      '@lerna/run-lifecycle': 5.6.2
-      fs-extra: 9.1.0
-      libnpmpublish: 6.0.5
-      npm-package-arg: 8.1.1
-      npmlog: 6.0.2
-      pify: 5.0.0
-      read-package-json: 5.0.2
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-    dev: false
-
-  /@lerna/npm-run-script/5.6.2:
-    resolution: {integrity: sha512-MOQoWNcAyJivM8SYp0zELM7vg/Dj07j4YMdxZkey+S1UO0T4/vKBxb575o16hH4WeNzC3Pd7WBlb7C8dLOfNwQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      '@lerna/get-npm-exec-opts': 5.6.2
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/otplease/5.6.2:
-    resolution: {integrity: sha512-dGS4lzkEQVTMAgji82jp8RK6UK32wlzrBAO4P4iiVHCUTuwNLsY9oeBXvVXSMrosJnl6Hbe0NOvi43mqSucGoA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/prompt': 5.6.2
-    dev: false
-
-  /@lerna/output/5.6.2:
-    resolution: {integrity: sha512-++d+bfOQwY66yo7q1XuAvRcqtRHCG45e/awP5xQomTZ6R1rhWiZ3whWdc9Z6lF7+UtBB9toSYYffKU/xc3L0yQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/pack-directory/5.6.2:
-    resolution: {integrity: sha512-w5Jk5fo+HkN4Le7WMOudTcmAymcf0xPd302TqAQncjXpk0cb8tZbj+5bbNHsGb58GRjOIm5icQbHXooQUxbHhA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/get-packed': 5.6.2
-      '@lerna/package': 5.6.2
-      '@lerna/run-lifecycle': 5.6.2
-      '@lerna/temp-write': 5.6.2
-      npm-packlist: 5.1.3
-      npmlog: 6.0.2
-      tar: 6.1.12
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-    dev: false
-
-  /@lerna/package-graph/5.6.2:
-    resolution: {integrity: sha512-TmL61qBBvA3Tc4qICDirZzdFFwWOA6qicIXUruLiE2PblRowRmCO1bKrrP6XbDOspzwrkPef6N2F2/5gHQAnkQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/prerelease-id-from-version': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      npm-package-arg: 8.1.1
-      npmlog: 6.0.2
-      semver: 7.3.8
-    dev: false
-
-  /@lerna/package/5.6.2:
-    resolution: {integrity: sha512-LaOC8moyM5J9WnRiWZkedjOninSclBOJyPqhif6mHb2kCFX6jAroNYzE8KM4cphu8CunHuhI6Ixzswtv+Dultw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      load-json-file: 6.2.0
-      npm-package-arg: 8.1.1
-      write-pkg: 4.0.0
-    dev: false
-
-  /@lerna/prerelease-id-from-version/5.6.2:
-    resolution: {integrity: sha512-7gIm9fecWFVNy2kpj/KbH11bRcpyANAwpsft3X5m6J7y7A6FTUscCbEvl3ZNdpQKHNuvnHgCtkm3A5PMSCEgkA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      semver: 7.3.8
-    dev: false
-
-  /@lerna/profiler/5.6.2:
-    resolution: {integrity: sha512-okwkagP5zyRIOYTceu/9/esW7UZFt7lyL6q6ZgpSG3TYC5Ay+FXLtS6Xiha/FQdVdumFqKULDWTGovzUlxcwaw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      fs-extra: 9.1.0
-      npmlog: 6.0.2
-      upath: 2.0.1
-    dev: false
-
-  /@lerna/project/5.6.2:
-    resolution: {integrity: sha512-kPIMcIy/0DVWM91FPMMFmXyAnCuuLm3NdhnA8NusE//VuY9wC6QC/3OwuCY39b2dbko/fPZheqKeAZkkMH6sGg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/package': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      cosmiconfig: 7.1.0
-      dedent: 0.7.0
-      dot-prop: 6.0.1
-      glob-parent: 5.1.2
-      globby: 11.1.0
-      js-yaml: 4.1.0
-      load-json-file: 6.2.0
-      npmlog: 6.0.2
-      p-map: 4.0.0
-      resolve-from: 5.0.0
-      write-json-file: 4.3.0
-    dev: false
-
-  /@lerna/prompt/5.6.2:
-    resolution: {integrity: sha512-4hTNmVYADEr0GJTMegWV+GW6n+dzKx1vN9v2ISqyle283Myv930WxuyO0PeYGqTrkneJsyPreCMovuEGCvZ0iQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      inquirer: 8.2.5
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/publish/5.6.2_nx@15.2.1+typescript@4.9.5:
-    resolution: {integrity: sha512-QaW0GjMJMuWlRNjeDCjmY/vjriGSWgkLS23yu8VKNtV5U3dt5yIKA3DNGV3HgZACuu45kQxzMDsfLzgzbGNtYA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/check-working-tree': 5.6.2
-      '@lerna/child-process': 5.6.2
-      '@lerna/collect-updates': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/describe-ref': 5.6.2
-      '@lerna/log-packed': 5.6.2
-      '@lerna/npm-conf': 5.6.2
-      '@lerna/npm-dist-tag': 5.6.2
-      '@lerna/npm-publish': 5.6.2
-      '@lerna/otplease': 5.6.2
-      '@lerna/output': 5.6.2
-      '@lerna/pack-directory': 5.6.2
-      '@lerna/prerelease-id-from-version': 5.6.2
-      '@lerna/prompt': 5.6.2
-      '@lerna/pulse-till-done': 5.6.2
-      '@lerna/run-lifecycle': 5.6.2
-      '@lerna/run-topologically': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      '@lerna/version': 5.6.2_nx@15.2.1+typescript@4.9.5
-      fs-extra: 9.1.0
-      libnpmaccess: 6.0.4
-      npm-package-arg: 8.1.1
-      npm-registry-fetch: 13.3.1
-      npmlog: 6.0.2
-      p-map: 4.0.0
-      p-pipe: 3.1.0
-      pacote: 13.6.2
-      semver: 7.3.8
-    transitivePeerDependencies:
-      - bluebird
-      - encoding
-      - nx
-      - supports-color
-      - typescript
-    dev: false
-
-  /@lerna/pulse-till-done/5.6.2:
-    resolution: {integrity: sha512-eA/X1RCxU5YGMNZmbgPi+Kyfx1Q3bn4P9jo/LZy+/NRRr1po3ASXP2GJZ1auBh/9A2ELDvvKTOXCVHqczKC6rA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/query-graph/5.6.2:
-    resolution: {integrity: sha512-KRngr96yBP8XYDi9/U62fnGO+ZXqm04Qk6a2HtoTr/ha8QvO1s7Tgm0xs/G7qWXDQHZgunWIbmK/LhxM7eFQrw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/package-graph': 5.6.2
-    dev: false
-
-  /@lerna/resolve-symlink/5.6.2:
-    resolution: {integrity: sha512-PDQy+7M8JEFtwIVHJgWvSxHkxJf9zXCENkvIWDB+SsoDPhw9+caewt46bTeP5iGm9pOMu3oZukaWo/TvF7sNjg==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      fs-extra: 9.1.0
-      npmlog: 6.0.2
-      read-cmd-shim: 3.0.1
-    dev: false
-
-  /@lerna/rimraf-dir/5.6.2:
-    resolution: {integrity: sha512-jgEfzz7uBUiQKteq3G8MtJiA2D2VoKmZSSY3VSiW/tPOSXYxxSHxEsClQdCeNa6+sYrDNDT8fP6MJ3lPLjDeLA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/child-process': 5.6.2
-      npmlog: 6.0.2
-      path-exists: 4.0.0
-      rimraf: 3.0.2
-    dev: false
-
-  /@lerna/run-lifecycle/5.6.2:
-    resolution: {integrity: sha512-u9gGgq/50Fm8dvfcc/TSHOCAQvzLD7poVanDMhHYWOAqRDnellJEEmA1K/Yka4vZmySrzluahkry9G6jcREt+g==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/npm-conf': 5.6.2
-      '@npmcli/run-script': 4.2.1
-      npmlog: 6.0.2
-      p-queue: 6.6.2
-    transitivePeerDependencies:
-      - bluebird
-      - supports-color
-    dev: false
-
-  /@lerna/run-topologically/5.6.2:
-    resolution: {integrity: sha512-QQ/jGOIsVvUg3izShWsd67RlWYh9UOH2yw97Ol1zySX9+JspCMVQrn9eKq1Pk8twQOFhT87LpT/aaxbTBgREPw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/query-graph': 5.6.2
-      p-queue: 6.6.2
-    dev: false
-
-  /@lerna/run/5.6.2:
-    resolution: {integrity: sha512-c2kJxdFrNg5KOkrhmgwKKUOsfSrGNlFCe26EttufOJ3xfY0VnXlEw9rHOkTgwtu7969rfCdyaVP1qckMrF1Dgw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/command': 5.6.2
-      '@lerna/filter-options': 5.6.2
-      '@lerna/npm-run-script': 5.6.2
-      '@lerna/output': 5.6.2
-      '@lerna/profiler': 5.6.2
-      '@lerna/run-topologically': 5.6.2
-      '@lerna/timer': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      fs-extra: 9.1.0
-      p-map: 4.0.0
-    dev: false
-
-  /@lerna/symlink-binary/5.6.2:
-    resolution: {integrity: sha512-Cth+miwYyO81WAmrQbPBrLHuF+F0UUc0el5kRXLH6j5zzaRS3kMM68r40M7MmfH8m3GPi7691UARoWFEotW5jw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/create-symlink': 5.6.2
-      '@lerna/package': 5.6.2
-      fs-extra: 9.1.0
-      p-map: 4.0.0
-    dev: false
-
-  /@lerna/symlink-dependencies/5.6.2:
-    resolution: {integrity: sha512-dUVNQLEcjVOIQiT9OlSAKt0ykjyJPy8l9i4NJDe2/0XYaUjo8PWsxJ0vrutz27jzi2aZUy07ASmowQZEmnLHAw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/create-symlink': 5.6.2
-      '@lerna/resolve-symlink': 5.6.2
-      '@lerna/symlink-binary': 5.6.2
-      fs-extra: 9.1.0
-      p-map: 4.0.0
-      p-map-series: 2.1.0
-    dev: false
-
-  /@lerna/temp-write/5.6.2:
-    resolution: {integrity: sha512-S5ZNVTurSwWBmc9kh5alfSjmO3+BnRT6shYtOlmVIUYqWeYVYA5C1Htj322bbU4CSNCMFK6NQl4qGKL17HMuig==}
-    dependencies:
-      graceful-fs: 4.2.10
-      is-stream: 2.0.1
-      make-dir: 3.1.0
-      temp-dir: 1.0.0
-      uuid: 8.3.2
-    dev: false
-
-  /@lerna/timer/5.6.2:
-    resolution: {integrity: sha512-AjMOiLc2B+5Nzdd9hNORetAdZ/WK8YNGX/+2ypzM68TMAPfIT5C40hMlSva9Yg4RsBz22REopXgM5s2zQd5ZQA==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dev: false
-
-  /@lerna/validation-error/5.6.2:
-    resolution: {integrity: sha512-4WlDUHaa+RSJNyJRtX3gVIAPVzjZD2tle8AJ0ZYBfdZnZmG0VlB2pD1FIbOQPK8sY2h5m0cHLRvfLoLncqHvdQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      npmlog: 6.0.2
-    dev: false
-
-  /@lerna/version/5.6.2_nx@15.2.1+typescript@4.9.5:
-    resolution: {integrity: sha512-odNSR2rTbHW++xMZSQKu/F6Syrd/sUvwDLPaMKktoOSPKmycHt/eWcuQQyACdtc43Iqeu4uQd7PCLsniqOVFrw==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      '@lerna/check-working-tree': 5.6.2
-      '@lerna/child-process': 5.6.2
-      '@lerna/collect-updates': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/conventional-commits': 5.6.2
-      '@lerna/github-client': 5.6.2
-      '@lerna/gitlab-client': 5.6.2
-      '@lerna/output': 5.6.2
-      '@lerna/prerelease-id-from-version': 5.6.2
-      '@lerna/prompt': 5.6.2
-      '@lerna/run-lifecycle': 5.6.2
-      '@lerna/run-topologically': 5.6.2
-      '@lerna/temp-write': 5.6.2
-      '@lerna/validation-error': 5.6.2
-      '@nrwl/devkit': 15.2.1_nx@15.2.1+typescript@4.9.5
-      chalk: 4.1.2
-      dedent: 0.7.0
-      load-json-file: 6.2.0
-      minimatch: 3.1.2
-      npmlog: 6.0.2
-      p-map: 4.0.0
-      p-pipe: 3.1.0
-      p-reduce: 2.1.0
-      p-waterfall: 2.1.1
-      semver: 7.3.8
-      slash: 3.0.0
-      write-json-file: 4.3.0
-    transitivePeerDependencies:
-      - bluebird
-      - encoding
-      - nx
-      - supports-color
-      - typescript
-    dev: false
-
-  /@lerna/write-log-file/5.6.2:
-    resolution: {integrity: sha512-J09l18QnWQ3sXIRwuJkjXY3+KwPR2uO5NgbZGE3GXJK1V/LzOBRMvjGAIbuQHXw25uqe7vpLUpB8drtnFrubCQ==}
-    engines: {node: ^14.15.0 || >=16.0.0}
-    dependencies:
-      npmlog: 6.0.2
-      write-file-atomic: 4.0.2
     dev: false
 
   /@manypkg/cli/0.20.0:
@@ -8009,6 +7320,20 @@ packages:
       infer-owner: 1.0.4
     dev: false
 
+  /@npmcli/run-script/4.1.7:
+    resolution: {integrity: sha512-WXr/MyM4tpKA4BotB81NccGAv8B48lNH0gRoILucbcAhTQXLCoi6HflMV3KdXubIqvP9SuLsFn68Z7r4jl+ppw==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dependencies:
+      '@npmcli/node-gyp': 2.0.0
+      '@npmcli/promise-spawn': 3.0.0
+      node-gyp: 9.3.0
+      read-package-json-fast: 2.0.3
+      which: 2.0.2
+    transitivePeerDependencies:
+      - bluebird
+      - supports-color
+    dev: false
+
   /@npmcli/run-script/4.2.1:
     resolution: {integrity: sha512-7dqywvVudPSrRCW5nTHpHgeWnbBtz8cFkOuKrecm6ih+oO9ciydhWt6OF7HlqupRRmB8Q/gECVdB9LMfToJbRg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -8023,36 +7348,118 @@ packages:
       - supports-color
     dev: false
 
-  /@nrwl/cli/15.2.1_@swc+core@1.3.20:
-    resolution: {integrity: sha512-ufBJ5o3WCixdp6/TPkpn4rH3QBFJcqCMG1d14A/SvAkEnXu3vWlj3E+4GXf3CK+sGNjjf3ZGoNm7OFV+/Ml4GA==}
+  /@nrwl/cli/15.8.5_@swc+core@1.3.20:
+    resolution: {integrity: sha512-voy16nUO1MxRMRqCpLlhDB9U4KyPfGHZABXtfMEIQk+W3alncatFMMSVvMQZmi8HXwubM8LxWSOnPtTtOCKBrQ==}
     dependencies:
-      nx: 15.2.1_@swc+core@1.3.20
+      nx: 15.8.5_@swc+core@1.3.20
     transitivePeerDependencies:
       - '@swc-node/register'
       - '@swc/core'
       - debug
     dev: false
 
-  /@nrwl/devkit/15.2.1_nx@15.2.1+typescript@4.9.5:
-    resolution: {integrity: sha512-si6DK0sjtr6Ln+7hh9QD50KqxnOxuP20xJ0fxMVafT/Lz/qtxuCPw9lwJWVagMHWw3pQAtN6lbkWiLOwj8+YPA==}
+  /@nrwl/devkit/15.8.5_nx@15.8.5+typescript@4.9.5:
+    resolution: {integrity: sha512-NgpD1I1BfFb6wRxB5i5PGP4hMyRhPsArCyENWWvY4gCn8tylAc7yjpQyiDiy2QnymL2PjWM8QeAeCOy1eF2xgw==}
     peerDependencies:
-      nx: '>= 14 <= 16'
+      nx: '>= 14.1 <= 16'
     dependencies:
       '@phenomnomnominal/tsquery': 4.1.1_typescript@4.9.5
       ejs: 3.1.8
       ignore: 5.2.4
-      nx: 15.2.1_@swc+core@1.3.20
+      nx: 15.8.5_@swc+core@1.3.20
       semver: 7.3.4
+      tmp: 0.2.1
       tslib: 2.4.1
     transitivePeerDependencies:
       - typescript
     dev: false
 
-  /@nrwl/tao/15.2.1_@swc+core@1.3.20:
-    resolution: {integrity: sha512-6ApglWKORasLhtjlJmqo2co/UexSSiD7mWVxT2886oKG2Y/T/5RnPFNhJgGnKJIURCNMxiSKhq7GAA+CE9zRZg==}
+  /@nrwl/nx-darwin-arm64/15.8.5:
+    resolution: {integrity: sha512-/8yXbh1J3k85MAW/A6cDiPeEnbt66SE9BPnM2IPlGoZrXakQvAXEn+gsjQlvnP3q2EaEyv7e5+GA+8d+p6mT5A==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-darwin-x64/15.8.5:
+    resolution: {integrity: sha512-zEVoi0d+YChLrQMypoGFwu73t3YiD8UkXSozMtUEa2mg/se4e7jh+15tB6Te+Oq5aL0JKwQpr027GE4YtAmpLw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-linux-arm-gnueabihf/15.8.5:
+    resolution: {integrity: sha512-4C5wN0C7gQD6/lC9+UKUsB6mbHvowKhlaO529GIgtzrCLmfEh/LJ/CybnnKGpFEB/8Y5GpCa2uTWyA1XcPDzUw==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-linux-arm64-gnu/15.8.5:
+    resolution: {integrity: sha512-SMQ+oIsyK75JiKeSMprmb8VXce6MLdfcS5GWWOihpoDWfUC9FoQHAu4X1OtxHbVTmJfoEOInJKAhPxXAi5obdw==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-linux-arm64-musl/15.8.5:
+    resolution: {integrity: sha512-GVENjltZ17aJ6KOCibdBtLXQcGY5lpBqKolB9+rIYJvTWuV1k/uHOkYJDG7Vl70Rj46rC8K0Jp6BCpJHCv1ksQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-linux-x64-gnu/15.8.5:
+    resolution: {integrity: sha512-AW8YjhZv3c+LRUoLvHLx4BZaDakQbPCPx70+c/uQyDkQP/ckYJc0gRjoZukolcI6+AvNcBhkI559RL9W4qb9iw==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-linux-x64-musl/15.8.5:
+    resolution: {integrity: sha512-m4Iy/pbzH0LTsADq/X+74nfVzm2Tt0zorOXXy/uQN4ozL/JNGVpwvxdOFxZ7e3RBXDX4u6awUzSE52Z2d2f0uA==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-win32-arm64-msvc/15.8.5:
+    resolution: {integrity: sha512-4AT1PHo5At8AXvgE5XlQbimE0THeSji6J3XZ1UTqq7n3L26QicNdnZcaHGyL1ukMtXRIwT/yed+xu1PFkXF4QA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/nx-win32-x64-msvc/15.8.5:
+    resolution: {integrity: sha512-53vzsQErvN4OeF/qBgfPg6OZ3smX4V8Lza59bwql9aAjjlMe1Ff9Su0BgAqlhVfSiYGxAirfHljgA6aWFqpCHQ==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@nrwl/tao/15.8.5_@swc+core@1.3.20:
+    resolution: {integrity: sha512-pb/hUprOOv2vgvbevGz9hiu8LLOtK7KKuBe4JLSXrFxfHEQjMFsK/2aymnts0ZQrA83QlIG2Mr0tuSKj6/iWvg==}
     hasBin: true
     dependencies:
-      nx: 15.2.1_@swc+core@1.3.20
+      nx: 15.8.5_@swc+core@1.3.20
     transitivePeerDependencies:
       - '@swc-node/register'
       - '@swc/core'
@@ -8106,6 +7513,10 @@ packages:
     transitivePeerDependencies:
       - encoding
 
+  /@octokit/openapi-types/12.11.0:
+    resolution: {integrity: sha512-VsXyi8peyRq9PqIz/tpqiL2w3w80OgVMwBHltTml3LmVvXiphgeqmY9mvBw9Wu7e0QWk/fqD37ux8yP5uVekyQ==}
+    dev: false
+
   /@octokit/openapi-types/14.0.0:
     resolution: {integrity: sha512-HNWisMYlR8VCnNurDU6os2ikx0s0VyEjDYHNS/h4cgb8DeOxQ0n72HyinUtdDVxJhFy3FWLGl0DJhfEWk3P5Iw==}
 
@@ -8113,14 +7524,14 @@ packages:
     resolution: {integrity: sha512-93uGjlhUD+iNg1iWhUENAtJata6w5nE+V4urXOAlIXdco6xNZtUSfYY8dzp3Udy74aqO/B5UZL80x/YMa5PKRw==}
     dev: false
 
-  /@octokit/plugin-paginate-rest/5.0.1_@octokit+core@4.1.0:
-    resolution: {integrity: sha512-7A+rEkS70pH36Z6JivSlR7Zqepz3KVucEFVDnSrgHXzG7WLAzYwcHZbKdfTXHwuTHbkT1vKvz7dHl1+HNf6Qyw==}
+  /@octokit/plugin-paginate-rest/3.1.0_@octokit+core@4.1.0:
+    resolution: {integrity: sha512-+cfc40pMzWcLkoDcLb1KXqjX0jTGYXjKuQdFQDc6UAknISJHnZTiBqld6HDwRJvD4DsouDKrWXNbNV0lE/3AXA==}
     engines: {node: '>= 14'}
     peerDependencies:
       '@octokit/core': '>=4'
     dependencies:
       '@octokit/core': 4.1.0
-      '@octokit/types': 8.0.0
+      '@octokit/types': 6.41.0
     dev: false
 
   /@octokit/plugin-request-log/1.0.4_@octokit+core@4.1.0:
@@ -8163,16 +7574,22 @@ packages:
     transitivePeerDependencies:
       - encoding
 
-  /@octokit/rest/19.0.5:
-    resolution: {integrity: sha512-+4qdrUFq2lk7Va+Qff3ofREQWGBeoTKNqlJO+FGjFP35ZahP+nBenhZiGdu8USSgmq4Ky3IJ/i4u0xbLqHaeow==}
+  /@octokit/rest/19.0.3:
+    resolution: {integrity: sha512-5arkTsnnRT7/sbI4fqgSJ35KiFaN7zQm0uQiQtivNQLI8RQx8EHwJCajcTUwmaCMNDg7tdCvqAnc7uvHHPxrtQ==}
     engines: {node: '>= 14'}
     dependencies:
       '@octokit/core': 4.1.0
-      '@octokit/plugin-paginate-rest': 5.0.1_@octokit+core@4.1.0
+      '@octokit/plugin-paginate-rest': 3.1.0_@octokit+core@4.1.0
       '@octokit/plugin-request-log': 1.0.4_@octokit+core@4.1.0
       '@octokit/plugin-rest-endpoint-methods': 6.7.0_@octokit+core@4.1.0
     transitivePeerDependencies:
       - encoding
+    dev: false
+
+  /@octokit/types/6.41.0:
+    resolution: {integrity: sha512-eJ2jbzjdijiL3B4PrSQaSjuF2sPEQPVCPzBvTHJD9Nz+9dw2SGH4K4xeQJ77YfTq5bRQ+bD8wT11JbeDPmxmGg==}
+    dependencies:
+      '@octokit/openapi-types': 12.11.0
     dev: false
 
   /@octokit/types/8.0.0:
@@ -9030,6 +8447,7 @@ packages:
 
   /@types/json5/0.0.29:
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+    dev: true
 
   /@types/keyv/3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
@@ -10517,8 +9935,8 @@ packages:
     dependencies:
       streamsearch: 1.1.0
 
-  /byte-size/7.0.1:
-    resolution: {integrity: sha512-crQdqyCwhokxwV1UyDzLZanhkugAgft7vt0qbbdt60C6Zf3CAiGmtUCylbtYwrU6loOUw3euGrNtW1J651ot1A==}
+  /byte-size/7.0.0:
+    resolution: {integrity: sha512-NNiBxKgxybMBtWdmvx7ZITJi4ZG+CYUgwOSZTfqB1qogkRHrhbQE/R2r5Fh94X+InN5MCYz6SvB/ejHMj/HbsQ==}
     engines: {node: '>=10'}
     dev: false
 
@@ -11130,8 +10548,8 @@ packages:
       yargs: 17.6.2
     dev: false
 
-  /config-chain/1.1.13:
-    resolution: {integrity: sha512-qj+f8APARXHrM0hraqXYb2/bOVSV4PvJQlNZ/DVj0QrmNM2q2euizkeuVckQ57J+W0mRH6Hvi+k50M4Jul2VRQ==}
+  /config-chain/1.1.12:
+    resolution: {integrity: sha512-a1eOIcu8+7lUInge4Rpf/n4Krkf3Dd9lqhljRzII1/Zno/kRtUWnznPO3jOKBmTEktkt3fkxisUcivoj0ebzoA==}
     dependencies:
       ini: 1.3.8
       proto-list: 1.2.4
@@ -11177,8 +10595,8 @@ packages:
     resolution: {integrity: sha512-hIP3EEPs8tB9AT1L+NUqtwOAps4mk2Zob89MWXMHjHWg9milF/j4osnnQLXBCBFBk/tvIG/tUc9mOUJiPBhPXA==}
     engines: {node: '>= 0.6'}
 
-  /conventional-changelog-angular/5.0.13:
-    resolution: {integrity: sha512-i/gipMxs7s8L/QeuavPF2hLnJgH6pEZAttySB6aiQLWcX3puWDL3ACVmvBhJGxnAy52Qc15ua26BufY6KpmrVA==}
+  /conventional-changelog-angular/5.0.12:
+    resolution: {integrity: sha512-5GLsbnkR/7A89RyHLvvoExbiGbd9xKdKqDTrArnPbOqBqG/2wIosu0fHwpeIRI8Tl94MhVNBXcLJZl92ZQ5USw==}
     engines: {node: '>=10'}
     dependencies:
       compare-func: 2.0.0
@@ -11339,6 +10757,17 @@ packages:
   /cosmiconfig/6.0.0:
     resolution: {integrity: sha512-xb3ZL6+L8b9JLLCx3ZdoZy4+2ECphCMo2PwqgP1tlfVq6M6YReyzBJtvWWtbDSpNr9hn96pkCiZqUcFEc+54Qg==}
     engines: {node: '>=8'}
+    dependencies:
+      '@types/parse-json': 4.0.0
+      import-fresh: 3.3.0
+      parse-json: 5.2.0
+      path-type: 4.0.0
+      yaml: 1.10.2
+    dev: false
+
+  /cosmiconfig/7.0.0:
+    resolution: {integrity: sha512-pondGvTuVYDk++upghXJabWzL6Kxu6f26ljFw64Swq9v6sQPUL3EUlVDV56diOjpCayKihL6hVe8exIACU4XcA==}
+    engines: {node: '>=10'}
     dependencies:
       '@types/parse-json': 4.0.0
       import-fresh: 3.3.0
@@ -13551,6 +12980,21 @@ packages:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
 
+  /execa/5.0.0:
+    resolution: {integrity: sha512-ov6w/2LCiuyO4RLYGdpFGjkcs0wMTgGE8PrkTHikeUy5iJekXyPIKUjifk5CsE0pt7sMCrMZ3YNqoCj6idQOnQ==}
+    engines: {node: '>=10'}
+    dependencies:
+      cross-spawn: 7.0.3
+      get-stream: 6.0.1
+      human-signals: 2.1.0
+      is-stream: 2.0.1
+      merge-stream: 2.0.0
+      npm-run-path: 4.0.1
+      onetime: 5.1.2
+      signal-exit: 3.0.7
+      strip-final-newline: 2.0.0
+    dev: false
+
   /execa/5.1.1:
     resolution: {integrity: sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg==}
     engines: {node: '>=10'}
@@ -14177,7 +13621,6 @@ packages:
       graceful-fs: 4.2.10
       jsonfile: 6.1.0
       universalify: 2.0.0
-    dev: true
 
   /fs-extra/7.0.1:
     resolution: {integrity: sha512-YJDaCJZEnBmcbw13fvdAM9AwNOJwOzrE4pqMqBq5nFiEqXUqHwlK4B+3pUw6JNvfSPtX05xFHtYy/1ni01eGCw==}
@@ -14338,6 +13781,11 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       pump: 3.0.0
+
+  /get-stream/6.0.0:
+    resolution: {integrity: sha512-A1B3Bh1UmL0bidM/YX2NsCOTnGJePL9rO/M+Mw3m9f2gUpfokS0hi5Eah0WSUEWZdZhIZtMjkIYS7mDfOqNHbg==}
+    engines: {node: '>=10'}
+    dev: false
 
   /get-stream/6.0.1:
     resolution: {integrity: sha512-ts6Wi+2j3jQjqi70w5AlN8DFnkSwC+MqmxEzdEALB2qXZYV3X/b1CTfgPLGJNMeAWxdPfU8FO1ms3NUfaHCPYg==}
@@ -15473,6 +14921,11 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
+  /is-stream/2.0.0:
+    resolution: {integrity: sha512-XCoy+WlUr7d1+Z8GgSuXmpuUFC9fOhRXglJMx+dwLKTkL44Cjd4W1Z5P+BQZpr+cR93aGP4S/s7Ftw6Nd/kiEw==}
+    engines: {node: '>=8'}
+    dev: false
+
   /is-stream/2.0.1:
     resolution: {integrity: sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==}
     engines: {node: '>=8'}
@@ -15884,6 +15337,7 @@ packages:
     hasBin: true
     dependencies:
       minimist: 1.2.7
+    dev: true
 
   /json5/2.2.1:
     resolution: {integrity: sha512-1hqLFMSrGHRHxav9q9gNjJ5EXznIxGVO09xQRrwplcS8qs28pZ8s8hupZAmqDwZUmVZ2Qb2jnyPOWcDH8m8dlA==}
@@ -16030,34 +15484,87 @@ packages:
       readable-stream: 2.3.7
     dev: true
 
-  /lerna/5.6.2_@swc+core@1.3.20:
-    resolution: {integrity: sha512-Y0yMPslvnBnTZi7Nrs/gDyYZYauNf61xWNCehISHIORxZmmpoluNkcWTfcyb47is5uJQCv5QJX5xKKubbs+a6w==}
+  /lerna/6.5.1_@swc+core@1.3.20:
+    resolution: {integrity: sha512-Va1bysubwWdoWZ1ncKcoTGBXNAu/10/TwELb550TTivXmEWjCCdek4eX0BNLTEYKxu3tpV2UEeqVisUiWGn4WA==}
     engines: {node: ^14.15.0 || >=16.0.0}
     hasBin: true
     dependencies:
-      '@lerna/add': 5.6.2
-      '@lerna/bootstrap': 5.6.2
-      '@lerna/changed': 5.6.2
-      '@lerna/clean': 5.6.2
-      '@lerna/cli': 5.6.2
-      '@lerna/command': 5.6.2
-      '@lerna/create': 5.6.2
-      '@lerna/diff': 5.6.2
-      '@lerna/exec': 5.6.2
-      '@lerna/import': 5.6.2
-      '@lerna/info': 5.6.2
-      '@lerna/init': 5.6.2
-      '@lerna/link': 5.6.2
-      '@lerna/list': 5.6.2
-      '@lerna/publish': 5.6.2_nx@15.2.1+typescript@4.9.5
-      '@lerna/run': 5.6.2
-      '@lerna/version': 5.6.2_nx@15.2.1+typescript@4.9.5
-      '@nrwl/devkit': 15.2.1_nx@15.2.1+typescript@4.9.5
+      '@lerna/child-process': 6.5.1
+      '@lerna/create': 6.5.1
+      '@npmcli/arborist': 5.3.0
+      '@npmcli/run-script': 4.1.7
+      '@nrwl/devkit': 15.8.5_nx@15.8.5+typescript@4.9.5
+      '@octokit/plugin-enterprise-rest': 6.0.1
+      '@octokit/rest': 19.0.3
+      byte-size: 7.0.0
+      chalk: 4.1.0
+      clone-deep: 4.0.1
+      cmd-shim: 5.0.0
+      columnify: 1.6.0
+      config-chain: 1.1.12
+      conventional-changelog-angular: 5.0.12
+      conventional-changelog-core: 4.2.4
+      conventional-recommended-bump: 6.1.0
+      cosmiconfig: 7.0.0
+      dedent: 0.7.0
+      dot-prop: 6.0.1
+      envinfo: 7.8.1
+      execa: 5.0.0
+      fs-extra: 9.1.0
+      get-port: 5.1.1
+      get-stream: 6.0.0
+      git-url-parse: 13.1.0
+      glob-parent: 5.1.2
+      globby: 11.1.0
+      graceful-fs: 4.2.10
+      has-unicode: 2.0.1
       import-local: 3.1.0
+      init-package-json: 3.0.2
       inquirer: 8.2.5
+      is-ci: 2.0.0
+      is-stream: 2.0.0
+      js-yaml: 4.1.0
+      libnpmaccess: 6.0.3
+      libnpmpublish: 6.0.4
+      load-json-file: 6.2.0
+      make-dir: 3.1.0
+      minimatch: 3.0.5
+      multimatch: 5.0.0
+      node-fetch: 2.6.7
+      npm-package-arg: 8.1.1
+      npm-packlist: 5.1.1
+      npm-registry-fetch: 13.3.0
       npmlog: 6.0.2
-      nx: 15.2.1_@swc+core@1.3.20
+      nx: 15.8.5_@swc+core@1.3.20
+      p-map: 4.0.0
+      p-map-series: 2.1.0
+      p-pipe: 3.1.0
+      p-queue: 6.6.2
+      p-reduce: 2.1.0
+      p-waterfall: 2.1.1
+      pacote: 13.6.1
+      path-exists: 4.0.0
+      pify: 5.0.0
+      read-cmd-shim: 3.0.0
+      read-package-json: 5.0.1
+      resolve-from: 5.0.0
+      rimraf: 3.0.2
+      semver: 7.3.4
+      signal-exit: 3.0.7
+      slash: 3.0.0
+      ssri: 9.0.1
+      strong-log-transformer: 2.1.0
+      tar: 6.1.11
+      temp-dir: 1.0.0
       typescript: 4.9.5
+      upath: 2.0.1
+      uuid: 8.3.2
+      validate-npm-package-license: 3.0.4
+      validate-npm-package-name: 4.0.0
+      write-file-atomic: 4.0.1
+      write-pkg: 4.0.0
+      yargs: 16.2.0
+      yargs-parser: 20.2.4
     transitivePeerDependencies:
       - '@swc-node/register'
       - '@swc/core'
@@ -16087,8 +15594,8 @@ packages:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  /libnpmaccess/6.0.4:
-    resolution: {integrity: sha512-qZ3wcfIyUoW0+qSFkMBovcTrSGJ3ZeyvpR7d5N9pEYv/kXs8sHP2wiqEIXBKLFrZlmM0kR0RJD7mtfLngtlLag==}
+  /libnpmaccess/6.0.3:
+    resolution: {integrity: sha512-4tkfUZprwvih2VUZYMozL7EMKgQ5q9VW2NtRyxWtQWlkLTAWHRklcAvBN49CVqEkhUw7vTX2fNgB5LzgUucgYg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
     dependencies:
       aproba: 2.0.0
@@ -16100,8 +15607,8 @@ packages:
       - supports-color
     dev: false
 
-  /libnpmpublish/6.0.5:
-    resolution: {integrity: sha512-LUR08JKSviZiqrYTDfywvtnsnxr+tOvBU0BF8H+9frt7HMvc6Qn6F8Ubm72g5hDTHbq8qupKfDvDAln2TVPvFg==}
+  /libnpmpublish/6.0.4:
+    resolution: {integrity: sha512-lvAEYW8mB8QblL6Q/PI/wMzKNvIrF7Kpujf/4fGS/32a2i3jzUXi04TNyIBcK6dQJ34IgywfaKGh+Jq4HYPFmg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
     dependencies:
       normalize-package-data: 4.0.1
@@ -16133,6 +15640,11 @@ packages:
 
   /lines-and-columns/1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
+    dev: false
+
+  /lines-and-columns/2.0.3:
+    resolution: {integrity: sha512-cNOjgCnLB+FnvWWtyRTzmB3POJ+cXxTA81LoW7u8JdmhfXzriropYwpjShnz1QLLWsQwY7nIxoDmcPTwphDK9w==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: false
 
   /load-json-file/4.0.0:
@@ -17257,6 +16769,17 @@ packages:
       validate-npm-package-name: 4.0.0
     dev: false
 
+  /npm-packlist/5.1.1:
+    resolution: {integrity: sha512-UfpSvQ5YKwctmodvPPkK6Fwk603aoVsf8AEbmVKAEECrfvL8SSe1A2YIwrJ6xmTHAITKPwwZsWo7WwEbNk0kxw==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    hasBin: true
+    dependencies:
+      glob: 8.0.3
+      ignore-walk: 5.0.1
+      npm-bundled: 1.1.2
+      npm-normalize-package-bin: 1.0.1
+    dev: false
+
   /npm-packlist/5.1.3:
     resolution: {integrity: sha512-263/0NGrn32YFYi4J533qzrQ/krmmrWwhKkzwTuM4f/07ug51odoaNjUexxO4vxlzURHcmYMH1QjvHjsNDKLVg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -17276,6 +16799,22 @@ packages:
       npm-normalize-package-bin: 2.0.0
       npm-package-arg: 9.1.2
       semver: 7.3.8
+    dev: false
+
+  /npm-registry-fetch/13.3.0:
+    resolution: {integrity: sha512-10LJQ/1+VhKrZjIuY9I/+gQTvumqqlgnsCufoXETHAPFTS3+M+Z5CFhZRDHGavmJ6rOye3UvNga88vl8n1r6gg==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dependencies:
+      make-fetch-happen: 10.2.1
+      minipass: 3.3.6
+      minipass-fetch: 2.1.2
+      minipass-json-stream: 1.0.1
+      minizlib: 2.1.2
+      npm-package-arg: 9.1.2
+      proc-log: 2.0.1
+    transitivePeerDependencies:
+      - bluebird
+      - supports-color
     dev: false
 
   /npm-registry-fetch/13.3.1:
@@ -17368,8 +16907,8 @@ packages:
     resolution: {integrity: sha512-90yv+6538zuvUMnN+zCr8LuV6bPFdq50304114vJYJ8RDyK8D5O9Phpbd6SZWgI7PwzmmfN1upeOJlvybDSgCw==}
     dev: false
 
-  /nx/15.2.1_@swc+core@1.3.20:
-    resolution: {integrity: sha512-vVeT5D02cDDiSmS3P2Bos/waYQa3m0yl/rouzsKpusVSmzAQGQbKXhxPb4WnNIj8Iz/8KjFeBM/RZO021BtGNg==}
+  /nx/15.8.5_@swc+core@1.3.20:
+    resolution: {integrity: sha512-1c6Y3rPSzzlqQVJPo33Ej0HY/3t9ykeaPs074HpYxXH0+GU1BSIv/9EfXKQGvmBzjs5yAx6asGIv+H3QDrFt3A==}
     hasBin: true
     requiresBuild: true
     peerDependencies:
@@ -17381,16 +16920,15 @@ packages:
       '@swc/core':
         optional: true
     dependencies:
-      '@nrwl/cli': 15.2.1_@swc+core@1.3.20
-      '@nrwl/tao': 15.2.1_@swc+core@1.3.20
+      '@nrwl/cli': 15.8.5_@swc+core@1.3.20
+      '@nrwl/tao': 15.8.5_@swc+core@1.3.20
       '@parcel/watcher': 2.0.4
       '@swc/core': 1.3.20
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.0-rc.31
       '@zkochan/js-yaml': 0.0.6
       axios: 1.2.0
-      chalk: 4.1.0
-      chokidar: 3.5.3
+      chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
       cliui: 7.0.4
@@ -17399,11 +16937,12 @@ packages:
       fast-glob: 3.2.7
       figures: 3.2.0
       flat: 5.0.2
-      fs-extra: 10.1.0
+      fs-extra: 11.1.0
       glob: 7.1.4
       ignore: 5.2.4
       js-yaml: 4.1.0
       jsonc-parser: 3.2.0
+      lines-and-columns: 2.0.3
       minimatch: 3.0.5
       npm-run-path: 4.0.1
       open: 8.4.0
@@ -17412,11 +16951,21 @@ packages:
       strong-log-transformer: 2.1.0
       tar-stream: 2.2.0
       tmp: 0.2.1
-      tsconfig-paths: 3.14.1
+      tsconfig-paths: 4.1.2
       tslib: 2.4.1
       v8-compile-cache: 2.3.0
       yargs: 17.6.2
       yargs-parser: 21.1.1
+    optionalDependencies:
+      '@nrwl/nx-darwin-arm64': 15.8.5
+      '@nrwl/nx-darwin-x64': 15.8.5
+      '@nrwl/nx-linux-arm-gnueabihf': 15.8.5
+      '@nrwl/nx-linux-arm64-gnu': 15.8.5
+      '@nrwl/nx-linux-arm64-musl': 15.8.5
+      '@nrwl/nx-linux-x64-gnu': 15.8.5
+      '@nrwl/nx-linux-x64-musl': 15.8.5
+      '@nrwl/nx-win32-arm64-msvc': 15.8.5
+      '@nrwl/nx-win32-x64-msvc': 15.8.5
     transitivePeerDependencies:
       - debug
     dev: false
@@ -17787,6 +17336,37 @@ packages:
       registry-auth-token: 4.2.2
       registry-url: 5.1.0
       semver: 6.3.0
+    dev: false
+
+  /pacote/13.6.1:
+    resolution: {integrity: sha512-L+2BI1ougAPsFjXRyBhcKmfT016NscRFLv6Pz5EiNf1CCFJFU0pSKKQwsZTyAQB+sTuUL4TyFyp6J1Ork3dOqw==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    hasBin: true
+    dependencies:
+      '@npmcli/git': 3.0.2
+      '@npmcli/installed-package-contents': 1.0.7
+      '@npmcli/promise-spawn': 3.0.0
+      '@npmcli/run-script': 4.2.1
+      cacache: 16.1.3
+      chownr: 2.0.0
+      fs-minipass: 2.1.0
+      infer-owner: 1.0.4
+      minipass: 3.3.6
+      mkdirp: 1.0.4
+      npm-package-arg: 9.1.2
+      npm-packlist: 5.1.3
+      npm-pick-manifest: 7.0.2
+      npm-registry-fetch: 13.3.1
+      proc-log: 2.0.1
+      promise-retry: 2.0.1
+      read-package-json: 5.0.2
+      read-package-json-fast: 2.0.3
+      rimraf: 3.0.2
+      ssri: 9.0.1
+      tar: 6.1.12
+    transitivePeerDependencies:
+      - bluebird
+      - supports-color
     dev: false
 
   /pacote/13.6.2:
@@ -19725,6 +19305,11 @@ packages:
     dependencies:
       pify: 2.3.0
 
+  /read-cmd-shim/3.0.0:
+    resolution: {integrity: sha512-KQDVjGqhZk92PPNRj9ZEXEuqg8bUobSKRw+q0YQ3TKI5xkce7bUJobL4Z/OtiEbAAv70yEpYIXp4iQ9L8oPVog==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dev: false
+
   /read-cmd-shim/3.0.1:
     resolution: {integrity: sha512-kEmDUoYf/CDy8yZbLTmhB1X9kkjf9Q80PCNsDMb7ufrGd6zZSQA1+UyjrO+pZm5K/S4OXCWJeiIt1JA8kAsa6g==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -19735,6 +19320,16 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       json-parse-even-better-errors: 2.3.1
+      npm-normalize-package-bin: 1.0.1
+    dev: false
+
+  /read-package-json/5.0.1:
+    resolution: {integrity: sha512-MALHuNgYWdGW3gKzuNMuYtcSSZbGQm94fAp16xt8VsYTLBjUSc55bLMKe6gzpWue0Tfi6CBgwCSdDAqutGDhMg==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    dependencies:
+      glob: 8.0.3
+      json-parse-even-better-errors: 2.3.1
+      normalize-package-data: 4.0.1
       npm-normalize-package-bin: 1.0.1
     dev: false
 
@@ -20873,13 +20468,6 @@ packages:
       is-plain-obj: 1.1.0
     dev: false
 
-  /sort-keys/4.2.0:
-    resolution: {integrity: sha512-aUYIEU/UviqPgc8mHR6IW1EGxkAXpeRETYcrzg8cLAvUPZcpAlleSXHV2mY7G12GphSH6Gzv+4MMVSSkbdteHg==}
-    engines: {node: '>=8'}
-    dependencies:
-      is-plain-obj: 2.1.0
-    dev: false
-
   /sorted-array-functions/1.3.0:
     resolution: {integrity: sha512-2sqgzeFlid6N4Z2fUQ1cvFmTOLRi/sEDzSQ0OKYchqgoPmQBVyM3959qYx3fpS6Esef80KjmpgPeEr028dP3OA==}
     dev: true
@@ -21479,6 +21067,18 @@ packages:
       inherits: 2.0.4
       readable-stream: 3.6.0
 
+  /tar/6.1.11:
+    resolution: {integrity: sha512-an/KZQzQUkZCkuoAA64hM92X0Urb6VpRhAFllDzz44U2mcD5scmT3zBc4VgVpkugF580+DQn8eAFSyoQt0tznA==}
+    engines: {node: '>= 10'}
+    dependencies:
+      chownr: 2.0.0
+      fs-minipass: 2.1.0
+      minipass: 3.3.6
+      minizlib: 2.1.2
+      mkdirp: 1.0.4
+      yallist: 4.0.0
+    dev: false
+
   /tar/6.1.12:
     resolution: {integrity: sha512-jU4TdemS31uABHd+Lt5WEYJuzn+TJTCBLljvIAHZOz6M9Os5pJ4dD+vRFLxPa/n3T0iEFzpi+0x1UfuDZYbRMw==}
     engines: {node: '>=10'}
@@ -21780,6 +21380,16 @@ packages:
       json5: 1.0.1
       minimist: 1.2.7
       strip-bom: 3.0.0
+    dev: true
+
+  /tsconfig-paths/4.1.2:
+    resolution: {integrity: sha512-uhxiMgnXQp1IR622dUXI+9Ehnws7i/y6xvpZB9IbUVOPy0muvdvgXeZOn88UcGPiT98Vp3rJPTa8bFoalZ3Qhw==}
+    engines: {node: '>=6'}
+    dependencies:
+      json5: 2.2.3
+      minimist: 1.2.7
+      strip-bom: 3.0.0
+    dev: false
 
   /tslib/1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
@@ -23098,6 +22708,14 @@ packages:
       typedarray-to-buffer: 3.1.5
     dev: false
 
+  /write-file-atomic/4.0.1:
+    resolution: {integrity: sha512-nSKUxgAbyioruk6hU87QzVbY279oYT6uiwgDoujth2ju4mJ+TZau7SQBhtbTmUyuNYTuXnSyRn66FV0+eCgcrQ==}
+    engines: {node: ^12.13.0 || ^14.15.0 || >=16}
+    dependencies:
+      imurmurhash: 0.1.4
+      signal-exit: 3.0.7
+    dev: false
+
   /write-file-atomic/4.0.2:
     resolution: {integrity: sha512-7KxauUdBmSdWnmpaGFg+ppNjKF8uNLry8LyzjauQDOVONfFLNKrKvQOxZ/VuTIcS/gge/YNahf5RIIQWTSarlg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -23115,18 +22733,6 @@ packages:
       pify: 4.0.1
       sort-keys: 2.0.0
       write-file-atomic: 2.4.3
-    dev: false
-
-  /write-json-file/4.3.0:
-    resolution: {integrity: sha512-PxiShnxf0IlnQuMYOPPhPkhExoCQuTUNPOa/2JWCYTmBquU9njyyDuwRKN26IZBlp4yn1nt+Agh2HOOBl+55HQ==}
-    engines: {node: '>=8.3'}
-    dependencies:
-      detect-indent: 6.1.0
-      graceful-fs: 4.2.10
-      is-plain-obj: 2.1.0
-      make-dir: 3.1.0
-      sort-keys: 4.2.0
-      write-file-atomic: 3.0.3
     dev: false
 
   /write-pkg/4.0.0:
