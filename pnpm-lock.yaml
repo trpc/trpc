@@ -31,7 +31,7 @@ importers:
       eslint-plugin-react: ^7.31.11
       eslint-plugin-react-hooks: ^4.6.0
       eslint-plugin-turbo: ^0.0.9
-      eslint-plugin-unicorn: 45.0.2
+      eslint-plugin-unicorn: 46.0.0
       express: ^4.17.1
       fast-glob: ^3.2.12
       hash-sum: ^2.0.0
@@ -64,7 +64,7 @@ importers:
       eslint-plugin-react: 7.31.11_eslint@8.30.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.30.0
       eslint-plugin-turbo: 0.0.9_eslint@8.30.0
-      eslint-plugin-unicorn: 45.0.2_eslint@8.30.0
+      eslint-plugin-unicorn: 46.0.0_eslint@8.30.0
       express: 4.18.2
       fast-glob: 3.2.12
       hash-sum: 2.0.0
@@ -13320,8 +13320,8 @@ packages:
       eslint: 8.30.0
     dev: false
 
-  /eslint-plugin-unicorn/45.0.2_eslint@8.30.0:
-    resolution: {integrity: sha512-Y0WUDXRyGDMcKLiwgL3zSMpHrXI00xmdyixEGIg90gHnj0PcHY4moNv3Ppje/kDivdAy5vUeUr7z211ImPv2gw==}
+  /eslint-plugin-unicorn/46.0.0_eslint@8.30.0:
+    resolution: {integrity: sha512-j07WkC+PFZwk8J33LYp6JMoHa1lXc1u6R45pbSAipjpfpb7KIGr17VE2D685zCxR5VL4cjrl65kTJflziQWMDA==}
     engines: {node: '>=14.18'}
     peerDependencies:
       eslint: '>=8.28.0'
