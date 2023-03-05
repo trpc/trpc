@@ -16,6 +16,12 @@ Some of these runtimes includes, but not limited to:
 - Deno Deploy
 - Vercel Edge Runtime (& Next.js Edge Runtime)
 
+This also makes it easy to integrate into frameworks that uses the web platform APIs to represent requests and responses, such as:
+
+- Astro (SSR mode)
+- Remix
+- SolidStart
+
 ## Example apps
 
 <table>
@@ -196,6 +202,24 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 ## Runtimes-specific setup
 
+### Astro
+
+```ts title='src/pages/trpc/[trpc].ts'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { APIRoute } from 'astro';
+import { createContext } from '../../server/context';
+import { appRouter } from '../../server/router';
+
+export const all: APIRoute = ({ params, request }) => {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: request,
+    router: appRouter,
+    createContext,
+  });
+};
+```
+
 ### Cloudflare Worker
 
 #### Install dependencies
@@ -316,6 +340,48 @@ Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will
 ### Next.js Edge Runtime
 
 See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime).
+
+### Remix
+
+```ts title='app/routes/trpc/$trpc.ts'
+import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from '~/server/context';
+import { appRouter } from '~/server/router';
+
+export const loader = async (args: LoaderArgs) => {
+  return handleRequest(args);
+};
+export const action = async (args: ActionArgs) => {
+  return handleRequest(args);
+};
+function handleRequest(args: LoaderArgs | ActionArgs) {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: args.request,
+    router: appRouter,
+    createContext,
+  });
+}
+```
+
+### SolidStart
+
+```ts title='src/routes/api/trpc/[trpc].ts'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { APIEvent } from 'solid-start';
+import { createContext } from '../../server/context';
+import { appRouter } from '../../server/router';
+
+const handler = (event: APIEvent) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req: event.request,
+    router: appRouter,
+    createContext,
+  });
+export { handler as GET, handler as POST };
+```
 
 ### Vercel Edge Runtime
 
