@@ -59,11 +59,6 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
-    },
-    "./links/ssrLink": {
-      "import": "./dist/links/ssrLink.mjs",
-      "require": "./dist/links/ssrLink.js",
-      "default": "./dist/links/ssrLink.js"
     }
   },
   "files": [
