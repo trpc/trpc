@@ -18,75 +18,87 @@ export async function nodeHTTPRequestHandler<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const createContext = async function _createContext(): Promise<
-    inferRouterContext<TRouter>
-  > {
-    return await opts.createContext?.(opts);
-  };
-  const { path, router } = opts;
+  const handleViaMiddleware =
+    opts.middleware ??
+    ((_req, _res, next) => {
+      return next();
+    });
 
-  const query = opts.req.query
-    ? new URLSearchParams(opts.req.query as any)
-    : new URLSearchParams(opts.req.url!.split('?')[1]);
-
-  const jsonContentTypeHandler =
-    defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
-      TRequest,
-      TResponse
-    >;
-
-  const contentTypeHandlers = opts.unstable_contentTypeHandlers ?? [
-    jsonContentTypeHandler,
-  ];
-
-  const contentTypeHandler =
-    contentTypeHandlers.find((handler) =>
-      handler.isMatch({
-        ...opts,
-        query,
-      }),
-    ) ??
-    // fallback to json
-    jsonContentTypeHandler;
-
-  const bodyResult = await contentTypeHandler.getBody({
-    ...opts,
-    query,
-  });
-
-  const req: HTTPRequest = {
-    method: opts.req.method!,
-    headers: opts.req.headers,
-    query,
-    body: bodyResult.ok ? bodyResult.data : undefined,
-  };
-
-  const result = await resolveHTTPResponse({
-    batching: opts.batching,
-    responseMeta: opts.responseMeta,
-    path,
-    createContext,
-    router,
-    req,
-    error: bodyResult.ok ? null : bodyResult.error,
-    onError(o) {
-      opts?.onError?.({
-        ...o,
-        req: opts.req,
-      });
-    },
-    contentTypeHandler,
-  });
-
-  const { res } = opts;
-  if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
-    res.statusCode = result.status;
-  }
-  for (const [key, value] of Object.entries(result.headers ?? {})) {
-    if (typeof value === 'undefined') {
-      continue;
+  return handleViaMiddleware(opts.req, opts.res, async (err) => {
+    if (err) {
+      throw err;
     }
-    res.setHeader(key, value);
-  }
-  res.end(result.body);
+
+    const createContext = async function _createContext(): Promise<
+      inferRouterContext<TRouter>
+    > {
+      return await opts.createContext?.(opts);
+    };
+    const { path, router } = opts;
+
+    const query = opts.req.query
+      ? new URLSearchParams(opts.req.query as any)
+      : new URLSearchParams(opts.req.url!.split('?')[1]);
+
+    const jsonContentTypeHandler =
+      defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
+        TRequest,
+        TResponse
+      >;
+
+    const contentTypeHandlers = opts.unstable_contentTypeHandlers ?? [
+      jsonContentTypeHandler,
+    ];
+
+    const contentTypeHandler =
+      contentTypeHandlers.find((handler) =>
+        handler.isMatch({
+          ...opts,
+          query,
+        }),
+      ) ??
+      // fallback to json
+      jsonContentTypeHandler;
+
+    const bodyResult = await contentTypeHandler.getBody({
+      ...opts,
+      query,
+    });
+
+    const req: HTTPRequest = {
+      method: opts.req.method!,
+      headers: opts.req.headers,
+      query,
+      body: bodyResult.ok ? bodyResult.data : undefined,
+    };
+
+    const result = await resolveHTTPResponse({
+      batching: opts.batching,
+      responseMeta: opts.responseMeta,
+      path,
+      createContext,
+      router,
+      req,
+      error: bodyResult.ok ? null : bodyResult.error,
+      onError(o) {
+        opts?.onError?.({
+          ...o,
+          req: opts.req,
+        });
+      },
+      contentTypeHandler,
+    });
+
+    const { res } = opts;
+    if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
+      res.statusCode = result.status;
+    }
+    for (const [key, value] of Object.entries(result.headers ?? {})) {
+      if (typeof value === 'undefined') {
+        continue;
+      }
+      res.setHeader(key, value);
+    }
+    res.end(result.body);
+  });
 }
