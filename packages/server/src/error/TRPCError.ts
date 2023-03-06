@@ -6,10 +6,9 @@ import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   const error = getErrorFromUnknown(cause);
-  // this should ideally be an `instanceof TRPCError` but for some reason that isn't working
-  // ref https://github.com/trpc/trpc/issues/331
-  if (error.name === 'TRPCError') {
-    return cause as TRPCError;
+
+  if (error instanceof TRPCError) {
+    return error;
   }
 
   const trpcError = new TRPCError({
@@ -25,7 +24,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
 }
 
 export class TRPCError extends Error {
-  public readonly cause?;
+  public readonly cause?: Error;
   public readonly code;
 
   constructor(opts: {
@@ -33,20 +32,16 @@ export class TRPCError extends Error {
     code: TRPC_ERROR_CODE_KEY;
     cause?: unknown;
   }) {
-    const code = opts.code;
     const message =
-      opts.message ?? getMessageFromUnknownError(opts.cause, code);
-    const cause: Error | undefined =
+      opts.message ?? getMessageFromUnknownError(opts.cause, opts.code);
+    const cause =
       opts.cause !== undefined ? getErrorFromUnknown(opts.cause) : undefined;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
     super(message, { cause });
 
-    this.code = code;
-    this.cause = cause;
-    this.name = 'TRPCError';
-
-    Object.setPrototypeOf(this, new.target.prototype);
+    this.code = opts.code;
+    this.name = this.constructor.name;
   }
 }
