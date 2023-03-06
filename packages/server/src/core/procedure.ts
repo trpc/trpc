@@ -22,7 +22,7 @@ export interface ProcedureOptions {
 /**
  * @internal
  */
-type AnyProcedureParams = {
+export type AnyProcedureParams = {
   _config: AnyRootConfig;
   _meta: unknown;
   _ctx_out: unknown;
