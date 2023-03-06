@@ -35,7 +35,7 @@ describe('router', () => {
     ).toThrow('Duplicate key: foo..bar');
   });
 
-  test('nestedRouter', async () => {
+  test('nested sub-router should be accessible', async () => {
     const router = t.router({
       foo: {
         bar: t.procedure.query(() => 'Hello I am recursive'),
@@ -43,6 +43,47 @@ describe('router', () => {
     });
 
     const caller = router.createCaller({});
-    expect(() => caller.foo.bar());
+    const result = await caller.foo.bar();
+    expect(result).toBe('Hello I am recursive');
+  });
+
+  test('multiple nested levels of subrouter should be accessible', async () => {
+    const router = t.router({
+      foo: {
+        bar: {
+          foo: {
+            bar: {
+              foo: {
+                bar: t.procedure.query(() => 'Hello I am recursive'),
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const caller = router.createCaller({});
+    const result = await caller.foo.bar.foo.bar.foo.bar();
+    expect(result).toBe('Hello I am recursive');
+  });
+
+  test('multiple nested levels of subrouter with different constructors should be accessible', async () => {
+    const router = t.router({
+      foo: {
+        bar: t.router({
+          foo: {
+            bar: {
+              foo: t.router({
+                bar: t.procedure.query(() => 'Hello I am recursive'),
+              }),
+            },
+          },
+        }),
+      },
+    });
+
+    const caller = router.createCaller({});
+    const result = await caller.foo.bar.foo.bar.foo.bar();
+    expect(result).toBe('Hello I am recursive');
   });
 });
