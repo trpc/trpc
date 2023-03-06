@@ -112,7 +112,7 @@ export const trpc = createTRPCNext<AppRouter>({
     return {
       transformer: superjson,
       links: [httpBatchLink({ url: `${getBaseUrl()}/api/trpc` })],
-      // Change options globally 
+      // Change options globally
       queryClientConfig: {
         defaultOptions: {
           queries: {
@@ -127,8 +127,11 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-Or do it on a per query basis: 
+Or do it on a per query basis:
 
 ```ts
-const data = trpc.myQuery.useQuery({}, { refetchOnMount: false, refetchOnWindowFocus: false })
+const data = trpc.myQuery.useQuery(
+  {},
+  { refetchOnMount: false, refetchOnWindowFocus: false },
+);
 ```
