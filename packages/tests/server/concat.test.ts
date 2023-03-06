@@ -81,7 +81,6 @@ test('decorate independently', async () => {
 
   expectTypeOf(result).toEqualTypeOf<{
     user: User | null;
-
     foo: 'bar';
   }>();
 });
