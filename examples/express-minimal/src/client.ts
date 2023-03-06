@@ -17,4 +17,4 @@ async function main() {
   console.log(withInputQuery);
 }
 
-main();
+void main();

@@ -71,4 +71,4 @@ async function main() {
   console.log('👌 should be a clean exit if everything is working right');
 }
 
-main();
+void main();
