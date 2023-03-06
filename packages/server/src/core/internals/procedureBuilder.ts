@@ -331,7 +331,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           meta: _def.meta,
           input: callOpts.input,
           next: async (nextOpts?: {
-            ctx?: { [key: string]: unknown };
+            ctx?: Record<string, unknown>;
             input?: unknown;
           }) => {
             return await callRecursive({
