@@ -82,7 +82,8 @@
       "@examples/trpc-next-prisma-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter",
       "@examples/next-websockets-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter",
       "@examples/trpc-next-prisma-todomvc>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc",
-      "@examples/legacy-next-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Flegacy-next-starter"
+      "@examples/legacy-next-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Flegacy-next-starter",
+      "@types/testing-library__jest-dom": "link:./packages/tests/vendor/@types/testing-library__jest-dom"
     }
   }
 }
