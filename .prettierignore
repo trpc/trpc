@@ -3,6 +3,7 @@ __generated__/
 .test/
 **/.next/
 **/www/build/
+**/www/typedoc/
 dist/
 examples/next-big-router/src/server/routers/*.ts
 packages/server/test/__packages.ts
