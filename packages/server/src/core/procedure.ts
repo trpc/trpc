@@ -35,14 +35,12 @@ type AnyProcedureParams = {
 /**
  * @internal
  */
-export type ProcedureParams<
-  TParams extends AnyProcedureParams = AnyProcedureParams,
-> = TParams;
+export type ProcedureParams<TParams extends AnyProcedureParams> = TParams;
 
 /**
  * @internal
  */
-export type ProcedureArgs<TParams extends ProcedureParams> =
+export type ProcedureArgs<TParams extends ProcedureParams<AnyProcedureParams>> =
   TParams['_input_in'] extends UnsetMarker
     ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
@@ -55,7 +53,7 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  */
 export interface Procedure<
   TType extends ProcedureType,
-  TParams extends ProcedureParams,
+  TParams extends ProcedureParams<AnyProcedureParams>,
 > {
   _type: TType;
   _def: TParams & ProcedureBuilderDef<TParams>;
