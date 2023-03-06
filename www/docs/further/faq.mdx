@@ -36,6 +36,7 @@ Here are some things to check:
 - Make sure you have the same version of all `@trpc/*` across all your project
 - Make sure you have `"strict": true` in all your `tsconfig.json`s
 - Make sure you have no type errors in your app
+- Make sure you have `"paths": [...]` in your client `tsconfig.json` like your server `tsconfig.json`,so that the client can find the same file
 
 You can also have a look at our [Awesome tRPC](awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
 
