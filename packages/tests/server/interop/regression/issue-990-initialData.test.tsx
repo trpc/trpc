@@ -1,7 +1,6 @@
 import { createQueryClient } from '../../__queryClient';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
 import { QueryClientProvider } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import * as trpcReact from '@trpc/react-query/src';
 import * as trpcServer from '@trpc/server/src';
