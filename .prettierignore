@@ -9,5 +9,6 @@ examples/next-big-router/src/server/routers/*.ts
 examples/next-app-router/.vscode
 packages/server/test/__packages.ts
 packages/tests/server/___packages.ts
+packages/tests/vendor/
 packages/coverage/
 pnpm-lock.yaml
