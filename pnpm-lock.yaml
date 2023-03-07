@@ -4,6 +4,7 @@ overrides:
   '@tanstack/react-query': 4.6.0
   '@trpc/client': link:./packages/client
   '@trpc/next': link:./packages/next
+  '@trpc/next-app-router': link:./packages/next-app-router
   '@trpc/react-query': link:./packages/react-query
   '@trpc/server': link:./packages/server
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
@@ -505,9 +506,9 @@ importers:
 
   examples/next-app-router:
     specifiers:
-      '@trpc/client': ^10.14.0
-      '@trpc/next-app-router': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': link:../../packages/client
+      '@trpc/next-app-router': link:../../packages/next-app-router
+      '@trpc/server': link:../../packages/server
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/react-dom': ^18.0.5
@@ -975,9 +976,9 @@ importers:
   packages/next-app-router:
     specifiers:
       '@tanstack/react-query': 4.6.0
-      '@trpc/client': ^10.14.0
-      '@trpc/react-query': ^10.14.0
-      '@trpc/server': ^10.14.0
+      '@trpc/client': link:../client
+      '@trpc/react-query': link:../react-query
+      '@trpc/server': link:../server
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       eslint: ^8.30.0
