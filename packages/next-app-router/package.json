@@ -34,13 +34,25 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./react-server": {
+      "import": "./dist/react-server/index.mjs",
+      "require": "./dist/react-server/index.js",
+      "default": "./dist/react-server/index.js"
+    },
+    "./client": {
+      "import": "./dist/client/index.mjs",
+      "require": "./dist/client/index.js",
+      "default": "./dist/client/index.js"
     }
   },
   "files": [
     "dist",
     "src",
     "README.md",
-    "package.json"
+    "package.json",
+    "react-server",
+    "client"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.3.8",

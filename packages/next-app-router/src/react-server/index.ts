@@ -10,7 +10,7 @@ type CreateTRPCNextAppRouterReactServerOptions<TRouter extends AnyRouter> = {
   getClient: () => TRPCUntypedClient<TRouter>;
 };
 
-export function createTRPCNextAppRouter<TRouter extends AnyRouter>(
+export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
   opts: CreateTRPCNextAppRouterReactServerOptions<TRouter>,
 ) {
   return createRecursiveProxy(({ path, args }) => {

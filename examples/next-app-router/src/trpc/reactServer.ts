@@ -1,11 +1,11 @@
 import { createTRPCUntypedClient, httpBatchLink } from '@trpc/client';
-import { createTRPCNextAppRouter } from '@trpc/next-app-router';
+import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-server';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { AppRouter } from '~/server/router';
 import { getUrl } from './shared';
 
-export const api = createTRPCNextAppRouter<AppRouter>({
+export const api = createTRPCNextAppRouterReactServer<AppRouter>({
   getClient: cache(() =>
     createTRPCUntypedClient({
       links: [

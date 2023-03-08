@@ -10,7 +10,7 @@ export const appRouter = t.router({
         text: z.string(),
       }),
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
       return `hello ${input.text}`;
     }),
 });

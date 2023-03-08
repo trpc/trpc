@@ -1,11 +1,16 @@
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNextAppRouterClient } from '@trpc/next-app-router/client';
 import { AppRouter } from '~/server/router';
 import { getUrl } from './shared';
 
-export const api = createTRPCProxyClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: getUrl(),
-    }),
-  ],
+export const api = createTRPCNextAppRouterClient<AppRouter>({
+  config() {
+    return {
+      links: [
+        httpBatchLink({
+          url: getUrl(),
+        }),
+      ],
+    };
+  },
 });
