@@ -5,7 +5,6 @@ import {
   dehydrate,
   useQueryClient,
 } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
 

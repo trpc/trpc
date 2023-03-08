@@ -96,3 +96,42 @@ While it's rare that you wouldn't want to forward the client's headers to the se
 ### Q: Why do I need to delete the `connection` header when using SSR on Node 18?
 
 If you don't remove the `connection` header, the data fetching will fail with `TRPCClientError: fetch failed` because `connection` is a [forbidden header name](https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name).
+
+### Q: Why do I still see network requests being made in the Network tab?
+
+Since we rely on `@tanstack/react-query`, there are some [options](https://tanstack.com/query/v4/docs/react/reference/useQuery) from the library which default to `true` that make client-side requests:
+
+- `refetchOnMount`
+- `refetchOnWindowFocus`
+
+If you want to avoid any client-side request, you can either change the behavior for all queries on the `queryClientConfig`
+
+```ts title='utils/trpc.ts'
+export const trpc = createTRPCNext<AppRouter>({
+  config({ ctx }) {
+    return {
+      transformer: superjson,
+      links: [httpBatchLink({ url: `${getBaseUrl()}/api/trpc` })],
+      // Change options globally
+      queryClientConfig: {
+        defaultOptions: {
+          queries: {
+            refetchOnMount: false,
+            refetchOnWindowFocus: false,
+          },
+        },
+      },
+    };
+  },
+  //... rest of options
+});
+```
+
+Or do it on a per query basis:
+
+```ts
+const data = trpc.myQuery.useQuery(
+  {},
+  { refetchOnMount: false, refetchOnWindowFocus: false },
+);
+```
