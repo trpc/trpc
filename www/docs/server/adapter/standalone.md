@@ -19,7 +19,7 @@ slug: /standalone
       <td>Standalone tRPC Server</td>
       <td>
         <ul>
-          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal">Stackblitz</a></li>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal/server/index.ts">Source</a></li>
         </ul>
       </td>
@@ -28,7 +28,7 @@ slug: /standalone
       <td>Standalone tRPC Server with CORS handling</td>
       <td>
         <ul>
-          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal-react">Stackblitz</a></li>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal-react">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal-react/server/index.ts">Source</a></li>
         </ul>
       </td>
