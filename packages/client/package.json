@@ -59,11 +59,6 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
-    },
-    "./links/dedupeLink": {
-      "import": "./dist/links/dedupeLink.mjs",
-      "require": "./dist/links/dedupeLink.js",
-      "default": "./dist/links/dedupeLink.js"
     }
   },
   "files": [

@@ -8,7 +8,6 @@ export const input = [
   'src/links/splitLink.ts',
   'src/links/loggerLink.ts',
   'src/links/wsLink.ts',
-  'src/links/dedupeLink.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
