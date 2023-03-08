@@ -1,4 +1,5 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import 'isomorphic-fetch';
 import type { AppRouter } from '../server';
 
 const client = createTRPCProxyClient<AppRouter>({
