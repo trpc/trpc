@@ -29,7 +29,6 @@ const t = initTRPC.create();
 
 export const appRouter = t.router({
   onAdd: t.procedure.subscription(() => {
-    // `resolve()` is triggered for each client when they start subscribing `onAdd`
 
     // return an `observable` with a callback which is triggered immediately
     return observable<Post>((emit) => {
