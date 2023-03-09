@@ -4,8 +4,6 @@ import type {
 } from '@clerk/nextjs/dist/api';
 import { getAuth } from '@clerk/nextjs/server';
 import { TRPCError, initTRPC } from '@trpc/server';
-import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { NextRequest } from 'next/server';
 import superjson from 'superjson';
 import { z } from 'zod';
