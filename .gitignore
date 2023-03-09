@@ -4,6 +4,8 @@ dist
 .next
 .turbo
 .vercel
+next-env.d.ts
+examples/**/.vscode
 
 node_modules
 package-lock.json
