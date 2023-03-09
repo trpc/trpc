@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import Image from 'next/image';
-import { ProductRating } from '~/app/components/product-rating';
+import { ProductRating } from '~/components/product-rating';
 import type { Product } from '~/server/types';
 import { Pricing } from './pricing';
 

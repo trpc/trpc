@@ -6,7 +6,7 @@ import { ProductEstimatedArrival } from './product-estimated-arrival';
 import { ProductLowStockWarning } from './product-low-stock-warning';
 import { ProductPrice } from './product-price';
 import { ProductRating } from './product-rating';
-import { ProductUsedPrice } from './product-used-price';
+import { ProductSplitPayments } from './product-split-payments';
 
 export const ProductCard = ({
   product,
@@ -15,7 +15,7 @@ export const ProductCard = ({
   product: Product;
   href: string;
 }) => {
-  const price = dinero(product.price as DineroSnapshot<number>);
+  const price = dinero(product.price);
 
   return (
     <Link href={href} className="group block">
@@ -47,11 +47,7 @@ export const ProductCard = ({
 
         <ProductPrice price={price} discount={product.discount} />
 
-        {/* <ProductSplitPayments price={price} /> */}
-
-        {product.usedPrice ? (
-          <ProductUsedPrice usedPrice={product.usedPrice} />
-        ) : null}
+        <ProductSplitPayments price={price} />
 
         <ProductEstimatedArrival leadTime={product.leadTime} />
 

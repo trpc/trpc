@@ -1,4 +1,4 @@
-import { ProductCard } from '~/app/components/product-card';
+import { ProductCard } from '~/components/product-card';
 import { Product } from '~/server/types';
 
 export async function RecommendedProducts({

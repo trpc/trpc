@@ -1,4 +1,4 @@
-import { ProductReviewCard } from '~/app/components/product-review-card';
+import { ProductReviewCard } from '~/components/product-review-card';
 import type { Review } from '~/server/types';
 
 export async function Reviews({ data }: { data: Promise<Review[]> }) {

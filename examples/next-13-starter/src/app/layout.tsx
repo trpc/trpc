@@ -1,4 +1,4 @@
-import { AddressBar } from '~/app/components/address-bar';
+import { AddressBar } from '~/components/address-bar';
 import './styles.css';
 
 export const metadata = {

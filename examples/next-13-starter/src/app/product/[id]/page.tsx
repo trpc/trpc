@@ -1,12 +1,11 @@
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
-import { Ping } from '~/app/components/ping';
 import {
   RecommendedProducts,
   RecommendedProductsSkeleton,
-} from '../recommended';
-import { Reviews, ReviewsSkeleton } from '../reviews';
-import { SingleProduct } from '../single-product';
+} from './recommended';
+import { Reviews, ReviewsSkeleton } from './reviews';
+import { SingleProduct } from './single-product';
 
 export const runtime = 'edge';
 
@@ -19,7 +18,7 @@ export default async function Page({ params }: { params: { id: string } }) {
       <Suspense fallback={<RecommendedProductsSkeleton />}>
         {/* @ts-expect-error Async Server Component */}
         <RecommendedProducts
-          path="/streaming/product"
+          path="/product"
           data={api.products.list.query(
             { filter: params.id, delay: 500 },
             { context: { skipBatch: true } },

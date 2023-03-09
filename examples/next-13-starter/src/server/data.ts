@@ -1,4 +1,11 @@
+import { Currency, dinero, toSnapshot } from 'dinero.js';
 import { Product, Review } from './types';
+
+const USD: Currency<number> = {
+  code: 'USD',
+  base: 10,
+  exponent: 2,
+};
 
 export const reviews: Review[] = [
   {
@@ -29,11 +36,7 @@ export const products: Product[] = [
     name: 'Donec sit elit',
     description:
       'Morbi eu ullamcorper urna, a condimentum massa. In fermentum ante non turpis cursus fringilla. Praesent neque eros, gravida vel ante sed, vehicula elementum orci. Sed eu ipsum eget enim mattis mollis.',
-    price: {
-      amount: 4200,
-      currency: { code: 'USD', base: 10, exponent: 2 },
-      scale: 2,
-    },
+    price: toSnapshot(dinero({ amount: 4200, currency: USD })),
     isBestSeller: false,
     leadTime: 2,
     discount: { percent: 90, expires: 2 },
@@ -48,11 +51,7 @@ export const products: Product[] = [
     name: 'Fusce commodo porta posuere',
     description:
       'Morbi eu ullamcorper urna, a condimentum massa. In fermentum ante non turpis cursus fringilla. Praesent neque eros, gravida vel ante sed, vehicula elementum orci. Sed eu ipsum eget enim mattis mollis.',
-    price: {
-      amount: 4600,
-      currency: { code: 'USD', base: 10, exponent: 2 },
-      scale: 2,
-    },
+    price: toSnapshot(dinero({ amount: 4600, currency: USD })),
     isBestSeller: false,
     leadTime: 1,
     image: 'patrick-OIFgeLnjwrM-unsplash.jpg',
@@ -66,11 +65,7 @@ export const products: Product[] = [
     name: 'Praesent tincidunt lectus',
     description:
       'Morbi eu ullamcorper urna, a condimentum massa. In fermentum ante non turpis cursus fringilla. Praesent neque eros, gravida vel ante sed, vehicula elementum orci. Sed eu ipsum eget enim mattis mollis.',
-    price: {
-      amount: 29200,
-      currency: { code: 'USD', base: 10, exponent: 2 },
-      scale: 2,
-    },
+    price: toSnapshot(dinero({ amount: 29200, currency: USD })),
     discount: { percent: 70, expires: 7 },
     isBestSeller: true,
     leadTime: 2,
@@ -85,11 +80,7 @@ export const products: Product[] = [
     name: 'Morbi at viverra turpis',
     description:
       'Morbi eu ullamcorper urna, a condimentum massa. In fermentum ante non turpis cursus fringilla. Praesent neque eros, gravida vel ante sed, vehicula elementum orci. Sed eu ipsum eget enim mattis mollis.',
-    price: {
-      amount: 21200,
-      currency: { code: 'USD', base: 10, exponent: 2 },
-      scale: 2,
-    },
+    price: toSnapshot(dinero({ amount: 21200, currency: USD })),
     isBestSeller: false,
     leadTime: 2,
     image: 'alexander-andrews-brAkTCdnhW8-unsplash.jpg',
@@ -103,11 +94,7 @@ export const products: Product[] = [
     name: 'Maecenas interdum',
     description:
       'Morbi eu ullamcorper urna, a condimentum massa. In fermentum ante non turpis cursus fringilla. Praesent neque eros, gravida vel ante sed, vehicula elementum orci. Sed eu ipsum eget enim mattis mollis.',
-    price: {
-      amount: 28700,
-      currency: { code: 'USD', base: 10, exponent: 2 },
-      scale: 2,
-    },
+    price: toSnapshot(dinero({ amount: 21200, currency: USD })),
     isBestSeller: false,
     leadTime: 4,
     image: 'guillaume-coupy-6HuoHgK7FN8-unsplash.jpg',

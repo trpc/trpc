@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { products, reviews } from './data';
@@ -37,7 +37,9 @@ export const appRouter = t.router({
     byId: demoProcedure
       .input(z.object({ id: z.string() }))
       .query(async ({ input }) => {
-        return products.find((p) => p.id === input.id);
+        const product = products.find((p) => p.id === input.id);
+        if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
+        return product;
       }),
   }),
 

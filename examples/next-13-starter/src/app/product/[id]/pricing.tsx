@@ -1,11 +1,10 @@
 import { type DineroSnapshot, dinero } from 'dinero.js';
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
-import { ProductEstimatedArrival } from '~/app/components/product-estimated-arrival';
-import { ProductLowStockWarning } from '~/app/components/product-low-stock-warning';
-import { ProductPrice } from '~/app/components/product-price';
-import { ProductSplitPayments } from '~/app/components/product-split-payments';
-import { ProductUsedPrice } from '~/app/components/product-used-price';
+import { ProductEstimatedArrival } from '~/components/product-estimated-arrival';
+import { ProductLowStockWarning } from '~/components/product-low-stock-warning';
+import { ProductPrice } from '~/components/product-price';
+import { ProductSplitPayments } from '~/components/product-split-payments';
 import type { Product } from '~/server/types';
 import { AddToCart } from './add-to-cart';
 
@@ -29,14 +28,10 @@ function LoadingDots() {
 
 async function UserSpecificDetails({ productId }: { productId: string }) {
   const product = await api.products.byId.query({ id: productId, delay: 500 });
-  const price = dinero(product.price as DineroSnapshot<number>);
-
+  const price = dinero(product.price);
   return (
     <>
       <ProductSplitPayments price={price} />
-      {product.usedPrice ? (
-        <ProductUsedPrice usedPrice={product.usedPrice} />
-      ) : null}
       <ProductEstimatedArrival leadTime={product.leadTime} hasDeliveryTime />
       {product.stock <= 1 ? (
         <ProductLowStockWarning stock={product.stock} />
@@ -52,8 +47,7 @@ export function Pricing({
   product: Product;
   cartCount: string;
 }) {
-  const price = dinero(product.price as DineroSnapshot<number>);
-
+  const price = dinero(product.price);
   return (
     <div className="space-y-4 rounded-lg bg-gray-900 p-3">
       <ProductPrice price={price} discount={product.discount} />

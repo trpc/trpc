@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import React from 'react';
-import { Boundary } from '~/app/components/boundary';
-import { CartCountProvider } from './product/cart-count-context';
-import { Header } from './product/header';
+import { Boundary } from '~/components/boundary';
+import { CartCountProvider } from './cart-count-context';
+import { Header } from './header';
 
 export const metadata = {
   title: 'Streaming (Edge Runtime)',
