@@ -42,15 +42,12 @@ export function AddToCart({ initialCartCount }: { initialCartCount: number }) {
       disabled={isPending}
     >
       Add to Cart
-      {isPending ? (
+      {isPending && (
         <div className="absolute right-2 top-1.5" role="status">
-          <div
-            className="
-          h-4 w-4 animate-spin rounded-full border-[3px] border-white border-r-transparent"
-          />
+          <div className="h-4 w-4 animate-spin rounded-full border-[3px] border-white border-r-transparent" />
           <span className="sr-only">Loading...</span>
         </div>
-      ) : null}
+      )}
     </button>
   );
 }

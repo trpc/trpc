@@ -1,17 +1,14 @@
-// import { NextLogo } from '#/ui/next-logo';
-import { Search, ShoppingCart } from 'lucide-react';
+import { type User as ClerkUser } from '@clerk/nextjs/dist/api';
+import { Search, ShoppingCart, User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { SignIn } from '~/app/auth-actions';
 import { CartCount } from './cart-count';
 
-export function Header() {
+export async function Header({ user }: { user: ClerkUser }) {
   return (
     <div className="flex items-center justify-between gap-x-3 rounded-lg bg-gray-800 px-3 py-3 lg:px-5 lg:py-4">
       <div className="flex gap-x-3">
-        {/*<Link href="/streaming">
-          <div className="h-10 w-10 hover:opacity-70"><NextLogo /></div>
-        </Link>*/}
-
         <div className="relative flex-1">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <Search className="h-5 w-5 text-gray-300" />
@@ -35,13 +32,27 @@ export function Header() {
           </div>
         </div>
 
-        <Image
-          src="/prince-akachi-LWkFHEGpleE-unsplash.jpg"
-          className="rounded-full"
-          width={40}
-          height={40}
-          alt="User"
-        />
+        {user ? (
+          <Link href="/auth/signout">
+            <Image
+              src={user.profileImageUrl}
+              className="rounded-full"
+              width={40}
+              height={40}
+              alt="User"
+            />
+          </Link>
+        ) : (
+          <SignIn>
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-600 text-white">
+              <User
+                className="w-6 text-white"
+                aria-label="User"
+                aria-hidden="true"
+              />
+            </div>
+          </SignIn>
+        )}
       </div>
     </div>
   );

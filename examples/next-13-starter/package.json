@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^4.11.5",
+    "@prisma/client": "^4.10.1",
     "@tailwindcss/forms": "^0.5.3",
     "@tailwindcss/typography": "^0.5.9",
     "@trpc/client": "^10.14.0",
@@ -21,7 +23,7 @@
     "date-fns": "^2.29.3",
     "dinero.js": "2.0.0-alpha.8",
     "lucide-react": "^0.124.0",
-    "next": "^13.2.4-canary.8",
+    "next": "^13.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "superjson": "^1.7.4",
@@ -32,6 +34,8 @@
   "devDependencies": {
     "autoprefixer": "^10.4.7",
     "postcss": "^8.4.14",
-    "tailwindcss": "^3.1.6"
+    "prisma": "^4.10.1",
+    "tailwindcss": "^3.1.6",
+    "tsx": "^3.12.3"
   }
 }

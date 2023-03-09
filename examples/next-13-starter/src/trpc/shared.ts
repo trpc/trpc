@@ -1,4 +1,5 @@
-import { inferRouterOutputs } from '@trpc/server';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '~/server/api/router';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
@@ -9,3 +10,5 @@ function getBaseUrl() {
 export function getUrl() {
   return getBaseUrl() + '/api/trpc';
 }
+
+export type RouterOutputs = inferRouterOutputs<AppRouter>;

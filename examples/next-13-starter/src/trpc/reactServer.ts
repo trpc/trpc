@@ -8,7 +8,7 @@ import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import superjson from 'superjson';
-import { AppRouter } from '~/server/router';
+import { AppRouter } from '~/server/api/router';
 import { getUrl } from './shared';
 
 export const api = createTRPCNextAppRouterReactServer<AppRouter>({

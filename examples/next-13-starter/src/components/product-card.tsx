@@ -34,8 +34,6 @@ export const ProductCard = ({
             height={400}
             className="rounded-xl grayscale group-hover:opacity-80"
             alt={product.name}
-            placeholder="blur"
-            blurDataURL={product.imageBlur}
           />
         </div>
 

@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id           String    @id @default(cuid())
+  stock        Int
+  rating       Int
+  name         String
+  description  String
+  price        Int
+  isBestSeller Boolean
+  leadTime     Int
+  image        String
+  discount     Discount? @relation(fields: [discountId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  discountId   String?
+  review       Review[]
+}
+
+model Discount {
+  id        String    @id @default(cuid())
+  percent   Int
+  expiresAt Int
+  Product   Product[]
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+model User {
+  id      String   @id
+  name    String?
+  image   String?
+  reviews Review[]
+}

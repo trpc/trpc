@@ -1,3 +1,4 @@
+import { auth, currentUser } from '@clerk/nextjs/app-beta';
 import { cookies } from 'next/headers';
 import React from 'react';
 import { Boundary } from '~/components/boundary';
@@ -8,8 +9,13 @@ export const metadata = {
   title: 'Streaming (Edge Runtime)',
 };
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const cartCount = Number(cookies().get('_cart_count')?.value || '0');
+  const user = await currentUser();
 
   return (
     <>
@@ -31,7 +37,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <Boundary animateRerendering={false} labels={['Demo']} size="small">
         <CartCountProvider initialCartCount={cartCount}>
           <div className="space-y-10">
-            <Header />
+            {/** @ts-expect-error Async Server Component */}
+            <Header user={user} />
 
             {children}
           </div>

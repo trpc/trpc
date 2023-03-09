@@ -1,12 +1,18 @@
 import { ProductReviewCard } from '~/components/product-review-card';
-import type { Review } from '~/server/types';
+import { RouterOutputs } from '~/trpc/shared';
+import { ReviewForm } from './review-form';
 
-export async function Reviews({ data }: { data: Promise<Review[]> }) {
+export async function Reviews({
+  data,
+}: {
+  data: Promise<RouterOutputs['reviews']['list']>;
+}) {
   const reviews = await data;
 
   return (
     <div className="space-y-6">
       <div className="text-lg font-medium text-white">Customer Reviews</div>
+      <ReviewForm />
       <div className="space-y-8">
         {reviews.map((review) => {
           return <ProductReviewCard key={review.id} review={review} />;
