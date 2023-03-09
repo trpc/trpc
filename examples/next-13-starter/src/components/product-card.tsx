@@ -1,12 +1,14 @@
 import { type DineroSnapshot, dinero } from 'dinero.js';
 import Image from 'next/image';
 import Link from 'next/link';
-import { type Product } from '~/server/types';
+import { RouterOutputs } from '~/trpc/shared';
 import { ProductEstimatedArrival } from './product-estimated-arrival';
 import { ProductLowStockWarning } from './product-low-stock-warning';
 import { ProductPrice } from './product-price';
 import { ProductRating } from './product-rating';
 import { ProductSplitPayments } from './product-split-payments';
+
+type Product = RouterOutputs['products']['byId'];
 
 export const ProductCard = ({
   product,

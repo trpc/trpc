@@ -2,11 +2,9 @@ import Image from 'next/image';
 import { RouterOutputs } from '~/trpc/shared';
 import { ProductRating } from './product-rating';
 
-export const ProductReviewCard = ({
-  review,
-}: {
-  review: RouterOutputs['reviews']['list'][number];
-}) => {
+type Review = RouterOutputs['reviews']['list'][number];
+
+export const ProductReviewCard = ({ review }: { review: Review }) => {
   return (
     <div className="space-y-4">
       <div className="space-y-2">

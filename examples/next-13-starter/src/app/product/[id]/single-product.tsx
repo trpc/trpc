@@ -1,8 +1,10 @@
 import { cookies } from 'next/headers';
 import Image from 'next/image';
 import { ProductRating } from '~/components/product-rating';
-import type { Product } from '~/server/types';
+import { RouterOutputs } from '~/trpc/shared';
 import { Pricing } from './pricing';
+
+type Product = RouterOutputs['products']['byId'];
 
 export const SingleProduct = async ({ data }: { data: Promise<Product> }) => {
   const product = await data;

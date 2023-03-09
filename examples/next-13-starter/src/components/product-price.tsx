@@ -1,8 +1,10 @@
 import { type Dinero, multiply, toUnit } from 'dinero.js';
-import { type Product } from '~/server/types';
+import { RouterOutputs } from '~/trpc/shared';
 import { ProductCurrencySymbol } from './product-currency-symbol';
 import { ProductDeal } from './product-deal';
 import { ProductLighteningDeal } from './product-lightening-deal';
+
+type Product = RouterOutputs['products']['byId'];
 
 function isDiscount(obj: any): obj is { percent: number; expires?: number } {
   return typeof obj?.percent === 'number';

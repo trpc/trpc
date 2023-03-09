@@ -31,6 +31,7 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const products = await ctx.prisma.product.findMany({
           ...(input?.filter ? { where: { id: { not: input.filter } } } : {}),
+          include: { discount: true },
         });
 
         return products.map((p) => ({
@@ -44,6 +45,7 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const product = await ctx.prisma.product.findUnique({
           where: { id: input.id },
+          include: { discount: true },
         });
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
         return {

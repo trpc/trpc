@@ -1,5 +1,7 @@
 import { ProductCard } from '~/components/product-card';
-import { Product } from '~/server/types';
+import { RouterOutputs } from '~/trpc/shared';
+
+type Product = RouterOutputs['products']['byId'];
 
 export async function RecommendedProducts({
   path,

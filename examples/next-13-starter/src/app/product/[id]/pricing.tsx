@@ -5,7 +5,7 @@ import { ProductEstimatedArrival } from '~/components/product-estimated-arrival'
 import { ProductLowStockWarning } from '~/components/product-low-stock-warning';
 import { ProductPrice } from '~/components/product-price';
 import { ProductSplitPayments } from '~/components/product-split-payments';
-import type { Product } from '~/server/types';
+import { RouterOutputs } from '~/trpc/shared';
 import { AddToCart } from './add-to-cart';
 
 function LoadingDots() {
@@ -44,7 +44,7 @@ export function Pricing({
   product,
   cartCount,
 }: {
-  product: Product;
+  product: RouterOutputs['products']['byId'];
   cartCount: string;
 }) {
   const price = dinero(product.price);
