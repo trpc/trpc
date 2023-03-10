@@ -103,9 +103,14 @@ export function unstable_createZodFileSchema<
 
     let schema: z.ZodTypeAny = z.union(inputs as any);
     if (types) {
-      schema = schema.refine((file) => {
-        return types.includes(file.type);
-      }, 'Invalid file type');
+      schema = schema.refine(
+        (file) => {
+          return types.includes(file.type);
+        },
+        (val) => ({
+          message: `Invalid file type: ${val.type}`,
+        }),
+      );
     }
     return schema;
   }
