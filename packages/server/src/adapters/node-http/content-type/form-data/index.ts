@@ -55,6 +55,13 @@ export const nodeHTTPFormDataContentTypeHandler =
               type,
             };
           }
+          // stream.on('data', (data) => {
+          //   console.log(`File [${fileName}] got ${data.length} bytes`);
+          // });
+          // stream.on('end', () => {
+          //   console.log(`File [${fileName}] Finished`);
+          // });
+
           stream.emit('end');
         });
 

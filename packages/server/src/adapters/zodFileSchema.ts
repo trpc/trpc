@@ -1,18 +1,19 @@
-import type { Readable } from 'stream';
 import z, { ZodTypeAny } from 'zod';
+import { Overwrite } from '../internals';
 import { FormDataFileStream } from './node-http/content-type/form-data';
 
+type Stream = FormDataFileStream['stream'];
+
 function isObject(value: unknown): value is Record<string, unknown> {
-  // check that value is object
   return !!value && !Array.isArray(value) && typeof value === 'object';
 }
 
-const readableEsqueSchema = z.custom<Readable>((value) => {
-  // check if file is is a Readable without importing Readable
+const readableEsqueSchema = z.custom<Stream>((value) => {
+  // check if file is is a Stream without importing Stream
   if (!isObject(value)) {
     return false;
   }
-  if (typeof (value as unknown as Readable).on === 'function') {
+  if (typeof (value as unknown as Stream).on === 'function') {
     return true;
   }
 
@@ -48,68 +49,21 @@ const fileListEsqueSchema = z
   })
   .transform((value) => value.item(0));
 
-export const unstable_zodFileStreamSchema = z.object({
-  stream: readableEsqueSchema,
-  name: z.string(),
-  type: z.string(),
-});
-
-/**
- * Isomorphic File schema.
- * It will accept a File, FileList, or a ReadableStream and return a File
- */
-export const unstable_zodFileSchema = z.union([
-  fileEsqueSchema,
-  fileListEsqueSchema,
-  unstable_zodFileStreamSchema.transform(async (input) => {
-    const chunks: Buffer[] = [];
-    for await (const chunk of input.stream) {
-      chunks.push(chunk);
-    }
-
-    return new File(chunks, input.name, {
-      type: input.type,
-    });
-  }),
-]);
-
-export const unstable_zodFileSchemaOptional = z
-  .union([
-    unstable_zodFileSchema,
-    z
-      .custom<FileList>(isFileListEsque)
-      .transform((value) => value.item(0) ?? undefined),
-  ])
-  .optional();
-
-type Input<
-  // _TStream extends boolean,
-  _TMimeType extends string,
-  TOptional extends boolean,
-> =
+type Input<_TMimeType extends string, TOptional extends boolean> =
   | File
   | FileList
-  | {
-      stream: FormDataFileStream['stream'];
-      name: string;
-      type: string;
-    }
+  | FormDataFileStream
   | (TOptional extends true ? undefined : never);
 
-type Output<
-  // TStream extends boolean,
-  TMimeType extends string,
-  TOptional extends boolean,
-> =
-  | {
-      name: string;
-      type: TMimeType;
-      stream: FormDataFileStream['stream'];
-    }
+type Output<TMimeType extends string, TOptional extends boolean> =
+  | Overwrite<FormDataFileStream, { type: TMimeType }>
   | (TOptional extends true ? undefined | null : never);
 
 type NonEmptyArray<TTypes> = [TTypes, ...TTypes[]];
 
+/**
+ * Isomorphic File schema that can be used in both the browser and server.
+ */
 export function unstable_createZodFileSchema<
   // TStream extends boolean = false,
   TMimeType extends string = string,
@@ -124,22 +78,19 @@ export function unstable_createZodFileSchema<
    * @default false
    */
   optional?: TOptional;
-
   /**
+   * This only exists for tests to force the context
    * @internal
    */
   __context?: 'server' | 'browser';
 }): z.ZodType<
-  // output
   Output<TMimeType, TOptional>,
-  // input
   z.ZodTypeDef,
   Input<TMimeType, TOptional>
 > {
   const {
     types,
     optional,
-
     __context = typeof window === 'undefined' ? 'server' : 'browser',
   } = opts;
 
