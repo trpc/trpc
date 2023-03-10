@@ -6,8 +6,9 @@ import {
 import { z } from 'zod';
 
 export const uploadFileSchema = z.object({
-  hello: z.string(),
-  file1: unstable_createZodFileSchema({
+  name: z.string().min(5),
+  image: unstable_createZodFileSchema({
     types: ['image/png'],
   }),
+  document: unstable_createZodFileSchema({ optional: true }),
 });

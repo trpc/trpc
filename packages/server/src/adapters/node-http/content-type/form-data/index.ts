@@ -68,6 +68,8 @@ export const nodeHTTPFormDataContentTypeHandler =
         req.pipe(bb);
       });
 
+      console.log({ fields });
+
       return { ok: true, data: fields };
     },
     getInputs({ req }) {

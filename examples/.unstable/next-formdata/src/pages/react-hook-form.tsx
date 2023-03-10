@@ -1,5 +1,7 @@
 import { ErrorMessage } from '@hookform/error-message';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Image from 'next/image';
+import { ReactNode, useState } from 'react';
 import {
   FormProvider,
   UseFormProps,
@@ -26,9 +28,6 @@ function useZodForm<TSchema extends z.ZodType>(
 
 export default function Page() {
   const mutation = trpc.upload.useMutation({
-    onSuccess() {
-      alert('success!');
-    },
     onError(err) {
       alert('Error from server: ' + err.message);
     },
@@ -41,7 +40,9 @@ export default function Page() {
 
   const form = useZodForm({
     schema: uploadFileSchema,
-    defaultValues: {},
+    defaultValues: {
+      name: 'whadaaaap',
+    },
   });
 
   return (
@@ -56,33 +57,50 @@ export default function Page() {
             action={`/api/trpc/${mutation.trpc.path}`}
             encType="multipart/form-data"
             onSubmit={form.handleSubmit(async (values, event) => {
-              await mutation.mutateAsync(values);
+              const { image } = await mutation.mutateAsync(
+                new FormData(event?.target) as any,
+              );
             })}
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
           >
-            <div>
-              <input {...form.register('hello')} />
-              {form.formState.errors.hello && (
-                <div>{form.formState.errors.hello.message}</div>
+            <div style={{}}>
+              <label htmlFor="name">Enter your name</label>
+              <input {...form.register('name')} />
+              {form.formState.errors.name && (
+                <div>{form.formState.errors.name.message}</div>
               )}
             </div>
 
-            <input type="file" {...form.register('file1')} />
-
-            {form.formState.errors.file1 && (
-              <div>{form.formState.errors.file1.message}</div>
-            )}
+            <div>
+              <label>Required file, only pngs</label>
+              <input type="file" {...form.register('image')} />
+              {form.formState.errors.image && (
+                <div>{form.formState.errors.image.message}</div>
+              )}
+            </div>
 
             <div>
-              <button
-                type="submit"
+              <label>Optional file</label>
+              <input type="file" {...form.register('document')} />
+              {form.formState.errors.document && (
+                <div>{form.formState.errors.document.message}</div>
+              )}
+            </div>
 
-                // disabled={form.formState.isSubmitting}
-              >
+            <div>
+              <button type="submit" disabled={form.formState.isSubmitting}>
                 submit
               </button>
             </div>
           </form>
         </fieldset>
+
+        {mutation.data && (
+          <fieldset>
+            <legend>Upload result</legend>
+            <img {...mutation.data.image} />
+          </fieldset>
+        )}
       </FormProvider>
     </>
   );
