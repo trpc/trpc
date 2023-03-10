@@ -66,10 +66,9 @@ export const userRouter = router({
 
 ```
 
-
 ### Defining an inline sub-router
 
-When you define an inline sub-router, you can represent your router as a plain object. 
+When you define an inline sub-router, you can represent your router as a plain object.
 
 In the below example, `nested1` and `neested2` are equal:
 
@@ -93,13 +92,12 @@ const appRouter = router({
   nested1: {
     proc: publicProcedure.query(() => '...'),
   },
-  // 
+  //
   nested2: router({
     proc : publicProcedure.query(() => '...'),
   }),
 });
 ```
-
 
 ## Merging with `t.mergeRouters`
 
