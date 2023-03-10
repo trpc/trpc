@@ -16,17 +16,21 @@ import { uploadFileSchema } from '~/utils/schemas';
 
 async function writeFileToDisk(file: FormDataFileStream) {
   const rootDir = __dirname + '/../../../../..';
-  const nonce = Math.random().toString(36).substring(2, 15);
+
+  // todays date
+  const nonce = Date.now();
   const fileDir = path.resolve(`${rootDir}/public/uploads/${nonce}`);
 
   if (!fs.existsSync(fileDir)) {
     fs.mkdirSync(fileDir, { recursive: true });
   }
+  console.log('Writing', file.name, 'to', fileDir);
   const fd = fs.createWriteStream(path.resolve(`${fileDir}/${file.name}`));
   for await (const chunk of file.stream) {
     fd.write(chunk);
   }
   fd.end();
+
   return {
     url: `/uploads/${nonce}/${file.name}`,
     name: file.name,
@@ -66,5 +70,6 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 export const config = {
   api: {
     bodyParser: false,
+    responseLimit: '100mb',
   },
 };

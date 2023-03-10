@@ -1,14 +1,5 @@
-import { ErrorMessage } from '@hookform/error-message';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Image from 'next/image';
-import { ReactNode, useState } from 'react';
-import {
-  FormProvider,
-  UseFormProps,
-  UseFormReturn,
-  useForm,
-  useFormContext,
-} from 'react-hook-form';
+import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { trpc } from '~/utils/trpc';
