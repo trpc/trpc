@@ -22,14 +22,16 @@ export const api = createTRPCNextAppRouterReactServer<AppRouter>({
             url: getUrl(),
             fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
             headers() {
-              return Object.fromEntries(headers());
+              const { connection: _, ...h } = Object.fromEntries(headers());
+              return h;
             },
           }),
           false: httpBatchLink({
             url: getUrl(),
             fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
             headers() {
-              return Object.fromEntries(headers());
+              const { connection: _, ...h } = Object.fromEntries(headers());
+              return h;
             },
           }),
         }),
