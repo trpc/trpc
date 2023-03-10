@@ -17,7 +17,6 @@ import { uploadFileSchema } from '~/utils/schemas';
 async function writeFileToDisk(file: FormDataFileStream) {
   const rootDir = __dirname + '/../../../../..';
 
-  // todays date
   const nonce = Date.now();
   const fileDir = path.resolve(`${rootDir}/public/uploads/${nonce}`);
 
