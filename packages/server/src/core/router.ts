@@ -173,6 +173,10 @@ const reservedWords = [
    * since JS will think that `.then` is something that exists
    */
   'then',
+  /**
+   * `_def` is a reserved word because it's used internally a lot
+   */
+  '_def',
 ];
 
 /**
