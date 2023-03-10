@@ -13,6 +13,9 @@ export function genericRouter<S extends (value: any) => unknown>(schema: S) {
   });
 }
 
+export type Foo = { x: Foo | number };
+
+
 const routerA = t.router({
   a: t.procedure.query(() => 'a'),
 });
@@ -25,6 +28,11 @@ const appRouter = t.router({
   hello: t.procedure.use(someMiddleware).query(() => 'hello'),
   generic: genericRouter((value: string) => value.toUpperCase()),
   merged: t.mergeRouters(routerA, routerB),
+  recursive: t.procedure.query(() => {
+    return {
+        x: 1,
+    } as Foo;
+  }),
 });
 
 export type AppRouter = typeof appRouter;

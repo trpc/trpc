@@ -42,8 +42,11 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
 };
 
-/** JSON serialize objects (not including arrays) and classes */
-type SerializeObject<T extends object> = {
+/**
+ * JSON serialize objects (not including arrays) and classes
+ * @internal
+ **/
+export type SerializeObject<T extends object> = {
   [k in keyof Omit<T, FilterKeys<T, NonJsonPrimitive>>]: Serialize<T[k]>;
 };
 
