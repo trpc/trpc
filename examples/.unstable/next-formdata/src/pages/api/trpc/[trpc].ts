@@ -28,8 +28,8 @@ async function writeFileToDisk(file: FormDataFileStream) {
   }
   fd.end();
   return {
-    src: `/uploads/${nonce}/${file.name}`,
-    alt: file.name,
+    url: `/uploads/${nonce}/${file.name}`,
+    name: file.name,
   };
 }
 
@@ -37,6 +37,8 @@ const appRouter = router({
   upload: publicProcedure.input(uploadFileSchema).mutation(async (opts) => {
     return {
       image: await writeFileToDisk(opts.input.image),
+      document:
+        opts.input.document && (await writeFileToDisk(opts.input.document)),
     };
   }),
 });

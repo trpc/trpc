@@ -93,7 +93,25 @@ export default function Page() {
         {mutation.data && (
           <fieldset>
             <legend>Upload result</legend>
-            <img {...mutation.data.image} />
+            <ul>
+              <li>
+                Document:
+                {mutation.data.document ? (
+                  <a href={mutation.data.document.url}>
+                    {mutation.data.document.name}
+                  </a>
+                ) : (
+                  <em>Empty</em>
+                )}
+              </li>
+              <li>
+                Image: <br />
+                <img
+                  src={mutation.data.image.url}
+                  alt={mutation.data.image.url}
+                />
+              </li>
+            </ul>
           </fieldset>
         )}
       </FormProvider>
