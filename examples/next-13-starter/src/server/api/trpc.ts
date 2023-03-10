@@ -1,16 +1,13 @@
-import type {
-  SignedInAuthObject,
-  SignedOutAuthObject,
-} from '@clerk/nextjs/dist/api';
-import { getAuth } from '@clerk/nextjs/server';
 import { TRPCError, initTRPC } from '@trpc/server';
+import { Session, getServerSession } from 'next-auth';
 import { NextRequest } from 'next/server';
 import superjson from 'superjson';
 import { z } from 'zod';
+import { authOptions } from '~/pages/api/auth/[...nextauth]';
 import { prisma } from '../prisma';
 
 type CreateContextOptions = {
-  auth: SignedInAuthObject | SignedOutAuthObject;
+  session: Session | null;
 };
 
 /**
@@ -25,7 +22,7 @@ type CreateContextOptions = {
  */
 const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
-    auth: opts.auth,
+    session: opts.session,
     prisma,
   };
 };
@@ -37,8 +34,12 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
  * @see https://trpc.io/docs/context
  */
 export const createTRPCContext = async (opts: { req: NextRequest }) => {
+  const session = await getServerSession(authOptions);
+
+  console.log('session', session);
+
   return createInnerTRPCContext({
-    auth: getAuth(opts.req),
+    session,
   });
 };
 
@@ -58,13 +59,23 @@ export const demoProcedure = t.procedure
   });
 
 const isAuthed = t.middleware(({ next, ctx }) => {
-  if (!ctx.auth.userId) {
+  if (
+    !ctx.session?.user?.email ||
+    !ctx.session?.user?.name ||
+    !ctx.session?.user?.image
+  ) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
   return next({
     ctx: {
-      auth: ctx.auth,
+      session: {
+        user: {
+          email: ctx.session.user.email,
+          name: ctx.session.user.name,
+          image: ctx.session.user.image,
+        },
+      },
     },
   });
 });

@@ -7,7 +7,7 @@ import {
 import { Reviews, ReviewsSkeleton } from './reviews';
 import { SingleProduct } from './single-product';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ params }: { params: { id: string } }) {

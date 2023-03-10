@@ -1,11 +1,10 @@
-import { type User as ClerkUser } from '@clerk/nextjs/dist/api';
 import { Search, ShoppingCart, User } from 'lucide-react';
+import { type User as NextAuthUser } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SignIn } from '~/app/auth-actions';
 import { CartCount } from './cart-count';
 
-export async function Header({ user }: { user: ClerkUser }) {
+export async function Header({ user }: { user: NextAuthUser }) {
   return (
     <div className="flex items-center justify-between gap-x-3 rounded-lg bg-gray-800 px-3 py-3 lg:px-5 lg:py-4">
       <div className="flex gap-x-3">
@@ -33,9 +32,9 @@ export async function Header({ user }: { user: ClerkUser }) {
         </div>
 
         {user ? (
-          <Link href="/auth/signout">
+          <Link href="/api/auth/signout">
             <Image
-              src={user.profileImageUrl}
+              src={user.image as string}
               className="rounded-full"
               width={40}
               height={40}
@@ -43,7 +42,7 @@ export async function Header({ user }: { user: ClerkUser }) {
             />
           </Link>
         ) : (
-          <SignIn>
+          <Link href="/api/auth/signin">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-600 text-white">
               <User
                 className="w-6 text-white"
@@ -51,7 +50,7 @@ export async function Header({ user }: { user: ClerkUser }) {
                 aria-hidden="true"
               />
             </div>
-          </SignIn>
+          </Link>
         )}
       </div>
     </div>

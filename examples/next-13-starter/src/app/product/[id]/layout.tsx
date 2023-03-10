@@ -1,7 +1,8 @@
-import { auth, currentUser } from '@clerk/nextjs/app-beta';
+import { getServerSession } from 'next-auth';
 import { cookies } from 'next/headers';
 import React from 'react';
 import { Boundary } from '~/components/boundary';
+import { authOptions } from '~/pages/api/auth/[...nextauth]';
 import { CartCountProvider } from './cart-count-context';
 import { Header } from './header';
 
@@ -15,7 +16,8 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const cartCount = Number(cookies().get('_cart_count')?.value || '0');
-  const user = await currentUser();
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
 
   return (
     <>

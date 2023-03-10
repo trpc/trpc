@@ -1,4 +1,3 @@
-import { clerkClient } from '@clerk/nextjs/server';
 import { TRPCError } from '@trpc/server';
 import { Currency, dinero, toSnapshot } from 'dinero.js';
 import { z } from 'zod';
@@ -70,9 +69,7 @@ export const appRouter = router({
         });
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
 
-        const user = await clerkClient.users.getUser(ctx.auth.userId);
-        let name = user.firstName + ' ' + user.lastName;
-        if (!name.trim()) name = user.username as string;
+        const user = ctx.session.user;
 
         return ctx.prisma.review.create({
           data: {
@@ -81,11 +78,11 @@ export const appRouter = router({
             },
             user: {
               connectOrCreate: {
-                where: { id: ctx.auth.userId },
+                where: { email: user.email },
                 create: {
-                  id: ctx.auth.userId,
-                  name,
-                  image: user.profileImageUrl,
+                  name: user.name,
+                  email: user.email,
+                  image: user.image,
                 },
               },
             },

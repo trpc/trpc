@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { api } from 'trpc-api';
 
 export function ReviewForm() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const productId = pathname.split('/').pop() as string;
 
   const [value, setValue] = useState('');

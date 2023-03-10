@@ -39,13 +39,13 @@ model Review {
   updatedAt DateTime @updatedAt
   product   Product  @relation(fields: [productId], references: [id])
   productId String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  user      User     @relation(fields: [userEmail], references: [email])
+  userEmail String
 }
 
 model User {
-  id      String   @id
   name    String?
+  email   String   @id
   image   String?
   reviews Review[]
 }
