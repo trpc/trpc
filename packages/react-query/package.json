@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.15.0",
+    "@trpc/client": "^10.14.1",
     "@trpc/server": "^10.15.0",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
