@@ -64,10 +64,10 @@ export const allSponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=b4c6ff29bddd7f807146231ab3a88aee1a16c5dd&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=ba89e0794e3d5e7b4fdcad3ff21c2f253905fc10&v=4",
     "weight": 3,
     "login": "sam3d",
-    "link": "https://samholmes.net/?ref=trpc",
+    "link": "https://samholmes.dev/?ref=trpc",
     "createdAt": 1626852612000
   },
   {
@@ -113,7 +113,7 @@ export const allSponsors = [
   {
     "name": "Snaplet",
     "imgSrc": "https://avatars.githubusercontent.com/u/69029941?v=4",
-    "weight": 6,
+    "weight": 7,
     "login": "snaplet",
     "link": "https://snaplet.dev/?ref=trpc",
     "createdAt": 1636827585000
@@ -184,7 +184,7 @@ export const allSponsors = [
   },
   {
     "name": "Faraz Patankar",
-    "imgSrc": "https://avatars.githubusercontent.com/u/10681116?u=694385b48756c6be01f289f8c419e95b3103fa84&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/10681116?u=707f054b6651fcf93e5297b2142d15e772712e4a&v=4",
     "weight": 2,
     "login": "FarazPatankar",
     "link": "https://farazpatankar.com/?ref=trpc",
@@ -287,14 +287,6 @@ export const allSponsors = [
     "createdAt": 1658023715000
   },
   {
-    "name": "prisma",
-    "imgSrc": "https://avatars.githubusercontent.com/u/17219288?v=4",
-    "weight": 13,
-    "login": "prisma",
-    "link": "https://www.prisma.io/?ref=trpc",
-    "createdAt": 1658485707000
-  },
-  {
     "name": "Lori Karikari",
     "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
     "weight": 2,
@@ -359,17 +351,9 @@ export const allSponsors = [
     "createdAt": 1663779120000
   },
   {
-    "name": "Simon Flack",
-    "imgSrc": "https://avatars.githubusercontent.com/u/4867329?v=4",
-    "weight": 2,
-    "login": "simonflk",
-    "link": "https://github.com/simonflk",
-    "createdAt": 1664470616000
-  },
-  {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 9,
+    "weight": 10,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -455,14 +439,6 @@ export const allSponsors = [
     "createdAt": 1672846478000
   },
   {
-    "name": "Ilko Kacharov",
-    "imgSrc": "https://avatars.githubusercontent.com/u/893608?v=4",
-    "weight": 2,
-    "login": "kachar",
-    "link": "https://stackoverflow.com/users/668245/kachar?ref=trpc",
-    "createdAt": 1673326373000
-  },
-  {
     "name": "Daniel Burger",
     "imgSrc": "https://avatars.githubusercontent.com/u/34251194?u=2cad4388c1544e539ecb732d656e42fb07b4ff2d&v=4",
     "weight": 2,
@@ -476,7 +452,7 @@ export const allSponsors = [
     "weight": 2,
     "login": "piscis",
     "link": "https://piscis.io/?ref=trpc",
-    "createdAt": 1675802381000
+    "createdAt": 1675802615000
   },
   {
     "name": "John Shahawy",
@@ -501,5 +477,13 @@ export const allSponsors = [
     "login": "McPizza0",
     "link": "https://mcpizza.is/?ref=trpc",
     "createdAt": 1677448223000
+  },
+  {
+    "name": "Šimon Prokopec",
+    "imgSrc": "https://avatars.githubusercontent.com/u/97883441?v=4",
+    "weight": 1,
+    "login": "prokopec-simon",
+    "link": "https://github.com/prokopec-simon",
+    "createdAt": 1677538189000
   }
 ] as const;
