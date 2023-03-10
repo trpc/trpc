@@ -19,9 +19,10 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
       return createInnerProxy(callback, [...path, key]);
     },
     apply(_1, _2, args) {
+      const isApply = path[path.length - 1] === 'apply';
       return callback({
-        args,
-        path,
+        args: isApply ? args[1] : args,
+        path: isApply ? path.slice(0, -1) : path,
       });
     },
   });
