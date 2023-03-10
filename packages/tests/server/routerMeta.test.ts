@@ -195,7 +195,7 @@ test('complex meta merging', async () => {
         obj2: string;
       };
     }>({
-      data1: 'foobar'
+      data1: 'foobar',
     })
     .create();
 
@@ -208,7 +208,7 @@ test('complex meta merging', async () => {
   const router = t.router({
     foo1: procedure
       .meta({ data2: 11 })
-      .meta({ data1: 'bazbar', dataObj: {obj1: 'a', obj2: 'b'} })
+      .meta({ data1: 'bazbar', dataObj: { obj1: 'a', obj2: 'b' } })
       .query(() => 'bar1'),
   });
 
@@ -223,9 +223,9 @@ test('complex meta merging', async () => {
     dataObj: {
       obj1: 'a',
       obj2: 'b',
-    }
+    },
   });
 
   expect(middleware).toHaveBeenCalledTimes(1);
   await close();
-})
+});
