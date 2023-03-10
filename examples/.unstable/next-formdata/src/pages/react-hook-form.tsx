@@ -31,11 +31,6 @@ export default function Page() {
     onError(err) {
       alert('Error from server: ' + err.message);
     },
-    trpc: {
-      context: {
-        formData: true,
-      },
-    },
   });
 
   const form = useZodForm({

@@ -11,7 +11,7 @@ export interface FormDataFileStream {
    */
   name: string;
   /**
-   * The MIME type of the file
+   * The mime type of the file
    */
   type: string;
 }

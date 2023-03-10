@@ -90,7 +90,7 @@ type Input<
   | File
   | FileList
   | {
-      stream: Readable;
+      stream: FormDataFileStream['stream'];
       name: string;
       type: string;
     }
@@ -103,8 +103,8 @@ type Output<
 > =
   | {
       name: string;
-      mime: TMimeType;
-      stream: Readable;
+      type: TMimeType;
+      stream: FormDataFileStream['stream'];
     }
   | (TOptional extends true ? undefined | null : never);
 
