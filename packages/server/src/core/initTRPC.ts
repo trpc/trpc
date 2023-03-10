@@ -44,19 +44,32 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
+interface TRPCBuilderConfig<TParams extends PartialRootConfigTypes> {
+  defaultMeta?: TParams['meta'];
+}
+
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
+  constructor(private readonly config: TRPCBuilderConfig<TParams>) {}
+
   context<
     TNewContext extends
       | RootConfigTypes['ctx']
       | ((...args: unknown[]) => RootConfigTypes['ctx']),
   >() {
-    return new TRPCBuilder<
-      FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>
-    >();
+    type NextParams = FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>;
+
+    return new TRPCBuilder<NextParams>(this.config as NextParams);
   }
-  meta<TNewMeta extends RootConfigTypes['meta']>() {
-    return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
+
+  meta<TNewMeta extends RootConfigTypes['meta']>(defaultMeta?: TNewMeta) {
+    type NextParams = FlatOverwrite<TParams, { meta: TNewMeta }>;
+
+    return new TRPCBuilder<NextParams>({
+      ...this.config,
+      defaultMeta: defaultMeta,
+    });
   }
+
   create<
     TOptions extends Partial<
       RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>
@@ -69,16 +82,18 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
         >
       | undefined,
   ) {
-    return createTRPCInner<TParams>()<TOptions>(options);
+    return createTRPCInner<TParams>(this.config)<TOptions>(options);
   }
 }
 
 /**
- * Initialize tRPC - be done exactly once per backend
+ * Initialize tRPC - done exactly once per backend
  */
-export const initTRPC = new TRPCBuilder();
+export const initTRPC = new TRPCBuilder({});
 
-function createTRPCInner<TParams extends PartialRootConfigTypes>() {
+function createTRPCInner<TParams extends PartialRootConfigTypes>(
+  builderConfig: TRPCBuilderConfig<TParams>,
+) {
   type $Generics = CreateRootConfigTypesFromPartial<TParams>;
 
   type $Context = $Generics['ctx'];
@@ -145,7 +160,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Builder object for creating procedures
        */
-      procedure: createBuilder<$Config>(),
+      procedure: createBuilder<$Config>({
+        meta: builderConfig.defaultMeta,
+      }),
       /**
        * Create reusable middlewares
        */
