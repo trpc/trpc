@@ -9,7 +9,7 @@ export default function IndexPage() {
       alert('success!');
     },
     onError(err) {
-      alert(err.message);
+      alert('Error: ' + err.message);
     },
   });
 

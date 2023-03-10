@@ -1,5 +1,6 @@
 import type { Readable } from 'stream';
-import z from 'zod';
+import z, { ZodTypeAny } from 'zod';
+import { FormDataFileStream } from './node-http/content-type/form-data';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   // check that value is object
@@ -43,9 +44,9 @@ function isFileListEsque(value: unknown): value is FileList {
  */
 const fileListEsqueSchema = z
   .custom<FileList>((value) => {
-    return isFileListEsque(value) && value.item(0);
+    return isFileListEsque(value);
   })
-  .transform((value) => value.item(0) as File);
+  .transform((value) => value.item(0));
 
 export const unstable_zodFileStreamSchema = z.object({
   stream: readableEsqueSchema,
@@ -81,39 +82,98 @@ export const unstable_zodFileSchemaOptional = z
   ])
   .optional();
 
-// export function unstable_createZodFileSchema<
-//   TStream extends boolean = false,
-//   TMimeType extends string,
-// >(opts: {
-//   /**
-//    * @default false
-//    */
-//   stream?: TStream;
+type Input<
+  // _TStream extends boolean,
+  _TMimeType extends string,
+  TOptional extends boolean,
+> =
+  | File
+  | FileList
+  | {
+      stream: Readable;
+      name: string;
+      type: string;
+    }
+  | (TOptional extends true ? undefined : never);
 
-//   /**
-//    * Mime types
-//    */
-//   types?: TMimeType[];
-// }): z.ZodType<
-//   // output
-//   {
-//     name: string;
-//     mime: TMimeType;
-//   } & TStream extends true
-//     ? {
-//         stream: Readable;
-//       }
-//     : {
-//         file: File;
-//       },
-//   // input
-//   z.ZodTypeDef,
-//   | File
-//   | FileList
-//   | {
-//       stream: Readable;
-//       name: string;
-//       type: string;
-//     }
-// > {
-// }
+type Output<
+  // TStream extends boolean,
+  TMimeType extends string,
+  TOptional extends boolean,
+> =
+  | {
+      name: string;
+      mime: TMimeType;
+      stream: Readable;
+    }
+  | (TOptional extends true ? undefined | null : never);
+
+type NonEmptyArray<TTypes> = [TTypes, ...TTypes[]];
+
+export function unstable_createZodFileSchema<
+  // TStream extends boolean = false,
+  TMimeType extends string = string,
+  TOptional extends boolean = false,
+>(opts: {
+  /**
+   * Mime types
+   */
+  types?: NonEmptyArray<TMimeType>;
+  /**
+   * Allow not uploading a file
+   * @default false
+   */
+  optional?: TOptional;
+
+  /**
+   * @internal
+   */
+  __context?: 'server' | 'browser';
+}): z.ZodType<
+  // output
+  Output<TMimeType, TOptional>,
+  // input
+  z.ZodTypeDef,
+  Input<TMimeType, TOptional>
+> {
+  const {
+    types,
+    optional,
+
+    __context = typeof window === 'undefined' ? 'server' : 'browser',
+  } = opts;
+
+  if (__context == 'browser') {
+    // Browser gets FileList or File
+    const inputs: z.ZodTypeAny[] = [
+      optional ? fileEsqueSchema.nullish() : fileEsqueSchema,
+      optional ? fileListEsqueSchema : fileListEsqueSchema.refine(Boolean),
+    ];
+
+    let schema: z.ZodTypeAny = z.union(inputs as any);
+    if (types) {
+      schema = schema.refine((file) => {
+        return types.includes(file.type);
+      }, 'Invalid file type');
+    }
+    return schema;
+  }
+
+  let schema: ZodTypeAny = z.object({
+    stream: readableEsqueSchema,
+    name: z.string(),
+    type: z.string(),
+  });
+
+  if (types) {
+    schema = schema.refine((input?: FormDataFileStream) => {
+      return input ? types.includes(input.type as any) : true;
+    }, 'Invalid file type');
+  }
+
+  if (optional) {
+    schema = schema.optional();
+  }
+
+  return schema;
+}

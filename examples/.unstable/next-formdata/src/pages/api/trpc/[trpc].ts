@@ -15,13 +15,7 @@ const appRouter = router({
     if (!opts.input.file1) {
       throw new Error('No file uploaded');
     }
-    return {
-      ...opts.input,
-      file1: {
-        name: opts.input.file1.name,
-        size: opts.input.file1.size,
-      },
-    };
+    return {};
   }),
 });
 

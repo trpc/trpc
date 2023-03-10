@@ -30,7 +30,12 @@ export default function Page() {
       alert('success!');
     },
     onError(err) {
-      alert(err.message);
+      alert('Error from server: ' + err.message);
+    },
+    trpc: {
+      context: {
+        formData: true,
+      },
     },
   });
 
@@ -51,7 +56,7 @@ export default function Page() {
             action={`/api/trpc/${mutation.trpc.path}`}
             encType="multipart/form-data"
             onSubmit={form.handleSubmit(async (values, event) => {
-              await mutation.mutateAsync(new FormData(event?.target) as any);
+              await mutation.mutateAsync(values);
             })}
           >
             <div>
@@ -68,7 +73,11 @@ export default function Page() {
             )}
 
             <div>
-              <button type="submit" disabled={form.formState.isSubmitting}>
+              <button
+                type="submit"
+
+                // disabled={form.formState.isSubmitting}
+              >
                 submit
               </button>
             </div>
