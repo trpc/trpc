@@ -91,23 +91,6 @@ describe('shorthand {}', () => {
     expect(result).toBe('Hello I am recursive');
   });
 
-  test('combined router object should be accessible', async () => {
-    const bar = {
-      foo: t.procedure.query(() => 'Hello I am recursive'),
-    };
-
-    const router = t.router({
-      foo: {
-        bar,
-      },
-    });
-
-    const caller = router.createCaller({});
-
-    const result = await caller.foo.bar.foo();
-    expect(result).toBe('Hello I am recursive');
-  });
-
   test('realistic nested router should be accessible', async () => {
     const posts = [
       {
