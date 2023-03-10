@@ -199,7 +199,7 @@ function createNewBuilder(
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
-    meta: def1.meta && meta ? { ...def1.meta, meta } : meta ?? def1.meta,
+    meta: def1.meta && meta ? { ...def1.meta, ...meta } : meta ?? def1.meta,
   });
 }
 
