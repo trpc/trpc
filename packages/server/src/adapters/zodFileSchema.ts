@@ -122,9 +122,14 @@ export function unstable_createZodFileSchema<
   });
 
   if (types) {
-    schema = schema.refine((input?: FormDataFileStream) => {
-      return input ? types.includes(input.type as any) : true;
-    }, 'Invalid file type');
+    schema = schema.refine(
+      (file) => {
+        return types.includes(file.type);
+      },
+      (val) => ({
+        message: `Invalid file type: ${val.type}`,
+      }),
+    );
   }
 
   if (optional) {
