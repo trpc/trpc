@@ -41,10 +41,10 @@ export default function IndexPage() {
           }}
         >
           <p>
-            <input name="hello" defaultValue="haz upload" />
+            <input name="name" defaultValue="haz upload" />
           </p>
           <p>
-            <input type="file" name="file1" />
+            <input type="file" name="image" />
           </p>
 
           <p>

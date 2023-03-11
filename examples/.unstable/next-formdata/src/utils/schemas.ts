@@ -1,8 +1,4 @@
-import {
-  unstable_createZodFileSchema,
-  unstable_zodFileSchema,
-  unstable_zodFileSchemaOptional,
-} from '@trpc/server/adapters/zodFileSchema';
+import { unstable_createZodFileSchema } from '@trpc/server/adapters/zodFileSchema';
 import { z } from 'zod';
 
 export const uploadFileSchema = z.object({
