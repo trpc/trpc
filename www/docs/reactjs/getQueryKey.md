@@ -33,12 +33,7 @@ type QueryType = "query" | "infinite" | "any";
 
 :::note
 
-The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching.
-
-General rule of thumb:
-
-- functions with a singular in the name (getQueryData) operate on one query, so exact
-- functions with a plural in the name (invalidateQueries) operate on multiple queries, so they match fuzzily.
+The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching. See [TanStack/query#5111 (comment)](https://github.com/TanStack/query/issues/5111#issuecomment-1464864361) for more context.
 
 :::
 
