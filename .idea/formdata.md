@@ -87,29 +87,36 @@ export const appRouter = router({
           maxSize: '1mb',
         });
 
-        const form = await unstable_parseMultipartFormData({
+        const formData = await unstable_parseMultipartFormData({
           schema: sendMessageSchema,
           request: opts.req,
           uploadHandler,
         })
         return opts.next({
-          form,
+          input: {
+            ...opts.input,
+            formData,
+          },
         })
       })
     )
     .mutation((opts) => {
       const {
-        ctx,
         input
       } = opts;
       input.roomId;
       //       ^? string
-      ctx.form.file
-      //        ^? FormDataFileStream
-      ctx.form.text
-      //        ^? string
+      input.formData.file
+      //             ^? FormDataFileStream
+      input.formData.text
+      //              ^? string
     }),
 });
+
+type Input = inferProcedureInput<typeof appRouter['sendMessage']>
+//   ^? { roomId: string, formData: FormData }
+type Output = inferProcedureOutput<typeof appRouter['sendMessage']>
+//    ^? { roomId: string, formData: { file: FormDataFileStream, text: string }}
 ```
 
 ### Usage in frontend (with helper)
@@ -155,7 +162,15 @@ function MyComponent() {
 ```tsx
 function MyComponent() {
   const utils = trpc.useContext();
-  const mutation = trpc.sendMessage.useMutation();
+  const mutation = trpc.sendMessage.useMutation({
+    trpc: {
+      formData: true,
+    },
+    onSuccess(output, input) {
+      input.formData;
+      //     ^? FormData
+    }
+  });
 
   const input: RouterInputs['sendMessage'] = {
     roomId: '123',
@@ -174,15 +189,7 @@ function MyComponent() {
           return;
         }
 
-        mutation.mutate(input, {
-          trpc: {
-            context: {
-              trpc: {
-                formData,
-              }
-            }
-          }
-        });
+        mutation.mutate({ ...input, formData });
         e.preventDefault();
       }}
       >
