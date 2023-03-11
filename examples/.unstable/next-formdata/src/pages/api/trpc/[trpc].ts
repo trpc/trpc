@@ -61,21 +61,23 @@ const appRouter = router({
         rawInput: isPlainObject(rawInput)
           ? {
               ...rawInput,
-              ...Object.fromEntries(formData),
+              formData,
             }
-          : formData,
+          : { formData },
       } as any);
     })
     .input(
-      zfd.formData({
-        name: zfd.text(),
-        image: zfd.file(),
-        document: zfd.file(z.instanceof(File).optional()),
+      z.object({
+        formData: zfd.formData({
+          name: zfd.text(),
+          image: zfd.file(),
+          document: zfd.file(z.instanceof(File).optional()),
+        }),
       }),
     )
     .mutation(async (opts) => {
       return {
-        image: await writeFileToDisk(opts.input.image),
+        image: await writeFileToDisk(opts.input.formData.image),
         document:
           opts.input.document && (await writeFileToDisk(opts.input.document)),
       };
