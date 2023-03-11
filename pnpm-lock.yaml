@@ -1027,6 +1027,7 @@ importers:
       '@types/node': ^18.7.20
       '@types/react': ^18.0.9
       '@types/ws': ^8.2.0
+      '@web3-storage/multipart-parser': ^1.0.0
       aws-lambda: ^1.0.7
       devalue: ^4.0.0
       eslint: ^8.30.0
@@ -1059,6 +1060,7 @@ importers:
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/ws': 8.5.3
+      '@web3-storage/multipart-parser': 1.0.0
       aws-lambda: 1.0.7
       devalue: 4.3.0
       eslint: 8.30.0
@@ -9563,6 +9565,10 @@ packages:
       loupe: 2.3.6
       picocolors: 1.0.0
       pretty-format: 27.5.1
+
+  /@web3-storage/multipart-parser/1.0.0:
+    resolution: {integrity: sha512-BEO6al7BYqcnfX15W2cnGR+Q566ACXAT9UQykORCWW80lmkpWsnEob6zJS1ZVBKsSJC8+7vJkHwlp+lXG1UCdw==}
+    dev: true
 
   /@webassemblyjs/ast/1.11.1:
     resolution: {integrity: sha512-ukBh14qFLjxTQNTXocdyksN5QdM28S1CxHt2rdskFyL+xFV7VremuBLVbmCePj+URalXBENx/9Lm7lnhihtCSw==}

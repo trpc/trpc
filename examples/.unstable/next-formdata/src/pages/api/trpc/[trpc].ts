@@ -4,17 +4,25 @@
  */
 import * as trpcNext from '@trpc/server/adapters/next';
 import {
-  FormDataFileStream,
   nodeHTTPFormDataContentTypeHandler,
+  unstable_createMemoryUploadHandler,
+  unstable_parseMultipartFormData,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
-import fs from 'fs';
 import { NextApiRequest, NextApiResponse } from 'next';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Readable } from 'node:stream';
+import { ReadableStream } from 'node:stream/web';
+import * as undici from 'undici';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
 import { publicProcedure, router } from '~/server/trpc';
 import { uploadFileSchema } from '~/utils/schemas';
 
-async function writeFileToDisk(file: FormDataFileStream) {
+globalThis.File = undici.File as any;
+
+async function writeFileToDisk(file: File) {
   const rootDir = __dirname + '/../../../../..';
 
   const nonce = Date.now();
@@ -25,7 +33,8 @@ async function writeFileToDisk(file: FormDataFileStream) {
   }
   console.log('Writing', file.name, 'to', fileDir);
   const fd = fs.createWriteStream(path.resolve(`${fileDir}/${file.name}`));
-  for await (const chunk of file.stream) {
+
+  for await (const chunk of Readable.fromWeb(file.stream() as ReadableStream)) {
     fd.write(chunk);
   }
   fd.end();
@@ -36,14 +45,41 @@ async function writeFileToDisk(file: FormDataFileStream) {
   };
 }
 
+function isPlainObject(obj: unknown): obj is object {
+  return !!obj && typeof obj === 'object' && !Array.isArray(obj);
+}
+
 const appRouter = router({
-  upload: publicProcedure.input(uploadFileSchema).mutation(async (opts) => {
-    return {
-      image: await writeFileToDisk(opts.input.image),
-      document:
-        opts.input.document && (await writeFileToDisk(opts.input.document)),
-    };
-  }),
+  upload: publicProcedure
+    .use(async ({ ctx, next, input, rawInput }) => {
+      const formData = await unstable_parseMultipartFormData(
+        ctx.req,
+        unstable_createMemoryUploadHandler(),
+      );
+
+      return next({
+        rawInput: isPlainObject(rawInput)
+          ? {
+              ...rawInput,
+              ...Object.fromEntries(formData),
+            }
+          : formData,
+      } as any);
+    })
+    .input(
+      zfd.formData({
+        name: zfd.text(),
+        image: zfd.file(),
+        document: zfd.file(z.instanceof(File).optional()),
+      }),
+    )
+    .mutation(async (opts) => {
+      return {
+        image: await writeFileToDisk(opts.input.image),
+        document:
+          opts.input.document && (await writeFileToDisk(opts.input.document)),
+      };
+    }),
 });
 
 // export only the type definition of the API

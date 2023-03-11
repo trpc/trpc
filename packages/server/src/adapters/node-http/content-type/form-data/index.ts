@@ -1,22 +1,56 @@
-import busboy, { Busboy, BusboyHeaders } from '@fastify/busboy';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
+/**
+ * Copyright 2021 Remix Software Inc.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
-export interface FormDataFileStream {
-  /**
-   * The stream of the file
-   */
-  stream: fs.ReadStream;
-  /**
-   * The name of the file
-   */
-  name: string;
-  /**
-   * The mime type of the file
-   */
-  type: string;
+/**
+ * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
+ */
+import { streamMultipart } from '@web3-storage/multipart-parser';
+import { Readable } from 'node:stream';
+import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
+import { NodeHTTPRequest } from '../../types';
+import { UploadHandler, UploadHandlerPart } from './uploadHandler';
+
+/**
+ * Allows you to handle multipart forms (file uploads) for your app.
+ *
+ * TODO: Update this comment
+ * @see https://remix.run/utils/parse-multipart-form-data
+ */
+async function parseMultipartFormData(
+  request: NodeHTTPRequest,
+  uploadHandler: UploadHandler,
+): Promise<FormData> {
+  const contentType = request.headers['content-type'] || '';
+  const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
+
+  if (!boundary || type !== 'multipart/form-data') {
+    throw new TypeError('Could not parse content as FormData.');
+  }
+
+  const formData = new FormData();
+  const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
+    streamMultipart(Readable.toWeb(request), boundary);
+
+  for await (const part of parts) {
+    if (part.done) break;
+
+    if (typeof part.filename === 'string') {
+      // only pass basename as the multipart/form-data spec recommends
+      // https://datatracker.ietf.org/doc/html/rfc7578#section-4.2
+      part.filename = part.filename.split(/[/\\]/).pop();
+    }
+
+    const value = await uploadHandler(part);
+    if (typeof value !== 'undefined' && value !== null) {
+      formData.append(part.name, value as any);
+    }
+  }
+
+  return formData;
 }
 
 export const nodeHTTPFormDataContentTypeHandler =
@@ -30,67 +64,7 @@ export const nodeHTTPFormDataContentTypeHandler =
       );
     },
     async getBody(opts) {
-      const { req } = opts;
-
-      if (req.method === 'GET') {
-        const fields: Record<string, string> = {};
-
-        opts.query.forEach((value, key) => {
-          fields[key] = value;
-        });
-
-        return { ok: true, data: fields };
-      }
-
-      const bb = busboy({ headers: req.headers as BusboyHeaders });
-      // const form = new FormData();
-
-      const fields: Record<string, string | FormDataFileStream> = {};
-
-      await new Promise(async (resolve, reject) => {
-        let tmpdir: string;
-
-        bb.on('file', async (inputName, stream, fileName, _, type) => {
-          // Assumes files without filenames are not files
-          // This avoids the case where you have an input without a file selected in the browser
-          if (fileName) {
-            if (!tmpdir) {
-              const osTmpdir = os.tmpdir();
-              tmpdir = await fs.promises.mkdtemp(`${osTmpdir}${path.sep}`);
-            }
-
-            const filepath = path.join(tmpdir, fileName);
-
-            const writer = fs.createWriteStream(filepath);
-            for await (const chunk of stream) {
-              writer.write(chunk);
-            }
-            console.log('wrote temp file:', filepath);
-            fields[inputName] = {
-              stream: fs.createReadStream(filepath),
-              name: fileName,
-              type,
-            };
-          } else {
-            stream.on('data', () => {});
-          }
-          // stream.on('data', (data) => {
-          //   console.log(`File [${fileName}] got ${data.length} bytes`);
-          // });
-          // stream.on('end', () => {
-          //   console.log(`File [${fileName}] Finished`);
-          // });
-        });
-
-        bb.on('field', (name, value) => {
-          fields[name] = value;
-        });
-
-        bb.on('error', reject);
-        bb.on('finish', resolve);
-
-        req.pipe(bb);
-      });
+      const fields = Object.fromEntries(opts.query);
 
       return { ok: true, data: fields };
     },
@@ -100,3 +74,9 @@ export const nodeHTTPFormDataContentTypeHandler =
       };
     },
   });
+
+export { parseMultipartFormData as unstable_parseMultipartFormData };
+export { createMemoryUploadHandler as unstable_createMemoryUploadHandler } from './memoryUploadHandler';
+export { createFileUploadHandler as unstable_createFileUploadHandler } from './fileUploadHandler';
+export { composeUploadHandlers as unstable_composeUploadHandlers } from './uploadHandler';
+export { type UploadHandler } from './uploadHandler';

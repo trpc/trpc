@@ -331,7 +331,12 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
 
     // run the middlewares recursively with the resolver as the last one
     const callRecursive = async (
-      callOpts: { ctx: any; index: number; input?: unknown } = {
+      callOpts: {
+        ctx: any;
+        index: number;
+        input?: unknown;
+        rawInput?: unknown;
+      } = {
         index: 0,
         ctx: opts.ctx,
       },
@@ -343,10 +348,14 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: opts.rawInput,
+          rawInput: callOpts.rawInput ?? opts.rawInput,
           meta: _def.meta,
           input: callOpts.input,
-          next: async (nextOpts?: { ctx: any; input?: any }) => {
+          next: async (nextOpts?: {
+            ctx: any;
+            input?: any;
+            rawInput?: any;
+          }) => {
             return await callRecursive({
               index: callOpts.index + 1,
               ctx:
@@ -357,6 +366,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
+              rawInput:
+                nextOpts && 'rawInput' in nextOpts
+                  ? nextOpts.rawInput
+                  : callOpts.rawInput,
             });
           },
         });

@@ -141,7 +141,6 @@
     "access": "public"
   },
   "devDependencies": {
-    "@fastify/busboy": "^1.2.1",
     "@fastify/websocket": "^7.1.2",
     "@tanstack/react-query": "^4.3.8",
     "@types/aws-lambda": "^8.10.97",
@@ -150,6 +149,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/ws": "^8.2.0",
+    "@web3-storage/multipart-parser": "^1.0.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^4.0.0",
     "eslint": "^8.30.0",

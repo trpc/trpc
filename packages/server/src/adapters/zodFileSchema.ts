@@ -1,6 +1,6 @@
 import z, { ZodTypeAny } from 'zod';
 import { Overwrite } from '../internals';
-import { FormDataFileStream } from './node-http/content-type/form-data';
+import { FormDataFileStream } from './node-http/content-type/form-data/busboy';
 
 type Stream = FormDataFileStream['stream'];
 
