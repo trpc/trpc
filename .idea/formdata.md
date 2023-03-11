@@ -127,8 +127,15 @@ function MyComponent() {
   // Pretend we're at path `/room/123`
   const roomId = useRouter().query.roomId as string;
 
+  const ctx = form.useForm({
+    input: {
+      roomId,
+    }
+  });
+
   return (
-    <form.Form 
+    <form.Form
+      {...ctx}
       // If the procedure is part of a base procedure that requires input,
       // It needs to be set here, and will be sent as query parameters
       input={{ roomId }}
