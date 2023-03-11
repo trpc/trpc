@@ -31,6 +31,17 @@ type QueryType = "query" | "infinite" | "any";
 // will match all ───────────────────────┘
 ```
 
+:::note
+
+The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching.
+
+General rule of thumb:
+
+- functions with a singular in the name (getQueryData) operate on one query, so exact
+- functions with a plural in the name (invalidateQueries) operate on multiple queries, so they match fuzzily.
+
+:::
+
 ```tsx
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { getQueryKey } from '@trpc/react-query';
