@@ -183,6 +183,11 @@ function MyComponent() {
       <input name="text" />
       <input type="upload" name="file" />
 
+      <label>
+        <input type="checkbox" value="1" name="nojs">
+        Submit form without using JS
+      </label>
+
       <input type="submit" disabled={mutation.isLoading} />
     </form>
   )
