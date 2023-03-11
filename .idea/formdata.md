@@ -4,10 +4,11 @@
   - [Challenges](#challenges)
   - [Practical example](#practical-example)
     - [What this means for tRPC](#what-this-means-for-trpc)
-  - [Dummy code example code](#dummy-code-example-code)
+  - [Dummy example code](#dummy-example-code)
     - [Schema](#schema)
     - [Backend](#backend)
-    - [Usage in frontend](#usage-in-frontend)
+    - [Usage in frontend (with helper)](#usage-in-frontend-with-helper)
+    - [Usage in frontend (raw)](#usage-in-frontend-raw)
     - [Internals](#internals)
       - [How this looks like for the tRPC client](#how-this-looks-like-for-the-trpc-client)
       - [How this request to the server would actually look like](#how-this-request-to-the-server-would-actually-look-like)
@@ -36,7 +37,7 @@
 - Probably, we want to send `input` as a query parameter (or request header next to the request❓) that can be handled before we start working through the `req.body`
 
 
-## Dummy code example code
+## Dummy example code
 
 ### Schema
 
@@ -111,9 +112,9 @@ export const appRouter = router({
 });
 ```
 
-### Usage in frontend
+### Usage in frontend (with helper)
 
-Imaginary `createForm`-helper
+Imaginary `createForm`-helper that would depend on trpc, react-hook-form and zod or zod-form-data
 
 ```tsx
 const form = createForm({
@@ -140,6 +141,53 @@ function MyComponent() {
   )
 }
 
+```
+
+### Usage in frontend (raw)
+
+```tsx
+function MyComponent() {
+  const utils = trpc.useContext();
+  const mutation = trpc.sendMessage.useMutation();
+
+  const input: RouterInputs['sendMessage'] = {
+    roomId: '123',
+  }
+  const serializedInput = encodeURIComponent(JSON.stringify(utils.client.transformer.serialize(input)));
+
+  return (
+    <form
+      method="post"
+      action={`/api/trpc/${mutation.trpc.path}?input=${serializedInput}`}
+      encType="multipart/form-data"
+      onSubmit={(e) => {
+        const formData = new FormData(e.currentTarget);
+        if (formData.get('nojs')) {
+          // Submit the form the oldschool way (should work?)
+          return;
+        }
+
+        mutation.mutate(input, {
+          trpc: {
+            context: {
+              trpc: {
+                formData,
+              }
+            }
+          }
+        });
+        e.preventDefault();
+      }}
+      >
+      
+      <input name="text" />
+      <input type="upload" name="file" />
+
+      <input type="submit" disabled={mutation.isLoading} />
+    </form>
+  )
+
+}
 ```
 ### Internals
 
