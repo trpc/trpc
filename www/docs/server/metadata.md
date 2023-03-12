@@ -68,7 +68,7 @@ export const appRouter = t.router({
 
 ## Default Meta, Chaining, and shallow merging
 
-If you set Meta multiple times, it will be shallow merged.
+If you set meta multiple times, it will be shallowly merged.
 
 ```tsx
 import { initTRPC } from '@trpc/server';
