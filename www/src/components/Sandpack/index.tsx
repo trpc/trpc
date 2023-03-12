@@ -13,6 +13,13 @@ import React, { useEffect, useRef, useState } from 'react';
 const BACKEND_FILES = {
   '/package.json': {
     code: JSON.stringify({
+      dependencies: {
+        '@trpc/server': '*',
+        '@trpc/client': '*',
+        '@trpc/react-query': '*',
+        '@tanstack/react-query': '*',
+        zod: '*',
+      },
       scripts: { start: 'node index.ts' },
       main: 'index.ts',
     }),
@@ -97,7 +104,7 @@ export function SandpackRoot() {
   const ref = useRef<HTMLIFrameElement>();
   // const [_loaded, setLoaded] = useState(false);
 
-  // Probably don't need this stuff if the abstractions can do it
+  // TODO: Probably don't need this stuff if the abstractions can do it, but also might need to build it ourselves
   // useEffect(() => {
   //   async function boot() {
   //     const el = ref.current;
