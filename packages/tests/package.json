@@ -47,7 +47,7 @@
     "node-fetch": "^3.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "scale-codec": "0.11.0-beta.2",
+    "scale-codec": "^0.11.0",
     "superjson": "^1.7.4",
     "superstruct": "^1.0.0",
     "tsx": "^3.12.3",

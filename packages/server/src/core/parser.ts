@@ -20,9 +20,7 @@ export type ParserYupEsque<TInput> = {
 };
 
 export type ParserScaleEsque<TInput> = {
-  _encode: (buffer: any, value: TInput) => void;
-  _decode: (buffer: any) => TInput;
-  _assert: (state: any) => void;
+  assert(value: unknown): asserts value is TInput;
 };
 
 export type ParserWithoutInput<TInput> =
