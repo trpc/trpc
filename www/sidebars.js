@@ -12,6 +12,7 @@ module.exports = {
         'main/quickstart',
         'main/awesome-trpc',
         'main/example-apps',
+        'main/sandpack-example',
         'nextjs/introduction',
         'reactjs/introduction',
         'main/contributing',
