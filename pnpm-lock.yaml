@@ -1,7 +1,6 @@
 lockfileVersion: 5.4
 
 overrides:
-  '@tanstack/react-query': 4.6.0
   '@trpc/client': link:./packages/client
   '@trpc/next': link:./packages/next
   '@trpc/react-query': link:./packages/react-query
@@ -90,7 +89,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Flegacy-next-starter
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
@@ -122,7 +121,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Flegacy-next-starter_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -135,7 +134,7 @@ importers:
       zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
-      '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
+      '@tanstack/react-query-devtools': 4.18.0_brdhmlf72zuns3lsk66phyptty
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@typescript-eslint/eslint-plugin': 5.47.0_jhaguxqfxx2v4alxps2nzei754
@@ -157,7 +156,7 @@ importers:
 
   examples/.test/big-router-declaration:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -173,7 +172,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -208,7 +207,7 @@ importers:
   examples/.test/ssg:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -225,7 +224,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -437,7 +436,7 @@ importers:
 
   examples/minimal-react/client:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
@@ -450,7 +449,7 @@ importers:
       typescript: ^4.8.3
       vite: ^4.1.2
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
@@ -505,7 +504,7 @@ importers:
 
   examples/next-big-router:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -521,7 +520,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -540,7 +539,7 @@ importers:
 
   examples/next-edge-runtime:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -555,7 +554,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -573,7 +572,7 @@ importers:
 
   examples/next-minimal-starter:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -588,7 +587,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -608,7 +607,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -639,7 +638,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -675,7 +674,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -698,7 +697,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -713,7 +712,7 @@ importers:
       zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
-      '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
+      '@tanstack/react-query-devtools': 4.18.0_brdhmlf72zuns3lsk66phyptty
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       eslint: 8.30.0
@@ -726,7 +725,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -763,7 +762,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -779,7 +778,7 @@ importers:
       zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
-      '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
+      '@tanstack/react-query-devtools': 4.18.0_brdhmlf72zuns3lsk66phyptty
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/ws': 8.5.3
@@ -907,7 +906,7 @@ importers:
 
   packages/next:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../client
       '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
@@ -927,7 +926,7 @@ importers:
     dependencies:
       react-ssr-prepass: 1.5.0_react@18.2.0
     devDependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
       '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
@@ -946,7 +945,7 @@ importers:
 
   packages/react-query:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@trpc/client': link:../client
       '@trpc/server': link:../server
       '@types/express': ^4.17.12
@@ -961,7 +960,7 @@ importers:
       tsx: ^3.12.3
       zod: ^3.0.0
     devDependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
       '@trpc/server': link:../server
       '@types/express': 4.17.14
@@ -979,7 +978,7 @@ importers:
   packages/server:
     specifiers:
       '@fastify/websocket': ^7.1.2
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
       '@types/hash-sum': ^1.0.0
@@ -1010,7 +1009,7 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@fastify/websocket': 7.1.2
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@types/aws-lambda': 8.10.109
       '@types/express': 4.17.14
       '@types/hash-sum': 1.0.0
@@ -1045,7 +1044,7 @@ importers:
       '@cloudflare/workers-types': ^4.0.0
       '@fastify/websocket': ^7.1.2
       '@miniflare/core': ^2.9.0
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': ^4.18.0
       '@testing-library/dom': ^9.0.0
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^14.0.0
@@ -1087,7 +1086,7 @@ importers:
       '@cloudflare/workers-types': 4.20230215.0
       '@fastify/websocket': 7.1.2
       '@miniflare/core': 2.11.0
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       '@testing-library/dom': 9.0.0
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 14.0.0_biqbaboplfbrettd7655fr4n2y
@@ -8742,10 +8741,10 @@ packages:
       remove-accents: 0.4.2
     dev: true
 
-  /@tanstack/query-core/4.6.0:
-    resolution: {integrity: sha512-8b+vwooh8b4z1bIT3Ca7OVSyARM5JNbXi6F+g5VLYiflRd0AtJ+koqhin7UGhR11bbypmzVRKllWHwexWjKjDg==}
+  /@tanstack/query-core/4.26.1:
+    resolution: {integrity: sha512-Zrx2pVQUP4ndnsu6+K/m8zerXSVY8QM+YSbxA1/jbBY21GeCd5oKfYl92oXPK0hPEUtoNuunIdiq0ZMqLos+Zg==}
 
-  /@tanstack/react-query-devtools/4.18.0_35w334xqtbzboqulr5pz522esm:
+  /@tanstack/react-query-devtools/4.18.0_brdhmlf72zuns3lsk66phyptty:
     resolution: {integrity: sha512-L51D0AUqLTs7J+W7RypJrUEKXsS0y0eEhXAgO+rhcZH6i8jVrKLhcNZStQSnE+UpZqPm73uxt2e8TJgYfzz0nw==}
     peerDependencies:
       '@tanstack/react-query': 4.18.0
@@ -8753,15 +8752,15 @@ packages:
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       '@tanstack/match-sorter-utils': 8.1.1
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.26.1_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.11.0
       use-sync-external-store: 1.2.0_react@18.2.0
     dev: true
 
-  /@tanstack/react-query/4.6.0_biqbaboplfbrettd7655fr4n2y:
-    resolution: {integrity: sha512-ZIx8EfRBGagxw+3onFb//Fnv0hhXDj/UHIYovPGwHdancAG9ZL4D0ymUan4cXJib/L0rGPzYFvET/yTEIPPXAw==}
+  /@tanstack/react-query/4.26.1_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-i3dnz4TOARGIXrXQ5P7S25Zfi4noii/bxhcwPurh2nrf5EUCcAt/95TB2HSmMweUBx206yIMWUMEQ7ptd6zwDg==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
@@ -8772,7 +8771,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 4.6.0
+      '@tanstack/query-core': 4.26.1
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0

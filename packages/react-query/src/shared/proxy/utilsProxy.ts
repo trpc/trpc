@@ -87,6 +87,18 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
+   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientensurequerydata
+   */
+  ensureData(
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchQueryOptions<
+      inferProcedureInput<TProcedure>,
+      TRPCClientError<TRouter>,
+      inferTransformedProcedureOutput<TProcedure>
+    >,
+  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+
+  /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
@@ -275,6 +287,7 @@ export function createReactQueryUtilsProxy<
         prefetch: () => context.prefetchQuery(queryKey, ...rest),
         prefetchInfinite: () =>
           context.prefetchInfiniteQuery(queryKey, ...rest),
+        ensureData: () => context.ensureQueryData(queryKey, ...rest),
         invalidate: () => context.invalidateQueries(queryKey, ...rest),
         reset: () => context.resetQueries(queryKey, ...rest),
         refetch: () => context.refetchQueries(queryKey, ...rest),
