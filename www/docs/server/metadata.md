@@ -66,7 +66,7 @@ export const appRouter = t.router({
 });
 ```
 
-## Default Meta, Chaining, and shallow merging
+## Default meta, chaining, and shallow merging
 
 If you set meta multiple times, it will be shallowly merged.
 
