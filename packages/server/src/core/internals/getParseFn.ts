@@ -30,6 +30,12 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return parser.create.bind(parser);
   }
 
+  if (typeof parser._assert === 'function') {
+    // ParserScaleEsque
+    // return (v: any) => $.assert(parser, v);
+    return (v: any) => v;
+  }
+
   throw new Error('Could not find a validator fn');
 }
 
