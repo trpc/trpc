@@ -271,8 +271,14 @@ export function createRootHooks<
     pathAndInput: [path: string, ...args: unknown[]],
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
+    const context = useContext();
+    if (!context) {
+      throw new Error(
+        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+      );
+    }
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
-      useContext();
+      context;
 
     if (
       typeof window === 'undefined' &&
