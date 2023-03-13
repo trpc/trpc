@@ -130,6 +130,17 @@ export function createRootHooks<
             },
             [client, queryClient],
           ),
+          ensureQueryData: useCallback(
+            (pathAndInput, opts) => {
+              return queryClient.ensureQueryData({
+                ...opts,
+                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryFn: () =>
+                  (client as any).query(...getClientArgs(pathAndInput, opts)),
+              });
+            },
+            [client, queryClient],
+          ),
           invalidateQueries: useCallback(
             (queryKey, filters, options) => {
               return queryClient.invalidateQueries(

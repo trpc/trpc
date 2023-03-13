@@ -169,6 +169,17 @@ function __createHooksInternal<
             },
             [client, queryClient],
           ),
+          ensureQueryData: useCallback(
+            (pathAndInput, opts) => {
+              return queryClient.ensureQueryData(
+                getArrayQueryKey(pathAndInput, 'query'),
+                () =>
+                  (client as any).query(...getClientArgs(pathAndInput, opts)),
+                opts,
+              );
+            },
+            [client, queryClient],
+          ),
           invalidateQueries: useCallback(
             (...args: any[]) => {
               const [queryKey, ...rest] = args;
