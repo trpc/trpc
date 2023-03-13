@@ -58,6 +58,8 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    * @default process.env.NODE_ENV !== 'production'
    */
   isDev: boolean;
+
+  defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 }
 
 /**

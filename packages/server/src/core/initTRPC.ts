@@ -44,13 +44,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  * - Doesn't need to be a class but it doesn't really hurt either
  */
 
-interface TRPCBuilderConfig<TParams extends PartialRootConfigTypes> {
-  defaultMeta?: TParams['meta'];
-}
-
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
-  constructor(private readonly config: TRPCBuilderConfig<TParams>) {}
-
   context<
     TNewContext extends
       | RootConfigTypes['ctx']
@@ -58,16 +52,13 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   >() {
     type NextParams = FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>;
 
-    return new TRPCBuilder<NextParams>(this.config as NextParams);
+    return new TRPCBuilder<NextParams>();
   }
 
-  meta<TNewMeta extends RootConfigTypes['meta']>(defaultMeta?: TNewMeta) {
+  meta<TNewMeta extends RootConfigTypes['meta']>() {
     type NextParams = FlatOverwrite<TParams, { meta: TNewMeta }>;
 
-    return new TRPCBuilder<NextParams>({
-      ...this.config,
-      defaultMeta: defaultMeta,
-    });
+    return new TRPCBuilder<NextParams>();
   }
 
   create<
@@ -82,18 +73,16 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
         >
       | undefined,
   ) {
-    return createTRPCInner<TParams>(this.config)<TOptions>(options);
+    return createTRPCInner<TParams>()<TOptions>(options);
   }
 }
 
 /**
  * Initialize tRPC - done exactly once per backend
  */
-export const initTRPC = new TRPCBuilder({});
+export const initTRPC = new TRPCBuilder();
 
-function createTRPCInner<TParams extends PartialRootConfigTypes>(
-  builderConfig: TRPCBuilderConfig<TParams>,
-) {
+function createTRPCInner<TParams extends PartialRootConfigTypes>() {
   type $Generics = CreateRootConfigTypesFromPartial<TParams>;
 
   type $Context = $Generics['ctx'];
@@ -161,7 +150,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>(
        * Builder object for creating procedures
        */
       procedure: createBuilder<$Config>({
-        meta: builderConfig.defaultMeta,
+        meta: runtime?.defaultMeta,
       }),
       /**
        * Create reusable middlewares

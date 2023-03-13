@@ -82,8 +82,10 @@ test('default meta', async () => {
   const t = initTRPC
     .meta<{
       data: string;
-    }>({ data: 'foobar' })
-    .create();
+    }>()
+    .create({
+      defaultMeta: { data: 'foobar' },
+    });
 
   const middleware = vi.fn((opts) => {
     return opts.next();
@@ -119,8 +121,8 @@ test('default meta with merging', async () => {
   const t = initTRPC
     .meta<{
       data: string;
-    }>({ data: 'foobar' })
-    .create();
+    }>()
+    .create({ defaultMeta: { data: 'foobar' } });
 
   const middleware = vi.fn((opts) => {
     return opts.next();
@@ -194,10 +196,12 @@ test('complex meta merging', async () => {
         obj1: string;
         obj2: string;
       };
-    }>({
-      data1: 'foobar',
-    })
-    .create();
+    }>()
+    .create({
+      defaultMeta: {
+        data1: 'foobar',
+      },
+    });
 
   const middleware = vi.fn((opts) => {
     return opts.next();
