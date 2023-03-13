@@ -13,14 +13,14 @@ import React, { useEffect, useRef, useState } from 'react';
 const BACKEND_FILES = {
   '/package.json': {
     code: JSON.stringify({
-      dependencies: {
-        '@trpc/server': '*',
-        '@trpc/client': '*',
-        '@trpc/react-query': '*',
-        '@tanstack/react-query': '*',
-        zod: '*',
-      },
-      scripts: { start: 'node index.ts' },
+      // dependencies: {
+      //   '@trpc/server': '*',
+      //   '@trpc/client': '*',
+      //   '@trpc/react-query': '*',
+      //   '@tanstack/react-query': '*',
+      //   zod: '*',
+      // },
+      scripts: { start: 'ts-node index.ts' },
       main: 'index.ts',
     }),
   },
@@ -148,6 +148,8 @@ export function SandpackRoot() {
             '@trpc/react-query': '*',
             '@tanstack/react-query': '*',
             zod: '*',
+            typescript: '*',
+            'ts-node': '*',
           },
           entry: 'index.ts',
           environment: 'node',
