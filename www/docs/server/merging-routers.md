@@ -70,7 +70,7 @@ export const userRouter = router({
 
 When you define an inline sub-router, you can represent your router as a plain object.
 
-In the below example, `nested1` and `neested2` are equal:
+In the below example, `nested1` and `nested2` are equal:
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
