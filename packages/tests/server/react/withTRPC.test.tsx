@@ -487,4 +487,64 @@ describe('withTRPC()', () => {
       });
     });
   });
+
+  describe('individual pages', () => {
+    test('useQuery', async () => {
+      // @ts-ignore
+      const { window } = global;
+
+      // @ts-ignore
+      delete global.window;
+      const { trpc, trpcClientOptions } = ctx;
+      const App = () => {
+        const query = trpc.allPosts.useQuery();
+        return <>{JSON.stringify(query.data)}</>;
+      };
+
+      const Wrapped = withTRPC({
+        config: () => trpcClientOptions,
+      })(App);
+
+      // @ts-ignore
+      global.window = window;
+
+      const utils = render(<Wrapped />);
+      expect(utils.container).not.toHaveTextContent('first post');
+
+      // should eventually be fetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+    test('useQuery - ssr', async () => {
+      // @ts-ignore
+      const { window } = global;
+
+      // @ts-ignore
+      delete global.window;
+      const { trpc, trpcClientOptions } = ctx;
+      const App = () => {
+        const query = trpc.allPosts.useQuery();
+        return <>{JSON.stringify(query.data)}</>;
+      };
+
+      const Wrapped = withTRPC({
+        config: () => trpcClientOptions,
+        ssr: true,
+      })(App);
+
+      // @ts-ignore
+      global.window = window;
+
+      // ssr should not work
+
+      const utils = render(<Wrapped />);
+      expect(utils.container).not.toHaveTextContent('first post');
+
+      // should eventually be fetched
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('first post');
+      });
+    });
+  });
 });
