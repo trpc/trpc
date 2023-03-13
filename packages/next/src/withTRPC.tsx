@@ -120,10 +120,15 @@ export function withTRPC<
       });
 
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
-      const hydratedState = trpc.useDehydratedState(
-        trpcClient,
-        props.pageProps.trpcState,
-      );
+
+      // allow normal components to be wrapped, not just app/pages
+      let hydratedState: DehydratedState | undefined;
+      if (props.pageProps) {
+        hydratedState = trpc.useDehydratedState(
+          trpcClient,
+          props.pageProps.trpcState,
+        );
+      }
 
       return (
         <trpc.Provider
