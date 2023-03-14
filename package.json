@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.29.1",
+  "packageManager": "pnpm@7.29.2",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
@@ -70,7 +70,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@tanstack/react-query": "4.6.0",
+      "@tanstack/react-query": "4.18.0",
       "@trpc/client": "link:./packages/client",
       "@trpc/next": "link:./packages/next",
       "@trpc/react-query": "link:./packages/react-query",
