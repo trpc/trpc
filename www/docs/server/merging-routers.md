@@ -106,7 +106,7 @@ We recommend you to only define inline sub-routers within a file, and to keep th
 <details style={{ marginTop: "1rem" }}>
 <summary>See a deep dive here</summary>
 
-When defining a router as a plain object, any keys are valid. This means you can define a router like this:
+When defining a router as a plain object, any key is valid. This means you can define a router like this, without any errors being shown. But when you try to merge this router somewhere else, things will blow up:
 
 ```ts twoslash title="routers/user.ts"
 export const userRouter = {
@@ -118,9 +118,7 @@ export const userRouter = {
 
 <br />
 
-without any errors being shown. But when you try to merge this router somewhere else, things will blow up:
-
-```ts twoslash title="routers/user.ts"
+```ts twoslash title="routers/_app.ts"
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
