@@ -21,7 +21,7 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
     apply(_1, _2, args) {
       const isApply = path[path.length - 1] === 'apply';
       return callback({
-        args: isApply ? args[1] : args,
+        args: isApply ? (args.length >= 2 ? args[1] : []) : args,
         path: isApply ? path.slice(0, -1) : path,
       });
     },
