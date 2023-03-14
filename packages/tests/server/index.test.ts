@@ -593,3 +593,29 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
   expect(await proxy.q.query()).toMatchInlineSnapshot(`Object {}`);
   await close();
 });
+
+describe('apply()', () => {
+  test('query without input', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      hello: t.procedure.query(() => 'world'),
+    });
+    const { close, proxy } = routerToServerAndClientNew(router);
+    expect(await proxy.hello.query.apply(undefined)).toBe('world');
+    await close();
+  });
+
+  test('query with input', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      helloinput: t.procedure
+        .input(z.string())
+        .query(({ input }) => `hello ${input}`),
+    });
+    const { close, proxy } = routerToServerAndClientNew(router);
+    expect(await proxy.helloinput.query.apply(undefined, ['world'])).toBe(
+      'hello world',
+    );
+    await close();
+  });
+});
