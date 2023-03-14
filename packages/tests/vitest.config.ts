@@ -16,6 +16,7 @@ export default defineConfig({
       include: ['*/src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
+    reporters: ['verbose'],
     useAtomics: !!process.env.CI,
   },
   resolve: {

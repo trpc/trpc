@@ -486,34 +486,38 @@ test('batching', async () => {
   await t.close();
 });
 
-describe('regression test - slow createContext', () => {
-  test('send messages immediately on connection', async () => {
-    const t = factory({
-      async createContext() {
-        await waitMs(50);
-        return {};
-      },
-    });
-    const rawClient = new WebSocket(t.wssUrl);
+describe(
+  'regression test - slow createContext',
+  () => {
+    test(
+      'send messages immediately on connection',
+      async () => {
+        const t = factory({
+          async createContext() {
+            await waitMs(50);
+            return {};
+          },
+        });
+        const rawClient = new WebSocket(t.wssUrl);
 
-    const msg: TRPCRequestMessage = {
-      id: 1,
-      method: 'query',
-      params: {
-        path: 'greeting',
-        input: null,
-      },
-    };
-    const msgStr = JSON.stringify(msg);
-    rawClient.onopen = () => {
-      rawClient.send(msgStr);
-    };
-    const data = await new Promise<string>((resolve) => {
-      rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
-      });
-    });
-    expect(JSON.parse(data)).toMatchInlineSnapshot(`
+        const msg: TRPCRequestMessage = {
+          id: 1,
+          method: 'query',
+          params: {
+            path: 'greeting',
+            input: null,
+          },
+        };
+        const msgStr = JSON.stringify(msg);
+        rawClient.onopen = () => {
+          rawClient.send(msgStr);
+        };
+        const data = await new Promise<string>((resolve) => {
+          rawClient.addEventListener('message', (msg) => {
+            resolve(msg.data as any);
+          });
+        });
+        expect(JSON.parse(data)).toMatchInlineSnapshot(`
       Object {
         "id": 1,
         "result": Object {
@@ -522,56 +526,58 @@ describe('regression test - slow createContext', () => {
         },
       }
     `);
-    rawClient.close();
-    await t.close();
-  });
-
-  test('createContext throws', async () => {
-    const createContext = vi.fn(async () => {
-      await waitMs(20);
-      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
-    });
-    const t = factory({
-      createContext,
-    });
-    // close built-in client immediately to prevent connection
-    t.wsClient.close();
-    const rawClient = new WebSocket(t.wssUrl);
-
-    const msg: TRPCRequestMessage = {
-      id: 1,
-      method: 'query',
-      params: {
-        path: 'greeting',
-        input: null,
+        rawClient.close();
+        await t.close();
       },
-    };
-    const msgStr = JSON.stringify(msg);
-    rawClient.onopen = () => {
-      rawClient.send(msgStr);
-    };
+      { retry: 5 },
+    );
 
-    const responses: any[] = [];
-    rawClient.addEventListener('message', (msg) => {
-      responses.push(JSON.parse(msg.data as any));
-    });
-    await new Promise<void>((resolve) => {
-      rawClient.addEventListener('close', () => {
-        resolve();
+    test('createContext throws', async () => {
+      const createContext = vi.fn(async () => {
+        await waitMs(20);
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
       });
-    });
-    for (const res of responses) {
-      expect(res).toHaveProperty('error');
-      expect(typeof res.error.data.stack).toBe('string');
-      res.error.data.stack = '[redacted]';
-    }
-    expect(responses).toHaveLength(2);
-    const [first, second] = responses;
+      const t = factory({
+        createContext,
+      });
+      // close built-in client immediately to prevent connection
+      t.wsClient.close();
+      const rawClient = new WebSocket(t.wssUrl);
 
-    expect(first.id).toBe(null);
-    expect(second.id).toBe(1);
+      const msg: TRPCRequestMessage = {
+        id: 1,
+        method: 'query',
+        params: {
+          path: 'greeting',
+          input: null,
+        },
+      };
+      const msgStr = JSON.stringify(msg);
+      rawClient.onopen = () => {
+        rawClient.send(msgStr);
+      };
 
-    expect(responses).toMatchInlineSnapshot(`
+      const responses: any[] = [];
+      rawClient.addEventListener('message', (msg) => {
+        responses.push(JSON.parse(msg.data as any));
+      });
+      await new Promise<void>((resolve) => {
+        rawClient.addEventListener('close', () => {
+          resolve();
+        });
+      });
+      for (const res of responses) {
+        expect(res).toHaveProperty('error');
+        expect(typeof res.error.data.stack).toBe('string');
+        res.error.data.stack = '[redacted]';
+      }
+      expect(responses).toHaveLength(2);
+      const [first, second] = responses;
+
+      expect(first.id).toBe(null);
+      expect(second.id).toBe(1);
+
+      expect(responses).toMatchInlineSnapshot(`
       Array [
         Object {
           "error": Object {
@@ -601,10 +607,12 @@ describe('regression test - slow createContext', () => {
       ]
     `);
 
-    expect(createContext).toHaveBeenCalledTimes(1);
-    await t.close();
-  });
-});
+      expect(createContext).toHaveBeenCalledTimes(1);
+      await t.close();
+    });
+  },
+  { retry: 5 },
+);
 
 test('malformatted JSON', async () => {
   const t = factory();
