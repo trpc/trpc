@@ -69,7 +69,7 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.15.0"
+    "@trpc/server": "10.16.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
