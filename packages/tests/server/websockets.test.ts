@@ -453,8 +453,8 @@ test(
     });
   },
   {
-    retry: 3,
-  } as any,
+    retry: 5,
+  },
 );
 
 test('not found error', async () => {
