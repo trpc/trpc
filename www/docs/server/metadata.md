@@ -81,9 +81,9 @@ interface Meta {
 export const t = initTRPC
   .context<Context>()
   .meta<Meta>()
-  .create({ 
+  .create({
     // Set a default value
-    defaultMeta: { authRequired: false } 
+    defaultMeta: { authRequired: false }
   });
 
 const publicProcedure = t.procedure
