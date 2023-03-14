@@ -99,7 +99,7 @@ const appRouter = router({
 });
 ```
 
-:::caution
+:::info
 
 We recommend you to only define inline sub-routers within a file, and to keep the exported routers as a `t.router` object. This makes any potential type errors show up in the file they originate from, and not at the place where you merge them.
 
