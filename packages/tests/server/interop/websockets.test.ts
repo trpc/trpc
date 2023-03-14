@@ -1,4 +1,3 @@
-// import WebSocket from 'ws';
 import { routerToServerAndClientNew, waitMs } from '../___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { TRPCClientError } from '@trpc/client/src';
@@ -13,7 +12,7 @@ import {
 } from '@trpc/server/src/rpc';
 import { EventEmitter } from 'events';
 import { expectTypeOf } from 'expect-type';
-import { default as WebSocket, default as ws } from 'ws';
+import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
 type Message = {
@@ -260,7 +259,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     }, 1);
   });
 
-  const wss = new ws.Server({ port: wssPort });
+  const wss = new Server({ port: wssPort });
   applyWSSHandler({ ...applyWSSHandlerOpts, wss });
 
   await waitFor(() => {
@@ -362,9 +361,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
   await close();
   await waitFor(() => {
-    expect((wsClient.getConnection() as any as WebSocket).readyState).toBe(
-      WebSocket.CLOSED,
-    );
+    expect(wsClient.getConnection().readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
