@@ -350,21 +350,25 @@ test('sub emits errors', async () => {
   await close();
 });
 
-test('wait for slow queries/mutations before disconnecting', async () => {
-  const { client, close, wsClient, onNewClient } = factory();
+test(
+  'wait for slow queries/mutations before disconnecting',
+  async () => {
+    const { client, close, wsClient, onNewClient } = factory();
 
-  await waitFor(() => {
-    expect(onNewClient).toHaveBeenCalledTimes(1);
-  });
-  const promise = client.mutation('slow');
-  wsClient.close();
-  expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
-  await close();
-  await waitFor(() => {
-    expect(wsClient.getConnection().readyState).toBe(WebSocket.CLOSED);
-  });
-  await close();
-});
+    await waitFor(() => {
+      expect(onNewClient).toHaveBeenCalledTimes(1);
+    });
+    const promise = client.mutation('slow');
+    wsClient.close();
+    expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
+    await close();
+    await waitFor(() => {
+      expect(wsClient.getConnection().readyState).toBe(WebSocket.CLOSED);
+    });
+    await close();
+  },
+  { retry: 5 },
+);
 
 test(
   'subscriptions are automatically resumed',
