@@ -24,7 +24,7 @@ When you're using the [`httpBatchLink`](links/httpBatchLink) or [`wsLink`](links
 ```tsx
 const Component = (props: { postIds: string[] }) => {
   const postQueries = trpc.useQueries((t) =>
-    props.post.byIds.map((id) => t.post.byId({ id })),
+    props.postIds.map((id) => t.post.byId({ id })),
   );
 
   return <>{/* [...] */}</>;
