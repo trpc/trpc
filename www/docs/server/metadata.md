@@ -68,7 +68,7 @@ export const appRouter = t.router({
 
 ## Default meta, chaining, and shallow merging
 
-If you set meta multiple times, it will be shallowly merged.
+You can set default values for your meta type, and if you chain meta on top of a base procedure it will be shallow merged.
 
 ```tsx
 import { initTRPC } from '@trpc/server';
@@ -80,11 +80,14 @@ interface Meta {
 
 export const t = initTRPC
   .context<Context>()
-  .meta<Meta>({ authRequired: false })
-  .create();
+  .meta<Meta>()
+  .create({ 
+    // Set a default value
+    defaultMeta: { authRequired: false } 
+  });
 
 const publicProcedure = t.procedure
-// ^ Meta: { authRequired: false }
+// ^ Default Meta: { authRequired: false }
 
 const authProcedure = publicProcedure
   .use(authMiddleware)
