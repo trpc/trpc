@@ -13,8 +13,8 @@ const bilbo = await client.getUser.query('id_bilbo');
 
 You are likely to use this client in two scenarios:
 
-* With a frontend framework which we don't have an official integration with
-* With a separate backend service written in Typescript.
+- With a frontend framework which we don't have an official integration with
+- With a separate backend service written in Typescript.
 
 ### When **NOT** to use the tRPC Client?
 

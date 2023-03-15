@@ -5,7 +5,6 @@ sidebar_label: Aborting Procedure Calls
 slug: /client/aborting-procedure-calls
 ---
 
-
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query-options and then call its parent `AbortController`'s `abort` method.
 
 ```ts twoslash title="utils.ts"
