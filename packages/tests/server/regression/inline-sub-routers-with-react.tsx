@@ -2,7 +2,7 @@ import { getServerAndReactClient } from '../react/__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -25,6 +25,12 @@ test('short-hand routers with React', async () => {
   function MyComponent() {
     const allPosts = proxy.foo.query.useQuery();
     proxy.foo.mutation.useMutation();
+    const utils = proxy.useContext();
+
+    useEffect(() => {
+      utils.foo.query.invalidate();
+      utils.client.foo.query.query();
+    }, [utils]);
 
     return <>{allPosts.data}</>;
   }
