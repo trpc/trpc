@@ -34,10 +34,7 @@ import { TRPCContextState } from '../../internals/context';
 import { QueryKeyKnown } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
-type DecorateProcedure<
-  TRouter extends AnyRouter,
-  TProcedure extends AnyQueryProcedure,
-> = {
+type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
@@ -45,7 +42,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
@@ -57,7 +54,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
@@ -69,7 +66,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<void>;
@@ -81,7 +78,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<void>;
@@ -93,7 +90,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
@@ -107,7 +104,7 @@ type DecorateProcedure<
       predicate?: (
         query: Query<
           inferProcedureInput<TProcedure>,
-          TRPCClientError<TRouter>,
+          TRPCClientError<TProcedure>,
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
@@ -216,10 +213,10 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
     ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
         DecorateRouter
     : // utils only apply to queries
-      DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
+      DecorateProcedure<TRouter['_def']['record'][TKey]>;
 } & DecorateRouter; // Add functions that should be available at utils root
 
-type AnyDecoratedProcedure = DecorateProcedure<any, any>;
+type AnyDecoratedProcedure = DecorateProcedure<any>;
 
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
