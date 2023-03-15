@@ -12,6 +12,7 @@ const ctx = konn()
         query: t.procedure.query(() => 'foobar'),
         mutation: t.procedure.mutation(() => 'foobar'),
       },
+      moo: t.procedure.query(() => 'moo'),
     });
     return getServerAndReactClient(appRouter);
   })
@@ -24,12 +25,14 @@ test('short-hand routers with React', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
     const allPosts = proxy.foo.query.useQuery();
-    proxy.foo.mutation.useMutation();
+    proxy.foo.mutation;
+    proxy.moo.useQuery();
     const utils = proxy.useContext();
 
     useEffect(() => {
       utils.foo.query.invalidate();
       utils.client.foo.query.query();
+      utils.client.moo.query();
     }, [utils]);
 
     return <>{allPosts.data}</>;
