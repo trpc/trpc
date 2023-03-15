@@ -101,7 +101,7 @@ const appRouter = router({
 
 :::info
 
-We recommend you to only define inline sub-routers within a file, and to keep the exported routers as a `t.router` object. This makes any potential type errors show up in the file they originate from, and not at the place where you merge them.
+We recommend you always export routers via `t.router`, as opposed to exporting objects with procedures attached. This ensures that type errors show up in the file they originate from, instead of the place where you merge them.
 
 <details style={{ marginTop: "1rem" }}>
 <summary>See a deep dive here</summary>
