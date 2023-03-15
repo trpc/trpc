@@ -1,6 +1,16 @@
 {
   "redirects": [
     {
+      "source": "/docs/aborting-procedure-calls",
+      "destination": "/docs/client/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/vanilla",
+      "destination": "/docs/client/setup",
+      "permanent": true
+    },
+    {
       "source": "/docs/api-gateway",
       "destination": "/docs/aws-lambda",
       "permanent": true
