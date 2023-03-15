@@ -1,22 +1,16 @@
 import { getServerAndReactClient } from '../react/__reactHelpers';
-import { useQuery } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React from 'react';
-import { z } from 'zod';
-
-const post = { id: 1, text: 'foo' };
-const posts = [post];
 
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.create();
     const appRouter = t.router({
-      foo: t.router({
+      foo: {
         bar: t.procedure.query(() => 'foobar'),
-      }),
+      },
     });
     return getServerAndReactClient(appRouter);
   })
