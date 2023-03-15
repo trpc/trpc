@@ -66,8 +66,6 @@ export const userRouter = router({
 
 ```
 
-<!--
-
 ### Defining an inline sub-router
 
 When you define an inline sub-router, you can represent your router as a plain object.
@@ -179,8 +177,6 @@ export const appRouter = router({
 </details>
 
 :::
-
--->
 
 ## Merging with `t.mergeRouters`
 
