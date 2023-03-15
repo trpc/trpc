@@ -1,6 +1,6 @@
 # tRPC Client
 
-The "vanilla" tRPC client can be used to call your API as if it's a local function, enabling a seamless development experience.
+The "vanilla" tRPC client can be used to call your API procedures as if they are local functions, enabling a seamless development experience.
 
 ```ts
 import type { AppRouter } from '../path/to/server/trpc';

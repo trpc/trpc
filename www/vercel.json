@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/docs/react-query",
+      "destination": "/docs/reactjs/introduction",
+      "permanent": true
+    },
+    {
       "source": "/docs/aborting-procedure-calls",
       "destination": "/docs/client/aborting-procedure-calls",
       "permanent": true
