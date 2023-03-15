@@ -216,6 +216,12 @@ export type DecoratedProcedureRecord<
       >
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey], TFlags, `${TPath}${TKey & string}`>
+    : TProcedures[TKey] extends ProcedureRouterRecord
+    ? DecoratedProcedureRecord<
+        TProcedures[TKey],
+        TFlags,
+        `${TPath}${TKey & string}.`
+      >
     : never;
 };
 
