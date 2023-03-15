@@ -9,8 +9,8 @@ const ctx = konn()
     const t = initTRPC.create();
     const appRouter = t.router({
       foo: {
-        query: t.procedure.query(() => 'foobar'),
-        mutation: t.procedure.mutation(() => 'foobar'),
+        query: t.procedure.query(() => 'foobar' as const),
+        mutation: t.procedure.mutation(() => 'foobar' as const),
       },
       moo: t.procedure.query(() => 'moo'),
     });
@@ -24,7 +24,7 @@ const ctx = konn()
 test('short-hand routers with React', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const allPosts = proxy.foo.query.useQuery();
+    const fooQuery = proxy.foo.query.useQuery();
     proxy.foo.mutation;
     proxy.moo.useQuery();
     proxy.useQueries((t) => [t.moo(), t.foo.query()]);
@@ -36,7 +36,12 @@ test('short-hand routers with React', async () => {
       utils.client.moo.query();
     }, [utils]);
 
-    return <>{allPosts.data}</>;
+    if (!fooQuery.data) {
+      return <>...</>;
+    }
+    expectTypeOf(fooQuery.data).toEqualTypeOf<'foobar'>();
+
+    return <>{fooQuery.data}</>;
   }
 
   const utils = render(
