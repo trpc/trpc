@@ -27,6 +27,7 @@ test('short-hand routers with React', async () => {
     const allPosts = proxy.foo.query.useQuery();
     proxy.foo.mutation;
     proxy.moo.useQuery();
+    proxy.useQueries((t) => [t.moo(), t.foo.query()]);
     const utils = proxy.useContext();
 
     useEffect(() => {
