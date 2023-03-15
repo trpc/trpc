@@ -1,4 +1,4 @@
-import { Nodebox } from '@codesandbox/nodebox';
+// import { Nodebox } from '@codesandbox/nodebox';
 import {
   Sandpack,
   SandpackCodeEditor,
@@ -11,16 +11,28 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 
 const BACKEND_FILES = {
+  'tsconfig.json': {
+    code: JSON.stringify({
+      compilerOptions: {
+        target: 'ESNext',
+        useDefineForClassFields: true,
+        module: 'ESNext',
+        moduleResolution: 'Node',
+        strict: true,
+        jsx: 'preserve',
+        resolveJsonModule: true,
+        isolatedModules: true,
+        esModuleInterop: true,
+        lib: ['ESNext', 'DOM'],
+        skipLibCheck: true,
+        noEmit: true,
+      },
+      include: ['src/**/*.ts', 'src/**/*.d.ts', 'src/**/*.tsx', 'src/**/*.vue'],
+    }),
+  },
   '/package.json': {
     code: JSON.stringify({
-      // dependencies: {
-      //   '@trpc/server': '*',
-      //   '@trpc/client': '*',
-      //   '@trpc/react-query': '*',
-      //   '@tanstack/react-query': '*',
-      //   zod: '*',
-      // },
-      scripts: { start: 'ts-node index.ts' },
+      scripts: { start: 'tsc && node index.js' },
       main: 'index.ts',
     }),
   },
@@ -149,9 +161,8 @@ export function SandpackRoot() {
             '@tanstack/react-query': '*',
             zod: '*',
             typescript: '*',
-            'ts-node': '*',
           },
-          entry: 'index.ts',
+          entry: 'index.js',
           environment: 'node',
         }}
         options={{
