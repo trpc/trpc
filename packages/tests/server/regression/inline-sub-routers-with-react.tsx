@@ -9,7 +9,8 @@ const ctx = konn()
     const t = initTRPC.create();
     const appRouter = t.router({
       foo: {
-        bar: t.procedure.query(() => 'foobar'),
+        query: t.procedure.query(() => 'foobar'),
+        mutation: t.procedure.mutation(() => 'foobar'),
       },
     });
     return getServerAndReactClient(appRouter);
@@ -22,7 +23,8 @@ const ctx = konn()
 test('short-hand routers with React', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const allPosts = proxy.foo.bar.useQuery();
+    const allPosts = proxy.foo.query.useQuery();
+    proxy.foo.mutation.useMutation();
 
     return <>{allPosts.data}</>;
   }
