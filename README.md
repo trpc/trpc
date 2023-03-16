@@ -107,7 +107,8 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
   <tbody>
     <tr>
       <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Julius Marminge</b></sub></a></td>
-      <td align="center"><a href="https://github.com/Nick-Lucas"><img src="https://avatars.githubusercontent.com/u/8896153?v4&s=100" width="100px;" alt=""/><br /><sub><b>Nick Lucas</b></sub></a></td>
+      <td align="center"><a href="https://github.com/Nick-Lucas"><img src="https://avatars.githubusercontent.com/u/8896153?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Nick Lucas</b></sub></a></td>
+      <td align="center"><a href="https://github.com/kamilogorek"><img src="https://avatars.githubusercontent.com/u/1523305?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Kamil Ogórek</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -177,9 +178,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 
 <table>
   <tr>
-   <td align="center"><a href="https://pliny.app/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/95662801?v=4&s=100" width="100" alt="Ahoy%20Labs"/><br />Ahoy Labs</a></td>
    <td align="center"><a href="http://solberg.is/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4&s=100" width="100" alt="J%C3%B6kull%20S%C3%B3lberg%20Au%C3%B0unsson"/><br />Jökull Sólberg Auðunsson</a></td>
-   <td align="center"><a href="https://samholmes.dev/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/8385528?u=ba89e0794e3d5e7b4fdcad3ff21c2f253905fc10&v=4&s=100" width="100" alt="Sam%20Holmes"/><br />Sam Holmes</a></td>
+   <td align="center"><a href="https://pliny.app/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/95662801?v=4&s=100" width="100" alt="Ahoy%20Labs"/><br />Ahoy Labs</a></td>
+   <td align="center"><a href="https://samholmes.dev/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/8385528?u=c7f711a6a265054f0fd0f16a89f9fd667f8fc9ef&v=4&s=100" width="100" alt="Sam%20Holmes"/><br />Sam Holmes</a></td>
    <td align="center"><a href="https://maxgreenwald.me/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4&s=100" width="100" alt="Max%20Greenwald"/><br />Max Greenwald</a></td>
    <td align="center"><a href="https://www.beekai.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/10513364?u=a129aade5f9a7a92cf06172b47d67ccefc736933&v=4&s=100" width="100" alt="Beier%20(Bill)"/><br />Beier (Bill)</a></td>
    <td align="center"><a href="https://hampuskraft.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/24176136?u=87f4c5cd23ae2c8b66cfca5f2ac393795b9fbf13&v=4&s=100" width="100" alt="Hampus%20Kraft"/><br />Hampus Kraft</a></td>
@@ -233,7 +234,8 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://xstevenyung.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/7261258?u=7f598524167766006eefe6585b7e91e162e3f45d&v=4&s=100" width="100" alt="Steven%20Yung"/><br />Steven Yung</a></td>
   </tr>
   <tr>
-   <td align="center"><a href="https://mcpizza.is/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/17185737?u=e2a9fa3197371329778d4abe4cad3b951609c581&v=4&s=100" width="100" alt="McPizza"/><br />McPizza</a></td>
+   <td align="center"><a href="https://github.com/McPizza0"><img src="https://avatars.githubusercontent.com/u/17185737?u=e2a9fa3197371329778d4abe4cad3b951609c581&v=4&s=100" width="100" alt="McPizza"/><br />McPizza</a></td>
+   <td align="center"><a href="http://malbert.space/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/18056644?u=d553998324f38e51175b6046b1ba0d97e41ac171&v=4&s=100" width="100" alt="maayanalbert"/><br />maayanalbert</a></td>
    <td align="center"><a href="https://github.com/JohnShahawy"><img src="https://avatars.githubusercontent.com/u/13843114?u=9604e985cff42b118d16c17d94701b33920f515e&v=4&s=100" width="100" alt="John%20Shahawy"/><br />John Shahawy</a></td>
    <td align="center"><a href="https://github.com/prokopec-simon"><img src="https://avatars.githubusercontent.com/u/97883441?v=4&s=100" width="100" alt="%C5%A0imon%20Prokopec"/><br />Šimon Prokopec</a></td>
   </tr>
