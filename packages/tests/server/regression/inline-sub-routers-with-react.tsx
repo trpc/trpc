@@ -12,7 +12,7 @@ const ctx = konn()
         query: t.procedure.query(() => 'foobar' as const),
         mutation: t.procedure.mutation(() => 'foobar' as const),
       },
-      moo: t.procedure.query(() => 'moo'),
+      greeting: t.procedure.query(() => 'moo'),
     });
     return getServerAndReactClient(appRouter);
   })
@@ -24,16 +24,16 @@ const ctx = konn()
 test('short-hand routers with React', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const fooQuery = proxy.foo.query.useQuery();
-    proxy.foo.mutation;
-    proxy.moo.useQuery();
-    proxy.useQueries((t) => [t.moo(), t.foo.query()]);
+    const fooQuery = proxy.foo.query.useQuery(); // yay
+    proxy.foo.mutation.useMutation(); // yay
+    proxy.greeting.useQuery();
+    proxy.useQueries((t) => [t.greeting(), t.foo.query()]);
     const utils = proxy.useContext();
 
     useEffect(() => {
       utils.foo.query.invalidate();
-      utils.client.foo.query.query();
-      utils.client.moo.query();
+      utils.client.foo.query.query(); // yay
+      utils.client.greeting.query(); // yay
     }, [utils]);
 
     if (!fooQuery.data) {
