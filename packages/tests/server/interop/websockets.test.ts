@@ -491,38 +491,36 @@ test('batching', async () => {
   await t.close();
 });
 
-describe(
-  'regression test - slow createContext',
-  () => {
-    test(
-      'send messages immediately on connection',
-      async () => {
-        const t = factory({
-          async createContext() {
-            await waitMs(50);
-            return {};
-          },
-        });
-        const rawClient = new WebSocket(t.wssUrl);
+describe('regression test - slow createContext', () => {
+  test(
+    'send messages immediately on connection',
+    async () => {
+      const t = factory({
+        async createContext() {
+          await waitMs(50);
+          return {};
+        },
+      });
+      const rawClient = new WebSocket(t.wssUrl);
 
-        const msg: TRPCRequestMessage = {
-          id: 1,
-          method: 'query',
-          params: {
-            path: 'greeting',
-            input: null,
-          },
-        };
-        const msgStr = JSON.stringify(msg);
-        rawClient.onopen = () => {
-          rawClient.send(msgStr);
-        };
-        const data = await new Promise<string>((resolve) => {
-          rawClient.addEventListener('message', (msg) => {
-            resolve(msg.data as any);
-          });
+      const msg: TRPCRequestMessage = {
+        id: 1,
+        method: 'query',
+        params: {
+          path: 'greeting',
+          input: null,
+        },
+      };
+      const msgStr = JSON.stringify(msg);
+      rawClient.onopen = () => {
+        rawClient.send(msgStr);
+      };
+      const data = await new Promise<string>((resolve) => {
+        rawClient.addEventListener('message', (msg) => {
+          resolve(msg.data as any);
         });
-        expect(JSON.parse(data)).toMatchInlineSnapshot(`
+      });
+      expect(JSON.parse(data)).toMatchInlineSnapshot(`
       Object {
         "id": 1,
         "result": Object {
@@ -531,13 +529,15 @@ describe(
         },
       }
     `);
-        rawClient.close();
-        await t.close();
-      },
-      { retry: 5 },
-    );
+      rawClient.close();
+      await t.close();
+    },
+    { retry: 5 },
+  );
 
-    test('createContext throws', async () => {
+  test(
+    'createContext throws',
+    async () => {
       const createContext = vi.fn(async () => {
         await waitMs(20);
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
@@ -614,10 +614,10 @@ describe(
 
       expect(createContext).toHaveBeenCalledTimes(1);
       await t.close();
-    });
-  },
-  { retry: 5 },
-);
+    },
+    { retry: 5 },
+  );
+});
 
 test('malformatted JSON', async () => {
   const t = factory();
