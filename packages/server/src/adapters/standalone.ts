@@ -1,58 +1,157 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import http from 'http';
-import { AnyRouter } from '../core';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
-} from './node-http';
+---
+id: standalone
+title: Standalone Usage
+sidebar_label: Standalone
+slug: /standalone
+---
 
-export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
-  NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
+## Example app
 
-export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
-  http.IncomingMessage,
-  http.ServerResponse
->;
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Standalone tRPC Server</td>
+      <td>
+        <ul>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal">StackBlitz</a></li>
+          <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal/server/index.ts">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Standalone tRPC Server with CORS handling</td>
+      <td>
+        <ul>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal-react">StackBlitz</a></li>
+          <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal-react/server/index.ts">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-export function createHTTPHandler<TRouter extends AnyRouter>(
-  opts: CreateHTTPHandlerOptions<TRouter>,
-) {
-  return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    // if no hostname, set a dummy one
-    const href = req.url!.startsWith('/')
-      ? `http://127.0.0.1${req.url}`
-      : req.url!;
+## Setting up a Standalone tRPC Server
 
-    // get procedure path and remove the leading slash
-    // /procedure -> procedure
-    const path = new URL(href).pathname.slice(1);
+### 1. Implement your App Router
 
-    await nodeHTTPRequestHandler({
-      ...opts,
-      req,
-      res,
-      path,
-    });
-  };
-}
+Implement your tRPC router. For example:
 
-export function createHTTPServer<TRouter extends AnyRouter>(
-  opts: CreateHTTPHandlerOptions<TRouter>,
-) {
-  const handler = createHTTPHandler(opts);
-  const server = http.createServer((req, res) => handler(req, res));
+```ts title='appRouter.ts'
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
-  return {
-    server,
-    listen: (port?: number) => {
-      server.listen(port);
-      const actualPort =
-        port === 0 ? ((server.address() as any).port as number) : port;
+export const t = initTRPC.create();
 
-      return {
-        port: actualPort,
-      };
-    },
-  };
-}
+export const appRouter = t.router({
+  getUser: t.procedure.input(z.string()).query((req) => {
+    return { id: req.input, name: 'Bilbo' };
+  }),
+  createUser: t.procedure
+    .input(z.object({ name: z.string().min(5) }))
+    .mutation(async (req) => {
+      // use your ORM of choice
+      return await UserModel.create({
+        data: req.input,
+      });
+    }),
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+For more information you can look at the [quickstart guide](/docs/quickstart)
+
+### 2. Use the Standalone adapter
+
+The Standalone adapter runs a simple Node.js HTTP server.
+
+```ts title='server.ts'
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './appRouter.ts';
+
+createHTTPServer({
+  router: appRouter,
+  createContext() {
+    console.log('context 3');
+    return {};
+  },
+}).listen(2022);
+```
+
+## Handling CORS & Options
+
+By default the standalone server will not respond to HTTP OPTIONS requests, or set any CORS headers.
+
+If you're not hosting in an environment which can handle this for you, like during local development, you may need to handle it.
+
+### 1. Install cors
+
+You can add support yourself with the popular `cors` package
+
+```bash
+yarn add cors
+yarn add -D @types/cors
+```
+
+For full information on how to configure this package, [check the docs](https://github.com/expressjs/cors#readme)
+
+### 2. Configure the Standalone server
+
+This example just throws open CORS to any request, which is useful for development, but you can and should configure it more strictly in a production environment.
+
+```ts title='server.ts'
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import cors from 'cors';
+
+createHTTPServer({
+  middleware: cors(),
+  router: appRouter,
+  createContext() {
+    console.log('context 3');
+    return {};
+  },
+}).listen(3333);
+```
+
+The `middleware` option will accept any function which resembles a connect/node.js middleware, so it can be used for more than `cors` handling if you wish. It is, however, intended to be a simple escape hatch and as such won't on its own allow you to compose multiple middlewares together. If you want to do this then you could:
+
+1. Use an alternate adapter with more comprehensive middleware support, like the [Express adapter](/docs/express)
+2. Use a solution to compose middlewares such as [connect](https://github.com/senchalabs/connect)
+3. Extend the Standalone `createHTTPHandler` with a custom http server (see below)
+
+## Going further
+
+If `createHTTPServer` isn't enough you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP Server. For instance:
+
+```ts title='server.ts'
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import { createServer } from 'http';
+
+const handler = createHTTPHandler({
+  router: appRouter,
+  createContext() {
+    return {};
+  },
+});
+
+createServer((req, res) => {
+  /**
+   * Handle the request however you like,
+   * just call the tRPC handler when you're ready
+   */
+
+  handler(req, res);
+});
+
+server.listen(3333);
+```
