@@ -76,6 +76,7 @@ export type ProcedureBuilderDef<
   output?: Parser;
   meta?: TParams['_meta'];
   resolver?: ProcedureBuilderResolver;
+  batch?: boolean;
   middlewares: ProcedureBuilderMiddleware[];
   mutation?: boolean;
   query?: boolean;
@@ -83,6 +84,100 @@ export type ProcedureBuilderDef<
 };
 
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
+
+type Unwrap<TWrappedType> = TWrappedType extends (infer U)[] ? U : never;
+
+export interface BatchProcedureBuilder<
+  TParams extends ProcedureParams<AnyProcedureParams>,
+> {
+  /**
+   * Add an input parser to the procedure.
+   */
+  input<$Parser extends Parser>(
+    schema: TParams['_input_out'] extends UnsetMarker[]
+      ? $Parser
+      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
+      ? TParams['_input_out'] extends Record<string, unknown>[] | undefined
+        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+          ? undefined extends TParams['_input_out'][]
+            ? $Parser
+            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
+          : $Parser
+        : ErrorMessage<'All input parsers did not resolve to an object'>
+      : ErrorMessage<'All input parsers did not resolve to an object'>,
+  ): BatchProcedureBuilder<{
+    _config: TParams['_config'];
+    _meta: TParams['_meta'];
+    _ctx_out: TParams['_ctx_out'];
+    _input_in: OverwriteIfDefined<
+      TParams['_input_in'],
+      inferParser<$Parser>['in']
+    >;
+    _input_out: OverwriteIfDefined<
+      Unwrap<TParams['_input_out']>,
+      inferParser<$Parser>['out']
+    >[];
+
+    _output_in: TParams['_output_in'];
+    _output_out: TParams['_output_out'];
+  }>;
+  /**
+   * Add an output parser to the procedure.
+   */
+  output<$Parser extends Parser>(
+    schema: $Parser,
+  ): BatchProcedureBuilder<{
+    _config: TParams['_config'];
+    _meta: TParams['_meta'];
+    _ctx_out: TParams['_ctx_out'];
+    _input_in: TParams['_input_in'];
+    _input_out: TParams['_input_out'];
+    _output_in: inferParser<$Parser>['in'][];
+    _output_out: inferParser<$Parser>['out'];
+  }>;
+  /**
+   * Add a meta data to the procedure.
+   */
+  meta(meta: TParams['_meta']): ProcedureBuilder<TParams>;
+  /**
+   * Add a middleware to the procedure.
+   */
+  use<$Params extends ProcedureParams<AnyProcedureParams>>(
+    fn:
+      | MiddlewareBuilder<TParams, $Params>
+      | MiddlewareFunction<TParams, $Params>,
+  ): CreateProcedureReturnInput<TParams, $Params>;
+  /**
+   * Query procedure
+   */
+  query<$Output>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+  ): BuildProcedure<'query', TParams, $Output>;
+
+  /**
+   * Mutation procedure
+   */
+  mutation<$Output>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+  ): BuildProcedure<'mutation', TParams, $Output>;
+
+  /**
+   * Mutation procedure
+   */
+  subscription<$Output>(
+    resolver: (
+      opts: ResolveOptions<TParams>,
+    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+  ): BuildProcedure<'subscription', TParams, $Output>;
+  /**
+   * @internal
+   */
+  _def: ProcedureBuilderDef<TParams>;
+}
 
 export interface ProcedureBuilder<
   TParams extends ProcedureParams<AnyProcedureParams>,
@@ -136,6 +231,20 @@ export interface ProcedureBuilder<
    * Add a meta data to the procedure.
    */
   meta(meta: TParams['_meta']): ProcedureBuilder<TParams>;
+  /**
+   * Mark procedure as a batch.
+   *
+   */
+  batch(): BatchProcedureBuilder<{
+    _config: TParams['_config'];
+    _meta: TParams['_meta'];
+    _ctx_out: TParams['_ctx_out'];
+    _input_in: TParams['_input_in'];
+    _input_out: TParams['_input_out'][];
+
+    _output_in: TParams['_output_in'][];
+    _output_out: TParams['_output_out'];
+  }>;
   /**
    * Add a middleware to the procedure.
    */
@@ -235,6 +344,11 @@ export function createBuilder<TConfig extends AnyRootConfig>(
         meta: meta as Record<string, unknown>,
       }) as AnyProcedureBuilder;
     },
+    batch() {
+      return createNewBuilder(_def, {
+        batch: true,
+      }) as BatchProcedureBuilder<any>;
+    },
     use(middlewareBuilderOrFn) {
       // Distinguish between a middleware builder and a middleware function
       const middlewares =
@@ -333,6 +447,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           type: opts.type,
           path: opts.path,
           rawInput: opts.rawInput,
+          batch: _def.batch === true,
           meta: _def.meta,
           input: callOpts.input,
           next: async (nextOpts?: {

@@ -176,6 +176,13 @@ export async function resolveHTTPResponse<
       return input;
     };
     const inputs = getInputs();
+    const batchMemos: Record<typeof paths[number], Promise<unknown[]>> = {};
+    const batchIndexes: Record<typeof paths[number], number> = {};
+    const batchRawInputs = paths.reduce((initialValue, path, i) => {
+      return initialValue[path]
+        ? { ...initialValue, [path]: [...initialValue[path]!, inputs[i]] }
+        : { ...initialValue, [path]: [inputs[i]] };
+    }, {} as Record<string, Array<typeof inputs[number]>>);
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const requestInfo: TRPCRequestInfo = {
@@ -193,18 +200,42 @@ export async function resolveHTTPResponse<
         const input = inputs[index];
 
         try {
-          const output = await callProcedure({
-            procedures: router._def.procedures,
-            path,
-            rawInput: input,
-            ctx,
-            type,
-          });
-          return {
-            input,
-            path,
-            data: output,
-          };
+          if (router._def.procedures[path]._def.batch) {
+            const batchIndex = batchIndexes[path] || 0;
+            batchIndexes[path] = batchIndex + 1;
+            if (!batchMemos[path]) {
+              batchMemos[path] = callProcedure({
+                procedures: router._def.procedures,
+                path,
+                rawInput: router?._def?.procedures[path]?._def?.batch
+                  ? batchRawInputs[path]
+                  : input,
+                ctx,
+                type,
+              }) as Promise<unknown[]>;
+            }
+            const batchOutput = await batchMemos[path];
+            return {
+              input,
+              path,
+              data: batchOutput![batchIndex],
+            };
+          } else {
+            const output = await callProcedure({
+              procedures: router._def.procedures,
+              path,
+              rawInput: router?._def?.procedures[path]?._def?.batch
+                ? batchRawInputs[path]
+                : input,
+              ctx,
+              type,
+            });
+            return {
+              input,
+              path,
+              data: output,
+            };
+          }
         } catch (cause) {
           const error = getTRPCErrorFromUnknown(cause);
 

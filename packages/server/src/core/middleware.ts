@@ -135,6 +135,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
+    batch: boolean;
     rawInput: unknown;
     meta: TParams['_meta'] | undefined;
     next: {
@@ -204,27 +205,59 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     next,
     rawInput,
     input,
+    batch,
   }) => {
-    let parsedInput: ReturnType<typeof parse>;
-    try {
-      parsedInput = await parse(rawInput);
-    } catch (cause) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
-      });
-    }
-
-    // Multiple input parsers
-    const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
-        ? {
-            ...input,
-            ...parsedInput,
+    if (batch) {
+      const result = await Promise.all(
+        (rawInput as unknown[]).map(async (rawInput, index) => {
+          let parsedInput:
+            | ReturnType<typeof parse>
+            | ReturnType<typeof parse>[];
+          try {
+            parsedInput = await parse(rawInput);
+          } catch (cause) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              cause: getCauseFromUnknown(cause),
+            });
           }
-        : parsedInput;
 
-    return next({ input: combinedInput });
+          // Multiple input parsers
+          const combinedInput =
+            input && isPlainObject(input[index]) && isPlainObject(parsedInput)
+              ? {
+                  ...input[index],
+                  ...parsedInput,
+                }
+              : parsedInput;
+
+          return combinedInput;
+        }),
+      );
+
+      return next({ input: result });
+    } else {
+      let parsedInput: ReturnType<typeof parse> | ReturnType<typeof parse>[];
+      try {
+        parsedInput = await parse(rawInput);
+      } catch (cause) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          cause: getCauseFromUnknown(cause),
+        });
+      }
+
+      // Multiple input parsers
+      const combinedInput =
+        isPlainObject(input) && isPlainObject(parsedInput)
+          ? {
+              ...input,
+              ...parsedInput,
+            }
+          : parsedInput;
+
+      return next({ input: combinedInput });
+    }
   };
   inputMiddleware._type = 'input';
   return inputMiddleware;
@@ -234,18 +267,31 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
-  const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
+  const outputMiddleware: ProcedureBuilderMiddleware = async ({
+    next,
+    batch,
+  }) => {
     const result = await next();
     if (!result.ok) {
       // pass through failures without validating
       return result;
     }
     try {
-      const data = await parse(result.data);
-      return {
-        ...result,
-        data,
-      };
+      if (batch) {
+        const data = await Promise.all(
+          (result.data as unknown[]).map((d: unknown) => parse(d)),
+        );
+        return {
+          ...result,
+          data,
+        };
+      } else {
+        const data = await parse(result.data);
+        return {
+          ...result,
+          data,
+        };
+      }
     } catch (cause) {
       throw new TRPCError({
         message: 'Output validation failed',
