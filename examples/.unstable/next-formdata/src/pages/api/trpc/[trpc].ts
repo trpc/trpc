@@ -18,7 +18,6 @@ import * as undici from 'undici';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 import { publicProcedure, router } from '~/server/trpc';
-import { uploadFileSchema } from '~/utils/schemas';
 
 globalThis.File = undici.File as any;
 
@@ -79,7 +78,8 @@ const appRouter = router({
       return {
         image: await writeFileToDisk(opts.input.formData.image),
         document:
-          opts.input.document && (await writeFileToDisk(opts.input.document)),
+          opts.input.formData.document &&
+          (await writeFileToDisk(opts.input.formData.document)),
       };
     }),
 });

@@ -27,8 +27,6 @@ import * as mock_trpcServer__adapters__standalone from '../../server/src/adapter
 vi.mock('@trpc/server/adapters/standalone', () => mock_trpcServer__adapters__standalone);
 import * as mock_trpcServer__adapters__ws from '../../server/src/adapters/ws';
 vi.mock('@trpc/server/adapters/ws', () => mock_trpcServer__adapters__ws);
-import * as mock_trpcServer__adapters__zodFileSchema from '../../server/src/adapters/zodFileSchema';
-vi.mock('@trpc/server/adapters/zodFileSchema', () => mock_trpcServer__adapters__zodFileSchema);
 
 import * as mock_trpcClient from '../../client/src';
 vi.mock('@trpc/client', () => mock_trpcClient);

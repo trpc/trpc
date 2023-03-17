@@ -79,11 +79,6 @@
       "require": "./dist/adapters/node-http/content-type/form-data/index.js",
       "default": "./dist/adapters/node-http/content-type/form-data/index.js"
     },
-    "./adapters/zodFileSchema": {
-      "import": "./dist/adapters/zodFileSchema.mjs",
-      "require": "./dist/adapters/zodFileSchema.js",
-      "default": "./dist/adapters/zodFileSchema.js"
-    },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
