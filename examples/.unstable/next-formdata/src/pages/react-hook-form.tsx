@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MutationLike } from '@trpc/react-query/shared';
 import { inferProcedureInput } from '@trpc/server';
 import { useRef } from 'react';
 import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import type { AppRouter } from '~/pages/api/trpc/[trpc]';
 import { uploadFileSchema } from '~/utils/schemas';
 import { RouterInput, trpc } from '~/utils/trpc';
 
@@ -41,6 +41,13 @@ function useZodFormData<TSchema extends z.ZodType>(
 }
 
 export default function Page() {
+  // const fff = useTRPCFormDataMutation(
+  //   mutation: trpc.room.sendMessage,
+  //   input: {
+  //     roomId: '123',
+  //   },
+  //   formSchema: uploadFileSchema,
+  // ));
   const mutation = trpc.room.sendMessage.useMutation({
     onError(err) {
       alert('Error from server: ' + err.message);
