@@ -28,7 +28,6 @@ async function parseMultipartFormData(
   const contentType = request.headers['content-type'] || '';
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
-  console.log({ boundary, type });
   if (!boundary || type !== 'multipart/form-data') {
     throw new TypeError('Could not parse content as FormData.');
   }
@@ -78,14 +77,12 @@ export const nodeHTTPFormDataContentTypeHandler =
           0: undefined,
         };
       }
-      console.log({ unparsedInput });
       const transformer = opts.router._def._config
         .transformer as CombinedDataTransformer;
 
       const deserializedInput = transformer.input.deserialize(
         JSON.parse(unparsedInput),
       );
-      console.log({ deserializedInput });
       return {
         0: deserializedInput,
       };
