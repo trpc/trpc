@@ -1,20 +1,43 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { inferProcedureInput } from '@trpc/server';
+import { useRef } from 'react';
 import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import type { AppRouter } from '~/pages/api/trpc/[trpc]';
 import { uploadFileSchema } from '~/utils/schemas';
 import { trpc } from '~/utils/trpc';
 
-function useZodForm<TSchema extends z.ZodType>(
+function useZodFormData<TSchema extends z.ZodType>(
   props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
     schema: TSchema;
   },
 ) {
-  const form = useForm<TSchema['_input']>({
-    ...props,
-    resolver: zodResolver(props.schema, undefined),
+  const formRef = useRef<HTMLFormElement>(null);
+  const _resolver = zodResolver(props.schema, undefined, {
+    rawValues: true,
   });
 
-  return form;
+  const form = useForm<TSchema['_input']>({
+    ...props,
+    resolver: (_, ctx, opts) => {
+      if (!formRef.current) {
+        return {
+          values: {},
+          errors: {
+            root: {
+              message: 'Form not mounted',
+            },
+          },
+        };
+      }
+      const values = new FormData(formRef.current);
+      const result = _resolver(values, ctx, opts);
+
+      return result;
+    },
+  });
+
+  return { ...form, formRef };
 }
 
 export default function Page() {
@@ -24,12 +47,13 @@ export default function Page() {
     },
   });
 
-  const form = useZodForm({
+  const form = useZodFormData({
     schema: uploadFileSchema,
     defaultValues: {
       name: 'whadaaaap',
     },
   });
+  type Input = inferProcedureInput<AppRouter['upload']>;
 
   return (
     <>
@@ -48,6 +72,7 @@ export default function Page() {
               );
             })}
             style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+            ref={form.formRef}
           >
             <div style={{}}>
               <label htmlFor="name">Enter your name</label>

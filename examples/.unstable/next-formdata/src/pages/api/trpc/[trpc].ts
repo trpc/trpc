@@ -16,8 +16,8 @@ import { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
 import * as undici from 'undici';
 import { z } from 'zod';
-import { zfd } from 'zod-form-data';
 import { publicProcedure, router } from '~/server/trpc';
+import { uploadFileSchema } from '~/utils/schemas';
 
 globalThis.File = undici.File as any;
 
@@ -67,11 +67,7 @@ const appRouter = router({
     })
     .input(
       z.object({
-        formData: zfd.formData({
-          name: zfd.text(),
-          image: zfd.file(),
-          document: zfd.file(z.instanceof(File).optional()),
-        }),
+        formData: uploadFileSchema,
       }),
     )
     .mutation(async (opts) => {
