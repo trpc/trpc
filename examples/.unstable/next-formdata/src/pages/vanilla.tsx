@@ -4,7 +4,7 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const mutation = trpc.upload.useMutation({
+  const mutation = trpc.sendMessage.useMutation({
     onSuccess() {
       alert('success!');
     },

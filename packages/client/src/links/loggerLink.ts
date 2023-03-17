@@ -1,6 +1,7 @@
 import { AnyRouter } from '@trpc/server';
 import { observable, tap } from '@trpc/server/observable';
 import { TRPCClientError } from '..';
+import { isObject } from './internals/isObject';
 import { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 type ConsoleEsque = {
@@ -56,6 +57,14 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   console?: ConsoleEsque;
 }
 
+function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
+
 // maybe this should be moved to it's own package
 const defaultLogger =
   <TRouter extends AnyRouter>(
@@ -65,9 +74,11 @@ const defaultLogger =
     const { direction, type, path, context, id } = props;
     const [light, dark] = palette[type];
 
+    const rawInput = props.input;
+
     const input =
-      props.input instanceof FormData
-        ? Object.fromEntries(props.input)
+      isObject(rawInput) && isFormData(rawInput.formData)
+        ? { ...rawInput, formData: Object.fromEntries(rawInput.formData) }
         : props.input;
 
     const css = `

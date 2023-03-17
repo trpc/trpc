@@ -48,8 +48,14 @@ function isPlainObject(obj: unknown): obj is object {
   return !!obj && typeof obj === 'object' && !Array.isArray(obj);
 }
 
+const roomProcedure = publicProcedure.input(
+  z.object({
+    roomId: z.string(),
+  }),
+);
+
 const appRouter = router({
-  upload: publicProcedure
+  sendMessage: roomProcedure
     .use(async ({ ctx, next, input, rawInput }) => {
       const formData = await unstable_parseMultipartFormData(
         ctx.req,

@@ -6,6 +6,7 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientRuntime } from '..';
 import { TRPCClientError } from '../../TRPCClientError';
+import { isObject } from './isObject';
 
 // FIXME:
 // - the generics here are probably unnecessary
@@ -38,11 +39,6 @@ function transformResultInner<TRouter extends AnyRouter, TOutput>(
     }),
   } as TRPCResultMessage<TOutput>['result'];
   return { ok: true, result } as const;
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  // check that value is object
-  return !!value && !Array.isArray(value) && typeof value === 'object';
 }
 
 /**

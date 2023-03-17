@@ -41,7 +41,7 @@ function useZodFormData<TSchema extends z.ZodType>(
 }
 
 export default function Page() {
-  const mutation = trpc.upload.useMutation({
+  const mutation = trpc.sendMessage.useMutation({
     onError(err) {
       alert('Error from server: ' + err.message);
     },
@@ -53,7 +53,7 @@ export default function Page() {
       name: 'whadaaaap',
     },
   });
-  type Input = inferProcedureInput<AppRouter['upload']>;
+  type Input = inferProcedureInput<AppRouter['sendMessage']>;
 
   return (
     <>
@@ -67,9 +67,11 @@ export default function Page() {
             action={`/api/trpc/${mutation.trpc.path}`}
             encType="multipart/form-data"
             onSubmit={form.handleSubmit(async (values, event) => {
-              const { image } = await mutation.mutateAsync(
-                new FormData(event?.target) as any,
-              );
+              await mutation.mutateAsync({
+                roomId: '123',
+                // This casting shouldn't be needed https://github.com/airjp73/remix-validated-form/pull/262
+                formData: new FormData(event?.target) as any,
+              });
             })}
             style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
             ref={form.formRef}
