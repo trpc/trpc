@@ -5,7 +5,7 @@ import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { AppRouter } from '~/pages/api/trpc/[trpc]';
 import { uploadFileSchema } from '~/utils/schemas';
-import { trpc } from '~/utils/trpc';
+import { RouterInput, trpc } from '~/utils/trpc';
 
 function useZodFormData<TSchema extends z.ZodType>(
   props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
@@ -41,9 +41,14 @@ function useZodFormData<TSchema extends z.ZodType>(
 }
 
 export default function Page() {
-  const mutation = trpc.sendMessage.useMutation({
+  const mutation = trpc.room.sendMessage.useMutation({
     onError(err) {
       alert('Error from server: ' + err.message);
+    },
+    trpc: {
+      context: {
+        formData: true,
+      },
     },
   });
 
@@ -53,7 +58,8 @@ export default function Page() {
       name: 'whadaaaap',
     },
   });
-  type Input = inferProcedureInput<AppRouter['sendMessage']>;
+  type Input = RouterInput['room']['sendMessage'];
+  //    ^?
 
   return (
     <>

@@ -5,6 +5,7 @@ import {
   unstable_formDataLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
@@ -24,6 +25,26 @@ function getBaseUrl() {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
+  unstable_overrides: {
+    useMutation: {
+      /**
+       * This function is called whenever a `.useMutation` succeeds
+       **/
+      async onSuccess(opts) {
+        /**
+         * @note that order here matters:
+         * The order here allows route changes in `onSuccess` without
+         * having a flash of content change whilst redirecting.
+         **/
+
+        // Calls the `onSuccess` defined in the `useQuery()`-options:
+        await opts.originalFn();
+
+        // Invalidate all queries in the react-query cache:
+        await opts.queryClient.invalidateQueries();
+      },
+    },
+  },
   config() {
     const url = getBaseUrl() + '/api/trpc';
     return {
@@ -34,7 +55,7 @@ export const trpc = createTRPCNext<AppRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         splitLink({
-          condition: (op) => op.input instanceof FormData,
+          condition: (op) => !!op.context.formData,
           true: unstable_formDataLink({
             url,
           }),
@@ -47,3 +68,6 @@ export const trpc = createTRPCNext<AppRouter>({
   },
   ssr: false,
 });
+
+export type RouterInput = inferRouterInputs<AppRouter>;
+export type RouterOutput = inferRouterOutputs<AppRouter>;
