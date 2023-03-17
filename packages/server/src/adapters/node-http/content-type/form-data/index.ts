@@ -8,6 +8,7 @@
 /**
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
+import { CombinedDataTransformer } from '@trpc/server/transformer';
 import { streamMultipart } from '@web3-storage/multipart-parser';
 import { Readable } from 'node:stream';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
@@ -27,6 +28,7 @@ async function parseMultipartFormData(
   const contentType = request.headers['content-type'] || '';
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
+  console.log({ boundary, type });
   if (!boundary || type !== 'multipart/form-data') {
     throw new TypeError('Could not parse content as FormData.');
   }
@@ -68,9 +70,24 @@ export const nodeHTTPFormDataContentTypeHandler =
 
       return { ok: true, data: fields };
     },
-    getInputs({ req }) {
+    getInputs(opts) {
+      const req = opts.req;
+      const unparsedInput = req.query.get('input');
+      if (!unparsedInput) {
+        return {
+          0: undefined,
+        };
+      }
+      console.log({ unparsedInput });
+      const transformer = opts.router._def._config
+        .transformer as CombinedDataTransformer;
+
+      const deserializedInput = transformer.input.deserialize(
+        JSON.parse(unparsedInput),
+      );
+      console.log({ deserializedInput });
       return {
-        0: req.body,
+        0: deserializedInput,
       };
     },
   });

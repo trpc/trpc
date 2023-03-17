@@ -53,7 +53,6 @@ const formDataRequester: Requester = (opts) => {
   }
   return httpRequest({
     ...opts,
-    contentTypeHeader: 'multipart/form-data',
     getUrl,
     getBody,
   });
