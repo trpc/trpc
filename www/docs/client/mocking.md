@@ -229,6 +229,6 @@ PASS component/cats/BestCat.spec.tsx
 - For information about more complex Mock Service Worker functionality, [visit their documentation](https://mswjs.io/docs/recipes/mocking-error-responses)
 - To contribute to `msw-trpc`, visit their [Github repo](https://github.com/maloguertin/msw-trpc)
 - To learn more about the benefits of simulating the environment your tests will be used in more closely, check out Kent C. Dodds [article on the subject](https://kentcdodds.com/blog/stop-mocking-fetch)
-- While MSW is an easy way to accomplish this kind of mocking, it is also possible and in many situations desirable (for example, E2E tests) to simulate your enitre backend, including database. For an example of this, check out [@briangwaltney](https://github.com/briangwaltney)'s [testing example repo](https://github.com/briangwaltney/t3-testing-example)
+- While MSW is an easy way to accomplish this kind of mocking, it is also possible and in many situations desirable (for example, E2E tests) to simulate your entire backend, including database. For an example of this, check out [@briangwaltney](https://github.com/briangwaltney)'s [testing example repo](https://github.com/briangwaltney/t3-testing-example)
 
 Thanks and credit to [@getinnocuous](https://github.com/getinnocuous) for their [excellent example](https://github.com/trpc/trpc/discussions/3612#discussioncomment-4948917)
