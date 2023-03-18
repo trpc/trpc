@@ -116,12 +116,11 @@ module.exports = {
       label: 'Next.js Integration',
       collapsed: true,
       link: {
-        type: 'generated-index',
-        title: 'tRPC Next.js documentation',
-        slug: '/next',
+        type: 'doc',
+        id: 'nextjs/introduction',
       },
       items: [
-        'nextjs/introduction',
+        'nextjs/setup',
         'nextjs/ssr',
         'nextjs/ssg',
         'nextjs/ssg-helpers',
