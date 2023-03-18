@@ -112,6 +112,7 @@ module.exports = {
         'reactjs/useContext',
         'reactjs/useQueries',
         'reactjs/getQueryKey',
+        'reactjs/mocking',
       ],
     },
     {
