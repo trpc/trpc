@@ -8,15 +8,15 @@
  * @see https://trpc.io/docs/v10/procedures
  */
 
-import { Context } from './context';
 import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
+import { transformer } from '~/utils/transformer';
+import { Context } from './context';
 
 const t = initTRPC.context<Context>().create({
   /**
    * @see https://trpc.io/docs/v10/data-transformers
    */
-  transformer: superjson,
+  transformer,
   /**
    * @see https://trpc.io/docs/v10/error-formatting
    */
