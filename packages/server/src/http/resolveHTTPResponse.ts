@@ -176,6 +176,7 @@ export async function resolveHTTPResponse<
       return input;
     };
     const inputs = getInputs();
+    paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const batchMemos: Record<typeof paths[number], Promise<unknown[]>> = {};
     const batchIndexes: Record<typeof paths[number], number> = {};
     const batchRawInputs = paths.reduce((initialValue, path, i) => {
@@ -184,7 +185,6 @@ export async function resolveHTTPResponse<
         : { ...initialValue, [path]: [inputs[i]] };
     }, {} as Record<string, Array<typeof inputs[number]>>);
 
-    paths = isBatchCall ? opts.path.split(',') : [opts.path];
     const requestInfo: TRPCRequestInfo = {
       isBatchCall,
       calls: paths.map((path, idx) => ({
