@@ -1,6 +1,6 @@
 # Next.js + tRPC
 
-This example shows how you can make a typed query using a minimal implementation of tRPC following [`this as a reference`](https://trpc.io/docs/nextjs).
+This example shows how you can make a typed query using a minimal implementation of tRPC following [`this as a reference`](https://trpc.io/docs/nextjs/introduction).
 
 ## Setup
 
