@@ -180,7 +180,7 @@ export async function resolveHTTPResponse<
     const batchMemos: Record<typeof paths[number], Promise<unknown[]>> = {};
     const batchIndexes: Record<typeof paths[number], number> = {};
     const batchRawInputs = paths.reduce((initialValue, path, i) => {
-      return initialValue[path]
+      return Array.isArray(initialValue[path])
         ? { ...initialValue, [path]: [...initialValue[path]!, inputs[i]] }
         : { ...initialValue, [path]: [inputs[i]] };
     }, {} as Record<string, Array<typeof inputs[number]>>);
