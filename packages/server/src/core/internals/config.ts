@@ -66,6 +66,7 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    * @default '.'
    */
   namespaceDelimiter: TTypes['namespaceDelimiter'];
+  defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 }
 
 /**
