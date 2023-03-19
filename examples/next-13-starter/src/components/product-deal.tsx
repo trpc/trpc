@@ -1,5 +1,5 @@
 import { type Dinero, toUnit } from 'dinero.js';
-import { ProductCurrencySymbol } from './product-currency-symbol';
+import { getCurrencySymbol } from '~/app/utils/currency-symbol';
 
 export const ProductDeal = ({
   price: priceRaw,
@@ -21,14 +21,14 @@ export const ProductDeal = ({
       </div>
       <div className="flex">
         <div className="text-sm leading-snug text-white">
-          <ProductCurrencySymbol dinero={discountRaw.amount} />
+          {getCurrencySymbol(discountRaw.amount)}
         </div>
         <div className="text-lg font-bold leading-snug text-white">
           {discount}
         </div>
       </div>
       <div className="text-sm leading-snug text-gray-400 line-through">
-        <ProductCurrencySymbol dinero={priceRaw} />
+        {getCurrencySymbol(priceRaw)}
         {price}
       </div>
     </div>

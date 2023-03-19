@@ -1,6 +1,6 @@
 import { type Dinero, multiply, toUnit } from 'dinero.js';
+import { getCurrencySymbol } from '~/app/utils/currency-symbol';
 import { RouterOutputs } from '~/trpc/shared';
-import { ProductCurrencySymbol } from './product-currency-symbol';
 import { ProductDeal } from './product-deal';
 import { ProductLighteningDeal } from './product-lightening-deal';
 
@@ -44,7 +44,7 @@ export const ProductPrice = ({
   return (
     <div className="flex">
       <div className="text-sm leading-snug text-white">
-        <ProductCurrencySymbol dinero={price} />
+        {getCurrencySymbol(price)}
       </div>
       <div className="text-lg font-bold leading-snug text-white">
         {toUnit(price)}

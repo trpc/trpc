@@ -1,5 +1,5 @@
 import { type Dinero, allocate, toUnit, up } from 'dinero.js';
-import { ProductCurrencySymbol } from './product-currency-symbol';
+import { getCurrencySymbol } from '~/app/utils/currency-symbol';
 
 export const ProductSplitPayments = ({ price }: { price: Dinero<number> }) => {
   // only offer split payments for more expensive items
@@ -10,7 +10,7 @@ export const ProductSplitPayments = ({ price }: { price: Dinero<number> }) => {
   const [perMonth] = allocate(price, [1, 2]);
   return (
     <div className="text-sm text-gray-400">
-      Or <ProductCurrencySymbol dinero={price} />
+      Or {getCurrencySymbol(price)}
       {toUnit(perMonth, { digits: 0, round: up })}/month for 3 months
     </div>
   );

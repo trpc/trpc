@@ -56,9 +56,9 @@ export function AddressBar() {
       </div>
       <div className="flex gap-x-1 text-sm font-medium">
         <div>
-          <span className="px-2 text-gray-400">acme.com</span>
+          <span className="px-2 text-gray-400">next-13.trpc.io</span>
         </div>
-        {pathname ? (
+        {!!pathname && (
           <>
             <span className="text-gray-600">/</span>
             {pathname
@@ -83,7 +83,7 @@ export function AddressBar() {
                 );
               })}
           </>
-        ) : null}
+        )}
 
         <Suspense>
           <Params />

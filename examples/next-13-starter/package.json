@@ -23,7 +23,7 @@
     "date-fns": "^2.29.3",
     "dinero.js": "2.0.0-alpha.8",
     "lucide-react": "^0.124.0",
-    "next": "^13.2.3",
+    "next": "13.2.5-canary.8",
     "next-auth": "^4.20.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

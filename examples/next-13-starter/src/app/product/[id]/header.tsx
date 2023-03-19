@@ -2,7 +2,6 @@ import { Search, ShoppingCart, User } from 'lucide-react';
 import { type User as NextAuthUser } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CartCount } from './cart-count';
 
 export async function Header({ user }: { user: NextAuthUser }) {
   return (
@@ -27,7 +26,7 @@ export async function Header({ user }: { user: NextAuthUser }) {
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-600 text-white">
           <ShoppingCart className="w-6 text-white" />
           <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-vercel-cyan text-sm font-bold text-cyan-800">
-            <CartCount />
+            ?
           </div>
         </div>
 

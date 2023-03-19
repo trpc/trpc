@@ -3,7 +3,6 @@ import { cookies } from 'next/headers';
 import React from 'react';
 import { Boundary } from '~/components/boundary';
 import { authOptions } from '~/pages/api/auth/[...nextauth]';
-import { CartCountProvider } from './cart-count-context';
 import { Header } from './header';
 
 export const metadata = {
@@ -37,14 +36,12 @@ export default async function Layout({
       </div>
 
       <Boundary animateRerendering={false} labels={['Demo']} size="small">
-        <CartCountProvider initialCartCount={cartCount}>
-          <div className="space-y-10">
-            {/** @ts-expect-error Async Server Component */}
-            <Header user={user} />
+        <div className="space-y-10">
+          {/** @ts-expect-error Async Server Component */}
+          <Header user={user} />
 
-            {children}
-          </div>
-        </CartCountProvider>
+          {children}
+        </div>
       </Boundary>
     </>
   );

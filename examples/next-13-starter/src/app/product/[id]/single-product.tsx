@@ -9,10 +9,6 @@ type Product = RouterOutputs['products']['byId'];
 export const SingleProduct = async ({ data }: { data: Promise<Product> }) => {
   const product = await data;
 
-  // Get the cart count from the users cookies and pass it to the client
-  // AddToCart component
-  const cartCount = cookies().get('_cart_count')?.value || '0';
-
   return (
     <div className="grid grid-cols-4 gap-6">
       <div className="col-span-full lg:col-span-1">
@@ -71,7 +67,7 @@ export const SingleProduct = async ({ data }: { data: Promise<Product> }) => {
       </div>
 
       <div className="col-span-full lg:col-span-1">
-        <Pricing product={product} cartCount={cartCount} />
+        <Pricing product={product} />
       </div>
     </div>
   );

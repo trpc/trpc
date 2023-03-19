@@ -1,4 +1,4 @@
-import { type DineroSnapshot, dinero } from 'dinero.js';
+import { dinero } from 'dinero.js';
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
 import { ProductEstimatedArrival } from '~/components/product-estimated-arrival';
@@ -6,7 +6,6 @@ import { ProductLowStockWarning } from '~/components/product-low-stock-warning';
 import { ProductPrice } from '~/components/product-price';
 import { ProductSplitPayments } from '~/components/product-split-payments';
 import { RouterOutputs } from '~/trpc/shared';
-import { AddToCart } from './add-to-cart';
 
 function LoadingDots() {
   return (
@@ -42,10 +41,8 @@ async function UserSpecificDetails({ productId }: { productId: string }) {
 
 export function Pricing({
   product,
-  cartCount,
 }: {
   product: RouterOutputs['products']['byId'];
-  cartCount: string;
 }) {
   const price = dinero(product.price);
   return (
@@ -56,8 +53,6 @@ export function Pricing({
         {/* @ts-expect-error Async Server Component */}
         <UserSpecificDetails productId={product.id} />
       </Suspense>
-
-      <AddToCart initialCartCount={Number(cartCount)} />
     </div>
   );
 }
