@@ -2,7 +2,7 @@
 id: ssg-helpers
 title: SSG Helpers
 sidebar_label: SSG Helpers
-slug: /ssg-helpers
+slug: /nextjs/ssg-helpers
 ---
 
 `createProxySSGHelpers` provides you with a set of helper functions that you can use to prefetch queries on the server.

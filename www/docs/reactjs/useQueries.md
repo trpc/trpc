@@ -2,7 +2,7 @@
 id: useQueries
 title: useQueries()
 sidebar_label: useQueries()
-slug: /useQueries
+slug: /reactjs/useQueries
 ---
 
 The `useQueries` hook can be used to fetch a variable number of queries at the same time using only one hook call.
