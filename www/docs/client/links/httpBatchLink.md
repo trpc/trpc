@@ -28,10 +28,10 @@ After that, you can make use of batching by setting all your procedures in a `Pr
 
 ```ts
 const somePosts = await Promise.all([
-  trpc.post.byId.query(1);
-  trpc.post.byId.query(2);
-  trpc.post.byId.query(3);
-])
+  trpc.post.byId.query(1),
+  trpc.post.byId.query(2),
+  trpc.post.byId.query(3),
+]);
 ```
 
 ## `httpBatchLink` Options

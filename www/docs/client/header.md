@@ -15,7 +15,15 @@ import type { AppRouter } from '@/server/routers/app';
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 
-export let token: string;
+let token: string;
+
+export function setToken(newToken: string) {
+  /**
+   * You can also save the token to cookies, and initialize from
+   * cookies above.
+   */
+  token = newToken;
+}
 
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {

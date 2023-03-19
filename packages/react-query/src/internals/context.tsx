@@ -131,6 +131,14 @@ export interface TRPCContextState<
   ) => Promise<void>;
 
   /**
+   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientensurequerydata
+   */
+  ensureQueryData: (
+    queryKey: TRPCQueryKey,
+    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+  ) => Promise<unknown>;
+
+  /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidateQueries: (
@@ -164,6 +172,7 @@ export interface TRPCContextState<
     queryKey: TRPCQueryKey,
     options?: CancelOptions,
   ) => Promise<void>;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
@@ -172,6 +181,7 @@ export interface TRPCContextState<
     updater: Updater<unknown | undefined, unknown | undefined>,
     options?: SetDataOptions,
   ) => void;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
@@ -187,6 +197,7 @@ export interface TRPCContextState<
     >,
     options?: SetDataOptions,
   ) => void;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
