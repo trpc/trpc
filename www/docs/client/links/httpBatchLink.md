@@ -31,7 +31,7 @@ const somePosts = await Promise.all([
   trpc.post.byId.query(1),
   trpc.post.byId.query(2),
   trpc.post.byId.query(3),
-])
+]);
 ```
 
 ## `httpBatchLink` Options
