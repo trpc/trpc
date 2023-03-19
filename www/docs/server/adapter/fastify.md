@@ -2,7 +2,7 @@
 id: fastify
 title: Usage with Fastify
 sidebar_label: Fastify
-slug: /fastify
+slug: /server/adapters/fastify
 ---
 
 ## Example app

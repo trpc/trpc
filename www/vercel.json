@@ -1,6 +1,31 @@
 {
   "redirects": [
     {
+      "source": "/docs/express",
+      "destination": "/docs/server/adapters/express",
+      "permanent": true
+    },
+    {
+      "source": "/docs/fastify",
+      "destination": "/docs/server/adapters/fastify",
+      "permanent": true
+    },
+    {
+      "source": "/docs/fetch",
+      "destination": "/docs/server/adapters/fetch",
+      "permanent": true
+    },
+    {
+      "source": "/docs/standalone",
+      "destination": "/docs/server/adapters/standalone",
+      "permanent": true
+    },
+    {
+      "source": "/docs/aws-lambda",
+      "destination": "/docs/server/adapters/aws-lambda",
+      "permanent": true
+    },
+    {
       "source": "/docs/server-side-calls",
       "destination": "/docs/server/server-side-calls",
       "permanent": true

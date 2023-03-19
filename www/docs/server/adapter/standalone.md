@@ -2,7 +2,7 @@
 id: standalone
 title: Standalone Usage
 sidebar_label: Standalone
-slug: /standalone
+slug: /server/adapters/standalone
 ---
 
 ## Example app
