@@ -107,27 +107,27 @@
     },
     {
       "source": "/docs/useQuery",
-      "destination": "/docs/reactjs/useQuery",
+      "destination": "/docs/reactjs/usequery",
       "permanent": true
     },
     {
       "source": "/docs/useQueries",
-      "destination": "/docs/reactjs/useQueries",
+      "destination": "/docs/reactjs/usequeries",
       "permanent": true
     },
     {
       "source": "/docs/useMutation",
-      "destination": "/docs/reactjs/useMutation",
+      "destination": "/docs/reactjs/usemutation",
       "permanent": true
     },
     {
       "source": "/docs/useInfiniteQuery",
-      "destination": "/docs/reactjs/useInfiniteQuery",
+      "destination": "/docs/reactjs/useinfinitequery",
       "permanent": true
     },
     {
       "source": "/docs/useContext",
-      "destination": "/docs/reactjs/useContext",
+      "destination": "/docs/reactjs/usecontext",
       "permanent": true
     },
     {

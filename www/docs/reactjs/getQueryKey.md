@@ -2,7 +2,7 @@
 id: getQueryKey
 title: getQueryKey
 sidebar_label: getQueryKey()
-slug: /reactjs/getQueryKey
+slug: /reactjs/getquerykey
 ---
 
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
