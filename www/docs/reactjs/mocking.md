@@ -122,7 +122,7 @@ export const trpcMsw = createTRPCMsw<AppRouter>();
 
 `msw-trpc` is a new and experimental package. As with any new package, it is worth checking through its (relatively lightweight) [contents](https://github.com/maloguertin/msw-trpc/tree/main/src) before usage.
 
-Alternatively, you can use standard REST handlers using `msw`s `rest` object by manually defining the Request URL and Method corresponding to the tRPC procedure you want to mock.
+Alternatively, you can use standard REST handlers through `msw`s `rest` object by manually defining the Request URL and Method corresponding to the tRPC procedure you want to mock.
 
 If you would prefer to use this approach, it is worth familiarizing yourself with the [HTTP RPC Specification](https://trpc.io/docs/rpc).
 
