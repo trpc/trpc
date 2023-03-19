@@ -2,7 +2,7 @@
 id: Mocking
 title: Mocking your server
 sidebar_label: Mocking your server
-slug: /mocking
+slug: /reactjs/mocking
 ---
 
 Mocking tRPC gives you the ability to isolate your frontend components into testing or presentation environments without having to alter how they behave.
