@@ -29,7 +29,7 @@ module.exports = {
         slug: '/server/introduction',
       },
       items: [
-        'server/router',
+        'server/routers',
         'server/procedures',
         'server/merging-routers',
         'server/context',

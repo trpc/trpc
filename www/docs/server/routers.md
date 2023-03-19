@@ -1,8 +1,8 @@
 ---
-id: router
+id: routers
 title: Define Routers
 sidebar_label: Define Routers
-slug: /server/router
+slug: /server/routers
 ---
 
 To begin building your tRPC-based API, you'll first need to define your router. Once you've mastered the fundamentals, you can [customize your routers](#advanced-usage) for more advanced use cases.

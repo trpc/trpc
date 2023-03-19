@@ -37,7 +37,7 @@
     },
     {
       "source": "/docs/router",
-      "destination": "/docs/server/router",
+      "destination": "/docs/server/routers",
       "permanent": true
     },
     {

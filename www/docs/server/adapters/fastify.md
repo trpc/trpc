@@ -46,7 +46,7 @@ yarn add @trpc/server fastify zod
 
 ### Create the router
 
-First of all you need a [router](/docs/server/router) to handle your queries, mutations and subscriptions.
+First of all you need a [router](/docs/server/routers) to handle your queries, mutations and subscriptions.
 
 A sample router is given below, save it in a file named `router.ts`.
 
