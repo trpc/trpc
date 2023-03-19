@@ -1,5 +1,5 @@
 ---
-id: Mocking
+id: mocking
 title: Mocking your server
 sidebar_label: Mocking your server
 slug: /reactjs/mocking
