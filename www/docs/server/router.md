@@ -31,7 +31,7 @@ You'll notice we are exporting certain methods of the `t` variable here rather t
 
 Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
 
-In order for these endpoints to be exposed to the frontend, the outermost router (in the example below, this is the `appRouter`) needs to be passed to the [API Handler](/docs/api-handler)'s `router` argument.
+In order for these endpoints to be exposed to the frontend, the outermost router (in the example below, this is the `appRouter`) needs to be passed to the [API Handler](/docs/server/api-handler)'s `router` argument.
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
@@ -61,10 +61,10 @@ export type AppRouter = typeof appRouter;
 
 When initializing your router, tRPC allows you to:
 
-- Setup [request contexts](/docs/context)
-- Assign [metadata](/docs/metadata) to procedures
-- [Format](/docs/error-formatting) and [handle](/docs/error-handling) errors
-- [Transform data](/docs/data-transformers) as needed
+- Setup [request contexts](/docs/server/context)
+- Assign [metadata](/docs/server/metadata) to procedures
+- [Format](/docs/server/error-formatting) and [handle](/docs/server/error-handling) errors
+- [Transform data](/docs/server/data-transformers) as needed
 - Customize the [runtime configuration](#runtime-configuration)
 
 You can use method chaining to customize your `t`-object on initialization. For example:

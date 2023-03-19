@@ -159,7 +159,7 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 ## Extending middlewares
 
 :::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](faq#unstable).
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
 :::
 
 We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.
