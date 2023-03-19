@@ -15,7 +15,6 @@ export function genericRouter<S extends (value: any) => unknown>(schema: S) {
 
 export type Foo = { x: Foo | number };
 
-
 const routerA = t.router({
   a: t.procedure.query(() => 'a'),
 });
