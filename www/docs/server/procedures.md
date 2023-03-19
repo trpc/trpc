@@ -2,7 +2,7 @@
 id: procedures
 title: Define Procedures
 sidebar_label: Define Procedures
-slug: /procedures
+slug: /server/procedures
 ---
 
 Procedures in tRPC are very flexible primitives to create backend functions; they use a builder pattern which means you can create reusable base procedures for different parts of your backend application.

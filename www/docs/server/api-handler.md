@@ -2,7 +2,7 @@
 id: api-handler
 title: API Handler
 sidebar_label: API Handler
-slug: /api-handler
+slug: /server/api-handler
 ---
 
 tRPC is not a backend of its own, but rather lives inside of other backends such as Next.js or Express. Despite that, most of tRPC's features and syntax are the same no matter which backend you are using. The API handler, also called [adapter](/docs/adapters), enables this by acting as the glue between HTTP requests to your backend and tRPC.

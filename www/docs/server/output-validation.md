@@ -2,7 +2,7 @@
 id: output-validation
 title: Output Validation
 sidebar_label: Output Validation
-slug: /output-validation
+slug: /server/output-validation
 ---
 
 tRPC gives you automatic type-safety of outputs without the need of adding a validator; however, it can be useful at times to strictly define the output type in order to prevent sensitive data from being leaked.

@@ -1,6 +1,81 @@
 {
   "redirects": [
     {
+      "source": "/docs/server-side-calls",
+      "destination": "/docs/server/server-side-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/router",
+      "destination": "/docs/server/router",
+      "permanent": true
+    },
+    {
+      "source": "/docs/procedures",
+      "destination": "/docs/server/procedures",
+      "permanent": true
+    },
+    {
+      "source": "/docs/output-validation",
+      "destination": "/docs/server/output-validation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/middlewares",
+      "destination": "/docs/server/middlewares",
+      "permanent": true
+    },
+    {
+      "source": "/docs/metadata",
+      "destination": "/docs/server/metadata",
+      "permanent": true
+    },
+    {
+      "source": "/docs/merging-routers",
+      "destination": "/docs/server/merging-routers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/infer-types",
+      "destination": "/docs/server/infer-types",
+      "permanent": true
+    },
+    {
+      "source": "/docs/error-handling",
+      "destination": "/docs/server/error-handling",
+      "permanent": true
+    },
+    {
+      "source": "/docs/error-formatting",
+      "destination": "/docs/server/error-formatting",
+      "permanent": true
+    },
+    {
+      "source": "/docs/data-transformers",
+      "destination": "/docs/server/data-transformers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/context",
+      "destination": "/docs/server/context",
+      "permanent": true
+    },
+    {
+      "source": "/docs/caching",
+      "destination": "/docs/server/caching",
+      "permanent": true
+    },
+    {
+      "source": "/docs/authorization",
+      "destination": "/docs/server/authorization",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api-handler",
+      "destination": "/docs/server/api-handler",
+      "permanent": true
+    },
+    {
       "source": "/docs/useQuery",
       "destination": "/docs/reactjs/useQuery",
       "permanent": true

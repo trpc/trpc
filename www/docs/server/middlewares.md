@@ -2,7 +2,7 @@
 id: middlewares
 title: Middlewares
 sidebar_label: Middlewares
-slug: /middlewares
+slug: /server/middlewares
 ---
 
 You are able to add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
