@@ -470,7 +470,7 @@ you may need to take note!
 :::
 
 To allow us to make room for some more advanced features like [invalidation across
-whole routers](/docs/reactjs/useContext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
+whole routers](/docs/reactjs/usecontext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
@@ -573,7 +573,7 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### `queryClient` is no longer exposed through tRPC context
 
-tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](/docs/reactjs/useContext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](/docs/reactjs/usecontext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
 
 ```tsx
 import { useQueryClient } from '@tanstack/react-query';
