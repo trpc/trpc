@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 overrides:
-  '@tanstack/react-query': 4.6.0
+  '@tanstack/react-query': 4.18.0
   '@trpc/client': link:./packages/client
   '@trpc/next': link:./packages/next
   '@trpc/react-query': link:./packages/react-query
@@ -14,6 +14,7 @@ overrides:
   '@examples/next-websockets-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
   '@examples/trpc-next-prisma-todomvc>prisma': https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
   '@examples/legacy-next-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Flegacy-next-starter
+  '@types/testing-library__jest-dom': link:./packages/tests/vendor/@types/testing-library__jest-dom
 
 importers:
 
@@ -87,7 +88,7 @@ importers:
 
   examples/.test/big-router-declaration:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -103,7 +104,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -138,7 +139,7 @@ importers:
   examples/.test/ssg:
     specifiers:
       '@playwright/test': ^1.26.1
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -155,7 +156,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -367,7 +368,7 @@ importers:
 
   examples/minimal-react/client:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
@@ -380,7 +381,7 @@ importers:
       typescript: ^4.8.3
       vite: ^4.1.2
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../../packages/client
       '@trpc/react-query': link:../../../packages/react-query
       '@trpc/server': link:../../../packages/server
@@ -435,7 +436,7 @@ importers:
 
   examples/next-big-router:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -451,7 +452,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -470,7 +471,7 @@ importers:
 
   examples/next-edge-runtime:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -485,7 +486,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -503,7 +504,7 @@ importers:
 
   examples/next-minimal-starter:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -518,7 +519,7 @@ importers:
       typescript: ^4.8.3
       zod: ^3.0.0
     dependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -538,7 +539,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -569,7 +570,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -605,7 +606,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -628,7 +629,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-todomvc_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -643,7 +644,7 @@ importers:
       zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
-      '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
+      '@tanstack/react-query-devtools': 4.18.0_2ryzfomli4bbns3rdhwnpgjdhm
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       eslint: 8.30.0
@@ -656,7 +657,7 @@ importers:
     specifiers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
@@ -693,7 +694,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Fnext-websockets-starter_prisma@4.10.1'
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -709,7 +710,7 @@ importers:
       zod: 3.20.2
     devDependencies:
       '@playwright/test': 1.28.1
-      '@tanstack/react-query-devtools': 4.18.0_35w334xqtbzboqulr5pz522esm
+      '@tanstack/react-query-devtools': 4.18.0_2ryzfomli4bbns3rdhwnpgjdhm
       '@types/node': 18.7.20
       '@types/react': 18.0.25
       '@types/ws': 8.5.3
@@ -837,7 +838,7 @@ importers:
 
   packages/next:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../client
       '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
@@ -857,7 +858,7 @@ importers:
     dependencies:
       react-ssr-prepass: 1.5.0_react@18.2.0
     devDependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
       '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
@@ -876,7 +877,7 @@ importers:
 
   packages/react-query:
     specifiers:
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../client
       '@trpc/server': link:../server
       '@types/express': ^4.17.12
@@ -891,7 +892,7 @@ importers:
       tsx: ^3.12.3
       zod: ^3.0.0
     devDependencies:
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@trpc/client': link:../client
       '@trpc/server': link:../server
       '@types/express': 4.17.14
@@ -909,7 +910,7 @@ importers:
   packages/server:
     specifiers:
       '@fastify/websocket': ^7.1.2
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@types/aws-lambda': ^8.10.97
       '@types/express': ^4.17.12
       '@types/hash-sum': ^1.0.0
@@ -940,7 +941,7 @@ importers:
       zod: ^3.0.0
     devDependencies:
       '@fastify/websocket': 7.1.2
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@types/aws-lambda': 8.10.109
       '@types/express': 4.17.14
       '@types/hash-sum': 1.0.0
@@ -975,7 +976,7 @@ importers:
       '@cloudflare/workers-types': ^4.0.0
       '@fastify/websocket': ^7.1.2
       '@miniflare/core': ^2.9.0
-      '@tanstack/react-query': 4.6.0
+      '@tanstack/react-query': 4.18.0
       '@testing-library/dom': ^9.0.0
       '@testing-library/jest-dom': ^5.16.5
       '@testing-library/react': ^14.0.0
@@ -985,7 +986,7 @@ importers:
       '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
       '@types/node': ^18.7.20
-      '@types/testing-library__jest-dom': ^5.14.5
+      '@types/testing-library__jest-dom': link:vendor/@types/testing-library__jest-dom
       '@vitest/coverage-istanbul': ^0.28.5
       '@vitest/ui': ^0.28.5
       abort-controller: ^3.0.0
@@ -1017,7 +1018,7 @@ importers:
       '@cloudflare/workers-types': 4.20230215.0
       '@fastify/websocket': 7.1.2
       '@miniflare/core': 2.11.0
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       '@testing-library/dom': 9.0.0
       '@testing-library/jest-dom': 5.16.5
       '@testing-library/react': 14.0.0_biqbaboplfbrettd7655fr4n2y
@@ -1027,7 +1028,7 @@ importers:
       '@trpc/react-query': link:../react-query
       '@trpc/server': link:../server
       '@types/node': 18.7.20
-      '@types/testing-library__jest-dom': 5.14.5
+      '@types/testing-library__jest-dom': link:vendor/@types/testing-library__jest-dom
       '@vitest/coverage-istanbul': 0.28.5_itn5mhdgoxdt6nk7zeh5bmcq5a
       '@vitest/ui': 0.28.5
       abort-controller: 3.0.0
@@ -4407,6 +4408,13 @@ packages:
     dependencies:
       regenerator-runtime: 0.13.11
 
+  /@babel/runtime/7.21.0:
+    resolution: {integrity: sha512-xwII0//EObnq89Ji5AKYQaRYiW/nZ3llSv29d49IuxPhKbtJoLP+9QUUZ4nVragQVtaVGeZrpB+ZtG/Pdy/POw==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.13.11
+    dev: false
+
   /@babel/template/7.18.10:
     resolution: {integrity: sha512-TI+rCtooWHr3QJ27kJxfjutghu44DLnasDMwpDqCXVTal9RLp3RSYNh4NdBrRP2cQAoG9A8juOQl6P6oZG4JxA==}
     engines: {node: '>=6.9.0'}
@@ -4502,7 +4510,7 @@ packages:
   /@changesets/apply-release-plan/6.1.2:
     resolution: {integrity: sha512-H8TV9E/WtJsDfoDVbrDGPXmkZFSv7W2KLqp4xX4MKZXshb0hsQZUNowUa8pnus9qb/5OZrFFRVsUsDCVHNW/AQ==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/config': 2.2.0
       '@changesets/get-version-range-type': 0.3.2
       '@changesets/git': 1.5.0
@@ -4520,7 +4528,7 @@ packages:
   /@changesets/assemble-release-plan/5.2.2:
     resolution: {integrity: sha512-B1qxErQd85AeZgZFZw2bDKyOfdXHhG+X5S+W3Da2yCem8l/pRy4G/S7iOpEcMwg6lH8q2ZhgbZZwZ817D+aLuQ==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/errors': 0.1.4
       '@changesets/get-dependents-graph': 1.3.4
       '@changesets/types': 5.2.0
@@ -4623,7 +4631,7 @@ packages:
   /@changesets/get-release-plan/3.0.15:
     resolution: {integrity: sha512-W1tFwxE178/en+zSj/Nqbc3mvz88mcdqUMJhRzN1jDYqN3QI4ifVaRF9mcWUU+KI0gyYEtYR65tour690PqTcA==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/assemble-release-plan': 5.2.2
       '@changesets/config': 2.2.0
       '@changesets/pre': 1.0.13
@@ -4639,7 +4647,7 @@ packages:
   /@changesets/git/1.5.0:
     resolution: {integrity: sha512-Xo8AT2G7rQJSwV87c8PwMm6BAc98BnufRMsML7m7Iw8Or18WFvFmxqG5aOL5PBvhgq9KrKvaeIBNIymracSuHg==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/errors': 0.1.4
       '@changesets/types': 5.2.0
       '@manypkg/get-packages': 1.1.3
@@ -4663,7 +4671,7 @@ packages:
   /@changesets/pre/1.0.13:
     resolution: {integrity: sha512-jrZc766+kGZHDukjKhpBXhBJjVQMied4Fu076y9guY1D3H622NOw8AQaLV3oQsDtKBTrT2AUFjt9Z2Y9Qx+GfA==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/errors': 0.1.4
       '@changesets/types': 5.2.0
       '@manypkg/get-packages': 1.1.3
@@ -4673,7 +4681,7 @@ packages:
   /@changesets/read/0.5.8:
     resolution: {integrity: sha512-eYaNfxemgX7f7ELC58e7yqQICW5FB7V+bd1lKt7g57mxUrTveYME+JPaBPpYx02nP53XI6CQp6YxnR9NfmFPKw==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/git': 1.5.0
       '@changesets/logger': 0.0.5
       '@changesets/parse': 0.3.15
@@ -4694,7 +4702,7 @@ packages:
   /@changesets/write/0.2.2:
     resolution: {integrity: sha512-kCYNHyF3xaId1Q/QE+DF3UTrHTyg3Cj/f++T8S8/EkC+jh1uK2LFnM9h+EzV+fsmnZDrs7r0J4LLpeI/VWC5Hg==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/types': 5.2.0
       fs-extra: 7.0.1
       human-id: 1.0.2
@@ -7106,7 +7114,7 @@ packages:
   /@manypkg/find-root/1.1.0:
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@types/node': 12.20.55
       find-up: 4.1.0
       fs-extra: 8.1.0
@@ -7125,7 +7133,7 @@ packages:
   /@manypkg/get-packages/1.1.3:
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
     dependencies:
-      '@babel/runtime': 7.20.7
+      '@babel/runtime': 7.21.0
       '@changesets/types': 4.1.0
       '@manypkg/find-root': 1.1.0
       fs-extra: 8.1.0
@@ -8672,10 +8680,10 @@ packages:
       remove-accents: 0.4.2
     dev: true
 
-  /@tanstack/query-core/4.6.0:
-    resolution: {integrity: sha512-8b+vwooh8b4z1bIT3Ca7OVSyARM5JNbXi6F+g5VLYiflRd0AtJ+koqhin7UGhR11bbypmzVRKllWHwexWjKjDg==}
+  /@tanstack/query-core/4.18.0:
+    resolution: {integrity: sha512-PP4mG8MD08sq64RZCqMfXMYfaj7+Oulwg7xZ/fJoEOdTZNcPIgaOkHajZvUBsNLbi/0ViMvJB4cFkL2Jg2WPbw==}
 
-  /@tanstack/react-query-devtools/4.18.0_35w334xqtbzboqulr5pz522esm:
+  /@tanstack/react-query-devtools/4.18.0_2ryzfomli4bbns3rdhwnpgjdhm:
     resolution: {integrity: sha512-L51D0AUqLTs7J+W7RypJrUEKXsS0y0eEhXAgO+rhcZH6i8jVrKLhcNZStQSnE+UpZqPm73uxt2e8TJgYfzz0nw==}
     peerDependencies:
       '@tanstack/react-query': 4.18.0
@@ -8683,15 +8691,15 @@ packages:
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       '@tanstack/match-sorter-utils': 8.1.1
-      '@tanstack/react-query': 4.6.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.11.0
       use-sync-external-store: 1.2.0_react@18.2.0
     dev: true
 
-  /@tanstack/react-query/4.6.0_biqbaboplfbrettd7655fr4n2y:
-    resolution: {integrity: sha512-ZIx8EfRBGagxw+3onFb//Fnv0hhXDj/UHIYovPGwHdancAG9ZL4D0ymUan4cXJib/L0rGPzYFvET/yTEIPPXAw==}
+  /@tanstack/react-query/4.18.0_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-s1kdbGMdVcfUIllzsHUqVUdktBT5uuIRgnvrqFNLjl9TSOXEoBSDrhjsGjao0INQZv8cMpQlgOh3YH9YtN6cKw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
@@ -8702,7 +8710,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 4.6.0
+      '@tanstack/query-core': 4.18.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
@@ -8726,7 +8734,7 @@ packages:
     dependencies:
       '@adobe/css-tools': 4.0.1
       '@babel/runtime': 7.20.1
-      '@types/testing-library__jest-dom': 5.14.5
+      '@types/testing-library__jest-dom': link:packages/tests/vendor/@types/testing-library__jest-dom
       aria-query: 5.1.3
       chalk: 3.0.0
       css.escape: 1.5.1
@@ -8963,13 +8971,6 @@ packages:
       '@types/istanbul-lib-report': 3.0.0
     dev: false
 
-  /@types/jest/27.5.2:
-    resolution: {integrity: sha512-mpT8LJJ4CMeeahobofYWIjFo0xonRS/HfxnVEPMPFSQdGUt1uHCnoPT7Zhb+sjDU2wz0oKV0OLUR0WzrHNgfeA==}
-    dependencies:
-      jest-matcher-utils: 27.5.1
-      pretty-format: 27.5.1
-    dev: false
-
   /@types/json-schema/7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
 
@@ -9135,12 +9136,6 @@ packages:
 
   /@types/stack-trace/0.0.29:
     resolution: {integrity: sha512-TgfOX+mGY/NyNxJLIbDWrO9DjGoVSW9+aB8H2yy1fy32jsvxijhmyJI9fDFgvz3YP4lvJaq9DzdR/M1bOgVc9g==}
-
-  /@types/testing-library__jest-dom/5.14.5:
-    resolution: {integrity: sha512-SBwbxYoyPIvxHbeHxTZX2Pe/74F/tX2/D3mMvzabdeJ25bBojfW0TyB8BHrbq/9zaaKICJZjLP+8r6AeZMFCuQ==}
-    dependencies:
-      '@types/jest': 27.5.2
-    dev: false
 
   /@types/unist/2.0.6:
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
@@ -12167,11 +12162,6 @@ packages:
 
   /didyoumean/1.2.2:
     resolution: {integrity: sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw==}
-
-  /diff-sequences/27.5.1:
-    resolution: {integrity: sha512-k1gCAXAsNgLwEL+Y8Wvl+M6oEFj5bgazfZULpS5CneoPPXRaCCW7dm+q21Ky2VEE5X+VeRDBVg1Pcvvsr4TtNQ==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    dev: false
 
   /diff/5.1.0:
     resolution: {integrity: sha512-D+mk+qE8VC/PAUrlAU34N+VfXev0ghe5ywmpqrawphmVZc1bEfn56uo9qpyGp1p4xpzOHkSW4ztBd6L7Xx4ACw==}
@@ -15625,31 +15615,6 @@ packages:
     resolution: {integrity: sha512-nO6jcEfZWQXDhOiBtG2KvKyEptz7RVbpGP4vTD2hLBdmNQSsCiicO2Ioinv6UI4y9ukqnBpy+XZ9H6uLNgJTlw==}
     dev: false
 
-  /jest-diff/27.5.1:
-    resolution: {integrity: sha512-m0NvkX55LDt9T4mctTEgnZk3fmEg3NRYutvMPWM/0iPnkFj2wIeF45O1718cMSOFO1vINkqmxqD8vE37uTEbqw==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    dependencies:
-      chalk: 4.1.2
-      diff-sequences: 27.5.1
-      jest-get-type: 27.5.1
-      pretty-format: 27.5.1
-    dev: false
-
-  /jest-get-type/27.5.1:
-    resolution: {integrity: sha512-2KY95ksYSaK7DMBWQn6dQz3kqAf3BB64y2udeG+hv4KfSOb9qwcYQstTJc1KCbsix+wLZWZYN8t7nwX3GOBLRw==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    dev: false
-
-  /jest-matcher-utils/27.5.1:
-    resolution: {integrity: sha512-z2uTx/T6LBaCoNWNFWwChLBKYxTMcGBRjAt+2SbP929/Fflb9aa5LGma654Rz8z9HLxsrUaYzxE9T/EFIL/PAw==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    dependencies:
-      chalk: 4.1.2
-      jest-diff: 27.5.1
-      jest-get-type: 27.5.1
-      pretty-format: 27.5.1
-    dev: false
-
   /jest-util/29.3.1:
     resolution: {integrity: sha512-7YOVZaiX7RJLv76ZfHt4nbNEzzTRiMW/IiOG7ZOKmTXmoGBxUDefgMAxQubu6WPVqP5zSzAdZG0FfLcC7HOIFQ==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -15703,7 +15668,6 @@ packages:
 
   /jose/4.12.0:
     resolution: {integrity: sha512-wW1u3cK81b+SFcHjGC8zw87yuyUweEFe0UJirrXEw1NasW00eF7sZjeG3SLBGz001ozxQ46Y9sofDvhBmWFtXQ==}
-    dev: true
 
   /js-sdsl/4.2.0:
     resolution: {integrity: sha512-dyBIzQBDkCqCu+0upx25Y2jGdbTGxE9fshMsCdK0ViOongpV+n5tXRcZY9v7CaVQ79AGS9KA1KHtojxiM7aXSQ==}
@@ -17536,7 +17500,7 @@ packages:
   /openid-client/5.3.0:
     resolution: {integrity: sha512-SykPCeZBZ/SxiBH5AWynvFUIDX3//2pgwc/3265alUmGHeCN03+X8uP+pHOVnCXCKfX/XOhO90qttAQ76XcGxA==}
     dependencies:
-      jose: 4.11.1
+      jose: 4.12.0
       lru-cache: 6.0.0
       object-hash: 2.2.0
       oidc-token-hash: 5.0.1

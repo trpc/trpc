@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-minimal",
-  "version": "10.14.0",
+  "version": "10.16.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,9 +15,9 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/react-query": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "^10.16.0",
+    "@trpc/react-query": "^10.16.0",
+    "@trpc/server": "^10.16.0",
     "express": "^4.17.1",
     "zod": "^3.0.0"
   },

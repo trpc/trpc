@@ -125,6 +125,16 @@ export function createRootHooks<
             },
             [client, queryClient],
           ),
+          ensureQueryData: useCallback(
+            (queryKey, opts) => {
+              return queryClient.ensureQueryData({
+                ...opts,
+                queryKey,
+                queryFn: () => client.query(...getClientArgs(queryKey, opts)),
+              });
+            },
+            [client, queryClient],
+          ),
           invalidateQueries: useCallback(
             (queryKey, filters, options) => {
               return queryClient.invalidateQueries(
@@ -231,8 +241,14 @@ export function createRootHooks<
     input: unknown,
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
+    const context = useContext();
+    if (!context) {
+      throw new Error(
+        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+      );
+    }
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
-      useContext();
+      context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
 
     if (

@@ -12,6 +12,7 @@ export type {
   AnyQueryProcedure,
   AnyMutationProcedure,
   AnySubscriptionProcedure,
+  AnyProcedureParams,
   ProcedureParams,
   ProcedureArgs,
   ProcedureOptions,

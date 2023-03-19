@@ -105,6 +105,10 @@ export function getHTTPMethod(event: APIGatewayEvent) {
 
 export function getPath(event: APIGatewayEvent) {
   if (isPayloadV1(event)) {
+    if (!event.pathParameters) {
+      // Then this event was not triggered by a resource denoted with {proxy+}
+      return event.path.split('/').pop() || '';
+    }
     const matches = event.resource.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
