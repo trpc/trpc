@@ -5,6 +5,7 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   Filter,
+  ProcedureRouterRecord,
   inferProcedureInput,
 } from '@trpc/server';
 import {
@@ -14,48 +15,93 @@ import {
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
 
-type GetQueryOptions<
-  TRouter extends AnyRouter,
-  TProcedure extends AnyProcedure,
-  TPath extends string,
-> = <TData = inferTransformedProcedureOutput<TProcedure>>(
+type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
+  TData = inferTransformedProcedureOutput<TProcedure>,
+>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
     TPath,
     inferProcedureInput<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>,
     TData,
-    TRPCClientError<TRouter>
+    TRPCClientError<TProcedure>
   >,
 ) => TrpcQueryOptionsForUseQueries<
   TPath,
   inferProcedureInput<TProcedure>,
   inferTransformedProcedureOutput<TProcedure>,
   TData,
-  TRPCClientError<TRouter>
+  TRPCClientError<TProcedure>
 >;
 
 /**
  * @internal
  */
 export type UseQueriesProcedureRecord<
+  TRouter extends AnyRouter | ProcedureRouterRecord,
+  TPath extends string = '',
+> = TRouter extends AnyRouter
+  ? UseRouterProcedureRecord<TRouter, TPath>
+  : TRouter extends ProcedureRouterRecord
+  ? UseProcedureRouterRecord<TRouter, TPath>
+  : never;
+
+type UseProcedureRouterRecord<
+  TRouter extends ProcedureRouterRecord,
+  TPath extends string = '',
+> = {
+  [TKey in keyof Filter<
+    TRouter,
+    AnyRouter | ProcedureRouterRecord | AnyQueryProcedure
+  >]: TRouter[TKey] extends AnyRouter
+    ? UseRouterProcedureRecord<TRouter[TKey], `${TPath}${TKey & string}.`>
+    : TRouter[TKey] extends ProcedureRouterRecord
+    ? UseProcedureRouterRecord<TRouter[TKey], `${TPath}${TKey & string}.`>
+    : TRouter[TKey] extends AnyQueryProcedure
+    ? GetQueryOptions<TRouter[TKey], `${TPath}${TKey & string}`>
+    : never;
+};
+
+type UseRouterProcedureRecord<
   TRouter extends AnyRouter,
   TPath extends string = '',
 > = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
+    AnyRouter | ProcedureRouterRecord | AnyQueryProcedure
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseQueriesProcedureRecord<
         TRouter['_def']['record'][TKey],
         `${TPath}${TKey & string}.`
       >
+    : TRouter['_def']['record'][TKey] extends ProcedureRouterRecord
+    ? UseQueriesProcedureRecord<
+        TRouter['_def']['record'][TKey],
+        `${TPath}${TKey & string}.`
+      >
     : GetQueryOptions<
-        TRouter,
         TRouter['_def']['record'][TKey],
         `${TPath}${TKey & string}`
       >;
 };
+
+// export type UseQueriesProcedureRecord<
+//   TRouter extends AnyRouter,
+//   TPath extends string = '',
+// > = {
+//   [TKey in keyof Filter<
+//     TRouter['_def']['record'],
+//     AnyRouter | ProcedureRouterRecord | AnyQueryProcedure
+//   >]: TRouter['_def']['record'][TKey] extends AnyRouter | ProcedureRouterRecord
+//     ? UseQueriesProcedureRecord<
+//         TRouter['_def']['record'][TKey],
+//         `${TPath}${TKey & string}.`
+//       >
+//     : GetQueryOptions<
+//         TRouter['_def']['record'][TKey],
+//         `${TPath}${TKey & string}`
+//       >;
+// };
 
 /**
  * Create proxy for `useQueries` options
