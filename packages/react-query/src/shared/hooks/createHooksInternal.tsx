@@ -248,7 +248,7 @@ export function createRootHooks<
       );
     }
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
-      useContext();
+      context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
 
     if (
