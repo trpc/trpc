@@ -59,6 +59,7 @@ export interface TRPCClient<TRouter extends AnyRouter> {
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
+  // opts.abortOnUnmount
   const client = new TRPCUntypedClient(opts);
   return client as TRPCClient<TRouter>;
 }

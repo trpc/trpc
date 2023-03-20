@@ -57,6 +57,7 @@ export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
    */
   ssrState?: SSRState;
   /**
+   * @deprecated pass abortOnUnmount to `trpcClient` instead
    * Abort loading query calls when unmounting a component - usually when navigating to a new page
    * @default false
    */

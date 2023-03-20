@@ -75,6 +75,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientBaseOptions<TRouter> & {
       links: TRPCLink<TRouter>[];
+      abortOnUnmount?: boolean;
     };
 
 /** @internal */
@@ -116,6 +117,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
 
     this.runtime = {
       transformer: getTransformer(),
+      abortOnUnmount: opts.abortOnUnmount ?? false,
     };
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));

@@ -426,9 +426,14 @@ importers:
   examples/minimal-react:
     specifiers:
       '@playwright/test': ^1.26.1
+      '@tanstack/react-query-devtools': ^4.3.8
       npm-run-all: ^4.1.5
+      react-router-dom: ^6.9.0
       start-server-and-test: ^1.12.0
       wait-port: ^1.0.1
+    dependencies:
+      '@tanstack/react-query-devtools': 4.18.0
+      react-router-dom: 6.9.0
     devDependencies:
       '@playwright/test': 1.28.1
       npm-run-all: 4.1.5
@@ -574,6 +579,7 @@ importers:
   examples/next-minimal-starter:
     specifiers:
       '@tanstack/react-query': 4.18.0
+      '@tanstack/react-query-devtools': ^4.3.8
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -589,6 +595,7 @@ importers:
       zod: ^3.0.0
     dependencies:
       '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
+      '@tanstack/react-query-devtools': 4.18.0_2ryzfomli4bbns3rdhwnpgjdhm
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -8251,6 +8258,11 @@ packages:
     resolution: {integrity: sha512-B3tcTxjx196nuAu1GOTKO9cGPUgTFHYRdkPkTS4m5ptb2cejyBlH9X7GOfSt3xlI7p4zAJDshJP4JJivCg9ouA==}
     requiresBuild: true
 
+  /@remix-run/router/1.4.0:
+    resolution: {integrity: sha512-BJ9SxXux8zAg991UmT8slpwpsd31K1dHHbD3Ba4VzD+liLQ4WAMSxQp2d2ZPRPfN0jN2NPRowcSSoM7lCaF08Q==}
+    engines: {node: '>=14'}
+    dev: false
+
   /@resvg/resvg-wasm/2.0.0-alpha.4:
     resolution: {integrity: sha512-pWIG9a/x1ky8gXKRhPH1OPKpHFoMN1ISLbJ+O+gPXQHIAKhNd5I28RlWf7q576hAOQA9JZTlo3p/M2uyLzJmmw==}
     engines: {node: '>= 10'}
@@ -8742,10 +8754,21 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       remove-accents: 0.4.2
-    dev: true
 
   /@tanstack/query-core/4.18.0:
     resolution: {integrity: sha512-PP4mG8MD08sq64RZCqMfXMYfaj7+Oulwg7xZ/fJoEOdTZNcPIgaOkHajZvUBsNLbi/0ViMvJB4cFkL2Jg2WPbw==}
+
+  /@tanstack/react-query-devtools/4.18.0:
+    resolution: {integrity: sha512-L51D0AUqLTs7J+W7RypJrUEKXsS0y0eEhXAgO+rhcZH6i8jVrKLhcNZStQSnE+UpZqPm73uxt2e8TJgYfzz0nw==}
+    peerDependencies:
+      '@tanstack/react-query': 4.18.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@tanstack/match-sorter-utils': 8.1.1
+      superjson: 1.11.0
+      use-sync-external-store: 1.2.0
+    dev: false
 
   /@tanstack/react-query-devtools/4.18.0_2ryzfomli4bbns3rdhwnpgjdhm:
     resolution: {integrity: sha512-L51D0AUqLTs7J+W7RypJrUEKXsS0y0eEhXAgO+rhcZH6i8jVrKLhcNZStQSnE+UpZqPm73uxt2e8TJgYfzz0nw==}
@@ -8760,7 +8783,6 @@ packages:
       react-dom: 18.2.0_react@18.2.0
       superjson: 1.11.0
       use-sync-external-store: 1.2.0_react@18.2.0
-    dev: true
 
   /@tanstack/react-query/4.18.0_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-s1kdbGMdVcfUIllzsHUqVUdktBT5uuIRgnvrqFNLjl9TSOXEoBSDrhjsGjao0INQZv8cMpQlgOh3YH9YtN6cKw==}
@@ -19680,6 +19702,17 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
+  /react-router-dom/6.9.0:
+    resolution: {integrity: sha512-/seUAPY01VAuwkGyVBPCn1OXfVbaWGGu4QN9uj0kCPcTyNYgL1ldZpxZUpRU7BLheKQI4Twtl/OW2nHRF1u26Q==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+    dependencies:
+      '@remix-run/router': 1.4.0
+      react-router: 6.9.0
+    dev: false
+
   /react-router/5.3.4_react@18.2.0:
     resolution: {integrity: sha512-Ys9K+ppnJah3QuaRiLxk+jDWOR1MekYQrlytiXxC1RyfbdsZkS5pvKAzCCr031xHixZwpnsYNT5xysdFHQaYsA==}
     peerDependencies:
@@ -19695,6 +19728,15 @@ packages:
       react-is: 16.13.1
       tiny-invariant: 1.3.1
       tiny-warning: 1.0.3
+    dev: false
+
+  /react-router/6.9.0:
+    resolution: {integrity: sha512-51lKevGNUHrt6kLuX3e/ihrXoXCa9ixY/nVWRLlob4r/l0f45x3SzBvYJe3ctleLUQQ5fVa4RGgJOTH7D9Umhw==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      '@remix-run/router': 1.4.0
     dev: false
 
   /react-ssr-prepass/1.5.0_react@18.2.0:
@@ -20037,7 +20079,6 @@ packages:
 
   /remove-accents/0.4.2:
     resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
-    dev: true
 
   /renderkid/3.0.0:
     resolution: {integrity: sha512-q/7VIQA8lmM1hF+jn+sFSPWGlMkSAeNYcPLmDQx2zzuiDfaLrOmumR8iaUKlenFgh0XRPIUeSPlH3A+AW3Z5pg==}
@@ -22335,6 +22376,12 @@ packages:
     dependencies:
       react: 18.2.0
       use-isomorphic-layout-effect: 1.1.2_react@18.2.0
+    dev: false
+
+  /use-sync-external-store/1.2.0:
+    resolution: {integrity: sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dev: false
 
   /use-sync-external-store/1.2.0_react@18.2.0:

@@ -107,8 +107,11 @@ export function withTRPC<
           return props.trpc;
         }
 
+        // this calls the config defined in `createTRPCNext`
         const config = getClientConfig({});
         const queryClient = getQueryClient(config);
+        // just feed abortOnUmount here but we need to keep
+        // it in prepassProps until we remove in v11
         const trpcClient = trpc.createClient(config);
         return {
           abortOnUnmount: config.abortOnUnmount,

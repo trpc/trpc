@@ -12,6 +12,7 @@ const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const appRouter = router({
   greeting: publicProcedure
     // This is the input schema of your procedure
@@ -23,7 +24,8 @@ const appRouter = router({
         })
         .nullish(),
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
+      await sleep(3000);
       // This is what you're returning to your client
       return {
         text: `hello ${input?.name ?? 'world'}`,

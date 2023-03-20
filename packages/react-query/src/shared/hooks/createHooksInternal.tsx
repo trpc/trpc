@@ -291,7 +291,10 @@ export function createRootHooks<
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
     // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ??
+      client.runtime.abortOnUnmount ??
+      abortOnUnmount;
 
     const hook = __useQuery({
       ...ssrOpts,
