@@ -2,7 +2,7 @@
 id: server-side-calls
 title: Server Side Calls
 sidebar_label: Server Side Calls
-slug: /server-side-calls
+slug: /server/server-side-calls
 ---
 
 You may need to call your procedure(s) directly from the same server they're hosted in, `router.createCaller()` can be used to achieve this.

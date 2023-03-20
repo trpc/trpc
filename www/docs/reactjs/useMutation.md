@@ -2,7 +2,7 @@
 id: useMutation
 title: useMutation()
 sidebar_label: useMutation()
-slug: /useMutation
+slug: /reactjs/usemutation
 ---
 
 :::note

@@ -24,10 +24,10 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'tRPC server documentation',
-        slug: '/server',
+        slug: '/server/introduction',
       },
       items: [
-        'server/router',
+        'server/routers',
         'server/procedures',
         'server/merging-routers',
         'server/context',
@@ -49,14 +49,14 @@ module.exports = {
           link: {
             type: 'generated-index',
             title: 'Official tRPC adapters',
-            slug: '/adapters',
+            slug: '/server/adapters',
           },
           items: [
-            'server/adapter/aws-lambda',
-            'server/adapter/express',
-            'server/adapter/fastify',
-            'server/adapter/fetch',
-            'server/adapter/standalone',
+            'server/adapters/aws-lambda',
+            'server/adapters/express',
+            'server/adapters/fastify',
+            'server/adapters/fetch',
+            'server/adapters/standalone',
           ],
         },
       ],
@@ -88,7 +88,7 @@ module.exports = {
             'client/links/loggerLink',
           ],
         },
-        'client/header',
+        'client/headers',
         'client/cors',
       ],
     },
@@ -134,7 +134,7 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'Extra Information',
-        slug: '/extra',
+        slug: '/further',
       },
       items: [
         'further/faq',
