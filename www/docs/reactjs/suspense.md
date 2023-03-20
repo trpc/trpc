@@ -2,7 +2,7 @@
 id: suspense
 title: Suspense (Experimental)
 sidebar_label: Suspense (Experimental)
-slug: /suspense
+slug: /reactjs/suspense
 ---
 
 :::info
@@ -10,7 +10,7 @@ slug: /suspense
 - `useSuspense` & `useSuspenseInfiniteQuery` are _experimental_ features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
 - Ensure you're on the latest version of React
 - When initializing `createTRPCReact` or `createTRPCNext` you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
-- If you use suspense with [tRPC's _automatic_ SSR in Next.js](ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
+- If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
 :::
 

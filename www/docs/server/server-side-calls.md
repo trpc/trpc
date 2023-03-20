@@ -2,7 +2,7 @@
 id: server-side-calls
 title: Server Side Calls
 sidebar_label: Server Side Calls
-slug: /server-side-calls
+slug: /server/server-side-calls
 ---
 
 You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.

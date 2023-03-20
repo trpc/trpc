@@ -2,7 +2,7 @@
 id: express
 title: Usage with Express
 sidebar_label: Express
-slug: /express
+slug: /server/adapters/express
 ---
 
 ## Example app
@@ -68,7 +68,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/server/merging-routers) into a single root `appRouter`.
 
 ### 3. Use the Express adapter
 

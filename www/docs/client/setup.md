@@ -1,8 +1,8 @@
 ---
-id: vanilla
+id: setup
 title: Vanilla client
 sidebar_label: Create Vanilla Client
-slug: /vanilla
+slug: /client/setup
 ---
 
 The magic of tRPC is making _strongly typed_ API calls without relying on code generation. With full-stack TypeScript projects, you can directly _import types from the server into the client_! This is a vital part of how tRPC works.

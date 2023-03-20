@@ -2,7 +2,7 @@
 id: aws-lambda
 title: Usage with AWS Lambda through the API Gateway
 sidebar_label: AWS Lambda
-slug: /aws-lambda
+slug: /server/adapters/aws-lambda
 ---
 
 ## AWS Lambda adapter
