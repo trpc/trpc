@@ -11,7 +11,7 @@ The API Handler sits on a route in your server (usually `/api/trpc`, but this is
 
 It can also take some optional arguments such as `onError`, a callback function that runs whenever an error is thrown inside of a procedure.
 
-Below is an example implementation in Next.js. The process is similar for [AWS Lambda](./adapter/aws-lambda.md#3-use-the-amazon-api-gateway-adapter), [Express](./adapter/express.md#3-use-the-express-adapter), [Fastify](./adapter/fastify.md#create-fastify-server), and the [Fetch API](./adapter/fetch.mdx).
+Below is an example implementation in Next.js. The process is similar for [AWS Lambda](./adapters/aws-lambda#3-use-the-amazon-api-gateway-adapter), [Express](./adapters/express#3-use-the-express-adapter), [Fastify](./adapters/fastify#create-fastify-server), and the [Fetch API](./adapters/fetch.mdx).
 
 ## Next.js example
 
