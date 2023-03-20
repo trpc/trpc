@@ -10,7 +10,7 @@ Mocking tRPC gives you the ability to isolate your frontend components into test
 By intercepting our tRPC calls at the [Service Worker level](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) and returning responses as the component expects, mocking can help you to:
 
 - Write performant, easy-to-execute tests that don't rely on changing the underlying component in any way
-Present components in frontend workshops like Storybook exactly as they would appear and behave in your main app
+- Present components in frontend workshops like Storybook exactly as they would appear and behave in your main app
 
 The examples below use [Vitest](https://vitest.dev/), [React Testing Library](https://github.com/testing-library/react-testing-library), and [Mock Service Worker](https://www.npmjs.com/package/msw-trpc) (MSW), but the concepts apply to any testing framework.
 
