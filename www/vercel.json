@@ -57,7 +57,7 @@
     },
     {
       "source": "/docs/next",
-      "destination": "/docs/nextjs/setup",
+      "destination": "/docs/nextjs/introduction",
       "permanent": true
     },
     {
@@ -207,7 +207,7 @@
     },
     {
       "source": "/docs/server",
-      "destination": "/docs/server/setup",
+      "destination": "/docs/server/introduction",
       "permanent": true
     },
     {

@@ -1,5 +1,5 @@
 ---
-id: header
+id: headers
 title: Custom header
 sidebar_label: Create Custom Header
 slug: /client/headers

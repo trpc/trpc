@@ -91,7 +91,7 @@ module.exports = {
             'client/links/loggerLink',
           ],
         },
-        'client/header',
+        'client/headers',
         'client/cors',
       ],
     },
