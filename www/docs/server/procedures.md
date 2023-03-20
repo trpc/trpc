@@ -140,6 +140,23 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [scale-ts](https://github.com/paritytech/scale-ts)
+
+```tsx
+import { initTRPC } from '@trpc/server';
+import * as $ from 'scale-ts';
+
+export const t = initTRPC.create();
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input($.object($.field('text', $.str)))
+    .query(({ input }) => ({ greeting: `hello ${input.text}` })),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Multiple input parsers {#multiple-input-parsers}
 
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.
