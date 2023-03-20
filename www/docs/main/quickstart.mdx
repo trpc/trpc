@@ -10,9 +10,25 @@ import CodeBlock from '@theme/CodeBlock';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-:::tip
-We highly encourage you to check out [the example apps](example-apps.mdx) to learn about how tRPC is installed in your favorite framework.
-:::
+<!-- Reusable snippet for the setup step only -->
+
+```twoslash include setup
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+const router = t.router;
+const publicProcedure = t.procedure;
+
+type User = { id: string; name: string };
+const db = {} as {
+  user: {
+    findMany: () => Promise<User[]>;
+    findById: (id: string) => Promise<User>;
+    create: (data: { name: string }) => Promise<User>;
+  };
+};
+```
 
 <!-- Reusable snippet for a full backend -->
 
@@ -63,11 +79,11 @@ const server = createHTTPServer({
 server.listen(3000);
 ```
 
-<!-- End reusable snippet for a full backend -->
+<!-- End reusable snippets -->
 
 ## Installation
 
-tRPC is broken up into several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase.
+tRPC is broken up into several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/reactjs/setup) and [usage with Next.js](/docs/nextjs/setup).
 
 :::info Requirements
 
@@ -76,90 +92,37 @@ tRPC is broken up into several packages, so you can install only what you need. 
 
 :::
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th>Purpose</th>
-      <th>Location</th>
-      <th>Install command</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Implement endpoints and routers</td>
-      <td>Server</td>
-      <td>
-        <code>npm install @trpc/server</code>
-      </td>
-    </tr>
-    <tr>
-      <td>Call procedures on client</td>
-      <td>Client</td>
-      <td>
-        <code>npm install @trpc/client @trpc/server</code>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        React hooks powered by{' '}
-        <a
-          href="https://tanstack.com/query/v4/docs/adapters/react-query"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          @tanstack/react-query
-        </a>{' '}
-      </td>
-      <td>Client</td>
-      <td>
-        <code>npm install @trpc/react-query @tanstack/react-query @trpc/client @trpc/server</code>
-      </td>
-      </tr>
-      <tr>
-      <td>
-        Next.js integration utilities </td>
-      <td>Next.js</td>
-      <td>
-        <code>npm install next @trpc/next @trpc/react-query @tanstack/react-query @trpc/client @trpc/server</code>
-      </td>
-    </tr>
+:::tip
 
-  </tbody>
-</table>
+We highly encourage you to check out [the example apps](example-apps.mdx) to learn about how tRPC is installed in your favorite framework.
 
-### Installation Snippets
+:::
 
-Here are some install scripts to add tRPC to your project. These scripts include every `@trpc/*` package, so feel free to remove what you don't need!
+Start off by installing the `@trpc/server` and `@trpc/client` packages:
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
 
 ```sh
-npm install @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query
+npm install @trpc/server @trpc/client
 ```
 
   </TabItem>
   <TabItem value="yarn" label="yarn">
 
 ```sh
-yarn add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query
+yarn add @trpc/server @trpc/client
 ```
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
 
 ```sh
-pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query
+pnpm add @trpc/server @trpc/client
 ```
 
   </TabItem>
 </Tabs>
-
-:::info
-
-Skip to [the playground](#try-it-out-for-yourself) if you want to try it out directly!
-
-:::
 
 ## Defining a backend router
 
@@ -168,9 +131,9 @@ Let's walk through the steps of building a typesafe API with tRPC. To start, thi
 ```ts
 type User = { id: string; name: string; };
 
-userList() => User[];
-userById(id: string) => User;
-userCreate(data: { name: string }) => User;
+userList: () => User[];
+userById: (id: string) => User;
+userCreate: (data: { name: string }) => User;
 ```
 
 ### 1. Create a router instance
@@ -203,24 +166,6 @@ Query procedures are the equivalent of a GET endpoint in a REST-based API.
 :::
 
 The following creates a query procedure called `userList` that returns a list of users from our database:
-
-```twoslash include setup
-import { initTRPC } from '@trpc/server';
-
-const t = initTRPC.create();
-
-const router = t.router;
-const publicProcedure = t.procedure;
-
-type User = { id: string; name: string };
-const db = {} as {
-  user: {
-    findMany: () => Promise<User[]>;
-    findById: (id: string) => Promise<User>;
-    create: (data: { name: string }) => Promise<User>;
-  };
-};
-```
 
 ```ts twoslash title='server.ts'
 // @include: setup
