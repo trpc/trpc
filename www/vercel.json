@@ -1,13 +1,13 @@
 {
   "redirects": [
     {
-      "source": "/docs/aborting-procedure-calls",
+      "source": "/docs/aborting-procedures",
       "destination": "/docs/client/aborting-procedure-calls",
       "permanent": true
     },
     {
-      "source": "/docs/header",
-      "destination": "/docs/client/header",
+      "source": "/docs/aborting-procedure-calls",
+      "destination": "/docs/client/aborting-procedure-calls",
       "permanent": true
     },
     {
@@ -16,8 +16,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/vanilla",
-      "destination": "/docs/client/setup",
+      "source": "/docs/header",
+      "destination": "/docs/client/headers",
       "permanent": true
     },
     {
@@ -26,28 +26,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/starter-projects",
-      "destination": "/docs/nextjs/starter-projects",
-      "permanent": true
-    },
-    {
-      "source": "/docs/ssr",
-      "destination": "/docs/nextjs/ssr",
-      "permanent": true
-    },
-    {
-      "source": "/docs/ssg",
-      "destination": "/docs/nextjs/ssg",
-      "permanent": true
-    },
-    {
-      "source": "/docs/ssg-helpers",
-      "destination": "/docs/nextjs/ssg-helpers",
-      "permanent": true
-    },
-    {
-      "source": "/docs/next",
-      "destination": "/docs/nextjs/setup",
+      "source": "/docs/vanilla",
+      "destination": "/docs/client/setup",
       "permanent": true
     },
     {
@@ -61,8 +41,53 @@
       "permanent": true
     },
     {
+      "source": "/docs/ssg-helpers",
+      "destination": "/docs/nextjs/ssg-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/ssg",
+      "destination": "/docs/nextjs/ssg",
+      "permanent": true
+    },
+    {
+      "source": "/docs/ssr",
+      "destination": "/docs/nextjs/ssr",
+      "permanent": true
+    },
+    {
+      "source": "/docs/starter-projects",
+      "destination": "/docs/nextjs/starter-projects",
+      "permanent": true
+    },
+    {
+      "source": "/docs/next",
+      "destination": "/docs/nextjs/setup",
+      "permanent": true
+    },
+    {
       "source": "/docs/react",
       "destination": "/docs/reactjs/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/create-react-app",
+      "destination": "/docs/reactjs/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/invalidateQuery",
+      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/invalidateQueries",
+      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/query-invalidation",
+      "destination": "/docs/reactjs/usecontext#query-invalidation",
       "permanent": true
     },
     {
@@ -97,7 +122,7 @@
     },
     {
       "source": "/docs/getQueryKey",
-      "destination": "/docs/reactjs/getQueryKey",
+      "destination": "/docs/reactjs/getquerykey",
       "permanent": true
     },
     {
@@ -108,6 +133,21 @@
     {
       "source": "/docs/react-queries-and-mutations",
       "destination": "/docs/react-queries",
+      "permanent": true
+    },
+    {
+      "source": "/docs/adapters",
+      "destination": "/docs/server/adapters",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api-gateway",
+      "destination": "/docs/server/adapters/aws-lambda",
+      "permanent": true
+    },
+    {
+      "source": "/docs/aws-lambda",
+      "destination": "/docs/server/adapters/aws-lambda",
       "permanent": true
     },
     {
@@ -131,73 +171,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/aws-lambda",
-      "destination": "/docs/server/adapters/aws-lambda",
-      "permanent": true
-    },
-    {
-      "source": "/docs/server-side-calls",
-      "destination": "/docs/server/server-side-calls",
-      "permanent": true
-    },
-    {
-      "source": "/docs/router",
-      "destination": "/docs/server/routers",
-      "permanent": true
-    },
-    {
-      "source": "/docs/procedures",
-      "destination": "/docs/server/procedures",
-      "permanent": true
-    },
-    {
-      "source": "/docs/output-validation",
-      "destination": "/docs/server/output-validation",
-      "permanent": true
-    },
-    {
-      "source": "/docs/middlewares",
-      "destination": "/docs/server/middlewares",
-      "permanent": true
-    },
-    {
-      "source": "/docs/metadata",
-      "destination": "/docs/server/metadata",
-      "permanent": true
-    },
-    {
-      "source": "/docs/merging-routers",
-      "destination": "/docs/server/merging-routers",
-      "permanent": true
-    },
-    {
-      "source": "/docs/infer-types",
-      "destination": "/docs/server/infer-types",
-      "permanent": true
-    },
-    {
-      "source": "/docs/error-handling",
-      "destination": "/docs/server/error-handling",
-      "permanent": true
-    },
-    {
-      "source": "/docs/error-formatting",
-      "destination": "/docs/server/error-formatting",
-      "permanent": true
-    },
-    {
-      "source": "/docs/data-transformers",
-      "destination": "/docs/server/data-transformers",
-      "permanent": true
-    },
-    {
-      "source": "/docs/context",
-      "destination": "/docs/server/context",
-      "permanent": true
-    },
-    {
-      "source": "/docs/caching",
-      "destination": "/docs/server/caching",
+      "source": "/docs/api-handler",
+      "destination": "/docs/server/api-handler",
       "permanent": true
     },
     {
@@ -206,13 +181,33 @@
       "permanent": true
     },
     {
-      "source": "/docs/api-handler",
-      "destination": "/docs/server/api-handler",
+      "source": "/docs/caching",
+      "destination": "/docs/server/caching",
       "permanent": true
     },
     {
-      "source": "/docs/adapters",
-      "destination": "/docs/server/adapters",
+      "source": "/docs/context",
+      "destination": "/docs/server/context",
+      "permanent": true
+    },
+    {
+      "source": "/docs/data-transformers",
+      "destination": "/docs/server/data-transformers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/error-formatting",
+      "destination": "/docs/server/error-formatting",
+      "permanent": true
+    },
+    {
+      "source": "/docs/error-handling",
+      "destination": "/docs/server/error-handling",
+      "permanent": true
+    },
+    {
+      "source": "/docs/infer-types",
+      "destination": "/docs/server/infer-types",
       "permanent": true
     },
     {
@@ -221,18 +216,38 @@
       "permanent": true
     },
     {
-      "source": "/docs/api-gateway",
-      "destination": "/docs/aws-lambda",
+      "source": "/docs/merging-routers",
+      "destination": "/docs/server/merging-routers",
       "permanent": true
     },
     {
-      "source": "/docs/create-react-app",
-      "destination": "/docs/react",
+      "source": "/docs/metadata",
+      "destination": "/docs/server/metadata",
       "permanent": true
     },
     {
-      "source": "/docs/invalidateQuery",
-      "destination": "/docs/invalidateQueries",
+      "source": "/docs/middlewares",
+      "destination": "/docs/server/middlewares",
+      "permanent": true
+    },
+    {
+      "source": "/docs/output-validation",
+      "destination": "/docs/server/output-validation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/procedures",
+      "destination": "/docs/server/procedures",
+      "permanent": true
+    },
+    {
+      "source": "/docs/router",
+      "destination": "/docs/server/routers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server-side-calls",
+      "destination": "/docs/server/server-side-calls",
       "permanent": true
     },
     {
@@ -247,37 +262,32 @@
     },
     {
       "source": "/docs/v10/invalidateQueries",
-      "destination": "/docs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/usecontext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/v10/publicProcedures",
-      "destination": "/docs/procedures",
+      "destination": "/docs/server/procedures",
       "permanent": true
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/usecontext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/useContext#query-invalidation",
-      "permanent": true
-    },
-    {
-      "source": "/docs/query-invalidation",
-      "destination": "/docs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/usecontext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/react-mutations",
-      "destination": "/docs/useMutation",
+      "destination": "/docs/reactjs/usemutation",
       "permanent": true
     },
     {
       "source": "/docs/react-queries",
-      "destination": "/docs/useQuery",
+      "destination": "/docs/reactjs/usequery",
       "permanent": true
     },
     {
@@ -291,13 +301,8 @@
       "permanent": false
     },
     {
-      "source": "/docs/aborting-procedures",
-      "destination": "/docs/aborting-procedure-calls",
-      "permanent": true
-    },
-    {
       "source": "/edge-runtimes",
-      "destination": "/docs/fetch",
+      "destination": "/docs/server/adapters/fetch",
       "permanent": true
     },
     {
