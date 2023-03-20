@@ -9,14 +9,18 @@ const trpc = createTRPCProxyClient<AppRouter>({
   ],
 });
 
-/**
- * Inferring types
- */
-const users = await trpc.userList.query();
-//    ^?
+async function main() {
+  /**
+   * Inferring types
+   */
+  const users = await trpc.userList.query();
+  //    ^?
 
-const user = await trpc.userById.query('1');
-//    ^?
+  const user = await trpc.userById.query('1');
+  //    ^?
 
-const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
-//    ^?
+  const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
+  //    ^?
+}
+
+main().catch(console.error);
