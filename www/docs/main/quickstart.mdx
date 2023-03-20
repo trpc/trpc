@@ -36,11 +36,11 @@ const db = {} as {
 };
 
 const appRouter = router({
-    userList: t.procedure.query(async () => {
+    userList: publicProcedure.query(async () => {
     const users = await db.user.findMany();
     return users;
   }),
-  userById: t.procedure.input(z.string()).query(async (opts) => {
+  userById: publicProcedure.input(z.string()).query(async (opts) => {
     const { input } = opts;
     const user = await db.user.findById(input);
     return user;
@@ -176,8 +176,8 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const router = t.router;
-const publicProcedure = t.procedure;
+const router = router;
+const publicProcedure = publicProcedure;
 
 const appRouter = router({});
 
@@ -203,8 +203,8 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const router = t.router;
-const publicProcedure = t.procedure;
+const router = router;
+const publicProcedure = publicProcedure;
 
 type User = { id: string; name: string };
 const db = {} as {
@@ -221,8 +221,8 @@ const db = {} as {
 
 // ---cut---
 
-const appRouter = t.router({
-  userList: t.procedure.query(async () => {
+const appRouter = router({
+  userList: publicProcedure.query(async () => {
     // Retrieve users from a datasource, this is an imaginary database
     const users = await db.user.findMany();
     //    ^?
@@ -247,9 +247,9 @@ You define your input parser on `publicProcedure.input()`, which can then be acc
 ```ts twoslash title='server.ts'
 // @include: setup
 // ---cut---
-const appRouter = t.router({
+const appRouter = router({
   // ...
-  userById: t.procedure
+  userById: publicProcedure
     // The input is unknown at this time. A client could have sent
     // us anything so we won't assume a certain data type.
     .input((val: unknown) => {
@@ -284,9 +284,9 @@ const appRouter = t.router({
 // ---cut---
 import { z } from 'zod';
 
-const appRouter = t.router({
+const appRouter = router({
   // ...
-  userById: t.procedure.input(z.string()).query(async (opts) => {
+  userById: publicProcedure.input(z.string()).query(async (opts) => {
     const { input } = opts;
     //      ^?
     // Retrieve the user with the given ID
@@ -309,16 +309,18 @@ const appRouter = t.router({
 // ---cut---
 import * as yup from 'yup';
 
-const appRouter = t.router({
+const appRouter = router({
   // ...
-  userById: t.procedure.input(yup.string().required()).query(async (opts) => {
-    const { input } = opts;
-    //      ^?
-    // Retrieve the user with the given ID
-    const user = await db.user.findById(input);
-    //    ^?
-    return user;
-  }),
+  userById: publicProcedure
+    .input(yup.string().required())
+    .query(async (opts) => {
+      const { input } = opts;
+      //      ^?
+      // Retrieve the user with the given ID
+      const user = await db.user.findById(input);
+      //    ^?
+      return user;
+    }),
 });
 ```
 
@@ -344,9 +346,9 @@ Let's add a `userCreate` mutation by adding it as a new property on our router o
 // ---cut---
 import { z } from 'zod';
 
-const appRouter = t.router({
+const appRouter = router({
   // ...
-  userCreate: t.procedure
+  userCreate: publicProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async (opts) => {
       const { input } = opts;
@@ -366,7 +368,7 @@ Now that we have defined our router, we can serve it. tRPC has many [adapters](/
 <!--  prettier-ignore-start -->
 ```ts twoslash title='server.ts'
 // @include: setup
-const appRouter = t.router({
+const appRouter = router({
   // ...
 });
 // ---cut---
