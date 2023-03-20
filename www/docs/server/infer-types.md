@@ -2,7 +2,7 @@
 id: infer-types
 title: Inferring Types
 sidebar_label: Inferring Types
-slug: /infer-types
+slug: /server/infer-types
 ---
 
 <!-- Reusable snippet -->

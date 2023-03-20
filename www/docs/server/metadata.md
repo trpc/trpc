@@ -2,7 +2,7 @@
 id: metadata
 title: Metadata
 sidebar_label: Metadata
-slug: /metadata
+slug: /server/metadata
 ---
 
 Procedure metadata allows you to add an optional procedure specific `meta` property which will be available in all [middleware](middlewares) function parameters.

@@ -2,7 +2,7 @@
 id: aborting-procedure-calls
 title: Aborting Procedure Calls
 sidebar_label: Aborting Procedure Calls
-slug: /aborting-procedure-calls
+slug: /client/aborting-procedure-calls
 ---
 
 ## @trpc/react-query
