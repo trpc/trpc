@@ -69,11 +69,11 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.16.0"
+    "@trpc/server": "10.17.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "10.16.0",
+    "@trpc/server": "^10.17.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",

@@ -57,15 +57,15 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.16.0",
-    "@trpc/server": "10.16.0",
+    "@trpc/client": "10.17.0",
+    "@trpc/server": "10.17.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.16.0",
-    "@trpc/server": "10.16.0",
+    "@trpc/client": "^10.17.0",
+    "@trpc/server": "^10.17.0",
     "@types/express": "^4.17.12",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
