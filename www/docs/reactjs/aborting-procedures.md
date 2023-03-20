@@ -11,7 +11,6 @@ By default, tRPC does not cancel requests on unmount. If you want to opt into th
 // @target: esnext
 // ---cut---
 // @filename: utils.ts
-// @noErrors
 import { createTRPCReact } from '@trpc/react-query';
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -28,12 +27,15 @@ You may also override this behaviour at the request level.
 
 // ---cut---
 // @filename: pages/posts/[id].tsx
-// @noErrors
 import { trpc } from '~/utils/trpc';
 
 const PostViewPage: NextPageWithLayout = () => {
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id }, { trpc: { abortOnUnmount: true } });
+  const postQuery = trpc.post.byId.useQuery(
+    { id }, 
+    { 
+      trpc: { abortOnUnmount: true } 
+    });
 
   return (...)
 }
