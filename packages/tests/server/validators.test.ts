@@ -2,6 +2,7 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
 import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
+import * as $ from 'scale-codec';
 import * as st from 'superstruct';
 import * as yup from 'yup';
 import { z } from 'zod';
@@ -174,6 +175,29 @@ test('yup', async () => {
     `[TRPCClientError: this must be a \`number\` type, but the final value was: \`NaN\` (cast from the value \`"asd"\`).]`,
   );
   expect(res.input).toBe(123);
+  await close();
+});
+
+test('scale', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input($.i8).query(({ input }) => {
+      expectTypeOf(input).toMatchTypeOf<number>();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(16);
+
+  // @ts-expect-error this only accepts a `number`
+  await expect(proxy.num.query('asd')).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: typeof value !== "number"]`,
+  );
+  expect(res.input).toBe(16);
   await close();
 });
 
