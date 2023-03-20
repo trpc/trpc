@@ -12,8 +12,8 @@ module.exports = {
         'main/quickstart',
         'main/awesome-trpc',
         'main/example-apps',
-        'nextjs/introduction',
-        'reactjs/introduction',
+        'nextjs/setup',
+        'reactjs/setup',
         'main/contributing',
         'main/love',
         'main/sponsors',
@@ -26,10 +26,10 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'tRPC server documentation',
-        slug: '/server',
+        slug: '/server/introduction',
       },
       items: [
-        'server/router',
+        'server/routers',
         'server/procedures',
         'server/merging-routers',
         'server/context',
@@ -51,14 +51,14 @@ module.exports = {
           link: {
             type: 'generated-index',
             title: 'Official tRPC adapters',
-            slug: '/adapters',
+            slug: '/server/adapters',
           },
           items: [
-            'server/adapter/aws-lambda',
-            'server/adapter/express',
-            'server/adapter/fastify',
-            'server/adapter/fetch',
-            'server/adapter/standalone',
+            'server/adapters/aws-lambda',
+            'server/adapters/express',
+            'server/adapters/fastify',
+            'server/adapters/fetch',
+            'server/adapters/standalone',
           ],
         },
       ],
@@ -70,10 +70,10 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'tRPC client documentation',
-        slug: '/client',
+        slug: '/client/introduction',
       },
       items: [
-        'client/vanilla',
+        'client/setup',
         'client/aborting-procedure-calls',
         {
           type: 'category',
@@ -91,7 +91,7 @@ module.exports = {
             'client/links/loggerLink',
           ],
         },
-        'client/header',
+        'client/headers',
         'client/cors',
       ],
     },
@@ -102,10 +102,10 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'tRPC React Query documentation',
-        slug: '/react-query',
+        slug: '/reactjs/introduction',
       },
       items: [
-        'reactjs/introduction',
+        'reactjs/setup',
         'reactjs/useQuery',
         'reactjs/useMutation',
         'reactjs/useInfiniteQuery',
@@ -121,10 +121,10 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'tRPC Next.js documentation',
-        slug: '/next',
+        slug: '/nextjs/introduction',
       },
       items: [
-        'nextjs/introduction',
+        'nextjs/setup',
         'nextjs/ssr',
         'nextjs/ssg',
         'nextjs/ssg-helpers',
@@ -138,7 +138,7 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'Extra Information',
-        slug: '/extra',
+        slug: '/further',
       },
       items: [
         'further/faq',

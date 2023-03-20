@@ -192,18 +192,19 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ) {
-  const { middlewares = [], inputs, ...rest } = def2;
+  const { middlewares = [], inputs, meta, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
-  } as any);
+    meta: def1.meta && meta ? { ...def1.meta, ...meta } : meta ?? def1.meta,
+  });
 }
 
 export function createBuilder<TConfig extends AnyRootConfig>(
-  initDef?: AnyProcedureBuilderDef,
+  initDef: Partial<AnyProcedureBuilderDef> = {},
 ): ProcedureBuilder<{
   _config: TConfig;
   _ctx_out: TConfig['$types']['ctx'];
@@ -213,9 +214,10 @@ export function createBuilder<TConfig extends AnyRootConfig>(
   _output_out: UnsetMarker;
   _meta: TConfig['$types']['meta'];
 }> {
-  const _def: AnyProcedureBuilderDef = initDef || {
+  const _def: AnyProcedureBuilderDef = {
     inputs: [],
     middlewares: [],
+    ...initDef,
   };
 
   return {
