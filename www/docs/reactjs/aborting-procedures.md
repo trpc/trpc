@@ -29,16 +29,24 @@ export type AppRouter = typeof appRouter;
 // @include: router
 // @filename: utils/trpc.ts
 import { httpBatchLink } from '@trpc/client';
-// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
+// ---cut---
+import { useState } from 'react';
 import type { AppRouter } from '../server/router';
 
 export const trpc = createTRPCReact<AppRouter>();
-trpc.createClient({
-  links: [httpBatchLink({ url: '/api/trpc' })],
-  // FIXME: fix this in core
-  // abortOnUnmount: true,
-});
+
+function AppProvider() {
+  const [client] = useState(() =>
+    trpc.createClient({
+      links: [httpBatchLink({ url: '/api/trpc' })],
+      // FIXME: fix this in core
+      // abortOnUnmount: true, // 👈
+    }),
+  );
+
+  // ...
+}
 ```
 
 You may also override this behaviour at the request level.
@@ -60,17 +68,16 @@ trpc.createClient({
 });
 // @filename: pages/posts/[id].tsx
 declare const useRouter: any;
-import React from 'react';
 // ---cut---
 import { trpc } from '../../utils/trpc';
 
-const PostViewPage = () => {
+function PostViewPage() {
   const { query } = useRouter();
   const postQuery = trpc.post.byId.useQuery(
     { id: query.id },
     { trpc: { abortOnUnmount: true } }
   );
 
-  return <h1>{postQuery.data?.title}</h1>;
+  // ...
 }
 ```
