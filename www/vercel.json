@@ -31,11 +31,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/extra",
-      "destination": "/docs/nextjs/introduction",
-      "permanent": true
-    },
-    {
       "source": "/docs/nextjs",
       "destination": "/docs/nextjs/introduction",
       "permanent": true
@@ -309,6 +304,11 @@
       "source": "/faq",
       "destination": "/docs/faq",
       "permanent": false
+    },
+    {
+      "source": "/docs/extra",
+      "destination": "/docs/further",
+      "permanent": true
     },
     {
       "source": "/docs/v10/:path*",
