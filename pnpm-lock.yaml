@@ -1073,6 +1073,7 @@ importers:
       node-fetch: ^3.3.0
       react: ^18.2.0
       react-dom: ^18.2.0
+      scale-codec: ^0.11.0
       superjson: ^1.7.4
       superstruct: ^1.0.0
       tsx: ^3.12.3
@@ -1115,6 +1116,7 @@ importers:
       node-fetch: 3.3.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+      scale-codec: 0.11.0
       superjson: 1.11.0
       superstruct: 1.0.3
       tsx: 3.12.3
@@ -20342,6 +20344,10 @@ packages:
     engines: {node: '>=v12.22.7'}
     dependencies:
       xmlchars: 2.2.0
+    dev: false
+
+  /scale-codec/0.11.0:
+    resolution: {integrity: sha512-b1y96lVmWHp3X/azi4HCawM6wcRP0yBuwk6aaUeuMBCBQzP3I9Z8zs5TejGvB8sH+vXM9HAUW9IsjeFms751gg==}
     dev: false
 
   /scheduler/0.23.0:
