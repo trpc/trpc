@@ -3,13 +3,14 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import React, { ComponentPropsWithoutRef, useState } from 'react';
+import React from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
 import { Features } from '../components/Features';
 import { GithubSponsorButton } from '../components/GithubSponsorButton';
 import { GithubStarsButton } from '../components/GithubStarsButton';
+import { Iframe } from '../components/Iframe';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
@@ -17,25 +18,6 @@ import { TwitterWall } from '../components/TwitterWall';
 import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
 import { TopSponsors } from '../components/sponsors/TopSponsors';
 import { searchParams } from '../utils/searchParams';
-
-const Iframe = (
-  props: Omit<ComponentPropsWithoutRef<'iframe'>, 'className'>,
-) => {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <iframe
-      loading="lazy"
-      {...props}
-      onLoad={() => {
-        setLoaded(true);
-      }}
-      className={clsx(
-        'w-full h-full absolute transition-opacity duration-1000',
-        loaded ? 'opacity-100' : 'opacity-0',
-      )}
-    />
-  );
-};
 
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();

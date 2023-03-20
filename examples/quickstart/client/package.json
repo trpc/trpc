@@ -1,0 +1,11 @@
+{
+  "name": "@examples/quickstart-client",
+  "version": "10.17.0",
+  "private": true,
+  "dependencies": {
+    "@trpc/client": "^10.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.20"
+  }
+}

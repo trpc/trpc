@@ -17,59 +17,53 @@ We highly encourage you to check out [the example apps](example-apps.mdx) to lea
 <!-- Reusable snippet for a full backend -->
 
 ```twoslash include server
-// @target: esnext
-
-// @filename: server.ts
 import { initTRPC } from '@trpc/server';
-import { z } from 'zod';
+import { createHTTPServer } from "@trpc/server/adapters/standalone";
+import { z } from "zod";
 
 const t = initTRPC.create();
 
 const router = t.router;
 const publicProcedure = t.procedure;
 
-interface User {
-  id: string;
-  name: string;
-}
-
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'KATT',
-  },
-];
+type User = { id: string; name: string };
+const db = {} as {
+  user: {
+    findMany: () => Promise<User[]>;
+    findById: (id: string) => Promise<User>;
+    create: (data: { name: string }) => Promise<User>;
+  };
+};
 
 const appRouter = router({
-  userById: publicProcedure
-    .input((val: unknown) => {
-      if (typeof val === 'string') return val;
-      throw new Error(`Invalid input: ${typeof val}`);
-    })
-    .query((req) => {
-      const input = req.input;
-      const user = userList.find((it) => it.id === input);
-
-      return user;
-    }),
+    userList: t.procedure.query(async () => {
+    const users = await db.user.findMany();
+    return users;
+  }),
+  userById: t.procedure.input(z.string()).query(async (opts) => {
+    const { input } = opts;
+    const user = await db.user.findById(input);
+    return user;
+  }),
   userCreate: publicProcedure
     .input(z.object({ name: z.string() }))
-    .mutation((req) => {
-      const id = `${Math.random()}`;
-
-      const user: User = {
-        id,
-        name: req.input.name,
-      };
-
-      userList.push(user);
-
+    .mutation(async (opts) => {
+      const { input } = opts;
+      const user = await db.user.create(input);
       return user;
     }),
 });
 
 export type AppRouter = typeof appRouter;
+
+const server = createHTTPServer({
+  router: appRouter,
+});
+
+server.listen(3000);
 ```
+
+<!-- End reusable snippet for a full backend -->
 
 ## Installation
 
@@ -118,7 +112,7 @@ tRPC is broken up into several packages, so you can install only what you need. 
       </td>
       <td>Client</td>
       <td>
-        <code>npm install @trpc/react-query @tanstack/react-query</code>
+        <code>npm install @trpc/react-query @tanstack/react-query @trpc/client @trpc/server</code>
       </td>
       </tr>
       <tr>
@@ -126,7 +120,7 @@ tRPC is broken up into several packages, so you can install only what you need. 
         Next.js integration utilities </td>
       <td>Next.js</td>
       <td>
-        <code>npm install @trpc/next</code>
+        <code>npm install next @trpc/next @trpc/react-query @tanstack/react-query @trpc/client @trpc/server</code>
       </td>
     </tr>
 
@@ -163,16 +157,19 @@ pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-
 
 ## Defining a backend router
 
-Let's walk through the steps of building a typesafe API with tRPC. To start, this API will only contain two endpoints with these TypeScript signatures:
+Let's walk through the steps of building a typesafe API with tRPC. To start, this API will contain three endpoints with these TypeScript signatures:
 
 ```ts
-userById(id: string) => { id: string; name: string; }
-userCreate(data: { name: string }) => { id: string; name: string; }
+type User = { id: string; name: string; };
+
+userList() => User[];
+userById(id: string) => User;
+userCreate(data: { name: string }) => User;
 ```
 
-### Create a router instance
+### 1. Create a router instance
 
-First, let's define an empty router in our server codebase:
+First, let's initilize the tRPC backend and define an empty router in our server codebase:
 
 ```ts twoslash title='server.ts'
 import { initTRPC } from '@trpc/server';
@@ -189,60 +186,152 @@ const appRouter = router({});
 export type AppRouter = typeof appRouter;
 ```
 
-### Add a query procedure
+### 2. Add a query procedure
 
-Use `procedure.query()` to add a query procedure/endpoint to the router. The two methods on this procedure are:
+Use `publicProcedure.query()` to add a query procedure to the router.
 
-- `input` _(optional)_: When provided, this should be a function that validates and casts the _input_ of this procedure. It should return a strongly typed value when the input is valid or throw an error if the input is invalid. We recommend using a TypeScript validation library like [Zod](https://github.com/colinhacks/zod), [Superstruct](https://github.com/ianstormtaylor/superstruct), or [Yup](https://github.com/jquense/yup) for input validation.
-- `query`: This is the implementation of the procedure (a "resolver"). It's a function with a single `req` argument to represent the incoming request. The validated (and strongly typed!) input is passed into `req.input`.
+:::info
 
-The following creates a query procedure called `userById` that takes a single string argument and returns a user object:
+Query procedures are the equivalent of a GET endpoint in a REST-based API.
 
-```ts twoslash title='server.ts'
-// @filename: server.ts
+:::
+
+The following creates a query procedure called `userList` that returns a list of users from our database:
+
+```twoslash include setup
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-interface User {
-  id: string;
-  name: string;
-}
+const router = t.router;
+const publicProcedure = t.procedure;
 
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'KATT',
-  },
-];
+type User = { id: string; name: string };
+const db = {} as {
+  user: {
+    findMany: () => Promise<User[]>;
+    findById: (id: string) => Promise<User>;
+    create: (data: { name: string }) => Promise<User>;
+  };
+};
+```
+
+```ts twoslash title='server.ts'
+// @include: setup
+
+// ---cut---
 
 const appRouter = t.router({
+  userList: t.procedure.query(async () => {
+    // Retrieve users from a datasource, this is an imaginary database
+    const users = await db.user.findMany();
+    //    ^?
+    return users;
+  }),
+});
+```
+
+### 3. Using input parser to validate procedure inputs
+
+To implement the `userById` procedure, we need to accept input from the client. tRPC lets you define [input parsers](/docs/server/input-parsers) to validate and parse the input. You can define your own input parser or use a validation library of your choice, like [zod](https://zod.dev), [yup](https://yup.dev), or [superstruct](https://superstruct.dev).
+
+You define your input parser on `publicProcedure.input()`, which can then be accessed on the resolver function as shown below:
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla" default>
+     The input parser should be a function that validates and casts the input of this procedure. It should return a strongly typed value when the input is valid or throw an error if the input is invalid.
+
+<br />
+<br />
+
+```ts twoslash title='server.ts'
+// @include: setup
+// ---cut---
+const appRouter = t.router({
+  // ...
   userById: t.procedure
-    // The input is unknown at this time.
-    // A client could have sent us anything
-    // so we won't assume a certain data type.
+    // The input is unknown at this time. A client could have sent
+    // us anything so we won't assume a certain data type.
     .input((val: unknown) => {
       // If the value is of type string, return it.
-      // TypeScript now knows that this value is a string.
+      // It will now be inferred as string.
       if (typeof val === 'string') return val;
 
       // Uh oh, looks like that input wasn't a string.
       // We will throw an error instead of running the procedure.
       throw new Error(`Invalid input: ${typeof val}`);
     })
-    .query((req) => {
-      const { input } = req;
-      //       ^?
-      const user = userList.find((u) => u.id === input);
-
+    .query(async (opts) => {
+      const { input } = opts;
+      //      ^?
+      // Retrieve the user with the given ID
+      const user = await db.user.findById(input);
+      //    ^?
       return user;
     }),
 });
-
-export type AppRouter = typeof appRouter;
 ```
 
-### Add a mutation procedure
+  </TabItem>
+  <TabItem value="zod" label="Zod">
+    The input parser can be any <code>ZodType</code>, e.g. <code>z.string()</code> or <code>z.object({})</code>.
+
+<br />
+<br />
+
+```ts twoslash title='server.ts'
+// @include: setup
+// ---cut---
+import { z } from 'zod';
+
+const appRouter = t.router({
+  // ...
+  userById: t.procedure.input(z.string()).query(async (opts) => {
+    const { input } = opts;
+    //      ^?
+    // Retrieve the user with the given ID
+    const user = await db.user.findById(input);
+    //    ^?
+    return user;
+  }),
+});
+```
+
+</TabItem>
+  <TabItem value="yup" label="Yup">
+    The input parser can be any <code>YupSchema</code>, e.g. <code>yup.string()</code> or <code>yup.object({})</code>.
+
+<br />
+<br />
+
+```ts twoslash title='server.ts'
+// @include: setup
+// ---cut---
+import * as yup from 'yup';
+
+const appRouter = t.router({
+  // ...
+  userById: t.procedure.input(yup.string().required()).query(async (opts) => {
+    const { input } = opts;
+    //      ^?
+    // Retrieve the user with the given ID
+    const user = await db.user.findById(input);
+    //    ^?
+    return user;
+  }),
+});
+```
+
+  </TabItem>
+</Tabs>
+
+:::info
+
+Throughout the remaining of this documentation, we will use `zod` as our validation library.
+
+:::
+
+### 4. Adding a mutation procedure
 
 Similar to GraphQL, tRPC makes a distinction between query and mutation procedures.
 
@@ -251,20 +340,68 @@ The way a procedure works on the server doesn't change much between a query and 
 Let's add a `userCreate` mutation by adding it as a new property on our router object:
 
 ```ts twoslash title='server.ts'
+// @include: setup
+// ---cut---
+import { z } from 'zod';
+
+const appRouter = t.router({
+  // ...
+  userCreate: t.procedure
+    .input(z.object({ name: z.string() }))
+    .mutation(async (opts) => {
+      const { input } = opts;
+      //      ^?
+      // Create a new user in the database
+      const user = await db.user.create(input);
+      //    ^?
+      return user;
+    }),
+});
+```
+
+## Serving the API
+
+Now that we have defined our router, we can serve it. tRPC has many [adapters](/docs/server/adapters) so you can use any backend framework of your choice. To keep it simple, we'll use the [`standalone`](/docs/server/adapters/standalone) adapter.
+
+<!--  prettier-ignore-start -->
+```ts twoslash title='server.ts'
+// @include: setup
+const appRouter = t.router({
+  // ...
+});
+// ---cut---
+
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
+const server = createHTTPServer({
+  router: appRouter,
+});
+
+server.listen(3000);
+```
+<!-- prettier-ignore-end -->
+
+<details>
+<summary>See the full backend code</summary>
+
+```ts twoslash title='server.ts'
 // @include: server
 ```
 
+</details>
+
 ## Using your new backend on the client
 
-Let's now move to your frontend code and embrace the power of end-to-end typesafety. When we import the `AppRouter` type for the client to use, we have achieved full typesafety for our system.
+Let's now move to your frontend code and embrace the power of end-to-end typesafety. When we import the `AppRouter` type for the client to use, we have achieved full typesafety for our system without leaking any implementation details to the client.
 
-### Setup the tRPC Client
+### 1. Setup the tRPC Client
 
 ```ts twoslash title="client.ts"
 // @target: esnext
+// @filename: server.ts
 // @include: server
-// ---cut---
 // @filename: client.ts
+// ---cut---
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -278,12 +415,13 @@ const trpc = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-### Querying & mutating
+### 2. Querying & mutating
 
 You now have access to your API procedures on the `trpc` object. Try it out!
 
 ```ts twoslash title="client.ts"
 // @target: esnext
+// @filename: server.ts
 // @include: server
 // @filename: client.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
@@ -292,25 +430,18 @@ import type { AppRouter } from './server';
 const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: 'http://localhost:3000/trpc',
+      url: 'http://localhost:3000',
     }),
   ],
 });
 
 // ---cut---
-// @noErrors
 // Inferred types
 const user = await trpc.userById.query('1');
-user.id;
-//   ^?
-user.name;
-//   ^?
+//    ^?
 
 const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
-createdUser.id;
-//          ^?
-createdUser.name;
-//          ^?
+//    ^?
 ```
 
 ### Full autocompletion
@@ -319,6 +450,7 @@ You can open up your Intellisense to explore your API on your frontend. You'll f
 
 ```ts twoslash title="client.ts"
 // @target: esnext
+// @filename: server.ts
 // @include: server
 // @filename: client.ts
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
@@ -327,17 +459,48 @@ import type { AppRouter } from './server';
 const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: 'http://localhost:3000/trpc',
+      url: 'http://localhost:3000',
     }),
   ],
 });
 
 // ---cut---
-// @noErrors
+// @errors: 2339
 // Full autocompletion on your routes
 trpc.u;
 //    ^|
 ```
+
+## Try it out for yourself!
+
+import { Iframe } from '@site/src/components/Iframe';
+import { searchParams } from '@site/src/utils/searchParams';
+import clsx from 'clsx';
+
+<div
+  className={clsx(
+    'h-[800px] w-full rounded-xl overflow-hidden z-10 relative my-0 md:my-4 lg:my-8',
+  )}
+>
+  <Iframe
+    src={
+      `https://stackblitz.com/github/trpc/trpc/tree/quickstart/examples/quickstart?` +
+      searchParams({
+        embed: '1',
+        file: [
+          // Opens these side-by-side
+          'client/index.ts',
+          'server/index.ts',
+        ],
+        hideNavigation: '1',
+        terminalHeight: '1',
+        showSidebar: '0',
+        view: 'editor',
+      })
+    }
+    frameBorder="0"
+  />
+</div>
 
 ## Next steps
 
