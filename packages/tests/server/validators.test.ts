@@ -195,7 +195,7 @@ test('scale', async () => {
 
   // @ts-expect-error this only accepts a `number`
   await expect(proxy.num.query('asd')).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: typeof value !== "number"`,
+    `[TRPCClientError: typeof value !== "number"]`,
   );
   expect(res.input).toBe(16);
   await close();
