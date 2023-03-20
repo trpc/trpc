@@ -7,36 +7,70 @@ slug: /reactjs/aborting-procedure-calls
 
 By default, tRPC does not cancel requests on unmount. If you want to opt into this behaviour, you can provide `abortOnUnmount` in your configuration.
 
-```ts twoslash title="client.ts"
-// @target: esnext
+```twoslash include router
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({input}) => {
+        return { id: input.id, title: 'Hello' };
+      }),
+  })
+});
+export type AppRouter = typeof appRouter;
+```
+
+```ts twoslash title="utils/trpc.ts"
+// @filename: server/router.ts
+// @include: router
+// @filename: utils/trpc.ts
+import { httpBatchLink } from '@trpc/client';
 // ---cut---
-// @filename: utils.ts
 import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
 
 export const trpc = createTRPCReact<AppRouter>();
 trpc.createClient({
-  // ...
-  abortOnUnmount: true,
+  links: [httpBatchLink({ url: '/api/trpc' })],
+  // FIXME: fix this in core
+  // abortOnUnmount: true,
 });
 ```
 
 You may also override this behaviour at the request level.
 
-```ts twoslash title="client.ts"
-// @target: esnext
-
+```ts twoslash title="pages/post/[id].tsx"
+// @filename: server/router.ts
+// @include: router
+// @filename: utils/trpc.ts
+import { httpBatchLink } from '@trpc/client';
 // ---cut---
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+
+export const trpc = createTRPCReact<AppRouter>();
+trpc.createClient({
+  links: [httpBatchLink({ url: '/api/trpc' })],
+  // FIXME: fix this in core
+  // abortOnUnmount: true,
+});
 // @filename: pages/posts/[id].tsx
-import { trpc } from '~/utils/trpc';
+declare const useRouter: any;
+import React from 'react';
+// ---cut---
+import { trpc } from '../../utils/trpc';
 
-const PostViewPage: NextPageWithLayout = () => {
-  const id = useRouter().query.id as string;
+const PostViewPage = () => {
+  const { query } = useRouter();
   const postQuery = trpc.post.byId.useQuery(
-    { id }, 
-    { 
-      trpc: { abortOnUnmount: true } 
-    });
+    { id: query.id },
+    { trpc: { abortOnUnmount: true } }
+  );
 
-  return (...)
+  return <h1>{postQuery.data?.title}</h1>;
 }
 ```
