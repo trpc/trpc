@@ -7,11 +7,11 @@ slug: /server/api-handler
 
 tRPC is not a backend of its own, but rather lives inside of other backends such as Next.js or Express. Despite that, most of tRPC's features and syntax are the same no matter which backend you are using. The API handler, also called [adapter](/docs/server/adapters), enables this by acting as the glue between HTTP requests to your backend and tRPC.
 
-The API Handler sits on a route in your server (usually `/api/trpc`, but this is just a convention) and processes all requests to that route and its subroutes. It receives a request from the server, uses the `createContext` function to generate [context](./context), and then sends the request and context to a [procedure](./procedures) in the router.
+The API Handler sits on a route in your server (usually `/api/trpc`, but this is just a convention) and processes all requests to that route and its subroutes. It receives a request from the server, uses the `createContext` function to generate [context](./context.md), and then sends the request and context to a [procedure](./procedures.md) in the router.
 
 It can also take some optional arguments such as `onError`, a callback function that runs whenever an error is thrown inside of a procedure.
 
-Below is an example implementation in Next.js. The process is similar for [AWS Lambda](./adapter/aws-lambda.md#3-use-the-amazon-api-gateway-adapter), [Express](./adapter/express.md#3-use-the-express-adapter), [Fastify](./adapter/fastify.md#create-fastify-server), and the [Fetch API](./adapter/fetch.mdx).
+Below is an example implementation in Next.js. The process is similar for [AWS Lambda](./adapters/aws-lambda.md#3-use-the-amazon-api-gateway-adapter), [Express](./adapters/express.md#3-use-the-express-adapter), [Fastify](./adapters/fastify.md#create-fastify-server), and the [Fetch API](./adapters/fetch.mdx).
 
 ## Next.js example
 
