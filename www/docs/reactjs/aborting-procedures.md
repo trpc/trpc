@@ -50,7 +50,7 @@ function AppProvider() {
 
 You may also override this behaviour at the request level.
 
-```ts twoslash title="pages/post/[id].tsx"
+```tsx twoslash title="pages/post/[id].tsx"
 // @filename: server/router.ts
 // @include: router
 // @filename: utils/trpc.ts
