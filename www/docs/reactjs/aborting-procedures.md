@@ -28,9 +28,8 @@ export type AppRouter = typeof appRouter;
 // @filename: server/router.ts
 // @include: router
 // @filename: utils/trpc.ts
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCReact } from '@trpc/react-query';
 // ---cut---
+import { createTRPCReact } from '@trpc/react-query';
 import { useState } from 'react';
 import type { AppRouter } from '../server/router';
 
@@ -39,7 +38,7 @@ export const trpc = createTRPCReact<AppRouter>();
 function AppProvider() {
   const [client] = useState(() =>
     trpc.createClient({
-      links: [httpBatchLink({ url: '/api/trpc' })],
+      links: [],
       // FIXME: fix this in core
       // abortOnUnmount: true, // 👈
     }),
@@ -55,17 +54,11 @@ You may also override this behaviour at the request level.
 // @filename: server/router.ts
 // @include: router
 // @filename: utils/trpc.ts
-import { httpBatchLink } from '@trpc/client';
 // ---cut---
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server/router';
-
 export const trpc = createTRPCReact<AppRouter>();
-trpc.createClient({
-  links: [httpBatchLink({ url: '/api/trpc' })],
-  // FIXME: fix this in core
-  // abortOnUnmount: true,
-});
+
 // @filename: pages/posts/[id].tsx
 declare const useRouter: any;
 // ---cut---
