@@ -25,4 +25,4 @@ You are likely to use this client in two scenarios:
 
 ### When **NOT** to use the tRPC Client?
 
-We recommend you do not use this client when calling procedures of the same API instance, this is because the invocation has to pass through the network layer. For complete recommendations on invoking a procedure in the current API, you can [read more here](/docs/server-side-calls).
+We recommend you do not use this client when calling procedures of the same API instance, this is because the invocation has to pass through the network layer. For complete recommendations on invoking a procedure in the current API, you can [read more here](/docs/server/server-side-calls).
