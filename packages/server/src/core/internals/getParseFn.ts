@@ -35,7 +35,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return (value) => {
       parser.assert(value);
       return value as TType;
-    }
+    };
   }
 
   throw new Error('Could not find a validator fn');
