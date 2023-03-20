@@ -176,8 +176,8 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const router = router;
-const publicProcedure = publicProcedure;
+const router = t.router;
+const publicProcedure = t.procedure;
 
 const appRouter = router({});
 
@@ -203,8 +203,8 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const router = router;
-const publicProcedure = publicProcedure;
+const router = t.router;
+const publicProcedure = t.procedure;
 
 type User = { id: string; name: string };
 const db = {} as {
@@ -218,7 +218,6 @@ const db = {} as {
 
 ```ts twoslash title='server.ts'
 // @include: setup
-
 // ---cut---
 
 const appRouter = router({
