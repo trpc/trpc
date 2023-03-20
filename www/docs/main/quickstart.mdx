@@ -161,7 +161,7 @@ Use `publicProcedure.query()` to add a query procedure to the router.
 
 :::info
 
-Query procedures are the equivalent of a GET endpoint in a REST-based API.
+A query procedure is the equivalent of a GET endpoint in a REST-based API.
 
 :::
 
@@ -284,6 +284,12 @@ Throughout the remaining of this documentation, we will use `zod` as our validat
 :::
 
 ### 4. Adding a mutation procedure
+
+:::info
+
+A mutation procedure is the equivalent of a POST endpoint in a REST-based API.
+
+:::
 
 Similar to GraphQL, tRPC makes a distinction between query and mutation procedures.
 
@@ -457,7 +463,9 @@ import clsx from 'clsx';
 ## Next steps
 
 :::tip
+
 By default, tRPC will map complex types like `Date` to their JSON-equivalent _(`string` in the case of `Date`)_. If you want to add to retain the integrity of those types, the easiest way to add support for these is to [use superjson](/docs/server/data-transformers#using-superjson) as a Data Transformer.
+
 :::
 
 tRPC includes more sophisticated client-side tooling designed for React projects and Next.js.
