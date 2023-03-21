@@ -21,7 +21,6 @@ function getBaseUrl() {
 export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
-      abortOnUnmount: true,
       links: [
         httpBatchLink({
           url: getBaseUrl() + '/api/trpc',
