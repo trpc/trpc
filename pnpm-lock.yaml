@@ -606,37 +606,37 @@ importers:
 
   examples/next-prisma-starter:
     specifiers:
-      '@playwright/test': ^1.31.2
+      '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       '@tanstack/react-query': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
       '@trpc/server': link:../../packages/server
-      '@types/node': ^18.15.3
-      '@types/react': ^18.0.28
-      '@typescript-eslint/eslint-plugin': ^5.55.0
-      '@typescript-eslint/parser': ^5.55.0
-      clsx: ^1.2.1
-      eslint: ^8.36.0
-      eslint-config-next: ^13.2.4
-      eslint-config-prettier: ^8.7.0
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      '@typescript-eslint/eslint-plugin': ^5.47.0
+      '@typescript-eslint/parser': ^5.47.0
+      clsx: ^1.1.1
+      eslint: ^8.30.0
+      eslint-config-next: ^13.2.1
+      eslint-config-prettier: ^8.5.0
       eslint-plugin-prettier: ^4.2.1
-      eslint-plugin-react: ^7.32.2
+      eslint-plugin-react: ^7.31.11
       eslint-plugin-react-hooks: ^4.6.0
-      next: ^13.2.4
+      next: ^13.2.1
       npm-run-all: ^4.1.5
-      prettier: ^2.8.5
+      prettier: ^2.7.1
       prisma: https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-starter
       react: ^18.2.0
       react-dom: ^18.2.0
-      start-server-and-test: ^1.15.4
-      superjson: ^1.12.2
-      tsx: ^3.12.5
-      typescript: ^4.9.5
-      vite: ^4.2.1
+      start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
+      tsx: ^3.12.3
+      typescript: ^4.8.3
+      vite: ^4.1.2
       vitest: ^0.28.5
-      zod: ^3.21.4
+      zod: ^3.0.0
     dependencies:
       '@prisma/client': '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%2540examples%252Ftrpc-next-prisma-starter_prisma@4.10.1'
       '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
@@ -10431,7 +10431,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2_debug@4.3.2
+      follow-redirects: 1.15.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -10447,7 +10447,7 @@ packages:
   /axios/0.27.2_debug@4.3.4:
     resolution: {integrity: sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==}
     dependencies:
-      follow-redirects: 1.15.2_debug@4.3.4
+      follow-redirects: 1.15.2
       form-data: 4.0.0
     transitivePeerDependencies:
       - debug
@@ -13532,7 +13532,7 @@ packages:
       enhanced-resolve: 5.12.0
       eslint: 8.30.0
       eslint-plugin-import: 2.26.0_p6eswnf3xl3aaa2djfyukgz5eq
-      get-tsconfig: 4.2.0
+      get-tsconfig: 4.4.0
       globby: 13.1.3
       is-core-module: 2.11.0
       is-glob: 4.0.3
@@ -13552,7 +13552,7 @@ packages:
       enhanced-resolve: 5.12.0
       eslint: 8.36.0
       eslint-plugin-import: 2.26.0_eosxdgmyqz43ysclotgiru7vde
-      get-tsconfig: 4.2.0
+      get-tsconfig: 4.4.0
       globby: 13.1.3
       is-core-module: 2.11.0
       is-glob: 4.0.3
@@ -14620,30 +14620,6 @@ packages:
       debug:
         optional: true
 
-  /follow-redirects/1.15.2_debug@4.3.2:
-    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.2
-    dev: true
-
-  /follow-redirects/1.15.2_debug@4.3.4:
-    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.4
-    dev: true
-
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
     dependencies:
@@ -14929,6 +14905,7 @@ packages:
 
   /get-tsconfig/4.2.0:
     resolution: {integrity: sha512-X8u8fREiYOE6S8hLbq99PeykTDoLVnxvF4DjWKJmz9xy2nNRdUcV8ZN9tniJFeKyTU3qnC9lL8n4Chd6LmVKHg==}
+    dev: false
 
   /get-tsconfig/4.4.0:
     resolution: {integrity: sha512-0Gdjo/9+FzsYhXCEFueo2aY1z1tpXrxWZzP7k8ul9qt1U5o8rYJwTJYmaeHdrVosYIVYkOy2iwCJ9FdpocJhPQ==}
