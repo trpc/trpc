@@ -25,6 +25,7 @@ packages/*/*
 ## Dont ignore src or test
 !packages/*/src
 !packages/tests/*
+!packages/eslint-plugin/tests
 packages/tests/node_modules
 
 examples/next-big-router/src/server/routers

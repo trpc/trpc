@@ -1,0 +1,37 @@
+{
+  "name": "@trpc/eslint-plugin",
+  "version": "10.17.0",
+  "description": "Eslint plugin for enforcing best practices",
+  "author": "KATT",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/eslint-plugin"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@eslint-community/regexpp": "^4.4.0",
+    "@typescript-eslint/scope-manager": "5.56.0",
+    "@typescript-eslint/type-utils": "5.56.0",
+    "@typescript-eslint/utils": "5.56.0",
+    "semver": "^7.3.7",
+    "tsutils": "^3.21.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "eslint": "^8.30.0",
+    "jest": "^27.3.1",
+    "ts-jest": "^27.0.7",
+    "typescript": "*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
