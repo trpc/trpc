@@ -1,4 +1,4 @@
-import rules from './rules';
+import * as rules from './rules';
 
 export default {
 rules

@@ -18,7 +18,7 @@ import { TRPCClientRuntime } from './links';
 /**
  * @deprecated
  */
-export interface TRPCClient<TRouter extends AnyRouter> {
+  export interface TRPCClient<TRouter extends AnyRouter> {
   readonly runtime: TRPCClientRuntime;
   query<
     TQueries extends TRouter['_def']['queries'],
