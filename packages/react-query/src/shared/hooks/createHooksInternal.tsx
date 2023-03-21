@@ -290,7 +290,6 @@ export function createRootHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
-    // request option should take priority over global
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ??
       client.runtime.abortOnUnmount ??
