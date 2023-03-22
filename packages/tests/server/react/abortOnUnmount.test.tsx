@@ -34,6 +34,20 @@ const ctx = konn()
       );
     }
 
+    function AnotherComponent() {
+      const [query, setQuery] = useState(1);
+      const x = useIsFetching();
+      return (
+        <div>
+          <button data-testid="setQ1" onClick={() => setQuery(1)} />
+          <button data-testid="setQ2" onClick={() => setQuery(2)} />
+          {query === 1 && <Query3 />}
+          {query === 2 && <Query4 />}
+          <div>isFetching: {x}</div>
+        </div>
+      );
+    }
+
     function Query1() {
       const query =
         proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 1');
@@ -43,6 +57,16 @@ const ctx = konn()
     function Query2() {
       const query =
         proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 2');
+      return <div>{query.data?.text ?? 'Loading 2'}</div>;
+    }
+
+    function Query3() {
+      const query = proxy.greeting.useQuery('tRPC greeting 1');
+      return <div>{query.data?.text ?? 'Loading 1'}</div>;
+    }
+
+    function Query4() {
+      const query = proxy.greeting.useQuery('tRPC greeting 2');
       return <div>{query.data?.text ?? 'Loading 2'}</div>;
     }
 
@@ -58,6 +82,7 @@ const ctx = konn()
       proxy,
       proxyWithAbortOnUnmount,
       queryClient,
+      AnotherComponent,
       MyComponent,
     };
   })
@@ -106,7 +131,7 @@ test('abortOnUnmount', async () => {
 });
 
 test('abortOnUnmount false', async () => {
-  const { proxy, httpUrl, queryClient, MyComponent } = ctx;
+  const { proxy, httpUrl, queryClient, AnotherComponent } = ctx;
 
   function App(props: { children: ReactNode }) {
     const [client] = useState(() =>
@@ -129,7 +154,7 @@ test('abortOnUnmount false', async () => {
 
   const utils = render(
     <App>
-      <MyComponent />
+      <AnotherComponent />
     </App>,
   );
 
