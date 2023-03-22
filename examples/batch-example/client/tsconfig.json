@@ -10,16 +10,15 @@
     "downlevelIteration": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    // so that if your project isn't using TypeScript, it still has autocomplete
-    "allowJs": true,
     "esModuleInterop": true,
     "types": [
-      "DOM"
     ],
+    "baseUrl": ".",
     "lib": [
       "dom",
       "ES2021"
     ],
   },
-  "include": ["./"]
+  "include": ["./"],
+  "exclude": ["node_modules"]
 }
