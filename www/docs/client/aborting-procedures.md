@@ -46,6 +46,22 @@ const PostViewPage: NextPageWithLayout = () => {
 
 > Note: @tanstack/react-query only allows aborting queries.
 
+## @trpc/react-query
+
+```ts twoslash title="client.ts"
+// @target: esnext
+// ---cut---
+// @filename: utils.ts
+// @noErrors
+import { createTRPCReact } from '@trpc/react-query';
+export const trpc = createTRPCReact<AppRouter>({
+  abortOnUnmount: true,
+});
+trpc.createClient({
+  // ...
+});
+```
+
 ## @trpc/client
 
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query-options and then call its parent `AbortController`'s `abort` method.
