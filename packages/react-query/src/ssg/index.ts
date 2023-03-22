@@ -1,10 +1,10 @@
-import { createSSGHelpers } from './ssg';
+import { createServerSideHelpers } from './ssg';
 
 export {
-  createSSGHelpers,
+  createServerSideHelpers,
   /**
-   * @deprecated - use `createSSGHelpers` instead
+   * @deprecated - use `createServerSideHelpers` instead
    */
-  createSSGHelpers as createProxySSGHelpers,
+  createServerSideHelpers as createProxySSGHelpers,
 };
 export type { DecoratedProcedureSSGRecord } from './ssg';

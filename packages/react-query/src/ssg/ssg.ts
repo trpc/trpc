@@ -77,7 +77,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
 /**
  * Create functions you can use for server-side rendering / static generation
  */
-export function createSSGHelpers<TRouter extends AnyRouter>(
+export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
 ) {
   const { router, transformer, ctx } = opts;
