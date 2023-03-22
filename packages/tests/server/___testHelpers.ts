@@ -17,6 +17,7 @@ import {
   WSSHandlerOptions,
   applyWSSHandler,
 } from '@trpc/server/src/adapters/ws';
+import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
 import ws from 'ws';
 
@@ -47,7 +48,8 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       },
     }),
   });
-  const { port: httpPort } = httpServer.listen(0);
+  const server = httpServer.listen(0);
+  const httpPort = (server.address() as AddressInfo).port;
   const httpUrl = `http://localhost:${httpPort}`;
 
   // wss
@@ -84,7 +86,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     proxy,
     close: async () => {
       await Promise.all([
-        new Promise((resolve) => httpServer.server.close(resolve)),
+        new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
           wss.clients.forEach((ws) => ws.close());
           wss.close(resolve);
