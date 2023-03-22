@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "strict": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    // so that if your project isn't using TypeScript, it still has autocomplete
+    "allowJs": true,
+    "esModuleInterop": true,
+    "types": [
+      "DOM"
+    ],
+    "lib": [
+      "dom",
+      "ES2021"
+    ],
+  },
+  "include": ["./"]
+}

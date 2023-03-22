@@ -1,0 +1,17 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite dev"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "solid-js": "^1.6.15",
+    "vite": "^4.1.4",
+    "vite-plugin-solid": "^2.6.1"
+  }
+}
