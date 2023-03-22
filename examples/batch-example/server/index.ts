@@ -1,10 +1,10 @@
-import http from "http";
-import { createHTTPHandler } from "../trpc/packages/server/dist/adapters/standalone.mjs";
+import http from 'http';
+import z from 'zod';
+import { createHTTPHandler } from '../../../packages/server/dist/adapters/standalone.mjs';
 import {
   defaultTransformer,
   initTRPC,
-} from "../trpc/packages/server/dist/index.js";
-import z from "zod";
+} from '../../../packages/server/dist/index.js';
 
 const user = z.object({
   email: z.string(),
@@ -30,7 +30,7 @@ export const appRouter = t.router({
       return input;
     }),
   naive: t.procedure.input(user.partial()).mutation(({ input }) => {
-    console.log("save operation: ", input);
+    console.log('save operation: ', input);
   }),
 });
 
@@ -42,15 +42,15 @@ export type AppRouter = typeof appRouter;
 
 http
   .createServer((req, res) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Request-Method", "*");
-    res.setHeader("Access-Control-Allow-Methods", "*");
-    res.setHeader("Access-Control-Allow-Headers", "*");
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Request-Method', '*');
+    res.setHeader('Access-Control-Allow-Methods', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
 
-    if (req.method === "OPTIONS") {
+    if (req.method === 'OPTIONS') {
       res.writeHead(200);
       return res.end();
     }
-    trpcHandler(req, res);
+    void trpcHandler(req, res);
   })
   .listen(3200);

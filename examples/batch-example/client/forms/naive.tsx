@@ -1,8 +1,8 @@
-import { createSignal } from "solid-js";
-import { g } from "../api";
+import { createSignal } from 'solid-js';
+import { g } from '../api';
 
 export const Email = () => {
-  const [input, setInput] = createSignal("");
+  const [input, setInput] = createSignal('');
 
   return {
     dom: (
@@ -14,13 +14,13 @@ export const Email = () => {
       ></input>
     ),
     save: () => {
-      g.naive.mutate({ email: input() });
+      void g.naive.mutate({ email: input() });
     },
   };
 };
 
 export const Name = () => {
-  const [input, setInput] = createSignal("");
+  const [input, setInput] = createSignal('');
 
   return {
     dom: (
@@ -32,7 +32,7 @@ export const Name = () => {
       ></input>
     ),
     save: () => {
-      g.naive.mutate({ name: input() });
+      void g.naive.mutate({ name: input() });
     },
   };
 };

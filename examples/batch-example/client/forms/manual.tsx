@@ -1,9 +1,9 @@
-import { createSignal } from "solid-js";
-import { g } from "../api";
+import { createSignal } from 'solid-js';
+import { g } from '../api';
 
 export const User = () => {
-  const [inputE, setInputE] = createSignal("");
-  const [inputN, setInputN] = createSignal("");
+  const [inputE, setInputE] = createSignal('');
+  const [inputN, setInputN] = createSignal('');
 
   return {
     dom: {
@@ -25,7 +25,7 @@ export const User = () => {
       ),
     },
     save: () => {
-      g.manualBatch.mutate([{ email: inputE() }, { name: inputN() }]);
+      void g.manualBatch.mutate([{ email: inputE() }, { name: inputN() }]);
     },
   };
 };
