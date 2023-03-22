@@ -1,16 +1,41 @@
-import * as trpc from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
-import { prisma } from '../utils/prisma';
+import type { inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { NextApiRequest } from 'next';
+import { prisma } from './prisma';
 
-// create context based of incoming request
-// set as optional here so it can also be re-used for `getStaticProps()`
-export const createContext = async (
-  opts?: trpcNext.CreateNextContextOptions,
-) => {
+/**
+ * Defines your inner context shape.
+ * Add fields here that the inner context brings.
+ */
+export interface CreateInnerContextOptions
+  extends Partial<CreateNextContextOptions> {}
+
+/**
+ * Inner context. Will always be available in your procedures, in contrast to the outer context.
+ *
+ * Also useful for:
+ * - testing, so you don't have to mock Next.js' `req`/`res`
+ * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
+ *
+ * @see https://trpc.io/docs/context#inner-and-outer-context
+ */
+export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
   return {
-    req: opts?.req,
     prisma,
     task: prisma.task,
   };
+}
+
+/**
+ * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
+ *
+ * @see https://trpc.io/docs/context#inner-and-outer-context
+ */
+export const createTRPCContext = async (opts?: CreateNextContextOptions) => {
+  const innerContext = await createInnerTRPCContext({ req: opts?.req });
+
+  return {
+    ...innerContext,
+    req: opts?.req,
+  };
 };
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;

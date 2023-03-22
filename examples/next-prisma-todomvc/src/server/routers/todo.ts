@@ -40,6 +40,13 @@ export const todoRouter = router({
       });
       return todo;
     }),
+  toggleAll: baseProcedure
+    .input(z.object({ completed: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.task.updateMany({
+        data: { completed: input.completed },
+      });
+    }),
   delete: baseProcedure
     .input(z.string().uuid())
     .mutation(async ({ ctx, input: id }) => {
