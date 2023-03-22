@@ -118,8 +118,8 @@ export interface BatchProcedureBuilder<
       inferParser<$Parser>['out']
     >[];
 
-    _output_in: TParams['_output_in'];
-    _output_out: TParams['_output_out'];
+    _output_in: Unwrap<TParams['_output_in']>;
+    _output_out: Unwrap<TParams['_output_out']>;
   }>;
   /**
    * Add an output parser to the procedure.
@@ -242,7 +242,7 @@ export interface ProcedureBuilder<
     _input_in: TParams['_input_in'];
     _input_out: TParams['_input_out'][];
 
-    _output_in: TParams['_output_in'][];
+    _output_in: TParams['_output_in'];
     _output_out: TParams['_output_out'];
   }>;
   /**
