@@ -290,10 +290,9 @@ export function createRootHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
+
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ??
-      client.runtime.abortOnUnmount ??
-      abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery({
       ...ssrOpts,

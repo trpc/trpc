@@ -48,7 +48,6 @@ export type TRPCFetch = (
 
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
-  abortOnUnmount?: boolean;
 }
 
 /**

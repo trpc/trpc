@@ -35,20 +35,31 @@ const ctx = konn()
     }
 
     function Query1() {
-      const query = proxy.greeting.useQuery('tRPC greeting 1');
+      const query =
+        proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 1');
       return <div>{query.data?.text ?? 'Loading 1'}</div>;
     }
 
     function Query2() {
-      const query = proxy.greeting.useQuery('tRPC greeting 2');
+      const query =
+        proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 2');
       return <div>{query.data?.text ?? 'Loading 2'}</div>;
     }
 
     const queryClient = createQueryClient();
+    const proxyWithAbortOnUnmount = createTRPCReact<typeof appRouter>({
+      abortOnUnmount: true,
+    });
     const proxy = createTRPCReact<typeof appRouter>();
     const opts = routerToServerAndClientNew(appRouter);
 
-    return { ...opts, proxy, queryClient, MyComponent };
+    return {
+      ...opts,
+      proxy,
+      proxyWithAbortOnUnmount,
+      queryClient,
+      MyComponent,
+    };
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -56,25 +67,24 @@ const ctx = konn()
   .done();
 
 test('abortOnUnmount', async () => {
-  const { proxy, httpUrl, queryClient, MyComponent } = ctx;
+  const { proxyWithAbortOnUnmount, httpUrl, queryClient, MyComponent } = ctx;
 
   function App(props: { children: ReactNode }) {
     const [client] = useState(() =>
-      proxy.createClient({
+      proxyWithAbortOnUnmount.createClient({
         links: [
           httpBatchLink({
             url: httpUrl,
           }),
         ],
-        abortOnUnmount: true,
       }),
     );
     return (
-      <proxy.Provider {...{ queryClient, client }}>
+      <proxyWithAbortOnUnmount.Provider {...{ queryClient, client }}>
         <QueryClientProvider client={queryClient}>
           {props.children}
         </QueryClientProvider>
-      </proxy.Provider>
+      </proxyWithAbortOnUnmount.Provider>
     );
   }
 
@@ -106,7 +116,6 @@ test('abortOnUnmount false', async () => {
             url: httpUrl,
           }),
         ],
-        abortOnUnmount: false,
       }),
     );
     return (
