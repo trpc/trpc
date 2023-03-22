@@ -1,21 +1,43 @@
-export function InfoFooter() {
+import Link from 'next/link';
+import { useLocale } from '~/utils/use-locale';
+
+export function InfoFooter(props: { filter: string; locales: string[] }) {
+  const { t, i18n } = useLocale();
+
   return (
     <footer className="info">
-      <p>Double-click to edit a todo</p>
+      <p>{t('footer.double_click_to_edit')}</p>
       {/* Change this out with your name and url ↓ */}
       <p>
-        Created with <a href="http://trpc.io">tRPC</a> by{' '}
+        {t('footer.created_with')} <a href="http://trpc.io">tRPC</a>{' '}
+        {t('footer.by')}{' '}
         <a href="https://twitter.com/alexdotjs">alexdotjs / KATT</a>.
       </p>
       <p>
         <a href="https://github.com/trpc/examples-next-prisma-todomvc">
-          Source code
+          {t('footer.source_code')}
         </a>{' '}
       </p>
       <p>
-        Based on <a href="http://todomvc.com">TodoMVC</a>, template made by{' '}
+        {t('footer.based_on')} <a href="http://todomvc.com">TodoMVC</a>,{' '}
+        {t('footer.template_made_by')}{' '}
         <a href="http://sindresorhus.com">Sindre Sorhus</a>.
       </p>
+      <ul className="filters">
+        {t('footer.select_language')}
+        {props.locales.map((changeTo) => (
+          <li>
+            <Link
+              href={`/${props.filter}`}
+              locale={changeTo}
+              className={changeTo === i18n.language ? 'selected' : ''}
+            >
+              <button>{changeTo}</button>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
       <div
         style={{
           marginTop: '100px',
@@ -69,8 +91,8 @@ function TRPCLogo() {
     >
       <rect width="512" height="512" rx="150" fill="#398CCB" />
       <path
-        fill-rule="evenodd"
-        clip-rule="evenodd"
+        fillRule="evenodd"
+        clipRule="evenodd"
         d="M255.446 75L326.523 116.008V138.556L412.554 188.238V273.224L435.631 286.546V368.608L364.6 409.615L333.065 391.378L256.392 435.646L180.178 391.634L149.085 409.615L78.0538 368.538V286.546L100.231 273.743V188.238L184.415 139.638L184.462 139.636V116.008L255.446 75ZM326.523 159.879V198.023L255.492 239.031L184.462 198.023V160.936L184.415 160.938L118.692 198.9V263.084L149.085 245.538L220.115 286.546V368.538L198.626 380.965L256.392 414.323L314.618 380.712L293.569 368.538V286.546L364.6 245.538L394.092 262.565V198.9L326.523 159.879ZM312.031 357.969V307.915L355.369 332.931V382.985L312.031 357.969ZM417.169 307.846L373.831 332.862V382.985L417.169 357.9V307.846ZM96.5154 357.9V307.846L139.854 332.862V382.915L96.5154 357.9ZM201.654 307.846L158.315 332.862V382.915L201.654 357.9V307.846ZM321.262 291.923L364.6 266.908L407.938 291.923L364.6 316.962L321.262 291.923ZM149.085 266.838L105.746 291.923L149.085 316.892L192.423 291.923L149.085 266.838ZM202.923 187.362V137.308L246.215 162.346V212.377L202.923 187.362ZM308.015 137.308L264.723 162.346V212.354L308.015 187.362V137.308ZM212.154 121.338L255.446 96.3231L298.785 121.338L255.446 146.354L212.154 121.338Z"
         fill="white"
       />

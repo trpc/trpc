@@ -1,6 +1,7 @@
 import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { NextApiRequest } from 'next';
+import { i18n } from 'next-i18next.config';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { prisma } from './prisma';
 
 /**
@@ -8,7 +9,10 @@ import { prisma } from './prisma';
  * Add fields here that the inner context brings.
  */
 export interface CreateInnerContextOptions
-  extends Partial<CreateNextContextOptions> {}
+  extends Partial<CreateNextContextOptions> {
+  locale: string;
+  i18n: inferAsyncReturnType<typeof serverSideTranslations>;
+}
 
 /**
  * Inner context. Will always be available in your procedures, in contrast to the outer context.
@@ -23,6 +27,7 @@ export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
   return {
     prisma,
     task: prisma.task,
+    ...opts,
   };
 }
 
@@ -32,7 +37,17 @@ export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export const createTRPCContext = async (opts?: CreateNextContextOptions) => {
-  const innerContext = await createInnerTRPCContext({ req: opts?.req });
+  console.log('opts?.req.headers', opts?.req);
+  const acceptLanguage = opts?.req.headers['accept-language'];
+  // FIXME: Prob needs a better parsing of the accept-language header
+  const locale = acceptLanguage?.includes('en') ? 'en' : 'sv';
+  const _i18n = await serverSideTranslations(locale, ['common']);
+
+  const innerContext = await createInnerTRPCContext({
+    req: opts?.req,
+    locale,
+    i18n: _i18n,
+  });
 
   return {
     ...innerContext,

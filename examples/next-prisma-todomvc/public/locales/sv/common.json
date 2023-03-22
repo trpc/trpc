@@ -1,0 +1,19 @@
+{
+  "task_left": "uppgift kvar",
+  "tasks_left": "uppgifter kvar",
+  "what_needs_to_be_done": "Vad behöver göras",
+  "mark_all_as_complete": "Markera alla som avklarade",
+  "all": "alla",
+  "active": "aktiva",
+  "completed": "avklarade",
+  "clear_completed": "Rensa avklarade",
+  "footer": {
+    "double_click_to_edit": "Dubbelklicka för att redigera en uppgift",
+    "created_with": "Skapad med",
+    "by": "av",
+    "source_code": "Källkod",
+    "based_on": "Baserad på",
+    "template_made_by": "mall gjord av",
+    "select_language": "Välj språk"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "task_left": "task left",
+  "tasks_left": "tasks left",
+  "what_needs_to_be_done": "What needs to be done",
+  "mark_all_as_complete": "Mark all as complete",
+  "all": "all",
+  "active": "active",
+  "completed": "completed",
+  "clear_completed": "Clear completed",
+  "footer": {
+    "double_click_to_edit": "Double click to edit a todo",
+    "created_with": "Created with",
+    "by": "by",
+    "source_code": "Source code",
+    "based_on": "Based on",
+    "template_made_by": "template made by",
+    "select_language": "Select language"
+  }
+}
