@@ -5,21 +5,24 @@ sidebar_label: Aborting Procedure Calls
 slug: /client/aborting-procedure-calls
 ---
 
-## @trpc/react-query
+## @trpc/next
 
-By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration.
+By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration callback.
 
 ```ts twoslash title="client.ts"
 // @target: esnext
 // ---cut---
 // @filename: utils.ts
 // @noErrors
-import { createTRPCReact } from '@trpc/react-query';
+import { createTRPCNext } from '@trpc/next';
 
-export const trpc = createTRPCReact<AppRouter>();
-trpc.createClient({
-  // ...
-  abortOnUnmount: true,
+export const trpc = createTRPCNext<AppRouter>({
+  config() {
+    return {
+      // ...
+      abortOnUnmount: true,
+    };
+  },
 });
 ```
 
