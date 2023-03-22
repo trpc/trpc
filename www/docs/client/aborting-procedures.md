@@ -54,6 +54,7 @@ const PostViewPage: NextPageWithLayout = () => {
 // @filename: utils.ts
 // @noErrors
 import { createTRPCReact } from '@trpc/react-query';
+
 export const trpc = createTRPCReact<AppRouter>({
   abortOnUnmount: true,
 });
