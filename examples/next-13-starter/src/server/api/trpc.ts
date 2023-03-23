@@ -1,9 +1,9 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import { Session, getServerSession } from 'next-auth';
 import { NextRequest } from 'next/server';
-import superjson from 'superjson';
 import { z } from 'zod';
 import { authOptions } from '~/pages/api/auth/[...nextauth]';
+import { transformer } from '~/trpc/shared';
 import { prisma } from '../prisma';
 
 type CreateContextOptions = {
@@ -42,7 +42,7 @@ export const createTRPCContext = async (opts: { req: NextRequest }) => {
 };
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
+  transformer,
 });
 
 export const router = t.router;

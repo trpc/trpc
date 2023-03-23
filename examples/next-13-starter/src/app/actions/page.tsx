@@ -10,6 +10,7 @@ export default async function TestPage() {
   return (
     <div>
       <form action="" method="POST" className="space-y-2">
+        {/** @ts-expect-error - how tf do i type server actions */}
         <input name="$$id" value={whatever.$$id} hidden readOnly />
         <input
           name="text"

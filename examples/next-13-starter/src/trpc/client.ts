@@ -1,13 +1,12 @@
 import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
 import { createTRPCNextAppRouterClient } from '@trpc/next-app-router/client';
-import superjson from 'superjson';
 import { AppRouter } from '~/server/api/router';
-import { getUrl } from './shared';
+import { getUrl, transformer } from './shared';
 
 export const api = createTRPCNextAppRouterClient<AppRouter>({
   config() {
     return {
-      transformer: superjson,
+      transformer,
       links: [
         loggerLink(),
         splitLink({

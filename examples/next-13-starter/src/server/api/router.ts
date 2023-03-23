@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { Currency, dinero, toSnapshot } from 'dinero.js';
+import { Currency, dinero } from 'dinero.js';
 import { z } from 'zod';
 import { demoProcedure, protectedProcedure, router } from './trpc';
 
@@ -35,7 +35,7 @@ export const appRouter = router({
 
         return products.map((p) => ({
           ...p,
-          price: toSnapshot(dinero({ amount: p.price, currency: USD })),
+          price: dinero({ amount: p.price, currency: USD }),
         }));
       }),
 
@@ -49,7 +49,7 @@ export const appRouter = router({
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
         return {
           ...product,
-          price: toSnapshot(dinero({ amount: product.price, currency: USD })),
+          price: dinero({ amount: product.price, currency: USD }),
         };
       }),
   }),

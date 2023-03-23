@@ -7,14 +7,13 @@ import {
 import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-server';
 import { headers } from 'next/headers';
 import { cache } from 'react';
-import superjson from 'superjson';
 import { AppRouter } from '~/server/api/router';
-import { getUrl } from './shared';
+import { getUrl, transformer } from './shared';
 
 export const api = createTRPCNextAppRouterReactServer<AppRouter>({
   getClient: cache(() =>
     createTRPCUntypedClient({
-      transformer: superjson,
+      transformer,
       links: [
         splitLink({
           condition: (op) => !!op.context.skipBatch,
