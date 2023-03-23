@@ -96,7 +96,18 @@ Note that the default behaviour of `react-query` is to refetch the data on the c
 
 This might be preferable if you want to minimize the number of requests to your API, which might be necessary if you're using a third-party rate-limited API for example.
 
-This can be done globally:
+This can be done per query:
+
+```tsx
+const data = trpc.example.useQuery(
+  // if your router takes no input, make sure that you don't
+  // accidentally pass the query options as the first argument
+  undefined,
+  { refetchOnMount: false, refetchOnWindowFocus: false },
+);
+```
+
+Or globally, if every query across your app should behave the same way:
 
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
@@ -127,13 +138,4 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-Or per query:
-
-```tsx
-const data = trpc.example.useQuery(
-  // if your router takes no input, make sure that you don't
-  // accidentally pass the query options as the first argument
-  undefined,
-  { refetchOnMount: false, refetchOnWindowFocus: false },
-);
-```
+Be careful with this approach if your app has a mixture of static and dynamic queries.
