@@ -1,7 +1,7 @@
 ---
 id: ssg-helpers
-title: Server Side Helpers
-sidebar_label: Server Side Helpers
+title: Server-Side Helpers
+sidebar_label: Server-Side Helpers
 slug: /nextjs/ssg-helpers
 ---
 
