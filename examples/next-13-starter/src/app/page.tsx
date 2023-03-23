@@ -6,22 +6,19 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-gray-200">
       <h1 className="text-center text-2xl font-bold">tRPC App Playground</h1>
 
-      <Link
-        href="/product/1"
-        className="bg-gray-800 text-gray-200 px-5 py-3 rounded text-center"
-      >
+      <Link href="/product/1" className="bg-gray-800 px-5 py-3 rounded">
         Go to product page
       </Link>
+      {session && <span>Hello {session.user.name}!</span>}
       <Link
-        href="/api/auth/signin"
-        className="bg-gray-800 text-gray-200 px-5 py-3 rounded"
+        href={session ? '/api/auth/signout' : '/api/auth/signin'}
+        className="bg-gray-800 px-5 py-3 rounded"
       >
-        Sign In (NextAuth)
+        {session ? 'Sign Out' : 'Sign In'}
       </Link>
-      <pre>{JSON.stringify(session)}</pre>
     </div>
   );
 }

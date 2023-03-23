@@ -47,16 +47,20 @@ function Byline() {
       <div className="flex items-center gap-x-1.5">
         <div className="text-sm text-gray-400">By</div>
         <a href="https://vercel.com" title="Vercel">
-          <div className="w-16 text-gray-100 hover:text-gray-50">Vercel</div>
+          <div className="text-gray-100 hover:text-gray-50">Vercel</div>
         </a>
-        <div className="text-sm text-gray-400">Modifed by</div>
-        <a
-          href="
+        <span className="text-gray-400 mx-4">-</span>
+        <div className="flex items-center gap-1">
+          <div className="text-sm text-gray-400">Modifed by</div>
+          <a
+            href="
           https://trpc.io"
-          title="trpc"
-        >
-          <div className="w-16 text-gray-100 hover:text-gray-50">tRPC</div>
-        </a>
+            title="trpc"
+          >
+            <div className="text-gray-100 hover:text-gray-50">tRPC</div>
+          </a>
+          <div className="text-sm text-gray-400">for RSC demo purposes</div>
+        </div>
       </div>
 
       <div className="text-sm text-gray-400">
