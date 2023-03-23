@@ -92,4 +92,48 @@ export default function PostViewPage(
 }
 ```
 
-Note that the default behaviour of `react-query` is to refetch the data on the client-side when it mounts, so if you want to _only_ fetch the data via `getStaticProps`, you need to set `refetchOnMount`, `refetchOnWindowFocus`, and `refetchOnReconnect` to `false` in the query options. See the [React Query docs](https://tanstack.com/query/latest/docs/react/reference/useQuery) for more info.
+Note that the default behaviour of `react-query` is to refetch the data on the client-side when it mounts, so if you want to _only_ fetch the data via `getStaticProps`, you need to set `refetchOnMount` and `refetchOnWindowFocus` to `false` in the query options.
+
+This might be preferable if you want to minimize the number of requests to your API, which might be necessary if you're using a third-party rate-limited API for example.
+
+This can be done globally:
+
+```tsx title='utils/trpc.ts'
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
+
+export const trpc = createTRPCNext<AppRouter>({
+  config({ ctx }) {
+    return {
+      transformer: superjson,
+      links: [
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+        }),
+      ],
+      // Change options globally
+      queryClientConfig: {
+        defaultOptions: {
+          queries: {
+            refetchOnMount: false,
+            refetchOnWindowFocus: false,
+          },
+        },
+      },
+    },
+  },
+});
+```
+
+Or per query:
+
+```tsx
+const data = trpc.example.useQuery(
+  // if your router takes no input, make sure that you don't
+  // accidentally pass the query options as the first argument
+  undefined,
+  { refetchOnMount: false, refetchOnWindowFocus: false },
+);
+```

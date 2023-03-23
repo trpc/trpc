@@ -87,6 +87,103 @@ const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
 export default trpc.withTRPC(MyApp);
 ```
 
+## Using server-side helpers
+
+```tsx title='utils/trpc.ts'
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
+
+export const trpc = createTRPCNext<AppRouter>({
+  config({ ctx }) {
+    return {
+      transformer: superjson, // optional - adds superjson serialization
+      links: [
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+        }),
+      ],
+    },
+  },
+  // `ssr` is false by default
+});
+```
+
+```tsx title='pages/_app.tsx'
+import type { AppProps } from 'next/app';
+import React from 'react';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
+  return <Component {...pageProps} />;
+};
+
+export default trpc.withTRPC(MyApp);
+```
+
+```tsx title='pages/posts/[id].tsx'
+import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
+import { prisma } from 'server/context';
+import { appRouter } from 'server/routers/_app';
+import superjson from 'superjson';
+import { trpc } from 'utils/trpc';
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext<{ id: string }>,
+) {
+  const ssg = await createServerSideHelpers({
+    router: appRouter,
+    ctx: {},
+    transformer: superjson, // optional - adds superjson serialization
+  });
+  const id = context.params?.id as string;
+
+  try {
+    // prefetch `post.byId`
+    await ssg.post.byId.prefetch({ id });
+  } catch (err) {
+    return {
+      // if failed, return 404
+      props: { id },
+      notFound: true,
+    };
+  }
+
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      id,
+    },
+  };
+}
+
+export default function PostViewPage(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+) {
+  const { id } = props;
+  const postQuery = trpc.post.byId.useQuery({ id });
+
+  if (postQuery.status !== 'success') {
+    // won't happen since the query has been prefetched
+    return <>Loading...</>;
+  }
+  const { data } = postQuery;
+  return (
+    <>
+      <h1>{data.title}</h1>
+      <em>Created {data.createdAt.toLocaleDateString('en-us')}</em>
+
+      <p>{data.text}</p>
+
+      <h2>Raw data:</h2>
+      <pre>{JSON.stringify(data, null, 4)}</pre>
+    </>
+  );
+}
+```
+
 ## FAQ
 
 ### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically do that for me?
