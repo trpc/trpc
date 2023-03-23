@@ -100,7 +100,7 @@ This can be done per query:
 
 ```tsx
 const data = trpc.example.useQuery(
-  // if your router takes no input, make sure that you don't
+  // if your query takes no input, make sure that you don't
   // accidentally pass the query options as the first argument
   undefined,
   { refetchOnMount: false, refetchOnWindowFocus: false },
