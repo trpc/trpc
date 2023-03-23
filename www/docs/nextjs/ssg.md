@@ -11,6 +11,8 @@ Reference project: https://github.com/trpc/examples-next-prisma-todomvc
 
 Static site generation requires executing tRPC queries inside `getStaticProps` on each page.
 
+This can be done using [server-side helpers](ssg-helpers) to prefetch the queries, dehydrate them, and pass it to the page. The queries will then automatically pick up the `trpcState` and use it as an initial value.
+
 ## Fetch data in `getStaticProps`
 
 ```tsx title='pages/posts/[id].tsx'
@@ -90,4 +92,4 @@ export default function PostViewPage(
 }
 ```
 
-Check [this](ssg-helpers) out to learn more about `createServerSideHelpers`.
+Note that the default behaviour of `react-query` is to refetch the data on the client-side when it mounts, so if you want to _only_ fetch the data via `getStaticProps`, you need to set `refetchOnMount`, `refetchOnWindowFocus`, and `refetchOnReconnect` to `false` in the query options. See the [React Query docs](https://tanstack.com/query/latest/docs/react/reference/useQuery) for more info.
