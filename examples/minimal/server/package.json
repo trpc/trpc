@@ -3,7 +3,8 @@
   "version": "10.17.0",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.17.0"
+    "@trpc/server": "^10.17.0",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.20"
