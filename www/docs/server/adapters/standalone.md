@@ -2,7 +2,7 @@
 id: standalone
 title: Standalone Usage
 sidebar_label: Standalone
-slug: /standalone
+slug: /server/adapters/standalone
 ---
 
 ## Example app
@@ -124,7 +124,7 @@ createHTTPServer({
 
 The `middleware` option will accept any function which resembles a connect/node.js middleware, so it can be used for more than `cors` handling if you wish. It is, however, intended to be a simple escape hatch and as such won't on its own allow you to compose multiple middlewares together. If you want to do this then you could:
 
-1. Use an alternate adapter with more comprehensive middleware support, like the [Express adapter](/docs/express)
+1. Use an alternate adapter with more comprehensive middleware support, like the [Express adapter](/docs/server/adapters/express)
 2. Use a solution to compose middlewares such as [connect](https://github.com/senchalabs/connect)
 3. Extend the Standalone `createHTTPHandler` with a custom http server (see below)
 

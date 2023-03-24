@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 23,
+    "weight": 25,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -161,7 +161,7 @@ export const allSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 23,
+    "weight": 25,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -377,7 +377,7 @@ export const allSponsors = [
   {
     "name": "Interval",
     "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 7,
+    "weight": 9,
     "login": "interval",
     "link": "https://interval.com/?ref=trpc",
     "createdAt": 1668779128000
@@ -457,7 +457,7 @@ export const allSponsors = [
   {
     "name": "John Shahawy",
     "imgSrc": "https://avatars.githubusercontent.com/u/13843114?u=9604e985cff42b118d16c17d94701b33920f515e&v=4",
-    "weight": 1,
+    "weight": 2,
     "login": "JohnShahawy",
     "link": "https://github.com/JohnShahawy",
     "createdAt": 1676389422000
@@ -493,5 +493,13 @@ export const allSponsors = [
     "login": "maayanalbert",
     "link": "http://malbert.space/?ref=trpc",
     "createdAt": 1678916730000
+  },
+  {
+    "name": "Chris LeBrun",
+    "imgSrc": "https://avatars.githubusercontent.com/u/97346675?u=3f55d44662f5e03f80b1088938f189f1ce545253&v=4",
+    "weight": 3,
+    "login": "First0fAll",
+    "link": "https://github.com/First0fAll",
+    "createdAt": 1679333729000
   }
 ] as const;

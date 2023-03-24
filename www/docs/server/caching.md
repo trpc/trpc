@@ -2,7 +2,7 @@
 id: caching
 title: Response Caching
 sidebar_label: Response Caching
-slug: /caching
+slug: /server/caching
 ---
 
 The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.

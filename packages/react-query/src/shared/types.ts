@@ -27,6 +27,12 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   };
 
   /**
+   * Abort all queries when unmounting
+   * @default false
+   */
+  abortOnUnmount?: boolean;
+
+  /**
    * Override the default context provider
    * @default undefined
    */

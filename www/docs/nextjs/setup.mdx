@@ -1,8 +1,8 @@
 ---
-id: introduction
+id: setup
 title: Usage with Next.js
 sidebar_label: Usage with Next.js
-slug: /nextjs
+slug: /nextjs/setup
 ---
 
 import TabItem from '@theme/TabItem';
@@ -11,7 +11,7 @@ import Tabs from '@theme/Tabs';
 Next.js makes it easy for you to build your client and server together in one codebase. tRPC makes it easy to share types between them, ensuring typesafety for your application's data fetching.
 
 :::tip
-If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](example-apps)
+If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](/docs/example-apps)
 :::
 
 ## Recommended file structure
@@ -251,12 +251,12 @@ export default function IndexPage() {
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
 - **Required**:
-- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](links).
+- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/links).
 - Optional:
 - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
 - `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v4/docs/reference/QueryClient)
   - **Note:** You can only provide either a `queryClient` or a `queryClientConfig`.
-- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
+- `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
 ### `unstable_overrides`: (default: `undefined`)
@@ -300,6 +300,6 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## Next steps
 
-Browse the rest of the docs to learn more about things like [authorization](/docs/authorization), [middlewares](/docs/middlewares), and [error handling](/docs/error-handling).
+Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find usual information about [queries](useQuery) and [mutations](useMutation) now that you're using `@trpc/react-query`.
+You can also find usual information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/usemutation) now that you're using `@trpc/react-query`.

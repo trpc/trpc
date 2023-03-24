@@ -2,7 +2,7 @@
 id: authorization
 title: Authorization
 sidebar_label: Authorization
-slug: /authorization
+slug: /server/authorization
 ---
 
 The `createContext` function is called for each incoming request, so here you can add contextual information about the calling user from the request object.
