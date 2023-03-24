@@ -23,10 +23,13 @@ export default async function TestPage() {
           Submit
         </button>
       </form>
-      <div className="space-y-8">
-        {data.map((review) => {
-          return <div key={review.id}>{review.comment}</div>;
-        })}
+      <div className="space-y-2 mt-4">
+        <h3 className="text-lg font-bold">Reviews:</h3>
+        <ul className="list-disc pl-4">
+          {data.map((review) => {
+            return <li key={review.id}>{review.comment}</li>;
+          })}
+        </ul>
       </div>
     </div>
   );
