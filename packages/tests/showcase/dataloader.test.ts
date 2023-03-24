@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { routerToServerAndClientNew } from '../server/___testHelpers';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import DataLoader from 'dataloader';
