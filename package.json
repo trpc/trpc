@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@7.30.0",
+  "packageManager": "pnpm@7.30.2",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
@@ -12,6 +12,7 @@
     "dev-www": "turbo --filter www dev",
     "test": "turbo --filter \"@trpc/tests\" test",
     "test-watch": "cd packages/tests && pnpm test-watch",
+    "vitest": "cd packages/tests && pnpm vitest",
     "oldlint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore . --report-unused-disable-directives",
     "lint": "turbo lint",
     "lint-fix": "turbo lint -- --fix && manypkg fix",
