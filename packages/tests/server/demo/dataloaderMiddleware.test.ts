@@ -1,5 +1,6 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { initTRPC } from '@trpc/server/src';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import DataLoader from 'dataloader';
 import { konn } from 'konn';
 import { z } from 'zod';
@@ -15,21 +16,18 @@ const posts = [
   },
 ];
 
-type Context = {
-  dataloaders: Record<string, DataLoader<unknown, unknown>>;
-};
-
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.context<Context>().create();
-
-    type PostLoader = DataLoader<number, typeof posts[number] | undefined>;
-    const createPostLoader = vi.fn(
-      (): PostLoader =>
-        new DataLoader(async (ids) => {
+    function createContext(_opts: CreateHTTPContextOptions) {
+      return {
+        postLoader: new DataLoader(async (ids: ReadonlyArray<number>) => {
           return ids.map((id) => posts.find((post) => post.id === id));
         }),
-    );
+      };
+    }
+    type Context = inferAsyncReturnType<typeof createContext>;
+    const t = initTRPC.context<Context>().create();
+
     const appRouter = t.router({
       post: t.router({
         byId: t.procedure
@@ -38,33 +36,15 @@ const ctx = konn()
               id: z.number(),
             }),
           )
-          .use((opts) => {
-            const postLoader = (opts.ctx.dataloaders[opts.path] =
-              opts.ctx.dataloaders[opts.path] ??
-              createPostLoader()) as PostLoader;
-
-            return opts.next({
-              ctx: {
-                postLoader,
-              },
-            });
-          })
           .query(({ input, ctx }) => ctx.postLoader.load(input.id)),
       }),
     });
     const opts = routerToServerAndClientNew(appRouter, {
       server: {
-        createContext() {
-          return {
-            dataloaders: {},
-          };
-        },
+        createContext,
       },
     });
-    return {
-      ...opts,
-      createPostLoader,
-    };
+    return opts;
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -78,6 +58,4 @@ test('dataloader', async () => {
   ]);
 
   expect(result).toEqual([posts[0], posts[1]]);
-
-  expect(ctx.createPostLoader).toHaveBeenCalledTimes(1);
 });
