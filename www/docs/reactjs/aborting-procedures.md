@@ -7,48 +7,24 @@ slug: /reactjs/aborting-procedure-calls
 
 By default, tRPC does not cancel requests on unmount. If you want to opt into this behaviour, you can provide `abortOnUnmount` in your configuration.
 
-```twoslash include router
-import { initTRPC } from '@trpc/server';
-import { z } from "zod";
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  post: t.router({
-    byId: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query(async ({input}) => {
-        return { id: input.id, title: 'Hello' };
-      }),
-  })
-});
-export type AppRouter = typeof appRouter;
-```
-
-```ts twoslash title="utils/trpc.ts"
-// @filename: server/router.ts
-// @include: router
-// @filename: utils/trpc.ts
+```ts twoslash title="client.ts"
+// @target: esnext
 // ---cut---
+// @filename: utils.ts
+// @noErrors
 import { createTRPCReact } from '@trpc/react-query';
-import { useState } from 'react';
-import type { AppRouter } from '../server/router';
 
-export const trpc = createTRPCReact<AppRouter>();
-
-function AppProvider() {
-  const [client] = useState(() =>
-    trpc.createClient({
-      links: [],
-      // FIXME: fix this in core
-      // abortOnUnmount: true, // 👈
-    }),
-  );
-
+export const trpc = createTRPCReact<AppRouter>({
+  abortOnUnmount: true,
+});
+trpc.createClient({
   // ...
-}
+});
 ```
 
-You may also override this behaviour at the request level.
+> Note: @tanstack/react-query only allows aborting queries.
+
+You may also override this behaviour at the query level.
 
 ```tsx twoslash title="pages/post/[id].tsx"
 // @filename: server/router.ts
