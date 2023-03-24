@@ -88,7 +88,7 @@ npx create-next-app --example https://github.com/trpc/trpc --example-path exampl
 
 ### Project leads
 
-> The people who lead the API-design decisions and has the most active role in the development
+> The people who lead the API-design decisions and have the most active role in the development
 
 <table>
   <tbody>
