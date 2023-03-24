@@ -1,7 +1,7 @@
 ---
 id: setup
-title: Usage with React
-sidebar_label: Usage with React
+title: Set up the React Query Integration
+sidebar_label: Setup
 description: How to use and setup tRPC in React
 slug: /reactjs/setup
 ---
@@ -9,76 +9,9 @@ slug: /reactjs/setup
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-:::info
+### 1. Install dependencies
 
-- If you're using Next.js, read the [Usage with Next.js](/docs/nextjs/introduction) guide instead.
-- In order to infer types from your Node.js backend, you should have the frontend and backend in the same monorepo.
-
-:::
-
-## Add tRPC to an existing React project
-
-### Server Side
-
-#### 1. Install dependencies
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npm install @trpc/server zod
-```
-
-  </TabItem>
-
-  <TabItem value="yarn" label="yarn">
-
-```bash
-yarn add @trpc/server zod
-```
-
-  </TabItem>
-
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-pnpm add @trpc/server zod
-```
-
-  </TabItem>
-</Tabs>
-
-##### Why Zod?
-
-[Zod](https://github.com/colinhacks/zod) is an input validator to ensure that our backend only processes requests that fit our API. You can use other validation libraries like [Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts) if you prefer. In fact, any object containing a `parse`, `create`, or `validateSync` method will work.
-
-#### 2. Enable strict mode
-
-If you want to use Zod for input validation, make sure you have enabled strict mode in your `tsconfig.json`:
-
-```diff title="tsconfig.json"
-  "compilerOptions": {
-+   "strict": true
-  }
-```
-
-If strict mode is too harsh, at least enable `strictNullChecks`:
-
-```diff title="tsconfig.json"
-  "compilerOptions": {
-+   "strictNullChecks": true
-  }
-```
-
-#### 3. Implement your `appRouter`
-
-Follow the [Quickstart](/docs/quickstart#create-a-router-instance) to build your "hello world" router. Once you have your API implemented and listening via HTTP, you're ready to set up your React client.
-
-### Client Side
-
-> tRPC works great with Create React App!
-
-#### 1. Install dependencies
+The following dependencies should be installed
 
 <Tabs>
   <TabItem value="npm" label="npm" default>
@@ -106,27 +39,46 @@ pnpm add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
   </TabItem>
 </Tabs>
 
-##### Why `@trpc/server`?
+### 2. Import your `AppRouter`
 
-`@trpc/server` is a peer dependency of `@trpc/client` so you will need to make sure that it is available on your client!
+```twoslash include router
+// @filename: server/router.ts
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+const t = initTRPC.create();
 
-##### Why `@tanstack/react-query`?
+const appRouter = t.router({
+  getUser: t.procedure.input(z.object({ id: z.string() })).query(() => ({ name: 'foo' })),
+  createUser: t.procedure.input(z.object({ name: z.string() })).mutation(() => 'bar'),
+});
+export type AppRouter = typeof appRouter;
+```
 
-`@trpc/react-query` provides a thin wrapper over `@tanstack/react-query`. It is required as a peer dependency.
+import ImportAppRouter from '../partials/_import-approuter.mdx';
 
-#### 2. Create tRPC hooks
+<ImportAppRouter />
+
+### 3. Create tRPC hooks
 
 Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createTRPCReact`.
 
-```tsx title='utils/trpc.ts'
-// utils/trpc.ts
+```ts twoslash title='utils/trpc.ts'
+// @include: router
+// @filename: utils/trpc.ts
+// ---cut---
 import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../path/to/router.ts';
+import type { AppRouter } from '../server/router';
 
 export const trpc = createTRPCReact<AppRouter>();
 ```
 
-#### 3. Add tRPC providers
+### 4. Add tRPC providers
+
+Create a tRPC client, and wrap your application in the tRPC Provider, as below. You will also need to set up and connect React Query, which [they document in more depth](https://tanstack.com/query/latest/docs/react/quick-start).
+
+:::tip
+If you already use React Query in your application, you **should** re-use the `QueryClient` and `QueryClientProvider` you already have.
+:::
 
 ```tsx title='App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -140,9 +92,10 @@ export function App() {
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: 'http://localhost:5000/trpc',
-          // optional
-          headers() {
+          url: 'http://localhost:3000/trpc',
+
+          // You can pass any HTTP headers you wish here
+          async headers() {
             return {
               authorization: getAuthCookie(),
             };
@@ -151,6 +104,7 @@ export function App() {
       ],
     }),
   );
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
@@ -162,20 +116,37 @@ export function App() {
 ```
 
 :::note
-The reason behind the `useState` calls for the creation of the `queryClient` and the `TRPCClient` in the example above as opposed to declaring them outside of the component is to ensure that each request gets a unique client while using SSR so that request caches aren't shared between them.
+The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can move them if you wish.
 :::
 
-#### 4. Fetch data
+#### 5. Fetch data
 
-```tsx title='pages/IndexPage.tsx'
+You can now use the tRPC React Query integration to call queries and mutations on your API.
+
+```tsx twoslash title='pages/IndexPage.tsx'
+// @include: router
+// @filename: utils/trpc.ts
+// ---cut---
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+
+export const trpc = createTRPCReact<AppRouter>();
+// @filename: pages/IndexPage.tsx
+import React from "react";
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.hello.useQuery({ text: 'client' });
-  if (!hello.data) return <div>Loading...</div>;
+  const userQuery = trpc.getUser.useQuery({ id: 'id_bilbo' });
+  const userCreator = trpc.createUser.useMutation();
+
   return (
     <div>
-      <p>{hello.data.greeting}</p>
+      <p>{userQuery.data?.name}</p>
+
+      <button onClick={() => userCreator.mutate({ name: 'Frodo' })}>
+        Create Frodo
+      </button>
     </div>
   );
 }
