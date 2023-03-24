@@ -7,6 +7,8 @@ slug: /nextjs/aborting-procedure-calls
 
 By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration callback.
 
+### Globally
+
 ```ts twoslash title="client.ts"
 // @target: esnext
 // ---cut---
@@ -23,6 +25,8 @@ export const trpc = createTRPCNext<AppRouter>({
   },
 });
 ```
+
+### Per-request
 
 You may also override this behavior at the request level.
 

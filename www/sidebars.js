@@ -121,6 +121,7 @@ module.exports = {
       },
       items: [
         'nextjs/setup',
+        'nextjs/aborting-procedure-calls',
         'nextjs/ssr',
         'nextjs/ssg',
         'nextjs/ssg-helpers',
