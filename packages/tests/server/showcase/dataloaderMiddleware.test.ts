@@ -16,16 +16,17 @@ const posts = [
   },
 ];
 
+function createContext(_opts: CreateHTTPContextOptions) {
+  return {
+    postLoader: new DataLoader(async (ids: ReadonlyArray<number>) => {
+      return ids.map((id) => posts.find((post) => post.id === id));
+    }),
+  };
+}
+type Context = inferAsyncReturnType<typeof createContext>;
+
 const ctx = konn()
   .beforeEach(() => {
-    function createContext(_opts: CreateHTTPContextOptions) {
-      return {
-        postLoader: new DataLoader(async (ids: ReadonlyArray<number>) => {
-          return ids.map((id) => posts.find((post) => post.id === id));
-        }),
-      };
-    }
-    type Context = inferAsyncReturnType<typeof createContext>;
     const t = initTRPC.context<Context>().create();
 
     const appRouter = t.router({
