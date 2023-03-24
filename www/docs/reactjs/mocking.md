@@ -55,7 +55,8 @@ Now we just need to create a wrapper that exposes the client. This process is si
 global.fetch = fetch;
 
 const mockedTRPCClient = mockedTRPC.createClient({
-  links: [httpBatchLink({ url: "http://localhost:3000/api/trpc" })],
+  transformer: superjson,
+  links: [httpLink({ url: "http://localhost:3000/api/trpc" })],
 });
 
 const mockedQueryClient = new QueryClient();
@@ -107,7 +108,7 @@ To mock data using your router, start by installing both packages into your dev 
 
 ### 1. Create your MSW handlers
 
-To utilize tRPC's typing superpowers, we can create an `mswTrpc` constant which generates a typed set of handlers for MSW, based on the shape of your `AppRouter`. This enables us to build handlers specific to our tests rapidly and with typesafety.
+To utilize tRPC's typing superpowers, we can create an `mswTrpc` constant which generates a typed set of handlers for MSW, based on the shape of your `AppRouter`. This enables us to build handlers specific to our tests rapidly and with type-safety.
 
 ```ts title='mockedTRPCProvider.ts'
 import type { AppRouter } from "path/to/your/router";
@@ -115,7 +116,9 @@ import { createTRPCMsw } from "msw-trpc";
 
 // YOUR PROVIDER
 
-export const trpcMsw = createTRPCMsw<AppRouter>();
+export const trpcMsw = createTRPCMsw<AppRouter>({
+  transformer: { input: superjson, output: superjson },
+});
 ```
 
 :::info
@@ -170,10 +173,12 @@ Finally, we want to verify that our component is working as we anticipated, so w
 describe("BestCat", () => {
   const server = setupServer(
     trpcMsw.cats.bestCat.query((req, res, ctx) => {
+      const request = req.getInput().json
+      // 🚨 You can console.log here to view your request being captured
       return res(
         ctx.status(200),
         ctx.data({
-          bestCat: `Hey ${req.getinput().name}! The best cat is Mozzie!`,
+          bestCat: `Hey ${request.name}! The best cat is Mozzie!`,
         })
       );
     })
