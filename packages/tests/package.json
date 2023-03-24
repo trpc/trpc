@@ -34,6 +34,7 @@
     "@vitest/ui": "^0.28.5",
     "abort-controller": "^3.0.0",
     "concurrently": "^7.6.0",
+    "dataloader": "^2.2.2",
     "devalue": "^4.0.0",
     "eslint": "^8.30.0",
     "expect-type": "^0.15.0",
