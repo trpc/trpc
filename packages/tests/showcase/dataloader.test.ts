@@ -40,12 +40,11 @@ const ctx = konn()
           .query(({ input, ctx }) => ctx.postLoader.load(input.id)),
       }),
     });
-    const opts = routerToServerAndClientNew(appRouter, {
+    return routerToServerAndClientNew(appRouter, {
       server: {
         createContext,
       },
     });
-    return opts;
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
