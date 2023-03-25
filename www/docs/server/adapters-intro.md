@@ -12,6 +12,5 @@ Adapters typically follow some common conventions, allowing you to set up contex
 We support many modes of hosting an API, which you will find documented here.
 
 :::tip
-For local development or server-based infrastructure, the simplest Adapter to use is the [Standalone Adapter](adapters/standalone), which can be used to run a standard Node.js HTTP Server. We recommend this when you need to get started quickly and have no existing HTTP Server to integrate with. 
+For local development or server-based infrastructure, the simplest Adapter to use is the [Standalone Adapter](adapters/standalone), which can be used to run a standard Node.js HTTP Server. We recommend this when you need to get started quickly and have no existing HTTP Server to integrate with.
 :::
-
