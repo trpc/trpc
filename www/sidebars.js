@@ -34,7 +34,7 @@ module.exports = {
         'server/middlewares',
         {
           type: 'category',
-          label: 'Hosting tRPC in Adapters',
+          label: 'Hosting tRPC with Adapters',
           collapsed: true,
           link: {
             type: 'doc',
