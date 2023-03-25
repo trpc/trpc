@@ -86,7 +86,7 @@ createHTTPServer({
 }).listen(2022);
 ```
 
-## Handling CORS & Options
+## Handling CORS & OPTIONS
 
 By default the standalone server will not respond to HTTP OPTIONS requests, or set any CORS headers.
 

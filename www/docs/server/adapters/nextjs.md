@@ -1,17 +1,35 @@
 ---
-id: api-handler
-title: API Handler
-sidebar_label: API Handler
-slug: /server/api-handler
+id: nextjs
+title: Usage with Next.js
+sidebar_label: Next.js
+slug: /server/adapters/nextjs
 ---
 
-tRPC is not a backend of its own, but rather lives inside of other backends such as Next.js or Express. Despite that, most of tRPC's features and syntax are the same no matter which backend you are using. The API handler, also called [adapter](/docs/server/adapters), enables this by acting as the glue between HTTP requests to your backend and tRPC.
+:::tip
+tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter, but complete documentation is [available here](/docs/nextjs/introduction)
+:::
 
-The API Handler sits on a route in your server (usually `/api/trpc`, but this is just a convention) and processes all requests to that route and its subroutes. It receives a request from the server, uses the `createContext` function to generate [context](./context), and then sends the request and context to a [procedure](./procedures) in the router.
+## Example app
 
-It can also take some optional arguments such as `onError`, a callback function that runs whenever an error is thrown inside of a procedure.
-
-Below is an example implementation in Next.js. The process is similar for [AWS Lambda](./adapters/aws-lambda#3-use-the-amazon-api-gateway-adapter), [Express](./adapters/express#3-use-the-express-adapter), [Fastify](./adapters/fastify#create-fastify-server), and the [Fetch API](./adapters/fetch.mdx).
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Next.js Minimal Starter</td>
+      <td>
+        <ul>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-minimal-starter">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-minimal-starter">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ## Next.js example
 
@@ -20,18 +38,18 @@ import { createNextApiHandler } from '@trpc/server/adapters/next';
 import { createContext } from '../../../server/trpc/context';
 import { appRouter } from '../../../server/trpc/router/_app';
 
-// export API handler
+// @see https://nextjs.org/docs/api-routes/introduction
 export default createNextApiHandler({
-  router: appRouter, // your outermost router, see https://trpc.io/docs/procedures
-  createContext, // your request context, see https://trpc.io/docs/context
+  router: appRouter,
+  createContext,
 });
 ```
 
-## Advanced Usage
+## Handling CORS, and other Advanced usage
 
 While you can usually just "set and forget" the API Handler as shown above, sometimes you might want to modify it further.
 
-The API handler that is created by `createNextApiHandler` and equivalents in other frameworks is just a function that takes `req` and `res` objects. This means you can also modify those objects before passing them to the handler, for example to [enable CORS](/docs/client/cors).
+The API handler created by `createNextApiHandler` and equivalents in other frameworks is just a function that takes `req` and `res` objects. This means you can also modify those objects before passing them to the handler, for example to [enable CORS](/docs/client/cors).
 
 ```ts title='pages/api/trpc/[trpc].ts'
 import { createNextApiHandler } from '@trpc/server/adapters/next';
@@ -49,8 +67,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  // Modify `req` and `res` objects here
-  // In this case, we are enabling CORS
+  // We can use the response object to enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Request-Method', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
@@ -72,7 +89,7 @@ export default async function handler(
     return res.end();
   }
 
-  // pass the (modified) req/res to the handler
+  // finally pass the request on to the tRPC handler
   return nextApiHandler(req, res);
 }
 ```
