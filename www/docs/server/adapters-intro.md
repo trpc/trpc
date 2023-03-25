@@ -5,7 +5,7 @@ sidebar_label: Adapters
 slug: /server/adapters
 ---
 
-tRPC is not a backend of its own, but is instead mounted inside of other hosts, such as a simple [Node.js HTTP Server](adapters/standalone), [Express](adapters/express), or even [Next.js](adapters/nextjs). Most tRPC features are the same no matter which backend you choose. **Adapters** act as the glue between the host system and your tRPC API.
+tRPC is not a backend on its own, but is instead mounted inside of other hosts, such as a simple [Node.js HTTP Server](adapters/standalone), [Express](adapters/express), or even [Next.js](adapters/nextjs). Most tRPC features are the same no matter which backend you choose. **Adapters** act as the glue between the host system and your tRPC API.
 
 Adapters typically follow some common conventions, allowing you to set up context creation via `createContext`, and globally handle errors via `onError`, but importantly allow you to choose an appropriate host for your application.
 
