@@ -8,12 +8,19 @@ const router = t.router;
 const publicProcedure = t.procedure;
 
 type User = { id: string; name: string };
-const db = {} as {
+
+// Imaginary database
+const users: User[] = [];
+const db = {
   user: {
-    findMany: () => Promise<User[]>;
-    findById: (id: string) => Promise<User>;
-    create: (data: { name: string }) => Promise<User>;
-  };
+    findMany: async () => users,
+    findById: async (id: string) => users.find((user) => user.id === id),
+    create: async (data: { name: string }) => {
+      const user = { id: String(users.length + 1), ...data };
+      users.push(user);
+      return user;
+    }
+  }
 };
 
 const appRouter = router({
