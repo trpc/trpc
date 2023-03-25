@@ -36,8 +36,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/ssg-helpers",
-      "destination": "/docs/nextjs/ssg-helpers",
+      "source": "/docs/server-side-helpers",
+      "destination": "/docs/nextjs/server-side-helpers",
       "permanent": true
     },
     {

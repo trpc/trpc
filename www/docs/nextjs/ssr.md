@@ -11,7 +11,7 @@ To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
 When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps`, and solving it is out of our hands.
 
 &nbsp;  
-Alternatively, you can leave SSR disabled (the default) and use [SSG Helpers](./ssg-helpers.md) to prefetch queries in `getStaticProps` or `getServerSideProps`.
+Alternatively, you can leave SSR disabled (the default) and use [Server-Side Helpers](server-side-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
 :::
 
 In order to execute queries properly during the server-side render step we need to add extra logic inside our `config`:
@@ -82,6 +82,95 @@ const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
 export default trpc.withTRPC(MyApp);
 ```
 
+## Using server-side helpers
+
+```tsx title='utils/trpc.ts'
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import superjson from 'superjson';
+import type { AppRouter } from './api/trpc/[trpc]';
+export const trpc = createTRPCNext<AppRouter>({
+  config({ ctx }) {
+    return {
+      transformer: superjson, // optional - adds superjson serialization
+      links: [
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+        }),
+      ],
+    },
+  },
+  // `ssr` is false by default
+});
+```
+
+```tsx title='pages/_app.tsx'
+import type { AppProps } from 'next/app';
+import React from 'react';
+import { trpc } from '~/utils/trpc';
+
+const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
+  return <Component {...pageProps} />;
+};
+export default trpc.withTRPC(MyApp);
+```
+
+```tsx title='pages/posts/[id].tsx'
+import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
+import { prisma } from 'server/context';
+import { appRouter } from 'server/routers/_app';
+import superjson from 'superjson';
+import { trpc } from 'utils/trpc';
+
+export async function getServerSideProps(
+  context: GetServerSidePropsContext<{ id: string }>,
+) {
+  const ssg = await createServerSideHelpers({
+    router: appRouter,
+    ctx: {},
+    transformer: superjson, // optional - adds superjson serialization
+  });
+  const id = context.params?.id as string;
+  try {
+    // prefetch `post.byId`
+    await ssg.post.byId.prefetch({ id });
+  } catch (err) {
+    return {
+      // if failed, return 404
+      props: { id },
+      notFound: true,
+    };
+  }
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      id,
+    },
+  };
+}
+export default function PostViewPage(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+) {
+  const { id } = props;
+  const postQuery = trpc.post.byId.useQuery({ id });
+  if (postQuery.status !== 'success') {
+    // won't happen since the query has been prefetched
+    return <>Loading...</>;
+  }
+  const { data } = postQuery;
+  return (
+    <>
+      <h1>{data.title}</h1>
+      <em>Created {data.createdAt.toLocaleDateString('en-us')}</em>
+      <p>{data.text}</p>
+      <h2>Raw data:</h2>
+      <pre>{JSON.stringify(data, null, 4)}</pre>
+    </>
+  );
+}
+```
+
 ## FAQ
 
 ### Q: Why do I need to forward the client's headers to the server manually? Why doesn't tRPC automatically do that for me?
@@ -94,39 +183,4 @@ If you don't remove the `connection` header, the data fetching will fail with `T
 
 ### Q: Why do I still see network requests being made in the Network tab?
 
-Since we rely on `@tanstack/react-query`, there are some [options](https://tanstack.com/query/v4/docs/react/reference/useQuery) from the library which default to `true` that make client-side requests:
-
-- `refetchOnMount`
-- `refetchOnWindowFocus`
-
-If you want to avoid any client-side request, you can either change the behavior for all queries on the `queryClientConfig`
-
-```ts title='utils/trpc.ts'
-export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
-    return {
-      transformer: superjson,
-      links: [httpBatchLink({ url: `${getBaseUrl()}/api/trpc` })],
-      // Change options globally
-      queryClientConfig: {
-        defaultOptions: {
-          queries: {
-            refetchOnMount: false,
-            refetchOnWindowFocus: false,
-          },
-        },
-      },
-    };
-  },
-  //... rest of options
-});
-```
-
-Or do it on a per query basis:
-
-```ts
-const data = trpc.myQuery.useQuery(
-  {},
-  { refetchOnMount: false, refetchOnWindowFocus: false },
-);
-```
+By default, `@tanstack/react-query` (which we use for the data fetching hooks) refetches data on mount and window refocus, even if it's already got initial data via SSR. This ensures data is always up-to-date. See the page on [SSG](ssg) if you'd like to disable this behavior.

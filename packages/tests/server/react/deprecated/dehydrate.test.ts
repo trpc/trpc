@@ -1,17 +1,18 @@
-import { createAppRouter } from './__testHelpers';
-import { createServerSideHelpers } from '@trpc/react-query/src/ssg';
+import { createAppRouter } from '../__testHelpers';
+import '@testing-library/jest-dom';
+import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
   factory = createAppRouter();
 });
-afterEach(async () => {
-  await factory.close();
+afterEach(() => {
+  factory.close();
 });
 
-test('dehydrate', async () => {
+test('deprecated dehydrate', async () => {
   const { db, appRouter } = factory;
-  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
 
   await ssg.allPosts.prefetch();
   await ssg.postById.prefetch('1');

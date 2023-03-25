@@ -25,7 +25,7 @@ export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @deprecated use `createProxySSGHelpers` instead
+ * @deprecated use `createServerSideHelpers` instead
  */
 export function createSSGHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
