@@ -19,8 +19,8 @@ const db = {
       const user = { id: String(users.length + 1), ...data };
       users.push(user);
       return user;
-    }
-  }
+    },
+  },
 };
 
 const appRouter = router({
