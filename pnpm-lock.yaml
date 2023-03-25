@@ -489,8 +489,10 @@ importers:
     specifiers:
       '@trpc/client': link:../../../packages/client
       '@types/node': ^18.7.20
+      undici: ^5.14.0
     dependencies:
       '@trpc/client': link:../../../packages/client
+      undici: 5.16.0
     devDependencies:
       '@types/node': 18.7.20
 
@@ -22615,7 +22617,6 @@ packages:
     engines: {node: '>=12.18'}
     dependencies:
       busboy: 1.6.0
-    dev: true
 
   /undici/5.9.1:
     resolution: {integrity: sha512-6fB3a+SNnWEm4CJbgo0/CWR8RGcOCQP68SF4X0mxtYTq2VNN8T88NYrWVBAeSX+zb7bny2dx2iYhP3XHi00omg==}

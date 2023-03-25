@@ -3,7 +3,8 @@
   "version": "10.18.0",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.18.0"
+    "@trpc/client": "^10.18.0",
+    "undici": "^5.14.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.20"
