@@ -1,7 +1,7 @@
 ---
 id: aws-lambda
-title: Usage with AWS Lambda through the API Gateway
-sidebar_label: AWS Lambda
+title: AWS Lambda + API Gateway Adapter
+sidebar_label: AWS Lambda + API Gateway
 slug: /server/adapters/aws-lambda
 ---
 

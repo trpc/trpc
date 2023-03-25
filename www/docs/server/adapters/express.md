@@ -1,6 +1,6 @@
 ---
 id: express
-title: Usage with Express
+title: Express Adapter
 sidebar_label: Express
 slug: /server/adapters/express
 ---

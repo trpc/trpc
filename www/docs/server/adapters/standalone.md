@@ -1,6 +1,6 @@
 ---
 id: standalone
-title: Standalone Usage
+title: Standalone Adapter
 sidebar_label: Standalone
 slug: /server/adapters/standalone
 ---

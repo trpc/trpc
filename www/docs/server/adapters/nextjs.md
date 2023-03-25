@@ -1,6 +1,6 @@
 ---
 id: nextjs
-title: Usage with Next.js
+title: Next.js Adapter
 sidebar_label: Next.js
 slug: /server/adapters/nextjs
 ---
@@ -32,6 +32,8 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
 </table>
 
 ## Next.js example
+
+Hosting tRPC within a Next.js server is straight-forward, just create an API Handler like `pages/api/trpc/[trpc].ts` and export a created handle like below.
 
 ```ts title='pages/api/trpc/[trpc].ts'
 import { createNextApiHandler } from '@trpc/server/adapters/next';
