@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 23,
+    "weight": 25,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -64,7 +64,7 @@ export const allSponsors = [
   },
   {
     "name": "Sam Holmes",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=ba89e0794e3d5e7b4fdcad3ff21c2f253905fc10&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=c7f711a6a265054f0fd0f16a89f9fd667f8fc9ef&v=4",
     "weight": 3,
     "login": "sam3d",
     "link": "https://samholmes.dev/?ref=trpc",
@@ -161,7 +161,7 @@ export const allSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 23,
+    "weight": 25,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -217,7 +217,7 @@ export const allSponsors = [
   {
     "name": "Jökull Sólberg Auðunsson",
     "imgSrc": "https://avatars.githubusercontent.com/u/701?u=0532b62166893d5160ef795c4c8b7512d971af05&v=4",
-    "weight": 4,
+    "weight": 5,
     "login": "jokull",
     "link": "http://solberg.is/?ref=trpc",
     "createdAt": 1655370373000
@@ -377,7 +377,7 @@ export const allSponsors = [
   {
     "name": "Interval",
     "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 7,
+    "weight": 9,
     "login": "interval",
     "link": "https://interval.com/?ref=trpc",
     "createdAt": 1668779128000
@@ -457,7 +457,7 @@ export const allSponsors = [
   {
     "name": "John Shahawy",
     "imgSrc": "https://avatars.githubusercontent.com/u/13843114?u=9604e985cff42b118d16c17d94701b33920f515e&v=4",
-    "weight": 1,
+    "weight": 2,
     "login": "JohnShahawy",
     "link": "https://github.com/JohnShahawy",
     "createdAt": 1676389422000
@@ -475,7 +475,7 @@ export const allSponsors = [
     "imgSrc": "https://avatars.githubusercontent.com/u/17185737?u=e2a9fa3197371329778d4abe4cad3b951609c581&v=4",
     "weight": 2,
     "login": "McPizza0",
-    "link": "https://mcpizza.is/?ref=trpc",
+    "link": "https://github.com/McPizza0",
     "createdAt": 1677448223000
   },
   {
@@ -485,5 +485,21 @@ export const allSponsors = [
     "login": "prokopec-simon",
     "link": "https://github.com/prokopec-simon",
     "createdAt": 1677538189000
+  },
+  {
+    "name": "maayanalbert",
+    "imgSrc": "https://avatars.githubusercontent.com/u/18056644?u=d553998324f38e51175b6046b1ba0d97e41ac171&v=4",
+    "weight": 2,
+    "login": "maayanalbert",
+    "link": "http://malbert.space/?ref=trpc",
+    "createdAt": 1678916730000
+  },
+  {
+    "name": "Chris LeBrun",
+    "imgSrc": "https://avatars.githubusercontent.com/u/97346675?u=3f55d44662f5e03f80b1088938f189f1ce545253&v=4",
+    "weight": 3,
+    "login": "First0fAll",
+    "link": "https://github.com/First0fAll",
+    "createdAt": 1679333729000
   }
 ] as const;

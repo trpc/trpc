@@ -2,7 +2,7 @@
 id: middlewares
 title: Middlewares
 sidebar_label: Middlewares
-slug: /middlewares
+slug: /server/middlewares
 ---
 
 You are able to add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
@@ -159,7 +159,7 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 ## Extending middlewares
 
 :::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](faq#unstable).
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
 :::
 
 We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.

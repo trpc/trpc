@@ -2,7 +2,7 @@
 id: merging-routers
 title: Merging Routers
 sidebar_label: Merging Routers
-slug: /merging-routers
+slug: /server/merging-routers
 ---
 
 Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers.

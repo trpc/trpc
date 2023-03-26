@@ -1,182 +1,42 @@
 ---
 id: introduction
-title: Usage with React
-sidebar_label: Usage with React
-description: How to use and setup tRPC in React
-slug: /react
+title: React Query Integration
+sidebar_label: React Query Integration
+description: React Query Integration
+slug: /reactjs/introduction
 ---
 
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
+tRPC offers a first class integration with React. Under the hood this is simply a wrapper around the very popular [@tanstack/react-query](https://tanstack.com/query/latest), so we recommend that you familiarise yourself with React Query, as their docs go in to much greater depth on its usage.
 
-:::info
-
-- If you're using Next.js, read the [Usage with Next.js](nextjs) guide instead.
-- In order to infer types from your Node.js backend, you should have the frontend and backend in the same monorepo.
-
+:::tip
+If you are using Next.js we recommend using [our integration with that](/docs/nextjs/introduction) instead
 :::
 
-## Add tRPC to an existing React project
+### The tRPC React Query Integration
 
-### Server Side
-
-#### 1. Install dependencies
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npm install @trpc/server zod
-```
-
-  </TabItem>
-
-  <TabItem value="yarn" label="yarn">
-
-```bash
-yarn add @trpc/server zod
-```
-
-  </TabItem>
-
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-pnpm add @trpc/server zod
-```
-
-  </TabItem>
-</Tabs>
-
-##### Why Zod?
-
-[Zod](https://github.com/colinhacks/zod) is an input validator to ensure that our backend only processes requests that fit our API. You can use other validation libraries like [Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts) if you prefer. In fact, any object containing a `parse`, `create`, or `validateSync` method will work.
-
-#### 2. Enable strict mode
-
-If you want to use Zod for input validation, make sure you have enabled strict mode in your `tsconfig.json`:
-
-```diff title="tsconfig.json"
-  "compilerOptions": {
-+   "strict": true
-  }
-```
-
-If strict mode is too harsh, at least enable `strictNullChecks`:
-
-```diff title="tsconfig.json"
-  "compilerOptions": {
-+   "strictNullChecks": true
-  }
-```
-
-#### 3. Implement your `appRouter`
-
-Follow the [Quickstart](/docs/quickstart#create-a-router-instance) to build your "hello world" router. Once you have your API implemented and listening via HTTP, you're ready to set up your React client.
-
-### Client Side
-
-> tRPC works great with Create React App!
-
-#### 1. Install dependencies
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```bash
-npm install @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
-```
-
-  </TabItem>
-
-  <TabItem value="yarn" label="yarn">
-
-```bash
-yarn add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
-```
-
-  </TabItem>
-
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-pnpm add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query
-```
-
-  </TabItem>
-</Tabs>
-
-##### Why `@trpc/server`?
-
-`@trpc/server` is a peer dependency of `@trpc/client` so you will need to make sure that it is available on your client!
-
-##### Why `@tanstack/react-query`?
-
-`@trpc/react-query` provides a thin wrapper over `@tanstack/react-query`. It is required as a peer dependency.
-
-#### 2. Create tRPC hooks
-
-Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createTRPCReact`.
-
-```tsx title='utils/trpc.ts'
-// utils/trpc.ts
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../path/to/router.ts';
-
-export const trpc = createTRPCReact<AppRouter>();
-```
-
-#### 3. Add tRPC providers
-
-```tsx title='App.tsx'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink } from '@trpc/client';
-import React, { useState } from 'react';
-import { trpc } from './utils/trpc';
-
-export function App() {
-  const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:5000/trpc',
-          // optional
-          headers() {
-            return {
-              authorization: getAuthCookie(),
-            };
-          },
-        }),
-      ],
-    }),
-  );
-  return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {/* Your app here */}
-      </QueryClientProvider>
-    </trpc.Provider>
-  );
-}
-```
-
-:::note
-The reason behind the `useState` calls for the creation of the `queryClient` and the `TRPCClient` in the example above as opposed to declaring them outside of the component is to ensure that each request gets a unique client while using SSR so that request caches aren't shared between them.
-:::
-
-#### 4. Fetch data
+This library enables usage directly within React components
 
 ```tsx title='pages/IndexPage.tsx'
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const hello = trpc.hello.useQuery({ text: 'client' });
-  if (!hello.data) return <div>Loading...</div>;
+  const helloQuery = trpc.hello.useQuery({ name: 'Bob' });
+  const goodbyeMutation = trpc.goodbye.useMutation();
+
   return (
     <div>
-      <p>{hello.data.greeting}</p>
+      <p>{helloQuery.data?.greeting}</p>
+
+      <button onClick={() => goodbyteMutation.mutate()}>Say Goodbye</button>
     </div>
   );
 }
 ```
+
+### Differences to vanilla React Query
+
+The wrapper abstracts some aspects of React Query for you:
+
+- Query Keys - these are generated and managed by tRPC on your behalf, based on the procedure inputs you provide
+  - If you need the query key which tRPC calculates, you can use [getQueryKey](/docs/reactjs/getquerykey)
+- Type safe by default - the types you provide in your tRPC Backend also drive the types of your React Query client, providing safety throughout your React app
