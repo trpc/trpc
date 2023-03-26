@@ -31,7 +31,7 @@ test('short-hand routers with React', async () => {
     const utils = proxy.useContext();
 
     useEffect(() => {
-      // utils.foo.query.invalidate();
+      utils.foo.query.invalidate();
       utils.client.foo.query.query(); // yay
       utils.client.greeting.query(); // yay
     }, [utils]);
