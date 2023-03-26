@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
-import { Greeting } from './client-greeting';
+import { ClientGreeting } from './client-greeting';
+import { ServerGreeting } from './server-greeting';
 
 export default async function Home() {
   const [result, result2] = await Promise.all([
@@ -8,22 +9,31 @@ export default async function Home() {
     api.greeting.query({ text: 'from server2' }),
   ]);
 
-  const promise = new Promise(async (res) => {
+  const promise = new Promise(async (resolve) => {
     await new Promise((r) => setTimeout(r, 1000)); // wait for demo purposes
-    res(api.greeting.query({ text: 'streamed server data' }));
+    resolve(api.greeting.query({ text: 'streamed server data' }));
   });
 
   return (
     <main>
-      <Suspense fallback={<>Loading client...</>}>
-        <Greeting />
-      </Suspense>
-      <div>{result}</div>
-      <div>{result2}</div>
-      <Suspense fallback={<>Loading stream...</>}>
-        {/** @ts-expect-error - Async Server Component */}
-        <StreamedSC promise={promise} />
-      </Suspense>
+      <div>
+        <Suspense fallback={<>Loading client...</>}>
+          <ClientGreeting />
+        </Suspense>
+      </div>
+
+      <div>
+        <Suspense fallback={<>Loading Server...</>}>
+          {/* @ts-expect-error RSC + TS not friends yet */}
+          <ServerGreeting />
+        </Suspense>
+      </div>
+      <div>
+        <Suspense fallback={<>Loading stream...</>}>
+          {/** @ts-expect-error - Async Server Component */}
+          <StreamedSC promise={promise} />
+        </Suspense>
+      </div>
     </main>
   );
 }
