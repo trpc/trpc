@@ -38,6 +38,11 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     };
   }
 
+  if (typeof parser.ast?._tag === 'string') {
+    // ParserEffectSchemaEsque
+    return parser.validate.bind(parser);
+  }
+
   throw new Error('Could not find a validator fn');
 }
 
