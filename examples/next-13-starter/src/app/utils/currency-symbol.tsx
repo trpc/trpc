@@ -1,7 +1,7 @@
-import { type Dinero, toFormat } from 'dinero.js';
+import { toFormat, type Dinero } from 'dinero.js';
 
-export const getCurrencySymbol = (dinero: Dinero<number>) => {
-  switch (toFormat(dinero, ({ currency }) => currency.code)) {
+export const CurrencySymbol = (props: { dinero: Dinero<number> }) => {
+  switch (toFormat(props.dinero, ({ currency }) => currency.code)) {
     case 'GBP':
       return <>£</>;
 

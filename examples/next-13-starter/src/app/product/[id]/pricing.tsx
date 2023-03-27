@@ -1,4 +1,3 @@
-import { dinero } from 'dinero.js';
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
 import { ProductEstimatedArrival } from '~/components/product-estimated-arrival';
@@ -27,10 +26,10 @@ function LoadingDots() {
 
 async function UserSpecificDetails({ productId }: { productId: string }) {
   const product = await api.products.byId.query({ id: productId, delay: 500 });
-  const price = dinero(product.price);
+
   return (
     <>
-      <ProductSplitPayments price={price} />
+      <ProductSplitPayments price={product.price} />
       <ProductEstimatedArrival leadTime={product.leadTime} hasDeliveryTime />
       {product.stock <= 1 ? (
         <ProductLowStockWarning stock={product.stock} />
@@ -44,10 +43,9 @@ export function Pricing({
 }: {
   product: RouterOutputs['products']['byId'];
 }) {
-  const price = dinero(product.price);
   return (
     <div className="space-y-4 rounded-lg bg-gray-900 p-3">
-      <ProductPrice price={price} discount={product.discount} />
+      <ProductPrice price={product.price} discount={product.discount} />
 
       <Suspense fallback={<LoadingDots />}>
         {/* @ts-expect-error Async Server Component */}

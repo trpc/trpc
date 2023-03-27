@@ -3,23 +3,27 @@ import { dinero, type Dinero } from 'dinero.js';
 import superjson from 'superjson';
 import type { AppRouter } from '~/server/api/router';
 
-export const transformer = superjson;
-
-transformer.registerCustom(
+superjson.registerCustom(
   {
     isApplicable: (val): val is Dinero<number> => {
       try {
-        dinero(val);
+        (val as Dinero<number>).calculator.add(1, 2);
         return true;
       } catch {
         return false;
       }
     },
-    serialize: (val) => JSON.stringify(val),
-    deserialize: (val) => dinero(JSON.parse(val).price),
+    serialize: (val) => {
+      return val.toJSON();
+    },
+    deserialize: (val) => {
+      return dinero(val);
+    },
   },
-  'dinero',
+  'dinero.js',
 );
+
+export const transformer = superjson;
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';

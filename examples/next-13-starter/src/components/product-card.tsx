@@ -17,8 +17,6 @@ export const ProductCard = ({
   product: Product;
   href: string;
 }) => {
-  const price = dinero(product.price);
-
   return (
     <Link href={href} className="group block">
       <div className="space-y-2">
@@ -45,9 +43,9 @@ export const ProductCard = ({
 
         {product.rating ? <ProductRating rating={product.rating} /> : null}
 
-        <ProductPrice price={price} discount={product.discount} />
+        <ProductPrice price={product.price} discount={product.discount} />
 
-        <ProductSplitPayments price={price} />
+        <ProductSplitPayments price={product.price} />
 
         <ProductEstimatedArrival leadTime={product.leadTime} />
 
