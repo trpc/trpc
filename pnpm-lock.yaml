@@ -244,6 +244,45 @@ importers:
       start-server-and-test: 1.14.0
       typescript: 4.8.3
 
+  examples/.test/ssr:
+    specifiers:
+      '@playwright/test': ^1.26.1
+      '@tanstack/react-query': 4.18.0
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
+      '@types/node': ^18.7.20
+      '@types/react': ^18.0.9
+      '@types/react-dom': ^18.0.5
+      eslint: ^8.30.0
+      next: ^13.2.1
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      start-server-and-test: ^1.12.0
+      superjson: ^1.7.4
+      typescript: ^4.8.3
+      zod: ^3.0.0
+    dependencies:
+      '@tanstack/react-query': 4.18.0_biqbaboplfbrettd7655fr4n2y
+      '@trpc/client': link:../../../packages/client
+      '@trpc/next': link:../../../packages/next
+      '@trpc/react-query': link:../../../packages/react-query
+      '@trpc/server': link:../../../packages/server
+      next: 13.2.1_biqbaboplfbrettd7655fr4n2y
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      superjson: 1.11.0
+      zod: 3.20.2
+    devDependencies:
+      '@playwright/test': 1.28.1
+      '@types/node': 18.13.0
+      '@types/react': 18.0.25
+      '@types/react-dom': 18.0.9
+      eslint: 8.30.0
+      start-server-and-test: 1.14.0
+      typescript: 4.9.5
+
   examples/cloudflare-workers:
     specifiers:
       '@cloudflare/workers-types': ^4.0.0
