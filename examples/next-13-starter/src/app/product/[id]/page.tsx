@@ -32,7 +32,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         <Reviews
           productId={params.id}
           data={api.reviews.list.query(
-            { delay: 1000 },
+            { productId: params.id, delay: 1000 },
             { context: { skipBatch: true } },
           )}
         />

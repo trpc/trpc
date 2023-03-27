@@ -92,12 +92,15 @@ export const appRouter = router({
         });
       }),
 
-    list: demoProcedure.query(async ({ ctx }) => {
-      return ctx.prisma.review.findMany({
-        include: { user: true },
-        orderBy: { createdAt: 'desc' },
-      });
-    }),
+    list: demoProcedure
+      .input(z.object({ productId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return ctx.prisma.review.findMany({
+          where: { productId: input.productId },
+          include: { user: true },
+          orderBy: { createdAt: 'desc' },
+        });
+      }),
   }),
 });
 
