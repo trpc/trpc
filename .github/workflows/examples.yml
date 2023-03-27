@@ -30,6 +30,7 @@ jobs:
         dir:
           [
             .test/ssg,
+            .test/ssr,
             .test/internal-types-export,
             express-server,
             express-minimal,
