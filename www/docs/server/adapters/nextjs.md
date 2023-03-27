@@ -33,7 +33,7 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
 
 ## Next.js example
 
-Hosting tRPC within a Next.js server is straight-forward, just create an API Handler like `pages/api/trpc/[trpc].ts` and export a created handler like below.
+Serving your tRPC router in a Next.js project is straight-forward. Just create an API handler in `pages/api/trpc/[trpc].ts` as shown below:
 
 ```ts title='pages/api/trpc/[trpc].ts'
 import { createNextApiHandler } from '@trpc/server/adapters/next';

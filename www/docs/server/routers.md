@@ -31,7 +31,7 @@ You'll notice we are exporting certain methods of the `t` variable here rather t
 
 Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
 
-In order for these endpoints to be exposed to the frontend, your [Adapter](/docs/server/adapters) should be configured with `appRouter` instance.
+In order for these endpoints to be exposed to the frontend, your [Adapter](/docs/server/adapters) should be configured with your `appRouter` instance.
 
 ```ts twoslash title="server/_app.ts"
 // @filename: trpc.ts
