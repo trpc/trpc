@@ -1,8 +1,7 @@
-import { getServerSession } from 'next-auth';
 import { cookies } from 'next/headers';
 import React from 'react';
 import { Boundary } from '~/components/boundary';
-import { authOptions } from '~/pages/api/auth/[...nextauth]';
+import { getServerSession } from '~/server/auth';
 import { Header } from './header';
 
 export const metadata = {
@@ -15,7 +14,7 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const cartCount = Number(cookies().get('_cart_count')?.value || '0');
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
   const user = session?.user;
 
   return (

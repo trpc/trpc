@@ -1,13 +1,12 @@
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 import { ProductRating } from '~/components/product-rating';
 import { RouterOutputs } from '~/trpc/shared';
 import { Pricing } from './pricing';
 
-type Product = RouterOutputs['products']['byId'];
-
-export const SingleProduct = async ({ data }: { data: Promise<Product> }) => {
-  const product = await data;
+export const SingleProduct = async (props: {
+  product: RouterOutputs['products']['byId'];
+}) => {
+  const { product } = props;
 
   return (
     <div className="grid grid-cols-4 gap-6">

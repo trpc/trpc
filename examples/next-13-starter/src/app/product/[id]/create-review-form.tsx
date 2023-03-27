@@ -1,14 +1,15 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { api } from 'trpc-api';
 
-export function CreateReviewForm(props: { productId: string }) {
+export function CreateReviewForm(props: {
+  productId: string;
+  userSignedIn: boolean; // TODO: useSession
+}) {
   const router = useRouter();
-  const sesh = useSession();
   const [isPending, startTransition] = useTransition();
   const [isCreating, setIsCreating] = useState(false);
   const [text, setText] = useState('');
@@ -28,7 +29,7 @@ export function CreateReviewForm(props: { productId: string }) {
     });
   }
 
-  if (!sesh.data)
+  if (!props.userSignedIn)
     return (
       <Link
         href="/api/auth/signin"

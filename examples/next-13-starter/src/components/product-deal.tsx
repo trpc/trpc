@@ -1,5 +1,5 @@
 import { toUnit, type Dinero } from 'dinero.js';
-import { CurrencySymbol } from '~/app/utils/currency-symbol';
+import { CurrencySymbol } from '~/components/currency-symbol';
 
 export const ProductDeal = ({
   price: priceRaw,

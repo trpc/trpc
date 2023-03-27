@@ -1,5 +1,5 @@
 import { allocate, toUnit, up, type Dinero } from 'dinero.js';
-import { CurrencySymbol } from '~/app/utils/currency-symbol';
+import { CurrencySymbol } from '~/components/currency-symbol';
 
 export const ProductSplitPayments = ({ price }: { price: Dinero<number> }) => {
   // only offer split payments for more expensive items

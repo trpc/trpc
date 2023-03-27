@@ -1,5 +1,5 @@
+import { type User as NextAuthUser } from '@auth/core/types';
 import { Search, ShoppingCart, User } from 'lucide-react';
-import { type User as NextAuthUser } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';
 

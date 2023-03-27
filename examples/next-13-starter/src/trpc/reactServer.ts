@@ -19,7 +19,7 @@ export const api = createTRPCNextAppRouterReactServer<AppRouter>({
           condition: (op) => !!op.context.skipBatch,
           true: httpLink({
             url: getUrl(),
-            fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
+            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
             headers() {
               const { connection: _, ...h } = Object.fromEntries(headers());
               return h;
@@ -27,7 +27,7 @@ export const api = createTRPCNextAppRouterReactServer<AppRouter>({
           }),
           false: httpBatchLink({
             url: getUrl(),
-            fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
+            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
             headers() {
               const { connection: _, ...h } = Object.fromEntries(headers());
               return h;

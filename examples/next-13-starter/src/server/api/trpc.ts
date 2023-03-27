@@ -1,8 +1,8 @@
+import { Session } from '@auth/core/types';
 import { TRPCError, initTRPC } from '@trpc/server';
-import { Session, getServerSession } from 'next-auth';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { authOptions } from '~/pages/api/auth/[...nextauth]';
+import { getServerSession } from '~/server/auth';
 import { transformer } from '~/trpc/shared';
 import { prisma } from '../prisma';
 
@@ -34,7 +34,7 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
  * @see https://trpc.io/docs/context
  */
 export const createTRPCContext = async (opts: { req: NextRequest }) => {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
 
   return createInnerTRPCContext({
     session,
