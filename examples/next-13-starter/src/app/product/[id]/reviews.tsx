@@ -1,6 +1,6 @@
 import { ProductReviewCard } from '~/components/product-review-card';
 import { RouterOutputs } from '~/trpc/shared';
-import { CreateReviewForm } from '../create-review-form';
+import { CreateReviewForm } from './create-review-form';
 
 export async function Reviews(props: {
   productId: string;
@@ -24,12 +24,12 @@ export async function Reviews(props: {
   );
 }
 
-export function ReviewsSkeleton() {
+export function ReviewsSkeleton(props: { n?: number }) {
   return (
     <div className="space-y-6">
       <div className="h-7 w-2/5 rounded-lg bg-gray-900 relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
       <div className="space-y-8">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: props.n ?? 3 }).map((_, i) => (
           <div key={i} className="space-y-4">
             <div className="h-6 w-2/6 rounded-lg bg-gray-900" />
             <div className="h-4 w-1/6 rounded-lg bg-gray-900" />
