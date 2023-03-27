@@ -79,14 +79,6 @@ export const allSponsors = [
     "createdAt": 1629750649000
   },
   {
-    "name": "Theo Browne",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6751787?u=3b31853b56349de39c66e73c14e6d34d047f0b53&v=4",
-    "weight": 2,
-    "login": "t3dotgg",
-    "link": "http://t3.gg/?ref=trpc",
-    "createdAt": 1631688228000
-  },
-  {
     "name": "Max Greenwald",
     "imgSrc": "https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4",
     "weight": 3,
@@ -287,14 +279,6 @@ export const allSponsors = [
     "createdAt": 1658023715000
   },
   {
-    "name": "Lori Karikari",
-    "imgSrc": "https://avatars.githubusercontent.com/u/7902980?u=d016e5a9c337fbd4c60a7ea61352185f8b88b585&v=4",
-    "weight": 2,
-    "login": "LoriKarikari",
-    "link": "https://github.com/LoriKarikari",
-    "createdAt": 1658573921000
-  },
-  {
     "name": "Tola",
     "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
     "weight": 101,
@@ -309,14 +293,6 @@ export const allSponsors = [
     "login": "francisprovost",
     "link": "http://francisprovost.com/?ref=trpc",
     "createdAt": 1659711715000
-  },
-  {
-    "name": "Jirka Svoboda",
-    "imgSrc": "https://avatars.githubusercontent.com/u/761766?u=1771454e0852904ddf71fe74e493e228331dd27a&v=4",
-    "weight": 2,
-    "login": "svobik7",
-    "link": "https://github.com/svobik7",
-    "createdAt": 1661061502000
   },
   {
     "name": "fanvue",
