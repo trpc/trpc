@@ -23,6 +23,6 @@ export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
     );
     const fullPath = pathCopy.join('.');
 
-    return (client[procedureType] as any)(fullPath, ...args);
+    return (client as any)[procedureType](fullPath, ...args);
   }) as CreateTRPCProxyClient<TRouter>;
 }

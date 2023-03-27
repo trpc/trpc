@@ -30,6 +30,7 @@ export default async function Page({ params }: { params: { id: string } }) {
       <Suspense fallback={<ReviewsSkeleton />}>
         {/* @ts-expect-error Async Server Component */}
         <Reviews
+          productId={params.id}
           data={api.reviews.list.query(
             { delay: 1000 },
             { context: { skipBatch: true } },

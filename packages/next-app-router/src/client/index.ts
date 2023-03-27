@@ -63,7 +63,9 @@ export function createTRPCNextAppRouterClient<TRouter extends AnyRouter>(
 
     return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
-      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+      const procedureType = clientCallTypeToProcedureType(
+        pathCopy.pop() as string,
+      );
 
       if (procedureType === 'query') {
         const queryCacheKey = JSON.stringify([path, args[0]]);

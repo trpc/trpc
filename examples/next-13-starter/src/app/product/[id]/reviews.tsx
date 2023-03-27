@@ -1,18 +1,9 @@
-import { api } from 'trpc-api';
 import { ProductReviewCard } from '~/components/product-review-card';
 import { RouterOutputs } from '~/trpc/shared';
-
-async function createReview(fd: FormData) {
-  'use server';
-  const review = await api.reviews.create.mutate({
-    productId: '1', // parse from url
-    rating: 5,
-    text: fd.get('text') as string,
-  });
-  console.log(review);
-}
+import { CreateReviewForm } from '../create-review-form';
 
 export async function Reviews(props: {
+  productId: string;
   data: Promise<RouterOutputs['reviews']['list']>;
 }) {
   const reviews = await props.data;
@@ -22,20 +13,7 @@ export async function Reviews(props: {
       <div className="text-lg font-medium text-white">Customer Reviews</div>
       <div className="space-y-4">
         <div className="text-lg font-medium text-white">Write a Review</div>
-        <form action="" method="POST" className="space-y-2  ">
-          {/** @ts-expect-error - how tf do i type action id??? */}
-          <input name="$$id" value={createReview.$$id} hidden readOnly />
-          <input
-            name="text"
-            className="block w-full rounded-lg border-none bg-gray-600 px-2 font-medium text-gray-200 focus:border-vercel-pink focus:ring-2 focus:ring-vercel-pink"
-          />
-          <button
-            type="submit"
-            className="relative rounded-lg w-full items-center space-x-2 bg-vercel-blue px-3 py-1 text-sm font-medium text-white hover:bg-vercel-blue/90 disabled:text-white/70 disabled:cursor-not-allowed"
-          >
-            Submit
-          </button>
-        </form>
+        <CreateReviewForm productId={props.productId} />
       </div>
       <div className="space-y-8">
         {reviews.map((review) => {
