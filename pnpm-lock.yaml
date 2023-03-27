@@ -1004,6 +1004,7 @@ importers:
       superstruct: ^1.0.0
       tsx: ^3.12.3
       typescript: ^4.8.3
+      uWebSockets.js: uNetworking/uWebSockets.js#v20.20.0
       vitest: ^0.28.5
       ws: ^8.0.0
       yup: ^1.0.0
@@ -1035,6 +1036,7 @@ importers:
       superstruct: 1.0.3
       tsx: 3.12.3
       typescript: 4.8.3
+      uWebSockets.js: github.com/uNetworking/uWebSockets.js/70291680f6052af5306191b6ed88bceb58e49aa2
       vitest: 0.28.5
       ws: 8.11.0
       yup: 1.0.0
@@ -10646,7 +10648,7 @@ packages:
   /axios/0.21.4_debug@4.3.2:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.15.2
+      follow-redirects: 1.15.2_debug@4.3.2
     transitivePeerDependencies:
       - debug
     dev: true
@@ -14594,6 +14596,18 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+
+  /follow-redirects/1.15.2_debug@4.3.2:
+    resolution: {integrity: sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.2
+    dev: true
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -24036,3 +24050,9 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.10.1
+
+  github.com/uNetworking/uWebSockets.js/70291680f6052af5306191b6ed88bceb58e49aa2:
+    resolution: {tarball: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/70291680f6052af5306191b6ed88bceb58e49aa2}
+    name: uWebSockets.js
+    version: 20.20.0
+    dev: true

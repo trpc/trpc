@@ -79,6 +79,16 @@
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
     },
+    "./adapters/uwebsockets/http": {
+      "import": "./dist/adapters/uwebsockets/http.mjs",
+      "require": "./dist/adapters/uwebsockets/http.js",
+      "default": "./dist/adapters/uwebsockets/http.js"
+    },
+    "./adapters/uwebsockets/ws": {
+      "import": "./dist/adapters/uwebsockets/ws.mjs",
+      "require": "./dist/adapters/uwebsockets/ws.js",
+      "default": "./dist/adapters/uwebsockets/ws.js"
+    },
     "./adapters/fetch": {
       "import": "./dist/adapters/fetch/index.mjs",
       "require": "./dist/adapters/fetch/index.js",
@@ -152,6 +162,7 @@
     "superstruct": "^1.0.0",
     "tsx": "^3.12.3",
     "typescript": "^4.8.3",
+    "uWebSockets.js": "uNetworking/uWebSockets.js#v20.20.0",
     "vitest": "^0.28.5",
     "ws": "^8.0.0",
     "yup": "^1.0.0",

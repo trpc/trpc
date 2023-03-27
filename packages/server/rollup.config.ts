@@ -10,6 +10,8 @@ export const input = [
   'src/adapters/node-http/index.ts',
   'src/adapters/standalone.ts',
   'src/adapters/ws.ts',
+  'src/adapters/uwebsockets/http.ts',
+  'src/adapters/uwebsockets/ws.ts',
   'src/adapters/fetch/index.ts',
   'src/http/index.ts',
   'src/rpc/index.ts',
