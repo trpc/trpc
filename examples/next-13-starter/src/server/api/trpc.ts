@@ -1,4 +1,3 @@
-import { Session } from '@auth/core/types';
 import { TRPCError, initTRPC } from '@trpc/server';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -7,7 +6,7 @@ import { transformer } from '~/trpc/shared';
 import { prisma } from '../prisma';
 
 type CreateContextOptions = {
-  session: Session | null;
+  session: Awaited<ReturnType<typeof getServerSession>>;
 };
 
 /**

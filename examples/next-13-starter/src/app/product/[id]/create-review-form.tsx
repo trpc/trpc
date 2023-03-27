@@ -5,10 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { api } from 'trpc-api';
 
-export function CreateReviewForm(props: {
-  productId: string;
-  userSignedIn: boolean; // TODO: useSession
-}) {
+export function CreateReviewForm(props: { productId: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isCreating, setIsCreating] = useState(false);
@@ -28,16 +25,6 @@ export function CreateReviewForm(props: {
       router.refresh();
     });
   }
-
-  if (!props.userSignedIn)
-    return (
-      <Link
-        href="/api/auth/signin"
-        className="relative rounded-lg w-full items-center space-x-2 bg-vercel-blue px-3 py-1 text-sm font-medium text-white hover:bg-vercel-blue/90 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-vercel-blue"
-      >
-        Sign in to submit a review
-      </Link>
-    );
 
   return (
     <form className="space-y-2">

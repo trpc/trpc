@@ -74,11 +74,19 @@ export async function getSession(
   options: NextAuthConfig,
 ): Promise<Session | null> {
   options.secret ??= process.env.NEXTAUTH_SECRET;
-  options.trustHost ??= true;
+  options.trustHost ??= !!(
+    process.env.AUTH_TRUST_HOST ??
+    process.env.VERCEL ??
+    process.env.NODE_ENV !== 'production'
+  );
 
   const { headers } = await import('next/headers');
 
-  const url = new URL('/api/auth/session', process.env.NEXTAUTH_URL);
+  const baseUrl = process.env.VERCEL
+    ? 'https://' + process.env.VERCEL_URL
+    : process.env.NEXTAUTH_URL;
+
+  const url = new URL('/api/auth/session', baseUrl);
   const response = await Auth(
     new Request(url, { headers: headers() }),
     options,

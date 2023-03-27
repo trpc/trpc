@@ -12,10 +12,7 @@ export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ params }: { params: { id: string } }) {
-  const [product, session] = await Promise.all([
-    api.products.byId.query({ id: params.id }),
-    getServerSession(), // TODO: Remove this prop drilling of session state
-  ]);
+  const product = await api.products.byId.query({ id: params.id });
 
   return (
     <div className="space-y-8 lg:space-y-14">
@@ -36,7 +33,6 @@ export default async function Page({ params }: { params: { id: string } }) {
       <Suspense fallback={<ReviewsSkeleton />}>
         {/* @ts-expect-error Async Server Component */}
         <Reviews
-          userSignedIn={!!session}
           productId={params.id}
           data={api.reviews.list.query(
             { productId: params.id, delay: 1000 },

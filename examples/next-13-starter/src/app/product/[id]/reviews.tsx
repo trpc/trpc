@@ -5,7 +5,6 @@ import { CreateReviewForm } from './create-review-form';
 export async function Reviews(props: {
   productId: string;
   data: Promise<RouterOutputs['reviews']['list']>;
-  userSignedIn: boolean;
 }) {
   const reviews = await props.data;
 
@@ -14,10 +13,7 @@ export async function Reviews(props: {
       <div className="text-lg font-medium text-white">Customer Reviews</div>
       <div className="space-y-4">
         <div className="text-lg font-medium text-white">Write a Review</div>
-        <CreateReviewForm
-          productId={props.productId}
-          userSignedIn={props.userSignedIn}
-        />
+        <CreateReviewForm productId={props.productId} />
       </div>
       <div className="space-y-8">
         {reviews.map((review) => {
