@@ -37,9 +37,9 @@ export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
 export const createTRPCContext = async (opts?: CreateNextContextOptions) => {
-  console.log('opts?.req.headers', opts?.req);
   const acceptLanguage = opts?.req.headers['accept-language'];
-  // FIXME: Prob needs a better parsing of the accept-language header
+  // If you store locales on User in DB, you can use that instead
+  // We use the accept-language header to determine the locale here.
   const locale = acceptLanguage?.includes('en') ? 'en' : 'sv';
   const _i18n = await serverSideTranslations(locale, ['common']);
 

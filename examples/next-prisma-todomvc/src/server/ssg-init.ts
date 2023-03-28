@@ -10,7 +10,6 @@ export async function ssgInit<TParams extends { locale?: string }>(
   opts: GetStaticPropsContext<TParams>,
 ) {
   const locale = opts.params?.locale ?? opts?.locale ?? i18n.defaultLocale;
-  console.log({ opts });
   const _i18n = await serverSideTranslations(locale, ['common']);
 
   const ssg = createProxySSGHelpers({

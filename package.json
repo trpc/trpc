@@ -72,6 +72,7 @@
   "pnpm": {
     "overrides": {
       "@tanstack/react-query": "4.18.0",
+      "@tanstack/react-query-devtools": "4.18.0",
       "@trpc/client": "link:./packages/client",
       "@trpc/next": "link:./packages/next",
       "@trpc/react-query": "link:./packages/react-query",

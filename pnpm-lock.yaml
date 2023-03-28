@@ -2,6 +2,7 @@ lockfileVersion: 5.4
 
 overrides:
   '@tanstack/react-query': 4.18.0
+  '@tanstack/react-query-devtools': 4.18.0
   '@trpc/client': link:./packages/client
   '@trpc/next': link:./packages/next
   '@trpc/react-query': link:./packages/react-query
@@ -91,7 +92,7 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Flegacy-next-starter
       '@tanstack/react-query': 4.18.0
-      '@tanstack/react-query-devtools': ^4.18.0
+      '@tanstack/react-query-devtools': 4.18.0
       '@trpc/client': link:../../../packages/client
       '@trpc/next': link:../../../packages/next
       '@trpc/react-query': link:../../../packages/react-query
@@ -676,7 +677,7 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Ftrpc-next-prisma-todomvc
       '@tanstack/react-query': 4.18.0
-      '@tanstack/react-query-devtools': ^4.18.0
+      '@tanstack/react-query-devtools': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
@@ -733,7 +734,7 @@ importers:
       '@playwright/test': ^1.26.1
       '@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=%40examples%2Fnext-websockets-starter
       '@tanstack/react-query': 4.18.0
-      '@tanstack/react-query-devtools': ^4.18.0
+      '@tanstack/react-query-devtools': 4.18.0
       '@trpc/client': link:../../packages/client
       '@trpc/next': link:../../packages/next
       '@trpc/react-query': link:../../packages/react-query
