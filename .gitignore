@@ -6,6 +6,7 @@ dist
 .vercel
 next-env.d.ts
 examples/**/.vscode
+examples/next-13-starter/.env
 
 node_modules
 package-lock.json
