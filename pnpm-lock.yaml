@@ -1059,7 +1059,7 @@ importers:
       '@vitest/coverage-istanbul': ^0.28.5
       '@vitest/ui': ^0.28.5
       abort-controller: ^3.0.0
-      concurrently: ^7.6.0
+      concurrently: ^8.0.0
       dataloader: ^2.2.2
       devalue: ^4.0.0
       eslint: ^8.30.0
@@ -1103,7 +1103,7 @@ importers:
       '@vitest/coverage-istanbul': 0.28.5_itn5mhdgoxdt6nk7zeh5bmcq5a
       '@vitest/ui': 0.28.5
       abort-controller: 3.0.0
-      concurrently: 7.6.0
+      concurrently: 8.0.0
       dataloader: 2.2.2
       devalue: 4.3.0
       eslint: 8.30.0
@@ -11645,15 +11645,15 @@ packages:
       typedarray: 0.0.6
     dev: false
 
-  /concurrently/7.6.0:
-    resolution: {integrity: sha512-BKtRgvcJGeZ4XttiDiNcFiRlxoAeZOseqUvyYRUp/Vtd+9p1ULmeoSqGsDA+2ivdeDFpqrJvGvmI+StKfKl5hw==}
-    engines: {node: ^12.20.0 || ^14.13.0 || >=16.0.0}
+  /concurrently/8.0.0:
+    resolution: {integrity: sha512-1fjagjL+RgPRAx9Wi8Yv866Whtx34MRdk9qf6wwxpQoYL2mD+lUZMOe9RXYULC6eBl6e4sde6cu8bpyg9Rd9/w==}
+    engines: {node: ^14.13.0 || >=16.0.0}
     hasBin: true
     dependencies:
       chalk: 4.1.2
       date-fns: 2.29.3
       lodash: 4.17.21
-      rxjs: 7.5.7
+      rxjs: 7.8.0
       shell-quote: 1.7.4
       spawn-command: 0.0.2-1
       supports-color: 8.1.1
@@ -15739,7 +15739,7 @@ packages:
       mute-stream: 0.0.8
       ora: 5.4.1
       run-async: 2.4.1
-      rxjs: 7.5.7
+      rxjs: 7.8.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
       through: 2.3.8
@@ -20866,6 +20866,12 @@ packages:
     resolution: {integrity: sha512-z9MzKh/UcOqB3i20H6rtrlaE/CgjLOvheWK/9ILrbhROGTweAi1BaFsTT9FbwZi5Trr1qNRs+MXkhmR06awzQA==}
     dependencies:
       tslib: 2.4.1
+    dev: true
+
+  /rxjs/7.8.0:
+    resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
+    dependencies:
+      tslib: 2.4.1
 
   /safe-buffer/5.1.2:
     resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}
@@ -23324,7 +23330,7 @@ packages:
       joi: 17.7.0
       lodash: 4.17.21
       minimist: 1.2.7
-      rxjs: 7.5.7
+      rxjs: 7.8.0
     transitivePeerDependencies:
       - debug
     dev: false
