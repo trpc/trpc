@@ -1,22 +1,16 @@
 ---
 id: setup
-title: Usage with Next.js
-sidebar_label: Usage with Next.js
+title: Set up with Next.js
+sidebar_label: Setup
 slug: /nextjs/setup
 ---
 
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 
-Next.js makes it easy for you to build your client and server together in one codebase. tRPC makes it easy to share types between them, ensuring typesafety for your application's data fetching.
-
-:::tip
-If you're using tRPC in a new project, consider using one of the example projects as a starting point or for reference: [tRPC Example Projects](/docs/example-apps)
-:::
-
 ## Recommended file structure
 
-We recommend a file structure like this one, although it is not enforced by tRPC. This is what you'll get when starting from [the examples](/main/example-apps.mdx).
+We recommend a file structure like this one, although it is not enforced by tRPC. This is what you'll see in [our examples](/main/example-apps.mdx). The rest of this page will take you through the process of adding tRPC in to this structure.
 
 ```graphql
 .
@@ -71,10 +65,7 @@ pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-
 </TabItem>
 </Tabs>
 
-Two packages of note:
-
-- [@tanstack/react-query](https://tanstack.com/query/v4/docs/adapters/react-query): `@trpc/react-query` provides a thin wrapper around react-query. It is required as a peer dependency as an idiomatic way to handle client-side caching in React applications.
-- [Zod](https://github.com/colinhacks/zod): We will use Zod for input validation to ensure that our backend only processes requests that fit our API. You can use other validation libraries like [Yup](https://github.com/jquense/yup), [Superstruct](https://github.com/ianstormtaylor/superstruct), [io-ts](https://github.com/gcanti/io-ts) if you prefer.
+The Next.js integration is actually a combination of our [React Query Integration](/docs/reactjs/introduction) and some Next.js specific integrations.
 
 ### 2. Enable strict mode
 
@@ -96,9 +87,10 @@ If strict mode is too harsh, you'll at least want to enable `strictNullChecks`:
 
 ### 3. Create a tRPC router
 
-Initialize your tRPC backend using the `initTRPC` function and create your first router. We're going to make a simple "hello world" router and procedure here - but be sure to browse the rest of the docs for information about creating more complex APIs.
+Initialize your tRPC backend in `src/server/trpc.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer back to the [quickstart guide](/docs/quickstart) and the [Backend usage docs](/docs/server/introduction)
 
-<details><summary>View sample backend</summary>
+<details>
+<summary>View sample backend</summary>
 
 ```ts title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -160,7 +152,7 @@ The backend above is using the [recommended file structure](#recommended-file-st
 
 ### 4. Create tRPC hooks
 
-Create a set of strongly-typed hooks using your API's type signature.
+use the `createTRPCNext` function to create a set of strongly-typed hooks from your API's type signature.
 
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
@@ -194,12 +186,15 @@ export const trpc = createTRPCNext<AppRouter>({
            * @link https://trpc.io/docs/ssr
            **/
           url: `${getBaseUrl()}/api/trpc`,
+
+          // You can pass any HTTP headers you wish here
+          async headers() {
+            return {
+              authorization: getAuthCookie(),
+            };
+          },
         }),
       ],
-      /**
-       * @link https://tanstack.com/query/v4/docs/reference/QueryClient
-       **/
-      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
   /**
@@ -210,10 +205,12 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 :::note
-`createTRPCNext` does not work with interop mode. If you are migrating from v9 using interop, keep using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
 :::
 
 ### 5. Configure `_app.tsx`
+
+Wrap your root app page in the `trpc.withTRPC` HOC, similar to this:
 
 ```tsx title='pages/_app.tsx'
 import type { AppType } from 'next/app';
@@ -227,6 +224,10 @@ export default trpc.withTRPC(MyApp);
 ```
 
 ### 6. Make an API request
+
+You're all set!
+
+You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](/docs/reactjs/introduction)
 
 ```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
@@ -261,7 +262,7 @@ The `config`-argument is a function that returns an object that configures the t
 
 ### `unstable_overrides`: (default: `undefined`)
 
-Configure [overrides for React Query's hooks](../reactjs/useContext.mdx#invalidate-full-cache-on-every-mutation).
+Configure [overrides for React Query's hooks](/docs/reactjs/usecontext#invalidate-full-cache-on-every-mutation).
 
 ### `ssr`-boolean (default: `false`)
 
@@ -302,4 +303,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find usual information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/usemutation) now that you're using `@trpc/react-query`.
+You can also find information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/usemutation) now that you're using `@trpc/react-query`.

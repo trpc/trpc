@@ -1,0 +1,83 @@
+---
+id: setup
+title: Set up a tRPC Client
+sidebar_label: Setup
+slug: /client/setup
+---
+
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+### 1. Install the tRPC Client library
+
+Use your preferred package manager to install the `@trpc/client` library, and also install `@trpc/server` which contains some required types.
+
+<Tabs>
+  <TabItem value="npm" label="npm" default>
+
+```bash
+npm install @trpc/client @trpc/server
+```
+
+  </TabItem>
+
+  <TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @trpc/client @trpc/server
+```
+
+  </TabItem>
+
+  <TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @trpc/client @trpc/server
+```
+
+  </TabItem>
+</Tabs>
+
+### 2. Import your App Router
+
+import ImportAppRouter from '../partials/_import-approuter.mdx';
+
+<ImportAppRouter />
+
+### 3. Initialize the tRPC client
+
+Create a tRPC client with the `createTRPCProxyClient` method, and add a `links` array with a [terminating link](./links/index.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](./links/index.md).
+
+```ts title='client.ts'
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../path/to/server/trpc';
+
+const client = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+
+      // You can pass any HTTP headers you wish here
+      async headers() {
+        return {
+          authorization: getAuthCookie(),
+        };
+      },
+    }),
+  ],
+});
+```
+
+### 4. Use the tRPC Client
+
+Under the hood this creates a typed [JavaScript Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) which allows you to interact with your tRPC API in a fully type-safe way:
+
+```ts title='client.ts'
+const bilbo = await client.getUser.query('id_bilbo');
+// => { id: 'id_bilbo', name: 'Bilbo' };
+
+const frodo = await client.createUser.mutate({ name: 'Frodo' });
+// => { id: 'id_frodo', name: 'Frodo' };
+```
+
+You're all set!
