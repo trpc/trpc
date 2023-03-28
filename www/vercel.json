@@ -6,8 +6,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/aborting-procedure-calls",
-      "destination": "/docs/client/aborting-procedure-calls",
+      "source": "/server/api-handler",
+      "destination": "/server/adapters/intro",
       "permanent": true
     },
     {
