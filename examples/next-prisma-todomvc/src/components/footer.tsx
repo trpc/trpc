@@ -32,7 +32,7 @@ export function InfoFooter(props: { filter: string; locales: string[] }) {
               locale={changeTo}
               className={changeTo === i18n.language ? 'selected' : ''}
             >
-              <button>{changeTo}</button>
+              {changeTo}
             </Link>
           </li>
         ))}
