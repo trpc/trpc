@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  e2e-old-nodes:
+  e2e-old-nodes-node-16:
     services:
       postgres:
         image: postgres
@@ -22,7 +22,7 @@ jobs:
       matrix:
         dir: [.interop/next-prisma-starter]
         # start example with:
-        node-start: ['14.x', '16.x']
+        node-start: ['16.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
@@ -32,6 +32,77 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter ./examples/${{ matrix.dir }}  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Install playwright???
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-start }}
+
+      - run: node -v
+
+      # Run test-dev & test-start separately so ports don't clash
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+      - name: Run test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+
+  e2e-old-nodes-node-14:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        dir: [.interop/next-prisma-starter]
+        # start example with:
+        node-start: ['14.x']
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v2.2.4
+        version: 7
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
