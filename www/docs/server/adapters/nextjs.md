@@ -100,8 +100,7 @@ export default async function handler(
 
 If you're trying out the Next.js App Router and want to use [route handlers](https://beta.nextjs.org/docs/routing/route-handlers), you can do so by using the [fetch](fetch) adapter, as they build on web standard Request and Response objects:
 
-```ts
-// app/api/trpc/[trpc]/route.ts
+```ts title='app/api/trpc/[trpc]/route.ts'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from '~/server/api/router';
 
