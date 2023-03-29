@@ -1,9 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AnyRouter, inferRouterContext } from '../../core';
-import {
-  HTTPBaseHandlerOptions,
-  HTTPRequest,
-} from '../../http/internals/types';
+import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
 

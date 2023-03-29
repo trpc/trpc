@@ -104,16 +104,6 @@
       "require": "./dist/subscription.js",
       "default": "./dist/subscription.js"
     },
-    "./transformer": {
-      "import": "./dist/transformer.mjs",
-      "require": "./dist/transformer.js",
-      "default": "./dist/transformer.js"
-    },
-    "./internals": {
-      "import": "./dist/internals/index.mjs",
-      "require": "./dist/internals/index.js",
-      "default": "./dist/internals/index.js"
-    },
     "./shared": {
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
