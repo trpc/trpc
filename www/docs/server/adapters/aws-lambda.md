@@ -1,7 +1,7 @@
 ---
 id: aws-lambda
-title: Usage with AWS Lambda through the API Gateway
-sidebar_label: AWS Lambda
+title: AWS Lambda + API Gateway Adapter
+sidebar_label: AWS Lambda + API Gateway
 slug: /server/adapters/aws-lambda
 ---
 
@@ -15,14 +15,12 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
   <thead>
     <tr>
       <th>Description</th>
-      <th>URL</th>
       <th>Links</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>API Gateway with NodeJS client.</td>
-      <td><em>n/a</em></td>
       <td>
         <ul>
           <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway">Source</a></li>
