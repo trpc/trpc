@@ -62,7 +62,7 @@ function assertIsJSONRPC2OrUndefined(
     throw new Error('Must be JSONRPC 2.0');
   }
 }
-function parseMessage(
+export function parseMessage(
   obj: unknown,
   transformer: CombinedDataTransformer,
 ): TRPCClientOutgoingMessage {

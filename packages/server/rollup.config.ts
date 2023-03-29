@@ -15,6 +15,8 @@ export const input = [
   'src/rpc/index.ts',
   'src/observable/index.ts',
   'src/subscription.ts',
+  'src/transformer.ts',
+  'src/internals/index.ts',
   'src/shared/index.ts',
 ];
 
