@@ -1,0 +1,53 @@
+{
+  "name": "@trpc/svelte-query",
+  "version": "10.18.0",
+  "description": "tRPC Svelte lib",
+  "author": "Aponia",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/svelte-query"
+  },
+  "scripts": {
+    "build": "tsup",
+    "format": "prettier --write src",
+    "lint": "eslint src",
+    "prepublish": "rimraf dist && npm run build"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@tanstack/svelte-query": "4.27.0",
+    "@trpc/client": "^10.18.0",
+    "@trpc/server": "^10.18.0",
+    "svelte": "^3.57.0"
+  },
+  "dependencies": {
+    "@tanstack/svelte-query": "4.27.0",
+    "@trpc/client": "^10.18.0",
+    "@trpc/server": "^10.18.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
+    "@typescript-eslint/parser": "^5.56.0",
+    "eslint": "^8.36.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-import": "^0.13.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "prettier": "^2.8.6",
+    "rimraf": "^4.4.1",
+    "svelte": "^3.57.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.2"
+  }
+}
