@@ -1,9 +1,6 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server';
-
-// Add polyfill for fetch for Node < 18. (Stackblitz runs Node 16 and we want embed to work)
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-global.fetch = require('undici').fetch;
+import './polyfill';
 
 const trpc = createTRPCProxyClient<AppRouter>({
   links: [
