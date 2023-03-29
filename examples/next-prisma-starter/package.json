@@ -6,7 +6,7 @@
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
     "db-seed": "prisma db seed",
-    "db-reset": "prisma migrate-dev reset",
+    "db-reset": "prisma migrate dev reset",
     "dx:next": "run-s migrate-dev db-seed && next dev",
     "dx:prisma-studio": "pnpm prisma-studio",
     "dx": "run-p dx:* --print-label",
