@@ -11,5 +11,6 @@ export default function rollup(): RollupOptions[] {
   return buildConfig({
     input,
     packageDir: __dirname,
+    target: 'es5',
   });
 }

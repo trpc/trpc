@@ -1,4 +1,5 @@
 import nodeResolve from '@rollup/plugin-node-resolve';
+import { JscTarget } from '@swc/core/types';
 import path from 'path';
 import { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
@@ -14,13 +15,19 @@ const extensions = ['.ts', '.tsx'];
 type Options = {
   input: string[];
   packageDir: string;
+  target?: JscTarget;
 };
 
-export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
+export function buildConfig({
+  input,
+  packageDir,
+  target = 'es2020',
+}: Options): RollupOptions[] {
   const resolvedInput = input.map((file) => path.resolve(packageDir, file));
   const options: Options = {
     input: resolvedInput,
     packageDir,
+    target,
   };
 
   return [types(options), lib(options)];
@@ -53,7 +60,7 @@ function types({ input, packageDir }: Options): RollupOptions {
   };
 }
 
-function lib({ input, packageDir }: Options): RollupOptions {
+function lib({ input, packageDir, target }: Options): RollupOptions {
   return {
     input,
     output: [
@@ -81,7 +88,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
       swc({
         tsconfig: false,
         jsc: {
-          target: 'es2020',
+          target,
           transform: {
             react: {
               useBuiltins: true,
