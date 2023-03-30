@@ -17,7 +17,7 @@
     "sponsors-sync:push": "tsx ./src/components/sponsors/script.push.ts",
     "sponsors-sync": "run-s sponsors-sync:*",
     "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../.gitignore --report-unused-disable-directives src"
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../.gitignore --report-unused-disable-directives src"
   },
   "dependencies": {
     "@algolia/client-search": "^4.9.1",

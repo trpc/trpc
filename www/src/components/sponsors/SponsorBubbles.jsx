@@ -74,9 +74,9 @@ export function SponsorBubbles() {
                         >
                           <div
                             key={`circle-${i}`}
-                            className={`absolute bg-no-repeat bg-center bg-contain rounded-full
-                                    w-[95%] h-[95%] dark:w-[100.5%] dark:h-[100.5%]
-                                    left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                            className={`absolute left-1/2 top-1/2 h-[95%] w-[95%]
+                                    -translate-x-1/2 -translate-y-1/2 rounded-full bg-contain
+                                    bg-center bg-no-repeat dark:h-[100.5%] dark:w-[100.5%]
                                     `}
                             style={{
                               backgroundImage: `url(${circle.data.imgSrc})`,

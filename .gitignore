@@ -4,6 +4,7 @@ dist
 .next
 .turbo
 .vercel
+.eslintcache
 
 node_modules
 package-lock.json

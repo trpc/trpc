@@ -8,6 +8,7 @@ const config = {
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
+    'plugin:tailwindcss/recommended',
     'prettier',
   ],
   parserOptions: {
@@ -67,6 +68,10 @@ const config = {
         },
       },
     ],
+    'tailwindcss/classnames-order': 'error',
+    'tailwindcss/enforces-negative-arbitrary-values': 'error',
+    'tailwindcss/enforces-shorthand': 'error',
+    'tailwindcss/no-arbitrary-value': 'warn',
   },
   overrides: [
     {
