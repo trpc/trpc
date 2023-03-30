@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@8.0.0",
+  "packageManager": "pnpm@8.1.0",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
