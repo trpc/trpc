@@ -77,7 +77,7 @@
     "oauth": "^0.10.0",
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
-    "tailwindcss": "^3.1.6",
+    "tailwindcss": "^3.3.0",
     "tailwindcss-elevation": "^2.0.0",
     "tsx": "^3.12.3",
     "typedoc": "^0.23.26",
