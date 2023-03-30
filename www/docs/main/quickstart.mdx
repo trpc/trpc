@@ -398,7 +398,7 @@ server.listen(3000);
 
 ## Using your new backend on the client
 
-Let's now move to your frontend code and embrace the power of end-to-end typesafety. When we import the `AppRouter` type for the client to use, we have achieved full typesafety for our system without leaking any implementation details to the client.
+Let's now move to the client-side code and embrace the power of end-to-end typesafety. When we import the `AppRouter` type for the client to use, we have achieved full typesafety for our system without leaking any implementation details to the client.
 
 ### 1. Setup the tRPC Client
 
@@ -414,8 +414,10 @@ Let's now move to your frontend code and embrace the power of end-to-end typesaf
 // ---cut---
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
+//     👆 **type-only** import
 
-// Notice the <AppRouter> generic here.
+// Pass AppRouter as generic here. 👇 This lets the `trpc` object know
+// what procedures are available on the server and their input/output types.
 const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
@@ -424,6 +426,8 @@ const trpc = createTRPCProxyClient<AppRouter>({
   ],
 });
 ```
+
+Links in tRPC is similar to links in GraphQL, they let us control how the data flow **before** it's sent to the server. In the example above, we just pass the [httpBatchLink](/docs/links/httpbatchlink) which just sends the data to the server as batched HTTP requests. For more in-depth usage of links, see the [links documentation](/docs/links).
 
 ### 2. Querying & mutating
 
