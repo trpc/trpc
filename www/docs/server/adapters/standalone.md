@@ -1,9 +1,15 @@
 ---
 id: standalone
-title: Standalone Usage
+title: Standalone Adapter
 sidebar_label: Standalone
 slug: /server/adapters/standalone
 ---
+
+tRPC's Standalone Adapter is the simplest way to stand up your application. It's ideal for local development, and for server-based production environments. In essence it's just a wrapper around the standard [Node.js HTTP Server](https://nodejs.org/api/http.html) with the normal options related to tRPC.
+
+If you have an existing API deployment like [Express](express), [Fastify](fastify), or [Next.js](nextjs), which you want to integrate tRPC into, you should have a look at their respective adapters. Likewise if you have a preference to host on serverless or edge compute, we have adapters like [AWS Lambda](aws-lambda) and [Fetch](fetch) which may fit your needs.
+
+It's also not uncommon, where the deployed adapter is hard to run on local machines, to have 2 entry-points in your application. You could use the Standalone Adapter for local development, and a different adapter when deployed.
 
 ## Example app
 
@@ -86,7 +92,7 @@ createHTTPServer({
 }).listen(2022);
 ```
 
-## Handling CORS & Options
+## Handling CORS & OPTIONS
 
 By default the standalone server will not respond to HTTP OPTIONS requests, or set any CORS headers.
 
