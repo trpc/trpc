@@ -74,6 +74,48 @@ const server = createHTTPServer({
 server.listen(3000);
 ```
 
+## Vocabulary
+
+Below are some commonly used terms in the tRPC ecosystem. We'll be using these terms throughout the docs, so it's good to get familiar with them and how they relate to eachother.
+
+<table>
+  <thead>
+    <tr>
+      <th>Term</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b className="text-green-500">Procedure</b> <a href="/docs/server/procedures">↗</a></td>
+      <td>API endpoint - can be a <b className="text-amber-500">query</b> or <b className="text-amber-500">mutation</b></td>
+    </tr>
+    <tr>
+      <td><b className="text-amber-500">Query</b></td>
+      <td>A <b className="text-green-500">procedure</b> that gets some data</td>
+    </tr>
+    <tr>
+      <td><b className="text-amber-500">Mutation</b></td>
+      <td>A <b className="text-green-500">procedure</b> that creates/changes/deletes (i.e. mutates) some data</td>
+    </tr>
+    <tr>
+      <td><b className="text-blue-500">Router</b> <a href="/docs/server/routers">↗</a></td>
+      <td>A collection of <b className="text-green-500">procedures</b> under a shared namespace. Can be nested with other <b className="text-blue-500">routers</b></td>
+    </tr>
+    <tr>
+      <td><b className="text-pink-500">Context</b> <a href="/docs/server/context">↗</a></td>
+      <td>Stuff accessible to all <b className="text-green-500">procedures</b> (e.g. session state, db connection)</td>
+    </tr>
+    <tr>
+      <td><b className="text-indigo-400">Middleware</b> <a href="/docs/server/middlewares">↗</a></td>
+      <td>Functions executed before and after <b className="text-green-500">procedures</b>, can modify <b className="text-pink-500">context</b></td>
+    </tr>
+  </tbody>
+</table>
+
+The last two we won't be touching on in this guide, but you can read more about them in the [middlewares](/docs/server/middlewares) and [context](/docs/server/context) docs.
+
+
 ## Installation
 
 tRPC is broken up into several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/reactjs/setup) and [usage with Next.js](/docs/nextjs/setup).
