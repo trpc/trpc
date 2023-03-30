@@ -10,7 +10,7 @@ export const Preview = () => {
           muted
           playsInline
           width="1200px"
-          className="border-6 rounded-lg border-[#111111] bg-[#111111] shadow-xl md:hidden"
+          className="rounded-lg border-4 border-[#111111] bg-[#111111] shadow-xl md:hidden"
           poster="https://assets.trpc.io/www/v10/preview-dark.png"
         >
           <source
