@@ -37,12 +37,12 @@ async function main() {
         rootPkgJson.pnpm.overrides[
           `${pkgJson.name}>@prisma/client`
         ] = `https://registry.npmjs.com/@prisma/client/-/client-${version}.tgz?id=${encodeURIComponent(
-          pkgJson.name,
+          pkgJson.name.replace(/\/|@/g, ''), // remove @ and / before. vitest hiccups otherwise
         )}`;
         rootPkgJson.pnpm.overrides[
           `${pkgJson.name}>prisma`
         ] = `https://registry.npmjs.com/prisma/-/prisma-${version}.tgz?id=${encodeURIComponent(
-          pkgJson.name,
+          pkgJson.name.replace(/\//g, ''),
         )}`;
       }
     }),
