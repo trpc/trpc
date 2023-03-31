@@ -263,7 +263,7 @@ export default function IndexPage() {
                 {messages?.map((item) => (
                   <article key={item.id} className=" text-gray-50">
                     <header className="flex space-x-2 text-sm">
-                      <h3 className="text-md">
+                      <h3 className="text-base">
                         {item.source === 'RAW' ? (
                           item.name
                         ) : (

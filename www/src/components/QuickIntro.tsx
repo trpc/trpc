@@ -26,7 +26,7 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
       className="flex flex-col justify-between gap-12 lg:flex-row"
     >
       <div
-        className={clsx('order-1 flex-1 lg:order-[0]', {
+        className={clsx('order-1 flex-1 lg:order-none', {
           'lg:order-1': rightSide,
         })}
       >
@@ -34,8 +34,8 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
       </div>
       <div className="flex-1">
         <div className="flex flex-col justify-center gap-3 lg:flex-row lg:items-center lg:justify-start">
-          <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary dark:bg-primary-dark">
-            <p className="font-bold text-white dark:text-[#313131]">{num}</p>
+          <div className="bg-primary dark:bg-primary-dark grid h-6 w-6 shrink-0 place-items-center rounded-full">
+            <p className="font-bold text-white dark:text-zinc-800">{num}</p>
           </div>
           <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
         </div>
