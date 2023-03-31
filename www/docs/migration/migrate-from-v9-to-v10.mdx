@@ -173,14 +173,14 @@ type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
-See [Inferring types](infer-types) for more.
+See [Inferring types](/docs/server/infer-types) for more.
 
 </details>
 
 <details>
   <summary>Middlewares</summary>
 
-Middlewares are now reusable and can be chained, see the [middleware](middlewares) docs for more.
+Middlewares are now reusable and can be chained, see the [middleware](/docs/server/middlewares) docs for more.
 
 ```ts
 // v9
@@ -470,7 +470,7 @@ you may need to take note!
 :::
 
 To allow us to make room for some more advanced features like [invalidation across
-whole routers](useContext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
+whole routers](/docs/reactjs/usecontext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
@@ -573,7 +573,7 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### `queryClient` is no longer exposed through tRPC context
 
-tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](useContext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](/docs/reactjs/usecontext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
 
 ```tsx
 import { useQueryClient } from '@tanstack/react-query';
@@ -586,4 +586,4 @@ const MyComponent = () => {
 
 ### Migrate custom error formatters
 
-You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](error-formatting) for more.
+You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](/docs/server/error-formatting) for more.

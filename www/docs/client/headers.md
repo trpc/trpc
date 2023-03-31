@@ -1,8 +1,8 @@
 ---
-id: header
+id: headers
 title: Custom header
 sidebar_label: Create Custom Header
-slug: /header
+slug: /client/headers
 ---
 
 The headers option can be customized in the config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.md).

@@ -2,7 +2,7 @@
 id: useContext
 title: useContext
 sidebar_label: useContext()
-slug: /useContext
+slug: /reactjs/usecontext
 ---
 
 `useContext` is a hook that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`queryClient`](https://tanstack.com/query/v4/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useContext` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
@@ -87,6 +87,7 @@ These are the helpers you'll get access to via `useContext`. The table below wil
 | `prefetch`          | [`queryClient.prefetchQuery`](https://tanstack.com/query/v4/docs/guides/prefetching)                                             |
 | `fetchInfinite`     | [`queryClient.fetchInfiniteQuery`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery)       |
 | `prefetchInfinite`  | [`queryClient.prefetchInfiniteQuery`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery) |
+| `ensureData`        | [`queryClient.ensureData`](https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientensurequerydata)            |
 | `invalidate`        | [`queryClient.invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation)                                  |
 | `refetch`           | [`queryClient.refetchQueries`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientrefetchqueries)               |
 | `cancel`            | [`queryClient.cancelQuery`](https://tanstack.com/query/v4/docs/guides/query-cancellation)                                        |
@@ -244,7 +245,7 @@ function MyComponent() {
 ### Invalidate full cache on every mutation
 
 :::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](faq#unstable).
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
 :::
 
 Keeping track of exactly what queries a mutation should invalidate is hard, therefore, it can be a pragmatic solution to invalidate the _full cache_ as a side-effect on any mutation. Since we have request batching, this invalidation will simply refetch all queries on the page you're looking at in one single request.

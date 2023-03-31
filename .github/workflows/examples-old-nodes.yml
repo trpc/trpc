@@ -22,7 +22,7 @@ jobs:
       matrix:
         dir: [.interop/next-prisma-starter]
         # start example with:
-        node-start: ['14.x', '16.x']
+        node-start: ['16.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3

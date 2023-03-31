@@ -2,13 +2,13 @@
 id: ssg-helpers
 title: SSG Helpers
 sidebar_label: SSG Helpers
-slug: /ssg-helpers
+slug: /nextjs/ssg-helpers
 ---
 
 `createProxySSGHelpers` provides you with a set of helper functions that you can use to prefetch queries on the server.
 
-Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](server-side-calls).
-That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the SSG helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](context) in that scenario.
+Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](/docs/server/server-side-calls).
+That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the SSG helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
 ```ts
 import { createProxySSGHelpers } from '@trpc/react-query/ssg';

@@ -1,7 +1,8 @@
 /** @typedef  {import("@ianvs/prettier-plugin-sort-imports").PluginConfig} SortImportsConfig*/
 /** @typedef  {import("prettier").Config} PrettierConfig*/
+/** @typedef  {{ tailwindConfig: string }} TailwindConfig*/
 
-/** @type { PrettierConfig | SortImportsConfig } */
+/** @type { PrettierConfig | SortImportsConfig | TailwindConfig } */
 const config = {
   printWidth: 80,
   trailingComma: 'all',
@@ -9,13 +10,14 @@ const config = {
   singleQuote: true,
   importOrder: ['___', '__', '<THIRD_PARTY_MODULES>', '^[./]'],
   importOrderSortSpecifiers: true,
-  plugins: ['@ianvs/prettier-plugin-sort-imports'],
-  importOrderSeparation: false,
-  importOrderSortSpecifiers: true,
-  importOrderBuiltinModulesToTop: true,
-  importOrderParserPlugins: ['typescript', 'jsx', 'decorators-legacy'],
-  importOrderMergeDuplicateImports: true,
-  importOrderCombineTypeAndValueImports: true,
+  tailwindConfig: './www/tailwind.config.ts',
+  plugins: [
+    require.resolve('@ianvs/prettier-plugin-sort-imports'),
+    /**
+     * Tailwind plugin must come last!
+     */
+    require.resolve('prettier-plugin-tailwindcss'),
+  ],
 };
 
 module.exports = config;

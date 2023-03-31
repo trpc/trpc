@@ -1,8 +1,8 @@
 ---
 id: fastify
-title: Usage with Fastify
+title: Fastify Adapter
 sidebar_label: Fastify
-slug: /fastify
+slug: /server/adapters/fastify
 ---
 
 ## Example app
@@ -46,7 +46,7 @@ yarn add @trpc/server fastify zod
 
 ### Create the router
 
-First of all you need a [router](router) to handle your queries, mutations and subscriptions.
+First of all you need a [router](/docs/server/routers) to handle your queries, mutations and subscriptions.
 
 A sample router is given below, save it in a file named `router.ts`.
 
@@ -92,11 +92,11 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/server/merging-routers) into a single root `appRouter`.
 
 ### Create the context
 
-Then you need a [context](context) that will be created for each request.
+Then you need a [context](/docs/server/context) that will be created for each request.
 
 A sample context is given below, save it in a file named `context.ts`:
 
@@ -156,7 +156,7 @@ Your endpoints are now available via HTTP!
 
 ## How to enable subscriptions (WebSocket)
 
-The Fastify adapter supports [subscriptions](subscriptions) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
+The Fastify adapter supports [subscriptions](/docs/subscriptions) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
 
 ### Install dependencies
 
