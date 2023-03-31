@@ -2,7 +2,7 @@
 id: procedures
 title: Define Procedures
 sidebar_label: Define Procedures
-slug: /procedures
+slug: /server/procedures
 ---
 
 Procedures in tRPC are very flexible primitives to create backend functions; they use a builder pattern which means you can create reusable base procedures for different parts of your backend application.
@@ -135,6 +135,23 @@ export const appRouter = router({
         greeting: `hello ${input.text}`,
       };
     }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [scale-ts](https://github.com/paritytech/scale-ts)
+
+```tsx
+import { initTRPC } from '@trpc/server';
+import * as $ from 'scale-ts';
+
+export const t = initTRPC.create();
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input($.object($.field('text', $.str)))
+    .query(({ input }) => ({ greeting: `hello ${input.text}` })),
 });
 
 export type AppRouter = typeof appRouter;

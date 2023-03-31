@@ -1,20 +1,20 @@
 {
   "name": "@examples/lambda-api-gateway",
   "private": true,
-  "version": "10.14.0",
+  "version": "10.18.0",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "type-check": "tsc",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "^10.18.0",
+    "@trpc/server": "^10.18.0",
     "tsx": "^3.12.3",
     "zod": "^3.0.0"
   },

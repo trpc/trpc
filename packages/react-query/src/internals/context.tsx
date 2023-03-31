@@ -57,6 +57,7 @@ export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
    */
   ssrState?: SSRState;
   /**
+   * @deprecated pass abortOnUnmount to `createTRPCReact` instead
    * Abort loading query calls when unmounting a component - usually when navigating to a new page
    * @default false
    */
@@ -126,6 +127,7 @@ export interface TRPCContextState<
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
   ) => Promise<TOutput>;
+
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
@@ -142,6 +144,7 @@ export interface TRPCContextState<
       TOutput
     >,
   ) => Promise<InfiniteData<TOutput>>;
+
   /**
    * @link https://react-query.tanstack.com/guides/prefetching
    */
@@ -173,6 +176,19 @@ export interface TRPCContextState<
   ) => Promise<void>;
 
   /**
+   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientensurequerydata
+   */
+  ensureQueryData: <
+    TPath extends keyof TRouter['_def']['queries'] & string,
+    TProcedure extends TRouter['_def']['queries'][TPath],
+    TOutput extends inferTransformedProcedureOutput<TProcedure>,
+    TInput extends inferProcedureInput<TProcedure>,
+  >(
+    pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
+    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
+  ) => Promise<TOutput>;
+
+  /**
    * @link https://react-query.tanstack.com/guides/query-invalidation
    */
   invalidateQueries: <
@@ -200,6 +216,7 @@ export interface TRPCContextState<
     filters?: RefetchQueryFilters,
     options?: RefetchOptions,
   ): Promise<void>;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientrefetchqueries
    */
@@ -218,6 +235,7 @@ export interface TRPCContextState<
     pathAndInput: [TPath, TInput?],
     options?: CancelOptions,
   ) => Promise<void>;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
@@ -232,6 +250,7 @@ export interface TRPCContextState<
     updater: Updater<TOutput | undefined, TOutput | undefined>,
     options?: SetDataOptions,
   ) => void;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */
@@ -244,6 +263,7 @@ export interface TRPCContextState<
   >(
     pathAndInput: [TPath, TInput?],
   ) => TOutput | undefined;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientsetquerydata
    */
@@ -261,6 +281,7 @@ export interface TRPCContextState<
     >,
     options?: SetDataOptions,
   ) => void;
+
   /**
    * @link https://react-query.tanstack.com/reference/QueryClient#queryclientgetquerydata
    */

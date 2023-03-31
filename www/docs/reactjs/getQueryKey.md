@@ -2,7 +2,7 @@
 id: getQueryKey
 title: getQueryKey
 sidebar_label: getQueryKey()
-slug: /getQueryKey
+slug: /reactjs/getquerykey
 ---
 
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
@@ -30,6 +30,12 @@ type QueryType = "query" | "infinite" | "any";
 // for useInfiniteQuery ────┘            │
 // will match all ───────────────────────┘
 ```
+
+:::note
+
+The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching. See [TanStack/query#5111 (comment)](https://github.com/TanStack/query/issues/5111#issuecomment-1464864361) for more context.
+
+:::
 
 ```tsx
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';

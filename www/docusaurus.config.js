@@ -77,7 +77,7 @@ module.exports = {
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/nextjs',
+          to: 'docs/nextjs/introduction',
           label: 'Using Next.js',
         },
         {
@@ -116,7 +116,7 @@ module.exports = {
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/nextjs',
+              to: 'docs/nextjs/introduction',
             },
           ],
         },

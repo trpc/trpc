@@ -2,12 +2,12 @@
 id: useInfiniteQuery
 title: useInfiniteQuery
 sidebar_label: useInfiniteQuery()
-slug: /useInfiniteQuery
+slug: /reactjs/useinfinitequery
 ---
 
 :::info
 
-- Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc)
+- Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
 - For more details on infinite queries read the [react-query docs](https://react-query.tanstack.com/reference/useInfiniteQuery)
 - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
 

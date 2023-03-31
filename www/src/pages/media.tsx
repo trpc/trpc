@@ -9,9 +9,9 @@ const Asset = (props: {
   imgClassName: string;
 }) => {
   return (
-    <div className="flex flex-col relative">
+    <div className="relative flex flex-col">
       <img
-        className={`self-center flex-grow ${props.imgClassName}`}
+        className={`grow self-center ${props.imgClassName}`}
         src={props.src}
       />
       <div className="mt-2">
@@ -29,9 +29,9 @@ const InfoCard = (props: {
 }) => {
   return (
     <div
-      className={`text-white relative w-full h-28 rounded-lg ${props.className}`}
+      className={`relative h-28 w-full rounded-lg text-white ${props.className}`}
     >
-      <div className="absolute bottom-0 m-2 text-xl flex w-full">
+      <div className="absolute bottom-0 m-2 flex w-full text-xl">
         <p>{props.title}</p>
         <button
           onClick={() => void navigator.clipboard.writeText(props.value)}
@@ -48,22 +48,22 @@ const InfoCard = (props: {
 };
 const PressContent = () => {
   return (
-    <main className="container px-6 mx-auto">
-      <h1 className="m-4 text-2xl font-extrabold leading-tight tracking-tight text-center whitespace-pre-wrap md:text-3xl lg:text-4xl xl:text-5xl">
+    <main className="container mx-auto px-6">
+      <h1 className="m-4 whitespace-pre-wrap text-center text-2xl font-extrabold leading-tight tracking-tight md:text-3xl lg:text-4xl xl:text-5xl">
         Media Assets
       </h1>
 
       <div className="sm:flex sm:space-x-4">
-        <div className="sm:w-1/3 lg:w-1/4 -space-y-8">
+        <div className="-space-y-8 sm:w-1/3 lg:w-1/4">
           <InfoCard
-            className="bg-primary z-10"
+            className="z-10 bg-primary"
             title="Primary"
             value="#398ccb"
           />
           <InfoCard className="bg-black " title="Font" value="Inter" />
         </div>
 
-        <div className="grid grid-cols-3 gap-4 my-4 sm:mt-0 sm:w-2/3 lg:w-3/4">
+        <div className="my-4 grid grid-cols-3 gap-4 sm:mt-0 sm:w-2/3 lg:w-3/4">
           <Asset
             title="Logo"
             description="Please use this in most circumstances."
