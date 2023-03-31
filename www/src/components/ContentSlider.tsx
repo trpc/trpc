@@ -11,7 +11,7 @@ type Props = {
 
 export const ContentSlider = ({ cards }: Props) => {
   return (
-    <div className="px-4 no-scrollbar grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 snap-x snap-mandatory overflow-x-auto gap-8">
+    <div className="grid snap-x snap-mandatory gap-8 overflow-x-auto px-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
       {cards.map((card) => {
         return (
           <a
@@ -19,13 +19,11 @@ export const ContentSlider = ({ cards }: Props) => {
             target="_blank"
             rel="noopener noreferrer"
             key={card.title}
-            className="p-6 flex flex-none justify-between flex-col snap-center snap-always border-2 rounded"
+            className="flex flex-none snap-center snap-always flex-col justify-between rounded border-2 p-6"
           >
             <p className="text-lg font-bold dark:text-white">{card.title}</p>
             <div>
-              <p className="mt-4 mb-4 dark:text-white">
-                {card.people.join(', ')}
-              </p>
+              <p className="my-4 dark:text-white">{card.people.join(', ')}</p>
               <p className="text-zinc-300">{card.time}</p>
             </div>
           </a>

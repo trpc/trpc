@@ -52,12 +52,12 @@ const features = [
 
 export const Features: FC = () => {
   return (
-    <div className="grid grid-cols-1 gap-6 mx-auto lg:grid-cols-3">
+    <div className="mx-auto grid grid-cols-1 gap-6 lg:grid-cols-3">
       {features.map((feature) => {
         return (
           <div key={feature.title}>
             <h2
-              className={`${feature.color} mb-3 rounded-xl w-12 h-12 grid place-items-center`}
+              className={`${feature.color} mb-3 grid h-12 w-12 place-items-center rounded-xl`}
             >
               {feature.icon}
             </h2>

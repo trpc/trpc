@@ -573,7 +573,7 @@ test('merges optional with required property', async () => {
       .query(() => 'hi'),
   });
 
-  type Input = inferProcedureInput<typeof router['proc']>;
+  type Input = inferProcedureInput<(typeof router)['proc']>;
   //    ^?
   expectTypeOf<Input>().toEqualTypeOf<{ id: string }>();
 

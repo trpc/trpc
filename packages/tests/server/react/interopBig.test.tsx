@@ -20,7 +20,7 @@ const ctx = konn()
 
     const opts = routerToServerAndClientNew(appRouter, {});
     const queryClient = createQueryClient();
-    const react = createReactQueryHooks<typeof opts['router']>();
+    const react = createReactQueryHooks<(typeof opts)['router']>();
     const client = opts.client;
 
     return {
