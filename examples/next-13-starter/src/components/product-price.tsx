@@ -25,14 +25,12 @@ function formatDiscount(
     : undefined;
 }
 
-export const ProductPrice = ({
-  price,
-  discount: discountRaw,
-}: {
+export const ProductPrice = (props: {
   price: Dinero<number>;
   discount: Product['discount'];
 }) => {
-  const discount = formatDiscount(price, discountRaw);
+  const discount = formatDiscount(props.price, props.discount);
+  const price = props.price;
 
   if (discount) {
     if (discount?.expires && typeof discount.expires === 'number') {

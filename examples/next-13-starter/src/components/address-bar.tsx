@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import React, { Suspense } from 'react';
 
 function Params() {
-  const searchParams = useSearchParams()!;
+  const searchParams = useSearchParams();
 
   return searchParams.toString().length !== 0 ? (
     <div className="px-2 text-gray-500">

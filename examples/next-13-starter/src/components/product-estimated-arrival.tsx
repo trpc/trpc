@@ -1,14 +1,11 @@
 import { add, format, isTomorrow } from 'date-fns';
 
-export const ProductEstimatedArrival = ({
-  leadTime,
-  hasDeliveryTime = false,
-}: {
+export const ProductEstimatedArrival = (props: {
   leadTime: number;
   hasDeliveryTime?: boolean;
 }) => {
   const date = add(new Date(), {
-    days: leadTime,
+    days: props.leadTime,
   });
 
   return (
@@ -18,7 +15,7 @@ export const ProductEstimatedArrival = ({
         {isTomorrow(date) ? 'tomorrow, ' : null}
         {format(date, 'MMM d')}
       </strong>
-      {hasDeliveryTime ? <> by 5pm</> : null}
+      {props.hasDeliveryTime ? <> by 5pm</> : null}
     </div>
   );
 };

@@ -37,11 +37,8 @@ async function UserSpecificDetails({ productId }: { productId: string }) {
   );
 }
 
-export function Pricing({
-  product,
-}: {
-  product: RouterOutputs['products']['byId'];
-}) {
+export function Pricing(props: { product: RouterOutputs['products']['byId'] }) {
+  const { product } = props;
   return (
     <div className="space-y-4 rounded-lg bg-gray-900 p-3">
       <ProductPrice price={product.price} discount={product.discount} />

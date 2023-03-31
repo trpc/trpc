@@ -1,17 +1,14 @@
 import { toUnit, type Dinero } from 'dinero.js';
 import { CurrencySymbol } from '~/components/currency-symbol';
 
-export const ProductDeal = ({
-  price: priceRaw,
-  discount: discountRaw,
-}: {
+export const ProductDeal = (props: {
   price: Dinero<number>;
   discount: {
     amount: Dinero<number>;
   };
 }) => {
-  const discount = toUnit(discountRaw.amount);
-  const price = toUnit(priceRaw);
+  const discount = toUnit(props.discount.amount);
+  const price = toUnit(props.price);
   const percent = Math.round(100 - (discount / price) * 100);
 
   return (
@@ -21,14 +18,14 @@ export const ProductDeal = ({
       </div>
       <div className="flex">
         <div className="text-sm leading-snug text-white">
-          <CurrencySymbol dinero={discountRaw.amount} />
+          <CurrencySymbol dinero={props.discount.amount} />
         </div>
         <div className="text-lg font-bold leading-snug text-white">
           {discount}
         </div>
       </div>
       <div className="text-sm leading-snug text-gray-400 line-through">
-        <CurrencySymbol dinero={priceRaw} />
+        <CurrencySymbol dinero={props.price} />
 
         {price}
       </div>

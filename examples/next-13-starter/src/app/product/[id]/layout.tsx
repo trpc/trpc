@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import React from 'react';
 import { Boundary } from '~/components/boundary';
 import { getServerSession } from '~/server/auth';
@@ -8,12 +7,7 @@ export const metadata = {
   title: 'Streaming (Edge Runtime)',
 };
 
-export default async function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const cartCount = Number(cookies().get('_cart_count')?.value || '0');
+export default async function Layout(props: { children: React.ReactNode }) {
   const session = await getServerSession();
   const user = session?.user;
 
@@ -38,8 +32,7 @@ export default async function Layout({
         <div className="space-y-10">
           {/** @ts-expect-error Async Server Component */}
           <Header user={user} />
-
-          {children}
+          {props.children}
         </div>
       </Boundary>
     </>

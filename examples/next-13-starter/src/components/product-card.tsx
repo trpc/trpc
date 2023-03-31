@@ -9,15 +9,10 @@ import { ProductSplitPayments } from './product-split-payments';
 
 type Product = RouterOutputs['products']['byId'];
 
-export const ProductCard = ({
-  product,
-  href,
-}: {
-  product: Product;
-  href: string;
-}) => {
+export const ProductCard = (props: { product: Product; href: string }) => {
+  const { product } = props;
   return (
-    <Link href={href} className="group block">
+    <Link href={props.href} className="group block">
       <div className="space-y-2">
         <div className="relative">
           {product.isBestSeller ? (

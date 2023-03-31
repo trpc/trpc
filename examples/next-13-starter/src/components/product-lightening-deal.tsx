@@ -2,17 +2,14 @@ import { add, formatDistanceToNow } from 'date-fns';
 import { type Dinero } from 'dinero.js';
 import { ProductDeal } from './product-deal';
 
-export const ProductLighteningDeal = ({
-  price,
-  discount,
-}: {
+export const ProductLighteningDeal = (props: {
   price: Dinero<number>;
   discount: {
     amount: Dinero<number>;
     expires?: number;
   };
 }) => {
-  const date = add(new Date(), { days: discount.expires });
+  const date = add(new Date(), { days: props.discount.expires });
 
   return (
     <>
@@ -22,7 +19,7 @@ export const ProductLighteningDeal = ({
         </div>
       </div>
 
-      <ProductDeal price={price} discount={discount} />
+      <ProductDeal price={props.price} discount={props.discount} />
     </>
   );
 };
