@@ -1,8 +1,9 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const colors = require('tailwindcss/colors');
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from 'tailwindcss';
+import colors from 'tailwindcss/colors';
+
+const config: Config = {
   content: ['./src/**/*.tsx'],
   theme: {
     container: {
@@ -73,13 +74,13 @@ module.exports = {
         },
         fadeToTransparent: {
           '0%': {
-            opacity: 1,
+            opacity: '1',
           },
           '40%': {
-            opacity: 1,
+            opacity: '1',
           },
           '100%': {
-            opacity: 0,
+            opacity: '0',
           },
         },
       }),
@@ -87,3 +88,5 @@ module.exports = {
   },
   plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms')],
 };
+
+export default config;
