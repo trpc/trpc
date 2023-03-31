@@ -130,6 +130,17 @@ export function createRootHooks<
             },
             [client, queryClient],
           ),
+          ensureQueryData: useCallback(
+            (pathAndInput, opts) => {
+              return queryClient.ensureQueryData({
+                ...opts,
+                queryKey: getArrayQueryKey(pathAndInput, 'query'),
+                queryFn: () =>
+                  (client as any).query(...getClientArgs(pathAndInput, opts)),
+              });
+            },
+            [client, queryClient],
+          ),
           invalidateQueries: useCallback(
             (queryKey, filters, options) => {
               return queryClient.invalidateQueries(
@@ -260,8 +271,14 @@ export function createRootHooks<
     pathAndInput: [path: string, ...args: unknown[]],
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
+    const context = useContext();
+    if (!context) {
+      throw new Error(
+        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+      );
+    }
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
-      useContext();
+      context;
 
     if (
       typeof window === 'undefined' &&
@@ -273,8 +290,9 @@ export function createRootHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
-    // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery({
       ...ssrOpts,

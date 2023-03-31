@@ -1,8 +1,8 @@
 ---
 id: express
-title: Usage with Express
+title: Express Adapter
 sidebar_label: Express
-slug: /express
+slug: /server/adapters/express
 ---
 
 ## Example app
@@ -11,14 +11,12 @@ slug: /express
   <thead>
     <tr>
       <th>Description</th>
-      <th>URL</th>
       <th>Links</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>Express server &amp; procedure calls with Node.js.</td>
-      <td><em>n/a</em></td>
       <td>
         <ul>
           <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
@@ -68,7 +66,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/server/merging-routers) into a single root `appRouter`.
 
 ### 3. Use the Express adapter
 

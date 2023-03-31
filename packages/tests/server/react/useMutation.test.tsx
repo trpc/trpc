@@ -76,7 +76,7 @@ test('useMutation', async () => {
       return <>...</>;
     }
 
-    type TData = typeof mutation['data'];
+    type TData = (typeof mutation)['data'];
     expectTypeOf<TData>().toMatchTypeOf<'__mutationResult'>();
 
     return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;

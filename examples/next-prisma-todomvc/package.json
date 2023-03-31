@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-todomvc",
-  "version": "10.14.0",
+  "version": "10.18.0",
   "private": true,
   "scripts": {
     "generate": "prisma generate",
@@ -11,7 +11,7 @@
     "dev": "pnpm dx:next",
     "prebuild": "run-s generate migrate",
     "build": "next build",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "next start",
     "studio": "prisma studio",
     "migrate-dev": "prisma migrate dev",
@@ -22,12 +22,12 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^4.10.1",
-    "@tanstack/react-query": "^4.3.8",
-    "@trpc/client": "^10.14.0",
-    "@trpc/next": "^10.14.0",
-    "@trpc/react-query": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@prisma/client": "^4.12.0",
+    "@tanstack/react-query": "^4.18.0",
+    "@trpc/client": "^10.18.0",
+    "@trpc/next": "^10.18.0",
+    "@trpc/react-query": "^10.18.0",
+    "@trpc/server": "^10.18.0",
     "clsx": "^1.1.1",
     "next": "^13.2.1",
     "react": "^18.2.0",
@@ -44,7 +44,7 @@
     "@types/react": "^18.0.9",
     "eslint": "^8.30.0",
     "npm-run-all": "^4.1.5",
-    "prisma": "^4.10.1",
+    "prisma": "^4.12.0",
     "start-server-and-test": "^1.12.0",
     "typescript": "^4.8.3"
   },

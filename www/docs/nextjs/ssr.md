@@ -2,7 +2,7 @@
 id: ssr
 title: Server-Side Rendering
 sidebar_label: Server-Side Rendering (SSR)
-slug: /ssr
+slug: /nextjs/ssr
 ---
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
@@ -49,23 +49,18 @@ export const trpc = createTRPCNext<AppRouter>({
            * @link https://trpc.io/docs/v10/header
            */
           headers() {
-            if (ctx?.req) {
-              // To use SSR properly, you need to forward the client's headers to the server
-              // This is so you can pass through things like cookies when we're server-side rendering
-
-              // If you're using Node 18, omit the "connection" header
-              const {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                connection: _connection,
-                ...headers
-              } = ctx.req.headers;
-              return {
-                ...headers,
-                // Optional: inform server that it's an SSR request
-                'x-ssr': '1',
-              };
+            if (!ctx?.req?.headers) {
+              return {};
             }
-            return {};
+            // To use SSR properly, you need to forward the client's headers to the server
+            // This is so you can pass through things like cookies when we're server-side rendering
+
+            const {
+              // If you're using Node 18 before 18.15.0, omit the "connection" header
+              connection: _connection,
+              ...headers
+            } = ctx.req.headers;
+            return headers;
           },
         }),
       ],

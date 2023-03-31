@@ -2,7 +2,7 @@
 id: useQueries
 title: useQueries()
 sidebar_label: useQueries()
-slug: /useQueries
+slug: /reactjs/usequeries
 ---
 
 The `useQueries` hook can be used to fetch a variable number of queries at the same time using only one hook call.
@@ -18,13 +18,13 @@ While fetching multiple types in a `useQueries` hook is possible, there is not m
 The useQueries hook is the same as that of [@tanstack/query useQueries](https://tanstack.com/query/v4/docs/react/reference/useQueries). The only difference is that you pass in a function that returns an array of queries instead of an array of queries inside an object parameter.
 
 :::tip
-When you're using the [`httpBatchLink`](links/httpBatchLink) or [`wsLink`](links/wsLink), the below will end up being only 1 HTTP call to your server. Additionally, if the underlying procedure is using something like Prisma's `findUnique()` it will [automatically batch](https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) & do exactly 1 database query as a well.
+When you're using the [`httpBatchLink`](/docs/links/httpBatchLink) or [`wsLink`](/docs/links/wsLink), the below will end up being only 1 HTTP call to your server. Additionally, if the underlying procedure is using something like Prisma's `findUnique()` it will [automatically batch](https://www.prisma.io/docs/guides/performance-and-optimization/query-optimization-performance#solving-n1-in-graphql-with-findunique-and-prismas-dataloader) & do exactly 1 database query as a well.
 :::
 
 ```tsx
 const Component = (props: { postIds: string[] }) => {
   const postQueries = trpc.useQueries((t) =>
-    props.post.byIds.map((id) => t.post.byId({ id })),
+    props.postIds.map((id) => t.post.byId({ id })),
   );
 
   return <>{/* [...] */}</>;

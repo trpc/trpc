@@ -25,7 +25,7 @@ import {
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
 export interface ProcedureRouterRecord {
-  [key: string]: AnyProcedure | AnyRouter;
+  [key: string]: AnyProcedure | AnyRouter | ProcedureRouterRecord;
 }
 
 /**
@@ -97,7 +97,9 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  * @internal
  */
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends ProcedureRouterRecord
+    ? DecoratedProcedureRecord<TProcedures[TKey]>
+    : TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
@@ -140,9 +142,15 @@ export interface Router<TDef extends AnyRouterDef> {
 export type AnyRouter = Router<AnyRouterDef>;
 
 function isRouter(
-  procedureOrRouter: AnyProcedure | AnyRouter,
+  procedureOrRouter: AnyProcedure | AnyRouter | ProcedureRouterRecord,
 ): procedureOrRouter is AnyRouter {
   return 'router' in procedureOrRouter._def;
+}
+
+function isNestedRouter(
+  procedureOrRouter: AnyProcedure | AnyRouter | ProcedureRouterRecord,
+): procedureOrRouter is ProcedureRouterRecord {
+  return !('_def' in procedureOrRouter);
 }
 
 const emptyRouter = {
@@ -165,6 +173,10 @@ const reservedWords = [
    * since JS will think that `.then` is something that exists
    */
   'then',
+  /**
+   * `_def` is a reserved word because it's used internally a lot
+   */
+  '_def',
 ];
 
 /**
@@ -200,10 +212,32 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
       );
     }
 
+    const newProcedures: ProcedureRouterRecord = {};
+    for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
+      const value = procedures[key] ?? {};
+
+      if (isNestedRouter(value)) {
+        newProcedures[key] = createRouterInner(value);
+        continue;
+      }
+
+      if (isRouter(value)) {
+        newProcedures[key] = procedureOrRouter;
+        continue;
+      }
+
+      newProcedures[key] = procedureOrRouter;
+    }
+
     const routerProcedures: ProcedureRecord = omitPrototype({});
     function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
+
+        if (isNestedRouter(procedureOrRouter)) {
+          recursiveGetPaths(procedureOrRouter, `${newPath}.`);
+          continue;
+        }
 
         if (isRouter(procedureOrRouter)) {
           recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
@@ -217,14 +251,14 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         routerProcedures[newPath] = procedureOrRouter;
       }
     }
-    recursiveGetPaths(procedures);
+    recursiveGetPaths(newProcedures);
 
     const _def: AnyRouterDef<TConfig> = {
       _config: config,
       router: true,
       procedures: routerProcedures,
       ...emptyRouter,
-      record: procedures,
+      record: newProcedures,
       queries: Object.entries(routerProcedures)
         .filter((pair) => (pair[1] as any)._def.query)
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
@@ -237,7 +271,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     };
 
     const router: AnyRouter = {
-      ...procedures,
+      ...newProcedures,
       _def,
       createCaller(ctx) {
         const proxy = createRecursiveProxy(({ path, args }) => {
@@ -295,6 +329,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         return this._def._config.errorFormatter({ ...opts, shape });
       },
     };
+
     return router as any;
   };
 }

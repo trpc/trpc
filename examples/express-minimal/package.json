@@ -1,13 +1,13 @@
 {
   "name": "@examples/express-minimal",
-  "version": "10.14.0",
+  "version": "10.18.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 3000 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "type-check": "tsc",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "start": "pnpm dev",
@@ -15,9 +15,9 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/react-query": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "^10.18.0",
+    "@trpc/react-query": "^10.18.0",
+    "@trpc/server": "^10.18.0",
     "express": "^4.17.1",
     "zod": "^3.0.0"
   },

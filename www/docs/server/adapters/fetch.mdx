@@ -1,8 +1,8 @@
 ---
 id: fetch
-title: Usage with edge runtimes using the Fetch API
+title: Fetch / Edge Runtimes Adapter
 sidebar_label: Fetch / Edge Runtimes
-slug: /fetch
+slug: /server/adapters/fetch
 ---
 
 import TabItem from '@theme/TabItem';
@@ -69,7 +69,7 @@ This also makes it easy to integrate into frameworks that uses the web platform 
 
 ## How to use tRPC server with an edge runtime
 
-tRPC provides a [fetch adapter](/docs/fetch) that uses the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) APIs as input and output. The tRPC-specific code is the same across all runtimes, the only difference being how the response is returned.
+tRPC provides a [fetch adapter](/docs/server/adapters/fetch) that uses the native [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) APIs as input and output. The tRPC-specific code is the same across all runtimes, the only difference being how the response is returned.
 
 tRPC includes an adapter for the native [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) out of the box. This adapter lets you convert your tRPC router into a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) handler that returns [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects.
 
@@ -124,7 +124,7 @@ pnpm add @trpc/server zod
 
 ### Create the router
 
-First of all you need a [router](router) to handle your queries, mutations and subscriptions.
+First of all you need a [router](/docs/server/routers) to handle your queries, mutations and subscriptions.
 
 A sample router is given below, save it in a file named `router.ts`.
 
@@ -172,11 +172,11 @@ export type AppRouter = typeof appRouter;
 
 </details>
 
-If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](merging-routers) into a single root `appRouter`.
+If your router file starts getting too big, split your router into several subrouters each implemented in its own file. Then [merge them](/docs/server/merging-routers) into a single root `appRouter`.
 
 ### Create the context
 
-Then you need a [context](context) that will be created for each request.
+Then you need a [context](/docs/server/context) that will be created for each request.
 
 A sample context is given below, save it in a file named `context.ts`:
 
