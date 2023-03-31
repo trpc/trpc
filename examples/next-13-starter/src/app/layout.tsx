@@ -17,24 +17,24 @@ export default async function RootLayout({
     <NextAuthProvider>
       <html lang="en" className="[color-scheme:dark]">
         <head />
-        <body className="overflow-y-scroll bg-gray-1100 bg-[url('/grid.svg')]">
+        <body className="bg-gray-1100 overflow-y-scroll bg-[url('/grid.svg')]">
           {/* <GlobalNav /> */}
 
           <div className="lg:pl-72">
             <div className="mx-auto max-w-4xl space-y-8 px-2 pt-20 lg:py-8 lg:px-8">
-              <div className="rounded-lg bg-vc-border-gradient p-px shadow-lg shadow-black/20">
+              <div className="bg-vc-border-gradient rounded-lg p-px shadow-lg shadow-black/20">
                 <div className="rounded-lg bg-black">
                   <AddressBar />
                 </div>
               </div>
 
-              <div className="rounded-lg bg-vc-border-gradient p-px shadow-lg shadow-black/20">
+              <div className="bg-vc-border-gradient rounded-lg p-px shadow-lg shadow-black/20">
                 <div className="rounded-lg bg-black p-3.5 lg:p-6">
                   {children}
                 </div>
               </div>
 
-              <div className="rounded-lg bg-vc-border-gradient p-px shadow-lg shadow-black/20">
+              <div className="bg-vc-border-gradient rounded-lg p-px shadow-lg shadow-black/20">
                 <div className="rounded-lg bg-black">
                   <Byline />
                 </div>
@@ -55,7 +55,7 @@ function Byline() {
         <a href="https://vercel.com" title="Vercel">
           <div className="text-gray-100 hover:text-gray-50">Vercel</div>
         </a>
-        <span className="text-gray-400 mx-4">-</span>
+        <span className="mx-4 text-gray-400">-</span>
         <div className="flex items-center gap-1">
           <div className="text-sm text-gray-400">Modifed by</div>
           <a

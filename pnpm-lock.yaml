@@ -16,6 +16,8 @@ overrides:
   '@examples/trpc-next-prisma-todomvc>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc
   '@examples/legacy-next-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter
   '@types/testing-library__jest-dom': link:./packages/tests/vendor/@types/testing-library__jest-dom
+  '@examples/next-app-playground>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground
+  '@examples/next-app-playground>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground
 
 importers:
 
@@ -701,8 +703,8 @@ importers:
   examples/next-13-starter:
     dependencies:
       '@prisma/client':
-        specifier: ^4.10.1
-        version: 4.10.1(prisma@4.10.1)
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground(prisma@4.12.0)'
       '@tailwindcss/forms':
         specifier: ^0.5.3
         version: 0.5.3(tailwindcss@3.2.4)
@@ -771,8 +773,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.21
       prisma:
-        specifier: ^4.10.1
-        version: 4.10.1
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground
+        version: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-app-playground'
       tailwindcss:
         specifier: ^3.1.6
         version: 3.2.4(postcss@8.4.21)
@@ -9420,31 +9422,9 @@ packages:
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
 
-  /@prisma/client@4.10.1(prisma@4.10.1):
-    resolution: {integrity: sha512-VonXLJZybdt8e5XZH5vnIGCRNnIh6OMX1FS3H/yzMGLT3STj5TJ/OkMcednrvELgk8PK89Vo3aSh51MWNO0axA==}
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19
-      prisma: 4.10.1
-    dev: false
-
-  /@prisma/engines-version@4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19:
-    resolution: {integrity: sha512-tsjTho7laDhf9EJ9EnDxAPEf7yrigSMDhniXeU4YoWc7azHAs4GPxRi2P9LTFonmHkJLMOLjR77J1oIP8Ife1w==}
-    dev: false
-
   /@prisma/engines-version@4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7:
     resolution: {integrity: sha512-JIHNj5jlXb9mcaJwakM0vpgRYJIAurxTUqM0iX0tfEQA5XLZ9ONkIckkhuAKdAzocZ+80GYg7QSsfpjg7OxbOA==}
     dev: false
-
-  /@prisma/engines@4.10.1:
-    resolution: {integrity: sha512-B3tcTxjx196nuAu1GOTKO9cGPUgTFHYRdkPkTS4m5ptb2cejyBlH9X7GOfSt3xlI7p4zAJDshJP4JJivCg9ouA==}
-    requiresBuild: true
 
   /@prisma/engines@4.12.0:
     resolution: {integrity: sha512-0alKtnxhNB5hYU+ymESBlGI4b9XrGGSdv7Ud+8TE/fBNOEhIud0XQsAR+TrvUZgS4na5czubiMsODw0TUrgkIA==}
@@ -20259,14 +20239,6 @@ packages:
       react: 18.2.0
     dev: false
 
-  /prisma@4.10.1:
-    resolution: {integrity: sha512-0jDxgg+DruB1kHVNlcspXQB9au62IFfVg9drkhzXudszHNUAQn0lVuu+T8np0uC2z1nKD5S3qPeCyR8u5YFLnA==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-    requiresBuild: true
-    dependencies:
-      '@prisma/engines': 4.10.1
-
   /prismjs@1.29.0:
     resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}
     engines: {node: '>=6'}
@@ -24366,6 +24338,23 @@ packages:
       prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter'
     dev: false
 
+  '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground(prisma@4.12.0)':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground'
+    name: '@prisma/client'
+    version: 4.12.0
+    engines: {node: '>=14.17'}
+    requiresBuild: true
+    peerDependencies:
+      prisma: '*'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+    dependencies:
+      '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-app-playground'
+    dev: false
+
   '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter(prisma@4.12.0)':
     resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter}
     id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter'
@@ -24419,6 +24408,16 @@ packages:
 
   '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter}
+    name: prisma
+    version: 4.12.0
+    engines: {node: '>=14.17'}
+    hasBin: true
+    requiresBuild: true
+    dependencies:
+      '@prisma/engines': 4.12.0
+
+  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-app-playground':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground}
     name: prisma
     version: 4.12.0
     engines: {node: '>=14.17'}

@@ -32,7 +32,7 @@ export function CreateReviewForm(props: { productId: string }) {
     return (
       <Link
         href="/api/auth/signin"
-        className="relative rounded-lg w-full items-center space-x-2 bg-vercel-blue px-3 py-1 text-sm font-medium text-white hover:bg-vercel-blue/90 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-vercel-blue"
+        className="bg-vercel-blue hover:bg-vercel-blue/90 disabled:hover:bg-vercel-blue relative w-full items-center space-x-2 rounded-lg px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:text-white/70"
       >
         Sign in to submit a review
       </Link>
@@ -41,14 +41,14 @@ export function CreateReviewForm(props: { productId: string }) {
   return (
     <form className="space-y-2">
       <input
-        className="block w-full rounded-lg border-none bg-gray-600 px-2 font-medium text-gray-200 focus:border-vercel-pink focus:ring-2 focus:ring-vercel-pink"
+        className="focus:border-vercel-pink focus:ring-vercel-pink block w-full rounded-lg border-none bg-gray-600 px-2 font-medium text-gray-200 focus:ring-2"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
       <button
         onClick={() => void handleSubmit()}
         disabled={isCreating || !text || isPending}
-        className="relative rounded-lg w-full items-center space-x-2 bg-vercel-blue px-3 py-1 text-sm font-medium text-white hover:bg-vercel-blue/90 disabled:text-white/70 disabled:cursor-not-allowed disabled:hover:bg-vercel-blue"
+        className="bg-vercel-blue hover:bg-vercel-blue/90 disabled:hover:bg-vercel-blue relative w-full items-center space-x-2 rounded-lg px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:text-white/70"
       >
         Submit
       </button>

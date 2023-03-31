@@ -88,8 +88,8 @@
       "@examples/trpc-next-prisma-todomvc>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc",
       "@examples/legacy-next-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter",
       "@types/testing-library__jest-dom": "link:./packages/tests/vendor/@types/testing-library__jest-dom",
-      "@examples/next-app-playground>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground",
-      "@examples/next-app-playground>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examplesnext-app-playground"
+      "@examples/next-app-playground>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground",
+      "@examples/next-app-playground>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground"
     }
   }
 }

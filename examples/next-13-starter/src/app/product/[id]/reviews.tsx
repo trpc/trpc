@@ -27,7 +27,7 @@ export async function Reviews(props: {
 export function ReviewsSkeleton(props: { n?: number }) {
   return (
     <div className="space-y-6">
-      <div className="h-7 w-2/5 rounded-lg bg-gray-900 relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
+      <div className="relative h-7 w-2/5 overflow-hidden rounded-lg bg-gray-900 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
       <div className="space-y-8">
         {Array.from({ length: props.n ?? 3 }).map((_, i) => (
           <div key={i} className="space-y-4">
