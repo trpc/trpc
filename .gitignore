@@ -4,7 +4,6 @@ dist
 .next
 .turbo
 .vercel
-.eslintcache
 
 node_modules
 package-lock.json
@@ -27,6 +26,8 @@ packages/*/*
 !packages/*/src
 !packages/tests/*
 packages/tests/node_modules
+
+.eslintcache
 
 examples/next-big-router/src/server/routers
 
