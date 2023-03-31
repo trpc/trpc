@@ -25,7 +25,7 @@
     "migrate": "prisma migrate deploy",
     "start": "cross-env NODE_ENV=production node dist/server/prodServer.js",
     "studio": "prisma studio",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives --report-unused-disable-directives src",
     "lint-fix": "pnpm lint --fix",
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
@@ -75,10 +75,10 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.14",
-    "prettier": "^2.7.1",
+    "prettier": "^2.8.7",
     "prisma": "^4.12.0",
     "start-server-and-test": "^1.12.0",
-    "tailwindcss": "^3.1.6",
+    "tailwindcss": "^3.3.0",
     "typescript": "^4.8.3"
   },
   "publishConfig": {
