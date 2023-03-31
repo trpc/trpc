@@ -93,7 +93,7 @@ export const TwitterWall = () => {
             </figcaption>
 
             <blockquote
-              className="whitespace-pre-wrap border-none pt-4 pl-0 text-zinc-600 dark:text-zinc-400"
+              className="whitespace-pre-wrap border-none pl-0 pt-4 text-zinc-600 dark:text-zinc-400"
               cite={tweet.url}
             >
               {tweet.text}

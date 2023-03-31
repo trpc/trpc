@@ -63,7 +63,7 @@ export function SponsorBubbles() {
                           href={circle.data.link}
                           className={
                             `spon-link ` +
-                            `absolute shadow-lg bg-white rounded-full z-0`
+                            `absolute z-0 rounded-full bg-white shadow-lg`
                           }
                           style={{
                             left: circle.x,
@@ -84,11 +84,11 @@ export function SponsorBubbles() {
                           />
                           <div
                             className={twMerge(
-                              `spon-tooltip absolute text-sm
-                              bg-gray-800 text-white p-2 pointer-events-none
-                              transform opacity-0
-                              shadow-xl rounded-lg
-                              flex flex-col items-center
+                              `spon-tooltip pointer-events-none absolute
+                              flex transform flex-col items-center
+                              rounded-lg bg-gray-800
+                              p-2 text-sm
+                              text-white opacity-0 shadow-xl
                             `,
 
                               tooltipX == 'left'

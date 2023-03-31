@@ -17,7 +17,6 @@ import { InferQueryLikeData } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
-
 /**
  * We define a router factory which can be used many times.
  *
@@ -25,7 +24,6 @@ import React, { ReactNode, useState } from 'react';
  * interfaces which concrete router instances are compatible with
  */
 import * as Factory from './polymorphism.factory';
-
 /**
  * We also define a factory which extends from the basic Factory with an entity sub-type and extra procedure
  */
