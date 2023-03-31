@@ -9,23 +9,21 @@ import { Reviews, ReviewsSkeleton } from './reviews';
 import { SingleProduct } from './single-product';
 
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
 
 export default async function Page({ params }: { params: { id: string } }) {
-  const product = await api.products.byId.query({ id: params.id });
-
   return (
     <div className="space-y-8 lg:space-y-14">
-      {/* @ts-expect-error Async Server Component */}
-      <SingleProduct product={product} />
-
+      <Suspense>
+        {/* @ts-expect-error Async Server Component */}
+        <SingleProduct product={api.products.byId.query({ id: params.id })} />
+      </Suspense>
       <Suspense fallback={<RecommendedProductsSkeleton />}>
         {/* @ts-expect-error Async Server Component */}
         <RecommendedProducts
           path="/product"
           data={api.products.list.query(
-            { filter: params.id, delay: 500 },
-            { context: { skipBatch: true } },
+            { filter: params.id },
+            { context: { skipBatch: true, delay: 1000 } },
           )}
         />
       </Suspense>
@@ -35,7 +33,7 @@ export default async function Page({ params }: { params: { id: string } }) {
         <Reviews
           productId={params.id}
           data={api.reviews.list.query(
-            { productId: params.id, delay: 1000 },
+            { productId: params.id, delay: 1500 },
             { context: { skipBatch: true } },
           )}
         />

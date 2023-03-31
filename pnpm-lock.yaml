@@ -8,8 +8,8 @@ overrides:
   '@trpc/react-query': link:./packages/react-query
   '@trpc/server': link:./packages/server
   '@types/testing-library__jest-dom': link:./packages/tests/vendor/@types/testing-library__jest-dom
-  '@examples/next-app-playground>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground
-  '@examples/next-app-playground>prisma': https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examplesnext-app-playground
+  '@examples/next-app-playground>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground
+  '@examples/next-app-playground>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground
   '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc
   '@examples/trpc-next-prisma-todomvc>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter
@@ -706,8 +706,8 @@ importers:
         specifier: ^0.5.1
         version: 0.5.1
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground(prisma@4.10.1)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground(prisma@4.12.0)'
       '@tailwindcss/forms':
         specifier: ^0.5.3
         version: 0.5.3(tailwindcss@3.3.0)
@@ -748,8 +748,8 @@ importers:
         specifier: ^0.124.0
         version: 0.124.0(react@18.2.0)
       next:
-        specifier: 13.2.5-canary.19
-        version: 13.2.5-canary.19(react-dom@18.2.0)(react@18.2.0)
+        specifier: 13.2.5-canary.22
+        version: 13.2.5-canary.22(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -785,8 +785,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.14
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examplesnext-app-playground
-        version: '@registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%2540examplesnext-app-playground'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground
+        version: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-app-playground'
       tailwindcss:
         specifier: ^3.1.6
         version: 3.3.0(postcss@8.4.14)
@@ -8888,8 +8888,8 @@ packages:
   /@next/env@13.2.1:
     resolution: {integrity: sha512-Hq+6QZ6kgmloCg8Kgrix+4F0HtvLqVK3FZAnlAoS0eonaDemHe1Km4kwjSWRE3JNpJNcKxFHF+jsZrYo0SxWoQ==}
 
-  /@next/env@13.2.5-canary.19:
-    resolution: {integrity: sha512-QXO4HlOMammiqsRvFFfr29oPR5qj6bneLmwkRfceYcBE1bq8+xnB3ZpMCc26mCpAkpSFWlGgF53JzKCWWxlAxQ==}
+  /@next/env@13.2.5-canary.22:
+    resolution: {integrity: sha512-mfsfm+9aGG7NQgdp6HhH/9JjO/SNABrcBT3SkkZKv+iXraBAKnWpH460LVkgCY53xTiYo7JBVZrQ0UebMqnlzA==}
     dev: false
 
   /@next/eslint-plugin-next@13.2.1:
@@ -8922,8 +8922,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-darwin-arm64@13.2.5-canary.19:
-    resolution: {integrity: sha512-29JRAeF/dMO/cHlGmNun6t7oAKmZ1UmPyHZi6jbbSOZH4mpLAtLhyg6azqHzTYQj86TLpJZMc12g2ql4e62ldQ==}
+  /@next/swc-darwin-arm64@13.2.5-canary.22:
+    resolution: {integrity: sha512-fsAG9LruF3iDVtTdVE7TozvDDUdmJwZnn3ymmTLwIsVPwK/BEQeJJFmtn1zWVHkz/qqEErqyZl9/09Va2hT/CA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
@@ -8939,8 +8939,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-darwin-x64@13.2.5-canary.19:
-    resolution: {integrity: sha512-hz5pbgSg+vq2YZPFFmwwzXyXdXNffhHm97v8RWK4fUtMD9DlbZJrRUVcyOtk9486u1SkTXIMyZ8KUjE1TpZQQg==}
+  /@next/swc-darwin-x64@13.2.5-canary.22:
+    resolution: {integrity: sha512-/PzBrgv/TYFow3X8lFzQSfGicnBO6V9sd9e3jflxl/Iei1uTQ+NHsDsEE3m0P0l1E8Fj2wn6JZLh32Nl4QRuUQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
@@ -8972,8 +8972,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-gnu@13.2.5-canary.19:
-    resolution: {integrity: sha512-MIQJpgHhIIbr/CJyBOFSCsbr1Kv1nFB2VC2zfARjyDOOuKQQf5tlJrERQKyr8b61+/w5f+L3ZiPp7QPAUd9jmA==}
+  /@next/swc-linux-arm64-gnu@13.2.5-canary.22:
+    resolution: {integrity: sha512-zwqORoEIZmm4ST1gsvdOYWM9D+QqAluKk30PWAcT21q7Va8oODEgNtJlgjai81V/tYVdp2Sowao2JWVBragtjg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
@@ -8989,8 +8989,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-musl@13.2.5-canary.19:
-    resolution: {integrity: sha512-r88q1FhZwFpWwBH6lLJmm9d/WCY2MIewghUqOCKMbXLtPBLdSEvNR726PGGUBtC6pFQsRuv7Prn7CT/VMkRyXA==}
+  /@next/swc-linux-arm64-musl@13.2.5-canary.22:
+    resolution: {integrity: sha512-T6OYDRmhenO6MFWys6N29ch2x366TdiMZPDo92EOGfGXcEo12l89Nj+1Rwx9ZWWZy/PnhwY535atM+BQZRoyIg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
@@ -9006,8 +9006,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-gnu@13.2.5-canary.19:
-    resolution: {integrity: sha512-Ke5aTqYMH9J3a38t6GvM58AY3MmOKbSR3RTQzaIb+96xtTUdzWjWnbAv05Lr9zlrnjTHmFR50CoOvulLTCXW/w==}
+  /@next/swc-linux-x64-gnu@13.2.5-canary.22:
+    resolution: {integrity: sha512-FyLoGBZlFBi/ABOLGky85qO87KiDbTD4M8RZfaEKuHaxDuSyGH1UBhA5k6pgu3dBM0EA7bCMR4qDfVGBWtho9Q==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
@@ -9023,8 +9023,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-musl@13.2.5-canary.19:
-    resolution: {integrity: sha512-GPAyzn7ksPTpY0rPoMnzBydnpMAnK9z8H8y6VEvbAqwoJY+NZN+YepnJkW9HV01mdrvmxXv5dkdPlfbxW5pRsQ==}
+  /@next/swc-linux-x64-musl@13.2.5-canary.22:
+    resolution: {integrity: sha512-u3uuLvslp5Wq9DYogUs+ojrbe7mvNrgKnJK0llsYPCo/f+BEdLhWvzuBaEA03b/KNFh7ab6XFoFwFzNh1TmpKg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
@@ -9040,8 +9040,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-arm64-msvc@13.2.5-canary.19:
-    resolution: {integrity: sha512-s+z9qlmtvWJ5uQj8yrX5d+SW4OeYN+8fdnLDRIZBa1IJZ2R6GZ0suX06KMZHR+RE2Z/vI3Nwz7kyAq3RkK9/HQ==}
+  /@next/swc-win32-arm64-msvc@13.2.5-canary.22:
+    resolution: {integrity: sha512-MBCUNSSFWYSkQxVDpfcKXWTH7/s9IAbdfMZm5z9Mbu/GVzYfEgd8hrZ7epMXQf7gmbcOm5jpi2mbiPJwyUwM+A==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
@@ -9057,8 +9057,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-ia32-msvc@13.2.5-canary.19:
-    resolution: {integrity: sha512-6EjXMAERpj71R1kGcocTtSefI33W4lN7L/ERtIwc1YUSw1wajsOHoWZBH0S9g6H632rxeuZi9oUfYbxOQnYsAQ==}
+  /@next/swc-win32-ia32-msvc@13.2.5-canary.22:
+    resolution: {integrity: sha512-QLofn9NMt1gV4hdcAGMIZS1GbQH+Lm7msQXW+7GyDU/aXa+U5/Lal6dldOuguhHs3Og6S8AbRKoXTDjkM5JGog==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
@@ -9074,8 +9074,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-x64-msvc@13.2.5-canary.19:
-    resolution: {integrity: sha512-bEXNS4MbZwM/k1HjxZ3dfnkZWZZD81kQfY8yLCmuefXZ+YgcY2dh4AB6+CbgYKJ3GBCGqM5gpFu3/5fQZg+g1g==}
+  /@next/swc-win32-x64-msvc@13.2.5-canary.22:
+    resolution: {integrity: sha512-AESo1iKYop0HGHazv0900wVT99liTKY/4QTuQ6I2Itk/JZcdkg8YcEOMj1ALpnGF6RpbMv9ZgLFHuAU3qXPWRw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -9454,17 +9454,9 @@ packages:
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
 
-  /@prisma/engines-version@4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19:
-    resolution: {integrity: sha512-tsjTho7laDhf9EJ9EnDxAPEf7yrigSMDhniXeU4YoWc7azHAs4GPxRi2P9LTFonmHkJLMOLjR77J1oIP8Ife1w==}
-    dev: false
-
   /@prisma/engines-version@4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7:
     resolution: {integrity: sha512-JIHNj5jlXb9mcaJwakM0vpgRYJIAurxTUqM0iX0tfEQA5XLZ9ONkIckkhuAKdAzocZ+80GYg7QSsfpjg7OxbOA==}
     dev: false
-
-  /@prisma/engines@4.10.1:
-    resolution: {integrity: sha512-B3tcTxjx196nuAu1GOTKO9cGPUgTFHYRdkPkTS4m5ptb2cejyBlH9X7GOfSt3xlI7p4zAJDshJP4JJivCg9ouA==}
-    requiresBuild: true
 
   /@prisma/engines@4.12.0:
     resolution: {integrity: sha512-0alKtnxhNB5hYU+ymESBlGI4b9XrGGSdv7Ud+8TE/fBNOEhIud0XQsAR+TrvUZgS4na5czubiMsODw0TUrgkIA==}
@@ -18116,8 +18108,8 @@ packages:
       - '@babel/core'
       - babel-plugin-macros
 
-  /next@13.2.5-canary.19(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-PHDHdrlMaZu3YmFAKPfLGVQgl7pohUs9G7Q3HJVw9qmqEK3e1PDc6y8ny5sg6HXaIAdqrnMgzLLPyHpKAGZ6cA==}
+  /next@13.2.5-canary.22(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-F3uYWS7ZROKOwoyYiom9x4KwhpF++uRMxQlhfIWFvv0mTG+P01UmMyg+sTpUNahI2+d6xoJMMNCBmj3z3Q97Qg==}
     engines: {node: '>=14.6.0'}
     hasBin: true
     peerDependencies:
@@ -18137,7 +18129,7 @@ packages:
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.2.5-canary.19
+      '@next/env': 13.2.5-canary.22
       '@swc/helpers': 0.4.14
       busboy: 1.6.0
       caniuse-lite: 1.0.30001434
@@ -18146,15 +18138,15 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       styled-jsx: 5.1.1(@babel/core@7.20.2)(react@18.2.0)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.2.5-canary.19
-      '@next/swc-darwin-x64': 13.2.5-canary.19
-      '@next/swc-linux-arm64-gnu': 13.2.5-canary.19
-      '@next/swc-linux-arm64-musl': 13.2.5-canary.19
-      '@next/swc-linux-x64-gnu': 13.2.5-canary.19
-      '@next/swc-linux-x64-musl': 13.2.5-canary.19
-      '@next/swc-win32-arm64-msvc': 13.2.5-canary.19
-      '@next/swc-win32-ia32-msvc': 13.2.5-canary.19
-      '@next/swc-win32-x64-msvc': 13.2.5-canary.19
+      '@next/swc-darwin-arm64': 13.2.5-canary.22
+      '@next/swc-darwin-x64': 13.2.5-canary.22
+      '@next/swc-linux-arm64-gnu': 13.2.5-canary.22
+      '@next/swc-linux-arm64-musl': 13.2.5-canary.22
+      '@next/swc-linux-x64-gnu': 13.2.5-canary.22
+      '@next/swc-linux-x64-musl': 13.2.5-canary.22
+      '@next/swc-win32-arm64-msvc': 13.2.5-canary.22
+      '@next/swc-win32-ia32-msvc': 13.2.5-canary.22
+      '@next/swc-win32-x64-msvc': 13.2.5-canary.22
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
@@ -24183,23 +24175,6 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground(prisma@4.10.1)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.10.1.tgz?id=examplesnext-app-playground'
-    name: '@prisma/client'
-    version: 4.10.1
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.10.1-2.aead147aa326ccb985dcfed5b065b4fdabd44b19
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%2540examplesnext-app-playground'
-    dev: false
-
   '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter(prisma@4.12.0)':
     resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter}
     id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter'
@@ -24215,6 +24190,23 @@ packages:
     dependencies:
       '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
       prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter'
+    dev: false
+
+  '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground(prisma@4.12.0)':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-app-playground'
+    name: '@prisma/client'
+    version: 4.12.0
+    engines: {node: '>=14.17'}
+    requiresBuild: true
+    peerDependencies:
+      prisma: '*'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+    dependencies:
+      '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-app-playground'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter(prisma@4.12.0)':
@@ -24268,18 +24260,18 @@ packages:
       prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%2540examplesnext-app-playground':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.10.1.tgz?id=%40examplesnext-app-playground}
+  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter}
     name: prisma
-    version: 4.10.1
+    version: 4.12.0
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.10.1
+      '@prisma/engines': 4.12.0
 
-  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter}
+  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-app-playground':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-app-playground}
     name: prisma
     version: 4.12.0
     engines: {node: '>=14.17'}

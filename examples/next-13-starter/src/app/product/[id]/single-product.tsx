@@ -4,9 +4,9 @@ import { RouterOutputs } from '~/trpc/shared';
 import { Pricing } from './pricing';
 
 export const SingleProduct = async (props: {
-  product: RouterOutputs['products']['byId'];
+  product: Promise<RouterOutputs['products']['byId']>;
 }) => {
-  const { product } = props;
+  const product = await props.product;
 
   return (
     <div className="grid grid-cols-4 gap-6">

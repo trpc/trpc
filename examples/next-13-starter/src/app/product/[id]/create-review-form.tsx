@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { api } from 'trpc-api';
 
-export function CreateReviewForm(props: { productId: string }) {
+export function CreateReviewForm(props: {
+  onSubmit: (text: string, rating: number) => Promise<any>;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isCreating, setIsCreating] = useState(false);
@@ -13,11 +13,8 @@ export function CreateReviewForm(props: { productId: string }) {
 
   async function handleSubmit() {
     setIsCreating(true);
-    const review = await api.reviews.create.mutate({
-      productId: props.productId,
-      rating: Math.floor(Math.random() * 5) + 1,
-      text,
-    });
+    const res = await props.onSubmit(text, Math.floor(Math.random() * 5) + 1);
+    console.log('client got', res);
     setIsCreating(false);
     setText('');
 
