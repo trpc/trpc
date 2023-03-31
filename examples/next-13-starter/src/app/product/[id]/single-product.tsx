@@ -6,8 +6,8 @@ import { Pricing } from './pricing';
 
 type Product = RouterOutputs['products']['byId'];
 
-export const SingleProduct = async ({ data }: { data: Promise<Product> }) => {
-  const product = await data;
+export const SingleProduct = async (props: { data: Promise<Product> }) => {
+  const product = await props.data;
 
   return (
     <div className="grid grid-cols-4 gap-6">

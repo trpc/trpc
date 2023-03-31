@@ -3,14 +3,11 @@ import { RouterOutputs } from '~/trpc/shared';
 
 type Product = RouterOutputs['products']['byId'];
 
-export async function RecommendedProducts({
-  path,
-  data,
-}: {
+export async function RecommendedProducts(props: {
   path: string;
   data: Promise<Product[]>;
 }) {
-  const products = await data;
+  const products = await props.data;
 
   return (
     <div className="space-y-6">
@@ -25,7 +22,10 @@ export async function RecommendedProducts({
       <div className="grid grid-cols-4 gap-6">
         {products.map((product) => (
           <div key={product.id} className="col-span-4 lg:col-span-1">
-            <ProductCard product={product} href={`${path}/${product.id}`} />
+            <ProductCard
+              product={product}
+              href={`${props.path}/${product.id}`}
+            />
           </div>
         ))}
       </div>

@@ -1,5 +1,4 @@
 import { getServerSession } from 'next-auth';
-import { cookies } from 'next/headers';
 import React from 'react';
 import { Boundary } from '~/components/boundary';
 import { authOptions } from '~/pages/api/auth/[...nextauth]';
@@ -9,12 +8,7 @@ export const metadata = {
   title: 'Streaming (Edge Runtime)',
 };
 
-export default async function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const cartCount = Number(cookies().get('_cart_count')?.value || '0');
+export default async function Layout(props: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
   const user = session?.user;
 
@@ -40,7 +34,7 @@ export default async function Layout({
           {/** @ts-expect-error Async Server Component */}
           <Header user={user} />
 
-          {children}
+          {props.children}
         </div>
       </Boundary>
     </>

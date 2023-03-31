@@ -4,7 +4,8 @@ import { ProductRating } from './product-rating';
 
 type Review = RouterOutputs['reviews']['list'][number];
 
-export const ProductReviewCard = ({ review }: { review: Review }) => {
+export const ProductReviewCard = (props: { review: Review }) => {
+  const { review } = props;
   return (
     <div className="space-y-4">
       <div className="space-y-2">

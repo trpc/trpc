@@ -3,7 +3,7 @@ import { type User as NextAuthUser } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export async function Header({ user }: { user: NextAuthUser }) {
+export async function Header(props: { user: NextAuthUser }) {
   return (
     <div className="flex items-center justify-between gap-x-3 rounded-lg bg-gray-800 px-3 py-3 lg:px-5 lg:py-4">
       <div className="flex gap-x-3">
@@ -25,15 +25,15 @@ export async function Header({ user }: { user: NextAuthUser }) {
       <div className="flex shrink-0 gap-x-3">
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-600 text-white">
           <ShoppingCart className="w-6 text-white" />
-          <div className="bg-vercel-cyan absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-sm font-bold text-cyan-800">
+          <div className="bg-vercel-cyan absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-sm font-bold text-cyan-800">
             ?
           </div>
         </div>
 
-        {user ? (
+        {props.user ? (
           <Link href="/api/auth/signout">
             <Image
-              src={user.image as string}
+              src={props.user.image as string}
               className="rounded-full"
               width={40}
               height={40}
