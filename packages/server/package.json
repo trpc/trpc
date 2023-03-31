@@ -34,7 +34,7 @@
     "dev": "pnpm build --watch",
     "codegen:entrypoints": "tsx entrypoints.script.ts",
     "benchmark": "tsc --project tsconfig.benchmark.json",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "exports": {
