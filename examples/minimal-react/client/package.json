@@ -1,19 +1,19 @@
 {
   "name": "@examples/minimal-react-client",
   "private": true,
-  "version": "10.16.0",
+  "version": "10.18.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "vite preview"
   },
   "dependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.16.0",
-    "@trpc/react-query": "^10.16.0",
-    "@trpc/server": "^10.16.0",
+    "@trpc/client": "^10.18.0",
+    "@trpc/react-query": "^10.18.0",
+    "@trpc/server": "^10.18.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
