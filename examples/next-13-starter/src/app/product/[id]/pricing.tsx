@@ -1,10 +1,9 @@
 import { Suspense } from 'react';
-import { api } from 'trpc-api';
+import { RouterOutputs, api } from 'trpc-api';
 import { ProductEstimatedArrival } from '~/components/product-estimated-arrival';
 import { ProductLowStockWarning } from '~/components/product-low-stock-warning';
 import { ProductPrice } from '~/components/product-price';
 import { ProductSplitPayments } from '~/components/product-split-payments';
-import { RouterOutputs } from '~/trpc/shared';
 
 function LoadingDots() {
   return (

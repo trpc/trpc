@@ -1,5 +1,3 @@
-'use server';
-
 import {
   createTRPCUntypedClient,
   httpBatchLink,
@@ -7,10 +5,14 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-server';
+import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { headers } from 'next/headers';
 import { cache } from 'react';
 import { AppRouter } from '~/server/api/router';
 import { getUrl, transformer } from './shared';
+
+export type RouterInputs = inferRouterInputs<AppRouter>;
+export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 export const api = createTRPCNextAppRouterReactServer<AppRouter>({
   getClient: cache(() =>

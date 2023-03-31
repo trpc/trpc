@@ -1,5 +1,5 @@
+import { RouterOutputs } from 'trpc-api';
 import { ProductCard } from '~/components/product-card';
-import { RouterOutputs } from '~/trpc/shared';
 
 type Product = RouterOutputs['products']['byId'];
 

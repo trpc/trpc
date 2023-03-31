@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { RouterOutputs } from '~/trpc/shared';
+import { RouterOutputs } from 'trpc-api';
 import { ProductRating } from './product-rating';
 
 type Review = RouterOutputs['reviews']['list'][number];

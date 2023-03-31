@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { RouterOutputs } from '~/trpc/shared';
+import { RouterOutputs } from 'trpc-api';
 import { ProductEstimatedArrival } from './product-estimated-arrival';
 import { ProductLowStockWarning } from './product-low-stock-warning';
 import { ProductPrice } from './product-price';

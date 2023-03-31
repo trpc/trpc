@@ -1,6 +1,6 @@
 import { multiply, toUnit, type Dinero } from 'dinero.js';
+import { RouterOutputs } from 'trpc-api';
 import { CurrencySymbol } from '~/components/currency-symbol';
-import { RouterOutputs } from '~/trpc/shared';
 import { ProductDeal } from './product-deal';
 import { ProductLighteningDeal } from './product-lightening-deal';
 

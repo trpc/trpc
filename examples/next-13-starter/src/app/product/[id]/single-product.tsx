@@ -1,6 +1,6 @@
 import Image from 'next/image';
+import { RouterOutputs } from 'trpc-api';
 import { ProductRating } from '~/components/product-rating';
-import { RouterOutputs } from '~/trpc/shared';
 import { Pricing } from './pricing';
 
 export const SingleProduct = async (props: {

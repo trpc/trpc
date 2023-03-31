@@ -1,6 +1,5 @@
-import { api } from 'trpc-api';
+import { RouterOutputs, api } from 'trpc-api';
 import { ProductReviewCard } from '~/components/product-review-card';
-import { RouterOutputs } from '~/trpc/shared';
 import { CreateReviewForm } from './create-review-form';
 
 export async function Reviews(props: {
@@ -15,16 +14,17 @@ export async function Reviews(props: {
       <div className="space-y-4">
         <div className="text-lg font-medium text-white">Write a Review</div>
         <CreateReviewForm
-          onSubmit={async (text, rating) => {
-            'use server';
-            const review = await api.reviews.create.mutate({
-              productId: props.productId,
-              text,
-              rating,
-            });
-            console.log('server got', review);
-            return review;
-          }}
+          onSubmit={async () => void 0}
+          // onSubmit={async (text, rating) => {
+          //   'use server';
+          //   const review = await api.reviews.create.mutate({
+          //     productId: props.productId,
+          //     text,
+          //     rating,
+          //   });
+          //   console.log('server got', review);
+          //   return review;
+          // }}
         />
       </div>
       <div className="space-y-8">
