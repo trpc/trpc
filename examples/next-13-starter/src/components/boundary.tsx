@@ -50,7 +50,7 @@ export const Boundary = ({
         'border-vercel-cyan': color === 'cyan',
         'border-vercel-violet': color === 'violet',
         'border-vercel-orange': color === 'orange',
-        'animate-[rerender_1s_ease-in-out_1] text-vercel-pink':
+        'text-vercel-pink animate-[rerender_1s_ease-in-out_1]':
           animateRerendering,
       })}
     >

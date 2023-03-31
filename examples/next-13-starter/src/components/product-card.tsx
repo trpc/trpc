@@ -21,7 +21,7 @@ export const ProductCard = ({
       <div className="space-y-2">
         <div className="relative">
           {product.isBestSeller ? (
-            <div className="absolute top-2 left-2 z-10 flex">
+            <div className="absolute left-2 top-2 z-10 flex">
               <div className="rounded bg-gray-600 px-1.5 text-xs font-medium leading-5 text-white">
                 Best Seller
               </div>
@@ -36,7 +36,7 @@ export const ProductCard = ({
           />
         </div>
 
-        <div className="truncate text-sm font-medium text-white group-hover:text-vercel-cyan">
+        <div className="group-hover:text-vercel-cyan truncate text-sm font-medium text-white">
           {product.name}
         </div>
 

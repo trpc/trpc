@@ -16,7 +16,7 @@ export async function Header({ user }: { user: NextAuthUser }) {
             type="search"
             name="search"
             id="search"
-            className="block w-full rounded-full border-none bg-gray-600 pl-10 font-medium text-gray-200 focus:border-vercel-pink focus:ring-2 focus:ring-vercel-pink"
+            className="focus:border-vercel-pink focus:ring-vercel-pink block w-full rounded-full border-none bg-gray-600 pl-10 font-medium text-gray-200 focus:ring-2"
             autoComplete="off"
           />
         </div>
@@ -25,7 +25,7 @@ export async function Header({ user }: { user: NextAuthUser }) {
       <div className="flex shrink-0 gap-x-3">
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-600 text-white">
           <ShoppingCart className="w-6 text-white" />
-          <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-vercel-cyan text-sm font-bold text-cyan-800">
+          <div className="bg-vercel-cyan absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full text-sm font-bold text-cyan-800">
             ?
           </div>
         </div>
