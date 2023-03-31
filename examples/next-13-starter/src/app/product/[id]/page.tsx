@@ -15,7 +15,9 @@ export default async function Page(props: { params: { id: string } }) {
     <div className="space-y-8 lg:space-y-14">
       <Suspense>
         {/* @ts-expect-error Async Server Component */}
-        <SingleProduct product={api.products.byId.query({ id: params.id })} />
+        <SingleProduct
+          product={api.products.byId.query({ id: props.params.id })}
+        />
       </Suspense>
       <Suspense fallback={<RecommendedProductsSkeleton />}>
         {/* @ts-expect-error Async Server Component */}

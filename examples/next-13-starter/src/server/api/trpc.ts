@@ -1,8 +1,8 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import { NextRequest } from 'next/server';
-import { transformer } from 'trpc-api/shared';
 import { z } from 'zod';
 import { getServerSession } from '~/server/auth';
+import { transformer } from '~/trpc/shared';
 import { prisma } from '../prisma';
 
 type CreateContextOptions = {
