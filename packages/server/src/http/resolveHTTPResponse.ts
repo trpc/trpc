@@ -8,18 +8,17 @@ import {
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
+import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { Maybe } from '../types';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
+import { HTTPHeaders, HTTPResponse } from './internals/types';
 import {
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
   HTTPRequest,
-  HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   TRPCRequestInfo,
-} from './internals/types';
+} from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -35,7 +34,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
         return undefined;
       }
       const raw = req.query.get('input');
-      return JSON.parse(raw!);
+      return JSON.parse(raw);
     }
     if (typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''

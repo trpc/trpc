@@ -1,8 +1,5 @@
 import { AnyRouter } from '../../core';
-import {
-  HTTPRequest,
-  ResolveHTTPRequestOptionsContextFn,
-} from '../../http/internals/types';
+import { HTTPRequest, ResolveHTTPRequestOptionsContextFn } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
 
