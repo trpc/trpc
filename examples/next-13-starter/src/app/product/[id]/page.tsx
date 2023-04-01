@@ -7,7 +7,7 @@ import {
 import { Reviews, ReviewsSkeleton } from './reviews';
 import { SingleProduct } from './single-product';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 export default async function Page(props: { params: { id: string } }) {
   return (

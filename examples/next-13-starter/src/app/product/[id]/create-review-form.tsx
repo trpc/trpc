@@ -1,25 +1,20 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { api } from 'trpc-api';
 
-export function CreateReviewForm(props: { productId: string }) {
+export function CreateReviewForm(props: {
+  productId: string;
+  handleSubmit: (t: string, r: number) => Promise<void>;
+}) {
   const router = useRouter();
-  const sesh = useSession();
   const [isPending, startTransition] = useTransition();
   const [isCreating, setIsCreating] = useState(false);
   const [text, setText] = useState('');
 
   async function handleSubmit() {
     setIsCreating(true);
-    const review = await api.reviews.create.mutate({
-      productId: props.productId,
-      rating: Math.floor(Math.random() * 5) + 1,
-      text,
-    });
+    await props.handleSubmit(text, Math.floor(Math.random() * 5) + 1);
     setIsCreating(false);
     setText('');
 
@@ -27,16 +22,6 @@ export function CreateReviewForm(props: { productId: string }) {
       router.refresh();
     });
   }
-
-  if (!sesh.data)
-    return (
-      <Link
-        href="/api/auth/signin"
-        className="bg-vercel-blue hover:bg-vercel-blue/90 disabled:hover:bg-vercel-blue relative w-full items-center space-x-2 rounded-lg px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:text-white/70"
-      >
-        Sign in to submit a review
-      </Link>
-    );
 
   return (
     <form className="space-y-2">

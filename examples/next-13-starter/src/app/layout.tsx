@@ -1,4 +1,3 @@
-import { SessionProvider } from 'next-auth/react';
 import { AddressBar } from '~/components/address-bar';
 import NextAuthProvider from './next-auth-provider';
 import './styles.css';
