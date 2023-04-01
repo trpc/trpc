@@ -34,7 +34,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
         return undefined;
       }
       const raw = req.query.get('input');
-      return JSON.parse(raw);
+      return JSON.parse(raw!);
     }
     if (typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''
