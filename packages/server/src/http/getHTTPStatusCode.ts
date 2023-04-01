@@ -24,6 +24,7 @@ const JSONRPC2_TO_HTTP_CODE: Record<
   METHOD_NOT_SUPPORTED: 405,
   UNPROCESSABLE_CONTENT: 422,
   TOO_MANY_REQUESTS: 429,
+  I_AM_A_TEAPOT: 418,
 };
 
 function getStatusCodeFromKey(code: keyof typeof TRPC_ERROR_CODES_BY_KEY) {
