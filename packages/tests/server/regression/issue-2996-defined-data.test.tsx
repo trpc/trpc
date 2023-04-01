@@ -10,7 +10,7 @@ const posts = [
   { id: 1, title: 'foo' },
   { id: 2, title: 'bar' },
 ];
-type Post = typeof posts[number];
+type Post = (typeof posts)[number];
 
 const fetchPosts = async () => posts;
 
