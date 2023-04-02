@@ -37,13 +37,13 @@ tRPC defines a list of error codes that each represent a different type of error
 | UNAUTHORIZED          | The client request has not been completed because it lacks valid authentication credentials for the requested resource. | 401       |
 | FORBIDDEN             | The server was unauthorized to access a required data source, such as a REST API.                                       | 403       |
 | NOT_FOUND             | The server cannot find the requested resource.                                                                          | 404       |
+| METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
 | TIMEOUT               | The server would like to shut down this unused connection.                                                              | 408       |
 | CONFLICT              | The server request resource conflict with the current state of the target resource.                                     | 409       |
 | PRECONDITION_FAILED   | Access to the target resource has been denied.                                                                          | 412       |
 | PAYLOAD_TOO_LARGE     | Request entity is larger than limits defined by server.                                                                 | 413       |
-| METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
-| UNPROCESSABLE_CONTENT | The server understands the request method, and the request entity is correct, but the server was unable to process it.  | 422       |
 | I_AM_A_TEAPOT         | The server refuses to brew coffee because it is, permanently, a teapot.                                                 | 418       |
+| UNPROCESSABLE_CONTENT | The server understands the request method, and the request entity is correct, but the server was unable to process it.  | 422       |
 | TOO_MANY_REQUESTS     | The rate limit has been exceeded or too many requests are being sent to the server.                                     | 429       |
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |
