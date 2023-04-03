@@ -9,12 +9,12 @@ module.exports = {
         id: 'main/introduction',
       },
       items: [
+        'main/getting-started',
+        'main/concepts',
         'main/quickstart',
-        'main/awesome-trpc',
+        'main/anatomy-of-trpc',
+        'main/videos-and-community-resources',
         'main/example-apps',
-        'main/contributing',
-        'main/love',
-        'main/sponsors',
       ],
     },
     {
@@ -157,6 +157,17 @@ module.exports = {
     {
       type: 'doc',
       id: 'migration/migrate-from-v9-to-v10',
+    },
+    {
+      type: 'category',
+      label: 'Community',
+      collapsed: true,
+      items: [
+        'community/awesome-trpc',
+        'community/contributing',
+        'community/love',
+        'community/sponsors',
+      ],
     },
   ],
 };
