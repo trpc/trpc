@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
-import { ProductCard } from '~/components/product-card';
-import { ProductSkeleton } from './product/[id]/(components)/recommended';
+import { ProductCard, ProductSkeleton } from '~/components/product-card';
 
 export const runtime = 'edge';
 
@@ -23,10 +22,7 @@ export default async function Home() {
         <div className="rounded-lg bg-black p-4">
           <Suspense fallback={<ProductSkeleton />}>
             {/* @ts-expect-error - Async Server Component */}
-            <ProductCard
-              href="/product/1"
-              product={api.products.byId.query({ id: '1', delay: 500 })}
-            />
+            <AsyncProductCard />
           </Suspense>
         </div>
       </div>
@@ -42,4 +38,9 @@ export default async function Home() {
       </Link>
     </div>
   );
+}
+
+async function AsyncProductCard() {
+  const product = await api.products.byId.query({ id: '1', delay: 500 });
+  return <ProductCard href="/product/1" product={product} />;
 }
