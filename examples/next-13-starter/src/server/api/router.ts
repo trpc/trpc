@@ -1,7 +1,12 @@
 import { TRPCError } from '@trpc/server';
 import { Currency, dinero } from 'dinero.js';
 import { z } from 'zod';
-import { demoProcedure, protectedProcedure, router } from './trpc';
+import {
+  demoProcedure,
+  protectedProcedure,
+  publicProcedure,
+  router,
+} from './trpc';
 
 const USD: Currency<number> = {
   code: 'USD',
@@ -10,6 +15,9 @@ const USD: Currency<number> = {
 };
 
 export const appRouter = router({
+  session: publicProcedure.query(({ ctx }) => ctx.session),
+  me: publicProcedure.query(({ ctx }) => ctx.session?.user),
+
   greeting: demoProcedure
     .input(
       z.object({

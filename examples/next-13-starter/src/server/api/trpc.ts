@@ -47,6 +47,8 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 
 export const router = t.router;
 
+export const publicProcedure = t.procedure;
+
 export const demoProcedure = t.procedure
   .input(z.object({ delay: z.number().optional() }).optional())
   .use(async ({ input, next }) => {

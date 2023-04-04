@@ -1,11 +1,10 @@
-import { getServerSession } from 'next-auth/next';
 import Link from 'next/link';
-import { authOptions } from '~/pages/api/auth/[...nextauth]';
+import { api } from 'trpc-api';
 
 export const runtime = 'edge';
 
 export default async function Home() {
-  const session = await getServerSession(authOptions);
+  const session = await api.session.query();
 
   return (
     <div className="flex flex-col gap-4 text-gray-200">

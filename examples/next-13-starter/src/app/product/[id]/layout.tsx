@@ -1,15 +1,14 @@
-import { getServerSession } from 'next-auth';
 import React from 'react';
+import { api } from 'trpc-api';
 import { Boundary } from '~/components/boundary';
-import { authOptions } from '~/pages/api/auth/[...nextauth]';
-import { Header } from './header';
+import { Header } from './(components)/header';
 
 export const metadata = {
   title: 'Streaming (Edge Runtime)',
 };
 
 export default async function Layout(props: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const session = await api.session.query();
   const user = session?.user;
 
   return (

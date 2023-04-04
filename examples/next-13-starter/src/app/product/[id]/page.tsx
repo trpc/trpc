@@ -3,11 +3,11 @@ import { api } from 'trpc-api';
 import {
   RecommendedProducts,
   RecommendedProductsSkeleton,
-} from './recommended';
-import { Reviews, ReviewsSkeleton } from './reviews';
-import { SingleProduct } from './single-product';
+} from './(components)/recommended';
+import { Reviews, ReviewsSkeleton } from './(components)/reviews';
+import { SingleProduct } from './(components)/single-product';
 
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 export default async function Page(props: { params: { id: string } }) {
   return (
@@ -20,7 +20,7 @@ export default async function Page(props: { params: { id: string } }) {
         <RecommendedProducts
           path="/product"
           data={api.products.list.query(
-            { filter: props.params.id, delay: 500 },
+            { filter: props.params.id, delay: 250 },
             { context: { skipBatch: true } },
           )}
         />
@@ -31,7 +31,7 @@ export default async function Page(props: { params: { id: string } }) {
         <Reviews
           productId={props.params.id}
           data={api.reviews.list.query(
-            { productId: props.params.id, delay: 1000 },
+            { productId: props.params.id, delay: 500 },
             { context: { skipBatch: true } },
           )}
         />
