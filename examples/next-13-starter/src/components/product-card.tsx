@@ -10,8 +10,12 @@ import { ProductSplitPayments } from './product-split-payments';
 
 type Product = RouterOutputs['products']['byId'];
 
-export const ProductCard = (props: { product: Product; href: string }) => {
-  const { product } = props;
+export async function ProductCard(props: {
+  product: Product | Promise<Product>;
+  href: string;
+}) {
+  const product = await props.product;
+
   return (
     <Link href={props.href} className="group block">
       <div className="space-y-2">
@@ -50,4 +54,4 @@ export const ProductCard = (props: { product: Product; href: string }) => {
       </div>
     </Link>
   );
-};
+}

@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import Link from 'next/link';
 import { api } from 'trpc-api';
 import { ProductReviewCard } from '~/components/product-review-card';
 import { RouterOutputs } from '~/trpc/shared';
@@ -9,27 +9,44 @@ export async function Reviews(props: {
   data: Promise<RouterOutputs['reviews']['list']>;
 }) {
   const reviews = await props.data;
-
-  console.log(reviews);
+  const me = await api.me.query();
 
   return (
     <div className="space-y-6">
-      <div className="text-lg font-medium text-white">Customer Reviews</div>
-      <div className="space-y-4">
-        <div className="text-lg font-medium text-white">Write a Review</div>
-        <CreateReviewForm
-          productId={props.productId}
-          // handleSubmit={async (text, rating) => {
-          //   'use server';
-          //   const review = await api.reviews.create.mutate({
-          //     productId: props.productId,
-          //     rating,
-          //     text,
-          //   });
-          //   console.log('server says review', { review });
-          // }}
-        />
+      <div>
+        <div className="text-lg font-medium text-white">Customer Reviews</div>
+        <div className="text-sm text-gray-400">
+          Read what other people think of this product.{' '}
+          {!me && (
+            <>
+              <Link
+                href="/api/auth/signin"
+                className="underline decoration-dotted underline-offset-2 hover:text-white"
+              >
+                Sign in
+              </Link>{' '}
+              to write your own.
+            </>
+          )}
+        </div>
       </div>
+      {me && (
+        <div className="space-y-4">
+          <div className="text-lg font-medium text-white">Write a Review</div>
+          <CreateReviewForm
+            productId={props.productId}
+            // handleSubmit={async (text, rating) => {
+            //   'use server';
+            //   const review = await api.reviews.create.mutate({
+            //     productId: props.productId,
+            //     rating,
+            //     text,
+            //   });
+            //   console.log('server says review', { review });
+            // }}
+          />
+        </div>
+      )}
       <div className="space-y-8">
         {reviews.map((review) => {
           return <ProductReviewCard key={review.id} review={review} />;

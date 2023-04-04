@@ -20,7 +20,7 @@ export default async function Page(props: { params: { id: string } }) {
         <RecommendedProducts
           path="/product"
           data={api.products.list.query(
-            { filter: props.params.id, delay: 250 },
+            { filter: props.params.id, delay: 500 },
             { context: { skipBatch: true } },
           )}
         />
@@ -31,7 +31,7 @@ export default async function Page(props: { params: { id: string } }) {
         <Reviews
           productId={props.params.id}
           data={api.reviews.list.query(
-            { productId: props.params.id, delay: 500 },
+            { productId: props.params.id, delay: 1000 },
             { context: { skipBatch: true } },
           )}
         />

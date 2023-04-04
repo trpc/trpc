@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, User } from 'lucide-react';
+import { Info, Search, ShoppingCart, User } from 'lucide-react';
 import { type User as NextAuthUser } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';

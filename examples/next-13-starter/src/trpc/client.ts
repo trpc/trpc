@@ -13,11 +13,11 @@ export const api = createTRPCNextAppRouterClient<AppRouter>({
           condition: (op) => !!op.context.skipBatch,
           true: httpLink({
             url: getUrl(),
-            fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
+            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
           }),
           false: httpBatchLink({
             url: getUrl(),
-            fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
+            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
           }),
         }),
       ],
