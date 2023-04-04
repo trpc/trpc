@@ -27,7 +27,7 @@
     "lucide-react": "^0.124.0",
     "nanoid": "^4.0.2",
     "next": "13.2.5-canary.28",
-    "next-auth": "^4.21.1",
+    "next-auth": "^4.14.0",
     "prisma-generator-kysely": "^0.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
