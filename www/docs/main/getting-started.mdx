@@ -5,19 +5,47 @@ sidebar_label: Getting Started
 slug: /getting-started
 ---
 
-todo
+"Getting started" means different things to different people. The goal of this page is to guide you to the right resources based on your goals.
 
-- different sections for different goals
-- how to jump into a tRPC codebase
-  - queries, mutations, context, maybe middleware
-  - frontend usage - query/mutate, or
+## The bare minimum to be productive in a tRPC codebase.
+
+- Read the [concepts](./concepts.mdx) page
+- Backend concepts you might want to read about in more detail sooner or later are [routers](../server/routers.md), [procedures](../server/procedures.md), [context](../server/context.md), and [middleware](../server/middlewares.md).
+- If you are in a React codebase, read about [useQuery](../reactjs/useQuery.md), [useMutation](../reactjs/useMutation.md) and [useContext](../reactjs/useContext.mdx).
+
+## Creating a new project
+
+Since tRPC can live inside of many different frameworks, you will first need to decide what you want to use.
+
+Some resources:
+
+1. you need to choose what you will use for the app
+
+- BE: adapters [adapters](../server/adapters-intro.md)
+- FE:
+  - RQ [rq integration](../reactjs/introduction.mdx)
+  - NextJS http://localhost:3000/docs/nextjs/introduction
+  - [third-party adapters](../community/awesome-trpc.mdx#frontend-frameworks)
+
+Then you need to make another decision: do you want to use a template to scaffold your application, or start from scratch?
+
+### Using a template
+
+If you start from a template, your initial experience will be similar to jumping into an existing codebase, except that the scaffolded project will be much smaller than most existing codebases.
+
+### Starting from scratch
+
 - how to get started with a new project
   - you can use a template => like jumping into an existing codebase
   - from scratch
     - same as above but you also need to do setup
     - considerations about which adapters to use
     - read the general stuff plus the setup for chosen adapters
-- how to get started with an existing project
-  - same as "from scratch" above (know concepts + your adapters)
-  - some other ideas
-    - you don't need every endpoint to be tRPC
+    - even if you build your own, the templates might be helpful as a reference
+
+## Adding tRPC to an existing project
+
+Adding tRPC to an existing project is not significantly different from starting a new project, so the same resources apply. The main challenge is that an existing project will contain more stuff than a new project, so it can feel difficult to know where the touching points are. Here are some tips:
+
+- You don't need to port all of your existing backend logic to tRPC. A common migration strategy is to initally only use tRPC for new endpoints, and then gradually migrate existing endpoints to tRPC.
+- If you are in a codebase that already uses Tanstack Query, make sure you don't end up with two `QueryClientProvider` components. This can happen especially in Next.js, where the `withTRPC` function already includes a QueryClientProvider of its own. If you are using `withTRPC` in your app, you should remove the `QueryClientProvider` from your `_app.tsx` file.
