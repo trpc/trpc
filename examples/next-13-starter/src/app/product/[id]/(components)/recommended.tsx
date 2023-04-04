@@ -38,9 +38,13 @@ export function RecommendedProductsSkeleton() {
 
   return (
     <div className="space-y-6 pb-[5px]">
-      <div className="space-y-2">
-        <div className={`h-6 w-1/3 rounded-lg bg-gray-900 ${shimmer}`} />
-        <div className={`h-4 w-1/2 rounded-lg bg-gray-900 ${shimmer}`} />
+      <div>
+        <div className="text-lg font-medium text-white">
+          Recommended Products for You
+        </div>
+        <div className="text-sm text-gray-400">
+          Based on your preferences and shopping habits
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-6">

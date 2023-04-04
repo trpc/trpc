@@ -1,10 +1,12 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
-generator client {
-  provider = "prisma-client-js"
+generator kysely {
+  provider = "npx prisma-generator-kysely"
+  output   = "./types"
 }
 
 model Product {
@@ -22,6 +24,8 @@ model Product {
   updatedAt    DateTime  @updatedAt
   discountId   String?
   review       Review[]
+
+  @@index([discountId])
 }
 
 model Discount {
@@ -34,18 +38,22 @@ model Discount {
 model Review {
   id        String   @id @default(cuid())
   rating    Int
-  comment   String
+  comment   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   product   Product  @relation(fields: [productId], references: [id])
   productId String
-  user      User     @relation(fields: [userEmail], references: [email])
-  userEmail String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+
+  @@index([productId])
+  @@index([userId])
 }
 
 model User {
+  id      String   @id @default(cuid())
   name    String?
-  email   String   @id
+  email   String
   image   String?
   reviews Review[]
 }

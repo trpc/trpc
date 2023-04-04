@@ -8,8 +8,7 @@ export const metadata = {
 };
 
 export default async function Layout(props: { children: React.ReactNode }) {
-  const session = await api.session.query();
-  const user = session?.user;
+  const user = await api.me.query();
 
   return (
     <>

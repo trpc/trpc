@@ -4,7 +4,7 @@ import { api } from 'trpc-api';
 export const runtime = 'edge';
 
 export default async function Home() {
-  const session = await api.session.query();
+  const user = await api.me.query();
 
   return (
     <div className="flex flex-col gap-4 text-gray-200">
@@ -13,12 +13,12 @@ export default async function Home() {
       <Link href="/product/1" className="rounded bg-gray-800 px-5 py-3">
         Go to product page
       </Link>
-      {session && <span>Hello {session.user.name}!</span>}
+      {user && <span>Hello {user.name}!</span>}
       <Link
-        href={session ? '/api/auth/signout' : '/api/auth/signin'}
+        href={user ? '/api/auth/signout' : '/api/auth/signin'}
         className="rounded bg-gray-800 px-5 py-3"
       >
-        {session ? 'Sign Out' : 'Sign In'}
+        {user ? 'Sign Out' : 'Sign In'}
       </Link>
     </div>
   );

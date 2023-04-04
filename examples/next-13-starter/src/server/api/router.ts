@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { Currency, dinero } from 'dinero.js';
+import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import {
   demoProcedure,
@@ -15,8 +16,7 @@ const USD: Currency<number> = {
 };
 
 export const appRouter = router({
-  session: publicProcedure.query(({ ctx }) => ctx.session),
-  me: publicProcedure.query(({ ctx }) => ctx.session?.user),
+  me: publicProcedure.query(({ ctx }) => ctx?.user),
 
   greeting: demoProcedure
     .input(
@@ -36,13 +36,38 @@ export const appRouter = router({
     list: demoProcedure
       .input(z.object({ filter: z.string().optional() }).optional())
       .query(async ({ ctx, input }) => {
-        const products = await ctx.prisma.product.findMany({
-          ...(input?.filter ? { where: { id: { not: input.filter } } } : {}),
-          include: { discount: true },
-        });
+        const products = await ctx.db
+          .selectFrom('Product')
+          .leftJoin('Discount', 'Product.discountId', 'Discount.id')
+          .select([
+            'Product.id',
+            'Product.createdAt',
+            'Product.name',
+            'Product.description',
+            'Product.price',
+            'Product.image',
+            'Product.rating',
+            'Product.isBestSeller',
+            'Product.stock',
+            'Product.leadTime',
+            'Discount.id as discountId',
+            'Discount.percent',
+            'Discount.expiresAt',
+          ])
+          .$if(!!input?.filter, (q) =>
+            q.where('Product.id', '!=', input?.filter as string),
+          )
+          .execute();
 
         return products.map((p) => ({
           ...p,
+          discount: p.discountId
+            ? {
+                id: p.discountId,
+                percent: p.percent,
+                expires: p.expiresAt,
+              }
+            : null,
           price: dinero({ amount: p.price, currency: USD }),
         }));
       }),
@@ -50,13 +75,38 @@ export const appRouter = router({
     byId: demoProcedure
       .input(z.object({ id: z.string() }))
       .query(async ({ ctx, input }) => {
-        const product = await ctx.prisma.product.findUnique({
-          where: { id: input.id },
-          include: { discount: true },
-        });
+        console.log({ input });
+        const product = await ctx.db
+          .selectFrom('Product')
+          .leftJoin('Discount', 'Product.discountId', 'Discount.id')
+          .select([
+            'Product.id',
+            'Product.createdAt',
+            'Product.name',
+            'Product.description',
+            'Product.price',
+            'Product.image',
+            'Product.rating',
+            'Product.isBestSeller',
+            'Product.stock',
+            'Product.leadTime',
+            'Discount.id as discountId',
+            'Discount.percent',
+            'Discount.expiresAt',
+          ])
+          .where('Product.id', '=', input.id)
+          .executeTakeFirst();
+
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
         return {
           ...product,
+          discount: product.discountId
+            ? {
+                id: product.discountId,
+                percent: product.percent,
+                expires: product.expiresAt,
+              }
+            : null,
           price: dinero({ amount: product.price, currency: USD }),
         };
       }),
@@ -72,42 +122,54 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        const product = await ctx.prisma.product.findUnique({
-          where: { id: input.productId },
-        });
+        const product = await ctx.db
+          .selectFrom('Product')
+          .selectAll()
+          .where('Product.id', '=', input.productId)
+          .executeTakeFirst();
+
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
 
-        const user = ctx.session.user;
-
-        return ctx.prisma.review.create({
-          data: {
-            product: {
-              connect: { id: input.productId },
-            },
-            user: {
-              connectOrCreate: {
-                where: { email: user.email },
-                create: {
-                  name: user.name,
-                  email: user.email,
-                  image: user.image,
-                },
-              },
-            },
+        const id = nanoid();
+        await ctx.db
+          .insertInto('Review')
+          .values({
+            id,
+            productId: input.productId,
+            userId: ctx.user.id,
             comment: input.text,
             rating: input.rating,
-          },
-        });
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .executeTakeFirst();
+
+        return await ctx.db
+          .selectFrom('Review')
+          .selectAll()
+          .where('Review.id', '=', id)
+          .executeTakeFirst();
       }),
 
     list: demoProcedure
       .input(z.object({ productId: z.string() }))
       .query(async ({ ctx, input }) => {
-        return ctx.prisma.review.findMany({
-          where: { productId: input.productId },
-          include: { user: true },
-          orderBy: { createdAt: 'desc' },
-        });
+        const reviews = await ctx.db
+          .selectFrom('Review')
+          .leftJoin('User', 'Review.userId', 'User.id')
+          .selectAll()
+          .where('Review.productId', '=', input.productId)
+          .orderBy('Review.createdAt', 'desc')
+          .execute();
+        return reviews.map((r) => ({
+          ...r,
+          user: {
+            id: r.userId,
+            name: r.name,
+            email: r.email,
+            image: r.image,
+          },
+        }));
       }),
   }),
 });
