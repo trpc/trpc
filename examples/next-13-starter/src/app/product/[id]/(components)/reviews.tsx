@@ -10,6 +10,8 @@ export async function Reviews(props: {
 }) {
   const reviews = await props.data;
 
+  console.log(reviews);
+
   return (
     <div className="space-y-6">
       <div className="text-lg font-medium text-white">Customer Reviews</div>
@@ -17,20 +19,15 @@ export async function Reviews(props: {
         <div className="text-lg font-medium text-white">Write a Review</div>
         <CreateReviewForm
           productId={props.productId}
-          handleSubmit={async (text, rating) => {
-            'use server';
-            // const review = await api.reviews.create.mutate({
-            //   productId: props.productId,
-            //   rating,
-            //   text,
-            // });
-            const json = await (
-              await fetch('http://localhost:3000/api/trpc/reviews.create', {
-                headers: headers(),
-              })
-            ).json();
-            console.log('server says review', { json });
-          }}
+          // handleSubmit={async (text, rating) => {
+          //   'use server';
+          //   const review = await api.reviews.create.mutate({
+          //     productId: props.productId,
+          //     rating,
+          //     text,
+          //   });
+          //   console.log('server says review', { review });
+          // }}
         />
       </div>
       <div className="space-y-8">

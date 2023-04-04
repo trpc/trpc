@@ -9,8 +9,6 @@ type Product = RouterOutputs['products']['byId'];
 export const SingleProduct = async (props: { data: Promise<Product> }) => {
   const product = await props.data;
 
-  console.log('product', product);
-
   return (
     <div className="grid grid-cols-4 gap-6">
       <div className="col-span-full lg:col-span-1">

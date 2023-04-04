@@ -75,7 +75,6 @@ export const appRouter = router({
     byId: demoProcedure
       .input(z.object({ id: z.string() }))
       .query(async ({ ctx, input }) => {
-        console.log({ input });
         const product = await ctx.db
           .selectFrom('Product')
           .leftJoin('Discount', 'Product.discountId', 'Discount.id')
@@ -129,6 +128,23 @@ export const appRouter = router({
           .executeTakeFirst();
 
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
+
+        const user = await ctx.db
+          .selectFrom('User')
+          .selectAll()
+          .where('User.id', '=', ctx.user.id)
+          .executeTakeFirst();
+
+        if (!user)
+          await ctx.db
+            .insertInto('User')
+            .values({
+              id: ctx.user.id,
+              name: ctx.user.name,
+              email: ctx.user.email,
+              image: ctx.user.image,
+            })
+            .executeTakeFirstOrThrow();
 
         const id = nanoid();
         await ctx.db
