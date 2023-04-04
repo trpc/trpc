@@ -18,16 +18,6 @@ const USD: Currency<number> = {
 export const appRouter = router({
   me: publicProcedure.query(({ ctx }) => ctx?.user),
 
-  greeting: demoProcedure
-    .input(
-      z.object({
-        text: z.string(),
-      }),
-    )
-    .query(async ({ input }) => {
-      return `hello ${input.text}`;
-    }),
-
   products: router({
     // create: protectedProcedure
     //   .input(z.object({}))
@@ -36,12 +26,11 @@ export const appRouter = router({
     list: demoProcedure
       .input(z.object({ filter: z.string().optional() }).optional())
       .query(async ({ ctx, input }) => {
-        const products = await ctx.db
+        const query = ctx.db
           .selectFrom('Product')
           .leftJoin('Discount', 'Product.discountId', 'Discount.id')
           .select([
             'Product.id',
-            'Product.createdAt',
             'Product.name',
             'Product.description',
             'Product.price',
@@ -50,37 +39,37 @@ export const appRouter = router({
             'Product.isBestSeller',
             'Product.stock',
             'Product.leadTime',
-            'Discount.id as discountId',
+            'Product.discountId',
             'Discount.percent',
             'Discount.expiresAt',
-          ])
-          .$if(!!input?.filter, (q) =>
-            q.where('Product.id', '!=', input?.filter as string),
-          )
-          .execute();
+          ]);
+        const products = !!input?.filter
+          ? await query.where('Product.id', '!=', input?.filter).execute()
+          : await query.execute();
 
-        return products.map((p) => ({
-          ...p,
-          discount: p.discountId
-            ? {
-                id: p.discountId,
-                percent: p.percent,
-                expires: p.expiresAt,
-              }
-            : null,
-          price: dinero({ amount: p.price, currency: USD }),
-        }));
+        return products.map(
+          ({ discountId, percent, expiresAt, ...product }) => ({
+            ...product,
+            discount: discountId
+              ? {
+                  id: discountId,
+                  percent: percent,
+                  expires: expiresAt,
+                }
+              : null,
+            price: dinero({ amount: product.price, currency: USD }),
+          }),
+        );
       }),
 
     byId: demoProcedure
       .input(z.object({ id: z.string() }))
       .query(async ({ ctx, input }) => {
-        const product = await ctx.db
+        const result = await ctx.db
           .selectFrom('Product')
           .leftJoin('Discount', 'Product.discountId', 'Discount.id')
           .select([
             'Product.id',
-            'Product.createdAt',
             'Product.name',
             'Product.description',
             'Product.price',
@@ -89,21 +78,23 @@ export const appRouter = router({
             'Product.isBestSeller',
             'Product.stock',
             'Product.leadTime',
-            'Discount.id as discountId',
+            'Product.discountId',
             'Discount.percent',
             'Discount.expiresAt',
           ])
           .where('Product.id', '=', input.id)
           .executeTakeFirst();
 
-        if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
+        if (!result) throw new TRPCError({ code: 'NOT_FOUND' });
+
+        const { discountId, percent, expiresAt, ...product } = result;
         return {
           ...product,
-          discount: product.discountId
+          discount: discountId
             ? {
-                id: product.discountId,
-                percent: product.percent,
-                expires: product.expiresAt,
+                id: discountId,
+                percent: percent,
+                expires: expiresAt,
               }
             : null,
           price: dinero({ amount: product.price, currency: USD }),
@@ -121,21 +112,21 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        const product = await ctx.db
-          .selectFrom('Product')
-          .selectAll()
-          .where('Product.id', '=', input.productId)
-          .executeTakeFirst();
+        const [product, user] = await Promise.all([
+          ctx.db
+            .selectFrom('Product')
+            .select(['Product.id'])
+            .where('Product.id', '=', input.productId)
+            .executeTakeFirst(),
+          ctx.db
+            .selectFrom('User')
+            .selectAll()
+            .where('User.id', '=', ctx.user.id)
+            .executeTakeFirst(),
+        ]);
 
         if (!product) throw new TRPCError({ code: 'NOT_FOUND' });
-
-        const user = await ctx.db
-          .selectFrom('User')
-          .selectAll()
-          .where('User.id', '=', ctx.user.id)
-          .executeTakeFirst();
-
-        if (!user)
+        if (!user) {
           await ctx.db
             .insertInto('User')
             .values({
@@ -145,6 +136,7 @@ export const appRouter = router({
               image: ctx.user.image,
             })
             .executeTakeFirstOrThrow();
+        }
 
         const id = nanoid();
         await ctx.db
@@ -162,7 +154,13 @@ export const appRouter = router({
 
         return await ctx.db
           .selectFrom('Review')
-          .selectAll()
+          .select([
+            'Review.id',
+            'Review.comment',
+            'Review.rating',
+            'Review.createdAt',
+            'Review.userId',
+          ])
           .where('Review.id', '=', id)
           .executeTakeFirst();
       }),
@@ -173,17 +171,24 @@ export const appRouter = router({
         const reviews = await ctx.db
           .selectFrom('Review')
           .leftJoin('User', 'Review.userId', 'User.id')
-          .selectAll()
+          .select([
+            'Review.id',
+            'Review.comment',
+            'Review.rating',
+            'Review.createdAt',
+            'Review.userId',
+            'User.name',
+            'User.image',
+          ])
           .where('Review.productId', '=', input.productId)
           .orderBy('Review.createdAt', 'desc')
           .execute();
-        return reviews.map((r) => ({
-          ...r,
+        return reviews.map(({ userId, name, image, ...review }) => ({
+          ...review,
           user: {
-            id: r.userId,
-            name: r.name,
-            email: r.email,
-            image: r.image,
+            id: userId,
+            name: name,
+            image: image,
           },
         }));
       }),

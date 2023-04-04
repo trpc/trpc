@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 import { ProductRating } from '~/components/product-rating';
 import { RouterOutputs } from '~/trpc/shared';
