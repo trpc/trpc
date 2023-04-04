@@ -119,6 +119,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
       conn.close();
     }
   }
+  
+  function closePendingRequests() {
+    Object.values(pendingRequests).forEach(req => req.callbacks.complete())
+  }
 
   function resumeSubscriptionOnReconnect(req: TRequest) {
     if (outgoing.some((r) => r.id === req.op.id)) {
@@ -281,7 +285,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
     close: () => {
       state = 'closed';
       onClose?.();
-      closeIfNoPending(activeConnection);
+      closePendingRequests();
+      // closeIfNoPending(activeConnection);
       clearTimeout(connectTimer as any);
       connectTimer = null;
     },
@@ -323,28 +328,15 @@ export function wsLink<TRouter extends AnyRouter>(
 
         const input = runtime.transformer.serialize(op.input);
 
-        let isDone = false;
         const unsub = client.request(
           { type, path, input, id, context },
           {
             error(err) {
-              isDone = true;
               observer.error(err as TRPCClientError<any>);
               unsub();
             },
             complete() {
-              if (!isDone) {
-                isDone = true;
-                observer.error(
-                  TRPCClientError.from(
-                    new TRPCSubscriptionEndedError(
-                      'Operation ended prematurely',
-                    ),
-                  ),
-                );
-              } else {
                 observer.complete();
-              }
             },
             next(message) {
               const transformed = transformResult(message, runtime);
@@ -360,7 +352,6 @@ export function wsLink<TRouter extends AnyRouter>(
               if (op.type !== 'subscription') {
                 // if it isn't a subscription we don't care about next response
 
-                isDone = true;
                 unsub();
                 observer.complete();
               }
@@ -368,7 +359,6 @@ export function wsLink<TRouter extends AnyRouter>(
           },
         );
         return () => {
-          isDone = true;
           unsub();
         };
       });
