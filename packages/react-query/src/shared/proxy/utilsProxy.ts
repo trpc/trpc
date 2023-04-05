@@ -107,7 +107,7 @@ type DecorateProcedure<
       predicate?: (
         query: Query<
           inferProcedureInput<TProcedure>,
-          TRPCClientError<TRouter>,
+          TRPCClientError<TProcedure>,
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
