@@ -255,7 +255,7 @@ describe('polymorphism', () => {
           'Last Export: `Search for Polymorphism React` (Ready!)',
         );
       });
-    })
+    });
   });
 
   describe('sub-typed factory', () => {
