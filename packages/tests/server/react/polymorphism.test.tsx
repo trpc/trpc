@@ -17,6 +17,7 @@ import { InferQueryLikeData } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
+import { z } from 'zod';
 /**
  * We define a router factory which can be used many times.
  *
@@ -59,10 +60,22 @@ function createTRPCApi() {
         ),
       }),
       discussions: t.router({
-        export: Factory.createExportRoute(
-          t.router,
-          t.procedure,
-          DiscussionExportsProvider,
+        export: t.mergeRouters(
+          Factory.createExportRoute(
+            t.router,
+            t.procedure,
+            DiscussionExportsProvider,
+          ),
+
+          // We want to be sure that routers with abstract types,
+          //  which then get merged into a larger router, can be used polymorphically
+          t.router({
+            someExtraProcedure: t.procedure
+              .input(z.object({ name: z.string().min(0) }))
+              .mutation((opts) => {
+                return 'Hello ' + opts.input.name;
+              }),
+          }),
         ),
       }),
       pullRequests: t.router({
@@ -186,6 +199,63 @@ describe('polymorphism', () => {
         );
       });
     });
+
+    test('can use the abstract interface with a factory instance which has been merged with some extra procedures', async () => {
+      const { trpc } = ctx;
+
+      function DiscussionsExportPage() {
+        const utils = trpc.useContext();
+
+        const [currentExport, setCurrentExport] = useState<null | number>(null);
+
+        return (
+          <>
+            <StartExportButton
+              route={trpc.github.discussions.export}
+              utils={utils.github.discussions.export}
+              onExportStarted={setCurrentExport}
+            />
+
+            <RefreshExportsListButton
+              invalidateAll={() => utils.invalidate()}
+            />
+
+            <ExportStatus
+              status={trpc.github.discussions.export.status}
+              currentExport={currentExport}
+            />
+
+            <ExportsList list={trpc.github.discussions.export.list} />
+          </>
+        );
+      }
+
+      /**
+       * Test Act & Assertions
+       */
+
+      const $ = render(
+        <ctx.App>
+          <DiscussionsExportPage />
+        </ctx.App>,
+      );
+
+      await userEvent.click($.getByTestId('startExportBtn'));
+
+      await waitFor(() => {
+        expect($.container).toHaveTextContent(
+          'Last Export: `Search for Polymorphism React` (Working)',
+        );
+      });
+
+      await userEvent.click($.getByTestId('refreshBtn'));
+
+      await waitFor(() => {
+        expect($.container).toHaveTextContent(
+          'Last Export: `Search for Polymorphism React` (Ready!)',
+        );
+      });
+    })
   });
 
   describe('sub-typed factory', () => {
