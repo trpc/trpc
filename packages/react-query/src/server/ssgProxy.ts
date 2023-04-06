@@ -17,7 +17,8 @@ import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
-import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
+import { createSSGHelpers } from '../ssg/ssg';
+import { CreateSSGHelpersOptions } from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -63,12 +64,12 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
 /**
  * Create functions you can use for server-side rendering / static generation
  */
-export function createProxySSGHelpers<TRouter extends AnyRouter>(
+export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
 ) {
   const helpers = createSSGHelpers(opts);
 
-  type CreateProxySSGHelpers = ProtectedIntersection<
+  type CreateServerSideHelpers = ProtectedIntersection<
     {
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
@@ -76,7 +77,7 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     DecoratedProcedureSSGRecord<TRouter>
   >;
 
-  return createFlatProxy<CreateProxySSGHelpers>((key) => {
+  return createFlatProxy<CreateServerSideHelpers>((key) => {
     if (key === 'queryClient') {
       return helpers.queryClient;
     }
