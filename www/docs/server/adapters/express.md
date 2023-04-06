@@ -1,6 +1,6 @@
 ---
 id: express
-title: Usage with Express
+title: Express Adapter
 sidebar_label: Express
 slug: /server/adapters/express
 ---
@@ -11,14 +11,12 @@ slug: /server/adapters/express
   <thead>
     <tr>
       <th>Description</th>
-      <th>URL</th>
       <th>Links</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>Express server &amp; procedure calls with Node.js.</td>
-      <td><em>n/a</em></td>
       <td>
         <ul>
           <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
