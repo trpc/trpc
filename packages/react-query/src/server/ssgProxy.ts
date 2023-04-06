@@ -17,7 +17,8 @@ import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
-import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
+import { createSSGHelpers } from '../ssg/ssg';
+import { CreateSSGHelpersOptions } from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**

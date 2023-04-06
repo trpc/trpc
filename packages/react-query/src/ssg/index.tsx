@@ -13,4 +13,4 @@ export {
   createServerSideHelpers as createProxySSGHelpers,
 } from '../server';
 
-export { createSSGHelpers } from '../server/ssg';
+export { createSSGHelpers } from './ssg';

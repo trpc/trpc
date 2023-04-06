@@ -6,22 +6,13 @@ import {
 } from '@tanstack/react-query';
 import {
   AnyRouter,
-  ClientDataTransformerOptions,
   callProcedure,
   inferHandlerInput,
   inferProcedureOutput,
-  inferRouterContext,
 } from '@trpc/server';
 import { getArrayQueryKey } from '../internals/getArrayQueryKey';
-import { CreateTRPCReactQueryClientConfig, getQueryClient } from '../shared';
-
-interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
-  router: TRouter;
-  ctx: inferRouterContext<TRouter>;
-  transformer?: ClientDataTransformerOptions;
-}
-export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
-  CreateSSGHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
+import { CreateSSGHelpersOptions } from '../server/types';
+import { getQueryClient } from '../shared';
 
 /**
  * Create functions you can use for server-side rendering / static generation
