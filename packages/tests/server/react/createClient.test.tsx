@@ -3,7 +3,7 @@ import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { createTRPCReact, httpBatchLink } from '@trpc/react-query/src';
-import { createServerSideHelpers } from '@trpc/react-query/src/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
@@ -70,7 +70,7 @@ test('createClient()', async () => {
 test('useDehydratedState()', async () => {
   const { App, proxy, router } = ctx;
 
-  const ssg = createServerSideHelpers({ router, ctx: {} });
+  const ssg = createProxySSGHelpers({ router, ctx: {} });
   const res = await ssg.hello.fetch();
   expect(res).toBe('world');
   const dehydratedState = ssg.dehydrate();
