@@ -7,9 +7,8 @@ import type {
 } from 'aws-lambda';
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { resolveHTTPResponse } from '../../http';
-import { HTTPRequest } from '../../http/internals/types';
-import type { HTTPResponse } from '../../http/internals/types';
+import { HTTPRequest, resolveHTTPResponse } from '../../http';
+import { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,
   APIGatewayResult,

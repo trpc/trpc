@@ -11,7 +11,7 @@
     "dev": "pnpm dx:next",
     "prebuild": "run-s generate migrate",
     "build": "next build",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "next start",
     "studio": "prisma studio",
     "migrate-dev": "prisma migrate dev",
