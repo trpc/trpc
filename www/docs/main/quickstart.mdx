@@ -263,7 +263,7 @@ const appRouter = router({
     // us anything so we won't assume a certain data type.
     .input((val: unknown) => {
       // If the value is of type string, return it.
-      // It will now be inferred as string.
+      // It will now be inferred as a string.
       if (typeof val === 'string') return val;
 
       // Uh oh, looks like that input wasn't a string.
