@@ -88,27 +88,31 @@ Below are some commonly used terms in the tRPC ecosystem. We'll be using these t
   <tbody>
     <tr>
       <td><b className="text-green-500">Procedure</b> <a href="/docs/server/procedures">↗</a></td>
-      <td>API endpoint - can be a <b className="text-amber-500">query</b> or <b className="text-amber-500">mutation</b></td>
+      <td>tRPC's equivalent to an API endpoint - can be a <b className="text-cyan-500">query</b>, <b className="text-purple-500">mutation</b>, or a <b className="text-pink-500">subscription</b></td>
     </tr>
     <tr>
-      <td><b className="text-amber-500">Query</b></td>
+      <td><b className="text-cyan-500">Query</b></td>
       <td>A <b className="text-green-500">procedure</b> that gets some data</td>
     </tr>
     <tr>
-      <td><b className="text-amber-500">Mutation</b></td>
+      <td><b className="text-purple-500">Mutation</b></td>
       <td>A <b className="text-green-500">procedure</b> that creates/changes/deletes (i.e. mutates) some data</td>
     </tr>
     <tr>
-      <td><b className="text-blue-500">Router</b> <a href="/docs/server/routers">↗</a></td>
-      <td>A collection of <b className="text-green-500">procedures</b> under a shared namespace. Can be nested with other <b className="text-blue-500">routers</b></td>
+      <td><b className="text-pink-500">Subscription</b> <a href="/docs/subscriptions">↗</a></td>
+      <td>A <b className="text-green-500">procedure</b> that listens to changes and gets a stream of messages</td>
     </tr>
     <tr>
-      <td><b className="text-pink-500">Context</b> <a href="/docs/server/context">↗</a></td>
+      <td><b className="text-blue-500">Router</b> <a href="/docs/server/routers">↗</a></td>
+      <td>A collection of <b className="text-green-500">procedures</b> under a shared namespace. Can be nested with other <b className="text-blue-500">routers</b>.</td>
+    </tr>
+    <tr>
+      <td><b className="text-rose-500">Context</b> <a href="/docs/server/context">↗</a></td>
       <td>Stuff accessible to all <b className="text-green-500">procedures</b> (e.g. session state, db connection)</td>
     </tr>
     <tr>
       <td><b className="text-indigo-400">Middleware</b> <a href="/docs/server/middlewares">↗</a></td>
-      <td>Functions executed before and after <b className="text-green-500">procedures</b>, can modify <b className="text-pink-500">context</b></td>
+      <td>Functions executed before and after <b className="text-green-500">procedures</b>, can create new <b className="text-pink-500">context</b></td>
     </tr>
   </tbody>
 </table>
