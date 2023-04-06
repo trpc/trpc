@@ -27,6 +27,8 @@ packages/*/*
 !packages/tests/*
 packages/tests/node_modules
 
+.eslintcache
+
 examples/next-big-router/src/server/routers
 
 playwright
