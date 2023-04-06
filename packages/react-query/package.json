@@ -27,15 +27,20 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./ssg": {
-      "import": "./dist/ssg/index.mjs",
-      "require": "./dist/ssg/index.js",
-      "default": "./dist/ssg/index.js"
+    "./server": {
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.js",
+      "default": "./dist/server/index.js"
     },
     "./shared": {
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
+    },
+    "./ssg": {
+      "import": "./dist/ssg/index.mjs",
+      "require": "./dist/ssg/index.js",
+      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
@@ -43,8 +48,9 @@
     "src",
     "README.md",
     "package.json",
-    "ssg",
-    "shared"
+    "server",
+    "shared",
+    "ssg"
   ],
   "eslintConfig": {
     "rules": {

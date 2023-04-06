@@ -3,7 +3,7 @@ import { Post, createAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { expectTypeOf } from 'expect-type';
 import React, { Fragment, useState } from 'react';
 
@@ -377,7 +377,7 @@ describe('Infinite Query', () => {
 
   test('prefetchInfiniteQuery()', async () => {
     const { appRouter } = factory;
-    const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+    const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
     {
       await ssg.paginatedPosts.prefetchInfinite({ limit: 1 });
