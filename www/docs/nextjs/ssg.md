@@ -11,7 +11,7 @@ Reference project: https://github.com/trpc/examples-next-prisma-todomvc
 
 Static site generation requires executing tRPC queries inside `getStaticProps` on each page.
 
-This can be done using [server-side helpers](server-side-helpers) to prefetch the queries, dehydrate them, and pass it to the page. The queries will then automatically pick up the `trpcState` and use it as an initial value.
+This can be done using [server-side helpers](/docs/nextjs/server-side-helpers) to prefetch the queries, dehydrate them, and pass it to the page. The queries will then automatically pick up the `trpcState` and use it as an initial value.
 
 ## Fetch data in `getStaticProps`
 
