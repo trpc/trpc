@@ -5,7 +5,7 @@
       "outputs": [
         "links/**",
         "shared/**",
-        "server",
+        "server/**",
         "ssg/**",
         "adapters/**",
         "http/**",
