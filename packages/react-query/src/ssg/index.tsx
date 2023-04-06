@@ -1,14 +1,14 @@
 export {
   /**
-   * @deprecated use `@trpc/react/server` instead
+   * @deprecated use `@trpc/react-query/server` instead
    */
   type CreateSSGHelpersOptions,
   /**
-   * @deprecated use `@trpc/react/server` instead
+   * @deprecated use `@trpc/react-query/server` instead
    */
   type DecoratedProcedureSSGRecord,
   /**
-   * @deprecated use `import { createServerSideHelpers } from "@trpc/react/server"`;
+   * @deprecated use `import { createServerSideHelpers } from "@trpc/react-query/server"`;
    */
   createServerSideHelpers as createProxySSGHelpers,
 } from '../server';
