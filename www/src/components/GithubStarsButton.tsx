@@ -34,8 +34,8 @@ export const GithubStarsButton = ({ className }: Props) => {
       <span
         style={{ transition: 'max-width 1s, opacity 1s' }}
         className={clsx(
-          'whitespace-nowrap overflow-hidden w-full',
-          stars ? 'opacity-100 max-w-[100px]' : 'opacity-0 max-w-0',
+          'w-full overflow-hidden whitespace-nowrap',
+          stars ? 'max-w-[100px] opacity-100' : 'max-w-0 opacity-0',
         )}
       >
         {stars}

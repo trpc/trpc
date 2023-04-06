@@ -8,7 +8,7 @@
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "type-check": "tsc",
     "start:server": "node dist/server/index.js",
     "start:client": "wait-port 2022 && node dist/client/index.js",

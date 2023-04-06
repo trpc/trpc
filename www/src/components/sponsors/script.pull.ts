@@ -236,7 +236,7 @@ async function main() {
     });
 
     // Group by login
-    const sponsorsByLogin: Record<string, typeof list[number]> = {};
+    const sponsorsByLogin: Record<string, (typeof list)[number]> = {};
     for (const sponsor of list) {
       const existing = sponsorsByLogin[sponsor.login];
       if (existing) {
