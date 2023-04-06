@@ -1,6 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { inferProcedureOutput } from '@trpc/server';
 import clsx from 'clsx';
 import {
@@ -369,7 +369,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (
   context: GetStaticPropsContext<{ filter: string }>,
 ) => {
-  const ssg = createProxySSGHelpers({
+  const ssg = createServerSideHelpers({
     router: appRouter,
     transformer: superjson,
     ctx: await createContext(),

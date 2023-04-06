@@ -1,16 +1,16 @@
 {
   "name": "@examples/cloudflare-workers",
-  "version": "10.18.0",
+  "version": "10.19.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.18.0",
-    "@trpc/server": "^10.18.0",
+    "@trpc/client": "^10.19.0",
+    "@trpc/server": "^10.19.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-server",
-  "version": "10.18.0",
+  "version": "10.19.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,15 +9,15 @@
     "dev": "run-p dev:* --print-label",
     "type-check": "tsc",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "start": "pnpm dev",
     "test-dev": "start-server-and-test 'tsx src/server' 2021 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.18.0",
-    "@trpc/react-query": "^10.18.0",
-    "@trpc/server": "^10.18.0",
+    "@trpc/client": "^10.19.0",
+    "@trpc/react-query": "^10.19.0",
+    "@trpc/server": "^10.19.0",
     "express": "^4.17.1",
     "zod": "^3.0.0"
   },

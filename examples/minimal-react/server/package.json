@@ -1,15 +1,15 @@
 {
   "name": "@examples/minimal-react-server",
-  "version": "10.18.0",
+  "version": "10.19.0",
   "private": true,
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch index.ts",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives index.ts",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@trpc/server": "^10.18.0",
+    "@trpc/server": "^10.19.0",
     "cors": "^2.8.5",
     "zod": "^3.0.0"
   },

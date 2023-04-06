@@ -1,6 +1,6 @@
 ---
 id: fastify
-title: Usage with Fastify
+title: Fastify Adapter
 sidebar_label: Fastify
 slug: /server/adapters/fastify
 ---

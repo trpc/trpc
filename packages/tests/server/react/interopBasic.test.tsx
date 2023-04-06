@@ -57,7 +57,7 @@ const ctx = konn()
       },
     });
     const queryClient = createQueryClient();
-    const react = createReactQueryHooks<typeof opts['router']>();
+    const react = createReactQueryHooks<(typeof opts)['router']>();
     const client = opts.client;
     type Return = inferProcedureOutput<
       typeof opts.router._def.queries.oldProcedure

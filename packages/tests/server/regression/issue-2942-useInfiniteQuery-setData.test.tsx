@@ -66,7 +66,7 @@ test('with input', async () => {
       return <>...</>;
     }
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
@@ -146,7 +146,7 @@ test('w/o input', async () => {
       return <>...</>;
     }
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
