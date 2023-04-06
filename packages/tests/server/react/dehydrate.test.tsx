@@ -1,5 +1,5 @@
 import { createAppRouter } from './__testHelpers';
-import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
@@ -20,10 +20,10 @@ test('dehydrate', async () => {
   expect(dehydrated).toHaveLength(2);
 
   const [cache, cache2] = dehydrated;
-  expect(cache.queryHash).toMatchInlineSnapshot(
+  expect(cache!.queryHash).toMatchInlineSnapshot(
     `"[[\\"allPosts\\"],{\\"type\\":\\"query\\"}]"`,
   );
-  expect(cache.queryKey).toMatchInlineSnapshot(`
+  expect(cache!.queryKey).toMatchInlineSnapshot(`
     Array [
       Array [
         "allPosts",
@@ -33,8 +33,8 @@ test('dehydrate', async () => {
       },
     ]
   `);
-  expect(cache.state.data).toEqual(db.posts);
-  expect(cache2.state.data).toMatchInlineSnapshot(`
+  expect(cache!.state.data).toEqual(db.posts);
+  expect(cache2!.state.data).toMatchInlineSnapshot(`
     Object {
       "createdAt": 0,
       "id": "1",
