@@ -20,14 +20,14 @@ function getEndingLink(ctx: NextPageContext | undefined) {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
       headers() {
-        if (ctx?.req) {
-          // on ssr, forward client's headers to the server
-          return {
-            ...ctx.req.headers,
-            'x-ssr': '1',
-          };
+        if (!ctx?.req?.headers) {
+          return {};
         }
-        return {};
+        // on ssr, forward client's headers to the server
+        return {
+          ...ctx.req.headers,
+          'x-ssr': '1',
+        };
       },
     });
   }

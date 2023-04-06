@@ -5,7 +5,6 @@ import {
   inferRouterError,
 } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
-import { BaseHandlerOptions } from '../../internals/types';
 import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
 import { ResponseMeta } from '../types';
@@ -16,13 +15,6 @@ export interface HTTPResponse {
   status: number;
   headers?: HTTPHeaders;
   body?: string;
-}
-
-export interface HTTPRequest {
-  method: string;
-  query: URLSearchParams;
-  headers: HTTPHeaders;
-  body: unknown;
 }
 
 /**
@@ -38,39 +30,3 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
 }) => ResponseMeta;
-
-/**
- * Base interface for anything using HTTP
- */
-export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
-  extends BaseHandlerOptions<TRouter, TRequest> {
-  /**
-   * Add handler to be called before response is sent to the user
-   * Useful for setting cache headers
-   * @link https://trpc.io/docs/caching
-   */
-  responseMeta?: ResponseMetaFn<TRouter>;
-}
-
-/** @internal */
-export type ProcedureCall = {
-  type: ProcedureType;
-  input?: unknown;
-  path: string;
-};
-
-/**
- * Information about the incoming request
- * @internal
- */
-export type TRPCRequestInfo = {
-  isBatchCall: boolean;
-  calls: ProcedureCall[];
-};
-
-/**
- * Inner createContext function for `resolveHTTPResponse` used to forward `TRPCRequestInfo` to `createContext`
- * @internal
- */
-export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
-  (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;

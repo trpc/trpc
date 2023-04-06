@@ -1,5 +1,5 @@
 import { TRPCError, initTRPC } from '@trpc/server';
-import { TRPCRequestInfo } from '@trpc/server/http/internals/types';
+import { TRPCRequestInfo } from '@trpc/server/http';
 import { z } from 'zod';
 
 export type Context = {

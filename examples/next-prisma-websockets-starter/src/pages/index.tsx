@@ -25,7 +25,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const userName = session?.user?.name;
   if (!userName) {
     return (
-      <div className="flex justify-between w-full px-3 py-2 text-lg text-gray-200 bg-gray-800 rounded">
+      <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
         <p className="font-bold">
           You have to{' '}
           <button
@@ -39,7 +39,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
         <button
           onClick={() => signIn()}
           data-testid="signin"
-          className="h-full px-4 bg-indigo-500 rounded"
+          className="h-full rounded bg-indigo-500 px-4"
         >
           Sign In
         </button>
@@ -60,7 +60,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
         }}
       >
         <fieldset disabled={addPost.isLoading} className="min-w-0">
-          <div className="flex items-end w-full px-3 py-2 text-lg text-gray-200 bg-gray-500 rounded">
+          <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -89,7 +89,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               }}
             />
             <div>
-              <button type="submit" className="px-4 py-1 bg-indigo-500 rounded">
+              <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
                 Submit
               </button>
             </div>
@@ -185,10 +185,10 @@ export default function IndexPage() {
         <title>Prisma Starter</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div className="flex flex-col h-screen md:flex-row">
-        <section className="flex flex-col w-full bg-gray-800 md:w-72">
+      <div className="flex h-screen flex-col md:flex-row">
+        <section className="flex w-full flex-col bg-gray-800 md:w-72">
           <div className="flex-1 overflow-y-hidden">
-            <div className="flex flex-col h-full divide-y divide-gray-700">
+            <div className="flex h-full flex-col divide-y divide-gray-700">
               <header className="p-4">
                 <h1 className="text-3xl font-bold text-gray-50">
                   tRPC WebSocket starter
@@ -206,10 +206,10 @@ export default function IndexPage() {
                   </a>
                 </p>
               </header>
-              <div className="flex-1 hidden p-4 space-y-6 overflow-y-auto text-gray-400 md:block">
+              <div className="hidden flex-1 space-y-6 overflow-y-auto p-4 text-gray-400 md:block">
                 <article className="space-y-2">
                   <h2 className="text-lg text-gray-200">Introduction</h2>
-                  <ul className="space-y-2 list-disc list-inside">
+                  <ul className="list-inside list-disc space-y-2">
                     <li>Open inspector and head to Network tab</li>
                     <li>All client requests are handled through WebSockets</li>
                     <li>
@@ -242,16 +242,16 @@ export default function IndexPage() {
               </div>
             </div>
           </div>
-          <div className="flex-shrink-0 hidden h-16 md:block"></div>
+          <div className="hidden h-16 shrink-0 md:block"></div>
         </section>
         <div className="flex-1 overflow-y-hidden md:h-screen">
-          <section className="flex flex-col justify-end h-full p-4 space-y-4 bg-gray-700">
+          <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
             <div className="space-y-4 overflow-y-auto">
               <button
                 data-testid="loadMore"
                 onClick={() => fetchPreviousPage()}
                 disabled={!hasPreviousPage || isFetchingPreviousPage}
-                className="px-4 py-2 text-white bg-indigo-500 rounded disabled:opacity-40"
+                className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
               >
                 {isFetchingPreviousPage
                   ? 'Loading more...'
@@ -263,7 +263,7 @@ export default function IndexPage() {
                 {messages?.map((item) => (
                   <article key={item.id} className=" text-gray-50">
                     <header className="flex space-x-2 text-sm">
-                      <h3 className="text-md">
+                      <h3 className="text-base">
                         {item.source === 'RAW' ? (
                           item.name
                         ) : (
@@ -283,7 +283,7 @@ export default function IndexPage() {
                         }).format(item.createdAt)}
                       </span>
                     </header>
-                    <p className="text-xl leading-tight whitespace-pre-line">
+                    <p className="whitespace-pre-line text-xl leading-tight">
                       {item.text}
                     </p>
                   </article>

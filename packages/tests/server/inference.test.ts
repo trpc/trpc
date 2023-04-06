@@ -61,7 +61,7 @@ describe('infer query input & output', () => {
       }),
   });
 
-  type TQueries = typeof router['_def']['procedures'];
+  type TQueries = (typeof router)['_def']['procedures'];
 
   test('no input', () => {
     const input: inferProcedureInput<TQueries['noInput']> = null as any;
@@ -152,7 +152,7 @@ describe('infer mutation input & output', () => {
       }),
   });
 
-  type TMutations = typeof router['_def']['procedures'];
+  type TMutations = (typeof router)['_def']['procedures'];
 
   test('no input', () => {
     const input: inferProcedureInput<TMutations['noInput']> = null as any;
@@ -226,7 +226,7 @@ describe('infer subscription input & output', () => {
       }),
   });
 
-  type TSubscriptions = typeof router['_def']['procedures'];
+  type TSubscriptions = (typeof router)['_def']['procedures'];
 
   test('no input', () => {
     const input: inferProcedureInput<TSubscriptions['noInput']> = null as any;
