@@ -16,7 +16,7 @@ This can be done using [server-side helpers](server-side-helpers) to prefetch th
 ## Fetch data in `getStaticProps`
 
 ```tsx title='pages/posts/[id].tsx'
-import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import {
   GetStaticPaths,
   GetStaticPropsContext,

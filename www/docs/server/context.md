@@ -68,7 +68,7 @@ const caller = appRouter.createCaller(await createContext());
 
 ```ts
 // 3. SSG helper
-import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from './context';
 import { appRouter } from './router';
 

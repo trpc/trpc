@@ -116,7 +116,7 @@ export default trpc.withTRPC(MyApp);
 ```
 
 ```tsx title='pages/posts/[id].tsx'
-import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';

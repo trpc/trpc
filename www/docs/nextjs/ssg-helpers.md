@@ -11,7 +11,7 @@ Using the helpers makes tRPC call your procedures directly on the server, withou
 That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the SSG helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
 ```ts
-import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from 'server/context';
 
 const ssg = createServerSideHelpers({
@@ -30,7 +30,7 @@ The returned functions are all wrappers around react-query functions. Please che
 ## Next.js Example
 
 ```ts title='pages/posts/[id].tsx'
-import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { createContext } from 'server/context';
 import { appRouter } from 'server/routers/_app';

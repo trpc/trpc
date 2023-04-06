@@ -1,6 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createServerSideHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { inferProcedureOutput } from '@trpc/server';
 import clsx from 'clsx';
 import {
