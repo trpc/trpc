@@ -100,7 +100,6 @@ export const trpc = createTRPCNext<AppRouter>({
       ],
     },
   },
-  // `ssr` is false by default
 });
 ```
 
