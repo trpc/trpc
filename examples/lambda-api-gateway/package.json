@@ -6,7 +6,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "type-check": "tsc",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",

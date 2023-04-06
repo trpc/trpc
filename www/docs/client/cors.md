@@ -27,4 +27,6 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-You would then need to enable CORS on your server by modifying your [api handler](/docs/server/api-handler) or HTTP server. See example implementation [here](/docs/server/api-handler#advanced-usage).
+:::info
+You also need to enable CORS on your server by modifying your [adapter](/docs/server/adapters), or the HTTP server which fronts your API. The best way to do this varies adapter-by-adapter and based on your hosting infrastructure, and individual adapters generally document this process where applicable.
+:::

@@ -155,7 +155,7 @@ In some scenarios it could make sense to split up your context into "inner" and 
 ```ts
 import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { type Session, getSessionFromCookie } from './auth';
+import { getSessionFromCookie, type Session } from './auth';
 
 /**
  * Defines your inner context shape.
