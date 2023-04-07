@@ -125,7 +125,7 @@ export interface TRPCContextState<
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
+    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TProcedure>, TOutput>,
   ) => Promise<TOutput>;
 
   /**
@@ -140,7 +140,7 @@ export interface TRPCContextState<
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: TRPCFetchInfiniteQueryOptions<
       TInput,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       TOutput
     >,
   ) => Promise<InfiniteData<TOutput>>;
@@ -155,7 +155,7 @@ export interface TRPCContextState<
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
+    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TProcedure>, TOutput>,
   ) => Promise<void>;
 
   /**
@@ -170,7 +170,7 @@ export interface TRPCContextState<
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
     opts?: TRPCFetchInfiniteQueryOptions<
       TInput,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       TOutput
     >,
   ) => Promise<void>;
@@ -185,7 +185,7 @@ export interface TRPCContextState<
     TInput extends inferProcedureInput<TProcedure>,
   >(
     pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>],
-    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TRouter>, TOutput>,
+    opts?: TRPCFetchQueryOptions<TInput, TRPCClientError<TProcedure>, TOutput>,
   ) => Promise<TOutput>;
 
   /**
