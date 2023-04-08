@@ -40,4 +40,4 @@ We use `@vercel/og-image` for dynamic open graph image generation. They are depl
 
 To use the dynamic images, we override the default Docusaurus theme using [`swizzling`](https://www.docusaurus.io/docs/swizzling). You can find these overrides in [src/theme/\*\*](./src/theme).
 
-To play with them locally go the `og-image` folder and run `pnpm dev`.
+To play with them locally go the `og-image` folder and run `pnpm dev`
