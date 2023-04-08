@@ -42,7 +42,7 @@ t2.procedure.use(({ ctx }) => { ... });
 
 ## Creating the context
 
-The `createContext()` function must be passed to the handler that is mounting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or our [SSG helper](/docs/nextjs/ssg-helpers).
+The `createContext()` function must be passed to the handler that is mounting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or our [server-side helpers](/docs/nextjs/server-side-helpers).
 
 `createContext()` is called for each invocation of tRPC, so batched requests will share a context.
 
@@ -68,11 +68,11 @@ const caller = appRouter.createCaller(await createContext());
 
 ```ts
 // 3. SSG helper
-import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-const ssg = createProxySSGHelpers({
+const ssg = createServerSideHelpers({
   router: appRouter,
   ctx: await createContext(),
 });
@@ -146,7 +146,7 @@ export const protectedProcedure = t.procedure.use(isAuthed);
 
 In some scenarios it could make sense to split up your context into "inner" and "outer" functions.
 
-**Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [SSG helpers](/docs/nextjs/ssg-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
+**Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [server-side helpers](/docs/nextjs/server-side-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
 
 **Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is only available for procedures that are called via HTTP.
 
@@ -170,7 +170,7 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  *
  * Also useful for:
  * - testing, so you don't have to mock Next.js' `req`/`res`
- * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
+ * - tRPC's `createServerSideHelpers` where we don't have `req`/`res`
  *
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
