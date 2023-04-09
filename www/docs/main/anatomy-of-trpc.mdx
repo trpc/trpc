@@ -13,7 +13,7 @@ The goal of this page is to give you a high-level overview of how tRPC works. It
 
 If you would prefer to see this in video form, check out the ["How tRPC really works"](https://www.youtube.com/watch?v=x4mu-jOiA0Q) video. This video uses Next.js so the file structure might differ from that in your project, but the concepts are the same for any framework.
 
-The entire anatomy of a tRPC backend can be seen in the following diagram. We will start at the bottom with a query or mutation made by the client, and work our way over the network boundary and through tRPC's internals until the procedure is handled and a response is sent. Finally we will see how the client can know about the shape of the backend.
+The anatomy of tRPC can be seen in the following diagram. We will start at the bottom with a query or mutation made by the client, and work our way over the network boundary and through tRPC's internals until the procedure is handled and a response is sent. Finally we will see how the client can know about the shape of the backend.
 
 <img
   className="max-h-screen rounded-xl"
@@ -25,35 +25,52 @@ TODO: signpost to "main" docs as much as possible
 
 ## Client
 
-- links
-- transformers (here or in adapter?)
-- a word about type magic
 - query / mutation
-- mention RQ hooks
+  - the client's way of calling a procedure
+  - mention RQ hooks
+- links
+  - determines how the client talks to the server
+  - most applications never need to touch this after initial setup
+- transformers (here or in adapter?)
+  - serializes and deserializes the data sent over the wire (e.g. JSON.stringify, but we have some better ones)
+  - most common example: superjson allows sending dates etc over the wire
 
 ## Server
 
-### Middleware
-
 - adapter
+  - the glue between your backend and trpc
+  - takes a router and context
   - Transformers => here or in client?
 - context
+  - "stuff that every procedure has access to"
+  - outer/inner context
 - meta
+  - an object of information about the procedure
+  - use cases
+    - allows you to know information about the procedure in middleware
+    - generating OpenAPI spec with OpenAPI
+    - not required!
+- router
+  - groups a set of procedures and other routers under a shared namespace, which determines how the URL is constructed and the procedure is called from the frontend.
+  - `example.com/api/trpc/someRouter.someSubRouter.someProcedure`, the router determines the `someRouter.someProcedure` part. It also determines that the procedure exists at `trpc.someRouter.someSubRouter` in the frontend.
 - middleware (before or after procedure?)
+  - Runs before and after a procedure
+  - Can be used to add logging, authentication, etc.
+  - Can modify context, and the new context type is inferred in the procedure
+  - FILO - the last middleware that runs before the procedure is the first that runs after it
 - procedure
-  - query
-  - mutation
-  - subscription?
+  - can be a query or mutation
+  - should subscriptions be mentioned here?
   - error handling?
-- Input / Output Validation
 
 ## Type magic
 
-also maybe theres a better name for section?
+TODO: better name for section?
 
-- did i forget anything?
-
-if you want to know even more: How does tRPC work internally? (tinyrpc blog post & codebase)
+- app router type exported in BE
+- this is importend in FE where the client is created
+- client gets this + a url of where the backend lives
+- client can now know about the shape of the backend
 
 ## Learn more
 
