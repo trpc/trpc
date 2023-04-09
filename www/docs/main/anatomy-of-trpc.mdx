@@ -7,30 +7,50 @@ slug: /anatomy-of-trpc
 
 import { ArticleCard } from '../../src/components/ArticleCard';
 
-todo;
+## Introduction
+
+The goal of this page is to give you a high-level overview of how tRPC works. It's not meant to be a tutorial or a guide. If you're looking for that, check out the [Quickstart](./quickstart.mdx).
+
+If you would prefer to see this in video form, check out the ["How tRPC really works"](https://www.youtube.com/watch?v=x4mu-jOiA0Q) video. This video uses Next.js so the file structure might differ from that in your project, but the concepts are the same for any framework.
+
+The entire anatomy of a tRPC backend can be seen in the following diagram. We will start at the bottom with a query or mutation made by the client, and work our way over the network boundary and through tRPC's internals until the procedure is handled and a response is sent. Finally we will see how the client can know about the shape of the backend.
+
+<img
+  className="max-h-screen rounded-xl"
+  alt="Diagram of a tRPC procedure"
+  src="https://user-images.githubusercontent.com/8353666/230760330-20ac7910-ba80-4743-92e5-2df699229b0e.png"
+/>
+
+TODO: signpost to "main" docs as much as possible
+
+## Client
+
+- links
+- transformers (here or in adapter?)
+- a word about type magic
+- query / mutation
+- mention RQ hooks
+
+## Server
+
+### Middleware
+
+- adapter
+  - Transformers => here or in client?
+- context
+- meta
+- middleware (before or after procedure?)
+- procedure
+  - query
+  - mutation
+  - subscription?
+  - error handling?
+- Input / Output Validation
+
+## Type magic
 
 also maybe theres a better name for section?
 
-- Anatomy of a "Procedure"
-- "How tRPC really works" video, but as an article
-- signpost to "main" docs as much as possible
-  - adapter
-    - Transformers => here or in client?
-  - context
-  - meta
-  - middleware (before or after procedure?)
-  - procedure
-    - query
-    - mutation
-    - subscription?
-    - error handling?
-  - Input / Output Validation
-  - client
-    - links
-    - transformers (here or in adapter?)
-    - a word about type magic
-    - query / mutation
-    - mention RQ hooks
 - did i forget anything?
 
 if you want to know even more: How does tRPC work internally? (tinyrpc blog post & codebase)
@@ -45,7 +65,7 @@ You don't need to know this to use tRPC. It's only for people who are curious ab
 
 ### Tiny RPC
 
-In this article, tRPC Core Team member Julius Marminge walks you through creating a minimal version of tRPC from scratch. It's a great way to learn more about how tRPC works internally. You'll learn about proxies, TypeScript magic, and more.
+In this article, tRPC Core Team member Julius Marminge walks you through creating a minimal version of tRPC from scratch. It's a great way to learn more about how tRPC works internally. You'll learn about proxies, advanced TypeScript, and more.
 
 <ArticleCard
   title="Writing a tiny tRPC client"
