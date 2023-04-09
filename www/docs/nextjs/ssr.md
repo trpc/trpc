@@ -125,25 +125,29 @@ import { trpc } from 'utils/trpc';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const ssg = await createServerSideHelpers({
+  const helpers = createServerSideHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson, // optional - adds superjson serialization
   });
   const id = context.params?.id as string;
-  try {
+
+  // check if post exists - `prefetch` doesn't change its behavior
+  // based on the result of the query (including throws), so if we
+  // want to change the logic here in gSSP, we need to use `fetch`.
+  if (helpers.post.exists.fetch({ id })) {
     // prefetch `post.byId`
-    await ssg.post.byId.prefetch({ id });
-  } catch (err) {
+    await helpers.post.byId.prefetch({ id });
+  } else {
+    // if post doesn't exist, return 404
     return {
-      // if failed, return 404
       props: { id },
       notFound: true,
     };
   }
   return {
     props: {
-      trpcState: ssg.dehydrate(),
+      trpcState: helpers.dehydrate(),
       id,
     },
   };

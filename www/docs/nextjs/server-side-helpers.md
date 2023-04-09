@@ -14,18 +14,33 @@ That also means that you don't have the request and response at hand like you us
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from 'server/context';
 
-const ssg = createServerSideHelpers({
+const helpers = createServerSideHelpers({
   router: appRouter,
   ctx: await createContext(),
   transformer: superjson, // optional - adds superjson serialization
 });
 ```
 
+`createServerSideHelpers` returns an object much like the tRPC client, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
+
+The primary difference between `prefetch` and `fetch` is that `fetch` acts much like a normal function call, returning the result of the query, whereas `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead. Instead, `prefetch` will add the query to the cache, which you then dehydrate and send to the client.
+
+```ts
+return {
+  props: {
+    // very important - use `trpcState` as the key
+    trpcState: ssg.dehydrate(),
+  },
+};
+```
+
+The rule of thumb is `prefetch` for queries that you know you'll need on the client, and `fetch` for queries that you want to use the result of on the server.
+
+The functions are all wrappers around react-query functions. Please check out [their docs](https://react-query.tanstack.com/overview) to learn more about them in detail.
+
 :::info
 For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
 :::
-
-The returned functions are all wrappers around react-query functions. Please check out [their docs](https://react-query.tanstack.com/overview) to learn more about them.
 
 ## Next.js Example
 
@@ -40,7 +55,7 @@ import { trpc } from 'utils/trpc';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const ssg = createServerSideHelpers({
+  const helpers = createServerSideHelpers({
     router: appRouter,
     ctx: await createContext(),
     transformer: superjson,
@@ -51,12 +66,12 @@ export async function getServerSideProps(
    * Prefetching the `post.byId` query here.
    * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
    */
-  await ssg.post.byId.prefetch({ id });
+  await helpers.post.byId.prefetch({ id });
 
-  // Make sure to return { props: { trpcState: ssg.dehydrate() } }
+  // Make sure to return { props: { trpcState: helpers.dehydrate() } }
   return {
     props: {
-      trpcState: ssg.dehydrate(),
+      trpcState: helpers.dehydrate(),
       id,
     },
   };
