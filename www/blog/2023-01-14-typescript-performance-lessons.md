@@ -91,7 +91,7 @@ type DecorateProcedure<
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/react/guides/query-invalidation
    */
   invalidate(
     input?: inferProcedureInput<TProcedure>,

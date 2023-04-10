@@ -189,7 +189,7 @@ export interface TRPCContextState<
   ) => Promise<TOutput>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/react/guides/query-invalidation
    */
   invalidateQueries: <
     TPath extends keyof TRouter['_def']['queries'] & string,
