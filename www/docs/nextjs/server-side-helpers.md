@@ -29,7 +29,7 @@ The primary difference between `prefetch` and `fetch` is that `fetch` acts much 
 return {
   props: {
     // very important - use `trpcState` as the key
-    trpcState: ssg.dehydrate(),
+    trpcState: helpers.dehydrate(),
   },
 };
 ```
