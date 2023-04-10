@@ -146,7 +146,7 @@ export interface TRPCContextState<
   ) => Promise<InfiniteData<TOutput>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   prefetchQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
