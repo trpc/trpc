@@ -153,7 +153,7 @@ export default withTRPC<AppRouter>({
     return {
       url,
       /**
-       * @link https://react-query.tanstack.com/reference/QueryClient
+       * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
@@ -195,7 +195,7 @@ The `config`-argument is a function that returns an object that configures the t
   - `links` to customize the flow of data between tRPC Client and the tRPC-server. [Read more](../client/links.md).
 
 - Optional:
-  - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://react-query.tanstack.com/reference/QueryClient)
+  - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/react/reference/QueryClient)
   - `headers`: an object or a function that returns an object of outgoing tRPC requests
   - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](data-transformers)
   - `fetch`: customize the implementation of `fetch` used by tRPC internally
