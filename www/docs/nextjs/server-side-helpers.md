@@ -25,7 +25,7 @@ const ssg = createServerSideHelpers({
 For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
 :::
 
-The returned functions are all wrappers around react-query functions. Please check out [their docs](https://react-query.tanstack.com/overview) to learn more about them.
+The returned functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v4/docs/react/overview) to learn more about them.
 
 ## Next.js Example
 
