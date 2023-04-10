@@ -226,7 +226,7 @@ export interface TRPCContextState<
   ): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/query-cancellation
+   * @link https://tanstack.com/query/v4/docs/react/guides/query-cancellation
    */
   cancelQuery: <
     TPath extends keyof TRouter['_def']['queries'] & string,
