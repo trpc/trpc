@@ -3,9 +3,9 @@ import { api } from 'trpc-api';
 import {
   RecommendedProducts,
   RecommendedProductsSkeleton,
-} from './(components)/recommended';
-import { Reviews, ReviewsSkeleton } from './(components)/reviews';
-import { SingleProduct } from './(components)/single-product';
+} from './_components/recommended';
+import { Reviews, ReviewsSkeleton } from './_components/reviews';
+import { SingleProduct } from './_components/single-product';
 
 export const runtime = 'edge';
 

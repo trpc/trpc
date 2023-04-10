@@ -1,6 +1,6 @@
 import React from 'react';
 import { api } from 'trpc-api';
-import { Header } from './(components)/header';
+import { Header } from './_components/header';
 
 export const metadata = {
   title: 'Streaming (Edge Runtime)',
