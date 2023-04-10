@@ -5,7 +5,7 @@ sidebar_label: useQuery()
 slug: /react-queries
 ---
 
-> The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Queries](https://react-query.tanstack.com/guides/queries).
+> The hooks provided by `@trpc/react` are a thin wrapper around React Query. For in-depth information about options and usage patterns, refer to their docs on [Queries](https://tanstack.com/query/v4/docs/react/guides/queries).
 
 ```tsx
 function useQuery(
