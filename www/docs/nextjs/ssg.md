@@ -30,7 +30,7 @@ import { trpc } from 'utils/trpc';
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
 ) {
-  const ssg = await createServerSideHelpers({
+  const helpers = createServerSideHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson, // optional - adds superjson serialization
@@ -38,11 +38,11 @@ export async function getStaticProps(
   const id = context.params?.id as string;
 
   // prefetch `post.byId`
-  await ssg.post.byId.prefetch({ id });
+  await helpers.post.byId.prefetch({ id });
 
   return {
     props: {
-      trpcState: ssg.dehydrate(),
+      trpcState: helpers.dehydrate(),
       id,
     },
     revalidate: 1,
