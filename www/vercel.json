@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/docs/server/infer-types",
+      "destination": "/docs/client/infer-types",
+      "permanent": true
+    },
+    {
       "source": "/docs/aborting-procedures",
       "destination": "/docs/client/aborting-procedure-calls",
       "permanent": true
