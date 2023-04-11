@@ -193,7 +193,7 @@ type DecorateRouter = {
   /**
    * Invalidate the full router
    * @link https://trpc.io/docs/v10/useContext#query-invalidation
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/react/guides/query-invalidation
    */
   invalidate(
     input?: undefined,

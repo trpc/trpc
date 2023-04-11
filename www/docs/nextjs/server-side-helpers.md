@@ -36,7 +36,7 @@ return {
 
 The rule of thumb is `prefetch` for queries that you know you'll need on the client, and `fetch` for queries that you want to use the result of on the server.
 
-The functions are all wrappers around react-query functions. Please check out [their docs](https://react-query.tanstack.com/overview) to learn more about them in detail.
+The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v4/docs/react/overview) to learn more about them in detail.
 
 :::info
 For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
