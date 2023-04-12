@@ -83,14 +83,13 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
+type GetUrlOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
-    resolveHeaders: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
-export function getUrl(opts: HTTPRequestOptions) {
+export function getUrl(opts: GetUrlOptions) {
   let url = opts.url + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
@@ -118,6 +117,24 @@ export function getBody(opts: GetBodyOptions) {
   return input !== undefined ? JSON.stringify(input) : undefined;
 }
 
+export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
+  GetInputOptions & {
+    type: ProcedureType;
+    path: string;
+    headers: HTTPHeaders | Promise<HTTPHeaders>;
+  };
+
+export function resolveHeaders(opts: {
+  ops: Operation[];
+  headers?: HTTPLinkOptions['headers'];
+}): HTTPRequestOptions['headers'] {
+  const { headers, ops } = opts;
+  if (typeof headers === 'function') {
+    return headers({ ops });
+  }
+  return headers || {};
+}
+
 export function httpRequest(
   opts: HTTPRequestOptions,
 ): PromiseAndCancel<HTTPResult> {
@@ -129,7 +146,7 @@ export function httpRequest(
     const body = getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.resolveHeaders())
+    Promise.resolve(opts.headers)
       .then((headers) => {
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {

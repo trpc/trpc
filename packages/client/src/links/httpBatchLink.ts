@@ -8,6 +8,7 @@ import {
   getUrl,
   httpRequest,
   resolveHTTPLinkOptions,
+  resolveHeaders,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { Operation, TRPCLink } from './types';
@@ -28,8 +29,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
     const batchLoader = (type: ProcedureType) => {
       const validate = (batchOps: BatchOperation[]) => {
-        // DRY this up?
-
         if (maxURLLength === Infinity) {
           // escape hatch for quick calcs
           return true;
@@ -37,22 +36,12 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        // TODO: dry this up
-        const resolveHeaders = () => {
-          const { headers } = opts;
-          if (typeof headers === 'function') {
-            return headers({ ops: batchOps });
-          }
-          return {};
-        };
-
         const url = getUrl({
           ...resolvedOpts,
           runtime,
           type,
           path,
           inputs,
-          resolveHeaders,
         });
 
         return url.length <= maxURLLength;
@@ -62,22 +51,16 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        // TODO: dry this up
-        const resolveHeaders = () => {
-          const { headers } = opts;
-          if (typeof headers === 'function') {
-            return headers({ ops: batchOps });
-          }
-          return {};
-        };
-
         const { promise, cancel } = httpRequest({
           ...resolvedOpts,
           runtime,
           type,
           path,
           inputs,
-          resolveHeaders,
+          headers: resolveHeaders({
+            ops: batchOps,
+            headers: opts.headers,
+          }),
         });
 
         return {
