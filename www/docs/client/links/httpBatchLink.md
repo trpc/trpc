@@ -57,7 +57,9 @@ export interface HTTPLinkOptions {
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
    */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  headers?:
+    | HTTPHeaders
+    | ((opts: { ops: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 ```
 
