@@ -3,9 +3,9 @@ import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import {
   HTTPLinkOptions,
+  createResolveHeaders,
   httpRequest,
   resolveHTTPLinkOptions,
-  resolveHeaders,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { TRPCLink } from './types';
@@ -25,7 +25,7 @@ export function httpLink<TRouter extends AnyRouter>(
           type,
           path,
           input,
-          headers: resolveHeaders({
+          resolveHeaders: createResolveHeaders({
             ops: [op],
             headers: opts.headers,
           }),

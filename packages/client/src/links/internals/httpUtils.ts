@@ -121,18 +121,20 @@ export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
-    headers: HTTPHeaders | Promise<HTTPHeaders>;
+    resolveHeaders: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
-export function resolveHeaders(opts: {
+export function createResolveHeaders(opts: {
   ops: Operation[];
   headers?: HTTPLinkOptions['headers'];
-}): HTTPRequestOptions['headers'] {
-  const { headers, ops } = opts;
-  if (typeof headers === 'function') {
-    return headers({ ops });
-  }
-  return headers || {};
+}): HTTPRequestOptions['resolveHeaders'] {
+  return () => {
+    const { headers, ops } = opts;
+    if (typeof headers === 'function') {
+      return headers({ ops });
+    }
+    return headers || {};
+  };
 }
 
 export function httpRequest(
@@ -146,7 +148,7 @@ export function httpRequest(
     const body = getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.headers)
+    Promise.resolve(opts.resolveHeaders())
       .then((headers) => {
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {

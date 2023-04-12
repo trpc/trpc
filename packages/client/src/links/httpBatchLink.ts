@@ -5,10 +5,10 @@ import { dataLoader } from '../internals/dataLoader';
 import {
   HTTPLinkOptions,
   HTTPResult,
+  createResolveHeaders,
   getUrl,
   httpRequest,
   resolveHTTPLinkOptions,
-  resolveHeaders,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { Operation, TRPCLink } from './types';
@@ -57,7 +57,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           type,
           path,
           inputs,
-          headers: resolveHeaders({
+          resolveHeaders: createResolveHeaders({
             ops: batchOps,
             headers: opts.headers,
           }),
