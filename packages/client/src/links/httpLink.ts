@@ -23,6 +23,7 @@ export function httpLink<TRouter extends AnyRouter>(
           type,
           path,
           input,
+          ops: [op],
         });
         promise
           .then((res) => {

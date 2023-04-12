@@ -10,7 +10,7 @@ import {
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
-import { TRPCLink } from './types';
+import { Operation, TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {
   maxURLLength?: number;
@@ -28,6 +28,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
     const batchLoader = (type: ProcedureType) => {
       const validate = (batchOps: BatchOperation[]) => {
+        // DRY this up?
+
         if (maxURLLength === Infinity) {
           // escape hatch for quick calcs
           return true;
@@ -41,6 +43,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           type,
           path,
           inputs,
+          ops: batchOps as Operation[], // FIXME: is a BatchOperation just an Operation?
         });
         return url.length <= maxURLLength;
       };
@@ -55,6 +58,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           type,
           path,
           inputs,
+          ops: batchOps as Operation[],
         });
 
         return {

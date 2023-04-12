@@ -7,7 +7,7 @@ import {
   FetchEsque,
   ResponseEsque,
 } from '../../internals/types';
-import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
+import { HTTPHeaders, Operation, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 export interface HTTPLinkOptions {
   url: string;
@@ -23,7 +23,7 @@ export interface HTTPLinkOptions {
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
    */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  headers?: HTTPHeaders | ((opts: {ops: Operation[]}) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
 export interface ResolvedHTTPLinkOptions {
@@ -34,13 +34,13 @@ export interface ResolvedHTTPLinkOptions {
    * Headers to be set on outgoing request
    * @link http://trpc.io/docs/v10/header
    */
-  headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+  headers: (opts: {ops: Operation[]}) => HTTPHeaders | Promise<HTTPHeaders>;
 }
 
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkOptions,
 ): ResolvedHTTPLinkOptions {
-  const headers = opts.headers || (() => ({}));
+  const headers = opts.headers || {};
   return {
     url: opts.url,
     fetch: getFetch(opts.fetch),
@@ -87,6 +87,7 @@ export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
+    ops: Operation[]; // TODO: if we do this, then we should get rid of type and path
   };
 
 export function getUrl(opts: HTTPRequestOptions) {
@@ -120,7 +121,7 @@ export function getBody(opts: GetBodyOptions) {
 export function httpRequest(
   opts: HTTPRequestOptions,
 ): PromiseAndCancel<HTTPResult> {
-  const { type } = opts;
+  const { type, ops } = opts;
   const ac = opts.AbortController ? new opts.AbortController() : null;
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
@@ -128,7 +129,7 @@ export function httpRequest(
     const body = getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.headers())
+    Promise.resolve(opts.headers({ ops }))
       .then((headers) => {
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
