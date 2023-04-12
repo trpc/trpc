@@ -1,5 +1,9 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client/src';
+import {
+  createTRPCProxyClient,
+  httpBatchLink,
+  httpLink,
+} from '@trpc/client/src';
 import { Dict, initTRPC } from '@trpc/server/src';
 
 describe('pass headers', () => {
@@ -81,5 +85,65 @@ Object {
   "x-special": "async special header",
 }
 `);
+  });
+
+  test('custom headers with context using httpBatchLink', async () => {
+    const client = createTRPCProxyClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: httpUrl,
+          headers({ ops }) {
+            return new Promise((resolve) => {
+              resolve({
+                'X-Special': (ops[0] as any).context.headers['x-special'],
+              });
+            });
+          },
+        }),
+      ],
+    });
+
+    expect(
+      await client.hello.query(undefined, {
+        context: {
+          headers: {
+            'x-special': 'special header',
+          },
+        },
+      }),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "x-special": "special header",
+      }
+    `);
+  });
+
+  test('custom headers with context using httpLink', async () => {
+    const client = createTRPCProxyClient<AppRouter>({
+      links: [
+        httpLink({
+          url: httpUrl,
+          headers({ ops }) {
+            return {
+              'X-Special': (ops[0] as any).context.headers['x-special'],
+            };
+          },
+        }),
+      ],
+    });
+
+    expect(
+      await client.hello.query(undefined, {
+        context: {
+          headers: {
+            'x-special': 'special header',
+          },
+        },
+      }),
+    ).toMatchInlineSnapshot(`
+      Object {
+        "x-special": "special header",
+      }
+    `);
   });
 });
