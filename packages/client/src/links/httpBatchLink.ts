@@ -12,6 +12,8 @@ import {
 import { transformResult } from './internals/transformResult';
 import { Operation, TRPCLink } from './types';
 
+type BatchOperation = Operation;
+
 export interface HttpBatchLinkOptions extends HTTPLinkOptions {
   maxURLLength?: number;
 }
@@ -22,8 +24,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   // initialized config
   return (runtime) => {
-    type BatchOperation = { id: number; path: string; input: unknown };
-
     const maxURLLength = opts.maxURLLength || Infinity;
 
     const batchLoader = (type: ProcedureType) => {
