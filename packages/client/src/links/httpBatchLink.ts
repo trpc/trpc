@@ -34,31 +34,27 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           // escape hatch for quick calcs
           return true;
         }
-        const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
         const url = getUrl({
           ...resolvedOpts,
           runtime,
           type,
-          path,
           inputs,
-          ops: batchOps as Operation[], // FIXME: is a BatchOperation just an Operation?
+          ops: batchOps,
         });
         return url.length <= maxURLLength;
       };
 
       const fetch = (batchOps: BatchOperation[]) => {
-        const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
         const { promise, cancel } = httpRequest({
           ...resolvedOpts,
           runtime,
           type,
-          path,
           inputs,
-          ops: batchOps as Operation[],
+          ops: batchOps,
         });
 
         return {

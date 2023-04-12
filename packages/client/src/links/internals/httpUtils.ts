@@ -93,12 +93,12 @@ function getInput(opts: GetInputOptions) {
 export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
-    path: string;
     ops: Operation[]; // TODO: if we do this, then we should get rid of type and path
   };
 
 export function getUrl(opts: HTTPRequestOptions) {
-  let url = opts.url + '/' + opts.path;
+  const path = opts.ops.map((op) => op.path).join(',');
+  let url = opts.url + '/' + path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
     queryParts.push('batch=1');
