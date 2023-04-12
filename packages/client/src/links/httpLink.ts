@@ -17,13 +17,23 @@ export function httpLink<TRouter extends AnyRouter>(
     ({ op }) =>
       observable((observer) => {
         const { path, input, type } = op;
+
+        // TODO: share this with batch link
+        const resolveHeaders = () => {
+          const { headers } = opts;
+          if (typeof headers === 'function') {
+            return headers({ ops: [op] });
+          }
+          return {};
+        };
+
         const { promise, cancel } = httpRequest({
           ...resolvedOpts,
           runtime,
           type,
           path,
           input,
-          ops: [op],
+          resolveHeaders,
         });
         promise
           .then((res) => {

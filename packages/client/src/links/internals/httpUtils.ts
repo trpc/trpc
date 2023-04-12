@@ -37,22 +37,15 @@ export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch: FetchEsque;
   AbortController: AbortControllerEsque | null;
-  /**
-   * Headers to be set on outgoing request
-   * @link http://trpc.io/docs/v10/header
-   */
-  headers: (opts: { ops: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>;
 }
 
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkOptions,
 ): ResolvedHTTPLinkOptions {
-  const headers = opts.headers || {};
   return {
     url: opts.url,
     fetch: getFetch(opts.fetch),
     AbortController: getAbortController(opts.AbortController),
-    headers: typeof headers === 'function' ? headers : () => headers,
   };
 }
 
@@ -93,12 +86,12 @@ function getInput(opts: GetInputOptions) {
 export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
-    ops: Operation[]; // TODO: if we do this, then we should get rid of type and path
+    path: string;
+    resolveHeaders: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
 export function getUrl(opts: HTTPRequestOptions) {
-  const path = opts.ops.map((op) => op.path).join(',');
-  let url = opts.url + '/' + path;
+  let url = opts.url + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
     queryParts.push('batch=1');
@@ -128,7 +121,7 @@ export function getBody(opts: GetBodyOptions) {
 export function httpRequest(
   opts: HTTPRequestOptions,
 ): PromiseAndCancel<HTTPResult> {
-  const { type, ops } = opts;
+  const { type } = opts;
   const ac = opts.AbortController ? new opts.AbortController() : null;
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
@@ -136,7 +129,7 @@ export function httpRequest(
     const body = getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.headers({ ops }))
+    Promise.resolve(opts.resolveHeaders())
       .then((headers) => {
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
