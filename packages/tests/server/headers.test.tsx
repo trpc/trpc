@@ -54,7 +54,7 @@ describe('pass headers', () => {
           url: httpUrl,
           headers() {
             return {
-              'X-Special': 'special header',
+              'x-special': 'special header',
             };
           },
         }),
@@ -74,7 +74,7 @@ Object {
           url: httpUrl,
           async headers() {
             return {
-              'X-Special': 'async special header',
+              'x-special': 'async special header',
             };
           },
         }),
@@ -88,14 +88,19 @@ Object {
   });
 
   test('custom headers with context using httpBatchLink', async () => {
+    type LinkContext = {
+      headers: Dict<string | string[]>;
+    };
     const client = createTRPCProxyClient<AppRouter>({
       links: [
         httpBatchLink({
           url: httpUrl,
-          headers({ ops }) {
+          headers(opts) {
             return new Promise((resolve) => {
               resolve({
-                'X-Special': (ops[0] as any).context.headers['x-special'],
+                'x-special': (opts.opList[0].context as LinkContext).headers[
+                  'x-special'
+                ],
               });
             });
           },
@@ -119,13 +124,18 @@ Object {
   });
 
   test('custom headers with context using httpLink', async () => {
+    type LinkContext = {
+      headers: Dict<string | string[]>;
+    };
     const client = createTRPCProxyClient<AppRouter>({
       links: [
         httpLink({
           url: httpUrl,
-          headers({ ops }) {
+          headers(opts) {
             return {
-              'X-Special': (ops[0] as any).context.headers['x-special'],
+              'x-special': (opts.op.context as LinkContext).headers[
+                'x-special'
+              ],
             };
           },
         }),

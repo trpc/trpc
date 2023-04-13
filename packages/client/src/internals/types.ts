@@ -124,3 +124,8 @@ export interface ResponseEsque {
    */
   json(): Promise<unknown>;
 }
+
+/**
+ * @internal
+ */
+export type NonEmptyArray<TItem> = [TItem, ...TItem[]];

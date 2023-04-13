@@ -47,7 +47,7 @@ export interface HTTPLinkOptions {
    */
   headers?:
     | HTTPHeaders
-    | ((opts: { ops: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>);
+    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 ```
 

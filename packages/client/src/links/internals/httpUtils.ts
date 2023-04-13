@@ -7,14 +7,12 @@ import {
   FetchEsque,
   ResponseEsque,
 } from '../../internals/types';
-import {
-  HTTPHeaders,
-  Operation,
-  PromiseAndCancel,
-  TRPCClientRuntime,
-} from '../types';
+import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
-export interface HTTPLinkOptions {
+/**
+ * @internal
+ */
+export interface HTTPLinkBaseOptions {
   url: string;
   /**
    * Add ponyfill for fetch
@@ -24,13 +22,6 @@ export interface HTTPLinkOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/v10/header
-   */
-  headers?:
-    | HTTPHeaders
-    | ((opts: { ops: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
 export interface ResolvedHTTPLinkOptions {
@@ -40,7 +31,7 @@ export interface ResolvedHTTPLinkOptions {
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkOptions,
+  opts: HTTPLinkBaseOptions,
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url,
@@ -121,21 +112,8 @@ export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
-    resolveHeaders: () => HTTPHeaders | Promise<HTTPHeaders>;
+    headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
-
-export function createResolveHeaders(opts: {
-  ops: Operation[];
-  headers?: HTTPLinkOptions['headers'];
-}): HTTPRequestOptions['resolveHeaders'] {
-  return () => {
-    const { headers, ops } = opts;
-    if (typeof headers === 'function') {
-      return headers({ ops });
-    }
-    return headers || {};
-  };
-}
 
 export function httpRequest(
   opts: HTTPRequestOptions,
@@ -148,7 +126,7 @@ export function httpRequest(
     const body = getBody(opts);
 
     const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.resolveHeaders())
+    Promise.resolve(opts.headers())
       .then((headers) => {
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
