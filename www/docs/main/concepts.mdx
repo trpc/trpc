@@ -5,6 +5,8 @@ sidebar_label: Concepts
 slug: /concepts
 ---
 
+import { ConceptsChart } from '../../src/components/ConceptsChart';
+
 ## What is RPC? What mindset should I adopt?
 
 ### It's just functions
@@ -30,60 +32,4 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
 
 For more details on these concepts, see [Anatomy of tRPC](./anatomy-of-trpc.mdx). Most of these concepts also have their own pages in the documentation.
 
-TODO: add links and colors. make sure the colors look ok in light and dark mode.
-
-<table width="100%">
-  <thead>
-    <tr>
-      <th>Term</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>Procedure</strong>
-      </td>
-      <td>API endpoint - can be a query or a mutation</td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Query</strong>
-      </td>
-      <td>A procedure that gets some data</td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Mutation</strong>
-      </td>
-      <td>A procedure that creates, updates, or deletes some data</td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Router</strong>
-      </td>
-      <td>
-        A collection of procedures (and/or other routers) under a shared
-        namespace.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Context</strong>
-      </td>
-      <td>
-        Stuff that is accessible to all procedures. Commonly used for things
-        like session state and database connections.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Middleware</strong>
-      </td>
-      <td>
-        A function that can run code before and after a procedure. Can modify
-        context
-      </td>
-    </tr>
-  </tbody>
-</table>
+<ConceptsChart />
