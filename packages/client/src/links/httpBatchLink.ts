@@ -69,10 +69,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               return {};
             }
             if (typeof opts.headers === 'function') {
-              const headers = opts.headers({
+              return opts.headers({
                 opList: batchOps as NonEmptyArray<Operation>,
               });
-              return headers;
             }
             return opts.headers;
           },

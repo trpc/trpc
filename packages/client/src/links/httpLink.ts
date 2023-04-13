@@ -39,10 +39,9 @@ export function httpLink<TRouter extends AnyRouter>(
               return {};
             }
             if (typeof opts.headers === 'function') {
-              const headers = opts.headers({
+              return opts.headers({
                 op,
               });
-              return headers;
             }
             return opts.headers;
           },
