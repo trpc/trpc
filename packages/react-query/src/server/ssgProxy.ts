@@ -17,30 +17,31 @@ import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
-import { CreateSSGHelpersOptions, createSSGHelpers } from './ssg';
+import { createSSGHelpers } from '../ssg/ssg';
+import { CreateSSGHelpersOptions } from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   fetch(
     ...args: inferHandlerInput<TProcedure>
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   fetchInfinite(
     ...args: inferHandlerInput<TProcedure>
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   prefetch(...args: inferHandlerInput<TProcedure>): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   prefetchInfinite(...args: inferHandlerInput<TProcedure>): Promise<void>;
 };
@@ -63,12 +64,12 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
 /**
  * Create functions you can use for server-side rendering / static generation
  */
-export function createProxySSGHelpers<TRouter extends AnyRouter>(
+export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
 ) {
   const helpers = createSSGHelpers(opts);
 
-  type CreateProxySSGHelpers = ProtectedIntersection<
+  type CreateServerSideHelpers = ProtectedIntersection<
     {
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
@@ -76,7 +77,7 @@ export function createProxySSGHelpers<TRouter extends AnyRouter>(
     DecoratedProcedureSSGRecord<TRouter>
   >;
 
-  return createFlatProxy<CreateProxySSGHelpers>((key) => {
+  return createFlatProxy<CreateServerSideHelpers>((key) => {
     if (key === 'queryClient') {
       return helpers.queryClient;
     }
