@@ -169,7 +169,7 @@ userCreate: (data: { name: string }) => User;
 
 ### 1. Create a router instance
 
-First, let's initilize the tRPC backend. It's good convention to do this in a separate file and export reusable helper functions instead of the entire tRPC object.
+First, let's initialize the tRPC backend. It's good convention to do this in a separate file and export reusable helper functions instead of the entire tRPC object. 
 
 ```ts twoslash title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -263,7 +263,7 @@ const appRouter = router({
     // us anything so we won't assume a certain data type.
     .input((val: unknown) => {
       // If the value is of type string, return it.
-      // It will now be inferred as string.
+      // It will now be inferred as a string.
       if (typeof val === 'string') return val;
 
       // Uh oh, looks like that input wasn't a string.
@@ -469,7 +469,7 @@ const trpc = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-Links in tRPC is similar to links in GraphQL, they let us control how the data flow **before** it's sent to the server. In the example above, we just pass the [httpBatchLink](/docs/links/httpbatchlink) which just sends the data to the server as batched HTTP requests. For more in-depth usage of links, see the [links documentation](/docs/links).
+Links in tRPC are similar to links in GraphQL, they let us control the data flow **before** being sent to the server. In the example above, we use the [httpBatchLink](/docs/links/httpbatchlink), which automatically batches up multiple calls into a single HTTP request. For more in-depth usage of links, see the [links documentation](/docs/links).
 
 ### 2. Querying & mutating
 
