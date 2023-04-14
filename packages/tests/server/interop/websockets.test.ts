@@ -11,7 +11,6 @@ import {
   TRPCRequestMessage,
 } from '@trpc/server/src/rpc';
 import { EventEmitter } from 'events';
-import { expectTypeOf } from 'expect-type';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
