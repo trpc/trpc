@@ -46,7 +46,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
-  let url = initialUrl
+  let url = initialUrl;
   /**
    * outgoing messages buffer whilst not open
    */
@@ -99,17 +99,23 @@ export function createWSClient(opts: WebSocketClientOptions) {
     const timeout = retryDelayFn(connectAttempt++);
     reconnectInMs(timeout);
   }
-  async function reconnect() {
+  function reconnect() {
     state = 'connecting';
     const oldConnection = activeConnection;
     if (getRetryUrl) {
-      url = await getRetryUrl();
-      
-      activeConnection = createWS();
+      getRetryUrl()
+        .then((retryUrl) => {
+          url = retryUrl;
+          activeConnection = createWS();
+          closeIfNoPending(oldConnection);
+        })
+        .catch(() => {
+          tryReconnect();
+        });
     } else {
       activeConnection = createWS();
+      closeIfNoPending(oldConnection);
     }
-    closeIfNoPending(oldConnection);
   }
   function reconnectInMs(ms: number) {
     if (connectTimer) {
