@@ -1530,9 +1530,6 @@ importers:
       eslint:
         specifier: ^8.30.0
         version: 8.30.0
-      expect-type:
-        specifier: ^0.15.0
-        version: 0.15.0
       fastify:
         specifier: ^4.13.0
         version: 4.13.0
@@ -14364,6 +14361,7 @@ packages:
 
   /expect-type@0.15.0:
     resolution: {integrity: sha512-yWnriYB4e8G54M5/fAFj7rCIBiKs1HAACaY13kCz6Ku0dezjS9aMcfcdVK2X8Tv2tEV1BPz/wKfQ7WA4S/d8aA==}
+    dev: true
 
   /express@4.18.2:
     resolution: {integrity: sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==}

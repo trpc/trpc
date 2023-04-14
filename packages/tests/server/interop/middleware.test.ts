@@ -4,7 +4,6 @@ import { TRPCError, inferProcedureOutput } from '@trpc/server/src';
 import * as trpc from '@trpc/server/src';
 import { MiddlewareResult } from '@trpc/server/src/deprecated/internals/middlewares';
 import { AsyncLocalStorage } from 'async_hooks';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 test('is called if def first', async () => {

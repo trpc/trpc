@@ -37,7 +37,6 @@
     "dataloader": "^2.2.2",
     "devalue": "^4.0.0",
     "eslint": "^8.30.0",
-    "expect-type": "^0.15.0",
     "fastify": "^4.13.0",
     "fastify-plugin": "^4.5.0",
     "jsdom": "^21.1.0",
