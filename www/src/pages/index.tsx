@@ -3,7 +3,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
@@ -22,11 +22,13 @@ import { searchParams } from '../utils/searchParams';
 
 const sandboxes = [
   {
-    title: 'Node',
+    id: 'node',
+    title: 'Node.js',
     examplePath: 'minimal',
     files: ['client/index.ts', 'server/index.ts'],
   },
   {
+    id: 'next',
     title: 'Next.js',
     examplePath: 'next-minimal-starter',
     files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
@@ -35,6 +37,15 @@ const sandboxes = [
 
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
+  const [selectedSandbox, setSelectedSandbox] = React.useState(sandboxes[0].id);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const sandbox = sandboxes.find((s) => s.id === url.searchParams.get('try'));
+    if (sandbox) {
+      setSelectedSandbox(sandbox.id);
+    }
+  }, []);
 
   return (
     <main className="container mx-auto space-y-28 px-6">
@@ -108,18 +119,22 @@ const HomeContent: React.FC = () => {
             'z-10 my-0 h-[800px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
           )}
         >
-          <Tabs defaultValue="Node" className="h-full">
+          <Tabs
+            value={selectedSandbox}
+            onValueChange={(val) => setSelectedSandbox(val)}
+            className="h-full"
+          >
             <TabsList>
               {sandboxes.map((sandbox) => (
-                <TabsTrigger key={sandbox.title} value={sandbox.title}>
+                <TabsTrigger key={sandbox.id} value={sandbox.id}>
                   {sandbox.title}
                 </TabsTrigger>
               ))}
             </TabsList>
             {sandboxes.map((sandbox) => (
               <TabsContent
-                key={sandbox.title}
-                value={sandbox.title}
+                key={sandbox.id}
+                value={sandbox.id}
                 className="relative h-full p-0"
               >
                 <div className="absolute inset-0 animate-pulse bg-zinc-900" />
