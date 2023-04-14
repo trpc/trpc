@@ -12,7 +12,7 @@ describe('undefined on server response is inferred on the client', () => {
         getNum: t.procedure.query(() => {
           const nums = [1, 2, 3, 4, 5];
           const num = nums.find((n) => n === Math.floor(Math.random() * 10));
-
+          //    ^?
           expectTypeOf(num).toEqualTypeOf<number | undefined>();
           return num;
         }),
@@ -20,6 +20,9 @@ describe('undefined on server response is inferred on the client', () => {
           const objs = [{ id: 1 } as { id: number | undefined }];
           const obj = objs.find((n) => n.id === Math.floor(Math.random() * 5));
           //    ^?
+          expectTypeOf(obj).toEqualTypeOf<
+            { id: number | undefined } | undefined
+          >();
           return obj;
         }),
       });
