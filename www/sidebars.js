@@ -13,7 +13,6 @@ module.exports = {
         'main/awesome-trpc',
         'main/example-apps',
         'main/contributing',
-        'main/love',
         'main/sponsors',
       ],
     },
@@ -138,6 +137,7 @@ module.exports = {
       },
       items: [
         'further/faq',
+        'further/love',
         'further/rpc',
         'further/subscriptions',
         'further/further-reading',

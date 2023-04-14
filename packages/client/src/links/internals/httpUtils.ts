@@ -9,7 +9,10 @@ import {
 } from '../../internals/types';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
-export interface HTTPLinkOptions {
+/**
+ * @internal
+ */
+export interface HTTPLinkBaseOptions {
   url: string;
   /**
    * Add ponyfill for fetch
@@ -19,33 +22,21 @@ export interface HTTPLinkOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/v10/header
-   */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch: FetchEsque;
   AbortController: AbortControllerEsque | null;
-  /**
-   * Headers to be set on outgoing request
-   * @link http://trpc.io/docs/v10/header
-   */
-  headers: () => HTTPHeaders | Promise<HTTPHeaders>;
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkOptions,
+  opts: HTTPLinkBaseOptions,
 ): ResolvedHTTPLinkOptions {
-  const headers = opts.headers || (() => ({}));
   return {
     url: opts.url,
     fetch: getFetch(opts.fetch),
     AbortController: getAbortController(opts.AbortController),
-    headers: typeof headers === 'function' ? headers : () => headers,
   };
 }
 
@@ -83,13 +74,13 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
+type GetUrlOptions = ResolvedHTTPLinkOptions &
   GetInputOptions & {
     type: ProcedureType;
     path: string;
   };
 
-export function getUrl(opts: HTTPRequestOptions) {
+export function getUrl(opts: GetUrlOptions) {
   let url = opts.url + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
@@ -116,6 +107,13 @@ export function getBody(opts: GetBodyOptions) {
   const input = getInput(opts);
   return input !== undefined ? JSON.stringify(input) : undefined;
 }
+
+export type HTTPRequestOptions = ResolvedHTTPLinkOptions &
+  GetInputOptions & {
+    type: ProcedureType;
+    path: string;
+    headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+  };
 
 export function httpRequest(
   opts: HTTPRequestOptions,
