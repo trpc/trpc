@@ -42,8 +42,8 @@ describe('undefined on server response is inferred on the client', () => {
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
 
     const obj = await ctx.proxy.getObj.query();
-    // key might be stripped entirely   👇, or value can be undefined
-    expectTypeOf(obj).toEqualTypeOf<{ id?: number | undefined } | undefined>();
+    // key might be stripped entirely   👇, or value should be defined
+    expectTypeOf(obj).toEqualTypeOf<{ id?: number } | undefined>();
   });
 
   test('using createCaller', async () => {
@@ -53,7 +53,7 @@ describe('undefined on server response is inferred on the client', () => {
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
 
     const obj = await caller.getObj();
-    // key should not be stripped       👇, since we're not calling JSON.stringify/parse on createCaller
+    // key should not be stripped       👇, since we're not calling JSON.stringify/parse on createCaller, value can be undefined though
     expectTypeOf(obj).toEqualTypeOf<{ id: number | undefined } | undefined>();
   });
 
@@ -65,9 +65,7 @@ describe('undefined on server response is inferred on the client', () => {
 
       const { data: obj, isSuccess: objSuccess } = hooks.getObj.useQuery();
       if (objSuccess)
-        expectTypeOf(obj).toEqualTypeOf<
-          { id?: number | undefined } | undefined
-        >();
+        expectTypeOf(obj).toEqualTypeOf<{ id?: number } | undefined>();
 
       return null;
     };
