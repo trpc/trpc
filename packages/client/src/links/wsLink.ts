@@ -24,6 +24,7 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 
 export interface WebSocketClientOptions {
   url: string | (() => string);
+  getRetryUrl?: () => Promise<string>;
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
   onOpen?: () => void;
@@ -32,7 +33,8 @@ export interface WebSocketClientOptions {
 
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
-    url,
+    url: initialUrl,
+    getRetryUrl,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = retryDelay,
     onOpen,
@@ -44,6 +46,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
     );
   }
+  let url = initialUrl
   /**
    * outgoing messages buffer whilst not open
    */
@@ -96,10 +99,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
     const timeout = retryDelayFn(connectAttempt++);
     reconnectInMs(timeout);
   }
-  function reconnect() {
+  async function reconnect() {
     state = 'connecting';
     const oldConnection = activeConnection;
-    activeConnection = createWS();
+    if (getRetryUrl) {
+      url = await getRetryUrl();
+      
+      activeConnection = createWS();
+    } else {
+      activeConnection = createWS();
+    }
     closeIfNoPending(oldConnection);
   }
   function reconnectInMs(ms: number) {
