@@ -66,7 +66,7 @@ importers:
         specifier: ^4.6.0
         version: 4.6.0(eslint@8.30.0)
       eslint-plugin-turbo:
-        specifier: 1.9.1
+        specifier: ^1.9.1
         version: 1.9.1(eslint@8.30.0)
       eslint-plugin-unicorn:
         specifier: 46.0.0
@@ -117,7 +117,7 @@ importers:
         specifier: ^3.12.3
         version: 3.12.3
       turbo:
-        specifier: 1.9.1
+        specifier: ^1.9.1
         version: 1.9.1
       typescript:
         specifier: ^4.8.3
