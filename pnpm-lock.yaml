@@ -681,6 +681,9 @@ importers:
       '@trpc/client':
         specifier: link:../../../packages/client
         version: link:../../../packages/client
+      undici:
+        specifier: ^5.14.0
+        version: 5.16.0
     devDependencies:
       '@types/node':
         specifier: ^18.7.20
@@ -691,6 +694,9 @@ importers:
       '@trpc/server':
         specifier: link:../../../packages/server
         version: link:../../../packages/server
+      zod:
+        specifier: ^3.0.0
+        version: 3.20.2
     devDependencies:
       '@types/node':
         specifier: ^18.7.20
@@ -1737,6 +1743,9 @@ importers:
       typescript:
         specifier: ^4.8.3
         version: 4.8.3
+      yup:
+        specifier: ^1.0.0
+        version: 1.0.0
 
   www/og-image:
     dependencies:
@@ -30164,7 +30173,6 @@ packages:
     engines: { node: '>=12.18' }
     dependencies:
       busboy: 1.6.0
-    dev: true
 
   /undici@5.9.1:
     resolution:
