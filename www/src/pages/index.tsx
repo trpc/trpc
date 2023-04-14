@@ -42,7 +42,7 @@ const sandboxes = [
     description:
       'This is a minimal full-stack React application using tRPC and React.',
     examplePath: 'minimal-react',
-    files: ['client/src/App.tsx', 'server/src/index.ts'],
+    files: ['client/src/App.tsx', 'server/index.ts'],
   },
 ];
 
