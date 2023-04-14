@@ -14,10 +14,24 @@ import { Iframe } from '../components/Iframe';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/Tabs';
 import { TwitterWall } from '../components/TwitterWall';
 import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
 import { TopSponsors } from '../components/sponsors/TopSponsors';
 import { searchParams } from '../utils/searchParams';
+
+const sandboxes = [
+  {
+    title: 'Node',
+    examplePath: 'minimal',
+    files: ['client/index.ts', 'server/index.ts'],
+  },
+  {
+    title: 'Next.js',
+    examplePath: 'next-minimal-starter',
+    files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
+  },
+];
 
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
@@ -91,28 +105,41 @@ const HomeContent: React.FC = () => {
           whileInView="visible"
           viewport={{ once: true }}
           className={clsx(
-            'relative z-10 my-0 h-[800px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
+            'z-10 my-0 h-[800px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
           )}
         >
-          <div className="absolute inset-0 animate-pulse bg-zinc-900" />
-          <Iframe
-            src={
-              `https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?` +
-              searchParams({
-                embed: '1',
-                file: [
-                  // Opens these side-by-side
-                  'src/pages/index.tsx',
-                  'src/pages/api/trpc/[trpc].ts',
-                ],
-                hideNavigation: '1',
-                terminalHeight: '1',
-                showSidebar: '0',
-                view: 'editor',
-              })
-            }
-            frameBorder="0"
-          />
+          <Tabs defaultValue="Node" className="h-full">
+            <TabsList>
+              {sandboxes.map((sandbox) => (
+                <TabsTrigger key={sandbox.title} value={sandbox.title}>
+                  {sandbox.title}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {sandboxes.map((sandbox) => (
+              <TabsContent
+                key={sandbox.title}
+                value={sandbox.title}
+                className="relative h-full p-0"
+              >
+                <div className="absolute inset-0 animate-pulse bg-zinc-900" />
+                <Iframe
+                  src={
+                    `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.examplePath}?` +
+                    searchParams({
+                      embed: '1',
+                      file: sandbox.files,
+                      hideNavigation: '1',
+                      terminalHeight: '1',
+                      showSidebar: '0',
+                      view: 'editor',
+                    })
+                  }
+                  frameBorder="0"
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
         </motion.div>
         <motion.div
           variants={popIn}
