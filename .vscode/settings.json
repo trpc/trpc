@@ -18,8 +18,9 @@
   "editor.stickyScroll.enabled": true,
   "tailwindCSS.classAttributes": ["class", "className", "ngClass", "tw"],
   "tailwindCSS.experimental.classRegex": [
-    ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+    ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]", "cn\\(([^)]*)\\)"]
   ],
+  "tailwindCSS.experimental.configFile": "./www/tailwind.config.ts",
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
 }
