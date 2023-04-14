@@ -7,10 +7,6 @@ import { FilterKeys } from '../../types';
 type JsonPrimitive =
   | string
   | number
-  // `undefined` is a weird one that's technically not valid JSON,
-  // but the return value of `JSON.parse` can be `undefined` so we
-  // support it as both a Primitive and a NonJsonPrimitive
-  | undefined
   | boolean
   // eslint-disable-next-line @typescript-eslint/ban-types
   | String
@@ -21,17 +17,21 @@ type JsonPrimitive =
   | null;
 // eslint-disable-next-line @typescript-eslint/ban-types
 type NonJsonPrimitive = undefined | Function | symbol;
-
 /*
  * `any` is the only type that can let you equate `0` with `1`
  * See https://stackoverflow.com/a/49928360/1490091
  */
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
+// `undefined` is a weird one that's technically not valid JSON,
+// but the return value of `JSON.parse` can be `undefined` so we
+// support it as both a Primitive and a NonJsonPrimitive
+type JsonParseable = JsonPrimitive | undefined;
+
 // prettier-ignore
 export type Serialize<T> =
  IsAny<T> extends true ? any :
- T extends JsonPrimitive ? T :
+ T extends JsonParseable ? T :
  T extends Map<any,any> | Set<any> ? object : 
  T extends NonJsonPrimitive ? never :
  T extends { toJSON(): infer U } ? U :
