@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import type { Config } from 'tailwindcss';
 import plugin from 'tailwindcss/plugin';
 
@@ -55,8 +56,8 @@ const config: Config = {
         { values: theme('transitionDelay') },
       );
     }),
-    /* eslint-disable-next-line */
     require('tailwindcss-elevation')(['responsive']),
+    require('tailwindcss-radix')({ variantPrefix: 'rdx' }),
   ],
 };
 
