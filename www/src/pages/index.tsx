@@ -46,9 +46,7 @@ const HomeContent: React.FC = () => {
   useEffect(() => {
     const url = new URL(window.location.href);
     const sandbox = sandboxes.find((s) => s.id === url.searchParams.get('try'));
-    if (sandbox) {
-      setSandboxId(sandbox.id);
-    }
+    if (sandbox) setSandboxId(sandbox.id);
   }, []);
 
   return (
