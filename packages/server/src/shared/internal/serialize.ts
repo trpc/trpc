@@ -7,6 +7,10 @@ import { FilterKeys } from '../../types';
 type JsonPrimitive =
   | string
   | number
+  // `undefined` is a weird one that's technically not valid JSON,
+  // but the return value of `JSON.parse` can be `undefined` so we
+  // support it as both a Primitive and a NonJsonPrimitive
+  | undefined
   | boolean
   // eslint-disable-next-line @typescript-eslint/ban-types
   | String

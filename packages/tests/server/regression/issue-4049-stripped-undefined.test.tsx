@@ -16,6 +16,12 @@ describe('undefined on server response is inferred on the client', () => {
           expectTypeOf(num).toEqualTypeOf<number | undefined>();
           return num;
         }),
+        getObj: t.procedure.query(() => {
+          const objs = [{ id: 1 } as { id: number | undefined }];
+          const obj = objs.find((n) => n.id === Math.floor(Math.random() * 5));
+          //    ^?
+          return obj;
+        }),
       });
 
       return routerToServerAndClientNew(appRouter, {
@@ -34,6 +40,10 @@ describe('undefined on server response is inferred on the client', () => {
   test('using vanilla client', async () => {
     const num = await ctx.proxy.getNum.query();
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
+
+    const obj = await ctx.proxy.getObj.query();
+    // key might be stripped entirely   👇, or value can be undefined
+    expectTypeOf(obj).toEqualTypeOf<{ id?: number | undefined } | undefined>();
   });
 
   test('using createCaller', async () => {
@@ -41,13 +51,24 @@ describe('undefined on server response is inferred on the client', () => {
     const caller = router.createCaller({});
     const num = await caller.getNum();
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
+
+    const obj = await caller.getObj();
+    // key should not be stripped       👇, since we're not calling JSON.stringify/parse on createCaller
+    expectTypeOf(obj).toEqualTypeOf<{ id: number | undefined } | undefined>();
   });
 
   test('using react hooks', async () => {
     const hooks = createTRPCReact<typeof ctx.router>();
     () => {
-      const { data, isSuccess } = hooks.getNum.useQuery();
-      if (isSuccess) expectTypeOf(data).toEqualTypeOf<number | undefined>();
+      const { data: num, isSuccess: numSuccess } = hooks.getNum.useQuery();
+      if (numSuccess) expectTypeOf(num).toEqualTypeOf<number | undefined>();
+
+      const { data: obj, isSuccess: objSuccess } = hooks.getObj.useQuery();
+      if (objSuccess)
+        expectTypeOf(obj).toEqualTypeOf<
+          { id?: number | undefined } | undefined
+        >();
+
       return null;
     };
   });
