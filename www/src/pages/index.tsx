@@ -36,6 +36,14 @@ const sandboxes = [
     examplePath: 'next-minimal-starter',
     files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
   },
+  {
+    id: 'react',
+    title: 'React',
+    description:
+      'This is a minimal full-stack React application using tRPC and React.',
+    examplePath: 'minimal-react',
+    files: ['client/src/App.tsx', 'server/src/index.ts'],
+  },
 ];
 
 const HomeContent: React.FC = () => {
