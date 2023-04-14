@@ -3,7 +3,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
@@ -40,7 +40,7 @@ const sandboxes = [
 
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
-  const [sandboxId, setSandboxId] = React.useState(sandboxes[0].id);
+  const [sandboxId, setSandboxId] = useState(sandboxes[0].id);
   const sandbox = sandboxes.find((s) => s.id === sandboxId);
 
   useEffect(() => {
