@@ -136,7 +136,16 @@ const HomeContent: React.FC = () => {
                 value={sandbox.id}
                 className="relative h-full p-0"
               >
-                <div className="absolute inset-0 animate-pulse bg-zinc-900" />
+                <div className="absolute inset-0 flex animate-pulse flex-col items-center justify-center gap-2 bg-zinc-900">
+                  <div className="flex gap-2">
+                    <div className="h-4 w-4 animate-loader rounded-full bg-zinc-400" />
+                    <div className="h-4 w-4 animate-loader rounded-full bg-zinc-400 animation-delay-200" />
+                    <div className="h-4 w-4 animate-loader rounded-full bg-zinc-400 animation-delay-300" />
+                  </div>
+                  <span className="font-bold text-zinc-200">
+                    Loading sandbox...
+                  </span>
+                </div>
                 <Iframe
                   src={
                     `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.examplePath}?` +
