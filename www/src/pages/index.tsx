@@ -24,12 +24,15 @@ const sandboxes = [
   {
     id: 'node',
     title: 'Node.js',
+    description: 'This is a minimal Node.js application using tRPC.',
     examplePath: 'minimal',
     files: ['client/index.ts', 'server/index.ts'],
   },
   {
     id: 'next',
     title: 'Next.js',
+    description:
+      'This is a minimal full-stack React application using tRPC and Next.js.',
     examplePath: 'next-minimal-starter',
     files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
   },
@@ -37,13 +40,14 @@ const sandboxes = [
 
 const HomeContent: React.FC = () => {
   const { siteConfig } = useDocusaurusContext();
-  const [selectedSandbox, setSelectedSandbox] = React.useState(sandboxes[0].id);
+  const [sandboxId, setSandboxId] = React.useState(sandboxes[0].id);
+  const sandbox = sandboxes.find((s) => s.id === sandboxId);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const sandbox = sandboxes.find((s) => s.id === url.searchParams.get('try'));
     if (sandbox) {
-      setSelectedSandbox(sandbox.id);
+      setSandboxId(sandbox.id);
     }
   }, []);
 
@@ -103,12 +107,7 @@ const HomeContent: React.FC = () => {
         <SectionTitle
           id="try-it-out"
           title={<>Try it out for yourself!</>}
-          description={
-            <>
-              This is a minimal full-stack React application using tRPC and
-              Next.js.
-            </>
-          }
+          description={sandbox?.description ?? ''}
         />
         <motion.div
           variants={popIn}
@@ -120,8 +119,8 @@ const HomeContent: React.FC = () => {
           )}
         >
           <Tabs
-            value={selectedSandbox}
-            onValueChange={(val) => setSelectedSandbox(val)}
+            value={sandboxId}
+            onValueChange={(val) => setSandboxId(val)}
             className="h-full"
           >
             <TabsList>
