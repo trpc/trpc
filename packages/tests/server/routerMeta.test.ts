@@ -2,7 +2,6 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
 import { inferRouterMeta } from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
-import { expectTypeOf } from 'expect-type';
 
 test('route meta types', async () => {
   const testMeta = { data: 'foo' };
