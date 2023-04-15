@@ -9,14 +9,14 @@ describe('undefined on server response is inferred on the client', () => {
     .beforeEach(() => {
       const t = initTRPC.create();
       const appRouter = t.router({
-        getNum: t.procedure.query(() => {
+        num: t.procedure.query(() => {
           const nums = [1, 2, 3, 4, 5];
           const num = nums.find((n) => n === Math.floor(Math.random() * 10));
           //    ^?
           expectTypeOf(num).toEqualTypeOf<number | undefined>();
           return num;
         }),
-        getObj: t.procedure.query(() => {
+        obj: t.procedure.query(() => {
           const objs = [{ id: 1 } as { id: number | undefined }];
           const obj = objs.find((n) => n.id === Math.floor(Math.random() * 5));
           //    ^?
@@ -24,6 +24,9 @@ describe('undefined on server response is inferred on the client', () => {
             { id: number | undefined } | undefined
           >();
           return obj;
+        }),
+        und: t.procedure.query(() => {
+          return undefined;
         }),
       });
 
@@ -41,34 +44,43 @@ describe('undefined on server response is inferred on the client', () => {
     .done();
 
   test('using vanilla client', async () => {
-    const num = await ctx.proxy.getNum.query();
+    const num = await ctx.proxy.num.query();
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
 
-    const obj = await ctx.proxy.getObj.query();
+    const obj = await ctx.proxy.obj.query();
     // key might be stripped entirely   👇, or value should be defined
     expectTypeOf(obj).toEqualTypeOf<{ id?: number } | undefined>();
+
+    const und = await ctx.proxy.und.query();
+    expectTypeOf(und).toEqualTypeOf<undefined>();
   });
 
   test('using createCaller', async () => {
     const router = ctx.router;
     const caller = router.createCaller({});
-    const num = await caller.getNum();
+    const num = await caller.num();
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
 
-    const obj = await caller.getObj();
+    const obj = await caller.obj();
     // key should not be stripped       👇, since we're not calling JSON.stringify/parse on createCaller, value can be undefined though
     expectTypeOf(obj).toEqualTypeOf<{ id: number | undefined } | undefined>();
+
+    const und = await caller.und();
+    expectTypeOf(und).toEqualTypeOf<undefined>();
   });
 
   test('using react hooks', async () => {
     const hooks = createTRPCReact<typeof ctx.router>();
     () => {
-      const { data: num, isSuccess: numSuccess } = hooks.getNum.useQuery();
+      const { data: num, isSuccess: numSuccess } = hooks.num.useQuery();
       if (numSuccess) expectTypeOf(num).toEqualTypeOf<number | undefined>();
 
-      const { data: obj, isSuccess: objSuccess } = hooks.getObj.useQuery();
+      const { data: obj, isSuccess: objSuccess } = hooks.obj.useQuery();
       if (objSuccess)
         expectTypeOf(obj).toEqualTypeOf<{ id?: number } | undefined>();
+
+      const { data: und, isSuccess: undSuccess } = hooks.und.useQuery();
+      if (undSuccess) expectTypeOf(und).toEqualTypeOf<undefined>();
 
       return null;
     };
