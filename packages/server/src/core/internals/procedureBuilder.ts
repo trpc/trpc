@@ -3,6 +3,7 @@ import { MaybePromise, Simplify } from '../../types';
 import {
   MiddlewareBuilder,
   MiddlewareFunction,
+  MiddlewareProcedureChainer,
   MiddlewareResult,
   createInputMiddleware,
   createOutputMiddleware,
@@ -137,7 +138,8 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   use<$Params extends ProcedureParams>(
     fn:
       | MiddlewareBuilder<TParams, $Params>
-      | MiddlewareFunction<TParams, $Params>,
+      | MiddlewareFunction<TParams, $Params>
+      | MiddlewareProcedureChainer<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -249,6 +251,16 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       return createNewBuilder(_def, builder._def) as any;
     },
     use(middlewareBuilderOrFn) {
+      if (
+        typeof middlewareBuilderOrFn === 'object' &&
+        '_type' in middlewareBuilderOrFn &&
+        middlewareBuilderOrFn._type === 'chainer'
+      ) {
+        console.log('CHAINING!!');
+
+        return middlewareBuilderOrFn.chain(this) as AnyProcedureBuilder;
+      }
+
       // Distinguish between a middleware builder and a middleware function
       const middlewares =
         '_middlewares' in middlewareBuilderOrFn

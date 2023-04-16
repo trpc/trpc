@@ -3,7 +3,10 @@ import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
-import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
+import type {
+  ProcedureBuilder,
+  ProcedureBuilderMiddleware,
+} from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
   MiddlewareMarker,
@@ -86,6 +89,29 @@ export interface MiddlewareBuilder<
    * List of middlewares within this middleware builder
    */
   _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
+}
+
+/**
+ * @internal
+ */
+export interface MiddlewareProcedureChainer<
+  TRoot extends ProcedureParams,
+  TNext extends ProcedureParams,
+> {
+  _type: 'chainer';
+  chain(procedure: ProcedureBuilder<TRoot>): ProcedureBuilder<TNext>;
+}
+
+export type AgnosticMiddlewareProcedureChainer<TNext extends ProcedureParams> =
+  MiddlewareProcedureChainer<any, TNext>;
+
+export function createProcedureChainer<TNext extends ProcedureParams>(
+  chain: AgnosticMiddlewareProcedureChainer<TNext>['chain'],
+): AgnosticMiddlewareProcedureChainer<TNext> {
+  return {
+    _type: 'chainer',
+    chain,
+  };
 }
 
 /**
