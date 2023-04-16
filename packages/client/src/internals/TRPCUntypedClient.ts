@@ -97,7 +97,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    function getCombinedTransformer(): CombinedDataTransformer {
+    const combinedTransformer: CombinedDataTransformer = (() => {
       const transformer = opts.transformer as
         | DataTransformerOptions
         | undefined;
@@ -121,9 +121,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         input: transformer,
         output: transformer,
       };
-    }
-
-    const combinedTransformer = getCombinedTransformer();
+    })();
 
     this.runtime = {
       transformer: {
