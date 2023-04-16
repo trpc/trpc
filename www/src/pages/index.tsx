@@ -24,26 +24,23 @@ import { searchParams } from '../utils/searchParams';
 
 const sandboxes = [
   {
-    id: 'node',
+    id: 'minimal',
     title: 'Node.js',
     description: 'This is a minimal Node.js application using tRPC.',
-    examplePath: 'minimal',
     files: ['client/index.ts', 'server/index.ts'],
   },
   {
-    id: 'next',
+    id: 'next-minimal-starter',
     title: 'Next.js',
     description:
       'This is a minimal full-stack React application using tRPC and Next.js.',
-    examplePath: 'next-minimal-starter',
     files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
   },
   {
-    id: 'react',
+    id: 'minimal-react',
     title: 'React',
     description:
       'This is a minimal full-stack React application using tRPC and React.',
-    examplePath: 'minimal-react',
     files: ['client/src/App.tsx', 'server/index.ts'],
   },
 ] as const;
@@ -112,7 +109,7 @@ function TryItOut() {
               </div>
               <Iframe
                 src={
-                  `https://stackblitz.com/github/trpc/examples-${sandbox.examplePath}?` +
+                  `https://stackblitz.com/github/trpc/examples-${sandbox.id}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,
@@ -138,7 +135,7 @@ function TryItOut() {
       >
         <Button
           variant="tertiary"
-          href={`https://github.com/trpc/examples-${selected.examplePath}/generate`}
+          href={`https://github.com/trpc/examples-${selected.id}/generate`}
         >
           <svg
             role="img"
