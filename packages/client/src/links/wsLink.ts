@@ -119,9 +119,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
       conn.close();
     }
   }
-  
+
   function closePendingRequests() {
-    Object.values(pendingRequests).forEach(req => req.callbacks.complete())
+    Object.values(pendingRequests).forEach((req) => req.callbacks.complete());
   }
 
   function resumeSubscriptionOnReconnect(req: TRequest) {
@@ -309,14 +309,6 @@ class TRPCWebSocketClosedError extends Error {
   }
 }
 
-class TRPCSubscriptionEndedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'TRPCSubscriptionEndedError';
-    Object.setPrototypeOf(this, TRPCSubscriptionEndedError.prototype);
-  }
-}
-
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
@@ -336,7 +328,7 @@ export function wsLink<TRouter extends AnyRouter>(
               unsub();
             },
             complete() {
-                observer.complete();
+              observer.complete();
             },
             next(message) {
               const transformed = transformResult(message, runtime);
