@@ -97,9 +97,11 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    const transformer = opts.transformer as DataTransformerOptions | undefined;
-
     function getCombinedTransformer(): CombinedDataTransformer {
+      const transformer = opts.transformer as
+        | DataTransformerOptions
+        | undefined;
+
       if (!transformer) {
         return {
           input: {
@@ -128,7 +130,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         serialize: (data) => combinedTransformer.input.serialize(data),
         deserialize: (data) => combinedTransformer.output.deserialize(data),
       },
-      combinedTransformer: getCombinedTransformer(),
+      combinedTransformer,
     };
 
     // Initialize the links
