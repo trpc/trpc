@@ -144,7 +144,7 @@ export type AppRouter = typeof appRouter;
 
 ```tsx
 import { initTRPC } from '@trpc/server';
-import * as $ from 'scale-ts';
+import * as $ from 'scale-codec';
 
 export const t = initTRPC.create();
 

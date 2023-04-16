@@ -2,7 +2,6 @@ import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient
 import * as trpc from '@trpc/server/src';
 import { inferRouterMeta } from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
-import { expectTypeOf } from 'expect-type';
 
 test('route meta types', async () => {
   const testMeta = { data: 'foo' };

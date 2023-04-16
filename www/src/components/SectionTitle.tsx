@@ -21,14 +21,14 @@ export const SectionTitle: FC<SectionTitleProps> = (props) => {
       <h2
         id={props.id}
         className={clsx(
-          'text-2xl font-bold text-black hover:no-underline lg:text-3xl scroll-mt-20 dark:text-white',
+          'scroll-mt-20 text-2xl font-bold text-black hover:no-underline dark:text-white lg:text-3xl',
         )}
       >
         {props.title}
         <a className="hash-link" href={`#${props.id}`}></a>
       </h2>
       {props.description && (
-        <p className="text-zinc-600 dark:text-zinc-300 max-w-[60ch] pt-2 mx-auto text-sm md:text-base">
+        <p className="mx-auto max-w-[60ch] pt-2 text-sm text-zinc-600 dark:text-zinc-300 md:text-base">
           {props.description}
         </p>
       )}

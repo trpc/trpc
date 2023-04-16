@@ -5,8 +5,8 @@ import { allSponsors, topSponsors } from './script.output';
 
 export const TopSponsors = () => {
   return (
-    <div className="grid items-center justify-center grid-flow-row gap-4 mt-12 justify-items-center">
-      <h2 className="text-lg font-extrabold tracking-wider uppercase opacity-50">
+    <div className="mt-12 grid grid-flow-row items-center justify-center justify-items-center gap-4">
+      <h2 className="text-lg font-extrabold uppercase tracking-wider opacity-50">
         Supported by
       </h2>
       <div className="grid grid-cols-3 gap-4 sm:grid-flow-col sm:grid-cols-none">
@@ -20,7 +20,7 @@ export const TopSponsors = () => {
               title={sponsor.name}
             >
               <img
-                className="h-20 transition duration-300 shadow-none opacity-50 grayscale hover:grayscale-0 hover:shadow-lg rounded-2xl hover:opacity-100"
+                className="h-20 rounded-2xl opacity-50 shadow-none grayscale transition duration-300 hover:opacity-100 hover:shadow-lg hover:grayscale-0"
                 src={sponsor.imgSrc}
                 alt={sponsor.name}
               />
@@ -33,7 +33,7 @@ export const TopSponsors = () => {
           rel="noopener"
           title="tRPC Sponsors"
         >
-          <div className="grid content-center w-20 h-20 grid-flow-row p-2 font-bold tracking-tight text-center transition duration-300 opacity-50 justify-items-center grayscale hover:grayscale-0 hover:opacity-100">
+          <div className="grid h-20 w-20 grid-flow-row content-center justify-items-center p-2 text-center font-bold tracking-tight opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0">
             <FiArrowRightCircle size={20} />
             <span>{allSponsors.length - topSponsors.length} more</span>
           </div>

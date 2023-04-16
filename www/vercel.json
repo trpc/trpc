@@ -6,8 +6,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/aborting-procedure-calls",
-      "destination": "/docs/client/aborting-procedure-calls",
+      "source": "/server/api-handler",
+      "destination": "/server/adapters/intro",
       "permanent": true
     },
     {
@@ -37,7 +37,7 @@
     },
     {
       "source": "/docs/ssg-helpers",
-      "destination": "/docs/nextjs/ssg-helpers",
+      "destination": "/docs/nextjs/server-side-helpers",
       "permanent": true
     },
     {
@@ -313,6 +313,11 @@
     {
       "source": "/docs/v10/:path*",
       "destination": "/docs/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/ssg-helpers",
+      "destination": "/docs/nextjs/server-side-helpers",
       "permanent": true
     }
   ]

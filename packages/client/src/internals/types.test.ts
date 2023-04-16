@@ -1,4 +1,3 @@
-import { expectTypeOf } from 'expect-type';
 import isomorphicFetch from 'isomorphic-fetch';
 import nodeFetch from 'node-fetch';
 import type { fetch as undiciFetch } from 'undici';

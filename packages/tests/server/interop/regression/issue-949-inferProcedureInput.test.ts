@@ -2,7 +2,6 @@
 // IMPORTANT:
 // needs to be imported from compiled output otherwise we get a false-positive
 import * as trpc from '@trpc/server';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 // https://github.com/trpc/trpc/issues/949
