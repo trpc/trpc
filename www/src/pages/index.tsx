@@ -70,7 +70,6 @@ function TryItOut() {
     sandboxes.find((it) => it.id === param) ?? sandboxes[0];
   const selectedId = selected.id;
 
-
   return (
     <>
       <SectionTitle id="try-it-out" title={<>Try it out for yourself!</>} />
