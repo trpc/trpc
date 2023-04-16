@@ -57,7 +57,6 @@ const config: Config = {
       );
     }),
     require('tailwindcss-elevation')(['responsive']),
-    require('tailwindcss-radix')({ variantPrefix: 'rdx' }),
   ],
 };
 
