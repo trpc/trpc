@@ -11,7 +11,7 @@ const CodeBlock = ({ children, ...props }) => {
 
   const handleCopyCode = () => {
     if (pre.current) {
-      navigator.clipboard.writeText(
+      void navigator.clipboard.writeText(
         Array.from(pre.current.querySelectorAll('code div.line'))
           .map((el) => el.textContent)
           .join('\n'),
