@@ -1,7 +1,6 @@
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
-import { useQueryStringValue } from '@docusaurus/theme-common/internal';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
