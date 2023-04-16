@@ -1,11 +1,12 @@
 import Head from '@docusaurus/Head';
 import Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
+import { useQueryStringValue } from '@docusaurus/theme-common/internal';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
@@ -45,14 +46,32 @@ const sandboxes = [
   },
 ] as const;
 
-function TryItOut() {
+/**
+ * This is a hack to get around the fact that `useLocation` is not available on the first render
+ */
+const useQueryParam = (key: string) => {
+  const [mounted, setMounted] = React.useState(false);
   const location = useLocation();
-  const param = new URLSearchParams(location.search).get('try');
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+  return new URLSearchParams(location.search).get(key);
+};
+
+function TryItOut() {
+  const param = useQueryParam('try');
+
   type Sandbox = (typeof sandboxes)[number];
 
   const selected: Sandbox =
     sandboxes.find((it) => it.id === param) ?? sandboxes[0];
   const selectedId = selected.id;
+
+  console.log({ selected, selectedId, param });
 
   return (
     <>
