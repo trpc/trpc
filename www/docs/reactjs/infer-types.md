@@ -40,6 +40,8 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+In addition to the type inference made available by `@trpc/server` ([see here](/docs/client/infer-types)) this integration also provides some inference helpers for usage purely in React.
+
 ## Infer React Query options based on your router
 
 When creating custom hooks around tRPC procedures, it's sometimes necessary to have the types of the options inferred from the router. You can do so via the `inferReactQueryProcedureOptions` helper exported from `@trpc/react-query`.
@@ -110,9 +112,9 @@ function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
 }
 ```
 
-## Creating Abstract Router types
+## Infer abstract types from a "Router Factory"
 
-You can also infer abstract types for router interfaces which you share around an application via a router factory. For example:
+If you write a factory which creates a similar router interface several times in your application, you may wish to share client code between usages of the factory. `@trpc/react-query/shared` exports several types which can be used to generate abstract types for a router factory, and build common React components which are passed the router as a prop. 
 
 ```tsx twoslash title='api/factory.ts'
 // @module: esnext
