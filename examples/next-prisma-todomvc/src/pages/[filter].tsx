@@ -302,7 +302,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
    * Warning: This can be very heavy if you have a lot of locales
    * @see https://nextjs.org/docs/advanced-features/i18n-routing#dynamic-routes-and-getstaticprops-pages
    */
-  let paths = filters.flatMap((filter) =>
+  const paths = filters.flatMap((filter) =>
     i18n.locales.map((locale) => ({ params: { filter }, locale })),
   );
 

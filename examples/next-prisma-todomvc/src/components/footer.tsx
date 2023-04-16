@@ -26,7 +26,7 @@ export function InfoFooter(props: { filter: string; locales: string[] }) {
       <ul className="filters">
         {t('footer.select_language')}
         {props.locales.map((changeTo) => (
-          <li>
+          <li key={changeTo}>
             <Link
               href={`/${props.filter}`}
               locale={changeTo}
