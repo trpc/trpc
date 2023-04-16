@@ -191,7 +191,7 @@ const ctx = konn()
  * A hook that will subscribe the component to all the hooks for the
  * invalidation test.
  */
-const useSetupAllTestHooks = (proxy: typeof ctx['proxy']) => {
+const useSetupAllTestHooks = (proxy: (typeof ctx)['proxy']) => {
   const hooks = {
     user: {
       listAll: proxy.user.listAll.useQuery(),

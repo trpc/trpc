@@ -4,7 +4,7 @@ import { allSponsors } from './script.output';
 
 const sponsors = [...allSponsors].sort((a, b) => b.weight - a.weight);
 
-type Sponsor = typeof allSponsors[number];
+type Sponsor = (typeof allSponsors)[number];
 type ValidLogins = Sponsor['login'];
 
 interface Def {

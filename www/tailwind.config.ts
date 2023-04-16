@@ -1,5 +1,6 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
   content: [
     './src/**/*.{js,jsx,ts,tsx,md,mdx}',
     './docs/**/*.{js,jsx,ts,tsx,md,mdx}',
@@ -20,11 +21,11 @@ module.exports = {
       keyframes: {
         'pop-in': {
           '0%': {
-            opacity: 0,
+            opacity: '0',
             transform: 'translateY(48px)',
           },
           '100%': {
-            opacity: 1,
+            opacity: '1',
             transform: 'translateY(0)',
           },
         },
@@ -36,8 +37,9 @@ module.exports = {
   },
   darkMode: ['class', '[data-theme="dark"]'],
   plugins: [
-    require('@tailwindcss/line-clamp'),
     /* eslint-disable-next-line */
     require('tailwindcss-elevation')(['responsive']),
   ],
 };
+
+export default config;

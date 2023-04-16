@@ -1,7 +1,6 @@
 import * as trpc from '@trpc/server/src';
 import { inferProcedureInput, inferProcedureOutput } from '@trpc/server/src';
 import { Observable, observable } from '@trpc/server/src/observable';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 describe('infer query input & output', () => {
@@ -49,7 +48,7 @@ describe('infer query input & output', () => {
       },
     })
     .interop();
-  type TQueries = typeof router['_def']['queries'];
+  type TQueries = (typeof router)['_def']['queries'];
 
   test('no input', () => {
     const input: inferProcedureInput<TQueries['noInput']> = null as any;
@@ -131,7 +130,7 @@ describe('infer mutation input & output', () => {
       },
     })
     .interop();
-  type TMutations = typeof router['_def']['mutations'];
+  type TMutations = (typeof router)['_def']['mutations'];
 
   test('no input', () => {
     const input: inferProcedureInput<TMutations['noInput']> = null as any;
@@ -204,7 +203,7 @@ describe('infer subscription input & output', () => {
       },
     })
     .interop();
-  type TSubscriptions = typeof router['_def']['subscriptions'];
+  type TSubscriptions = (typeof router)['_def']['subscriptions'];
 
   test('no input', () => {
     const input: inferProcedureInput<TSubscriptions['noInput']> = null as any;

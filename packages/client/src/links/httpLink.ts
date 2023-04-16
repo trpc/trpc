@@ -2,12 +2,22 @@ import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import {
-  HTTPLinkOptions,
+  HTTPLinkBaseOptions,
   httpRequest,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
-import { TRPCLink } from './types';
+import { HTTPHeaders, Operation, TRPCLink } from './types';
+
+export interface HTTPLinkOptions extends HTTPLinkBaseOptions {
+  /**
+   * Headers to be set on outgoing requests or a callback that of said headers
+   * @link http://trpc.io/docs/client/headers
+   */
+  headers?:
+    | HTTPHeaders
+    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+}
 
 export function httpLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions,
@@ -17,13 +27,26 @@ export function httpLink<TRouter extends AnyRouter>(
     ({ op }) =>
       observable((observer) => {
         const { path, input, type } = op;
+
         const { promise, cancel } = httpRequest({
           ...resolvedOpts,
           runtime,
           type,
           path,
           input,
+          headers() {
+            if (!opts.headers) {
+              return {};
+            }
+            if (typeof opts.headers === 'function') {
+              return opts.headers({
+                op,
+              });
+            }
+            return opts.headers;
+          },
         });
+
         promise
           .then((res) => {
             const transformed = transformResult(res.json, runtime);

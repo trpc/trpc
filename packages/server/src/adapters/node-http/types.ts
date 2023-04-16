@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http/internals/types';
+import { HTTPBaseHandlerOptions } from '../../http';
 import { MaybePromise } from '../../types';
 
 interface ParsedQs {
