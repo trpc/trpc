@@ -113,7 +113,7 @@ export const appRouter = router({
 
 ## Context Extension
 
-"Context Extension" in tRPC is a very powerful feature of middlewares, where you can dynamically add and override keys on a base procedure's context in a typesafe manner.
+"Context Extension" enables middlewares to dynamically add and override keys on a base procedure's context in a typesafe manner.
 
 Below we have an example of a middleware that changes properties of a context, the change(s) are then available to all chained consumers, such as other middlewares and procedures:
 
