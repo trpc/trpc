@@ -2,7 +2,6 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   CombinedDataTransformer,
-  DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
 } from '@trpc/server';
