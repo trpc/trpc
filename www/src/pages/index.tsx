@@ -112,7 +112,7 @@ function TryItOut() {
               </div>
               <Iframe
                 src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.examplePath}?` +
+                  `https://stackblitz.com/github/trpc/examples-${sandbox.examplePath}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,
