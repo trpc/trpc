@@ -51,7 +51,9 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/data-transformers
          **/
-        transformer?: ClientDataTransformerOptions;
+        transformer?:
+          | /** @deprecated **/ ClientDataTransformerOptions
+          | CombinedDataTransformer;
       };
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
@@ -96,27 +98,40 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    function getTransformer(): DataTransformer {
-      const transformer = opts.transformer as
-        | ClientDataTransformerOptions
-        | undefined;
-      if (!transformer)
-        return {
-          serialize: (data) => data,
-          deserialize: (data) => data,
-        };
+    const transformer = opts.transformer as DataTransformerOptions | undefined;
 
-      if ('input' in transformer)
+    function getCombinedTransformer(): CombinedDataTransformer {
+      if (!transformer) {
         return {
-          serialize: transformer.input.serialize,
-          deserialize: transformer.output.deserialize,
+          input: {
+            serialize: (data) => data,
+            deserialize: (data) => data,
+          },
+          output: {
+            serialize: (data) => data,
+            deserialize: (data) => data,
+          },
         };
-      return transformer;
+      }
+      if ('input' in transformer) {
+        return opts.transformer as CombinedDataTransformer;
+      }
+      return {
+        input: transformer,
+        output: transformer,
+      };
     }
 
+    const combinedTransformer = getCombinedTransformer();
+
     this.runtime = {
-      transformer: getTransformer(),
+      transformer: {
+        serialize: (data) => combinedTransformer.input.serialize(data),
+        deserialize: (data) => combinedTransformer.output.deserialize(data),
+      },
+      combinedTransformer: getCombinedTransformer(),
     };
+
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));
   }
