@@ -125,7 +125,7 @@ function TryItOut() {
               </div>
               <Iframe
                 src={
-                  `https://github.com/trpc/trpc/tree/main/examples/${sandbox.id}?` +
+                  `https://stackblitz.com/github/trpc/examples-${sandbox.id}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,
