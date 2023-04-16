@@ -5,7 +5,6 @@ import { render, waitFor } from '@testing-library/react';
 import { createReactQueryHooks, httpBatchLink } from '@trpc/react-query/src';
 import * as interop from '@trpc/server/src';
 import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import superjson from 'superjson';
