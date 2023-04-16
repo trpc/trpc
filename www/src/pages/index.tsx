@@ -96,7 +96,7 @@ function TryItOut() {
             <div
               key={sandbox.id}
               className={cn(
-                'relative h-full p-0',
+                'relative h-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
                 selectedId !== sandbox.id && 'hidden',
               )}
             >
