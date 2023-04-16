@@ -148,7 +148,7 @@ importers:
         version: 1.2.1
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -242,7 +242,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -310,7 +310,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -722,7 +722,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -771,7 +771,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -817,7 +817,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -869,7 +869,7 @@ importers:
         version: 1.2.1
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -966,7 +966,7 @@ importers:
         version: 1.2.1
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1039,7 +1039,7 @@ importers:
         version: 1.2.1
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.14.0
         version: 4.17.0(next@13.2.1)(react-dom@18.2.0)(react@18.2.0)
@@ -1310,7 +1310,7 @@ importers:
         version: 4.18.2
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1355,7 +1355,7 @@ importers:
         version: 4.18.2
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1430,7 +1430,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1550,7 +1550,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.0
@@ -1729,9 +1729,6 @@ importers:
       tailwindcss-elevation:
         specifier: ^2.0.0
         version: 2.0.0(tailwindcss@3.3.0)
-      tailwindcss-radix:
-        specifier: ^2.8.0
-        version: 2.8.0
       tsx:
         specifier: ^3.12.3
         version: 3.12.3
@@ -1755,7 +1752,7 @@ importers:
         version: 1.0.0
       next:
         specifier: ^13.2.1
-        version: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: latest
         version: 18.2.0
@@ -2716,7 +2713,6 @@ packages:
       semver: 6.3.0
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/generator@7.20.14:
     resolution: {integrity: sha512-AEmuXHdcD3A52HHXxaTmYlb8q/xMEhoRP67B3T4Oq7lbmSoqroMZzjnGj3+i1io3pdnF8iBYVu4Ilj+c4hBxYg==}
@@ -2733,7 +2729,6 @@ packages:
       '@babel/types': 7.20.7
       '@jridgewell/gen-mapping': 0.3.2
       jsesc: 2.5.2
-    dev: true
 
   /@babel/helper-annotate-as-pure@7.18.6:
     resolution: {integrity: sha512-duORpUiYrEpzKIop6iNbjnwKLAKnJ47csTyRACyEmWj0QdUrm5aqNJGHSSEQSUAvNW0ojX0dOmK9dZduvkfeXA==}
@@ -2772,7 +2767,6 @@ packages:
       '@babel/helper-validator-option': 7.18.6
       browserslist: 4.21.4
       semver: 6.3.0
-    dev: true
 
   /@babel/helper-compilation-targets@7.20.7(@babel/core@7.20.12):
     resolution: {integrity: sha512-4tGORmfQcrc+bvrjb5y3dG9Mx1IOZjsHqQVUz7XCNHO+iTmqxWnVg3KRygjGmpRLJGdQSKuvFinbIb0CnZwHAQ==}
@@ -2955,7 +2949,6 @@ packages:
       '@babel/types': 7.20.7
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/helper-optimise-call-expression@7.18.6:
     resolution: {integrity: sha512-HP59oD9/fEHQkdcbgFCnbmgH5vIQTJbxh2yf+CdM89/glUNnuzr87Q8GIjGEnOktTROemO0Pe0iPAYbqZuOUiA==}
@@ -3063,7 +3056,6 @@ packages:
       '@babel/types': 7.20.7
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/helpers@7.20.13:
     resolution: {integrity: sha512-nzJ0DWCL3gB5RCXbUO3KIMMsBY2Eqbx8mBpKGE/02PgyRQFcPQLbkQ1vyy596mZLaP+dAfD+R4ckASzNVmW3jg==}
@@ -3096,7 +3088,6 @@ packages:
     hasBin: true
     dependencies:
       '@babel/types': 7.20.7
-    dev: true
 
   /@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@7.18.6(@babel/core@7.20.12):
     resolution: {integrity: sha512-Dgxsyg54Fx1d4Nge8UnvTrED63vrwOdPmyvPzlNN/boaliRP54pm3pGzZD1SJUwrBA+Cs/xdG8kXX6Mn/RfISQ==}
@@ -4926,7 +4917,6 @@ packages:
       '@babel/code-frame': 7.18.6
       '@babel/parser': 7.20.15
       '@babel/types': 7.20.7
-    dev: true
 
   /@babel/template@7.20.7:
     resolution: {integrity: sha512-8SegXApWe6VoNw0r9JHpSteLKTpTiLZ4rMlGIm9JQ18KiCtyQiAMEazujAHrUS5flrcqYZa75ukev3P6QmUwUw==}
@@ -4952,7 +4942,6 @@ packages:
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/traverse@7.20.13:
     resolution: {integrity: sha512-kMJXfF0T6DIS9E8cgdLCSAL+cuCK+YEZHWiLK0SXpTo8YRj5lpJu3CDNKiIBCne4m9hhTIqUg6SYTAI39tAiVQ==}
@@ -6959,7 +6948,7 @@ packages:
     resolution: {integrity: sha512-ebbEtlI7dxXF5ziNdr05mOY8NnDiPB1XvAlLHctRt/Rc+C3LCOVW5imUVX+mhvUhnNzmPBHewUkOFgGlCxgdAA==}
     dependencies:
       ajv: 8.11.2
-      ajv-formats: 2.1.1(ajv@8.11.2)
+      ajv-formats: 2.1.1
       fast-uri: 2.2.0
 
   /@fastify/deepmerge@1.2.0:
@@ -10598,10 +10587,8 @@ packages:
       clean-stack: 2.2.0
       indent-string: 4.0.0
 
-  /ajv-formats@2.1.1(ajv@8.11.2):
+  /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependencies:
-      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -14504,7 +14491,7 @@ packages:
     dependencies:
       '@fastify/deepmerge': 1.2.0
       ajv: 8.11.2
-      ajv-formats: 2.1.1(ajv@8.11.2)
+      ajv-formats: 2.1.1
       fast-deep-equal: 3.1.3
       fast-uri: 2.2.0
       rfdc: 1.3.0
@@ -17748,7 +17735,7 @@ packages:
       '@panva/hkdf': 1.0.2
       cookie: 0.5.0
       jose: 4.11.1
-      next: 13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       oauth: 0.9.15
       openid-client: 5.3.0
       preact: 10.11.3
@@ -17760,52 +17747,6 @@ packages:
   /next-tick@1.1.0:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: true
-
-  /next@13.2.1(@babel/core@7.20.12)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-qhgJlDtG0xidNViJUPeQHLGJJoT4zDj/El7fP3D3OzpxJDUfxsm16cK4WTMyvSX1ciIfAq05u+0HqFAa+VJ+Hg==}
-    engines: {node: '>=14.6.0'}
-    hasBin: true
-    peerDependencies:
-      '@opentelemetry/api': ^1.4.0
-      fibers: '>= 3.1.0'
-      node-sass: ^6.0.0 || ^7.0.0
-      react: ^18.2.0
-      react-dom: ^18.2.0
-      sass: ^1.3.0
-    peerDependenciesMeta:
-      '@opentelemetry/api':
-        optional: true
-      fibers:
-        optional: true
-      node-sass:
-        optional: true
-      sass:
-        optional: true
-    dependencies:
-      '@next/env': 13.2.1
-      '@swc/helpers': 0.4.14
-      caniuse-lite: 1.0.30001434
-      postcss: 8.4.14
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      styled-jsx: 5.1.1(@babel/core@7.20.12)(react@18.2.0)
-    optionalDependencies:
-      '@next/swc-android-arm-eabi': 13.2.1
-      '@next/swc-android-arm64': 13.2.1
-      '@next/swc-darwin-arm64': 13.2.1
-      '@next/swc-darwin-x64': 13.2.1
-      '@next/swc-freebsd-x64': 13.2.1
-      '@next/swc-linux-arm-gnueabihf': 13.2.1
-      '@next/swc-linux-arm64-gnu': 13.2.1
-      '@next/swc-linux-arm64-musl': 13.2.1
-      '@next/swc-linux-x64-gnu': 13.2.1
-      '@next/swc-linux-x64-musl': 13.2.1
-      '@next/swc-win32-arm64-msvc': 13.2.1
-      '@next/swc-win32-ia32-msvc': 13.2.1
-      '@next/swc-win32-x64-msvc': 13.2.1
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
 
   /next@13.2.1(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-qhgJlDtG0xidNViJUPeQHLGJJoT4zDj/El7fP3D3OzpxJDUfxsm16cK4WTMyvSX1ciIfAq05u+0HqFAa+VJ+Hg==}
@@ -17852,7 +17793,6 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
-    dev: true
 
   /nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -20962,7 +20902,7 @@ packages:
     dependencies:
       '@types/json-schema': 7.0.11
       ajv: 8.11.2
-      ajv-formats: 2.1.1(ajv@8.11.2)
+      ajv-formats: 2.1.1
       ajv-keywords: 5.1.0(ajv@8.11.2)
     dev: false
 
@@ -21176,7 +21116,7 @@ packages:
       '@serverless/platform-client': 4.3.2(supports-color@8.1.1)
       '@serverless/utils': 6.8.2
       ajv: 8.11.2
-      ajv-formats: 2.1.1(ajv@8.11.2)
+      ajv-formats: 2.1.1
       archiver: 5.3.1
       aws-sdk: 2.1261.0
       bluebird: 3.7.2
@@ -21837,23 +21777,6 @@ packages:
       inline-style-parser: 0.1.1
     dev: false
 
-  /styled-jsx@5.1.1(@babel/core@7.20.12)(react@18.2.0):
-    resolution: {integrity: sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==}
-    engines: {node: '>= 12.0.0'}
-    peerDependencies:
-      '@babel/core': '*'
-      babel-plugin-macros: '*'
-      react: '>= 16.8.0 || 17.x.x || ^18.0.0-0'
-    peerDependenciesMeta:
-      '@babel/core':
-        optional: true
-      babel-plugin-macros:
-        optional: true
-    dependencies:
-      '@babel/core': 7.20.12
-      client-only: 0.0.1
-      react: 18.2.0
-
   /styled-jsx@5.1.1(@babel/core@7.20.2)(react@18.2.0):
     resolution: {integrity: sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==}
     engines: {node: '>= 12.0.0'}
@@ -21870,7 +21793,6 @@ packages:
       '@babel/core': 7.20.2
       client-only: 0.0.1
       react: 18.2.0
-    dev: true
 
   /stylehacks@5.1.1(postcss@8.4.21):
     resolution: {integrity: sha512-sBpcd5Hx7G6seo7b1LkpttvTz7ikD0LlH5RmdcBNb6fFR0Fl7LQwHDFr300q4cwUqi+IYrFGmsIHieMBfnN/Bw==}
@@ -22019,10 +21941,6 @@ packages:
     dependencies:
       hex-rgb: 4.3.0
       tailwindcss: 3.3.0(postcss@8.4.14)
-    dev: true
-
-  /tailwindcss-radix@2.8.0:
-    resolution: {integrity: sha512-1k1UfoIYgVyBl13FKwwoKavjnJ5VEaUClCTAsgz3VLquN4ay/lyaMPzkbqD71sACDs2fRGImytAUlMb4TzOt1A==}
     dev: true
 
   /tailwindcss@3.3.0(postcss@8.4.14):

@@ -93,7 +93,7 @@ function TryItOut() {
                   key={it.id}
                   href={`?try=${it.id}#try-it-out`}
                   className={cn(
-                    'inline-flex min-w-[100px] items-center justify-center rounded-[0.185rem] px-3 py-1.5  text-sm font-medium text-zinc-700 transition-all disabled:pointer-events-none disabled:opacity-50 dark:text-zinc-200 dark:rdx-state-active:bg-zinc-900 dark:rdx-state-active:text-zinc-100',
+                    'inline-flex min-w-[100px] items-center justify-center rounded-[0.185rem] px-3 py-1.5  text-sm font-medium text-zinc-700 transition-all disabled:pointer-events-none disabled:opacity-50 dark:text-zinc-200',
                     selectedId === it.id &&
                       'bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100',
                   )}
