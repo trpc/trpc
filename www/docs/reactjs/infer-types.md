@@ -114,7 +114,7 @@ function usePostById(input: PostByIdInput, options?: PostByIdOptions) {
 
 ## Infer abstract types from a "Router Factory"
 
-If you write a factory which creates a similar router interface several times in your application, you may wish to share client code between usages of the factory. `@trpc/react-query/shared` exports several types which can be used to generate abstract types for a router factory, and build common React components which are passed the router as a prop. 
+If you write a factory which creates a similar router interface several times in your application, you may wish to share client code between usages of the factory. `@trpc/react-query/shared` exports several types which can be used to generate abstract types for a router factory, and build common React components which are passed the router as a prop.
 
 ```tsx twoslash title='api/factory.ts'
 // @module: esnext
