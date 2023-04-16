@@ -1,4 +1,4 @@
-import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import type { GetStaticPropsContext } from 'next';
 import { i18n } from 'next-i18next.config';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -12,7 +12,7 @@ export async function ssgInit<TParams extends { locale?: string }>(
   const locale = opts.params?.locale ?? opts?.locale ?? i18n.defaultLocale;
   const _i18n = await serverSideTranslations(locale, ['common']);
 
-  const ssg = createProxySSGHelpers({
+  const ssg = createServerSideHelpers({
     router: appRouter,
     transformer: SuperJSON,
     ctx: await createInnerTRPCContext({
