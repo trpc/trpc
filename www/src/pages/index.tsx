@@ -61,6 +61,41 @@ const useQueryParam = (key: string) => {
   return new URLSearchParams(location.search).get(key);
 };
 
+function ErrorOverlay(props: { url: string; dismiss: () => void }) {
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 overflow-hidden bg-zinc-900">
+      <div className="flex flex-col items-center justify-center gap-4">
+        <div className="text-5xl font-bold text-zinc-900 dark:text-zinc-100">
+          ⚠️
+        </div>
+        <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+          Heads up!
+        </div>
+        <div className="w-full max-w-xl text-lg font-medium text-zinc-700 dark:text-zinc-200">
+          WebContainers require modern Web APIs that likely isn&apos;t supported
+          by your browser. Either change browser, fork this sandbox on
+          Stackblitz and run it locally.
+        </div>
+        <div className="w-full max-w-xl text-lg font-medium text-zinc-700 dark:text-zinc-200">
+          You can dismiss this warning to see the code, although you&apos;ll
+          likely see unexpected errors.
+        </div>
+        <div className="flex gap-4">
+          <Button variant="primary" href={props.url}>
+            Fork on Stackblitz
+          </Button>
+          <button
+            onClick={props.dismiss}
+            className="rounded border border-transparent p-2 text-red-400 transition hover:border-red-400"
+          >
+            Show me the code
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TryItOut() {
   const param = useQueryParam('try');
 
@@ -69,6 +104,14 @@ function TryItOut() {
   const selected: Sandbox =
     sandboxes.find((it) => it.id === param) ?? sandboxes[0];
   const selectedId = selected.id;
+
+  const [deviceSupported, setIsSupported] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+
+    const ua = window.navigator.userAgent;
+    const supportsWebContainers = ua.includes('Chrome');
+    return supportsWebContainers;
+  });
 
   return (
     <>
@@ -123,6 +166,12 @@ function TryItOut() {
                   Loading sandbox...
                 </span>
               </div>
+              {!deviceSupported && (
+                <ErrorOverlay
+                  url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
+                  dismiss={() => setIsSupported(true)}
+                />
+              )}
               <Iframe
                 src={
                   `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}?` +
