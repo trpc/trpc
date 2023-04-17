@@ -25,9 +25,13 @@ test('middleware', () => {
     .input(z.object({ name: z.string() }))
     .query((opts) => {
       const orgId = opts.input.orgId;
+      //      ^?
       const name = opts.input.name;
+      //      ^?
       const orgOk = opts.ctx.orgPermitted;
+      //      ^?
       const userId = opts.ctx.userId;
+      //      ^?
 
       if (!orgOk) {
         throw new TRPCError({
