@@ -109,7 +109,10 @@ function TryItOut() {
     if (typeof window === 'undefined') return false;
 
     const ua = window.navigator.userAgent;
-    const supportsWebContainers = ua.includes('Chrome');
+    console.log({ ua });
+    const supportsWebContainers =
+      ua.includes('Chrome') || ua.includes('Firefox');
+    // || ua.includes('Safari'); // TODO: check version & verify we have necessary headers allowed
     return supportsWebContainers;
   });
 
