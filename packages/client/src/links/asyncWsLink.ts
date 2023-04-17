@@ -72,27 +72,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
    * tries to send the list of messages
    */
   function dispatch() {
-    if (state !== 'open' || dispatchTimer) {
-      return;
-    }
-
-    if (activeConnection) {
-      dispatchTimer = setTimeout(() => {
-        dispatchTimer = null;
-
-        if (activeConnection) {
-          if (outgoing.length === 1) {
-            // single send
-            activeConnection.send(JSON.stringify(outgoing.pop()));
-          } else {
-            // batch send
-            activeConnection.send(JSON.stringify(outgoing));
-          }
-        }
-        // clear
-        outgoing = [];
-      });
-    } else {
+    if (!activeConnection) {
       createWS()
         .then((connection) => {
           activeConnection = connection;
@@ -100,8 +80,27 @@ export function createWSClient(opts: WebSocketClientOptions) {
         .catch(() => {
           tryReconnect();
         });
-      return activeConnection;
+      return
     }
+    if (state !== 'open' || dispatchTimer) {
+      return;
+    }
+
+    dispatchTimer = setTimeout(() => {
+      dispatchTimer = null;
+
+      if (activeConnection) {
+        if (outgoing.length === 1) {
+          // single send
+          activeConnection.send(JSON.stringify(outgoing.pop()));
+        } else {
+          // batch send
+          activeConnection.send(JSON.stringify(outgoing));
+        }
+      }
+      // clear
+      outgoing = [];
+    });
   }
   function tryReconnect() {
     if (connectTimer || state === 'closed') {
