@@ -19,14 +19,17 @@ test('middleware', () => {
     .extend(experimentalExtension)
     .input(z.object({ name: z.string() }))
     .query((opts) => {
-      const orgId = opts.input.orgId;
-      //      ^?
-      const name = opts.input.name;
-      //      ^?
-      const orgOk = opts.ctx.orgPermitted;
-      //      ^?
-      const userId = opts.ctx.userId;
-      //      ^?
+      // @ts-expect-error number can't be a boolean
+      const orgId = opts.input.orgId as boolean;
+
+      // @ts-expect-error string can't be a boolean
+      const name = opts.input.name as boolean;
+
+      // @ts-expect-error boolean can't be a string
+      const orgOk = opts.ctx.orgPermitted as string;
+
+      // @ts-expect-error number can't be a boolean
+      const userId = opts.ctx.userId as boolean;
 
       if (!orgOk) {
         throw new TRPCError({
