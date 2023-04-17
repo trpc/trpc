@@ -138,8 +138,13 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   use<$Params extends ProcedureParams>(
     fn:
       | MiddlewareBuilder<TParams, $Params>
-      | MiddlewareFunction<TParams, $Params>
-      | MiddlewareProcedureChainer<TParams, $Params>,
+      | MiddlewareFunction<TParams, $Params>,
+  ): CreateProcedureReturnInput<TParams, $Params>;
+  /**
+   * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
+   */
+  extend<$Params extends ProcedureParams>(
+    fn: MiddlewareProcedureChainer<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -251,16 +256,6 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       return createNewBuilder(_def, builder._def) as any;
     },
     use(middlewareBuilderOrFn) {
-      if (
-        typeof middlewareBuilderOrFn === 'object' &&
-        '_type' in middlewareBuilderOrFn &&
-        middlewareBuilderOrFn._type === 'chainer'
-      ) {
-        console.log('CHAINING!!');
-
-        return middlewareBuilderOrFn.chain(this) as AnyProcedureBuilder;
-      }
-
       // Distinguish between a middleware builder and a middleware function
       const middlewares =
         '_middlewares' in middlewareBuilderOrFn
@@ -270,6 +265,9 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       return createNewBuilder(_def, {
         middlewares,
       }) as AnyProcedureBuilder;
+    },
+    extend(extender) {
+      return extender(this) as AnyProcedureBuilder;
     },
     query(resolver) {
       return createResolver(

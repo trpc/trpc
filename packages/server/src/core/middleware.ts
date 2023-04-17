@@ -12,7 +12,7 @@ import {
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
-import { ProcedureParams } from './procedure';
+import { AnyProcedureParams, ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
 /**
@@ -98,20 +98,16 @@ export interface MiddlewareProcedureChainer<
   TRoot extends ProcedureParams,
   TNext extends ProcedureParams,
 > {
-  _type: 'chainer';
-  chain(procedure: ProcedureBuilder<TRoot>): ProcedureBuilder<TNext>;
+  (procedure: ProcedureBuilder<TRoot>): ProcedureBuilder<TNext>;
 }
 
-export type AgnosticMiddlewareProcedureChainer<TNext extends ProcedureParams> =
-  MiddlewareProcedureChainer<any, TNext>;
-
-export function createProcedureChainer<TNext extends ProcedureParams>(
-  chain: AgnosticMiddlewareProcedureChainer<TNext>['chain'],
-): AgnosticMiddlewareProcedureChainer<TNext> {
-  return {
-    _type: 'chainer',
-    chain,
-  };
+export function createProcedureExtension<
+  TRoot extends ProcedureParams = AnyProcedureParams,
+  TNext extends ProcedureParams = ProcedureParams,
+>(
+  chain: MiddlewareProcedureChainer<TRoot, TNext>,
+): MiddlewareProcedureChainer<TRoot, TNext> {
+  return chain;
 }
 
 /**

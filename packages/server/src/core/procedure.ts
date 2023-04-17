@@ -59,6 +59,16 @@ export interface ProcedureParams<
   _output_out: TOutputOut;
 }
 
+export type AnyProcedureParams = ProcedureParams<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
+
 /**
  * @internal
  */

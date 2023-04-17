@@ -1,16 +1,11 @@
-import { createProcedureChainer } from '@trpc/server/core/middleware';
+import { createProcedureExtension } from '@trpc/server/core/middleware';
 import { TRPCError, initTRPC } from '@trpc/server/src';
 import { z } from 'zod';
 
 test('middleware', () => {
   const t = initTRPC.context<{ userId: string }>().create();
 
-  // Why is this cool?
-  // Well external vendors can write entire extensions to base procedures 
-  // without needing to know the content of `t`
-  // ALSO
-  // it enables complex middlewares which leverage the existing awesomeness of ProcedureBuilder to merge on their own inputs and middlewares
-  const experimentalChainer = createProcedureChainer((proc) => {
+  const experimentalExtension = createProcedureExtension((proc) => {
     return proc.input(z.object({ orgId: z.number() })).use(({ next }) => {
       return next({
         ctx: {
@@ -21,7 +16,7 @@ test('middleware', () => {
   });
 
   t.procedure
-    .use(experimentalChainer)
+    .extend(experimentalExtension)
     .input(z.object({ name: z.string() }))
     .query((opts) => {
       const orgId = opts.input.orgId;
