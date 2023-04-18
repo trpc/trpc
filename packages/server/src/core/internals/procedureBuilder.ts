@@ -156,15 +156,13 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
-  // extend<$Builder extends ProcedureBuilder<TParams>>(
-  //   fn: (procedure: ProcedureBuilder<TParams>) => $Builder,
-  // ): $Builder;
-  extend<$Params extends TParams>(
-    fn: (procedure: ProcedureBuilder<TParams>) => ProcedureBuilder<$Params>,
-  ): ProcedureBuilder<$Params>;
-  // extend<$Params extends AnyProcedureParams>(
+  extend<$NextBuilder extends ProcedureBuilder<any>>(
+    extender: (procedure: ProcedureBuilder<TParams>) => $NextBuilder,
+  ): $NextBuilder;
+  // extend<$Params extends TParams>(
   //   fn: (procedure: ProcedureBuilder<TParams>) => ProcedureBuilder<$Params>,
-  // ): CreateProcedureReturnInput2<TParams, $Params>;
+  // ): ProcedureBuilder<$Params>;
+
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.

@@ -23,20 +23,19 @@ test('middleware', () => {
   });
 
   // Sometimes nice to build types in the raw, but this should be rolled into createProcedureExtension
-  function genericTypedExtension<TProc extends ProcedureBuilder<any>>() {
-    return (proc: TProc) => {
-      return proc.input(z.object({ orgId: z.number() })).use(({ next }) => {
-        return next({
-          ctx: {
-            orgPermitted: true,
-          },
-        });
+  const genericTypedExtension = <T extends ProcedureBuilder<any>>(proc: T) => {
+    return proc.input(z.object({ orgId: z.number() })).use(({ next }) => {
+      return next({
+        ctx: {
+          orgPermitted: true,
+        },
       });
-    };
-  }
+    });
+  };
 
   t.procedure
     .input(z.object({ name: z.string() }))
+    // .extend(experimentalExtension)
     .extend(genericTypedExtension)
     .input(z.object({ name2: z.string() }))
     .query((opts) => {
