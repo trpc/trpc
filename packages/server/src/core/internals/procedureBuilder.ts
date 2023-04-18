@@ -3,7 +3,6 @@ import { MaybePromise, Simplify } from '../../types';
 import {
   MiddlewareBuilder,
   MiddlewareFunction,
-  MiddlewareProcedureChainer,
   MiddlewareResult,
   createInputMiddleware,
   createOutputMiddleware,
@@ -143,9 +142,9 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
-  extend<$Params extends ProcedureParams>(
-    fn: MiddlewareProcedureChainer<TParams, $Params>,
-  ): CreateProcedureReturnInput<TParams, $Params>;
+  extend<$Builder extends ProcedureBuilder<TParams>>(
+    fn: (procedure: ProcedureBuilder<TParams>) => $Builder,
+  ): $Builder;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
@@ -267,7 +266,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       }) as AnyProcedureBuilder;
     },
     extend(extender) {
-      return extender(this) as AnyProcedureBuilder;
+      return extender(this) as any;
     },
     query(resolver) {
       return createResolver(

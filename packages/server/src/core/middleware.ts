@@ -3,16 +3,13 @@ import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
-import type {
-  ProcedureBuilder,
-  ProcedureBuilderMiddleware,
-} from './internals/procedureBuilder';
+import type { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
-import { AnyProcedureParams, ProcedureParams } from './procedure';
+import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
 /**
@@ -89,25 +86,6 @@ export interface MiddlewareBuilder<
    * List of middlewares within this middleware builder
    */
   _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
-}
-
-/**
- * @internal
- */
-export interface MiddlewareProcedureChainer<
-  TRoot extends ProcedureParams,
-  TNext extends ProcedureParams,
-> {
-  (procedure: ProcedureBuilder<TRoot>): ProcedureBuilder<TNext>;
-}
-
-export function createProcedureExtension<
-  TRoot extends ProcedureParams = AnyProcedureParams,
-  TNext extends ProcedureParams = ProcedureParams,
->(
-  chain: MiddlewareProcedureChainer<TRoot, TNext>,
-): MiddlewareProcedureChainer<TRoot, TNext> {
-  return chain;
 }
 
 /**

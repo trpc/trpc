@@ -1,6 +1,13 @@
-import { createProcedureExtension } from '@trpc/server/core/middleware';
-import { TRPCError, initTRPC } from '@trpc/server/src';
+import { ProcedureBuilder, TRPCError, initTRPC } from '@trpc/server/src';
 import { z } from 'zod';
+
+// To put into main codebase
+export function createProcedureExtension<
+  TNext extends ProcedureBuilder<any>,
+  Extender extends <T extends ProcedureBuilder<any>>(procedure: T) => TNext,
+>(extender: Extender): Extender {
+  return extender;
+}
 
 test('middleware', () => {
   const t = initTRPC.context<{ userId: string }>().create();
@@ -15,9 +22,22 @@ test('middleware', () => {
     });
   });
 
+  // Sometimes nice to build types in the raw, but this should be rolled into createProcedureExtension
+  function genericTypedExtension<TProc extends ProcedureBuilder<any>>() {
+    return (proc: TProc) => {
+      return proc.input(z.object({ orgId: z.number() })).use(({ next }) => {
+        return next({
+          ctx: {
+            orgPermitted: true,
+          },
+        });
+      });
+    };
+  }
+
   t.procedure
     .input(z.object({ name: z.string() }))
-    .extend(experimentalExtension)
+    .extend(genericTypedExtension)
     .input(z.object({ name2: z.string() }))
     .query((opts) => {
       opts.input.name;
