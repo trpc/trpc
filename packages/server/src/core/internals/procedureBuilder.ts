@@ -11,6 +11,7 @@ import { Parser, inferParser } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
+  AnyProcedureParams,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   Procedure,
@@ -40,6 +41,19 @@ type CreateProcedureReturnInput<
   _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
   _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+}>;
+
+type CreateProcedureReturnInput2<
+  TPrev extends ProcedureParams,
+  TNext extends ProcedureParams,
+> = ProcedureBuilder<{
+  _config: TPrev['_config'];
+  _meta: OverwriteIfDefined<TPrev['_meta'], TNext['_meta']>;
+  _ctx_out: OverwriteIfDefined<TPrev['_ctx_out'], TNext['_ctx_out']>;
+  _input_in: OverwriteIfDefined<TNext['_input_in'], TPrev['_input_in']>;
+  _input_out: OverwriteIfDefined<TNext['_input_out'], TPrev['_input_out']>;
+  _output_in: OverwriteIfDefined<TNext['_output_in'], TPrev['_output_in']>;
+  _output_out: OverwriteIfDefined<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
 /**
@@ -142,9 +156,15 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
-  extend<$Builder extends ProcedureBuilder<TParams>>(
-    fn: (procedure: ProcedureBuilder<TParams>) => $Builder,
-  ): $Builder;
+  // extend<$Builder extends ProcedureBuilder<TParams>>(
+  //   fn: (procedure: ProcedureBuilder<TParams>) => $Builder,
+  // ): $Builder;
+  extend<$Params extends TParams>(
+    fn: (procedure: ProcedureBuilder<TParams>) => ProcedureBuilder<$Params>,
+  ): ProcedureBuilder<$Params>;
+  // extend<$Params extends AnyProcedureParams>(
+  //   fn: (procedure: ProcedureBuilder<TParams>) => ProcedureBuilder<$Params>,
+  // ): CreateProcedureReturnInput2<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
