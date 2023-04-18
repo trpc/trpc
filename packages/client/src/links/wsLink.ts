@@ -120,8 +120,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
     }
   }
 
-  function closePendingRequests() {
-    Object.values(pendingRequests).forEach((req) => req.callbacks.complete());
+  // function closePendingRequests() {
+  //   Object.values(pendingRequests).forEach((req) => req.callbacks.complete());
+  // }
+
+  function closeActiveSubscriptions() {
+    Object.values(pendingRequests).forEach((req) => {
+      if(req.type === 'subscription'){
+        req.callbacks.complete();
+      }
+    });
   }
 
   function resumeSubscriptionOnReconnect(req: TRequest) {
@@ -285,7 +293,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     close: () => {
       state = 'closed';
       onClose?.();
-      closePendingRequests();
+      closeActiveSubscriptions();
       // closeIfNoPending(activeConnection);
       clearTimeout(connectTimer as any);
       connectTimer = null;
