@@ -159,11 +159,14 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   // extend<$NextBuilder extends AnyProcedureBuilder>(
   //   extender: (procedure: ProcedureBuilder<TParams>) => $NextBuilder,
   // ): $NextBuilder;
-  extend<$ProcedureBuilder extends AnyProcedureBuilder>(
-    proc: (base: AnyProcedureBuilder) => $ProcedureBuilder,
-  ): $ProcedureBuilder extends ProcedureBuilder<infer $TParams>
-    ? CreateProcedureReturnInput2<TParams, $TParams>
-    : never;
+  // extend<$ProcedureBuilder extends AnyProcedureBuilder>(
+  //   proc: (base: AnyProcedureBuilder) => $ProcedureBuilder,
+  // ): $ProcedureBuilder extends ProcedureBuilder<infer $TParams>
+  //   ? CreateProcedureReturnInput2<TParams, $TParams>
+  //   : never;
+  extend<$Params extends ProcedureParams>(
+    proc: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
+  ): CreateProcedureReturnInput2<TParams, $Params>;
   // extend<$Params extends TParams>(
   //   fn: (procedure: ProcedureBuilder<TParams>) => ProcedureBuilder<$Params>,
   // ): ProcedureBuilder<$Params>;
