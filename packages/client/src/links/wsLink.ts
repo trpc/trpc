@@ -294,7 +294,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       state = 'closed';
       onClose?.();
       closeActiveSubscriptions();
-      // closeIfNoPending(activeConnection);
+      closeIfNoPending(activeConnection);
       clearTimeout(connectTimer as any);
       connectTimer = null;
     },
