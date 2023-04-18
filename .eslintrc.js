@@ -100,6 +100,7 @@ const config = {
       rules: {
         '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-unused-vars': 'off',
+        'unicorn/filename-case': 'off',
       },
     },
     {
