@@ -156,9 +156,14 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
-  extend<$NextBuilder extends ProcedureBuilder<any>>(
-    extender: (procedure: ProcedureBuilder<TParams>) => $NextBuilder,
-  ): $NextBuilder;
+  // extend<$NextBuilder extends AnyProcedureBuilder>(
+  //   extender: (procedure: ProcedureBuilder<TParams>) => $NextBuilder,
+  // ): $NextBuilder;
+  extend<$ProcedureBuilder extends AnyProcedureBuilder>(
+    proc: (base: AnyProcedureBuilder) => $ProcedureBuilder,
+  ): $ProcedureBuilder extends ProcedureBuilder<infer $TParams>
+    ? CreateProcedureReturnInput2<TParams, $TParams>
+    : never;
   // extend<$Params extends TParams>(
   //   fn: (procedure: ProcedureBuilder<TParams>) => ProcedureBuilder<$Params>,
   // ): ProcedureBuilder<$Params>;
