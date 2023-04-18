@@ -305,15 +305,11 @@ test('server subscription ended', async () => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
-  // destroy server subscription
+  // destroy server subscription (called by server)
   subRef.current.complete();
   await waitFor(() => {
-    expect(onErrorMock).toHaveBeenCalledTimes(1);
+    expect(onCompleteMock).toHaveBeenCalledTimes(1);
   });
-  expect(onCompleteMock).toHaveBeenCalledTimes(0);
-  expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
-    `[TRPCClientError: Operation ended prematurely]`,
-  );
   await close();
 });
 
