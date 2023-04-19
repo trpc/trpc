@@ -1,5 +1,5 @@
 import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
-import { getMessageFromUnknownError } from './internals/utils';
+import { getMessageFromUnknownError } from './utils';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {

@@ -1,5 +1,5 @@
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/internals/utils';
+import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
