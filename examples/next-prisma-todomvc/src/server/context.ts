@@ -1,16 +1,56 @@
-import * as trpc from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
-import { prisma } from '../utils/prisma';
+import type { inferAsyncReturnType } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { i18n } from 'next-i18next.config';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { prisma } from './prisma';
 
-// create context based of incoming request
-// set as optional here so it can also be re-used for `getStaticProps()`
-export const createContext = async (
-  opts?: trpcNext.CreateNextContextOptions,
-) => {
+/**
+ * Defines your inner context shape.
+ * Add fields here that the inner context brings.
+ */
+export interface CreateInnerContextOptions
+  extends Partial<CreateNextContextOptions> {
+  locale: string;
+  i18n: inferAsyncReturnType<typeof serverSideTranslations>;
+}
+
+/**
+ * Inner context. Will always be available in your procedures, in contrast to the outer context.
+ *
+ * Also useful for:
+ * - testing, so you don't have to mock Next.js' `req`/`res`
+ * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
+ *
+ * @see https://trpc.io/docs/context#inner-and-outer-context
+ */
+export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
   return {
-    req: opts?.req,
     prisma,
     task: prisma.task,
+    ...opts,
+  };
+}
+
+/**
+ * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
+ *
+ * @see https://trpc.io/docs/context#inner-and-outer-context
+ */
+export const createTRPCContext = async (opts?: CreateNextContextOptions) => {
+  const acceptLanguage = opts?.req.headers['accept-language'];
+  // If you store locales on User in DB, you can use that instead
+  // We use the accept-language header to determine the locale here.
+  const locale = acceptLanguage?.includes('en') ? 'en' : 'sv';
+  const _i18n = await serverSideTranslations(locale, ['common']);
+
+  const innerContext = await createInnerTRPCContext({
+    req: opts?.req,
+    locale,
+    i18n: _i18n,
+  });
+
+  return {
+    ...innerContext,
+    req: opts?.req,
   };
 };
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;

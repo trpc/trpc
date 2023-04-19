@@ -52,7 +52,6 @@ module.exports = {
         'server/server-side-calls',
         'server/authorization',
         'server/output-validation',
-        'server/infer-types',
         'server/error-handling',
         'server/error-formatting',
         'server/data-transformers',
@@ -71,6 +70,7 @@ module.exports = {
       items: [
         'client/setup',
         'client/aborting-procedure-calls',
+        'client/infer-types',
         {
           type: 'category',
           label: 'Links',
@@ -102,6 +102,7 @@ module.exports = {
       items: [
         'reactjs/setup',
         'reactjs/aborting-procedure-calls',
+        'reactjs/infer-types',
         'reactjs/useQuery',
         'reactjs/useMutation',
         'reactjs/useInfiniteQuery',
