@@ -1,3 +1,14 @@
+/**
+ * @internal
+ */
+export function isObject(value: unknown): value is Record<string, unknown> {
+  // check that value is object
+  return !!value && !Array.isArray(value) && typeof value === 'object';
+}
+
+/**
+ * @internal
+ */
 export function getMessageFromUnknownError(
   err: unknown,
   fallback: string,
@@ -8,15 +19,10 @@ export function getMessageFromUnknownError(
   if (err instanceof Error && typeof err.message === 'string') {
     return err.message;
   }
-  return fallback;
-}
-
-export function getErrorFromUnknown(cause: unknown): Error {
-  if (cause instanceof Error) {
-    return cause;
+  if (isObject(err) && typeof err.message === 'string') {
+    return err.message;
   }
-  const message = getMessageFromUnknownError(cause, 'Unknown error');
-  return new Error(message);
+  return fallback;
 }
 
 export function getCauseFromUnknown(cause: unknown) {
