@@ -8,8 +8,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
 
   const trpcError = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
-    cause: cause,
-    message: getMessageFromUnknownError(cause, 'Unknown error'),
+    cause,
   });
 
   // Inherit stack from error
