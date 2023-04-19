@@ -3,7 +3,7 @@ import {
   ProcedureBuilderDef,
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
-import { UnsetMarker, unsetMarker } from './internals/utils';
+import { UnsetMarker } from './internals/utils';
 import { ProcedureType } from './types';
 
 type ClientContext = Record<string, unknown>;
