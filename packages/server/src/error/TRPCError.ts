@@ -1,5 +1,5 @@
-import { getMessageFromUnknownError, isObject } from '../error/utils';
 import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
+import { getMessageFromUnknownError, isObject } from './internals/utils';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {
@@ -12,7 +12,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   });
 
   // Inherit stack from error
-  if (isObject(cause) && typeof cause.stack === 'string') {
+  if (cause instanceof Error && cause.stack) {
     trpcError.stack = cause.stack;
   }
 

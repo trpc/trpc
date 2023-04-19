@@ -7,7 +7,7 @@ import {
   inferRouterContext,
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
+import { getCauseFromUnknown } from '../error/internals/utils';
 import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
 import {

@@ -1,5 +1,5 @@
 import { TRPCError, getTRPCErrorFromUnknown } from '../../error/TRPCError';
-import { getCauseFromUnknown } from '../../error/utils';
+import { getCauseFromUnknown } from '../../error/internals/utils';
 import { InferLast } from '../../types';
 import { ProcedureType } from '../router';
 import {
