@@ -12,7 +12,13 @@ import {
 import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { SSRState, TRPCContext } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
