@@ -35,7 +35,7 @@ type CreateProcedureReturnInput<
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
-  _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
+  _ctx_out: OverwriteIfDefined<TPrev['_ctx_out'], TNext['_ctx_out']>;
   _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
   _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
   _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
@@ -48,12 +48,7 @@ type CreateProcedureFromExtension<
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
-  _ctx_out: OverwriteIfDefined<TPrev['_ctx_out'], TNext['_ctx_out']>;
-  // _ctx_out: SelectTypeOrOverwrite<
-  //   TPrev['_ctx_out'],
-  //   TNext['_ctx_out'],
-  //   unknown & Record<never, never>
-  // >;
+  _ctx_out: SelectTypeOrOverwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
   _input_in: SelectTypeOrOverwrite<TPrev['_input_in'], TNext['_input_in']>;
   _input_out: SelectTypeOrOverwrite<TPrev['_input_out'], TNext['_input_out']>;
   _output_in: SelectTypeOrOverwrite<TPrev['_output_in'], TNext['_output_in']>;
