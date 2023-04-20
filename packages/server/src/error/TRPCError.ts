@@ -21,6 +21,10 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
 
 export class TRPCError extends Error {
   public readonly cause?: Error;
+  /**
+   * If the `cause` is not an instance of `Error` it will be stored here
+   */
+  public readonly unknownCause?: unknown;
   public readonly code;
 
   constructor(opts: {
@@ -37,5 +41,8 @@ export class TRPCError extends Error {
 
     this.code = opts.code;
     this.name = this.constructor.name;
+    if (!(opts.cause instanceof Error)) {
+      this.unknownCause = opts.cause;
+    }
   }
 }
