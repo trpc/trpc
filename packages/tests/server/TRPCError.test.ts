@@ -37,9 +37,10 @@ test('should be able to create synthetic cause from string', () => {
 });
 
 test('should be able to create synthetic cause from object', () => {
-  const trpcError = new TRPCError({ code: 'FORBIDDEN', cause: { foo: 'bar' } });
+  const cause = { foo: 'bar' };
+  const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
   expect(trpcError.cause).toMatchInlineSnapshot('[Error: Unknown error]');
-  expect((trpcError.unknownCause as any).foo).toEqual('bar');
+  expect(trpcError.unknownCause).toBe(cause);
 });
 
 test('should skip creating the cause if one is not provided', () => {
