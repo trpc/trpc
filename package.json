@@ -24,7 +24,7 @@
     "codegen": "run-p codegen:*",
     "prepublish": "pnpm build",
     "postinstall": "pnpm codegen",
-    "postversion": "tsx scripts/postversion.ts && git reset HEAD^ && git add .",
+    "postversion": "tsx scripts/postversion.ts && git reset HEAD^ && git add . && git commit -m \"chore: update version\"",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
     "release:canary": "changeset publish --tag canary",
