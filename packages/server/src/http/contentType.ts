@@ -4,7 +4,7 @@ import { TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
 import { CombinedDataTransformer } from '../transformer';
 import { MaybePromise } from '../types';
-import { HTTPRequest } from './internals/types';
+import { HTTPRequest } from './types';
 
 type GetInputs = (opts: {
   req: HTTPRequest;

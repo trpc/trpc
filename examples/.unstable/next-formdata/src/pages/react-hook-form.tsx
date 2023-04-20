@@ -7,17 +7,30 @@ import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { RouterInput, trpc } from '~/utils/trpc';
 
-function useZodFormData<TSchema extends z.ZodType<any, any>>(
-  props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
+/**
+ * zod-form-data wraps zod in an effect where the original type is a `FormData`
+ */
+type UnwrapZodEffect<T extends z.ZodType> = T extends z.ZodEffects<
+  infer U,
+  any,
+  any
+>
+  ? U
+  : T;
+
+type GetInput<T extends z.ZodType> = UnwrapZodEffect<T>['_input'];
+
+function useZodFormData<TSchema extends z.ZodType>(
+  props: {
     schema: TSchema;
-  },
+  } & Omit<UseFormProps<GetInput<TSchema>>, 'resolver'>,
 ) {
   const formRef = useRef<HTMLFormElement>(null);
   const _resolver = zodResolver(props.schema, undefined, {
     rawValues: true,
   });
 
-  const form = useForm<TSchema['_input']>({
+  const form = useForm<GetInput<TSchema>>({
     ...props,
     resolver: (_, ctx, opts) => {
       if (!formRef.current) {
@@ -41,13 +54,6 @@ function useZodFormData<TSchema extends z.ZodType<any, any>>(
 }
 
 export default function Page() {
-  // const fff = useTRPCFormDataMutation(
-  //   mutation: trpc.room.sendMessage,
-  //   input: {
-  //     roomId: '123',
-  //   },
-  //   formSchema: uploadFileSchema,
-  // ));
   const mutation = trpc.room.sendMessage.useMutation({
     onError(err) {
       alert('Error from server: ' + err.message);
@@ -65,30 +71,28 @@ export default function Page() {
       name: 'whadaaaap',
     },
   });
-  type Input = RouterInput['room']['sendMessage'];
-  //    ^?
 
   return (
     <>
       <h2 className="text-3xl font-bold">Posts</h2>
 
       <FormProvider {...form}>
-        <fieldset>
-          <legend>Form with file upload</legend>
-          <form
-            method="post"
-            action={`/api/trpc/${mutation.trpc.path}`}
-            encType="multipart/form-data"
-            onSubmit={form.handleSubmit(async (values, event) => {
-              await mutation.mutateAsync({
-                roomId: '123',
-                // This casting shouldn't be needed https://github.com/airjp73/remix-validated-form/pull/262
-                formData: new FormData(event?.target) as any,
-              });
-            })}
-            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
-            ref={form.formRef}
-          >
+        <form
+          method="post"
+          action={`/api/trpc/${mutation.trpc.path}`}
+          encType="multipart/form-data"
+          onSubmit={form.handleSubmit(async (values, event) => {
+            await mutation.mutateAsync({
+              roomId: '123',
+              // This casting shouldn't be needed https://github.com/airjp73/remix-validated-form/pull/262
+              formData: new FormData(event?.target) as any,
+            });
+          })}
+          style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+          ref={form.formRef}
+        >
+          <fieldset>
+            <legend>Form with file upload</legend>
             <div style={{}}>
               <label htmlFor="name">Enter your name</label>
               <input {...form.register('name')} />
@@ -118,8 +122,8 @@ export default function Page() {
                 submit
               </button>
             </div>
-          </form>
-        </fieldset>
+          </fieldset>
+        </form>
 
         {mutation.data && (
           <fieldset>
