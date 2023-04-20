@@ -22,6 +22,7 @@ for (const name of packages) {
   }
 
   const content = fs.readFileSync(packageJSON).toString();
+  console.log('Running on ', name);
 
   const version = JSON.parse(content).version;
   // matches `"@trpc/*: ".*"` and replaces it with `"@trpc/*: "${version}""`
