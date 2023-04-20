@@ -1,4 +1,8 @@
-import { createProcedureExtension, initTRPC } from '@trpc/server/src';
+import {
+  ProcedureBuilder,
+  createProcedureExtension,
+  initTRPC,
+} from '@trpc/server/src';
 import { z } from 'zod';
 
 type NoAny<T> = any extends T ? never : T;

@@ -42,18 +42,38 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
-type CreateProcedureReturnInput2<
+type CreateProcedureFromExtension<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
-  _meta: OverwriteIfDefined<TPrev['_meta'], TNext['_meta']>;
+  _meta: TPrev['_meta'];
   _ctx_out: OverwriteIfDefined<TPrev['_ctx_out'], TNext['_ctx_out']>;
-  _input_in: OverwriteIfDefined<TNext['_input_in'], TPrev['_input_in']>;
-  _input_out: OverwriteIfDefined<TNext['_input_out'], TPrev['_input_out']>;
-  _output_in: OverwriteIfDefined<TNext['_output_in'], TPrev['_output_in']>;
-  _output_out: OverwriteIfDefined<TNext['_output_out'], TPrev['_output_out']>;
+  // _ctx_out: SelectTypeOrOverwrite<
+  //   TPrev['_ctx_out'],
+  //   TNext['_ctx_out'],
+  //   unknown & Record<never, never>
+  // >;
+  _input_in: SelectTypeOrOverwrite<TPrev['_input_in'], TNext['_input_in']>;
+  _input_out: SelectTypeOrOverwrite<TPrev['_input_out'], TNext['_input_out']>;
+  _output_in: SelectTypeOrOverwrite<TPrev['_output_in'], TNext['_output_in']>;
+  _output_out: SelectTypeOrOverwrite<
+    TPrev['_output_out'],
+    TNext['_output_out']
+  >;
 }>;
+
+type SelectTypeOrOverwrite<
+  TBase,
+  TOverwrite,
+  TUnset = UnsetMarker,
+> = TUnset extends TBase
+  ? TUnset extends TOverwrite
+    ? TUnset
+    : TOverwrite
+  : TUnset extends TOverwrite
+  ? TBase
+  : Overwrite<TBase, TOverwrite>;
 
 /**
  * @internal
@@ -157,7 +177,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    */
   extend<$Params extends ProcedureParams>(
     proc: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
-  ): CreateProcedureReturnInput2<TParams, $Params>;
+  ): CreateProcedureFromExtension<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
