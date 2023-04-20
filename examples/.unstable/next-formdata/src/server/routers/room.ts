@@ -5,7 +5,6 @@ import {
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { ReadableStream } from 'node:stream/web';
 import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { publicProcedure, router } from '../trpc';
@@ -22,7 +21,11 @@ async function writeFileToDisk(file: File) {
   console.log('Writing', file.name, 'to', fileDir);
   const fd = fs.createWriteStream(path.resolve(`${fileDir}/${file.name}`));
 
-  for await (const chunk of Readable.fromWeb(file.stream() as ReadableStream)) {
+  const fileStream = Readable.fromWeb(
+    // @ts-expect-error - unsure why this is not working
+    file.stream(),
+  );
+  for await (const chunk of fileStream) {
     fd.write(chunk);
   }
   fd.end();
@@ -44,20 +47,20 @@ const roomProcedure = publicProcedure.input(
 );
 export const roomRouter = router({
   sendMessage: roomProcedure
-    .use(async ({ ctx, next, input, rawInput }) => {
+    .use(async (opts) => {
       const formData = await unstable_parseMultipartFormData(
-        ctx.req,
+        opts.ctx.req,
         unstable_createMemoryUploadHandler(),
       );
 
-      return next({
-        rawInput: isPlainObject(rawInput)
+      return opts.next({
+        rawInput: isPlainObject(opts.rawInput)
           ? {
-              ...rawInput,
+              ...opts.rawInput,
               formData,
             }
           : { formData },
-      } as any);
+      });
     })
     .input(
       z.object({
@@ -65,6 +68,7 @@ export const roomRouter = router({
       }),
     )
     .mutation(async (opts) => {
+      opts.input.roomId;
       return {
         image: await writeFileToDisk(opts.input.formData.image),
         document:

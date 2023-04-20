@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MutationLike } from '@trpc/react-query/shared';
-import { inferProcedureInput } from '@trpc/server';
-import { useRef } from 'react';
+import { AnyMutationProcedure, inferProcedureInput } from '@trpc/server';
+import { useRef, useState } from 'react';
 import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
@@ -72,6 +72,8 @@ export default function Page() {
     },
   });
 
+  const [noJs, setNoJs] = useState(false);
+
   return (
     <>
       <h2 className="text-3xl font-bold">Posts</h2>
@@ -81,13 +83,17 @@ export default function Page() {
           method="post"
           action={`/api/trpc/${mutation.trpc.path}`}
           encType="multipart/form-data"
-          onSubmit={form.handleSubmit(async (values, event) => {
-            await mutation.mutateAsync({
-              roomId: '123',
-              // This casting shouldn't be needed https://github.com/airjp73/remix-validated-form/pull/262
-              formData: new FormData(event?.target) as any,
-            });
-          })}
+          onSubmit={(_event) => {
+            if (noJs) {
+              return;
+            }
+            form.handleSubmit(async (values, event) => {
+              await mutation.mutateAsync({
+                roomId: '1',
+                formData: new FormData(event?.target),
+              });
+            })(_event);
+          }}
           style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
           ref={form.formRef}
         >
@@ -117,6 +123,14 @@ export default function Page() {
               )}
             </div>
 
+            <div>
+              <label>Post without JS</label>
+              <input
+                type="checkbox"
+                checked={noJs}
+                onChange={(e) => setNoJs(e.target.checked)}
+              />
+            </div>
             <div>
               <button type="submit" disabled={mutation.status === 'loading'}>
                 submit
