@@ -2,7 +2,6 @@ import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client/src';
 import { AnyRouter, DefaultErrorShape, initTRPC } from '@trpc/server/src';
 import { DefaultErrorData } from '@trpc/server/src/error/formatter';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 
 function isTRPCClientError<TRouter extends AnyRouter>(

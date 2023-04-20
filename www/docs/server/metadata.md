@@ -2,7 +2,7 @@
 id: metadata
 title: Metadata
 sidebar_label: Metadata
-slug: /metadata
+slug: /server/metadata
 ---
 
 Procedure metadata allows you to add an optional procedure specific `meta` property which will be available in all [middleware](middlewares) function parameters.
@@ -19,7 +19,7 @@ import { initTRPC } from '@trpc/server';
 // [...]
 
 interface Meta {
-  hasAuth: boolean;
+  authRequired: boolean;
 }
 
 export const t = initTRPC.context<Context>().meta<Meta>().create();
@@ -37,14 +37,14 @@ import { initTRPC } from '@trpc/server';
 // [...]
 
 interface Meta {
-  hasAuth: boolean;
+  authRequired: boolean;
 }
 
 export const t = initTRPC.context<Context>().meta<Meta>().create();
 
 const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
   // only check authorization if enabled
-  if (meta?.hasAuth && !ctx.user) {
+  if (meta?.authRequired && !ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
   return next();
@@ -53,15 +53,53 @@ const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
 export const authedProcedure = t.procedure.use(isAuthed);
 
 export const appRouter = t.router({
-  hello: authedProcedure.meta({ hasAuth: false }).query(() => {
+  hello: authedProcedure.meta({ authRequired: false }).query(() => {
     return {
       greeting: 'hello world',
     };
   }),
-  protectedHello: authedProcedure.meta({ hasAuth: true }).query(() => {
+  protectedHello: authedProcedure.meta({ authRequired: true }).query(() => {
     return {
       greeting: 'hello-world',
     };
   }),
 });
+```
+
+## Default meta, chaining, and shallow merging
+
+You can set default values for your meta type, and if you chain meta on top of a base procedure it will be shallow merged.
+
+```tsx
+import { initTRPC } from '@trpc/server';
+
+interface Meta {
+  authRequired: boolean;
+  role?: 'user' | 'admin'
+}
+
+export const t = initTRPC
+  .context<Context>()
+  .meta<Meta>()
+  .create({
+    // Set a default value
+    defaultMeta: { authRequired: false }
+  });
+
+const publicProcedure = t.procedure
+// ^ Default Meta: { authRequired: false }
+
+const authProcedure = publicProcedure
+  .use(authMiddleware)
+  .meta({
+    authRequired: true;
+    role: 'user'
+  });
+// ^ Meta: { authRequired: true, role: 'user' }
+
+const adminProcedure = authProcedure
+  .meta({
+    role: 'admin'
+  });
+// ^ Meta: { authRequired: true, role: 'admin' }
 ```

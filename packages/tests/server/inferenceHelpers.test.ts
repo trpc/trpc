@@ -1,5 +1,4 @@
 import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/server';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 const t = initTRPC.create();

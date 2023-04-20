@@ -1,7 +1,6 @@
 import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React, { useState } from 'react';

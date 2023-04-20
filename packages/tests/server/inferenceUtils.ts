@@ -298,7 +298,7 @@ export const expectTypeOf: _ExpectTypeOf = <Actual>(
   type Keys = keyof ExpectTypeOf<any, any>;
 
   type FunctionsDict = Record<
-    Exclude<Keys, typeof nonFunctionProperties[number]>,
+    Exclude<Keys, (typeof nonFunctionProperties)[number]>,
     any
   >;
   const obj: FunctionsDict = {

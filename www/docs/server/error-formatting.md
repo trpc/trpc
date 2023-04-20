@@ -2,7 +2,7 @@
 id: error-formatting
 title: Error Formatting
 sidebar_label: Error Formatting
-slug: /error-formatting
+slug: /server/error-formatting
 ---
 
 The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)

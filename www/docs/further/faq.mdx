@@ -21,7 +21,7 @@ Feel free to contribute to this page with improvements or create a new discussio
 
 ## How do I make a middleware change the type of my `Context`?
 
-See [Context Swapping](middlewares#context-swapping).
+See [Context Extension](/docs/server/middlewares#context-extension).
 
 ## Is tRPC production ready?
 
@@ -36,6 +36,7 @@ Here are some things to check:
 - Make sure you have the same version of all `@trpc/*` across all your project
 - Make sure you have `"strict": true` in all your `tsconfig.json`s
 - Make sure you have no type errors in your app
+- In the case that you have a dedicated server and client `tsconfig.json` files without a bundled server monorepo package, make sure you have `"paths": [...]` in your client `tsconfig.json` like your server `tsconfig.json`,so that the client can find the same file.
 
 You can also have a look at our [Awesome tRPC](awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
 
@@ -55,7 +56,7 @@ No, not currently, in order for tRPC to do that automatically, we need something
 
 ## Can I apply a middleware to a full router?
 
-No, but you can use [base procedures](procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
+No, but you can use [base procedures](/docs/server/procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
 
 ## Does tRPC work with Next.js 13 App Layouts & RSC?
 

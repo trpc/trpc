@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const { parseEnv } = require('./src/utils/env');
+const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
 
 const env = parseEnv(process.env);
 
@@ -76,7 +77,7 @@ module.exports = {
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/nextjs',
+          to: 'docs/nextjs/introduction',
           label: 'Using Next.js',
         },
         {
@@ -115,7 +116,7 @@ module.exports = {
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/nextjs',
+              to: 'docs/nextjs/introduction',
             },
           ],
         },
@@ -163,6 +164,13 @@ module.exports = {
     },
   },
   plugins: [
+    // Sidebar order is decided by the position in the array below
+    ...generateTypedocDocusaurusPlugins([
+      'client',
+      'server',
+      'next',
+      'react-query',
+    ]),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',

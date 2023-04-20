@@ -1,5 +1,4 @@
 import { createAppRouter } from './__testHelpers';
-import '@testing-library/jest-dom';
 import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
 
 let factory: ReturnType<typeof createAppRouter>;

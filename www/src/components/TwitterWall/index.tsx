@@ -51,7 +51,7 @@ const latestTweets = tweets.data
 
 export const TwitterWall = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 my-6 rounded-xl">
+    <div className="my-6 grid grid-cols-1 gap-4 rounded-xl lg:grid-cols-2 xl:grid-cols-3">
       {latestTweets.map((tweet) => (
         <motion.a
           variants={popIn}
@@ -60,7 +60,7 @@ export const TwitterWall = () => {
           viewport={{ once: true }}
           href={tweet.url}
           key={tweet.id}
-          className="p-6 transition-colors rounded-lg dark:bg-zinc-800/50 bg-zinc-100 hover:bg-zinc-200 hover:dark:bg-zinc-700/50 hover:no-underline"
+          className="rounded-lg bg-zinc-100 p-6 transition-colors hover:bg-zinc-200 hover:no-underline dark:bg-zinc-800/50 hover:dark:bg-zinc-700/50"
         >
           <figure>
             <figcaption className="flex items-center justify-between">
@@ -68,13 +68,13 @@ export const TwitterWall = () => {
                 href={`https://twitter.com/${tweet.user.username}`}
                 className="cursor-pointer hover:underline"
               >
-                <div className="flex items-center gap-3 group">
+                <div className="group flex items-center gap-3">
                   <img
                     src={tweet.user.profile_image_url}
                     alt={tweet.user.username}
-                    className="w-12 h-12 rounded-full"
+                    className="h-12 w-12 rounded-full"
                   />
-                  <cite className="group-hover:underline not-italic">
+                  <cite className="not-italic group-hover:underline">
                     <p className="text-base font-bold">{tweet.user.name}</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
                       @{tweet.user.username}
@@ -93,7 +93,7 @@ export const TwitterWall = () => {
             </figcaption>
 
             <blockquote
-              className="pt-4 whitespace-pre-wrap text-zinc-600 dark:text-zinc-400 border-none pl-0"
+              className="whitespace-pre-wrap border-none pl-0 pt-4 text-zinc-600 dark:text-zinc-400"
               cite={tweet.url}
             >
               {tweet.text}

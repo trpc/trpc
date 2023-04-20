@@ -1,6 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { TRPCError, initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 
 type User = {
@@ -73,16 +72,14 @@ const ctx = konn()
 
 test('decorate independently', async () => {
   const result = await ctx.proxy.getContext.mutate();
-  // This is correct
+
   expect(result).toEqual({
     user: mockUser,
     foo: 'bar',
   });
 
-  // This is not correct
-  expectTypeOf(result).toMatchTypeOf<{
-    // TODO FIXME: this is a bug in the type inference
-    // user: User;
+  expectTypeOf(result).toEqualTypeOf<{
+    user: User | null;
     foo: 'bar';
   }>();
 });

@@ -2,7 +2,7 @@
 id: error-handling
 title: Error Handling
 sidebar_label: Error Handling
-slug: /error-handling
+slug: /server/error-handling
 ---
 
 Whenever an error occurs in a procedure, tRPC responds to the client with an object that includes an "error" property. This property contains all the information that you need to handle the error in the client.
@@ -42,6 +42,7 @@ tRPC defines a list of error codes that each represent a different type of error
 | PRECONDITION_FAILED   | Access to the target resource has been denied.                                                                          | 412       |
 | PAYLOAD_TOO_LARGE     | Request entity is larger than limits defined by server.                                                                 | 413       |
 | METHOD_NOT_SUPPORTED  | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
+| UNPROCESSABLE_CONTENT | The server understands the request method, and the request entity is correct, but the server was unable to process it.  | 422       |
 | TOO_MANY_REQUESTS     | The rate limit has been exceeded or too many requests are being sent to the server.                                     | 429       |
 | CLIENT_CLOSED_REQUEST | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR | An unspecified error occurred.                                                                                          | 500       |

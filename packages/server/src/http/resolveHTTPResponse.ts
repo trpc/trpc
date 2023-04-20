@@ -7,20 +7,16 @@ import {
   inferRouterError,
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { TRPCResponse } from '../rpc';
+import { transformTRPCResponse } from '../shared';
 import { Maybe } from '../types';
 import {
   BaseContentTypeHandler,
   getJsonContentTypeInputs,
 } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
-import {
-  HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
-} from './internals/types';
+import { HTTPHeaders, HTTPResponse } from './internals/types';
+import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,

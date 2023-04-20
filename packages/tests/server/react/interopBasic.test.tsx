@@ -5,7 +5,6 @@ import { render, waitFor } from '@testing-library/react';
 import { createReactQueryHooks, httpBatchLink } from '@trpc/react-query/src';
 import * as interop from '@trpc/server/src';
 import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import superjson from 'superjson';
@@ -57,7 +56,7 @@ const ctx = konn()
       },
     });
     const queryClient = createQueryClient();
-    const react = createReactQueryHooks<typeof opts['router']>();
+    const react = createReactQueryHooks<(typeof opts)['router']>();
     const client = opts.client;
     type Return = inferProcedureOutput<
       typeof opts.router._def.queries.oldProcedure

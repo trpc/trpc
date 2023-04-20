@@ -2,14 +2,14 @@
 id: server-side-calls
 title: Server Side Calls
 sidebar_label: Server Side Calls
-slug: /server-side-calls
+slug: /server/server-side-calls
 ---
 
-You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
+You may need to call your procedure(s) directly from the same server they're hosted in, `router.createCaller()` can be used to achieve this.
 
 :::info
 
-`createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to (potentially) create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
 
 <div className="flex gap-2 w-full justify-between pt-2">
   <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />

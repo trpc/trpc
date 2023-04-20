@@ -1,5 +1,5 @@
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http/internals/types';
+import { HTTPBaseHandlerOptions } from '../../http';
 
 export type FetchCreateContextFnOptions = {
   req: Request;

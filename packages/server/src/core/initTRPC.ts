@@ -50,13 +50,17 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
       | RootConfigTypes['ctx']
       | ((...args: unknown[]) => RootConfigTypes['ctx']),
   >() {
-    return new TRPCBuilder<
-      FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>
-    >();
+    type NextParams = FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>;
+
+    return new TRPCBuilder<NextParams>();
   }
+
   meta<TNewMeta extends RootConfigTypes['meta']>() {
-    return new TRPCBuilder<FlatOverwrite<TParams, { meta: TNewMeta }>>();
+    type NextParams = FlatOverwrite<TParams, { meta: TNewMeta }>;
+
+    return new TRPCBuilder<NextParams>();
   }
+
   create<
     TOptions extends Partial<
       RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>
@@ -74,7 +78,7 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
 }
 
 /**
- * Initialize tRPC - be done exactly once per backend
+ * Initialize tRPC - done exactly once per backend
  */
 export const initTRPC = new TRPCBuilder();
 
@@ -145,7 +149,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Builder object for creating procedures
        */
-      procedure: createBuilder<$Config>(),
+      procedure: createBuilder<$Config>({
+        meta: runtime?.defaultMeta,
+      }),
       /**
        * Create reusable middlewares
        */

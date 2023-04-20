@@ -17,17 +17,21 @@ type JsonPrimitive =
   | null;
 // eslint-disable-next-line @typescript-eslint/ban-types
 type NonJsonPrimitive = undefined | Function | symbol;
-
 /*
  * `any` is the only type that can let you equate `0` with `1`
  * See https://stackoverflow.com/a/49928360/1490091
  */
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
+// `undefined` is a weird one that's technically not valid JSON,
+// but the return value of `JSON.parse` can be `undefined` so we
+// support it as both a Primitive and a NonJsonPrimitive
+type JsonReturnable = JsonPrimitive | undefined;
+
 // prettier-ignore
 export type Serialize<T> =
  IsAny<T> extends true ? any :
- T extends JsonPrimitive ? T :
+ T extends JsonReturnable ? T :
  T extends Map<any,any> | Set<any> ? object : 
  T extends NonJsonPrimitive ? never :
  T extends { toJSON(): infer U } ? U :
@@ -42,8 +46,11 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
 };
 
-/** JSON serialize objects (not including arrays) and classes */
-type SerializeObject<T extends object> = {
+/**
+ * JSON serialize objects (not including arrays) and classes
+ * @internal
+ **/
+export type SerializeObject<T extends object> = {
   [k in keyof Omit<T, FilterKeys<T, NonJsonPrimitive>>]: Serialize<T[k]>;
 };
 

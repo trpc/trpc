@@ -7,7 +7,6 @@ import {
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
@@ -66,7 +65,7 @@ test('with input', async () => {
       return <>...</>;
     }
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
@@ -146,7 +145,7 @@ test('w/o input', async () => {
       return <>...</>;
     }
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;

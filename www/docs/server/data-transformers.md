@@ -2,7 +2,7 @@
 id: data-transformers
 title: Data Transformers
 sidebar_label: Data Transformers
-slug: /data-transformers
+slug: /server/data-transformers
 ---
 
 You are able to serialize the response data & input args. The transformers need to be added both to the server and the client.

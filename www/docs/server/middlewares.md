@@ -2,7 +2,7 @@
 id: middlewares
 title: Middlewares
 sidebar_label: Middlewares
-slug: /middlewares
+slug: /server/middlewares
 ---
 
 You are able to add middleware(s) to a procedure with the `t.procedure.use()` method. The middleware(s) will wrap the invocation of the procedure and must pass through its return value.
@@ -111,11 +111,11 @@ export const appRouter = router({
 });
 ```
 
-## Context Swapping
+## Context Extension
 
-Context swapping in tRPC is a very powerful feature that allows you to create base procedures that dynamically infers new context in a flexible and typesafe manner.
+"Context Extension" enables middlewares to dynamically add and override keys on a base procedure's context in a typesafe manner.
 
-Below we have an example of a middleware that changes properties of the context, and procedures will receive the new context value:
+Below we have an example of a middleware that changes properties of a context, the changes are then available to all chained consumers, such as other middlewares and procedures:
 
 ```ts twoslash
 // @target: esnext
@@ -159,12 +159,12 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 ## Extending middlewares
 
 :::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](faq#unstable).
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
 :::
 
 We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.
 
-Below we have an example of a middleware that extends a base middleware(foo). Like the context swapping example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
+Below we have an example of a middleware that extends a base middleware(foo). Like the context extension example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
 
 ```ts twoslash
 // @target: esnext

@@ -2,12 +2,12 @@
 id: output-validation
 title: Output Validation
 sidebar_label: Output Validation
-slug: /output-validation
+slug: /server/output-validation
 ---
 
 tRPC gives you automatic type-safety of outputs without the need of adding a validator; however, it can be useful at times to strictly define the output type in order to prevent sensitive data from being leaked.
 
-Similarly to [`input`](router), an `output` validator can be added. The output validator is invoked with your payload.
+Similarly to [`input`](routers), an `output` validator can be added. The output validator is invoked with your payload.
 
 When an `output` validator is defined, its inferred type is expected as the return type of your resolver (like `t.procedure.query()`).
 

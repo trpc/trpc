@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
-import { HTTPRequest } from '../../http/internals/types';
+import { HTTPRequest } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { RouterInput, trpc } from '~/utils/trpc';
 
-function useZodFormData<TSchema extends z.ZodType>(
+function useZodFormData<TSchema extends z.ZodType<any, any>>(
   props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
     schema: TSchema;
   },

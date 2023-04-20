@@ -2,9 +2,7 @@
 import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
-import { expectTypeOf } from 'expect-type';
 import React, { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;

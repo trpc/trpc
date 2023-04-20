@@ -1,11 +1,9 @@
 import { createQueryClient } from '../__queryClient';
 import { Post, createAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
-import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
-import { expectTypeOf } from 'expect-type';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import React, { Fragment, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -378,7 +376,7 @@ describe('Infinite Query', () => {
 
   test('prefetchInfiniteQuery()', async () => {
     const { appRouter } = factory;
-    const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+    const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
     {
       await ssg.paginatedPosts.prefetchInfinite({ limit: 1 });

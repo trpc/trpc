@@ -1,7 +1,5 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
-import '@testing-library/jest-dom';
 import * as trpc from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
 import * as t from 'superstruct';
 import * as yup from 'yup';
