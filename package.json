@@ -24,7 +24,7 @@
     "codegen": "run-p codegen:*",
     "prepublish": "pnpm build",
     "postinstall": "pnpm codegen",
-    "prepack": "tsx scripts/postversion.ts",
+    "postversion": "tsx scripts/postversion.ts",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
     "release:canary": "changeset publish --tag canary",
