@@ -1,6 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 
 test('children', async () => {
   const t = initTRPC.create();
