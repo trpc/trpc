@@ -11,7 +11,6 @@ import { Parser, inferParser } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
-  AnyProcedureParams,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   Procedure,
