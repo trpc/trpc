@@ -32,8 +32,13 @@ test('should correctly assign the cause when error instance is provided', () => 
 
 test('should be able to create synthetic cause from string', () => {
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause: 'rick' });
-  expect(trpcError.cause).toBeInstanceOf(Error);
-  expect(trpcError.cause?.message).toEqual('rick');
+  expect(trpcError.cause).toBe('rick');
+});
+
+test('should be able to create synthetic cause from object', () => {
+  const cause = { foo: 'bar' };
+  const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
+  expect(trpcError.cause).toBe(cause);
 });
 
 test('should skip creating the cause if one is not provided', () => {
@@ -53,8 +58,7 @@ describe('getTRPCErrorFromUnknown', () => {
     const trpcError = getTRPCErrorFromUnknown(originalError);
     expect(trpcError).toBeInstanceOf(TRPCError);
     expect(trpcError.message).toEqual('rick');
-    expect(trpcError.cause).toBeInstanceOf(Error);
-    expect(trpcError.cause?.message).toEqual('rick');
+    expect(trpcError.cause).toEqual('rick');
   });
 
   test('should create new instance of TRPCError with `INTERNAL_SERVER_ERROR` code and proper cause for errors', () => {
@@ -71,5 +75,12 @@ describe('getTRPCErrorFromUnknown', () => {
     originalError.stack = 'meeseeks';
     const trpcError = getTRPCErrorFromUnknown(originalError);
     expect(trpcError.stack).toEqual('meeseeks');
+  });
+
+  test('should create stack in case the cause was not an Error', () => {
+    const cause = 'picklyrick';
+
+    const trpcError = getTRPCErrorFromUnknown(cause);
+    expect(typeof trpcError.stack).toEqual('string');
   });
 });
