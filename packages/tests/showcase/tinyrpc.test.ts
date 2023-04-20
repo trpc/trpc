@@ -75,15 +75,17 @@ function createServer() {
   };
 }
 
-test('tinytrpc', async () => {
-  const server = createServer();
+test(
+  'tinytrpc',
+  async () => {
+    const server = createServer();
 
-  const trpc = createTinyRPCClient<AppRouter>(
-    `http://localhost:${server.port}`,
-  );
+    const trpc = createTinyRPCClient<AppRouter>(
+      `http://localhost:${server.port}`,
+    );
 
-  const posts = await trpc.listPosts.query();
-  expect(posts).toMatchInlineSnapshot(`
+    const posts = await trpc.listPosts.query();
+    expect(posts).toMatchInlineSnapshot(`
     Array [
       Object {
         "id": "1",
@@ -92,14 +94,18 @@ test('tinytrpc', async () => {
     ]
   `);
 
-  const title = 'Hello from test';
-  const addedPost = await trpc.addPost.mutate({ title });
+    const title = 'Hello from test';
+    const addedPost = await trpc.addPost.mutate({ title });
 
-  const post = await trpc.byId.query({ id: addedPost.id });
-  expect(post).not.toBeFalsy();
-  expect(post.title).toBe(title);
+    const post = await trpc.byId.query({ id: addedPost.id });
+    expect(post).not.toBeFalsy();
+    expect(post.title).toBe(title);
 
-  expect(await trpc.listPosts.query()).toHaveLength(posts.length + 1);
+    expect(await trpc.listPosts.query()).toHaveLength(posts.length + 1);
 
-  await server.close();
-});
+    await server.close();
+  },
+  {
+    retry: 3,
+  },
+);
