@@ -58,15 +58,11 @@ type CreateProcedureFromExtension<
   >;
 }>;
 
-type SelectTypeOrOverwrite<
-  TBase,
-  TOverwrite,
-  TUnset = UnsetMarker,
-> = TUnset extends TBase
-  ? TUnset extends TOverwrite
-    ? TUnset
+type SelectTypeOrOverwrite<TBase, TOverwrite> = UnsetMarker extends TBase
+  ? UnsetMarker extends TOverwrite
+    ? UnsetMarker
     : TOverwrite
-  : TUnset extends TOverwrite
+  : UnsetMarker extends TOverwrite
   ? TBase
   : Overwrite<TBase, TOverwrite>;
 
