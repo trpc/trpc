@@ -313,6 +313,38 @@ test('server subscription ended', async () => {
   await close();
 });
 
+
+test('can close wsClient when subscribed', async () => {
+  const { proxy, close, onCloseMock: wsClientOnCloseMock, wsClient, wss } = factory();
+  const serversideWsOnCloseMock = vi.fn();
+  wss.addListener('connection', ws => ws.on('close', serversideWsOnCloseMock));
+
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
+  proxy.onMessage.subscribe(undefined, {
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onError: onErrorMock,
+    onComplete: onCompleteMock,
+  });
+  
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  wsClient.close();
+
+  await waitFor(() => {
+    expect(onCompleteMock).toHaveBeenCalledTimes(1);
+    expect(wsClientOnCloseMock).toHaveBeenCalledTimes(1);
+    expect(serversideWsOnCloseMock).toHaveBeenCalledTimes(1);
+  });
+
+  await close();
+});
+
 test('sub emits errors', async () => {
   const { proxy, close, wss, ee, subRef } = factory();
 
