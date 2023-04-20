@@ -20,6 +20,8 @@ jobs:
             next-prisma-todomvc,
             next-minimal-starter,
             next-big-router,
+            minimal,
+            minimal-react,
           ]
 
     name: Update downstream ${{ matrix.path }} package
