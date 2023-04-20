@@ -120,10 +120,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
     }
   }
 
-  // function closePendingRequests() {
-  //   Object.values(pendingRequests).forEach((req) => req.callbacks.complete());
-  // }
-
   function closeActiveSubscriptions() {
     Object.values(pendingRequests).forEach((req) => {
       if(req.type === 'subscription'){
