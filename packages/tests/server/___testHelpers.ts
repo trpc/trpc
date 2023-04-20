@@ -1,4 +1,3 @@
-import './___packages';
 import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
@@ -20,8 +19,8 @@ import {
 } from '@trpc/server/src/adapters/ws';
 import { IncomingMessage } from 'http';
 import fetch from 'node-fetch';
-import { Mocked } from 'vitest';
 import ws from 'ws';
+import './___packages';
 
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
