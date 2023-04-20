@@ -21,8 +21,10 @@ import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
 import ws from 'ws';
 
+// This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
+
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {

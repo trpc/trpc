@@ -38,26 +38,26 @@ export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   fetch(
     ...args: inferHandlerInput<TProcedure>
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   fetchInfinite(
     ...args: inferHandlerInput<TProcedure>
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   prefetch(...args: inferHandlerInput<TProcedure>): Promise<void>;
 
   /**
-   * @link https://react-query.tanstack.com/guides/prefetching
+   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   prefetchInfinite(...args: inferHandlerInput<TProcedure>): Promise<void>;
 };

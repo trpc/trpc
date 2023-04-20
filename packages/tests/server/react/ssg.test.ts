@@ -1,7 +1,6 @@
 import { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 const t = initTRPC.create();

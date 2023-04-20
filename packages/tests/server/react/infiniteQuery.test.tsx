@@ -4,7 +4,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { expectTypeOf } from 'expect-type';
 import React, { Fragment, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
