@@ -76,4 +76,11 @@ describe('getTRPCErrorFromUnknown', () => {
     const trpcError = getTRPCErrorFromUnknown(originalError);
     expect(trpcError.stack).toEqual('meeseeks');
   });
+
+  test('should create stack in case the cause was not an Error', () => {
+    const cause = 'picklyrick';
+
+    const trpcError = getTRPCErrorFromUnknown(cause);
+    expect(typeof trpcError.stack).toEqual('string');
+  });
 });
