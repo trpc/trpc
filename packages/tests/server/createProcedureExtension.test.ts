@@ -147,7 +147,6 @@ describe('input merging', () => {
     });
   });
 
-  // TODO: is this a correct spec? Can we validly merge keys onto an array and vice versa?
   test('merging object onto array is type error', async () => {
     const t = initTRPC.create();
 
@@ -161,7 +160,6 @@ describe('input merging', () => {
       .extend(extension);
   });
 
-  // TODO: is this a correct spec? Can we validly merge keys onto an array and vice versa?
   test('merging array onto object is type error', async () => {
     const t = initTRPC.create();
 
@@ -171,11 +169,10 @@ describe('input merging', () => {
 
     t.procedure
       .input(z.object({ name: z.string() }))
-      // @ts-expect-error can't merge an object onto an array
+      // @ts-expect-error can't merge an array onto an object
       .extend(extension);
   });
 
-  // TODO: is this a correct spec? Can we validly merge keys onto an array and vice versa?
   test('merging arrays is type error', async () => {
     const t = initTRPC.create();
 
@@ -185,7 +182,7 @@ describe('input merging', () => {
 
     t.procedure
       .input(z.array(z.object({ name: z.string() })))
-      // @ts-expect-error can't merge an object onto an array
+      // @ts-expect-error can't merge an array onto an array
       .extend(extension);
   });
 });

@@ -42,6 +42,28 @@ type CreateProcedureReturnInput<
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
+type AllButObject =
+  | number
+  | boolean
+  | string
+  | bigint
+  | Array<any>
+  | undefined
+  | null
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | Function;
+
+type TrueObject = { [k: string]: any; length?: never };
+type CompatibleExtendParams<TParams extends ProcedureParams> = ProcedureParams<
+  AnyRootConfig, //TParams['_config'],
+  any,
+  object,
+  TParams['_input_in'] extends AllButObject ? never : object,
+  TParams['_input_out'] extends AllButObject ? never : object,
+  any,
+  any
+>;
+
 type CreateProcedureFromExtension<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
@@ -166,7 +188,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
-  extend<$Params extends ProcedureParams>(
+  extend<$Params extends CompatibleExtendParams<TParams>>(
     proc: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
   ): CreateProcedureFromExtension<TParams, $Params>;
   /**
