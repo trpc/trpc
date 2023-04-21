@@ -53,9 +53,8 @@ type AllButObject =
   // eslint-disable-next-line @typescript-eslint/ban-types
   | Function;
 
-type TrueObject = { [k: string]: any; length?: never };
 type CompatibleExtendParams<TParams extends ProcedureParams> = ProcedureParams<
-  AnyRootConfig, //TParams['_config'],
+  AnyRootConfig,
   any,
   object,
   TParams['_input_in'] extends AllButObject ? never : object,
