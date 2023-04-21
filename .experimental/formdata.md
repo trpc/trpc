@@ -16,6 +16,8 @@
 
 > Have a lookout for the ❓-emoji where we need some more thinking
 
+For a reference example, see [`/examples/.experimental/next-formdata`](../examples/.experimental/next-formdata)
+
 ## Challenges
 
 - We don't know *all* of the form's input before we have handled the data
