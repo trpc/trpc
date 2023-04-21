@@ -24,7 +24,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
-    "@trpc/client": "10.21.1",
+    "@trpc/client": "10.21.0",
     "@trpc/next": "10.21.1",
     "@trpc/react-query": "10.21.1",
     "@trpc/server": "10.21.1",
