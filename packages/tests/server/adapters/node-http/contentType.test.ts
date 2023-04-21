@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { createTRPCProxyClient, splitLink } from '@trpc/client';
-import { unstable_formDataLink } from '@trpc/client/links/formDataLink';
+import { experimental_formDataLink } from '@trpc/client/links/formDataLink';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { TRPCError, initTRPC } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
@@ -48,7 +48,7 @@ const t = konn()
 
     const { listen, server } = createHTTPServer({
       router,
-      unstable_contentTypeHandlers: [
+      experimental_contentTypeHandlers: [
         nodeHTTPFormDataContentTypeHandler(),
         nodeHTTPJSONContentTypeHandler(),
       ],
@@ -61,7 +61,7 @@ const t = konn()
       links: [
         splitLink({
           condition: (op) => op.input instanceof FormData,
-          true: unstable_formDataLink({
+          true: experimental_formDataLink({
             url,
             fetch: fetch as any,
           }),

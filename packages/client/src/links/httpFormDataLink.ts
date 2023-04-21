@@ -58,6 +58,6 @@ const formDataRequester: Requester = (opts) => {
   });
 };
 
-export const unstable_formDataLink = httpLinkFactory({
+export const experimental_formDataLink = httpLinkFactory({
   requester: formDataRequester,
 });

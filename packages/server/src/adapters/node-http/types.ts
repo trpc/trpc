@@ -65,7 +65,7 @@ export type NodeHTTPHandlerOptions<
    */
   middleware?: ConnectMiddleware;
   maxBodySize?: number;
-  unstable_contentTypeHandlers?: NodeHTTPContentTypeHandler<
+  experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
     TRequest,
     TResponse
   >[];

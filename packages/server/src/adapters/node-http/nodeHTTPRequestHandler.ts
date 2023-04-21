@@ -37,7 +37,7 @@ export async function nodeHTTPRequestHandler<
         TResponse
       >;
 
-    const contentTypeHandlers = opts.unstable_contentTypeHandlers ?? [
+    const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
       jsonContentTypeHandler,
     ];
 

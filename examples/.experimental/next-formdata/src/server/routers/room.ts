@@ -1,6 +1,6 @@
 import {
-  unstable_createMemoryUploadHandler,
-  unstable_parseMultipartFormData,
+  experimental_createMemoryUploadHandler,
+  experimental_parseMultipartFormData,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -48,9 +48,9 @@ const roomProcedure = publicProcedure.input(
 export const roomRouter = router({
   sendMessage: roomProcedure
     .use(async (opts) => {
-      const formData = await unstable_parseMultipartFormData(
+      const formData = await experimental_parseMultipartFormData(
         opts.ctx.req,
-        unstable_createMemoryUploadHandler(),
+        experimental_createMemoryUploadHandler(),
       );
 
       return opts.next({

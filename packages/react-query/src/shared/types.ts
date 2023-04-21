@@ -22,7 +22,7 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   /**
    * Override behaviors of the built-in hooks
    */
-  unstable_overrides?: {
+  experimental_overrides?: {
     useMutation?: Partial<UseMutationOverride>;
   };
 

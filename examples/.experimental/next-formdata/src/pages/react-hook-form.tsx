@@ -108,7 +108,7 @@ export default function Page() {
             </div>
 
             <div>
-              <label>Required file, only pngs</label>
+              <label>Required file, only images</label>
               <input type="file" {...form.register('image')} />
               {form.formState.errors.image && (
                 <div>{form.formState.errors.image.message}</div>

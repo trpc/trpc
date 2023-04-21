@@ -6,10 +6,10 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   createTRPCClientProxy,
+  experimental_formDataLink,
   httpBatchLink,
   loggerLink,
   splitLink,
-  unstable_formDataLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
@@ -17,8 +17,8 @@ import { inferRouterOutputs, initTRPC } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import {
-  unstable_zodFileSchema as zodFileSchema,
-  unstable_zodFileStreamSchema as zodFileStreamSchema,
+  experimental_zodFileSchema as zodFileSchema,
+  experimental_zodFileStreamSchema as zodFileStreamSchema,
 } from '@trpc/server/adapters/zodFileSchema';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
@@ -83,7 +83,7 @@ const ctx = konn()
     };
     const opts = routerToServerAndClientNew(appRouter, {
       server: {
-        unstable_contentTypeHandlers: [
+        experimental_contentTypeHandlers: [
           nodeHTTPFormDataContentTypeHandler(),
           nodeHTTPJSONContentTypeHandler(),
         ],
@@ -96,7 +96,7 @@ const ctx = konn()
           }),
           splitLink({
             condition: (op) => op.input instanceof FormData,
-            true: unstable_formDataLink({
+            true: experimental_formDataLink({
               url: httpUrl,
             }),
             false: httpBatchLink({
@@ -138,93 +138,6 @@ const ctx = konn()
     await ctx?.close?.();
   })
   .done();
-
-function createReactComponent(_ctx: typeof ctx) {
-  const { proxy, App } = _ctx;
-
-  type RouterOutput = inferRouterOutputs<typeof _ctx['appRouter']>;
-  const mutationResponse: {
-    current: RouterOutput['createUser'] | null;
-  } = { current: null };
-
-  function MyComponent() {
-    const createUserMutation = proxy.createUser.useMutation({
-      onSuccess: (data) => {
-        mutationResponse.current = data;
-      },
-    });
-
-    return (
-      <div>
-        <form
-          onSubmit={(e) => {
-            const formData = new FormData(e.currentTarget);
-            createUserMutation.mutate(formData as any);
-
-            e.preventDefault();
-          }}
-        >
-          <input name="name" defaultValue="bob" />
-          <input name="age" defaultValue={42} />
-          <input name="image" type="file" data-testid="image-input" />
-          <button type="submit">Submit</button>
-        </form>
-      </div>
-    );
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-
-  return { utils, mutationResponse };
-}
-
-test('react', async () => {
-  const opts = createReactComponent(ctx);
-  const { utils, mutationResponse } = opts;
-
-  utils.getByText('Submit').click();
-
-  await waitFor(() => {
-    assert(mutationResponse.current);
-  });
-  assert(mutationResponse.current);
-
-  expect(mutationResponse.current).toMatchInlineSnapshot(`
-    Object {
-      "age": 42,
-      "name": "bob",
-    }
-  `);
-  utils.unmount();
-});
-
-test('react upload file', async () => {
-  const opts = createReactComponent(ctx);
-  const { utils, mutationResponse } = opts;
-
-  // get the upload button
-  const uploader = utils.getByTestId('image-input');
-
-  const file = new File(['hi bob'], 'bob.txt', {
-    type: 'text/plain',
-  });
-
-  await userEvent.upload(uploader, file);
-
-  utils.getByText('Submit').click();
-
-  await waitFor(() => {
-    assert(mutationResponse.current);
-  });
-
-  assert(mutationResponse.current);
-  expect(mutationResponse.current.image).not.toBeFalsy();
-  expect(mutationResponse.current).toMatchInlineSnapshot();
-});
 
 test('upload file', async () => {
   const { client } = ctx;

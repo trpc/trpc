@@ -83,11 +83,11 @@ export const appRouter = router({
       async (opts) => {
         // Somewhat stolen from Remix
         // ❓ Def not the best API we can do
-        const uploadHandler = unstable_createMemoryUploadHandler({
+        const uploadHandler = experimental_createMemoryUploadHandler({
           maxSize: '1mb',
         });
 
-        const formData = await unstable_parseMultipartFormData({
+        const formData = await experimental_parseMultipartFormData({
           schema: sendMessageSchema,
           request: opts.req,
           uploadHandler,

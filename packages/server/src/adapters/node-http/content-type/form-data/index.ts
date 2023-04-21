@@ -89,8 +89,8 @@ export const nodeHTTPFormDataContentTypeHandler =
     },
   });
 
-export { parseMultipartFormData as unstable_parseMultipartFormData };
-export { createMemoryUploadHandler as unstable_createMemoryUploadHandler } from './memoryUploadHandler';
-export { createFileUploadHandler as unstable_createFileUploadHandler } from './fileUploadHandler';
-export { composeUploadHandlers as unstable_composeUploadHandlers } from './uploadHandler';
+export { parseMultipartFormData as experimental_parseMultipartFormData };
+export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
+export { createFileUploadHandler as experimental_createFileUploadHandler } from './fileUploadHandler';
+export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';

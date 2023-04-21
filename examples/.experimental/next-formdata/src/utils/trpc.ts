@@ -1,8 +1,8 @@
 import {
+  experimental_formDataLink,
   httpBatchLink,
   loggerLink,
   splitLink,
-  unstable_formDataLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
@@ -25,7 +25,7 @@ function getBaseUrl() {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
-  unstable_overrides: {
+  experimental_overrides: {
     useMutation: {
       /**
        * This function is called whenever a `.useMutation` succeeds
@@ -56,7 +56,7 @@ export const trpc = createTRPCNext<AppRouter>({
         }),
         splitLink({
           condition: (op) => !!op.context.formData,
-          true: unstable_formDataLink({
+          true: experimental_formDataLink({
             url,
           }),
           false: httpBatchLink({

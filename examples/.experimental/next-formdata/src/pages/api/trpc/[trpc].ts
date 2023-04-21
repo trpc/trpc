@@ -23,7 +23,7 @@ const handler = trpcNext.createNextApiHandler({
   createContext: (opts) => {
     return opts;
   },
-  unstable_contentTypeHandlers: [
+  experimental_contentTypeHandlers: [
     nodeHTTPFormDataContentTypeHandler(),
     nodeHTTPJSONContentTypeHandler(),
   ],
