@@ -189,7 +189,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
   extend<$Params extends CompatibleExtendParams<TParams>>(
-    proc: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
+    extender: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
   ): CreateProcedureFromExtension<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
