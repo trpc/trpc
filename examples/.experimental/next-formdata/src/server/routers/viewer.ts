@@ -4,20 +4,11 @@ import {
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
-import { writeFileToDisk } from '../../utils/writeFileToDisk';
+import { writeFileToDisk } from '~/utils/writeFileToDisk';
 import { publicProcedure, router } from '../trpc';
 
-function isPlainObject(obj: unknown): obj is object {
-  return !!obj && typeof obj === 'object' && !Array.isArray(obj);
-}
-
-const roomProcedure = publicProcedure.input(
-  z.object({
-    roomId: z.string(),
-  }),
-);
-export const roomRouter = router({
-  sendMessage: roomProcedure
+export const viewer = router({
+  updateProfile: publicProcedure
     .use(async (opts) => {
       const formData = await experimental_parseMultipartFormData(
         opts.ctx.req,
@@ -25,12 +16,7 @@ export const roomRouter = router({
       );
 
       return opts.next({
-        rawInput: isPlainObject(opts.rawInput)
-          ? {
-              ...opts.rawInput,
-              formData,
-            }
-          : { formData },
+        rawInput: { formData },
       });
     })
     .input(
@@ -39,12 +25,9 @@ export const roomRouter = router({
       }),
     )
     .mutation(async (opts) => {
-      opts.input.roomId;
       return {
+        name: opts.input.formData.name,
         image: await writeFileToDisk(opts.input.formData.image),
-        document:
-          opts.input.formData.document &&
-          (await writeFileToDisk(opts.input.formData.document)),
       };
     }),
 });

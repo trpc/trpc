@@ -137,7 +137,6 @@ export type MiddlewareFunction<
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
       <$Context>(opts: { ctx: $Context }): Promise<
         MiddlewareResult<{
           _config: TParams['_config'];
@@ -149,6 +148,7 @@ export type MiddlewareFunction<
           _meta: TParams['_meta'];
         }>
       >;
+      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
