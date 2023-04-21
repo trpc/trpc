@@ -558,8 +558,8 @@ importers:
         specifier: ^1.7.4
         version: 1.7.4
       tslib:
-        specifier: ^2.1.0
-        version: 2.1.0
+        specifier: ^2.5.0
+        version: 2.5.0
       ws:
         specifier: ^8.0.0
         version: 8.0.0
@@ -1521,8 +1521,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       tslib:
-        specifier: ^2.1.0
-        version: 2.1.0
+        specifier: ^2.5.0
+        version: 2.5.0
       tsx:
         specifier: ^3.12.3
         version: 3.12.3
@@ -5680,7 +5680,7 @@ packages:
       '@docusaurus/react-loadable': 5.5.2(react@18.2.0)
       '@docusaurus/types': 2.3.1(@swc/core@1.3.3)(react-dom@18.2.0)(react@18.2.0)
       '@types/history': 4.7.11
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
       '@types/react-router-config': 5.0.7
       '@types/react-router-dom': 5.3.3
       react: 18.2.0
@@ -6194,7 +6194,7 @@ packages:
     peerDependencies:
       react: '*'
     dependencies:
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
       prop-types: 15.8.1
       react: 18.2.0
 
@@ -6320,7 +6320,7 @@ packages:
       '@docusaurus/plugin-content-pages': 2.3.1(@swc/core@1.3.3)(@types/node@18.7.20)(eslint@8.30.0)(react-dom@18.2.0)(react@18.2.0)(ts-node@10.9.1)(typescript@4.8.3)
       '@docusaurus/utils': 2.3.1(@docusaurus/types@2.3.1)(@swc/core@1.3.3)
       '@types/history': 4.7.11
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
       '@types/react-router-config': 5.0.7
       clsx: 1.2.1
       parse-numeric-range: 1.3.0
@@ -6468,7 +6468,7 @@ packages:
       react-dom: ^16.8.4 || ^17.0.0
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
       commander: 5.1.0
       joi: 17.9.1
       react: 18.2.0
@@ -10173,7 +10173,7 @@ packages:
   /@types/hoist-non-react-statics@3.3.1:
     resolution: {integrity: sha512-iMIqiko6ooLrTh1joXodJK5X9xeEALT1kM5G3ZLhD3hszxBdIEd5C75U834D9mLcINgD4OyZf5uQXjkuYydWvA==}
     dependencies:
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
       hoist-non-react-statics: 3.3.2
     dev: false
 
@@ -10312,7 +10312,14 @@ packages:
     resolution: {integrity: sha512-jGjmu/ZqS7FjSH6owMcD5qpq19+1RS9DeVRqfl1FeBMxTDQAGwlMWOcs52NDoXaNKyG3d1cYQFMs9rCrb88o9Q==}
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
+
+  /@types/react@18.0.37:
+    resolution: {integrity: sha512-4yaZZtkRN3ZIQD3KSEwkfcik8s0SWV+82dlJot1AbGYHCzJkWP3ENBY6wYeDRmKZ6HkrgoGAmR2HqdwYGp6OEw==}
+    dependencies:
+      '@types/prop-types': 15.7.5
+      '@types/scheduler': 0.16.3
+      csstype: 3.1.2
 
   /@types/react@18.0.9:
     resolution: {integrity: sha512-9bjbg1hJHUm4De19L1cHiW0Jvx3geel6Qczhjd0qY5VKVE2X5+x77YxAepuCwVh4vrgZJdgEJw48zrhRIeF4Nw==}
@@ -10562,7 +10569,7 @@ packages:
     peerDependencies:
       react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
     dependencies:
-      '@types/react': 18.0.9
+      '@types/react': 18.0.37
       classnames: 2.3.2
       prop-types: 15.8.1
       react: 18.2.0
@@ -11838,7 +11845,7 @@ packages:
     resolution: {integrity: sha512-gxGWBrTT1JuMx6R+o5PTXMmUnhnVzLQ9SNutD4YqKtI6ap897t3tKECYla6gCWEkplXnlNybEkZg9GEGxKFCgw==}
     dependencies:
       pascal-case: 3.1.2
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: false
 
   /camelcase-css@2.0.1:
@@ -13615,7 +13622,7 @@ packages:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
     dependencies:
       no-case: 3.0.4
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: false
 
   /dot-prop@5.3.0:
@@ -15759,7 +15766,7 @@ packages:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
     dependencies:
       graphql: 16.6.0
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: true
 
   /graphql@15.8.0:
@@ -17485,7 +17492,7 @@ packages:
   /lower-case@2.0.2:
     resolution: {integrity: sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: false
 
   /lowercase-keys@1.0.1:
@@ -18235,7 +18242,7 @@ packages:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
     dependencies:
       lower-case: 2.0.2
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: false
 
   /node-addon-api@3.2.1:
@@ -19039,7 +19046,7 @@ packages:
     resolution: {integrity: sha512-RXlj7zCYokReqWpOPH9oYivUzLYZ5vAPIfEmCTNViosC78F8F0H9y7T7gG2M39ymgutxF5gcFEsyZQSph9Bp3A==}
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: false
 
   /parent-module@1.0.1:
@@ -19142,7 +19149,7 @@ packages:
     resolution: {integrity: sha512-uWlGT3YSnK9x3BQJaOdcZwrnV6hPpd8jFH1/ucpiLRPh/2zCVJKS19E4GvYHvaCcACn3foXZ0cLB9Wrx1KGe5g==}
     dependencies:
       no-case: 3.0.4
-      tslib: 2.1.0
+      tslib: 2.5.0
     dev: false
 
   /path-browserify@1.0.1:
@@ -21613,7 +21620,7 @@ packages:
   /rxjs@7.8.0:
     resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
     dependencies:
-      tslib: 2.1.0
+      tslib: 2.5.0
 
   /safe-buffer@5.1.2:
     resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}
@@ -23293,6 +23300,7 @@ packages:
 
   /tslib@2.1.0:
     resolution: {integrity: sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==}
+    dev: false
 
   /tslib@2.5.0:
     resolution: {integrity: sha512-336iVw3rtn2BUK7ORdIAHTyxHGRIHVReokCR3XjbckJMK7ms8FysBfhLR8IXnAgy7T0PTPNBWKiH514FOW/WSg==}
