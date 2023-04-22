@@ -451,6 +451,7 @@ describe('root config', () => {
       });
     });
 
+    // @ts-expect-error prequisites not met
     t.procedure.extend(extension);
   });
 
@@ -467,6 +468,67 @@ describe('root config', () => {
       });
     });
 
+    // @ts-expect-error prequisites not met
     t.procedure.extend(extension);
+  });
+
+  test('can define a base context to expect', async () => {
+    const t = initTRPC.context<{ foo: number }>().create();
+
+    const extension = withPrequisites<{
+      context: { foo: number };
+    }>().createProcedureExtension((proc) => {
+      return proc.use((opts) => {
+        assertType<{ foo: number }>().is(opts.ctx);
+
+        return opts.next({
+          ctx: {
+            bar: 2,
+          },
+        });
+      });
+    });
+
+    const subject = t.procedure.extend(extension).query((opts) => {
+      assertType<{ foo: number; bar: number }>().is(opts.ctx);
+      expect(opts.ctx).toEqual({
+        foo: 1,
+        bar: 2,
+      });
+
+      return true;
+    });
+
+    await t.router({ subject }).createCaller({ foo: 1 }).subject();
+  });
+
+  test('can define a base meta to expect', async () => {
+    const t = initTRPC.meta<{ foo: number }>().create();
+
+    const extension = withPrequisites<{
+      meta: { foo: number };
+    }>().createProcedureExtension((proc) => {
+      return proc.meta({ foo: 1 }).use((opts) => {
+        assertType<{ foo: number } | undefined>().is(opts.meta);
+
+        return opts.next();
+      });
+    });
+
+    const subject = t.procedure
+      .extend(extension)
+      .use((opts) => {
+        assertType<{ foo: number } | undefined>().is(opts.meta);
+        expect(opts.meta).toEqual({
+          fo: 1,
+        });
+
+        return opts.next();
+      })
+      .query(() => {
+        return true;
+      });
+
+    await t.router({ subject }).createCaller({}).subject();
   });
 });
