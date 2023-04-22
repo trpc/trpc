@@ -401,3 +401,43 @@ test('useQuery options inference', () => {
     </App>,
   );
 });
+
+// https://github.com/trpc/trpc/issues/4234
+test('useQuery options bug: #4234', () => {
+  const { appRouter, proxy, App } = ctx;
+
+  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
+  type Options = ReactQueryProcedure['post']['byIdWithSerializable'];
+
+  function MyComponent() {
+    const options: Options = {};
+    const query = proxy.post.byIdWithSerializable.useQuery(
+      { id: '1' },
+      {
+        // This options object also causes the bug
+        ...options,
+
+        // This is the originally reported bug
+        refetchInterval() {
+          return -1;
+        },
+
+        // Bug is that transforming the type won't compile: No overload matches this call
+        select(data) {
+          // transforming the data type should work
+          return '';
+        },
+      },
+    );
+
+    const data: string = query.data;
+
+    return <>{data}</>;
+  }
+
+  render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+});
