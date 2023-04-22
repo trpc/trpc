@@ -411,14 +411,11 @@ test('useQuery options bug: #4234', () => {
 
   function MyComponent() {
     const options: Options = {};
-    const query = proxy.post.byIdWithSerializable.useQuery(
+    proxy.post.byIdWithSerializable.useQuery(
       { id: '1' },
       {
-        // This options object also causes the bug
-        ...options,
-
         // This is the originally reported bug
-        refetchInterval() {
+        refetchInterval(data) {
           return -1;
         },
 
@@ -429,10 +426,49 @@ test('useQuery options bug: #4234', () => {
         },
       },
     );
+    proxy.post.byIdWithSerializable.useQuery(
+      { id: '1' },
+      {
+        // This options object also causes the bug
+        ...options,
 
-    const data: string = query.data;
+        // Bug is that transforming the type won't compile: No overload matches this call
+        select(data) {
+          // transforming the data type should work
+          return '';
+        },
+      },
+    );
+    proxy.post.byIdWithSerializable.useSuspenseQuery(
+      { id: '1' },
+      {
+        // This is the originally reported bug
+        refetchInterval(data) {
+          return -1;
+        },
 
-    return <>{data}</>;
+        // Bug is that transforming the type won't compile: No overload matches this call
+        select(data) {
+          // transforming the data type should work
+          return '';
+        },
+      },
+    );
+    proxy.post.byIdWithSerializable.useSuspenseQuery(
+      { id: '1' },
+      {
+        // This options object also causes the bug
+        ...options,
+
+        // Bug is that transforming the type won't compile: No overload matches this call
+        select(data) {
+          // transforming the data type should work
+          return '';
+        },
+      },
+    );
+
+    return <></>;
   }
 
   render(
