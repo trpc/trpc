@@ -53,8 +53,6 @@ type AllButObject =
   // eslint-disable-next-line @typescript-eslint/ban-types
   | Function;
 
-type NotArray<T> = T extends any[] ? never : T;
-
 type CompatibleExtendParams<TParams extends ProcedureParams> = ProcedureParams<
   AnyRootConfig,
   any,
@@ -190,13 +188,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
   extend<$Params extends CompatibleExtendParams<TParams>>(
-    extender: (
-      base: AnyProcedureBuilder,
-    ) => ProcedureBuilder<
-      $Params extends { _input_in: Array<any> } | { _input_out: Array<any> }
-        ? never
-        : $Params
-    >,
+    extender: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
   ): CreateProcedureFromExtension<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.

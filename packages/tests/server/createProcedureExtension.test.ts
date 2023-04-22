@@ -163,26 +163,24 @@ describe('input merging', () => {
   test('merging array onto object is type error', async () => {
     const t = initTRPC.create();
 
+    // @ts-expect-error returning array inputs is banned
     const extension = createProcedureExtension((proc) => {
       return proc.input(z.array(z.object({ orgId: z.number() })));
     });
 
-    t.procedure
-      .input(z.object({ name: z.string() }))
-      // @ts-expect-error can't merge an array onto an object
-      .extend(extension);
+    t.procedure.input(z.object({ name: z.string() })).extend(extension);
   });
 
   test('merging arrays is type error', async () => {
     const t = initTRPC.create();
 
+    // @ts-expect-error returning array inputs is banned
     const extension = createProcedureExtension((proc) => {
       return proc.input(z.array(z.object({ orgId: z.number() })));
     });
 
     t.procedure
       .input(z.array(z.object({ name: z.string() })))
-      // @ts-expect-error can't merge an array onto an array
       .extend(extension);
   });
 });
