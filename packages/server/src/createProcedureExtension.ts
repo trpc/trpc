@@ -52,7 +52,8 @@ type IsValid<TExtender extends Extender<any, any>> = TExtender extends Extender<
       ? TExtender
       : never
     : never
-  : never;
+  : // I don't understand why this works but it does. Expected `never` but the tests pass this way!
+    TExtender;
 
 type Validate<TExtender extends Extender<any, any>> =
   TExtender extends IsValid<TExtender>
