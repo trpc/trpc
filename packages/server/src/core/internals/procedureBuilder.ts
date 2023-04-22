@@ -53,15 +53,16 @@ type AllButObject =
   // eslint-disable-next-line @typescript-eslint/ban-types
   | Function;
 
-type CompatibleExtendParams<TParams extends ProcedureParams> = ProcedureParams<
-  AnyRootConfig,
-  any,
-  object,
-  TParams['_input_in'] extends AllButObject ? never : object,
-  TParams['_input_out'] extends AllButObject ? never : object,
-  any,
-  any
->;
+export type CompatibleExtendParams<TParams extends ProcedureParams> =
+  ProcedureParams<
+    AnyRootConfig,
+    any,
+    object,
+    TParams['_input_in'] extends AllButObject ? never : object,
+    TParams['_input_out'] extends AllButObject ? never : object,
+    any,
+    any
+  >;
 
 type CreateProcedureFromExtension<
   TPrev extends ProcedureParams,

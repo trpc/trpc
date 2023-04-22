@@ -1,7 +1,23 @@
 import { AnyRootConfig, ProcedureParams } from '.';
 import { ProcedureBuilder } from './internals';
 
-type AnyProcedureParams = any; //ProcedureParams<any, any, any, any, any, any, any>;
+type AnyProcedureParams = any;
+
+/**
+ * This is a compromise. We ban one possible property to ban all arrays.
+ * It prevents a whole class of errors while avoiding some TypeScript nastiness
+ */
+type AntiArray = { length?: never };
+
+type ValidParams = ProcedureParams<
+  AnyRootConfig,
+  object & AntiArray,
+  object & AntiArray,
+  object & AntiArray,
+  any,
+  any,
+  object & AntiArray
+>;
 
 type Extender<
   TNextBuilder extends ProcedureBuilder<any> = ProcedureBuilder<any>,
@@ -11,9 +27,9 @@ type Extender<
 
 type IsValid<T extends Extender> = T extends Extender<infer TNext>
   ? TNext extends ProcedureBuilder<infer $Params>
-    ? $Params extends { _input_in?: Array<any> } | { _input_out?: Array<any> }
-      ? never
-      : T
+    ? $Params extends ValidParams
+      ? T
+      : never
     : never
   : never;
 
@@ -23,7 +39,7 @@ export function createProcedureExtension<
 >(
   extender: TExtender extends IsValid<TExtender>
     ? TExtender
-    : 'Inputs may only be objects or never',
+    : 'Invalid Extension: Contexts and Inputs may only be objects or never',
 ): typeof extender {
   return extender;
 }

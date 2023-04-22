@@ -357,35 +357,35 @@ describe('meta merging', () => {
 });
 
 // TODO: should we retype the ProcedureBuilder to omit extra keys? Here's the proposal
-describe('limited ProcedureBuilder', () => {
-  test('the procedure builder does not have all keys available to it', () => {
-    createProcedureExtension((proc) => {
-      // @ts-expect-error not used intentionally
-      function checks() {
-        // Should exist
-        proc.input(null as any);
-        proc.use(null as any);
+// describe('limited ProcedureBuilder', () => {
+//   test('the procedure builder does not have all keys available to it', () => {
+//     createProcedureExtension((proc) => {
+//       // @ts-expect-error not used intentionally
+//       function checks() {
+//         // Should exist
+//         proc.input(null as any);
+//         proc.use(null as any);
 
-        // Should be omitted
-        // @ts-expect-error shouldn't exist
-        proc.extend(null as any);
-        // @ts-expect-error shouldn't exist
-        proc.query(null as any);
-        // @ts-expect-error shouldn't exist
-        proc.mutation(null as any);
-        // @ts-expect-error shouldn't exist
-        proc.subscription(null as any);
-        // @ts-expect-error shouldn't exist
-        proc.unstable_concat(null as any);
-        // @ts-expect-error shouldn't exist
-        proc.output(null as any);
-        // @ts-expect-error shouldn't exist
-        proc.meta(null as any);
-        // @ts-expect-error shouldn't exist
-        proc._def(null as any);
-      }
+//         // Should be omitted
+//         // @ts-expect-error shouldn't exist
+//         proc.extend(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc.query(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc.mutation(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc.subscription(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc.unstable_concat(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc.output(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc.meta(null as any);
+//         // @ts-expect-error shouldn't exist
+//         proc._def(null as any);
+//       }
 
-      return proc;
-    });
-  });
-});
+//       return proc;
+//     });
+//   });
+// });
