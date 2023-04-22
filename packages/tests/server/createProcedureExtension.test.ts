@@ -337,6 +337,56 @@ describe('context merging', () => {
   });
 });
 
+describe('outputs', () => {
+  test('output can be set', async () => {
+    const t = initTRPC.create();
+
+    const extension = createProcedureExtension((proc) => {
+      return proc.output(z.object({ foo: z.number() }));
+    });
+    const subject = t.procedure.extend(extension).query(() => {
+      return { foo: 1 } as any;
+    });
+
+    const result = await t.router({ subject }).createCaller({}).subject();
+    assertType<{ foo: number }>().is(result);
+  });
+
+  test('output survives extension', async () => {
+    const t = initTRPC.create();
+
+    const extension = createProcedureExtension((proc) => {
+      return proc;
+    });
+    const subject = t.procedure
+      .output(z.object({ foo: z.number() }))
+      .extend(extension)
+      .query(() => {
+        return { foo: 1 } as any;
+      });
+
+    const result = await t.router({ subject }).createCaller({}).subject();
+    assertType<{ foo: number }>().is(result);
+  });
+
+  test('output can be set after extension', async () => {
+    const t = initTRPC.create();
+
+    const extension = createProcedureExtension((proc) => {
+      return proc;
+    });
+    const subject = t.procedure
+      .extend(extension)
+      .output(z.object({ foo: z.number() }))
+      .query(() => {
+        return { foo: 1 } as any;
+      });
+
+    const result = await t.router({ subject }).createCaller({}).subject();
+    assertType<{ foo: number }>().is(result);
+  });
+});
+
 describe('meta merging', () => {
   test("meta cannot be set because it's not known", async () => {
     createProcedureExtension((proc) => {
@@ -355,37 +405,3 @@ describe('meta merging', () => {
     t.procedure.extend(extension).meta({ foo: 1 });
   });
 });
-
-// TODO: should we retype the ProcedureBuilder to omit extra keys? Here's the proposal
-// describe('limited ProcedureBuilder', () => {
-//   test('the procedure builder does not have all keys available to it', () => {
-//     createProcedureExtension((proc) => {
-//       // @ts-expect-error not used intentionally
-//       function checks() {
-//         // Should exist
-//         proc.input(null as any);
-//         proc.use(null as any);
-
-//         // Should be omitted
-//         // @ts-expect-error shouldn't exist
-//         proc.extend(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc.query(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc.mutation(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc.subscription(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc.unstable_concat(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc.output(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc.meta(null as any);
-//         // @ts-expect-error shouldn't exist
-//         proc._def(null as any);
-//       }
-
-//       return proc;
-//     });
-//   });
-// });
