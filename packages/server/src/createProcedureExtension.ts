@@ -35,10 +35,12 @@ type Extender<
   procedure: TBuilder,
 ) => TNextBuilder;
 
-type IsValid<T extends Extender> = T extends Extender<infer TNext>
+type IsValid<TExtender extends Extender> = TExtender extends Extender<
+  infer TNext
+>
   ? TNext extends ProcedureBuilder<infer $Params>
     ? $Params extends ValidParams
-      ? T
+      ? TExtender
       : never
     : never
   : never;
