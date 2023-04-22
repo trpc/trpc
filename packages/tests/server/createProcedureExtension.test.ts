@@ -350,6 +350,7 @@ describe('outputs', () => {
 
     const result = await t.router({ subject }).createCaller({}).subject();
     assertType<{ foo: number }>().is(result);
+    expect(result).toEqual({ foo: 1 });
   });
 
   test('output survives extension', async () => {
@@ -367,6 +368,7 @@ describe('outputs', () => {
 
     const result = await t.router({ subject }).createCaller({}).subject();
     assertType<{ foo: number }>().is(result);
+    expect(result).toEqual({ foo: 1 });
   });
 
   test('output can be set after extension', async () => {
@@ -384,6 +386,19 @@ describe('outputs', () => {
 
     const result = await t.router({ subject }).createCaller({}).subject();
     assertType<{ foo: number }>().is(result);
+    expect(result).toEqual({ foo: 1 });
+  });
+
+  test('output cannot be merged (yet)', async () => {
+    const t = initTRPC.create();
+
+    const extension = createProcedureExtension((proc) => {
+      return proc.output(z.object({ foo: z.number() }));
+    });
+
+    expect(() => {
+      t.procedure.extend(extension).output(z.object({ bar: z.number() }));
+    }).throws('Duplicate key output');
   });
 });
 
