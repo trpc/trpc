@@ -2,6 +2,7 @@ import {
   ProcedureBuilder,
   createProcedureExtension,
   initTRPC,
+  withPrequisites,
 } from '@trpc/server/src';
 import { z } from 'zod';
 
@@ -403,10 +404,17 @@ describe('outputs', () => {
 });
 
 describe('meta merging', () => {
-  test("meta cannot be set because it's not known", async () => {
-    createProcedureExtension((proc) => {
-      // @ts-expect-error meta cannot be set because it's not known
-      return proc.meta({ foo: 'bar' });
+  test('required meta can be set by extensions', async () => {
+    const t = initTRPC.meta<{ foo: number }>().create();
+
+    const extension = createProcedureExtension((proc) => {
+      return proc.meta({ foo: 1 });
+    });
+
+    t.procedure.extend(extension).use((opts) => {
+      assertType<{ foo: number } | undefined>().is(opts.meta);
+
+      return opts.next();
     });
   });
 
@@ -418,5 +426,47 @@ describe('meta merging', () => {
     });
 
     t.procedure.extend(extension).meta({ foo: 1 });
+  });
+});
+
+describe('root config', () => {
+  test('can define a root config', () => {
+    withPrequisites<{
+      context: { foo: number };
+    }>().createProcedureExtension((proc) => {
+      return proc;
+    });
+  });
+
+  test('can define a base context to expect', async () => {
+    const t = initTRPC.create();
+
+    const extension = withPrequisites<{
+      context: { foo: number };
+    }>().createProcedureExtension((proc) => {
+      return proc.use((opts) => {
+        assertType<{ foo: number }>().is(opts.ctx);
+
+        return opts.next();
+      });
+    });
+
+    t.procedure.extend(extension);
+  });
+
+  test('can define a base meta to expect', async () => {
+    const t = initTRPC.create();
+
+    const extension = withPrequisites<{
+      meta: { foo: number };
+    }>().createProcedureExtension((proc) => {
+      return proc.use((opts) => {
+        assertType<{ foo: number } | undefined>().is(opts.meta);
+
+        return opts.next();
+      });
+    });
+
+    t.procedure.extend(extension);
   });
 });

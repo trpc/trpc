@@ -1,16 +1,23 @@
 import { AnyRootConfig, ProcedureParams } from '.';
 import { ProcedureBuilder } from './internals';
+import { Simplify } from './types';
 
-type AnyProcedureParams = ProcedureParams<
-  AnyRootConfig,
-  any,
-  any,
-  any,
-  any,
-  any,
-  // Disallow meta setting for now
-  // tRPC may need some tweaks to allow extension of Meta types like ctx/input can be
-  never
+export type Root = {
+  context?: object;
+  meta?: object;
+};
+
+type IfObject<TType, TFallback> = TType extends object ? TType : TFallback;
+type BaseParams<TRootConfig extends Root = Root> = Simplify<
+  ProcedureParams<
+    AnyRootConfig,
+    IfObject<TRootConfig['context'], any>,
+    any,
+    any,
+    any,
+    any,
+    IfObject<TRootConfig['meta'], never>
+  >
 >;
 
 /**
@@ -19,39 +26,55 @@ type AnyProcedureParams = ProcedureParams<
  */
 type AntiArray = { length?: never };
 
-type ValidParams = ProcedureParams<
+type ValidParams<TRoot extends Root> = ProcedureParams<
   AnyRootConfig,
-  object & AntiArray,
+  IfObject<TRoot['context'], object & AntiArray>,
   object & AntiArray,
   object & AntiArray,
   any,
   any,
-  object & AntiArray
+  IfObject<TRoot['meta'], never>
 >;
 
 type Extender<
-  TNextBuilder extends ProcedureBuilder<AnyProcedureParams> = ProcedureBuilder<AnyProcedureParams>,
-> = <TBuilder extends ProcedureBuilder<AnyProcedureParams>>(
+  TRoot extends Root,
+  TNextBuilder extends ProcedureBuilder<BaseParams<TRoot>>,
+> = <TBuilder extends ProcedureBuilder<BaseParams<TRoot>>>(
   procedure: TBuilder,
 ) => TNextBuilder;
 
-type IsValid<TExtender extends Extender> = TExtender extends Extender<
+type IsValid<TExtender extends Extender<any, any>> = TExtender extends Extender<
+  infer TRoot,
   infer TNext
 >
   ? TNext extends ProcedureBuilder<infer $Params>
-    ? $Params extends ValidParams
+    ? $Params extends ValidParams<TRoot>
       ? TExtender
       : never
     : never
   : never;
 
-export function createProcedureExtension<
-  TNext extends ProcedureBuilder<AnyProcedureParams>,
-  TExtender extends Extender<TNext>,
->(
-  extender: TExtender extends IsValid<TExtender>
+type Validate<TExtender extends Extender<any, any>> =
+  TExtender extends IsValid<TExtender>
     ? TExtender
-    : 'Invalid Extension: Contexts and Inputs may only be objects or never',
-): typeof extender {
+    : 'Invalid Extension: Contexts and Inputs may only be objects or never';
+
+export function createProcedureExtension<
+  TNext extends ProcedureBuilder<BaseParams<Root>>,
+  TExtender extends Extender<Root, TNext>,
+>(extender: Validate<TExtender>): typeof extender {
   return extender;
+}
+
+export function withPrequisites<TRoot extends Root>() {
+  function createProcedureExtension<
+    TNext extends ProcedureBuilder<BaseParams<TRoot>>,
+    TExtender extends Extender<TRoot, TNext>,
+  >(extender: Validate<TExtender>): typeof extender {
+    return extender;
+  }
+
+  return {
+    createProcedureExtension,
+  };
 }

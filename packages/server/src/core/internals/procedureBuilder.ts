@@ -312,7 +312,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       }) as AnyProcedureBuilder;
     },
     extend(extender) {
-      return extender(this);
+      return extender(this) as any;
     },
     query(resolver) {
       return createResolver(
