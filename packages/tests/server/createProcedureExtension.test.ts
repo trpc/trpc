@@ -161,27 +161,17 @@ describe('input merging', () => {
   });
 
   test('merging array onto object is type error', async () => {
-    const t = initTRPC.create();
-
     // @ts-expect-error returning array inputs is banned
     const extension = createProcedureExtension((proc) => {
       return proc.input(z.array(z.object({ orgId: z.number() })));
     });
-
-    t.procedure.input(z.object({ name: z.string() })).extend(extension);
   });
 
   test('merging arrays is type error', async () => {
-    const t = initTRPC.create();
-
     // @ts-expect-error returning array inputs is banned
     const extension = createProcedureExtension((proc) => {
       return proc.input(z.array(z.object({ orgId: z.number() })));
     });
-
-    t.procedure
-      .input(z.array(z.object({ name: z.string() })))
-      .extend(extension);
   });
 });
 
@@ -353,6 +343,16 @@ describe('meta merging', () => {
       // @ts-expect-error meta cannot be set because it's not known
       return proc.meta({ foo: 'bar' });
     });
+  });
+
+  test('meta survives extensions', async () => {
+    const t = initTRPC.meta<{ foo: number }>().create();
+
+    const extension = createProcedureExtension((proc) => {
+      return proc;
+    });
+
+    t.procedure.extend(extension).meta({ foo: 1 });
   });
 });
 

@@ -1,7 +1,17 @@
 import { AnyRootConfig, ProcedureParams } from '.';
 import { ProcedureBuilder } from './internals';
 
-type AnyProcedureParams = any;
+type AnyProcedureParams = ProcedureParams<
+  AnyRootConfig,
+  any,
+  any,
+  any,
+  any,
+  any,
+  // Disallow meta setting for now
+  // tRPC may need some tweaks to allow extension of Meta types like ctx/input can be
+  never
+>;
 
 /**
  * This is a compromise. We ban one possible property to ban all arrays.
@@ -20,8 +30,8 @@ type ValidParams = ProcedureParams<
 >;
 
 type Extender<
-  TNextBuilder extends ProcedureBuilder<any> = ProcedureBuilder<any>,
-> = <TBuilder extends ProcedureBuilder<any>>(
+  TNextBuilder extends ProcedureBuilder<AnyProcedureParams> = ProcedureBuilder<AnyProcedureParams>,
+> = <TBuilder extends ProcedureBuilder<AnyProcedureParams>>(
   procedure: TBuilder,
 ) => TNextBuilder;
 
