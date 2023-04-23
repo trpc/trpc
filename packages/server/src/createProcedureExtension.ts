@@ -1,18 +1,17 @@
 import { AnyRootConfig, ProcedureParams } from '.';
+import {
+  AntiArray,
+  DefaultRoot,
+  IfObject,
+  Root,
+} from './core/internals/procedureBuilder';
 import { ProcedureBuilder } from './internals';
 import { Simplify } from './types';
 
-export type Root = {
-  context?: object;
-  meta?: object;
-};
-
-type IfObject<TType, TFallback> = TType extends object & AntiArray
-  ? TType
-  : TFallback;
-type BaseParams<TRootConfig extends Root = Root> = Simplify<
+// Must match ExtensionPrequisites in structure
+export type BaseParams<TRootConfig extends Root = DefaultRoot> = Simplify<
   ProcedureParams<
-    AnyRootConfig,
+    any,
     IfObject<TRootConfig['context'], any>,
     any,
     any,
@@ -21,12 +20,6 @@ type BaseParams<TRootConfig extends Root = Root> = Simplify<
     IfObject<TRootConfig['meta'], never>
   >
 >;
-
-/**
- * This is a compromise. We ban one possible property to ban all arrays.
- * It prevents a whole class of errors while avoiding some TypeScript nastiness
- */
-type AntiArray = { length?: never };
 
 type ValidParams<TRoot extends Root> = ProcedureParams<
   AnyRootConfig,
@@ -62,13 +55,6 @@ type Validate<TExtender extends Extender<any, any>> =
     ? TExtender
     : 'Invalid Extension: Contexts and Inputs may only be objects or never';
 
-export function createProcedureExtension<
-  TNext extends ProcedureBuilder<BaseParams<Root>>,
-  TExtender extends Extender<Root, TNext>,
->(extender: Validate<TExtender>): typeof extender {
-  return extender;
-}
-
 export function withPrequisites<TRoot extends Root>() {
   function createProcedureExtension<
     TNext extends ProcedureBuilder<BaseParams<TRoot>>,
@@ -81,3 +67,6 @@ export function withPrequisites<TRoot extends Root>() {
     createProcedureExtension,
   };
 }
+
+export const createProcedureExtension =
+  withPrequisites<DefaultRoot>().createProcedureExtension;

@@ -53,16 +53,63 @@ type AllButObject =
   // eslint-disable-next-line @typescript-eslint/ban-types
   | Function;
 
+export type AnyProcedureParams = ProcedureParams<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
+
+// Goal: Limit returned extension builder to types which are compatible with this builder
 export type CompatibleExtendParams<TParams extends ProcedureParams> =
   ProcedureParams<
     AnyRootConfig,
-    object,
-    TParams['_input_in'] extends AllButObject ? never : object,
-    TParams['_input_out'] extends AllButObject ? never : object,
+    object & AntiArray,
+    object & AntiArray,
+    object & AntiArray,
     any,
     any,
-    any
+    TParams['_meta']
   >;
+
+// Goal: Limit extension builders to those which have compatible initial states
+type PossibleExtensionPrequisites<TParams extends ProcedureParams> =
+  ProcedureParams<
+    any,
+    IfObject<TParams['_ctx_out'], object>,
+    any,
+    any,
+    any,
+    any,
+    IfObject<TParams['_meta'], never>
+  >;
+
+// Goal: extensions may define mandatory ctx/meta setup, this needs checking for compatibility
+type CheckExtensionPrequisites<
+  TParams extends AnyProcedureParams,
+  $ExtensionInitialParams extends AnyProcedureParams,
+> = PossibleExtensionPrequisites<TParams> extends $ExtensionInitialParams
+  ? $ExtensionInitialParams
+  : 'Extension Prerequitives not met';
+
+export type Root = {
+  context?: object;
+  meta?: object;
+};
+export type DefaultRoot = object;
+
+/**
+ * This is a compromise. We ban one possible property to ban all arrays.
+ * It prevents a whole class of errors while avoiding some TypeScript nastiness
+ */
+export type AntiArray = { length?: never };
+
+export type IfObject<TType, TFallback> = TType extends object & AntiArray
+  ? TType
+  : TFallback;
 
 type CreateProcedureFromExtension<
   TPrev extends ProcedureParams,
@@ -188,8 +235,20 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a procedure extension, which may append freely to the ProcedureBuilder instance.
    */
-  extend<$Params extends CompatibleExtendParams<TParams>>(
-    extender: (base: AnyProcedureBuilder) => ProcedureBuilder<$Params>,
+  extend<
+    $PreRequisites extends AnyProcedureParams,
+    $Params extends CompatibleExtendParams<TParams>,
+  >(
+    extender: (
+      base: ProcedureBuilder<
+        $PreRequisites extends CheckExtensionPrequisites<
+          TParams,
+          $PreRequisites
+        >
+          ? $PreRequisites
+          : never
+      >,
+    ) => ProcedureBuilder<$Params>,
   ): CreateProcedureFromExtension<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
@@ -312,7 +371,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       }) as AnyProcedureBuilder;
     },
     extend(extender) {
-      return extender(this) as any;
+      return extender(this as any) as any;
     },
     query(resolver) {
       return createResolver(
