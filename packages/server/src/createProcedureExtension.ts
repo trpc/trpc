@@ -7,7 +7,9 @@ export type Root = {
   meta?: object;
 };
 
-type IfObject<TType, TFallback> = TType extends object ? TType : TFallback;
+type IfObject<TType, TFallback> = TType extends object & AntiArray
+  ? TType
+  : TFallback;
 type BaseParams<TRootConfig extends Root = Root> = Simplify<
   ProcedureParams<
     AnyRootConfig,
