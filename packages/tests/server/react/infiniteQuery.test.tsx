@@ -393,14 +393,24 @@ describe('Infinite Query', () => {
     }
   });
 
-  test('cant useInfiniteQuery on on procedures that do not have a cursor', () => {
+  test('type tests', () => {
     ignoreErrors(() => {
       const { trpc } = factory;
       trpc.allPosts.useQuery();
       // @ts-expect-error cursor is not defined
       trpc.allPosts.useInfiniteQuery();
       // this is cool:
-      trpc.paginatedPosts.useInfiniteQuery({});
+      trpc.paginatedPosts.useInfiniteQuery({
+        limit: 2,
+      });
+
+      // @ts-expect-error too wide
+      trpc.paginatedPosts.useInfiniteQuery(
+        {
+          // does not exist
+          foo: 'bar',
+        },
+      });
     });
   });
 });

@@ -101,7 +101,7 @@ export type DecorateProcedure<
         type?: QueryType,
       ) => QueryKey;
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
-    } & ({ cursor?: any } extends inferProcedureInput<TProcedure>
+    } & (inferProcedureInput<TProcedure> extends { cursor?: any }
       ? {
           useInfiniteQuery: <
             _TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
