@@ -68,13 +68,16 @@ export function createAppRouter() {
     }),
     paginatedPosts: t.procedure
       .input(
-        z.object({
-          limit: z.number().min(1).max(100).nullish(),
-          cursor: z.number().nullish(),
-        }),
+        z
+          .object({
+            limit: z.number().min(1).max(100).nullish(),
+            cursor: z.number().nullish(),
+          })
+          .optional(),
       )
-      .query(({ input }) => {
+      .query((opts) => {
         const items: typeof db.posts = [];
+        const input = opts.input ?? {};
         const limit = input.limit ?? 50;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;

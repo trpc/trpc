@@ -1,3 +1,4 @@
+import { ignoreErrors } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { Post, createAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -390,5 +391,16 @@ describe('Infinite Query', () => {
       expect(data).toContain('first post');
       expect(data).toContain('second post');
     }
+  });
+
+  test('cant useInfiniteQuery on on procedures that do not have a cursor', () => {
+    ignoreErrors(() => {
+      const { trpc } = factory;
+      trpc.allPosts.useQuery();
+      // @ts-expect-error cursor is not defined
+      trpc.allPosts.useInfiniteQuery();
+      // this is cool:
+      trpc.paginatedPosts.useInfiniteQuery({});
+    });
   });
 });
