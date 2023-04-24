@@ -11,7 +11,6 @@ module.exports = {
       items: [
         'main/getting-started',
         'main/concepts',
-        'main/anatomy-of-trpc',
         'main/quickstart',
         'main/videos-and-community-resources',
         'main/example-apps',
