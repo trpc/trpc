@@ -1,7 +1,7 @@
 ---
 id: validators
-title: Validating Inputs & Outputs
-sidebar_label: Validating Inputs & Outputs
+title: Input & Output Validators
+sidebar_label: Input & Output Validators
 slug: /server/validators
 ---
 
@@ -53,7 +53,7 @@ const procedureWhichRejectsOutOfTownFolk = t.procedure
     if (opts.input.townName !== 'Pucklechurch') {
       throw new TRPCError({
         code: 'FORBIDDEN',
-        message: "We don't take kindly to out-of-town folk"
+        message: "We don't take kindly to out-of-town folk",
       });
     }
 
@@ -103,15 +103,20 @@ export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
+    .input(
+      z.object({
+        name: z.string(),
+      }),
+    )
     .output(
       z.object({
         greeting: z.string(),
       }),
     )
-    // expects return type of { greeting: string }
-    .query(() => {
+    .query(({ input }) => {
+      //      ^?
       return {
-        greeting: 'hello',
+        greeting: `hello ${input.name}`,
       };
     }),
 });
@@ -130,16 +135,22 @@ export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
+    .input((value: any): { name: string } => {
+      if (value && typeof value.name === 'string') {
+        return { name: value.name };
+      }
+      throw new Error('Greeting not found');
+    })
     .output((value: any) => {
       if (value && typeof value.greeting === 'string') {
         return { greeting: value.greeting };
       }
       throw new Error('Greeting not found');
     })
-    // expects return type of { greeting: string }
-    .query(() => {
+    .query(({ input }) => {
+      //      ^?
       return {
-        greeting: 'hello',
+        greeting: `hello ${input.name}`,
       };
     }),
 });
@@ -157,14 +168,20 @@ export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
+    .input(
+      yup.object({
+        name: yup.string().required(),
+      }),
+    )
     .output(
       yup.object({
         greeting: yup.string().required(),
       }),
     )
-    .query(() => {
+    .query(({ input }) => {
+      //      ^?
       return {
-        greeting: 'hello',
+        greeting: `hello ${input.name}`,
       };
     }),
 });
@@ -182,11 +199,11 @@ export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
-    .input(string())
+    .input(object({ name: string() }))
     .output(object({ greeting: string() }))
     .query(({ input }) => {
       return {
-        greeting: input,
+        greeting: `hello ${input.name}`,
       };
     }),
 });
@@ -198,6 +215,8 @@ export type AppRouter = typeof appRouter;
 
 A number of other community libraries have opted to support tRPC integrations::
 
-* [typia](https://typia.io/docs/utilization/trpc/)
+- [typia](https://typia.io/docs/utilization/trpc/)
+- [ArkType](https://github.com/arktypeio/arktype#trpc)
+- [scale-ts](https://github.com/paritytech/scale-ts)
 
 If you would like your own validator to be list here, please feel free to open a pull request.
