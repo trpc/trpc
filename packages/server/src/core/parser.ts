@@ -24,10 +24,10 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserEffectSchemaEsque<TInput> = {
+  To(_: TInput): TInput;
   ast: {
     _tag: string;
   };
-  To(_: TInput): TInput;
 };
 
 export type ParserWithoutInput<TInput> =

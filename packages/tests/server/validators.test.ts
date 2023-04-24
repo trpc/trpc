@@ -1,4 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { toSelfValidatingSchema } from '@daotl-effect/prelude';
 import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server/src';
 import myzod from 'myzod';
@@ -201,36 +202,6 @@ test('scale', async () => {
   await close();
 });
 
-test('effect schema', async () => {
-  function addValidate<From, To = From>(s: S.Schema<From, To>) {
-    return {
-      ...s,
-      validate: S.validate(s),
-    };
-  }
-
-  const t = initTRPC.create();
-  const router = t.router({
-    num: t.procedure.input(addValidate(S.number)).query(({ input }) => {
-      expectTypeOf(input).toMatchTypeOf<number>();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, proxy } = routerToServerAndClientNew(router);
-  const res = await proxy.num.query(13);
-
-  // @ts-expect-error this only accepts a `number`
-  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: error(s) found
-    └─ Expected number, actual "13"]
-  `);
-  expect(res.input).toBe(13);
-  await close();
-});
-
 test('myzod', async () => {
   const t = initTRPC.create();
 
@@ -249,6 +220,32 @@ test('myzod', async () => {
     `[TRPCClientError: expected type to be number but got string]`,
   );
   expect(res.input).toBe(123);
+  await close();
+});
+
+test('effect schema', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure
+      .input(toSelfValidatingSchema(S.number))
+      .query(({ input }) => {
+        expectTypeOf(input).toMatchTypeOf<number>();
+        return {
+          input,
+        };
+      }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(13);
+
+  // @ts-expect-error this only accepts a `number`
+  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
+	[TRPCClientError: error(s) found
+	└─ Expected number, actual "13"]
+`);
+  expect(res.input).toBe(13);
   await close();
 });
 
