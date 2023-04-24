@@ -20,22 +20,28 @@ export function ConceptsChart() {
           </td>
           <td>
             API endpoint - can be a{' '}
-            <strong className="text-teal-700 dark:text-teal-400">query</strong>{' '}
-            or a{' '}
+            <strong className="text-teal-700 dark:text-teal-400">query</strong>,{' '}
             <strong className="text-teal-700 dark:text-teal-400">
               mutation
             </strong>
+            , or{' '}
+            <strong className="text-teal-700 dark:text-teal-400">
+              subscription
+            </strong>
+            .
           </td>
         </tr>
         <tr>
           <td>
-            <a href="/foo">
-              <strong className="text-teal-700 dark:text-teal-400">
-                Query
-              </strong>
-            </a>
+            <strong className="text-teal-700 dark:text-teal-400">Query</strong>
           </td>
-          <td>Get some data</td>
+          <td>
+            A{' '}
+            <strong className="text-green-600 dark:text-green-400">
+              procedure
+            </strong>{' '}
+            that gets some data.
+          </td>
         </tr>
         <tr>
           <td>
@@ -43,7 +49,29 @@ export function ConceptsChart() {
               Mutation
             </strong>
           </td>
-          <td>Create, update, or delete some data</td>
+          <td>
+            A{' '}
+            <strong className="text-green-600 dark:text-green-400">
+              procedure
+            </strong>{' '}
+            that creates, updates, or deletes some data.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="/docs/subscriptions">
+              <strong className="text-teal-700 dark:text-teal-400">
+                Subscription
+              </strong>
+            </a>
+          </td>
+          <td>
+            A{' '}
+            <strong className="text-green-600 dark:text-green-400">
+              procedure
+            </strong>{' '}
+            that creates a persistent connection and listens to changes.
+          </td>
         </tr>
         <tr>
           <td>
