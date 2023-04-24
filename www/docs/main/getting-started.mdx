@@ -16,10 +16,10 @@ For a quick video overview of tRPC's concepts, check out the videos below:
 
 The fastest way to try tRPC is in an online REPL. Here are some options you can try out:
 
-- [Minimal Example](https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal?file=server%2Findex.ts&file=client%2Findex.ts&view=editor) - a minimal Node.js http server, and a client that calls a function on the server and logs the request to the console
+- [Minimal Example](https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal?file=server%2Findex.ts&file=client%2Findex.ts&view=editor) - a minimal Node.js http server, and a client that calls a function on the server and logs the request to the console.
 - [Minimal Next.js Example](https://stackblitz.com/github/trpc/trpc/tree/main/examples/next-minimal-starter?file=src%2Fpages%2Fapi%2Ftrpc%2F[trpc].ts&file=src%2Fpages%2Findex.tsx) - the smallest possible Next.js app that uses tRPC. It has a single endpoint that returns a string, and a page that calls that endpoint and displays the result.
 
-If you prefer to get started in your local environment, you can use one of our [example apps](./example-apps.mdx) to get a starter project that you can experiment with locally.
+If you prefer to get started in your local environment, you can use one of our [example apps](./example-apps.mdx) as a starter project that you can experiment with locally.
 
 ## Use tRPC
 
@@ -35,19 +35,17 @@ If you prefer to get started in your local environment, you can use one of our [
 
 Since tRPC can live inside of many different frameworks, you will first need to decide where you want to use it.
 
-For the backend, there are [adapters](../server/adapters-intro.md) for a range of frameworks as well as vanilla Node.js. For the frontend, you can use our [React](../reactjs/introduction.mdx) or [Next.js](../nextjs/introduction.mdx) integrations, a [third-party integration](../community/awesome-trpc.mdx#frontend-frameworks) for a variety of other frameworks, or the [Vanilla Client](../client/setup.mdx), which works anywhere JavaScript runs.
+On the backend, there are [adapters](../server/adapters-intro.md) for a range of frameworks as well as vanilla Node.js. On the frontend, you can use our [React](../reactjs/introduction.mdx) or [Next.js](../nextjs/introduction.mdx) integrations, a [third-party integration](../community/awesome-trpc.mdx#frontend-frameworks) for a variety of other frameworks, or the [Vanilla Client](../client/setup.mdx), which works anywhere JavaScript runs.
 
-After choosing your stack, you either scaffold your app using a [template](./example-apps.mdx), or start from scratch using the documentation for your chosen backend and frontend integration.
+After choosing your stack, you can either scaffold your app using a [template](./example-apps.mdx), or start from scratch using the documentation for your chosen backend and frontend integration.
 
 ### Adding tRPC to an existing project
 
-Adding tRPC to an existing project is not significantly different from starting a new project, so the same resources apply. The main challenge is that an existing project will contain more stuff than a new project, so it can feel difficult to know where the touching points are. Here are some tips:
+Adding tRPC to an existing project is not significantly different from starting a new project, so the same resources apply. The main challenge is that it can feel difficult to know how to integrate tRPC with your existing application. Here are some tips:
 
-- You don't need to port all of your existing backend logic to tRPC. A common migration strategy is to initally only use tRPC for new endpoints, and then gradually migrate existing endpoints to tRPC.
+- You don't need to port all of your existing backend logic to tRPC. A common migration strategy is to initally only use tRPC for new endpoints, and only later migrate existing endpoints to tRPC.
 - If your project already uses Tanstack Query, make sure you don't end up with two `QueryClientProvider` components. This can happen especially in Next.js, where the `withTRPC` function already includes a QueryClientProvider of its own. If you are using `withTRPC` in your app, you should remove the `QueryClientProvider` from your `_app.tsx` file.
-- If you're not sure where to start, check the documentation for your backend [adapter](../server/adapters-intro.md) and frontend implementation, as well as
-- check docs your adapter and integration
-- check sample projects
+- If you're not sure where to start, check the documentation for your backend [adapter](../server/adapters-intro.md) and frontend implementation, as well as the [example apps](./example-apps.mdx).
 
 ## Join our Community
 
