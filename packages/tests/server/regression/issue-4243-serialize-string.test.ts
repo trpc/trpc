@@ -55,7 +55,7 @@ function mockRes() {
   return { res, json, setHeader, end };
 }
 
-test('string stringified', async () => {
+test('string input is properly serialized and deserialized', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
