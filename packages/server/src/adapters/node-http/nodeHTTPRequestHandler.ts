@@ -67,6 +67,7 @@ export async function nodeHTTPRequestHandler<
       router: opts.router,
       req,
       error: bodyResult.ok ? null : bodyResult.error,
+      preparsedBody: opts.preparsedBody,
       onError(o) {
         opts?.onError?.({
           ...o,
