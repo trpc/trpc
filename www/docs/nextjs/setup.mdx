@@ -307,3 +307,14 @@ export const trpc = createTRPCNext<AppRouter>({
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
 You can also find information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/usemutation) now that you're using `@trpc/react-query`.
+
+If you for some reason want to disable bodyParser in your next.js route, you need to pass the following parameter to createNextApiHandler:
+
+```ts
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext: () => ({}),
+  // Body is preparsed by default, this tells hadler it needs to be parsed
+  preparsedBody: false,
+});
+```
