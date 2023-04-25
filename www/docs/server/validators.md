@@ -17,10 +17,12 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 export const t = initTRPC.create();
+const publicProcedure = t.procedure
+
 // ---cut---
 
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input(
       z.object({
         name: z.string(),
@@ -98,8 +100,10 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input((value: any): { name: string } => {
       if (value && typeof value.name === 'string') {
         return { name: value.name };
@@ -137,8 +141,10 @@ import { z } from 'zod';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input(
       z.object({
         name: z.string(),
@@ -168,8 +174,10 @@ import * as yup from 'yup';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input(
       yup.object({
         name: yup.string().required(),
@@ -199,8 +207,10 @@ import { object, string } from 'superstruct';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input(object({ name: string() }))
     .output(object({ greeting: string() }))
     .query(({ input }) => {
@@ -222,8 +232,10 @@ import * as $ from 'scale-codec';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input($.object($.field('name', $.str)))
     .output($.object($.field('greeting', $.str)))
     .query(({ input }) => {
@@ -245,10 +257,12 @@ import typia from 'typia';
 import { v4 } from 'uuid';
 import { IBbsArticle } from '../structures/IBbsArticle';
 
-const server = initTRPC.create();
+const t = initTRPC.create();
 
-export const appRouter = server.router({
-  store: server.procedure
+const publicProcedure = t.procedure
+
+export const appRouter = t.router({
+  store: publicProcedure
     .input(typia.createAssert<IBbsArticle.IStore>())
     .output(typia.createAssert<IBbsArticle>())
     .query(({ input }) => {
@@ -273,8 +287,10 @@ import { type } from 'arktype';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input(type({ name: 'string' }).assert)
     .output(type({ greeting: 'string' }).assert)
     .query(({ input }) => {
@@ -296,8 +312,10 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
+const publicProcedure = t.procedure
+
 export const appRouter = t.router({
-  hello: t.procedure
+  hello: publicProcedure
     .input(S.parse(S.struct({ name: S.string })))
     .output(S.parse(S.struct({ greeting: S.string })))
     .query(({ input }) => {
