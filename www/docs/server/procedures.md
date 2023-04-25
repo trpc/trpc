@@ -157,6 +157,27 @@ export const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [@effect/schema](https://github.com/Effect-TS/schema)
+
+Wrap your schema in `S.parse` to make it compatible with tRPC.
+
+```tsx
+import { initTRPC } from '@trpc/server';
+import * as S from '@effect/schema/Schema';
+
+export const t = initTRPC.create();
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(S.parse(
+      S.struct({ text: S.string() })
+    ))
+    .query(({ input }) => ({ greeting: `hello ${input.text}` })),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Multiple input parsers {#multiple-input-parsers}
 
 You're able to chain multiple parsers in order to make reusable publicProcedures for different parts of your application.

@@ -226,23 +226,25 @@ test('effect schema', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(S.parse(S.number)).query(({ input }) => {
-      expectTypeOf(input).toMatchTypeOf<number>();
-      return {
-        input,
-      };
-    }),
+    num: t.procedure
+      .input(S.parse(S.struct({ text: S.string })))
+      .query(({ input }) => {
+        expectTypeOf(input).toMatchTypeOf<{ text: string }>();
+        return {
+          input,
+        };
+      }),
   });
 
   const { close, proxy } = routerToServerAndClientNew(router);
-  const res = await proxy.num.query(13);
+  const res = await proxy.num.query({ text: '123' });
+  expect(res.input).toMatchObject({ text: '123' });
 
   // @ts-expect-error this only accepts a `number`
   await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
 	[TRPCClientError: error(s) found
-	└─ Expected number, actual "13"]
+	└─ Expected a generic object, actual "13"]
 `);
-  expect(res.input).toBe(13);
   await close();
 });
 
