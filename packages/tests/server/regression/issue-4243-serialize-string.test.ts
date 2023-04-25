@@ -8,6 +8,7 @@ function mockReq({
   method = 'GET',
   headers = {},
   body,
+  parseBody = true,
 }: {
   query: Record<string, any>;
   headers?: Record<string, string>;
@@ -21,6 +22,7 @@ function mockReq({
     | 'PUT'
     | 'TRACE';
   body?: any;
+  parseBody?: boolean;
 }) {
   const req = new EventEmitter() as any;
 
@@ -28,7 +30,8 @@ function mockReq({
   req.query = query;
   if (
     'content-type' in headers &&
-    headers['content-type'] === 'application/json'
+    headers['content-type'] === 'application/json' &&
+    parseBody
   ) {
     req.body = JSON.parse(body);
   } else {
@@ -55,39 +58,116 @@ function mockRes() {
   return { res, json, setHeader, end };
 }
 
-test('string input is properly serialized and deserialized', async () => {
+describe('string inputs are properly serialized and deserialized', () => {
   const t = initTRPC.create();
 
   const router = t.router({
     doSomething: t.procedure.input(z.string()).mutation((opts) => {
-      return `did ${opts.input}` as const;
+      return `did mutate ${opts.input}` as const;
+    }),
+    querySomething: t.procedure.input(z.string()).query((opts) => {
+      return `did query ${opts.input}` as const;
     }),
   });
 
   const handler = trpcNext.createNextApiHandler({
     router,
-    maxBodySize: 1,
   });
 
-  const { req } = mockReq({
-    query: {
-      trpc: ['doSomething'],
-    },
-    headers: {
-      'content-type': 'application/json',
-    },
-    method: 'POST',
-    body: JSON.stringify('something'),
+  test('in mutations', async () => {
+    const { req } = mockReq({
+      query: {
+        trpc: ['doSomething'],
+      },
+      headers: {
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify('something'),
+    });
+    const { res, end } = mockRes();
+    await handler(req, res);
+    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    expect(res.statusCode).toBe(200);
+    expect(json).toMatchInlineSnapshot(`
+      Object {
+        "result": Object {
+          "data": "did mutate something",
+        },
+      }
+    `);
   });
-  const { res, end } = mockRes();
-  await handler(req, res);
-  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
-  expect(res.statusCode).toBe(200);
-  expect(json).toMatchInlineSnapshot(`
-  Object {
-    "result": Object {
-      "data": "did something",
-    },
-  }
-`);
+
+  test('in queries', async () => {
+    const { req } = mockReq({
+      query: {
+        trpc: ['querySomething'],
+        input: JSON.stringify('something'),
+      },
+      method: 'GET',
+    });
+    const { res, end } = mockRes();
+    await handler(req, res);
+    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    expect(res.statusCode).toBe(200);
+    expect(json).toMatchInlineSnapshot(`
+      Object {
+        "result": Object {
+          "data": "did query something",
+        },
+      }
+    `);
+  });
+});
+
+describe('works good with bodyParser disable', () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    doSomething: t.procedure.input(z.string()).mutation((opts) => {
+      return `did mutate ${opts.input}` as const;
+    }),
+    querySomething: t.procedure.input(z.string()).query((opts) => {
+      return `did query ${opts.input}` as const;
+    }),
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    preparsedBody: false,
+    router,
+  });
+
+  test('in mutations', async () => {
+    const { req } = mockReq({
+      query: {
+        trpc: ['doSomething'],
+      },
+      headers: {
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+      parseBody: false,
+      body: JSON.stringify('something'),
+    });
+    const { res, end } = mockRes();
+    await handler(req, res);
+    const json: any = JSON.parse((end.mock.calls[0] as any)[0]).result.data;
+    expect(res.statusCode).toBe(200);
+    expect(json).toMatchInlineSnapshot('"did mutate something"');
+  });
+  test('in queries', async () => {
+    const { req } = mockReq({
+      query: {
+        trpc: ['querySomething'],
+        input: JSON.stringify('something'),
+      },
+      parseBody: false,
+      method: 'GET',
+    });
+    const { res, end } = mockRes();
+    await handler(req, res);
+    const json: any = JSON.parse((end.mock.calls[0] as any)[0]).result.data;
+    expect(res.statusCode).toBe(200);
+    expect(json).toMatchInlineSnapshot('"did query something"');
+  });
 });
