@@ -23,20 +23,12 @@ export type ParserScaleEsque<TInput> = {
   assert(value: unknown): asserts value is TInput;
 };
 
-export type ParserEffectSchemaEsque<TInput> = {
-  To(_: TInput): TInput;
-  ast: {
-    _tag: string;
-  };
-};
-
 export type ParserWithoutInput<TInput> =
   | ParserYupEsque<TInput>
   | ParserSuperstructEsque<TInput>
   | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
-  | ParserScaleEsque<TInput>
-  | ParserEffectSchemaEsque<TInput>;
+  | ParserScaleEsque<TInput>;
 
 export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
   TInput,

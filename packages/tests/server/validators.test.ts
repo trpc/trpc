@@ -1,5 +1,4 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { toSelfValidatingSchema } from '@daotl-effect/prelude';
 import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server/src';
 import myzod from 'myzod';
@@ -227,14 +226,12 @@ test('effect schema', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure
-      .input(toSelfValidatingSchema(S.number))
-      .query(({ input }) => {
-        expectTypeOf(input).toMatchTypeOf<number>();
-        return {
-          input,
-        };
-      }),
+    num: t.procedure.input(S.parse(S.number)).query(({ input }) => {
+      expectTypeOf(input).toMatchTypeOf<number>();
+      return {
+        input,
+      };
+    }),
   });
 
   const { close, proxy } = routerToServerAndClientNew(router);

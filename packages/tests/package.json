@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@daotl-effect/prelude": "^0.0.11",
     "@effect/schema": "^0.16.0",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
