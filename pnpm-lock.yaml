@@ -1480,6 +1480,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.0.0
         version: 4.20230215.0
+      '@effect/schema':
+        specifier: ^0.17.2
+        version: 0.17.2
       '@fastify/websocket':
         specifier: ^7.1.2
         version: 7.1.2
@@ -1528,6 +1531,9 @@ importers:
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
+      arktype:
+        specifier: 1.0.14-alpha
+        version: 1.0.14-alpha
       concurrently:
         specifier: ^8.0.0
         version: 8.0.0
@@ -1577,7 +1583,7 @@ importers:
         specifier: ^1.7.4
         version: 1.11.0
       superstruct:
-        specifier: ^1.0.0
+        specifier: ^1.0.3
         version: 1.0.3
       tsx:
         specifier: ^3.12.3
@@ -6509,13 +6515,11 @@ packages:
 
   /@effect/data@0.12.2:
     resolution: {integrity: sha512-bmWRTcsSRG1FlBswT+D8SxW6r3c4B3pKJrjYfitCD03tXHnup5gLHaWqbFgIjiyYITS+UsJRRjVrNxvyGG4ZNQ==}
-    dev: true
 
   /@effect/io@0.25.6:
     resolution: {integrity: sha512-08cJ5KkkArhxGig5UmoD/xFq2gsRGVWcVsk5OyitZuXzWO4Pd24zusqA8gtTtmeEmdTcN966JQpalWOnPPoatA==}
     dependencies:
       '@effect/data': 0.12.2
-    dev: true
 
   /@effect/schema@0.17.2:
     resolution: {integrity: sha512-HcXZBGtPzhuX/RnIkaVIlYGp1ThuAyl34YNhxrhUQ8TdOnRFkx3tAbmXYpkWkrlo92Ou+/Z0ZixEaSFn7x2shw==}
@@ -6523,7 +6527,6 @@ packages:
       '@effect/data': 0.12.2
       '@effect/io': 0.25.6
       fast-check: 3.8.1
-    dev: true
 
   /@emotion/is-prop-valid@0.8.8:
     resolution: {integrity: sha512-u5WtneEAr5IDG2Wv65yhunPSMLIpuKsbuOktRojfrEiEvRyC85LgPMZI63cr7NUqT8ZIGdSVg8ZKGxIug4lXcA==}
@@ -10853,7 +10856,6 @@ packages:
   /arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
     requiresBuild: true
-    dev: true
 
   /array-differ@3.0.0:
     resolution: {integrity: sha512-THtfYS6KtME/yIAhKjZ2ul7XI96lQGHRputJQHO80LAWQnuGP4iCIN8vdMRboGbIEYBwU33q8Tch1os2+X0kMg==}
@@ -14510,7 +14512,6 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       pure-rand: 6.0.2
-    dev: true
 
   /fast-content-type-parse@1.0.0:
     resolution: {integrity: sha512-Xbc4XcysUXcsP5aHUU7Nq3OwvHq97C+WnbkeIefpeYLX+ryzFJlU6OStFJhs6Ol0LkUGpcK+wL0JwfM+FCU5IA==}
@@ -20083,7 +20084,6 @@ packages:
 
   /pure-rand@6.0.2:
     resolution: {integrity: sha512-6Yg0ekpKICSjPswYOuC5sku/TSWaRYlA0qsXqJgM/d/4pLPHPuTxK7Nbf7jFKzAeedUhR8C7K9Uv63FBsSo8xQ==}
-    dev: true
 
   /q@1.5.1:
     resolution: {integrity: sha512-kV/CThkXo6xyFEZUugw/+pIOywXcDbFYgSct5cT3gqlbkBE1SJdwy6UQoZvodiWF/ckQLZyDE/Bu1M6gVu5lVw==}
