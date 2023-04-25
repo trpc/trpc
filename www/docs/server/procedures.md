@@ -49,7 +49,7 @@ const appRouter = router({
 
 ## Reusable "Base Procedures" {#reusable-base-procedures}
 
-You can create reusable base procedures, which can be consumed by numerous procedures in your application. This is a key pattern for code and behaviour re-use in tRPC and every application is likely to need it.
+As a general pattern we recommend you rename and export `t.procedure` as `publicProcedure`, which then makes room for you to create other named procedures for specific use cases and export those too. This pattern is called "base procedures" and is a key pattern for code and behaviour re-use in tRPC; every application is likely to need it.
 
 The below example takes a user input and [authorizes](https://en.wikipedia.org/wiki/Authorization) them like protective towns-people. This is obviously a contrived example for simplicity, and not an appropriate way to securely authorize an application user, so in practice you may want to use some combination of [Headers](/docs/client/headers), [Context](context), [Middleware](middlewares), and [Metadata](metadata), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and authorize your users.
 
@@ -58,10 +58,13 @@ The below example takes a user input and [authorizes](https://en.wikipedia.org/w
 import { TRPCError, initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
+// ---cut---
+
 export const t = initTRPC.create();
 
-// ---cut---
-const authorizedProcedure = t.procedure
+export const publicProcedure = t.procedure
+
+export const authorizedProcedure = publicProcedure
   .input(z.object({ townName: z.string() }))
   .use((opts) => {
     if (opts.input.townName !== 'Pucklechurch') {
