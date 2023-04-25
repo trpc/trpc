@@ -216,19 +216,15 @@ export type AppRouter = typeof appRouter;
 ### With [scale-ts](https://github.com/paritytech/scale-ts)
 
 ```ts twoslash
-import * as $ from 'scale-codec';
 import { initTRPC } from '@trpc/server';
+import * as $ from 'scale-codec';
 
 export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
-    .input(
-      $.object($.field('name', $.str)),
-    )
-    .output(
-      $.object($.field('greeting', $.str)),
-    )
+    .input($.object($.field('name', $.str)))
+    .output($.object($.field('greeting', $.str)))
     .query(({ input }) => {
       //      ^?
       return {
@@ -243,27 +239,26 @@ export type AppRouter = typeof appRouter;
 ### With [Typia](https://typia.io/docs/utilization/trpc/)
 
 ```ts
-import { initTRPC } from "@trpc/server";
-import { v4 } from "uuid";
-import typia from "typia";
- 
-import { IBbsArticle } from "../structures/IBbsArticle";
- 
+import { initTRPC } from '@trpc/server';
+import typia from 'typia';
+import { v4 } from 'uuid';
+import { IBbsArticle } from '../structures/IBbsArticle';
+
 const server = initTRPC.create();
- 
+
 export const appRouter = server.router({
-    store: server.procedure
-        .input(typia.createAssert<IBbsArticle.IStore>())
-        .output(typia.createAssert<IBbsArticle>())
-        .query(({ input }) => {
-            return {
-                id: v4(),
-                writer: input.writer,
-                title: input.title,
-                body: input.body,
-                created_at: new Date().toString(),
-            };
-        })
+  store: server.procedure
+    .input(typia.createAssert<IBbsArticle.IStore>())
+    .output(typia.createAssert<IBbsArticle>())
+    .query(({ input }) => {
+      return {
+        id: v4(),
+        writer: input.writer,
+        title: input.title,
+        body: input.body,
+        created_at: new Date().toString(),
+      };
+    }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -279,8 +274,30 @@ export const t = initTRPC.create();
 
 export const appRouter = t.router({
   hello: t.procedure
-    .input(type({ name: "string" }).assert)
-    .output(type({ greeting: "string" }).assert)
+    .input(type({ name: 'string' }).assert)
+    .output(type({ greeting: 'string' }).assert)
+    .query(({ input }) => {
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [@effect/schema](https://github.com/Effect-TS/schema)
+
+```ts twoslash
+import * as S from '@effect/schema/Schema';
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(S.parse(S.struct({ name: S.string })))
+    .output(S.parse(S.struct({ greeting: S.string })))
     .query(({ input }) => {
       return {
         greeting: `hello ${input.name}`,
@@ -297,5 +314,5 @@ If you work on a validator library which supports tRPC usage, please feel free t
 
 Integration with tRPC in most cases is as simple as meeting one of several existing type interfaces, but in some cases we may accept a PR to add a new supported interface. Feel free to open an issue for discussion. You can check the existing supported interfaces here:
 
-* [Types for Inference](https://github.com/trpc/trpc/blob/main/packages/server/src/core/parser.ts)
-* [Functions for parsing/validation](https://github.com/trpc/trpc/blob/main/packages/server/src/core/internals/getParseFn.ts)
+- [Types for Inference](https://github.com/trpc/trpc/blob/main/packages/server/src/core/parser.ts)
+- [Functions for parsing/validation](https://github.com/trpc/trpc/blob/main/packages/server/src/core/internals/getParseFn.ts)
