@@ -87,6 +87,42 @@ Validators are used to infer the input and output types of your procedures.
 If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
 :::
 
+## Using a function as a validator
+
+If you like, you can simply pass a function as a validator, though this isn't necessarily the best choice to use widely unless you have a specific need.
+
+In most cases we recommend you use a [Validator](#validator-integrations)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input((value: any): { name: string } => {
+      if (value && typeof value.name === 'string') {
+        return { name: value.name };
+      }
+      throw new Error('Greeting not found');
+    })
+    .output((value: any) => {
+      if (value && typeof value.greeting === 'string') {
+        return { greeting: value.greeting };
+      }
+      throw new Error('Greeting not found');
+    })
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Validator integrations
 
 tRPC works out of the box with a number of popular validation and parsing libraries. The below are some examples of usage with validators which we officially maintain support for.
@@ -113,40 +149,6 @@ export const appRouter = t.router({
         greeting: z.string(),
       }),
     )
-    .query(({ input }) => {
-      //      ^?
-      return {
-        greeting: `hello ${input.name}`,
-      };
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
-### Writing a custom validator
-
-If you like, you can simply pass a function as a validator, though this isn't necessarily the best choice to use widely unless you have a specific need.
-
-```ts twoslash
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.create();
-
-export const appRouter = t.router({
-  hello: t.procedure
-    .input((value: any): { name: string } => {
-      if (value && typeof value.name === 'string') {
-        return { name: value.name };
-      }
-      throw new Error('Greeting not found');
-    })
-    .output((value: any) => {
-      if (value && typeof value.greeting === 'string') {
-        return { greeting: value.greeting };
-      }
-      throw new Error('Greeting not found');
-    })
     .query(({ input }) => {
       //      ^?
       return {
@@ -191,7 +193,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { object, string } from 'superstruct';
 
@@ -211,12 +213,89 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Community integrations
+### With [scale-ts](https://github.com/paritytech/scale-ts)
 
-A number of other community libraries have opted to support tRPC integrations::
+```ts twoslash
+import * as $ from 'scale-codec';
+import { initTRPC } from '@trpc/server';
 
-- [typia](https://typia.io/docs/utilization/trpc/)
-- [ArkType](https://github.com/arktypeio/arktype#trpc)
-- [scale-ts](https://github.com/paritytech/scale-ts)
+export const t = initTRPC.create();
 
-If you would like your own validator to be list here, please feel free to open a pull request.
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(
+      $.object($.field('name', $.str)),
+    )
+    .output(
+      $.object($.field('greeting', $.str)),
+    )
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [Typia](https://typia.io/docs/utilization/trpc/)
+
+```ts
+import { initTRPC } from "@trpc/server";
+import { v4 } from "uuid";
+import typia from "typia";
+ 
+import { IBbsArticle } from "../structures/IBbsArticle";
+ 
+const server = initTRPC.create();
+ 
+export const appRouter = server.router({
+    store: server.procedure
+        .input(typia.createAssert<IBbsArticle.IStore>())
+        .output(typia.createAssert<IBbsArticle>())
+        .query(({ input }) => {
+            return {
+                id: v4(),
+                writer: input.writer,
+                title: input.title,
+                body: input.body,
+                created_at: new Date().toString(),
+            };
+        })
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [ArkType](https://github.com/arktypeio/arktype#trpc)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import { type } from 'arktype';
+
+export const t = initTRPC.create();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(type({ name: "string" }).assert)
+    .output(type({ greeting: "string" }).assert)
+    .query(({ input }) => {
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+## Contributing your own Validator Library
+
+If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.
+
+Integration with tRPC in most cases is as simple as meeting one of several existing type interfaces, but in some cases we may accept a PR to add a new supported interface. Feel free to open an issue for discussion. You can check the existing supported interfaces here:
+
+* [Types for Inference](https://github.com/trpc/trpc/blob/main/packages/server/src/core/parser.ts)
+* [Functions for parsing/validation](https://github.com/trpc/trpc/blob/main/packages/server/src/core/internals/getParseFn.ts)
