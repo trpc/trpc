@@ -248,7 +248,7 @@ test('arktype schema - [not officially supported]', async () => {
   await close();
 });
 
-test('effect schema', async () => {
+test('effect schema - [not officially supported]', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
