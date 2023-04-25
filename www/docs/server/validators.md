@@ -204,6 +204,7 @@ export const appRouter = t.router({
     .input(object({ name: string() }))
     .output(object({ greeting: string() }))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -277,6 +278,7 @@ export const appRouter = t.router({
     .input(type({ name: 'string' }).assert)
     .output(type({ greeting: 'string' }).assert)
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -299,6 +301,7 @@ export const appRouter = t.router({
     .input(S.parse(S.struct({ name: S.string })))
     .output(S.parse(S.struct({ greeting: S.string })))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
