@@ -6,6 +6,36 @@
       "permanent": true
     },
     {
+      "source": "/docs/server/procedures#with-scale-ts",
+      "destination": "/docs/server/validators#input-validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/procedures#with-superstruct",
+      "destination": "/docs/server/validators#input-validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/procedures#with-yup",
+      "destination": "/docs/server/validators#input-validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/procedures#with-zod",
+      "destination": "/docs/server/validators#input-validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/procedures#input-validation",
+      "destination": "/docs/server/validators#input-validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/procedures#multiple-input-parsers",
+      "destination": "/docs/server/validators#input-validators",
+      "permanent": true
+    },
+    {
       "source": "/docs/server/infer-types",
       "destination": "/docs/client/infer-types",
       "permanent": true
