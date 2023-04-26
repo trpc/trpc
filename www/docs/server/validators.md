@@ -94,7 +94,7 @@ If output validation fails, the server will respond with an `INTERNAL_SERVER_ERR
 
 ## The most basic validator: a function
 
-You can define a validator without any 3rd party dependencies, with a function. This isn't necessarily the best choice to use widely, unless you have a specific need, but it's important to understand that there's no magic here - it's *just typescript*!
+You can define a validator without any 3rd party dependencies, with a function. We don't recommend doing this unless you have a specific need, but it's important to understand that there's no magic here - it's *just typescript*!
 
 :::info
 In most cases we recommend you use a [Validator library](#validator-integrations)
