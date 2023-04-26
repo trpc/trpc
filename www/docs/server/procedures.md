@@ -22,7 +22,7 @@ Procedures in tRPC are very flexible primitives to create backend functions, the
 
 ## Writing procedures
 
-Writing a procedure is simple, the `t` object you create during tRPC setup returns an initial `t.procedure` which all other procedures are built on:
+The `t` object you create during tRPC setup returns an initial `t.procedure` which all other procedures are built on:
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';

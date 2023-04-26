@@ -9,7 +9,9 @@ tRPC procedures may define validation logic for their input and/or output. There
 
 ### Input Validators
 
-By defining an input validator, tRPC can check that a procedure call is correct and return a validation error if not. Just use the `.input()` method when writing your procedures.
+By defining an input validator, tRPC can check that a procedure call is correct and return a validation error if not. 
+
+To set up an input validator, use the `procedure.input()` method:
 
 ```ts twoslash
 // @target: esnext
