@@ -9,13 +9,9 @@ A procedure is a function which is exposed to the client, it can be one of:
 
 - a `Query` - used to fetch data, generally does not change any data
 - a `Mutation` - used to send data, often for create/update/delete purposes
-- a `Subscription` - you might not need this, and it has [dedicated documentation](/docs/further/subscriptions)
+- a `Subscription` - you might not need this, and we have [dedicated documentation](/docs/subscriptions)
 
 Procedures in tRPC are very flexible primitives to create backend functions. They use an immutable builder pattern, which means you can [create reusable base procedures](#reusable-base-procedures) that share functionality among multiple procedures.
-
-:::tip
-Procedures can be viewed as the equivalent of REST endpoints, and under the hood are built on HTTP; but they are more focused towards the needs of an application, rather than representing "resources". There is no internal difference between queries and mutations apart from semantics
-:::
 
 ## Writing procedures
 
@@ -25,15 +21,12 @@ The `t` object you create during tRPC setup returns an initial `t.procedure` whi
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC
-  .context<{ signGuestBook: () => Promise<void> }>()
-  .create();
+const t = initTRPC.context<{ signGuestBook: () => Promise<void> }>().create();
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
 const appRouter = router({
-
   // Queries are the best place to fetch data
   hello: publicProcedure.query(() => {
     return {
@@ -41,10 +34,9 @@ const appRouter = router({
     };
   }),
 
-
   // Mutations are the best place to do things like updating a database
   goodbye: publicProcedure.mutation(async (opts) => {
-    await opts.ctx.signGuestBook()
+    await opts.ctx.signGuestBook();
 
     return {
       message: 'goodbye!',
@@ -64,11 +56,9 @@ The below example takes a user input and [authorizes](https://en.wikipedia.org/w
 import { TRPCError, initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC
-  .context<{ signGuestBook: () => Promise<void> }>()
-  .create();
+const t = initTRPC.context<{ signGuestBook: () => Promise<void> }>().create();
 
-export const publicProcedure = t.procedure
+export const publicProcedure = t.procedure;
 
 // ---cut---
 
@@ -86,13 +76,13 @@ export const authorizedProcedure = publicProcedure
   });
 
 export const appRouter = t.router({
-  hello: publicProcedure.query(() => {
+  hello: authorizedProcedure.query(() => {
     return {
       message: 'hello world',
     };
   }),
-  goodbye: publicProcedure.mutation(async (opts) => {
-    await opts.ctx.signGuestBook()
+  goodbye: authorizedProcedure.mutation(async (opts) => {
+    await opts.ctx.signGuestBook();
 
     return {
       message: 'goodbye!',

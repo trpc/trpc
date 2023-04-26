@@ -5,23 +5,24 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 ---
 
-tRPC procedures may define validation logic for their input and/or output, and are also used to infer the types of inputs and outputs. There is first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
+tRPC procedures may define validation logic for their input and/or output, and validators are also used to infer the types of inputs and outputs. We have first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
 
-### Input Validators
+## Input Validators
 
-By defining an input validator, tRPC can check that a procedure call is correct and return a validation error if not. 
+By defining an input validator, tRPC can check that a procedure call is correct and return a validation error if not.
 
 To set up an input validator, use the `procedure.input()` method:
 
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
+// ---cut---
+
+// Our examples use Zod by default, but usage with other libraries is identical
 import { z } from 'zod';
 
 export const t = initTRPC.create();
-const publicProcedure = t.procedure
-
-// ---cut---
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -40,7 +41,9 @@ export const appRouter = t.router({
 });
 ```
 
-`.input` can also be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](middlewares).
+### Input Merging
+
+`.input()` can be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](middlewares).
 
 ```ts twoslash
 // @target: esnext
@@ -51,21 +54,19 @@ export const t = initTRPC.create();
 
 // ---cut---
 
-const procedureWhichRejectsOutOfTownFolk = t.procedure
+const baseProcedure = t.procedure
   .input(z.object({ townName: z.string() }))
   .use((opts) => {
-    if (opts.input.townName !== 'Pucklechurch') {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: "We don't take kindly to out-of-town folk",
-      });
-    }
+    const input = opts.input;
+    //    ^?
+
+    console.log(`Handling request with user from: ${input.townName}`);
 
     return opts.next();
   });
 
 export const appRouter = t.router({
-  hello: procedureWhichRejectsOutOfTownFolk
+  hello: baseProcedure
     .input(
       z.object({
         name: z.string(),
@@ -75,15 +76,15 @@ export const appRouter = t.router({
       const input = opts.input;
       //    ^?
       return {
-        greeting: `Hello ${input.name}, my friend`,
+        greeting: `Hello ${input.name}, my friend from ${input.townName}`,
       };
     }),
 });
 ```
 
-### Output Validators
+## Output Validators
 
-You can also define an output validator. Validating outputs is not always as important as defining inputs, since tRPC gives you automatic type-safety by inferring the return type of your procedures. Some reasons to define an output validator include:
+Validating outputs is not always as important as defining inputs, since tRPC gives you automatic type-safety by inferring the return type of your procedures. Some reasons to define an output validator include:
 
 - Checking that data returned from untrusted sources is correct
 - Ensure that you are not returning more data to the client than necessary
@@ -92,9 +93,36 @@ You can also define an output validator. Validating outputs is not always as imp
 If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
 :::
 
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// @noErrors
+// ---cut---
+
+import { z } from 'zod';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .output(
+      z.object({
+        greeting: z.string(),
+      }),
+    )
+    .query((opts) => {
+      return {
+        gre,
+        // ^|
+      };
+    }),
+});
+```
+
 ## The most basic validator: a function
 
-You can define a validator without any 3rd party dependencies, with a function. We don't recommend doing this unless you have a specific need, but it's important to understand that there's no magic here - it's *just typescript*!
+You can define a validator without any 3rd party dependencies, with a function. We don't recommend doing this unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
 
 :::info
 In most cases we recommend you use a [Validator library](#validator-integrations)
@@ -105,7 +133,7 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -146,7 +174,7 @@ import { z } from 'zod';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -179,7 +207,7 @@ import * as yup from 'yup';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -212,7 +240,7 @@ import { object, string } from 'superstruct';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -237,7 +265,7 @@ import * as $ from 'scale-codec';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -264,7 +292,7 @@ import { IBbsArticle } from '../structures/IBbsArticle';
 
 const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   store: publicProcedure
@@ -292,7 +320,7 @@ import { type } from 'arktype';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
@@ -317,7 +345,7 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 
-const publicProcedure = t.procedure
+const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
