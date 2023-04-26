@@ -5,7 +5,7 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 ---
 
-tRPC procedures may define validation logic for their input and/or output. There is first class support for many popular validators, and [integrating a validator](#contributing-your-own-validator-library) which we don't directly support in usually straight-forward.
+tRPC procedures may define validation logic for their input and/or output. There is first class support for many popular validators, and you can also [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
 
 ### Input Validators
 
