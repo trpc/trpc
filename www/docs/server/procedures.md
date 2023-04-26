@@ -5,19 +5,16 @@ sidebar_label: Define Procedures
 slug: /server/procedures
 ---
 
-In tRPC a Procedure is ultimately just a function which you want to expose to your client. A Procedure can be either:
+A procedure is a function which is exposed to the client, it can be one of:
 
 - a `Query` - used to fetch data, generally does not change any data
 - a `Mutation` - used to send data, often for create/update/delete purposes
+- a `Subscription` - you might not need this, and it has [dedicated documentation](/docs/further/subscriptions)
 
-Procedures in tRPC are very flexible primitives to create backend functions, they use an immutable builder pattern which means you can [create reusable base procedures](#reusable-base-procedures) which share functionality among multiple procedures.
+Procedures in tRPC are very flexible primitives to create backend functions. They use an immutable builder pattern, which means you can [create reusable base procedures](#reusable-base-procedures) that share functionality among multiple procedures.
 
 :::tip
-
-- A procedure can be viewed as the equivalent of a REST-endpoint, and under the hood are built on HTTP, but are more focused towards the needs of application, rather than representing "resources".
-- There's no internal difference between queries and mutations apart from semantics.
-- Defining a publicProcedure is the same for queries, mutations, and subscriptions, with the exception that subscriptions need to return an `observable` instance.
-
+Procedures can be viewed as the equivalent of REST endpoints, and under the hood are built on HTTP; but they are more focused towards the needs of an application, rather than representing "resources". There is no internal difference between queries and mutations apart from semantics
 :::
 
 ## Writing procedures
@@ -28,18 +25,27 @@ The `t` object you create during tRPC setup returns an initial `t.procedure` whi
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC.create();
+const t = initTRPC
+  .context<{ signGuestBook: () => Promise<void> }>()
+  .create();
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
 const appRouter = router({
+
+  // Queries are the best place to fetch data
   hello: publicProcedure.query(() => {
     return {
       message: 'hello world',
     };
   }),
-  goodbye: publicProcedure.mutation(() => {
+
+
+  // Mutations are the best place to do things like updating a database
+  goodbye: publicProcedure.mutation(async (opts) => {
+    await opts.ctx.signGuestBook()
+
     return {
       message: 'goodbye!',
     };
@@ -58,11 +64,13 @@ The below example takes a user input and [authorizes](https://en.wikipedia.org/w
 import { TRPCError, initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-// ---cut---
-
-export const t = initTRPC.create();
+const t = initTRPC
+  .context<{ signGuestBook: () => Promise<void> }>()
+  .create();
 
 export const publicProcedure = t.procedure
+
+// ---cut---
 
 export const authorizedProcedure = publicProcedure
   .input(z.object({ townName: z.string() }))
@@ -78,12 +86,14 @@ export const authorizedProcedure = publicProcedure
   });
 
 export const appRouter = t.router({
-  hello: authorizedProcedure.query((opts) => {
+  hello: publicProcedure.query(() => {
     return {
-      greeting: `Hello my friend`,
+      message: 'hello world',
     };
   }),
-  goodbye: authorizedProcedure.mutation(() => {
+  goodbye: publicProcedure.mutation(async (opts) => {
+    await opts.ctx.signGuestBook()
+
     return {
       message: 'goodbye!',
     };
