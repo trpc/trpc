@@ -28,14 +28,19 @@ function mockReq({
 
   req.method = method;
   req.query = query;
-  if (
-    'content-type' in headers &&
-    headers['content-type'] === 'application/json' &&
-    parseBody
-  ) {
-    req.body = JSON.parse(body);
-  } else {
-    req.body = body;
+  if (req.method === 'POST') {
+    if (
+      'content-type' in headers &&
+      headers['content-type'] === 'application/json' &&
+      parseBody
+    ) {
+      req.body = JSON.parse(body);
+    } else {
+      setImmediate(() => {
+        req.emit('data', body);
+        req.emit('end');
+      });
+    }
   }
 
   const socket = {
@@ -120,7 +125,7 @@ describe('string inputs are properly serialized and deserialized', () => {
   });
 });
 
-describe('works good with bodyParser disable', () => {
+describe('works good with bodyParser disabled', () => {
   const t = initTRPC.create();
 
   const router = t.router({
@@ -133,7 +138,6 @@ describe('works good with bodyParser disable', () => {
   });
 
   const handler = trpcNext.createNextApiHandler({
-    preparsedBody: false,
     router,
   });
 
