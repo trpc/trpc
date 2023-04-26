@@ -83,7 +83,10 @@ export const appRouter = t.router({
 
 ### Output Validators
 
-By defining an output validator, tRPC can also check that data returned from untrusted sources is correct, or to strip extraneous data. Defining outputs is not always as important as defining inputs, since tRPC gives you automatic type-safety by inferring the return type of your procedures.
+You can also define an output validator. Validating outputs is not always as important as defining inputs, since tRPC gives you automatic type-safety by inferring the return type of your procedures. Some reasons to define an output validator include:
+
+- Checking that data returned from untrusted sources is correct
+- Ensure that you are not returning more data to the client than necessary
 
 Validators are used to infer the input and output types of your procedures.
 
