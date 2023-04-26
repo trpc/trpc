@@ -5,7 +5,7 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 ---
 
-tRPC procedures may define validation logic for their input and/or output. There is first class support for many popular validators, and you can also [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
+tRPC procedures may define validation logic for their input and/or output, and are also used to infer the types of inputs and outputs. There is first class support for many popular validators, and you can [integrate validators](#contributing-your-own-validator-library) which we don't directly support.
 
 ### Input Validators
 
@@ -87,8 +87,6 @@ You can also define an output validator. Validating outputs is not always as imp
 
 - Checking that data returned from untrusted sources is correct
 - Ensure that you are not returning more data to the client than necessary
-
-Validators are used to infer the input and output types of your procedures.
 
 :::info
 If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
