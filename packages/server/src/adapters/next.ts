@@ -53,7 +53,6 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       ...opts,
-      preparsedBody: opts.preparsedBody ?? true,
       req,
       res,
       path,

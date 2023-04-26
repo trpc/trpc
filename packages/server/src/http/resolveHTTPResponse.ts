@@ -22,10 +22,11 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   GET: 'query',
   POST: 'mutation',
 };
-function getRawProcedureInputOrThrow(
-  req: HTTPRequest,
-  preparsedBody?: boolean,
-) {
+function getRawProcedureInputOrThrow(opts: {
+  req: HTTPRequest;
+  preprocessed?: boolean;
+}) {
+  const { req } = opts;
   try {
     if (req.method === 'GET') {
       if (!req.query.has('input')) {
@@ -34,7 +35,7 @@ function getRawProcedureInputOrThrow(
       const raw = req.query.get('input');
       return JSON.parse(raw!);
     }
-    if (typeof req.body === 'string' && !preparsedBody) {
+    if (typeof req.body === 'string' && !opts.preprocessed) {
       // A mutation with no inputs will have req.body === ''
       return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
@@ -55,14 +56,14 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
-  preparsedBody?: boolean;
+  preprocessedBody?: boolean;
 }
 
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
-  const { createContext, onError, router, req, preparsedBody } = opts;
+  const { createContext, onError, router, req, preprocessedBody } = opts;
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
@@ -137,7 +138,10 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = getRawProcedureInputOrThrow(req, preparsedBody);
+    const rawInput = getRawProcedureInputOrThrow({
+      req,
+      preprocessed: preprocessedBody,
+    });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await createContext();

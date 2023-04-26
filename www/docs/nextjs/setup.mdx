@@ -314,7 +314,5 @@ If you for some reason want to disable bodyParser in your next.js route, you nee
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: () => ({}),
-  // Body is preparsed by default, this tells hadler it needs to be parsed
-  preparsedBody: false,
 });
 ```

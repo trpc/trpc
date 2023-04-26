@@ -64,7 +64,6 @@ export type NodeHTTPHandlerOptions<
    */
   middleware?: ConnectMiddleware;
   maxBodySize?: number;
-  preparsedBody?: boolean;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
