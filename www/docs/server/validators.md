@@ -5,7 +5,7 @@ sidebar_label: Input & Output Validators
 slug: /server/validators
 ---
 
-tRPC procedures may define an input and/or an output. It's flexible too, so we support many different validators, and it's easy to integrate a validator which we don't directly support.
+tRPC procedures may define validation logic for their input and/or output. There is first class support for many popular validators, and [integrating a validator](#contributing-your-own-validator-library) which we don't directly support in usually straight-forward.
 
 ### Input Validators
 
@@ -89,11 +89,13 @@ Validators are used to infer the input and output types of your procedures.
 If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
 :::
 
-## Using a function as a validator
+## The most basic validator: a function
 
-If you like, you can simply pass a function as a validator, though this isn't necessarily the best choice to use widely unless you have a specific need.
+You can define a validator without any 3rd party dependencies, with a function. This isn't necessarily the best choice to use widely, unless you have a specific need, but it's important to understand that there's no magic here - it's *just typescript*!
 
-In most cases we recommend you use a [Validator](#validator-integrations)
+:::info
+In most cases we recommend you use a [Validator library](#validator-integrations)
+:::
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
