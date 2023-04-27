@@ -35,7 +35,7 @@ function getRawProcedureInputOrThrow(opts: {
       const raw = req.query.get('input');
       return JSON.parse(raw!);
     }
-    if (typeof req.body === 'string' && !opts.preprocessed) {
+    if (!opts.preprocessed && typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''
       return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
@@ -63,7 +63,7 @@ export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
-  const { createContext, onError, router, req, preprocessedBody } = opts;
+  const { router, req } = opts;
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
@@ -140,11 +140,11 @@ export async function resolveHTTPResponse<
     }
     const rawInput = getRawProcedureInputOrThrow({
       req,
-      preprocessed: preprocessedBody,
+      preprocessed: opts.preprocessedBody,
     });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await createContext();
+    ctx = await opts.createContext();
 
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'
@@ -202,7 +202,7 @@ export async function resolveHTTPResponse<
         } catch (cause) {
           const error = getTRPCErrorFromUnknown(cause);
 
-          onError?.({ error, path, input, ctx, type: type, req });
+          opts.onError?.({ error, path, input, ctx, type: type, req });
           return {
             input,
             path,
@@ -245,7 +245,7 @@ export async function resolveHTTPResponse<
     // - `errorFormatter` return value is malformed
     const error = getTRPCErrorFromUnknown(cause);
 
-    onError?.({
+    opts.onError?.({
       error,
       path: undefined,
       input: undefined,
