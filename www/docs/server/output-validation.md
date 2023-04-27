@@ -85,9 +85,9 @@ export const appRouter = t.router({
   hello: t.procedure
     .input(string())
     .output(object({ greeting: string() }))
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: input,
+        greeting: opts.input,
       };
     }),
 });

@@ -123,7 +123,8 @@ All errors that occur in a procedure go through the `onError` method before bein
 ```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
   // ...
-  onError({ error, type, path, input, ctx, req }) {
+  onError(opts) {
+    const { error, type, path, input, ctx, req } = opts
     console.error('Error:', error);
     if (error.code === 'INTERNAL_SERVER_ERROR') {
       // send to bug reporting
