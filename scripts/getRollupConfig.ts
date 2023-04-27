@@ -7,6 +7,7 @@ import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
 import typescript from 'rollup-plugin-typescript2';
+import { fileURLToPath } from 'url';
 
 const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
@@ -93,3 +94,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
     ],
   };
 }
+
+const __filename = fileURLToPath(import.meta.url);
+
+export const __dirname = path.dirname(__filename);

@@ -1,5 +1,5 @@
 import { RollupOptions } from 'rollup';
-import { buildConfig } from '../../scripts/getRollupConfig';
+import { __dirname, buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = ['src/index.ts'];
 
