@@ -44,8 +44,9 @@ export const postRouter = router({
         title: z.string(),
       }),
     )
-    .mutation(({ input }) => {
-      //          ^?
+    .mutation((opts) => {
+      const { input } = opts;
+      //        ^?
       // [...]
     }),
   list: publicProcedure.query(() => {
@@ -222,8 +223,9 @@ export const postRouter = router({
         title: z.string(),
       }),
     )
-    .mutation(({ input }) => {
-      //          ^?
+    .mutation((opts) => {
+      const { input } = opts;
+      //        ^?
       // [...]
     }),
   postList: publicProcedure.query(() => {

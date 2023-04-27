@@ -7,10 +7,11 @@ export async function getPostBody(opts: {
 }) {
   const { req, maxBodySize = Infinity } = opts;
   return new Promise<
-    { ok: true; data: unknown } | { ok: false; error: TRPCError }
+    | { ok: true; data: unknown; preprocessed: boolean }
+    | { ok: false; error: TRPCError }
   >((resolve) => {
     if ('body' in req) {
-      resolve({ ok: true, data: req.body });
+      resolve({ ok: true, data: req.body, preprocessed: true });
       return;
     }
     let body = '';
@@ -30,6 +31,7 @@ export async function getPostBody(opts: {
       resolve({
         ok: true,
         data: hasBody ? body : undefined,
+        preprocessed: false,
       });
     });
   });
