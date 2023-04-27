@@ -39,13 +39,14 @@ interface ResolveHTTPRequestOptions<
   path: string;
   error?: Maybe<TRPCError>;
   contentTypeHandler?: BaseContentTypeHandler<any>;
+  preprocessedBody?: boolean;
 }
 
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
-  const { createContext, onError, router, req } = opts;
+  const { router, req } = opts;
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
 
@@ -128,10 +129,11 @@ export async function resolveHTTPResponse<
       isBatchCall,
       req,
       router,
+      preprocessedBody: opts.preprocessedBody ?? false,
     });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await createContext();
+    ctx = await opts.createContext();
 
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
@@ -153,7 +155,7 @@ export async function resolveHTTPResponse<
         } catch (cause) {
           const error = getTRPCErrorFromUnknown(cause);
 
-          onError?.({ error, path, input, ctx, type: type, req });
+          opts.onError?.({ error, path, input, ctx, type: type, req });
           return {
             input,
             path,
@@ -196,7 +198,7 @@ export async function resolveHTTPResponse<
     // - `errorFormatter` return value is malformed
     const error = getTRPCErrorFromUnknown(cause);
 
-    onError?.({
+    opts.onError?.({
       error,
       path: undefined,
       input: undefined,

@@ -9,7 +9,7 @@ export async function getPostBody(opts: {
   const { req, maxBodySize = Infinity } = opts;
   return new Promise((resolve) => {
     if ('body' in req) {
-      resolve({ ok: true, data: req.body });
+      resolve({ ok: true, data: req.body, preprocessed: true });
       return;
     }
     let body = '';
@@ -29,6 +29,7 @@ export async function getPostBody(opts: {
       resolve({
         ok: true,
         data: hasBody ? body : undefined,
+        preprocessed: false,
       });
     });
   });

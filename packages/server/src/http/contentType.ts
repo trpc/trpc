@@ -10,10 +10,18 @@ type GetInputs = (opts: {
   req: HTTPRequest;
   isBatchCall: boolean;
   router: AnyRouter;
+  preprocessedBody: boolean;
 }) => MaybePromise<Record<number, unknown>>;
 
 export type BodyResult =
-  | { ok: true; data: unknown }
+  | {
+      ok: true;
+      data: unknown;
+      /**
+       * If the HTTP handler has already parsed the body
+       */
+      preprocessed: boolean;
+    }
   | { ok: false; error: TRPCError };
 
 export type BaseContentTypeHandler<TOptions> = {
@@ -22,7 +30,11 @@ export type BaseContentTypeHandler<TOptions> = {
   getInputs: GetInputs;
 };
 
-function getRawProcedureInputOrThrow(req: HTTPRequest) {
+function getRawProcedureInputOrThrow(opts: {
+  req: HTTPRequest;
+  preprocessedBody: boolean;
+}) {
+  const { req } = opts;
   try {
     if (req.method === 'GET') {
       if (!req.query.has('input')) {
@@ -31,7 +43,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
       const raw = req.query.get('input');
       return JSON.parse(raw!);
     }
-    if (typeof req.body === 'string') {
+    if (!opts.preprocessedBody && typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''
       return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
@@ -53,15 +65,11 @@ const deserializeInputValue = (
     : rawValue;
 };
 
-export const getJsonContentTypeInputs: GetInputs = ({
-  req,
-  isBatchCall,
-  router,
-}) => {
-  const rawInput = getRawProcedureInputOrThrow(req);
-  const transformer = router._def._config.transformer;
+export const getJsonContentTypeInputs: GetInputs = (opts) => {
+  const rawInput = getRawProcedureInputOrThrow(opts);
+  const transformer = opts.router._def._config.transformer;
 
-  if (!isBatchCall) {
+  if (!opts.isBatchCall) {
     return {
       0: deserializeInputValue(rawInput, transformer),
     };

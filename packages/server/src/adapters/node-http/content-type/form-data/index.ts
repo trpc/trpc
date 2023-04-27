@@ -67,7 +67,11 @@ export const nodeHTTPFormDataContentTypeHandler =
     async getBody(opts) {
       const fields = Object.fromEntries(opts.query);
 
-      return { ok: true, data: fields };
+      return {
+        ok: true,
+        data: fields,
+        preprocessed: false,
+      };
     },
     getInputs(opts) {
       const req = opts.req;
