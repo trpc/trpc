@@ -22,7 +22,11 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   GET: 'query',
   POST: 'mutation',
 };
-function getRawProcedureInputOrThrow(req: HTTPRequest) {
+function getRawProcedureInputOrThrow(opts: {
+  req: HTTPRequest;
+  preprocessed?: boolean;
+}) {
+  const { req } = opts;
   try {
     if (req.method === 'GET') {
       if (!req.query.has('input')) {
@@ -31,7 +35,7 @@ function getRawProcedureInputOrThrow(req: HTTPRequest) {
       const raw = req.query.get('input');
       return JSON.parse(raw!);
     }
-    if (typeof req.body === 'string') {
+    if (!opts.preprocessed && typeof req.body === 'string') {
       // A mutation with no inputs will have req.body === ''
       return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
@@ -52,13 +56,14 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
+  preprocessedBody?: boolean;
 }
 
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
-  const { createContext, onError, router, req } = opts;
+  const { router, req } = opts;
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
@@ -133,10 +138,13 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = getRawProcedureInputOrThrow(req);
+    const rawInput = getRawProcedureInputOrThrow({
+      req,
+      preprocessed: opts.preprocessedBody,
+    });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await createContext();
+    ctx = await opts.createContext();
 
     const deserializeInputValue = (rawValue: unknown) => {
       return typeof rawValue !== 'undefined'
@@ -194,7 +202,7 @@ export async function resolveHTTPResponse<
         } catch (cause) {
           const error = getTRPCErrorFromUnknown(cause);
 
-          onError?.({ error, path, input, ctx, type: type, req });
+          opts.onError?.({ error, path, input, ctx, type: type, req });
           return {
             input,
             path,
@@ -237,7 +245,7 @@ export async function resolveHTTPResponse<
     // - `errorFormatter` return value is malformed
     const error = getTRPCErrorFromUnknown(cause);
 
-    onError?.({
+    opts.onError?.({
       error,
       path: undefined,
       input: undefined,

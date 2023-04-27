@@ -8,6 +8,7 @@ test('has body', async () => {
     Object {
       "data": Object {},
       "ok": true,
+      "preprocessed": true,
     }
   `);
 });
@@ -28,9 +29,10 @@ test('req as eventemitter', async () => {
   expect(result.ok).toBeTruthy();
   expect((result as any).data).toBeTruthy();
   expect(result).toMatchInlineSnapshot(`
-Object {
-  "data": "{\\"hello\\":\\"there\\"}",
-  "ok": true,
-}
-`);
+    Object {
+      "data": "{\\"hello\\":\\"there\\"}",
+      "ok": true,
+      "preprocessed": false,
+    }
+  `);
 });
