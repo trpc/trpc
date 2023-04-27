@@ -68,8 +68,8 @@ const users: Record<string, User> = {};
 export const t = initTRPC.create();
 
 export const appRouter = t.router({
-  getUserById: t.procedure.input(z.string()).query(({ input }) => {
-    return users[input]; // input type is string
+  getUserById: t.procedure.input(z.string()).query((opts) => {
+    return users[opts.input]; // input type is string
   }),
   createUser: t.procedure
     .input(
@@ -78,9 +78,9 @@ export const appRouter = t.router({
         bio: z.string().max(142).optional(),
       }),
     )
-    .mutation(({ input }) => {
+    .mutation((opts) => {
       const id = Date.now().toString();
-      const user: User = { id, ...input };
+      const user: User = { id, ...opts.input };
       users[user.id] = user;
       return user;
     }),
