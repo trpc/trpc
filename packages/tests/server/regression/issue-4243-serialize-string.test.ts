@@ -79,7 +79,7 @@ describe('string inputs are properly serialized and deserialized', () => {
     router,
   });
 
-  test('in mutations', async () => {
+  test('mutation', async () => {
     const { req } = mockReq({
       query: {
         trpc: ['doSomething'],
@@ -102,27 +102,6 @@ describe('string inputs are properly serialized and deserialized', () => {
       }
     `);
   });
-
-  test('in queries', async () => {
-    const { req } = mockReq({
-      query: {
-        trpc: ['querySomething'],
-        input: JSON.stringify('something'),
-      },
-      method: 'GET',
-    });
-    const { res, end } = mockRes();
-    await handler(req, res);
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
-    expect(res.statusCode).toBe(200);
-    expect(json).toMatchInlineSnapshot(`
-      Object {
-        "result": Object {
-          "data": "did query something",
-        },
-      }
-    `);
-  });
 });
 
 describe('works good with bodyParser disabled', () => {
@@ -141,7 +120,7 @@ describe('works good with bodyParser disabled', () => {
     router,
   });
 
-  test('in mutations', async () => {
+  test('mutation', async () => {
     const { req } = mockReq({
       query: {
         trpc: ['doSomething'],
@@ -158,20 +137,5 @@ describe('works good with bodyParser disabled', () => {
     const json: any = JSON.parse((end.mock.calls[0] as any)[0]).result.data;
     expect(res.statusCode).toBe(200);
     expect(json).toMatchInlineSnapshot('"did mutate something"');
-  });
-  test('in queries', async () => {
-    const { req } = mockReq({
-      query: {
-        trpc: ['querySomething'],
-        input: JSON.stringify('something'),
-      },
-      parseBody: false,
-      method: 'GET',
-    });
-    const { res, end } = mockRes();
-    await handler(req, res);
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]).result.data;
-    expect(res.statusCode).toBe(200);
-    expect(json).toMatchInlineSnapshot('"did query something"');
   });
 });
