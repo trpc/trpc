@@ -4,7 +4,7 @@
   "engines": {
     "node": "^18.0.0"
   },
-  "packageManager": "pnpm@8.3.0",
+  "packageManager": "pnpm@8.3.1",
   "scripts": {
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
@@ -25,6 +25,7 @@
     "prepublish": "pnpm build",
     "postinstall": "pnpm codegen",
     "prepack": "tsx scripts/postversion.ts",
+    "postversion": "tsx scripts/postversion.ts && git reset HEAD^ && git add . && git commit --reuse-message=HEAD@{1}",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
     "release:canary": "changeset publish --tag canary",

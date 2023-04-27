@@ -76,7 +76,8 @@ export const appRouter = router({
         })
         .optional(),
     )
-    .query(({ input }) => {
+    .query((opts) => {
+      const { input } = opts;
       //      ^?
       return {
         greeting: `hello ${input?.text ?? 'world'}`,
@@ -102,9 +103,9 @@ export const appRouter = router({
         text: yup.string().required(),
       }),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input?.text ?? 'world'}`,
+        greeting: `hello ${opts.input?.text ?? 'world'}`,
       };
     }),
 });
@@ -130,9 +131,9 @@ export const appRouter = router({
         text: defaulted(string(), 'world'),
       }),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input.text}`,
+        greeting: `hello ${opts.input.text}`,
       };
     }),
 });
@@ -151,7 +152,7 @@ export const t = initTRPC.create();
 export const appRouter = router({
   hello: publicProcedure
     .input($.object($.field('text', $.str)))
-    .query(({ input }) => ({ greeting: `hello ${input.text}` })),
+    .query((opts) => ({ greeting: `hello ${opts.input.text}` })),
 });
 
 export type AppRouter = typeof appRouter;
@@ -211,8 +212,9 @@ const appRouter = router({
         text: z.string(),
       }),
     )
-    .mutation(({ input }) => {
-      //         ^?
+    .mutation((opts) => {
+      const { input } = opts;
+      //        ^?
       // [...]
     }),
 });
@@ -290,13 +292,14 @@ const t = initTRPC.context<Context>().create();
 /**
  * Reusable middleware that checks if users are authenticated.
  **/
-const isAuthed = t.middleware(({ next, ctx }) => {
+const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.session?.user?.email) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
     });
   }
-  return next({
+  return opts.next({
     ctx: {
       // Infers the `session` as non-nullable
       session: ctx.session,
@@ -325,14 +328,14 @@ import { z } from 'zod';
 
 export const appRouter = router({
   createPost: protectedProcedure
-    .mutation(({ ctx }) => {
-      const session = ctx.session;
+    .mutation((opts) => {
+      const session = opts.ctx.session;
       //      ^?
       // [...]
     }),
   whoami: publicProcedure
-    .query(({ ctx }) => {
-      const session = ctx.session;
+    .query((opts) => {
+      const session = opts.ctx.session;
       //      ^?
       // [...]
     }),
