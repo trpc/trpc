@@ -69,11 +69,11 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.21.3-alpha.1"
+    "@trpc/server": "10.21.3-alpha.5"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "^10.21.3-alpha.5",
+    "@trpc/server": "10.21.3-alpha.5",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",
@@ -87,5 +87,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "gitHead": "28f95673b95ac04f387edeba543aeb472ff90baf"
 }
