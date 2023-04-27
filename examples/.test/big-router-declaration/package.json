@@ -1,6 +1,6 @@
 {
   "name": "@examples/big-router-declaration",
-  "version": "10.21.3-alpha.4",
+  "version": "10.21.3-alpha.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.21.3-alpha.4",
-    "@trpc/next": "^10.21.3-alpha.4",
-    "@trpc/react-query": "^10.21.3-alpha.4",
-    "@trpc/server": "^10.21.3-alpha.4",
+    "@trpc/client": "^10.21.3-alpha.5",
+    "@trpc/next": "^10.21.3-alpha.5",
+    "@trpc/react-query": "^10.21.3-alpha.5",
+    "@trpc/server": "^10.21.3-alpha.5",
     "next": "^13.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
