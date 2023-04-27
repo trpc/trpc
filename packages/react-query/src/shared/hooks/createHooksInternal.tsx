@@ -10,7 +10,13 @@ import {
 } from '@tanstack/react-query';
 import { TRPCClientErrorLike, createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   SSRState,
   TRPCContext,
@@ -333,6 +339,9 @@ export function createRootHooks<
     const queryKey = hashQueryKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 
+    const optsRef = useRef<typeof opts>(opts);
+    optsRef.current = opts;
+
     return useEffect(() => {
       if (!enabled) {
         return;
@@ -344,7 +353,7 @@ export function createRootHooks<
         {
           onStarted: () => {
             if (!isStopped) {
-              opts.onStarted?.();
+              optsRef.current.onStarted?.();
             }
           },
           onData: (data) => {
@@ -354,7 +363,7 @@ export function createRootHooks<
           },
           onError: (err) => {
             if (!isStopped) {
-              opts.onError?.(err);
+              optsRef.current.onError?.(err);
             }
           },
         },
