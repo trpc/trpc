@@ -26,7 +26,7 @@ export function setToken(newToken: string) {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     return {
       links: [
         httpBatchLink({
@@ -50,8 +50,8 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ```ts title='pages/auth.tsx'
 const loginMut = trpc.auth.login.useMutation({
-  onSuccess({ accessToken }) {
-    token = accessToken;
+  onSuccess(opts) {
+    token = opts.accessToken;
   },
 });
 ```
