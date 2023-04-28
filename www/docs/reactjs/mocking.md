@@ -173,18 +173,20 @@ Finally, we want to verify that our component is working as we anticipated, so w
 describe("BestCat", () => {
   const server = setupServer(
     trpcMsw.cats.bestCat.query((req, res, ctx) => {
-      const request = req.getInput().json
+      const input = req.getInput()
       // 🚨 You can console.log here to view your request being captured
       return res(
         ctx.status(200),
         ctx.data({
-          bestCat: `Hey ${request.name}! The best cat is Mozzie!`,
+          bestCat: `Hey ${input.name}! The best cat is Mozzie!`,
         })
       );
     })
   );
+  
   beforeAll(() => server.listen());
   afterAll(() => server.close());
+  
   test("should render the result of our query", async () => {
     renderWithProviders(<BestCat />);
     expect(screen.getByText(/Data unavaliable/i)).toBeVisible();
