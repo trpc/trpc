@@ -25,7 +25,7 @@ function getBaseUrl() {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
-  experimental_overrides: {
+  unstable_overrides: {
     useMutation: {
       /**
        * This function is called whenever a `.useMutation` succeeds

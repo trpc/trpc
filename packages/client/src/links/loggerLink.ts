@@ -77,8 +77,8 @@ const defaultLogger =
     const rawInput = props.input;
 
     const input =
-      isObject(rawInput) && isFormData(rawInput.formData)
-        ? { ...rawInput, formData: Object.fromEntries(rawInput.formData) }
+      isObject(rawInput) && isFormData(rawInput)
+        ? Object.fromEntries(rawInput)
         : props.input;
 
     const css = `
