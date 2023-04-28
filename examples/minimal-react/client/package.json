@@ -1,7 +1,7 @@
 {
   "name": "@examples/minimal-react-client",
   "private": true,
-  "version": "10.21.3-alpha.9",
+  "version": "10.21.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.21.3-alpha.9",
-    "@trpc/react-query": "^10.21.3-alpha.9",
-    "@trpc/server": "^10.21.3-alpha.9",
+    "@trpc/client": "^10.21.2",
+    "@trpc/react-query": "^10.21.2",
+    "@trpc/server": "^10.21.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
