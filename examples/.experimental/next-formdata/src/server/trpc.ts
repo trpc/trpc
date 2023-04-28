@@ -7,11 +7,22 @@
  * @see https://trpc.io/docs/v10/router
  * @see https://trpc.io/docs/v10/procedures
  */
-import { initTRPC } from '@trpc/server';
-import { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
 import { ZodError } from 'zod';
 
-type Context = CreateNextContextOptions;
+/**
+ * Creates context for an incoming request
+ * @link https://trpc.io/docs/context
+ */
+export async function createContext(opts: trpcNext.CreateNextContextOptions) {
+  return {
+    req: opts.req,
+  };
+}
+
+export type Context = inferAsyncReturnType<typeof createContext>;
+
 const t = initTRPC.context<Context>().create({
   errorFormatter(opts) {
     return {
@@ -27,7 +38,6 @@ const t = initTRPC.context<Context>().create({
     };
   },
 });
-
 /**
  * Unprotected procedure
  **/

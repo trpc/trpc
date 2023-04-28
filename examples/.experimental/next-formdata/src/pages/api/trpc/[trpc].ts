@@ -8,7 +8,7 @@ import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/
 import { NextApiRequest, NextApiResponse } from 'next';
 import * as undici from 'undici';
 import { roomRouter } from '~/server/routers/room';
-import { router } from '~/server/trpc';
+import { createContext, router } from '~/server/trpc';
 
 const appRouter = router({
   room: roomRouter,
@@ -20,9 +20,7 @@ export type AppRouter = typeof appRouter;
 
 const handler = trpcNext.createNextApiHandler({
   router: appRouter,
-  createContext: (opts) => {
-    return opts;
-  },
+  createContext,
   experimental_contentTypeHandlers: [
     nodeHTTPFormDataContentTypeHandler(),
     nodeHTTPJSONContentTypeHandler(),
