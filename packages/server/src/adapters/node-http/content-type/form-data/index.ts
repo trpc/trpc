@@ -46,6 +46,7 @@ async function parseMultipartFormData(
     }
 
     const value = await uploadHandler(part);
+
     if (typeof value !== 'undefined' && value !== null) {
       formData.append(part.name, value as any);
     }
@@ -54,15 +55,18 @@ async function parseMultipartFormData(
   return formData;
 }
 
+function isMultipartFormDataRequest(req: NodeHTTPRequest) {
+  const contentTypeHeader = req.headers['content-type'];
+  return (
+    contentTypeHeader?.startsWith('multipart/form-data') ||
+    contentTypeHeader === 'application/x-www-form-urlencoded'
+  );
+}
+
 export const nodeHTTPFormDataContentTypeHandler =
   createNodeHTTPContentTypeHandler({
     isMatch(opts) {
-      const contentTypeHeader = opts.req.headers['content-type'];
-
-      return (
-        contentTypeHeader?.startsWith('multipart/form-data') ||
-        contentTypeHeader === 'application/x-www-form-urlencoded'
-      );
+      return isMultipartFormDataRequest(opts.req);
     },
     async getBody(opts) {
       const fields = Object.fromEntries(opts.query);
@@ -98,3 +102,4 @@ export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } f
 export { createFileUploadHandler as experimental_createFileUploadHandler } from './fileUploadHandler';
 export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';
+export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };

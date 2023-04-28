@@ -354,11 +354,14 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           meta: _def.meta,
           input: callOpts.input,
           next(_nextOpts?: any) {
-            const nextOpts = _nextOpts as {
-              ctx?: Record<string, unknown>;
-              input?: unknown;
-              rawInput?: unknown;
-            };
+            const nextOpts = _nextOpts as
+              | {
+                  ctx?: Record<string, unknown>;
+                  input?: unknown;
+                  rawInput?: unknown;
+                }
+              | undefined;
+            console.log('------------------opts', opts);
             return callRecursive({
               index: callOpts.index + 1,
               ctx:
