@@ -122,7 +122,7 @@ export const appRouter = t.router({
 
 ## The most basic validator: a function
 
-You can define a validator without any 3rd party dependencies, with a function. 
+You can define a validator without any 3rd party dependencies, with a function.
 
 :::info
 We don't recommend doing making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
