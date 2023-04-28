@@ -25,7 +25,6 @@
     "postinstall": "pnpm codegen",
     "prepublish": "pnpm build",
     "prepack": "tsx scripts/postversion.ts",
-    "postversion": "tsx scripts/postversion.ts && git reset HEAD^ && git add . && git commit --reuse-message=HEAD@{1}",
     "postpublish": "git tag -a $(git log -1 --pretty=%s) -m \"\"",
     "release": "changeset publish",
     "version:canary": "changeset version --snapshot canary",
