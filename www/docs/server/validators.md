@@ -122,9 +122,11 @@ export const appRouter = t.router({
 
 ## The most basic validator: a function
 
-You can define a validator without any 3rd party dependencies, with a function. We don't recommend doing this unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
+You can define a validator without any 3rd party dependencies, with a function. 
 
 :::info
+We don't recommend doing making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
+
 In most cases we recommend you use a [Validator library](#validator-integrations)
 :::
 
@@ -137,23 +139,22 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input((value: any): { name: string } => {
-      if (value && typeof value.name === 'string') {
-        return { name: value.name };
+    .input((value): string => {
+      if (typeof value === 'string') {
+        return value;
       }
-      throw new Error('Greeting not found');
+      throw new Error('Input is not a string');
     })
-    .output((value: any) => {
-      if (value && typeof value.greeting === 'string') {
-        return { greeting: value.greeting };
+    .output((value): string => {
+      if (typeof value === 'string') {
+        return value;
       }
-      throw new Error('Greeting not found');
+      throw new Error('Output is not a string');
     })
-    .query(({ input }) => {
+    .query((opts) => {
+      const { input } = opts;
       //      ^?
-      return {
-        greeting: `hello ${input.name}`,
-      };
+      return `hello ${input}`;
     }),
 });
 
