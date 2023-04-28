@@ -26,10 +26,3 @@ npm run dev
     - [./src/pages/vanilla.tsx](./src/pages/vanilla.tsx)
     - [./src/pages/react-hook-form.tsx](./src/pages/react-hook-form.tsx)
 
-## Development
-
-### Start project
-
-```bash
-npm run dev        # starts next.js
-```
