@@ -7,27 +7,26 @@ import { uploadFileSchema } from '~/utils/schemas';
 import { writeFileToDisk } from '../../utils/writeFileToDisk';
 import { publicProcedure, router } from '../trpc';
 
-export const roomRouter = router({
-  sendMessage: publicProcedure
-    .use(async (opts) => {
-      if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
-        return opts.next();
-      }
-      const formData = await experimental_parseMultipartFormData(
-        opts.ctx.req,
-        experimental_createMemoryUploadHandler(),
-      );
+const formDataProcedure = publicProcedure.use(async (opts) => {
+  if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
+    return opts.next();
+  }
+  const formData = await experimental_parseMultipartFormData(
+    opts.ctx.req,
+    experimental_createMemoryUploadHandler(),
+  );
 
-      return opts.next({
-        rawInput: formData,
-      });
-    })
+  return opts.next({
+    rawInput: formData,
+  });
+});
+
+export const roomRouter = router({
+  sendMessage: formDataProcedure
     .input(uploadFileSchema)
     .mutation(async (opts) => {
       return {
         image: await writeFileToDisk(opts.input.image),
-        document:
-          opts.input.document && (await writeFileToDisk(opts.input.document)),
       };
     }),
 });
