@@ -254,7 +254,7 @@ We have added a feature to help with this:
 
 ```ts
 export const trpc = createTRPCReact<AppRouter, SSRContext>({
-  unstable_overrides: {
+  overrides: {
     useMutation: {
       /**
        * This function is called whenever a `.useMutation` succeeds

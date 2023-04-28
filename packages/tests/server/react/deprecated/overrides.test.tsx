@@ -29,7 +29,7 @@ describe('mutation override', () => {
       });
       const opts = routerToServerAndClientNew(appRouter);
       const trpc = createTRPCReact<typeof appRouter>({
-        overrides: {
+        unstable_overrides: {
           useMutation: {
             async onSuccess(opts) {
               if (!opts.meta.skipInvalidate) {
