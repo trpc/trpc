@@ -1,8 +1,11 @@
 /**
  * @jest-environment node
  */
-import { createTRPCProxyClient, splitLink } from '@trpc/client';
-import { experimental_formDataLink } from '@trpc/client/links/formDataLink';
+import {
+  createTRPCProxyClient,
+  experimental_formDataLink,
+  splitLink,
+} from '@trpc/client';
 import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
 import { TRPCError, initTRPC } from '@trpc/server';
 import { nodeHTTPFormDataContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/form-data';
