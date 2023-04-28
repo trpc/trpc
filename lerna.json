@@ -1,14 +1,10 @@
 {
-  "version": "10.21.3-alpha.6",
+  "version": "10.21.3-alpha.8",
   "registry": "https://registry.npmjs.org/",
   "publishConfig": {
     "access": "public"
   },
   "npmClient": "pnpm",
   "useWorkspaces": true,
-  "packages": [
-    "packages/*",
-    "www",
-    "www/og-image"
-  ]
+  "packages": ["packages/*", "www", "www/og-image"]
 }
