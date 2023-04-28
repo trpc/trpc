@@ -1,11 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MutationLike } from '@trpc/react-query/shared';
-import { AnyMutationProcedure, inferProcedureInput } from '@trpc/server';
 import { useRef, useState } from 'react';
 import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
-import { RouterInput, trpc } from '~/utils/trpc';
+import { trpc } from '~/utils/trpc';
 
 /**
  * zod-form-data wraps zod in an effect where the original type is a `FormData`
@@ -58,11 +56,6 @@ export default function Page() {
     onError(err) {
       alert('Error from server: ' + err.message);
     },
-    trpc: {
-      context: {
-        formData: true,
-      },
-    },
   });
 
   const form = useZodFormData({
@@ -88,10 +81,7 @@ export default function Page() {
               return;
             }
             form.handleSubmit(async (values, event) => {
-              await mutation.mutateAsync({
-                roomId: '1',
-                formData: new FormData(event?.target),
-              });
+              await mutation.mutateAsync(new FormData(event?.target));
             })(_event);
           }}
           style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
@@ -112,14 +102,6 @@ export default function Page() {
               <input type="file" {...form.register('image')} />
               {form.formState.errors.image && (
                 <div>{form.formState.errors.image.message}</div>
-              )}
-            </div>
-
-            <div>
-              <label>Optional file</label>
-              <input type="file" {...form.register('document')} />
-              {form.formState.errors.document && (
-                <div>{form.formState.errors.document.message}</div>
               )}
             </div>
 

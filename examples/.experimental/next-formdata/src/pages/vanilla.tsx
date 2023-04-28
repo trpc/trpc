@@ -4,7 +4,7 @@
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
-  const mutation = trpc.sendMessage.useMutation({
+  const mutation = trpc.room.sendMessage.useMutation({
     onSuccess() {
       alert('success!');
     },
@@ -35,8 +35,7 @@ export default function IndexPage() {
               return;
             }
 
-            // setFormData(formData);
-            mutation.mutate(formData as any);
+            mutation.mutate(formData);
             e.preventDefault();
           }}
         >

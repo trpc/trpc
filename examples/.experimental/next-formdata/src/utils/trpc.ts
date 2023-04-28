@@ -55,7 +55,7 @@ export const trpc = createTRPCNext<AppRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         splitLink({
-          condition: (op) => !!op.context.formData,
+          condition: (op) => op.input instanceof FormData,
           true: experimental_formDataLink({
             url,
           }),

@@ -1,50 +1,33 @@
 import {
   experimental_createMemoryUploadHandler,
+  experimental_isMultipartFormDataRequest,
   experimental_parseMultipartFormData,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
-import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { writeFileToDisk } from '../../utils/writeFileToDisk';
 import { publicProcedure, router } from '../trpc';
 
-function isPlainObject(obj: unknown): obj is object {
-  return !!obj && typeof obj === 'object' && !Array.isArray(obj);
-}
-
-const roomProcedure = publicProcedure.input(
-  z.object({
-    roomId: z.string(),
-  }),
-);
 export const roomRouter = router({
-  sendMessage: roomProcedure
+  sendMessage: publicProcedure
     .use(async (opts) => {
+      if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
+        return opts.next();
+      }
       const formData = await experimental_parseMultipartFormData(
         opts.ctx.req,
         experimental_createMemoryUploadHandler(),
       );
 
       return opts.next({
-        rawInput: isPlainObject(opts.rawInput)
-          ? {
-              ...opts.rawInput,
-              formData,
-            }
-          : { formData },
+        rawInput: formData,
       });
     })
-    .input(
-      z.object({
-        formData: uploadFileSchema,
-      }),
-    )
+    .input(uploadFileSchema)
     .mutation(async (opts) => {
-      opts.input.roomId;
       return {
-        image: await writeFileToDisk(opts.input.formData.image),
+        image: await writeFileToDisk(opts.input.image),
         document:
-          opts.input.formData.document &&
-          (await writeFileToDisk(opts.input.formData.document)),
+          opts.input.document && (await writeFileToDisk(opts.input.document)),
       };
     }),
 });
