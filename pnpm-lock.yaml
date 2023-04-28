@@ -1547,6 +1547,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.0.0
         version: 4.20230215.0
+      '@effect/schema':
+        specifier: ^0.17.2
+        version: 0.17.2
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1598,6 +1601,9 @@ importers:
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
+      arktype:
+        specifier: 1.0.14-alpha
+        version: 1.0.14-alpha
       concurrently:
         specifier: ^8.0.0
         version: 8.0.0
@@ -1761,6 +1767,9 @@ importers:
       '@docusaurus/module-type-aliases':
         specifier: 2.4.0
         version: 2.4.0(@swc/core@1.3.20)(react-dom@18.2.0)(react@18.2.0)
+      '@effect/schema':
+        specifier: ^0.17.2
+        version: 0.17.2
       '@octokit/graphql':
         specifier: ^5.0.0
         version: 5.0.4
@@ -1776,6 +1785,9 @@ importers:
       '@types/oauth':
         specifier: ^0.9.1
         version: 0.9.1
+      arktype:
+        specifier: 1.0.14-alpha
+        version: 1.0.14-alpha
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
@@ -1806,6 +1818,12 @@ importers:
       prettier:
         specifier: ^2.8.7
         version: 2.8.7
+      scale-codec:
+        specifier: ^0.11.0
+        version: 0.11.0
+      superstruct:
+        specifier: ^1.0.0
+        version: 1.0.3
       tailwindcss:
         specifier: ^3.3.0
         version: 3.3.0(postcss@8.4.14)
@@ -6124,7 +6142,7 @@ packages:
     peerDependencies:
       react: '*'
     dependencies:
-      '@types/react': 18.0.25
+      '@types/react': 18.2.0
       prop-types: 15.8.1
       react: 18.2.0
 
@@ -6575,6 +6593,21 @@ packages:
     dependencies:
       '@edge-runtime/primitives': 2.0.2
     dev: true
+
+  /@effect/data@0.12.2:
+    resolution: {integrity: sha512-bmWRTcsSRG1FlBswT+D8SxW6r3c4B3pKJrjYfitCD03tXHnup5gLHaWqbFgIjiyYITS+UsJRRjVrNxvyGG4ZNQ==}
+
+  /@effect/io@0.25.8:
+    resolution: {integrity: sha512-fFSf7CdKyqqRyRKIFKoWx63sO1tGDjDIs26Ce+UevD3V/HbT0sKmG2MBThWoO5D2/tWEqwmq8+a/og6gq8KX4w==}
+    dependencies:
+      '@effect/data': 0.12.2
+
+  /@effect/schema@0.17.2:
+    resolution: {integrity: sha512-HcXZBGtPzhuX/RnIkaVIlYGp1ThuAyl34YNhxrhUQ8TdOnRFkx3tAbmXYpkWkrlo92Ou+/Z0ZixEaSFn7x2shw==}
+    dependencies:
+      '@effect/data': 0.12.2
+      '@effect/io': 0.25.8
+      fast-check: 3.8.1
 
   /@emotion/is-prop-valid@0.8.8:
     resolution: {integrity: sha512-u5WtneEAr5IDG2Wv65yhunPSMLIpuKsbuOktRojfrEiEvRyC85LgPMZI63cr7NUqT8ZIGdSVg8ZKGxIug4lXcA==}
@@ -9999,7 +10032,7 @@ packages:
   /@types/hoist-non-react-statics@3.3.1:
     resolution: {integrity: sha512-iMIqiko6ooLrTh1joXodJK5X9xeEALT1kM5G3ZLhD3hszxBdIEd5C75U834D9mLcINgD4OyZf5uQXjkuYydWvA==}
     dependencies:
-      '@types/react': 18.0.25
+      '@types/react': 18.2.0
       hoist-non-react-statics: 3.3.2
     dev: false
 
@@ -10150,7 +10183,7 @@ packages:
     resolution: {integrity: sha512-Fv/5kb2STAEMT3wHzdKQK2z8xKq38EDIGVrutYLmQVVLe+4orDFquU52hQrULnEHinMKv9FSA6lf9+uNT1ITtA==}
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 18.0.25
+      '@types/react': 18.2.0
 
   /@types/react@18.0.25:
     resolution: {integrity: sha512-xD6c0KDT4m7n9uD4ZHi02lzskaiqcBxf4zi+tXZY98a04wvc0hi/TcCPC2FOESZi51Nd7tlUeOJY8RofL799/g==}
@@ -10165,7 +10198,6 @@ packages:
       '@types/prop-types': 15.7.5
       '@types/scheduler': 0.16.2
       csstype: 3.1.1
-    dev: false
 
   /@types/resolve@1.20.2:
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -10401,7 +10433,7 @@ packages:
     peerDependencies:
       react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
     dependencies:
-      '@types/react': 18.0.25
+      '@types/react': 18.2.0
       classnames: 2.3.2
       prop-types: 15.8.1
       react: 18.2.0
@@ -10939,6 +10971,10 @@ packages:
     resolution: {integrity: sha512-R5iJ5lkuHybztUfuOAznmboyjWq8O6sqNqtK7CLOqdydi54VNbORp49mb14KbWgG1QD3JFO9hJdZ+y4KutfdOQ==}
     dependencies:
       deep-equal: 2.1.0
+
+  /arktype@1.0.14-alpha:
+    resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
+    requiresBuild: true
 
   /array-differ@3.0.0:
     resolution: {integrity: sha512-THtfYS6KtME/yIAhKjZ2ul7XI96lQGHRputJQHO80LAWQnuGP4iCIN8vdMRboGbIEYBwU33q8Tch1os2+X0kMg==}
@@ -14589,6 +14625,12 @@ packages:
       chardet: 0.7.0
       iconv-lite: 0.4.24
       tmp: 0.0.33
+
+  /fast-check@3.8.1:
+    resolution: {integrity: sha512-WRll9CUIz6jWKgByFlHT2M/1BY3F7lewKl5BBIz5VHAy7B8y5iklK9rVm922kx+0x1hJqdkffuTs008xfIgytQ==}
+    engines: {node: '>=8.0.0'}
+    dependencies:
+      pure-rand: 6.0.2
 
   /fast-content-type-parse@1.0.0:
     resolution: {integrity: sha512-Xbc4XcysUXcsP5aHUU7Nq3OwvHq97C+WnbkeIefpeYLX+ryzFJlU6OStFJhs6Ol0LkUGpcK+wL0JwfM+FCU5IA==}
@@ -20160,6 +20202,9 @@ packages:
     resolution: {integrity: sha512-QFADYnsVoBMw1srW7OVKEYjG+MbIa49s54w1MA1EDY6r2r/sTcKKYqRX1f4GYvnXP7eN/Pe9HFcX+hwzmrXRHA==}
     dev: false
 
+  /pure-rand@6.0.2:
+    resolution: {integrity: sha512-6Yg0ekpKICSjPswYOuC5sku/TSWaRYlA0qsXqJgM/d/4pLPHPuTxK7Nbf7jFKzAeedUhR8C7K9Uv63FBsSo8xQ==}
+
   /q@1.5.1:
     resolution: {integrity: sha512-kV/CThkXo6xyFEZUugw/+pIOywXcDbFYgSct5cT3gqlbkBE1SJdwy6UQoZvodiWF/ckQLZyDE/Bu1M6gVu5lVw==}
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
@@ -21120,7 +21165,6 @@ packages:
 
   /scale-codec@0.11.0:
     resolution: {integrity: sha512-b1y96lVmWHp3X/azi4HCawM6wcRP0yBuwk6aaUeuMBCBQzP3I9Z8zs5TejGvB8sH+vXM9HAUW9IsjeFms751gg==}
-    dev: false
 
   /scheduler@0.23.0:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
