@@ -127,7 +127,7 @@ You can define a validator without any 3rd party dependencies, with a function.
 :::info
 We don't recommend doing making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
 
-In most cases we recommend you use a [Validator library](#validator-integrations)
+In most cases we recommend you use a [validation library](#library-integrations)
 :::
 
 ```ts twoslash
@@ -161,7 +161,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Validator integrations
+## Library integrations
 
 tRPC works out of the box with a number of popular validation and parsing libraries. The below are some examples of usage with validators which we officially maintain support for.
 
