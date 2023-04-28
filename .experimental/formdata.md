@@ -18,4 +18,4 @@
 
 1. Add support for FormData & JSON content types: 
   - https://github.com/trpc/trpc/blob/5d234b6d26173256caa16045cf3ba931399c2629/examples/.experimental/next-formdata/src/pages/api/trpc/%5Btrpc%5D.ts#L6-L7
-  - https://github.com/trpc/trpc/blob/5d234b6d26173256caa16045cf3ba931399c2629/examples/.experimental/next-formdata/src/pages/api/trpc/%5Btrpc%5D.ts#L24C4-L27
+  - https://github.com/trpc/trpc/blob/5d234b6d26173256caa16045cf3ba931399c2629/examples/.experimental/next-formdata/src/pages/api/trpc/%5Btrpc%5D.ts#L24-L27
