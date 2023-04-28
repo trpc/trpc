@@ -8,15 +8,15 @@ import { trpc } from '~/utils/trpc';
 /**
  * zod-form-data wraps zod in an effect where the original type is a `FormData`
  */
-type UnwrapZodEffect<T extends z.ZodType> = T extends z.ZodEffects<
+type UnwrapZodEffect<TType extends z.ZodType> = TType extends z.ZodEffects<
   infer U,
   any,
   any
 >
   ? U
-  : T;
+  : TType;
 
-type GetInput<T extends z.ZodType> = UnwrapZodEffect<T>['_input'];
+type GetInput<TType extends z.ZodType> = UnwrapZodEffect<TType>['_input'];
 
 function useZodFormData<TSchema extends z.ZodType>(
   props: {
@@ -42,9 +42,7 @@ function useZodFormData<TSchema extends z.ZodType>(
         };
       }
       const values = new FormData(formRef.current);
-      const result = _resolver(values, ctx, opts);
-
-      return result;
+      return _resolver(values, ctx, opts);
     },
   });
 
