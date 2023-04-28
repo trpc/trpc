@@ -28,6 +28,7 @@ module.exports = {
       items: [
         'server/routers',
         'server/procedures',
+        'server/validators',
         'server/merging-routers',
         'server/context',
         'server/middlewares',
@@ -50,7 +51,6 @@ module.exports = {
         },
         'server/server-side-calls',
         'server/authorization',
-        'server/output-validation',
         'server/error-handling',
         'server/error-formatting',
         'server/data-transformers',

@@ -31,11 +31,11 @@ export const appRouter = t.router({
         name: z.string(),
       }),
     )
-    .mutation(({ input }) => {
+    .mutation((opts) => {
       // Here some login stuff would happen
       return {
         user: {
-          name: input.name,
+          name: opts.input.name,
           role: 'ADMIN',
         },
       };

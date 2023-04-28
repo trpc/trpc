@@ -58,9 +58,9 @@ export const appRouter = t.router({
         })
         .nullish(),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input?.text ?? 'world'}`,
+        greeting: `hello ${opts.input?.text ?? 'world'}`,
       };
     }),
 });

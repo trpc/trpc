@@ -115,7 +115,7 @@ import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     return {
       transformer: superjson,
       links: [

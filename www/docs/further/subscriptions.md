@@ -52,8 +52,8 @@ export const appRouter = t.router({
         text: z.string().min(1),
       }),
     )
-    .mutation(async ({ input }) => {
-      const post = { ...input }; /* [..] add to db */
+    .mutation(async (opts) => {
+      const post = { ...opts.input }; /* [..] add to db */
 
       ee.emit('add', post);
       return post;
