@@ -1,34 +1,14 @@
 import { httpLinkFactory } from './httpLink';
-import {
-  GetBody,
-  GetUrl,
-  HTTPBaseRequestOptions,
-  Requester,
-  httpRequest,
-} from './internals/httpUtils';
-import { isObject } from './internals/isObject';
-
-function inputFromOpts(opts: HTTPBaseRequestOptions): FormData {
-  const input = 'input' in opts ? opts.input : undefined;
-
-  if (!isObject(input)) {
-    throw new Error('No input');
-  }
-  if (!(input instanceof FormData)) {
-    throw new Error('Input is not FormData');
-  }
-
-  return input;
-}
-
-const getUrl: GetUrl = (opts) => {
-  const url = opts.url + '/' + opts.path;
-
-  return url;
-};
+import { GetBody, Requester, httpRequest } from './internals/httpUtils';
 
 const getBody: GetBody = (opts) => {
-  return inputFromOpts(opts);
+  if (!('input' in opts)) {
+    return undefined;
+  }
+  if (!(opts.input instanceof FormData)) {
+    throw new Error('Input is not FormData');
+  }
+  return opts.input;
 };
 
 const formDataRequester: Requester = (opts) => {
@@ -38,7 +18,9 @@ const formDataRequester: Requester = (opts) => {
   }
   return httpRequest({
     ...opts,
-    getUrl,
+    getUrl() {
+      return `${opts.url}/${opts.path}`;
+    },
     getBody,
   });
 };
