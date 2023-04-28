@@ -74,6 +74,7 @@ function __createHooksInternal<
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
+    config?.overrides?.useMutation?.onSuccess ??
     config?.unstable_overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
