@@ -25,6 +25,7 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
     opts: HTTPLinkOptions,
   ): TRPCLink<TRouter> => {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
+
     return (runtime) =>
       ({ op }) =>
         observable((observer) => {

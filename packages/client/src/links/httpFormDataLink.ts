@@ -8,42 +8,27 @@ import {
 } from './internals/httpUtils';
 import { isObject } from './internals/isObject';
 
-interface FormDataInput {
-  formData: FormData;
-  query: Record<string, unknown> | null;
-}
-
-function inputFromOpts(opts: HTTPBaseRequestOptions): FormDataInput {
+function inputFromOpts(opts: HTTPBaseRequestOptions): FormData {
   const input = 'input' in opts ? opts.input : undefined;
 
   if (!isObject(input)) {
     throw new Error('No input');
   }
-  const { formData, ...queryParamInput } = input;
+  if (!(input instanceof FormData)) {
+    throw new Error('Input is not FormData');
+  }
 
-  return {
-    formData: formData as FormData,
-    query: Object.keys(queryParamInput).length === 0 ? null : queryParamInput,
-  };
+  return input;
 }
 
 const getUrl: GetUrl = (opts) => {
-  let url = opts.url + '/' + opts.path;
-  const inputs = inputFromOpts(opts);
-
-  if (inputs.query) {
-    url +=
-      '?input=' +
-      encodeURIComponent(
-        JSON.stringify(opts.runtime.transformer.serialize(inputs.query)),
-      );
-  }
+  const url = opts.url + '/' + opts.path;
 
   return url;
 };
 
 const getBody: GetBody = (opts) => {
-  return inputFromOpts(opts).formData;
+  return inputFromOpts(opts);
 };
 
 const formDataRequester: Requester = (opts) => {
