@@ -1,10 +1,8 @@
 # FormData
 
-{% note %}
 
-**Note:** Owners and administrators can add outside collaborators to a repository.
-
-{% endnote %}
+**Note**
+This is a note
 
 
 - [FormData](#formdata)
