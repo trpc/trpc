@@ -78,7 +78,7 @@ export default function Page() {
             if (noJs) {
               return;
             }
-            form.handleSubmit(async (values, event) => {
+            void form.handleSubmit(async (values, event) => {
               await mutation.mutateAsync(new FormData(event?.target));
             })(_event);
           }}
