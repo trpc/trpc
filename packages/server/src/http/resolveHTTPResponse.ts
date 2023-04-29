@@ -7,10 +7,13 @@ import {
   inferRouterError,
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
 import { TRPCResponse } from '../rpc';
-import { transformTRPCResponse } from '../shared/transformTRPCResponse';
+import { transformTRPCResponse } from '../shared';
 import { Maybe } from '../types';
+import {
+  BaseContentTypeHandler,
+  getJsonContentTypeInputs,
+} from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { HTTPHeaders, HTTPResponse } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
@@ -22,31 +25,10 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   GET: 'query',
   POST: 'mutation',
 };
-function getRawProcedureInputOrThrow(opts: {
-  req: HTTPRequest;
-  preprocessed?: boolean;
-}) {
-  const { req } = opts;
-  try {
-    if (req.method === 'GET') {
-      if (!req.query.has('input')) {
-        return undefined;
-      }
-      const raw = req.query.get('input');
-      return JSON.parse(raw!);
-    }
-    if (!opts.preprocessed && typeof req.body === 'string') {
-      // A mutation with no inputs will have req.body === ''
-      return req.body.length === 0 ? undefined : JSON.parse(req.body);
-    }
-    return req.body;
-  } catch (err) {
-    throw new TRPCError({
-      code: 'PARSE_ERROR',
-      cause: getCauseFromUnknown(err),
-    });
-  }
-}
+
+const fallbackContentTypeHandler = {
+  getInputs: getJsonContentTypeInputs,
+};
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
@@ -56,6 +38,7 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
+  contentTypeHandler?: BaseContentTypeHandler<any>;
   preprocessedBody?: boolean;
 }
 
@@ -64,6 +47,9 @@ export async function resolveHTTPResponse<
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { router, req } = opts;
+  const contentTypeHandler =
+    opts.contentTypeHandler ?? fallbackContentTypeHandler;
+
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
@@ -138,49 +124,16 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    const rawInput = getRawProcedureInputOrThrow({
+
+    const inputs = await contentTypeHandler.getInputs({
+      isBatchCall,
       req,
-      preprocessed: opts.preprocessedBody,
+      router,
+      preprocessedBody: opts.preprocessedBody ?? false,
     });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
-
-    const deserializeInputValue = (rawValue: unknown) => {
-      return typeof rawValue !== 'undefined'
-        ? router._def._config.transformer.input.deserialize(rawValue)
-        : rawValue;
-    };
-    const getInputs = (): Record<number, unknown> => {
-      if (!isBatchCall) {
-        return {
-          0: deserializeInputValue(rawInput),
-        };
-      }
-
-      /* istanbul ignore if -- @preserve */
-      if (
-        rawInput == null ||
-        typeof rawInput !== 'object' ||
-        Array.isArray(rawInput)
-      ) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: '"input" needs to be an object when doing a batch call',
-        });
-      }
-      const input: Record<number, unknown> = {};
-      for (const key in rawInput) {
-        const k = key as any as number;
-        const rawValue = rawInput[k];
-
-        const value = deserializeInputValue(rawValue);
-
-        input[k] = value;
-      }
-      return input;
-    };
-    const inputs = getInputs();
 
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
