@@ -45,9 +45,7 @@ export function createTRPCNext<
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
 ): CreateTRPCNext<TRouter, TSSRContext, TFlags> {
-  const hooks = createRootHooks<TRouter, TSSRContext>({
-    unstable_overrides: opts.unstable_overrides,
-  });
+  const hooks = createRootHooks<TRouter, TSSRContext>(opts);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC(opts);

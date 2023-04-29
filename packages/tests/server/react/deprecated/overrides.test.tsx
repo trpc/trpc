@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { routerToServerAndClientNew } from '../../___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -29,7 +29,7 @@ describe('mutation override', () => {
       });
       const opts = routerToServerAndClientNew(appRouter);
       const trpc = createTRPCReact<typeof appRouter>({
-        overrides: {
+        unstable_overrides: {
           useMutation: {
             async onSuccess(opts) {
               if (!opts.meta.skipInvalidate) {
