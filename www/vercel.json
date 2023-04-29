@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/docs/server/output-validation",
+      "destination": "/docs/server/validators",
+      "permanent": true
+    },
+    {
       "source": "/docs/server/infer-types",
       "destination": "/docs/client/infer-types",
       "permanent": true

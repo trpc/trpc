@@ -29,7 +29,7 @@ import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../server/routers/_app';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     if (typeof window !== 'undefined') {
       return {
         links: [
@@ -53,7 +53,9 @@ export const trpc = createTRPCNext<AppRouter>({
     };
   },
   ssr: true,
-  responseMeta({ ctx, clientErrors }) {
+  responseMeta(opts) {
+    const { clientErrors } = opts;
+
     if (clientErrors.length) {
       // propagate http first error from API calls
       return {
@@ -104,7 +106,7 @@ const waitFor = async (ms: number) =>
 
 export const appRouter = t.router({
   public: t.router({
-    slowQueryCached: t.procedure.query(async ({ ctx }) => {
+    slowQueryCached: t.procedure.query(async (opts) => {
       await waitFor(5000); // wait for 5s
 
       return {
@@ -122,7 +124,8 @@ export type AppRouter = typeof appRouter;
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
-  responseMeta({ ctx, paths, type, errors }) {
+  responseMeta(opts) {
+    const { ctx, paths, errors, type } = opts;
     // assuming you have all your public routes with the keyword `public` in them
     const allPublic = paths && paths.every((path) => path.includes('public'));
     // checking that no procedures errored
