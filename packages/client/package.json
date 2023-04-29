@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
   "version": "10.23.0",
-  "description": "tRPC Client lib",
+  "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
   "main": "dist/index.js",

@@ -1,7 +1,7 @@
 {
   "name": "@trpc/next",
   "version": "10.23.0",
-  "description": "tRPC Next lib",
+  "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
   "main": "dist/index.js",
