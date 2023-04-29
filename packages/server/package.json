@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.22.0",
+  "version": "10.23.0",
   "description": "tRPC Server",
   "author": "KATT",
   "license": "MIT",
@@ -69,6 +69,16 @@
       "require": "./dist/adapters/node-http/index.js",
       "default": "./dist/adapters/node-http/index.js"
     },
+    "./adapters/node-http/content-type/json": {
+      "import": "./dist/adapters/node-http/content-type/json/index.mjs",
+      "require": "./dist/adapters/node-http/content-type/json/index.js",
+      "default": "./dist/adapters/node-http/content-type/json/index.js"
+    },
+    "./adapters/node-http/content-type/form-data": {
+      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
+      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
+      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
+    },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
@@ -135,6 +145,7 @@
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
     "@types/ws": "^8.2.0",
+    "@web3-storage/multipart-parser": "^1.0.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^4.0.0",
     "eslint": "^8.30.0",
@@ -150,6 +161,7 @@
     "rollup": "^2.79.1",
     "superjson": "^1.7.4",
     "superstruct": "^1.0.0",
+    "tslib": "^2.5.0",
     "tsx": "^3.12.3",
     "typescript": "^4.8.3",
     "vitest": "^0.28.5",
