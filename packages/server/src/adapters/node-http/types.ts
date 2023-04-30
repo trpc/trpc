@@ -58,7 +58,7 @@ export type NodeHTTPHandlerOptions<
    * You can also use it for other needs which a connect/node.js compatible middleware can solve,
    *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
    */
-  middleware?: ConnectMiddleware;
+  middleware?: ConnectMiddleware<TRequest, TResponse>;
   maxBodySize?: number;
   experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
     TRequest,
