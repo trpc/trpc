@@ -13,7 +13,6 @@ import { initTRPC } from '@trpc/server';
 import {
   experimental_createFormDataInputStrategy,
   experimental_createMemoryUploadHandler,
-  experimental_parseMultipartFormData,
   nodeHTTPFormDataContentTypeHandler,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
@@ -40,28 +39,10 @@ const ctx = konn()
 
     const appRouter = t.router({
       polymorphic: t.procedure
-        // .use(async (opts) => {
-        //   if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
-        //     return opts.next();
-        //   }
-        //   const formData = await experimental_parseMultipartFormData(
-        //     opts.ctx.req,
-        //     experimental_createMemoryUploadHandler(),
-        //   );
-
-        //   return opts.next({
-        //     rawInput: formData,
-        //   });
-        // })
-        // .input(
-        //   formDataOrObject({
-        //     text: z.string(),
-        //   }),
-        // )
         .input(
           experimental_createFormDataInputStrategy({
             uploadHandler: experimental_createMemoryUploadHandler(),
-            parser: zfd.formData({
+            parser: formDataOrObject({
               text: z.string(),
             }),
           }),
@@ -70,19 +51,12 @@ const ctx = konn()
           return opts.input;
         }),
       uploadFile: t.procedure
-        .use(async (opts) => {
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createMemoryUploadHandler(),
-          );
-
-          return opts.next({
-            rawInput: formData,
-          });
-        })
         .input(
-          zfd.formData({
-            file: zfd.file(),
+          experimental_createFormDataInputStrategy({
+            uploadHandler: experimental_createMemoryUploadHandler(),
+            parser: zfd.formData({
+              file: zfd.file(),
+            }),
           }),
         )
         .mutation(async ({ input }) => {
@@ -179,14 +153,13 @@ test('upload file', async () => {
   `);
 });
 
-// TODO: add this back
-// test('polymorphic - accept both JSON and FormData', async () => {
-//   const form = new FormData();
-//   form.set('text', 'foo');
+test('polymorphic - accept both JSON and FormData', async () => {
+  const form = new FormData();
+  form.set('text', 'foo');
 
-//   const formDataRes = await ctx.proxy.polymorphic.mutate(form);
-//   const jsonRes = await ctx.proxy.polymorphic.mutate({
-//     text: 'foo',
-//   });
-//   expect(formDataRes).toEqual(jsonRes);
-// });
+  const formDataRes = await ctx.proxy.polymorphic.mutate(form);
+  const jsonRes = await ctx.proxy.polymorphic.mutate({
+    text: 'foo',
+  });
+  expect(formDataRes).toEqual(jsonRes);
+});

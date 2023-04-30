@@ -124,7 +124,10 @@ type FormDataLikeInput = {
 };
 
 export function experimental_createFormDataInputStrategy<
-  TParser extends ParserWithInputOutput<FormData | FormDataLikeInput, any>,
+  TParser extends ParserWithInputOutput<
+    FormData | FormDataLikeInput | object,
+    any
+  >,
 >(config: {
   uploadHandler?: UploadHandler;
   // TODO: make optional and passthrough
