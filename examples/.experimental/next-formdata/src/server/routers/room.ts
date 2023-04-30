@@ -31,17 +31,3 @@ export const roomRouter = router({
       };
     }),
 });
-
-const ip = experimental_createFormDataInputStrategy({
-  // Optional: defaults to in-memory setup
-  uploadHandler: experimental_createMemoryUploadHandler(),
-  parser: uploadFileSchema,
-});
-
-export const roomRouter2 = router({
-  sendMessage: publicProcedure.input(ip).mutation(async (opts) => {
-    return {
-      image: await writeFileToDisk(opts.input.image),
-    };
-  }),
-});

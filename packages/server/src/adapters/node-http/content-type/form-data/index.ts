@@ -116,13 +116,19 @@ export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest }
 //
 //
 
+// THis is confusing, comes from zod formdata, and typescript won't permit it without this
+type FormDataLikeInput = {
+  [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>;
+  entries(): IterableIterator<[string, FormDataEntryValue]>;
+};
+
 export function experimental_createFormDataInputStrategy<
-  TParsed,
-  TParser extends ParserWithInputOutput<FormData, TParsed>,
+  TParser extends ParserWithInputOutput<FormData | FormDataLikeInput, any>,
 >(config: {
   uploadHandler?: UploadHandler;
+  // TODO: make optional and passthrough
   parser: TParser;
-}): Experimental_ParseStrategy<any, any> {
+}): Experimental_ParseStrategy<TParser> {
   return {
     _strategy: strategyMarker,
     async _loadFromRequest(req: NodeHTTPRequest) {
