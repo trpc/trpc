@@ -1,3 +1,5 @@
+// import { NodeHTTPRequest } from '../adapters/node-http/types';
+
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
   _output: TParsedInput;
@@ -35,17 +37,33 @@ export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
   TParsedInput
 >;
 
-export type Parser = ParserWithoutInput<any> | ParserWithInputOutput<any, any>;
+export type Parser =
+  | ParserWithoutInput<any>
+  | ParserWithInputOutput<any, any>
+  | Experimental_ParseStrategy<any, any>;
 
-export type inferParser<TParser extends Parser> =
-  TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
-    ? {
-        in: $TIn;
-        out: $TOut;
-      }
-    : TParser extends ParserWithoutInput<infer $InOut>
-    ? {
-        in: $InOut;
-        out: $InOut;
-      }
-    : never;
+export type inferParser<TParser extends Parser> = TParser extends
+  | ParserWithInputOutput<infer $TIn, infer $TOut>
+  | Experimental_ParseStrategy<infer $TIn, infer $TOut>
+  ? {
+      in: $TIn;
+      out: $TOut;
+    }
+  : TParser extends ParserWithoutInput<infer $InOut>
+  ? {
+      in: $InOut;
+      out: $InOut;
+    }
+  : never;
+
+//
+//
+
+export const strategyMarker = Symbol('input-strategy');
+export type StrategyMarker = typeof strategyMarker;
+
+export type Experimental_ParseStrategy<TInput, TParsed> = {
+  _strategy: StrategyMarker;
+  _loadFromRequest: (req: any) => Promise<TInput>;
+  _parser: ParserWithInputOutput<TInput, TParsed>;
+};
