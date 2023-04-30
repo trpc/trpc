@@ -69,6 +69,6 @@ export type Experimental_ParseStrategy<
   _strategy: StrategyMarker;
   _loadFromRequest: (
     req: NodeHTTPRequest,
-  ) => Promise<inferParser<TParser>['in']>;
+  ) => Promise<inferParser<TParser>['in'] | undefined>;
   _parser: TParser;
 };
