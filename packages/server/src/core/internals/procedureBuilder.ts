@@ -207,10 +207,14 @@ function getParseStrategyMiddleware(
   parser: Parser,
 ): ProcedureBuilderMiddleware {
   if ('_strategy' in parser && parser._strategy === strategyMarker) {
-    return (opts) => {
+    return async (opts) => {
       // TODO: ideally we wouldn't force this to be added by the user, would be better to have the Adapter provide this
       if ('req' in opts.ctx) {
-        const rawInput = parser._loadFromRequest(opts.ctx.req);
+        const rawInput = await parser._loadFromRequest(opts.ctx.req);
+        if (rawInput === undefined) {
+          return opts.next();
+        }
+
         return opts.next({
           rawInput: rawInput,
         });

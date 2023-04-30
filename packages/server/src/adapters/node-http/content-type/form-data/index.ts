@@ -136,6 +136,10 @@ export function experimental_createFormDataInputStrategy<
   return {
     _strategy: strategyMarker,
     async _loadFromRequest(req: NodeHTTPRequest) {
+      if (!isMultipartFormDataRequest(req)) {
+        return;
+      }
+
       return await parseMultipartFormData(
         req,
         config.uploadHandler ?? createMemoryUploadHandler(),
