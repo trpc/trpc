@@ -4,12 +4,7 @@ import { HTTPBaseHandlerOptions } from '../../http';
 import { MaybePromise } from '../../types';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
-interface ParsedQs {
-  [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
-}
-
 export type NodeHTTPRequest = IncomingMessage & {
-  query?: ParsedQs;
   body?: unknown;
 };
 export type NodeHTTPResponse = ServerResponse;

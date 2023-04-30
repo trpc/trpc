@@ -27,9 +27,7 @@ export async function nodeHTTPRequestHandler<
       return await opts.createContext?.(opts);
     };
 
-    const query = opts.req.query
-      ? new URLSearchParams(opts.req.query as any)
-      : new URLSearchParams(opts.req.url!.split('?')[1]);
+    const query = new URLSearchParams(opts.req.url!.split('?')[1]);
 
     const jsonContentTypeHandler =
       defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
