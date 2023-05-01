@@ -1,0 +1,33 @@
+---
+id: concepts
+title: Concepts
+sidebar_label: Concepts
+slug: /concepts
+---
+
+import { ConceptsChart } from '../../src/components/ConceptsChart';
+
+## What is RPC? What mindset should I adopt?
+
+### It's just functions
+
+RPC is short for "Remote Procedure Call". It is a way of calling functions on a one computer (the server) from another computer (the client). With traditional HTTP/REST APIs, you call a URL and get a response. With RPC, you call a function and get a response.
+
+```ts
+// HTTP/REST
+const res = await fetch('/api/users/1');
+const user = await res.json();
+
+// RPC
+const user = await api.users.getById({ id: 1 });
+```
+
+### Don't think about HTTP/REST implementation details
+
+If you inspect the network traffic of a tRPC app, you'll see that it's just fairly standard HTTP requests and responses. But you don't need to think about the implementation details while writing your application code. You call functions, and tRPC takes care of everything else.
+
+## Vocabulary
+
+Below are some terms that are used frequently in the tRPC ecosystem. We'll be using these throughout the documentation, so it's good to get familiar with them. Most of these concepts also have their own pages in the documentation.
+
+<ConceptsChart />
