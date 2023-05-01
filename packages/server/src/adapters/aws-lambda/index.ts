@@ -41,6 +41,7 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   }
 
   return {
+    raw: event,
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,
@@ -104,7 +105,6 @@ export function awsLambdaRequestHandler<
       responseMeta: opts?.responseMeta,
       createContext,
       req,
-      rawReq: req,
       path,
       error: null,
       onError(o) {

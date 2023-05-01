@@ -36,7 +36,6 @@ interface ResolveHTTPRequestOptions<
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   req: TRequest;
-  rawReq: unknown;
   path: string;
   error?: Maybe<TRPCError>;
   contentTypeHandler?: BaseContentTypeHandler<any>;
@@ -142,7 +141,7 @@ export async function resolveHTTPResponse<
 
         try {
           const output = await callProcedure({
-            rawReq: opts.rawReq,
+            rawReq: opts.req.raw,
             procedures: router._def.procedures,
             path,
             rawInput: input,

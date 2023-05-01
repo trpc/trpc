@@ -57,6 +57,7 @@ export async function nodeHTTPRequestHandler<
     });
 
     const req: HTTPRequest = {
+      raw: opts.req,
       method: opts.req.method!,
       headers: opts.req.headers,
       query,
@@ -70,7 +71,6 @@ export async function nodeHTTPRequestHandler<
       createContext,
       router: opts.router,
       req,
-      rawReq: opts.req,
       error: bodyResult.ok ? null : bodyResult.error,
       preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
       onError(o) {

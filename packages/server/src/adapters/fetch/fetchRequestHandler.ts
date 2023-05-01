@@ -20,6 +20,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   const url = new URL(opts.req.url);
   const path = url.pathname.slice(opts.endpoint.length + 1);
   const req: HTTPRequest = {
+    raw: opts.req,
     query: url.searchParams,
     method: opts.req.method,
     headers: Object.fromEntries(opts.req.headers),
@@ -31,7 +32,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 
   const result = await resolveHTTPResponse({
     req,
-    rawReq: opts.req,
     createContext,
     path,
     router: opts.router,

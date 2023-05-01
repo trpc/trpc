@@ -41,11 +41,11 @@ export async function fastifyRequestHandler<
     method: opts.req.method,
     headers: opts.req.headers,
     body: opts.req.body ?? 'null',
+    raw: opts.req,
   };
 
   const result = await resolveHTTPResponse({
     req,
-    rawReq: opts.req,
     createContext,
     path: opts.path,
     router: opts.router,

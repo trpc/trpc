@@ -119,10 +119,11 @@ export function experimental_createFormDataMiddleware<
   },
 ) {
   return t.middleware(async (opts) => {
-    // TODO: ideally we wouldn't force this to be added by the user, would be better to have the Adapter provide this
-    if ('req' in opts.ctx && isMultipartFormDataRequest(opts.ctx.req)) {
+    const request = opts.rawReq as any;
+
+    if (isMultipartFormDataRequest(request)) {
       const rawInput = await parseMultipartFormData(
-        opts.ctx.req,
+        request,
         config?.uploadHandler ?? createMemoryUploadHandler(),
       );
 
