@@ -68,6 +68,15 @@ const ctx = konn()
             },
           };
         }),
+      passthroughFile: t.procedure
+        .input(experimental_createFormDataInputStrategy())
+        .mutation(async ({ input }) => {
+          if (input instanceof FormData) {
+            return Array.from(input.keys());
+          } else {
+            throw new Error('Unknown input: ' + String(input));
+          }
+        }),
     });
 
     type TRouter = typeof appRouter;
@@ -162,4 +171,13 @@ test('polymorphic - accept both JSON and FormData', async () => {
     text: 'foo',
   });
   expect(formDataRes).toEqual(jsonRes);
+});
+
+test("passthrough, don't validate/parse the input beyond loading the formData", async () => {
+  const form = new FormData();
+  form.set('text', 'foo');
+
+  const formDataRes = await ctx.proxy.passthroughFile.mutate(form);
+
+  expect(formDataRes).toEqual(['text']);
 });
