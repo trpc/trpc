@@ -63,8 +63,12 @@ export type inferParser<TParser extends Parser> =
 export const strategyMarker = Symbol('input-strategy');
 export type StrategyMarker = typeof strategyMarker;
 
+export type ParseStrategyParser<TInput, TOutput> =
+  | ParserWithInputOutput<TInput, TOutput>
+  | ((t: TInput) => TOutput);
+
 export type Experimental_ParseStrategy<
-  TParser extends ParserWithInputOutput<any, any>,
+  TParser extends ParseStrategyParser<any, any>,
 > = {
   _strategy: StrategyMarker;
   _loadFromRequest: (

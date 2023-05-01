@@ -14,7 +14,7 @@ import { streamMultipart } from '@web3-storage/multipart-parser';
 import { Readable } from 'node:stream';
 import {
   Experimental_ParseStrategy,
-  ParserWithInputOutput,
+  ParseStrategyParser,
   strategyMarker,
 } from '../../../../core/parser';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
@@ -117,22 +117,25 @@ export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest }
 //
 //
 
-// THis is confusing, comes from zod formdata, and typescript won't permit it without this
+// This is a cut&paste from zod formdata, and typescript has a moan without it being in the union
 type FormDataLikeInput = {
   [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>;
   entries(): IterableIterator<[string, FormDataEntryValue]>;
 };
 
+type FormDataLike = FormData | FormDataLikeInput | object;
+
 export function experimental_createFormDataInputStrategy<
-  TParser extends ParserWithInputOutput<
-    FormData | FormDataLikeInput | object,
-    any
+  TParser extends ParseStrategyParser<FormDataLike, any> = ParseStrategyParser<
+    FormDataLike,
+    FormDataLike
   >,
->(config: {
+>(config?: {
   uploadHandler?: UploadHandler;
-  // TODO: make optional and passthrough
-  parser: TParser;
+  parser?: TParser;
 }): Experimental_ParseStrategy<TParser> {
+  const parser = config?.parser ?? (((formData) => formData) as TParser);
+
   return {
     _strategy: strategyMarker,
     async _loadFromRequest(req: NodeHTTPRequest) {
@@ -142,9 +145,9 @@ export function experimental_createFormDataInputStrategy<
 
       return await parseMultipartFormData(
         req,
-        config.uploadHandler ?? createMemoryUploadHandler(),
+        config?.uploadHandler ?? createMemoryUploadHandler(),
       );
     },
-    _parser: config.parser,
+    _parser: parser,
   };
 }
