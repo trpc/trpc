@@ -9,14 +9,10 @@
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
 
+import { AnyTRPCInstance } from '@trpc/server/core/initTRPC';
 import { CombinedDataTransformer } from '@trpc/server/transformer';
 import { streamMultipart } from '@web3-storage/multipart-parser';
 import { Readable } from 'node:stream';
-import {
-  Experimental_ParseStrategy,
-  ParseStrategyParser,
-  strategyMarker,
-} from '../../../../core/parser';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { NodeHTTPRequest } from '../../types';
 import {
@@ -114,40 +110,27 @@ export { composeUploadHandlers as experimental_composeUploadHandlers } from './u
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
 
-//
-//
-
-// This is a cut&paste from zod formdata, and typescript has a moan without it being in the union
-type FormDataLikeInput = {
-  [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>;
-  entries(): IterableIterator<[string, FormDataEntryValue]>;
-};
-
-type FormDataLike = FormData | FormDataLikeInput | object;
-
-export function experimental_createFormDataInputStrategy<
-  TParser extends ParseStrategyParser<FormDataLike, any> = ParseStrategyParser<
-    FormDataLike,
-    FormDataLike
-  >,
->(config?: {
-  uploadHandler?: UploadHandler;
-  parser?: TParser;
-}): Experimental_ParseStrategy<TParser> {
-  const parser = config?.parser ?? (((formData) => formData) as TParser);
-
-  return {
-    _strategy: strategyMarker,
-    async _loadFromRequest(req: NodeHTTPRequest) {
-      if (!isMultipartFormDataRequest(req)) {
-        return;
-      }
-
-      return await parseMultipartFormData(
-        req,
+export function experimental_createFormDataMiddleware<
+  TTRPCInstance extends ReturnType<AnyTRPCInstance>,
+>(
+  t: TTRPCInstance,
+  config?: {
+    uploadHandler?: UploadHandler;
+  },
+) {
+  return t.middleware(async (opts) => {
+    // TODO: ideally we wouldn't force this to be added by the user, would be better to have the Adapter provide this
+    if ('req' in opts.ctx && isMultipartFormDataRequest(opts.ctx.req)) {
+      const rawInput = await parseMultipartFormData(
+        opts.ctx.req,
         config?.uploadHandler ?? createMemoryUploadHandler(),
       );
-    },
-    _parser: parser,
-  };
+
+      return opts.next({
+        rawInput: rawInput,
+      });
+    } else {
+      return opts.next();
+    }
+  });
 }

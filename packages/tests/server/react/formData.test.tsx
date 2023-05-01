@@ -11,7 +11,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { initTRPC } from '@trpc/server';
 import {
-  experimental_createFormDataInputStrategy,
+  experimental_createFormDataMiddleware,
   experimental_createMemoryUploadHandler,
   nodeHTTPFormDataContentTypeHandler,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
@@ -37,26 +37,29 @@ const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.context<CreateHTTPContextOptions>().create();
 
+    const formDataMiddleware = experimental_createFormDataMiddleware(t, {
+      // Totally optional
+      uploadHandler: experimental_createMemoryUploadHandler(),
+    });
+
+    const defaultFormDataMiddleware = experimental_createFormDataMiddleware(t);
+
     const appRouter = t.router({
       polymorphic: t.procedure
+        .use(formDataMiddleware)
         .input(
-          experimental_createFormDataInputStrategy({
-            uploadHandler: experimental_createMemoryUploadHandler(),
-            parser: formDataOrObject({
-              text: z.string(),
-            }),
+          formDataOrObject({
+            text: z.string(),
           }),
         )
         .mutation((opts) => {
           return opts.input;
         }),
       uploadFile: t.procedure
+        .use(formDataMiddleware)
         .input(
-          experimental_createFormDataInputStrategy({
-            uploadHandler: experimental_createMemoryUploadHandler(),
-            parser: zfd.formData({
-              file: zfd.file(),
-            }),
+          zfd.formData({
+            file: zfd.file(),
           }),
         )
         .mutation(async ({ input }) => {
@@ -69,7 +72,9 @@ const ctx = konn()
           };
         }),
       passthroughFile: t.procedure
-        .input(experimental_createFormDataInputStrategy())
+        .use(defaultFormDataMiddleware)
+        // TODO: an implicit type from the middleware might be nice?
+        .input((formData: any) => formData as FormData)
         .mutation(async ({ input }) => {
           if (input instanceof FormData) {
             return Array.from(input.keys());
