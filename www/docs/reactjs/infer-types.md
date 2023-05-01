@@ -172,14 +172,15 @@ type MyGenericComponentProps = {
   utils: MyRouterUtilsLike;
 };
 
-function MyGenericComponent({ route, utils }: MyGenericComponentProps) {
+function MyGenericComponent(props: MyGenericComponentProps) {
+  const { route } = props;
   const thing = route.listThings.useQuery({
     filter: 'qwerty',
   });
 
   const mutation = route.doThing.useMutation({
     onSuccess() {
-      utils.listThings.invalidate();
+      props.utils.listThings.invalidate();
     },
   });
 

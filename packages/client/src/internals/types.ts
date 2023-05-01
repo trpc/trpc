@@ -81,7 +81,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's body.
    */
-  body?: string | ReadableStream | null;
+  body?: string | ReadableStream | FormData | null;
 
   /**
    * Sets the request's associated headers.

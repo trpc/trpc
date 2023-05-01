@@ -24,15 +24,15 @@ const appRouter = t.router({
     }),
     byId: t.procedure
       .input(z.string())
-      .query(({ input }) => {
+      .query((opts) => {
         // imaginary db call
         return { id: 1, title: 'tRPC is the best!' };
     }),
     create: t.procedure
       .input(z.object({ title: z.string(), text: z.string(), }))
-      .mutation(({ input }) => {
+      .mutation((opts) => {
         // imaginary db call
-        return { id: 1, ...input };
+        return { id: 1, ...opts.input };
     }),
   }),
 });

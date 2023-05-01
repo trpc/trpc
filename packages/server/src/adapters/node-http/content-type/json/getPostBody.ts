@@ -1,15 +1,13 @@
-import { TRPCError } from '../../../error/TRPCError';
-import { NodeHTTPRequest } from '../types';
+import { TRPCError } from '../../../../error/TRPCError';
+import { BodyResult } from '../../../../http/contentType';
+import { NodeHTTPRequest } from '../../types';
 
 export async function getPostBody(opts: {
   req: NodeHTTPRequest;
   maxBodySize?: number;
-}) {
+}): Promise<BodyResult> {
   const { req, maxBodySize = Infinity } = opts;
-  return new Promise<
-    | { ok: true; data: unknown; preprocessed: boolean }
-    | { ok: false; error: TRPCError }
-  >((resolve) => {
+  return new Promise((resolve) => {
     if ('body' in req) {
       resolve({ ok: true, data: req.body, preprocessed: true });
       return;

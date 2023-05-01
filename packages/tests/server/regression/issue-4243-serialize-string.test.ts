@@ -47,6 +47,7 @@ function mockReq({
     destroy: vi.fn(),
   };
   req.socket = socket;
+  req.headers = {};
 
   return { req, socket };
 }

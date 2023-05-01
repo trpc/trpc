@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
-  "version": "10.21.2",
-  "description": "tRPC Client lib",
+  "version": "10.23.0",
+  "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
   "main": "dist/index.js",
@@ -69,11 +69,11 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.21.2"
+    "@trpc/server": "10.23.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "10.21.2",
+    "@trpc/server": "10.23.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
     "eslint": "^8.30.0",
