@@ -32,6 +32,16 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 
   const result = await resolveHTTPResponse({
     req,
+    requestUtils: {
+      getHeaders() {
+        return Object.fromEntries(opts.req.headers.entries());
+      },
+      async getBodyStream() {
+        // TODO: non null assertion? maybe throw instead?
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return opts.req.body!;
+      },
+    },
     createContext,
     path,
     router: opts.router,

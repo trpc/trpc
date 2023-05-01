@@ -6,6 +6,7 @@ import {
   inferRouterContext,
   inferRouterError,
 } from '../core';
+import { RequestUtils } from '../core/internals/procedureBuilder';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../shared';
@@ -36,6 +37,7 @@ interface ResolveHTTPRequestOptions<
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   req: TRequest;
+  requestUtils: RequestUtils;
   path: string;
   error?: Maybe<TRPCError>;
   contentTypeHandler?: BaseContentTypeHandler<any>;
@@ -141,7 +143,7 @@ export async function resolveHTTPResponse<
 
         try {
           const output = await callProcedure({
-            rawReq: opts.req.raw,
+            requestUtils: opts.requestUtils,
             procedures: router._def.procedures,
             path,
             rawInput: input,

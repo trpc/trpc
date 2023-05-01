@@ -305,9 +305,17 @@ function createResolver(
 /**
  * @internal
  */
+export interface RequestUtils {
+  getHeaders(): Record<string, string | string[] | undefined>;
+  getBodyStream(): Promise<ReadableStream<any>>;
+}
+
+/**
+ * @internal
+ */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  rawReq: unknown;
+  requestUtils: RequestUtils;
   rawInput: unknown;
   input?: unknown;
   path: string;
@@ -348,7 +356,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
         const result = await middleware({
-          rawReq: opts.rawReq,
+          requestUtils: opts.requestUtils,
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,

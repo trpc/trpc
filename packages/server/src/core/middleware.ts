@@ -3,7 +3,10 @@ import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
-import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
+import {
+  ProcedureBuilderMiddleware,
+  RequestUtils,
+} from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
   MiddlewareMarker,
@@ -129,7 +132,7 @@ export type MiddlewareFunction<
   TParamsAfter extends ProcedureParams,
 > = {
   (opts: {
-    rawReq: unknown;
+    requestUtils: RequestUtils;
     ctx: Simplify<TParams['_ctx_out']>;
     type: ProcedureType;
     path: string;

@@ -5,6 +5,7 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
+import { Readable } from 'stream';
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPRequest, resolveHTTPResponse } from '../../http';
@@ -100,6 +101,16 @@ export function awsLambdaRequestHandler<
     };
 
     const response = await resolveHTTPResponse({
+      requestUtils: {
+        getHeaders() {
+          return req.headers;
+        },
+        async getBodyStream() {
+          // TODO: is this right? also non-null assertion
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          return Readable.toWeb(Readable.from(event.body!));
+        },
+      },
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts?.responseMeta,

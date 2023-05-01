@@ -166,7 +166,16 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         await ctxPromise; // asserts context has been set
 
         const result = await callProcedure({
-          rawReq: req,
+          requestUtils: {
+            getHeaders() {
+              return req.headers;
+            },
+            getBodyStream() {
+              throw new Error(
+                'Not Supported: stream / formdata is not supported in websockets / subscriptions',
+              );
+            },
+          },
           procedures: router._def.procedures,
           path,
           rawInput: input,

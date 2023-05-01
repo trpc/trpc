@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { Readable } from 'stream';
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
 import { HTTPRequest } from '../../http';
@@ -65,6 +66,14 @@ export async function nodeHTTPRequestHandler<
     };
 
     const result = await resolveHTTPResponse({
+      requestUtils: {
+        getHeaders() {
+          return opts.req.headers;
+        },
+        async getBodyStream() {
+          return Readable.toWeb(opts.req);
+        },
+      },
       batching: opts.batching,
       responseMeta: opts.responseMeta,
       path: opts.path,

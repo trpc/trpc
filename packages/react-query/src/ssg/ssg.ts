@@ -41,7 +41,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawReq: null,
+          requestUtils: {
+            getHeaders() {
+              return {};
+            },
+            getBodyStream() {
+              throw new Error('Not Implemented / Supported');
+            },
+          },
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
@@ -62,7 +69,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawReq: null,
+          requestUtils: {
+            getHeaders() {
+              return {};
+            },
+            getBodyStream() {
+              throw new Error('Not Implemented / Supported');
+            },
+          },
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
@@ -84,7 +98,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawReq: null,
+          requestUtils: {
+            getHeaders() {
+              return {};
+            },
+            getBodyStream() {
+              throw new Error('Not Implemented / Supported');
+            },
+          },
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
@@ -106,7 +127,14 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawReq: null,
+          requestUtils: {
+            getHeaders() {
+              return {};
+            },
+            getBodyStream() {
+              throw new Error('Not Implemented / Supported');
+            },
+          },
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',

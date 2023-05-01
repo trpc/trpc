@@ -46,6 +46,17 @@ export async function fastifyRequestHandler<
 
   const result = await resolveHTTPResponse({
     req,
+    requestUtils: {
+      getHeaders() {
+        return opts.req.headers;
+      },
+      async getBodyStream() {
+        // TODO: looks like 3rd party lib might be needed? https://github.com/fastify/fastify-multipart
+        throw new Error(
+          'Not Implemented: tRPC does not currently support streams / form-data with Fastify Adapter',
+        );
+      },
+    },
     createContext,
     path: opts.path,
     router: opts.router,

@@ -10,11 +10,10 @@
  */
 
 import { AnyTRPCInstance } from '@trpc/server/core/initTRPC';
+import { RequestUtils } from '@trpc/server/core/internals/procedureBuilder';
 import { CombinedDataTransformer } from '@trpc/server/transformer';
 import { streamMultipart } from '@web3-storage/multipart-parser';
-import { Readable } from 'node:stream';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import { NodeHTTPRequest } from '../../types';
 import {
   UploadHandler,
   UploadHandlerPart,
@@ -28,10 +27,16 @@ import {
  * @see https://remix.run/utils/parse-multipart-form-data
  */
 async function parseMultipartFormData(
-  request: NodeHTTPRequest,
+  utils: RequestUtils,
   uploadHandler: UploadHandler,
 ): Promise<FormData> {
-  const contentType = request.headers['content-type'] || '';
+  const headers = utils.getHeaders();
+  const stream = await utils.getBodyStream();
+  let contentType = headers['content-type'] || '';
+  if (Array.isArray(contentType)) {
+    // TODO: what do?
+    contentType = contentType[0] || '';
+  }
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
   if (!boundary || type !== 'multipart/form-data') {
@@ -40,7 +45,7 @@ async function parseMultipartFormData(
 
   const formData = new FormData();
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
-    streamMultipart(Readable.toWeb(request), boundary);
+    streamMultipart(stream, boundary);
 
   for await (const part of parts) {
     if (part.done) break;
@@ -61,10 +66,17 @@ async function parseMultipartFormData(
   return formData;
 }
 
-function isMultipartFormDataRequest(req: NodeHTTPRequest) {
-  const contentTypeHeader = req.headers['content-type'];
+function isMultipartFormDataRequest(
+  headers: Record<string, string | string[] | undefined>,
+) {
+  let contentTypeHeader = headers['content-type'];
+  if (Array.isArray(contentTypeHeader)) {
+    contentTypeHeader = contentTypeHeader[0];
+  }
+  contentTypeHeader ??= '';
+
   return (
-    contentTypeHeader?.startsWith('multipart/form-data') ||
+    contentTypeHeader.startsWith('multipart/form-data') ||
     contentTypeHeader === 'application/x-www-form-urlencoded'
   );
 }
@@ -72,7 +84,7 @@ function isMultipartFormDataRequest(req: NodeHTTPRequest) {
 export const nodeHTTPFormDataContentTypeHandler =
   createNodeHTTPContentTypeHandler({
     isMatch(opts) {
-      return isMultipartFormDataRequest(opts.req);
+      return isMultipartFormDataRequest(opts.req.headers);
     },
     async getBody(opts) {
       const fields = Object.fromEntries(opts.query);
@@ -119,16 +131,14 @@ export function experimental_createFormDataMiddleware<
   },
 ) {
   return t.middleware(async (opts) => {
-    const request = opts.rawReq as any;
-
     if (opts.rawInput instanceof FormData) {
       // we have a form data request, pass through
       return opts.next();
     }
 
-    if (isMultipartFormDataRequest(request)) {
+    if (isMultipartFormDataRequest(opts.requestUtils.getHeaders())) {
       const rawInput = await parseMultipartFormData(
-        request,
+        opts.requestUtils,
         config?.uploadHandler ?? createMemoryUploadHandler(),
       );
 
