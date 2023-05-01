@@ -36,11 +36,22 @@ function formDataOrObject<T extends z.ZodRawShape>(input: T) {
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.context<CreateHTTPContextOptions>().create();
+    type Context = {
+      req?: CreateHTTPContextOptions['req'];
+    };
+    const t = initTRPC.context<Context>().create();
 
     const appRouter = t.router({
       polymorphic: t.procedure
         .use(async (opts) => {
+          if (opts.rawInput instanceof FormData) {
+            // we have a form data request, pass through
+            return opts.next();
+          }
+          if (!opts.ctx.req) {
+            // no request, pass through - was probably called through `createCaller()`
+            return opts.next();
+          }
           if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
             return opts.next();
           }
@@ -176,6 +187,18 @@ test('polymorphic - accept both JSON and FormData', async () => {
   form.set('text', 'foo');
 
   const formDataRes = await ctx.proxy.polymorphic.mutate(form);
+  const jsonRes = await ctx.proxy.polymorphic.mutate({
+    text: 'foo',
+  });
+  expect(formDataRes).toEqual(jsonRes);
+});
+
+test('polymorphic - createCaller', async () => {
+  const form = new FormData();
+  form.set('text', 'foo');
+
+  const caller = ctx.router.createCaller({});
+  const formDataRes = await caller.polymorphic(form);
   const jsonRes = await ctx.proxy.polymorphic.mutate({
     text: 'foo',
   });
