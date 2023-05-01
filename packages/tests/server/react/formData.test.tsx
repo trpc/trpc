@@ -182,6 +182,18 @@ test('polymorphic - accept both JSON and FormData', async () => {
   expect(formDataRes).toEqual(jsonRes);
 });
 
+test('polymorphic - createCaller', async () => {
+  const form = new FormData();
+  form.set('text', 'foo');
+
+  const caller = ctx.router.createCaller({});
+  const formDataRes = await caller.polymorphic(form);
+  const jsonRes = await ctx.proxy.polymorphic.mutate({
+    text: 'foo',
+  });
+  expect(formDataRes).toEqual(jsonRes);
+});
+
 test("passthrough, don't validate/parse the input beyond loading the formData", async () => {
   const form = new FormData();
   form.set('text', 'foo');

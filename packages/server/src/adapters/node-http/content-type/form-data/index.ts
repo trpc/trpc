@@ -121,6 +121,11 @@ export function experimental_createFormDataMiddleware<
   return t.middleware(async (opts) => {
     const request = opts.rawReq as any;
 
+    if (opts.rawInput instanceof FormData) {
+      // we have a form data request, pass through
+      return opts.next();
+    }
+
     if (isMultipartFormDataRequest(request)) {
       const rawInput = await parseMultipartFormData(
         request,
