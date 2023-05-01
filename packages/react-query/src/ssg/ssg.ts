@@ -41,6 +41,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
+          rawReq: null,
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
@@ -61,6 +62,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
+          rawReq: null,
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
@@ -82,6 +84,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
+          rawReq: null,
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
@@ -103,6 +106,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
+          rawReq: null,
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',

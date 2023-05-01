@@ -129,6 +129,7 @@ export type MiddlewareFunction<
   TParamsAfter extends ProcedureParams,
 > = {
   (opts: {
+    req: unknown;
     ctx: Simplify<TParams['_ctx_out']>;
     type: ProcedureType;
     path: string;

@@ -307,6 +307,7 @@ function createResolver(
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
+  rawReq: unknown;
   rawInput: unknown;
   input?: unknown;
   path: string;
@@ -347,6 +348,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
         const result = await middleware({
+          req: opts.rawReq,
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,

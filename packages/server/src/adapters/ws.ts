@@ -166,6 +166,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         await ctxPromise; // asserts context has been set
 
         const result = await callProcedure({
+          rawReq: req,
           procedures: router._def.procedures,
           path,
           rawInput: input,

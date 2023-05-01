@@ -13,6 +13,7 @@ test('deprecated: call proc directly', async () => {
     ctx: {},
     path: 'asd',
     type: 'query',
+    rawReq: null,
     rawInput: {},
   });
 

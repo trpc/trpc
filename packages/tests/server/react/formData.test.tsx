@@ -16,7 +16,6 @@ import {
   nodeHTTPFormDataContentTypeHandler,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
 import { z } from 'zod';
@@ -35,7 +34,7 @@ function formDataOrObject<T extends z.ZodRawShape>(input: T) {
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.context<CreateHTTPContextOptions>().create();
+    const t = initTRPC.create();
 
     const formDataMiddleware = experimental_createFormDataMiddleware(t, {
       // Totally optional
@@ -92,6 +91,11 @@ const ctx = konn()
     };
     const opts = routerToServerAndClientNew(appRouter, {
       server: {
+        createContext() {
+          return {
+            // Don't need to attach req or res for this
+          };
+        },
         experimental_contentTypeHandlers: [
           nodeHTTPFormDataContentTypeHandler(),
           nodeHTTPJSONContentTypeHandler(),

@@ -31,6 +31,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 
   const result = await resolveHTTPResponse({
     req,
+    rawReq: opts.req,
     createContext,
     path,
     router: opts.router,

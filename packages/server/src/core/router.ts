@@ -281,6 +281,8 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
             procedureTypes.includes(path[0] as ProcedureType)
           ) {
             return callProcedure({
+              // TODO: req:null will probably break local calling of formData mutations
+              rawReq: null,
               procedures: _def.procedures,
               path: args[0] as string,
               rawInput: args[1],
@@ -300,6 +302,8 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
           }
 
           return procedure({
+            // TODO: req:null will probably break local calling of formData mutations
+            rawReq: null,
             path: fullPath,
             rawInput: args[0],
             ctx,

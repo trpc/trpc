@@ -70,6 +70,7 @@ export async function nodeHTTPRequestHandler<
       createContext,
       router: opts.router,
       req,
+      rawReq: opts.req,
       error: bodyResult.ok ? null : bodyResult.error,
       preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
       onError(o) {

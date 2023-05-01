@@ -104,6 +104,7 @@ export function awsLambdaRequestHandler<
       responseMeta: opts?.responseMeta,
       createContext,
       req,
+      rawReq: req,
       path,
       error: null,
       onError(o) {

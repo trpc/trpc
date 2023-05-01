@@ -45,6 +45,7 @@ export async function fastifyRequestHandler<
 
   const result = await resolveHTTPResponse({
     req,
+    rawReq: opts.req,
     createContext,
     path: opts.path,
     router: opts.router,
