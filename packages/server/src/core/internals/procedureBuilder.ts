@@ -7,7 +7,7 @@ import {
   createInputMiddleware,
   createOutputMiddleware,
 } from '../middleware';
-import { Parser, inferParser, strategyMarker } from '../parser';
+import { Parser, inferParser } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -203,31 +203,6 @@ function createNewBuilder(
   });
 }
 
-function getParseStrategyMiddleware(
-  parser: Parser,
-): ProcedureBuilderMiddleware {
-  if ('_strategy' in parser && parser._strategy === strategyMarker) {
-    return async (opts) => {
-      // TODO: ideally we wouldn't force this to be added by the user, would be better to have the Adapter provide this
-      if ('req' in opts.ctx) {
-        const rawInput = await parser._loadFromRequest(opts.ctx.req);
-        if (rawInput === undefined) {
-          return opts.next();
-        }
-
-        return opts.next({
-          rawInput: rawInput,
-        });
-      } else {
-        throw new Error('WIP: req must be attached to context but was not');
-      }
-    };
-  } else {
-    // TODO: just return null and don't attach it at all
-    return (opts) => opts.next();
-  }
-}
-
 export function createBuilder<TConfig extends AnyRootConfig>(
   initDef: Partial<AnyProcedureBuilderDef> = {},
 ): ProcedureBuilder<{
@@ -249,20 +224,12 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     _def,
     input(input) {
       const parser = getParseFn(input);
-
       return createNewBuilder(_def, {
         inputs: [input],
-        middlewares: [
-          getParseStrategyMiddleware(input),
-          createInputMiddleware(parser),
-        ],
+        middlewares: [createInputMiddleware(parser)],
       }) as AnyProcedureBuilder;
     },
     output(output: Parser) {
-      if ('_strategy' in output && output._strategy === strategyMarker) {
-        throw new Error('WIP: output parser cannot be a strategy parser');
-      }
-
       const parseOutput = getParseFn(output);
       return createNewBuilder(_def, {
         output,
