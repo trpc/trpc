@@ -12,6 +12,7 @@ export async function getPostBody(opts: {
       resolve({
         ok: true,
         data: req.body,
+        // If the request headers specifies a content-type, we assume that the body has been preprocessed
         preprocessed: req.headers['content-type'] === 'application/json',
       });
       return;
