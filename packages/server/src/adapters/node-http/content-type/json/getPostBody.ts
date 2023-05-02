@@ -9,7 +9,11 @@ export async function getPostBody(opts: {
   const { req, maxBodySize = Infinity } = opts;
   return new Promise((resolve) => {
     if ('body' in req) {
-      resolve({ ok: true, data: req.body, preprocessed: true });
+      resolve({
+        ok: true,
+        data: req.body,
+        preprocessed: req.headers['content-type'] === 'application/json',
+      });
       return;
     }
     let body = '';
