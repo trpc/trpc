@@ -30,7 +30,7 @@
     "@mdx-js/react": "^1.6.22",
     "@trpc/client": "^10.24.0",
     "@trpc/next": "^10.24.0",
-    "@trpc/react-query": "^10.24.0",
+    "@trpc/react-query": "^10.23.1",
     "@trpc/server": "^10.24.0",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
