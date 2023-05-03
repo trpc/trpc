@@ -73,7 +73,7 @@ module.exports = {
           label: 'Quickstart',
         },
         {
-          to: 'docs/awesome-trpc',
+          to: 'docs/community/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
