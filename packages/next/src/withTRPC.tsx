@@ -93,9 +93,7 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>({
-      unstable_overrides: opts.unstable_overrides,
-    });
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
@@ -233,9 +231,10 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydratedCacheWithErrors,
-        );
+        pageProps.trpcState =
+          trpcClient.runtime.combinedTransformer.output.serialize(
+            dehydratedCacheWithErrors,
+          );
 
         const appTreeProps = getAppTreeProps(pageProps);
 

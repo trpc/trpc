@@ -1,6 +1,16 @@
 {
   "redirects": [
     {
+      "source": "/docs/server/output-validation",
+      "destination": "/docs/server/validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/infer-types",
+      "destination": "/docs/client/infer-types",
+      "permanent": true
+    },
+    {
       "source": "/docs/aborting-procedures",
       "destination": "/docs/client/aborting-procedure-calls",
       "permanent": true
@@ -37,7 +47,7 @@
     },
     {
       "source": "/docs/ssg-helpers",
-      "destination": "/docs/nextjs/ssg-helpers",
+      "destination": "/docs/nextjs/server-side-helpers",
       "permanent": true
     },
     {
@@ -202,7 +212,7 @@
     },
     {
       "source": "/docs/infer-types",
-      "destination": "/docs/server/infer-types",
+      "destination": "/docs/client/infer-types",
       "permanent": true
     },
     {
@@ -313,6 +323,31 @@
     {
       "source": "/docs/v10/:path*",
       "destination": "/docs/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/ssg-helpers",
+      "destination": "/docs/nextjs/server-side-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/awesome-trpc",
+      "destination": "/docs/community/awesome-trpc",
+      "permanent": true
+    },
+    {
+      "source": "/docs/contributing",
+      "destination": "/docs/community/contributing",
+      "permanent": true
+    },
+    {
+      "source": "/docs/love",
+      "destination": "/docs/community/love",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sponsors",
+      "destination": "/docs/community/sponsors",
       "permanent": true
     }
   ]

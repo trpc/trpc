@@ -38,7 +38,7 @@ pnpm add @trpc/react-query @tanstack/react-query
 Create a utils file that exports tRPC hooks and providers.
 
 ```ts
-import { createReactQueryHooks, createTRPCReact } from '@trpc/react-query';
+import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from './server';
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -72,10 +72,10 @@ export function App() {
 Now in any component, you can query your API using the proxy exported from the utils file.
 
 ```ts
-import { proxy } from '~/utils/trpc';
+import { trpc } from '~/utils/trpc';
 
 export function Hello() {
-  const { data, error, status } = proxy.greeting.useQuery({ name: 'tRPC' });
+  const { data, error, status } = trpc.greeting.useQuery({ name: 'tRPC' });
 
   if (error) {
     return <p>{error.message}</p>;

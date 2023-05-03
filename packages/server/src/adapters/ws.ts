@@ -8,7 +8,6 @@ import {
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
-import { transformTRPCResponse } from '../internals/transformTRPCResponse';
 import { BaseHandlerOptions } from '../internals/types';
 import { Unsubscribable, isObservable } from '../observable';
 import {
@@ -17,6 +16,7 @@ import {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
+import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { CombinedDataTransformer } from '../transformer';
 import {
   NodeHTTPCreateContextFnOptions,
@@ -62,7 +62,7 @@ function assertIsJSONRPC2OrUndefined(
     throw new Error('Must be JSONRPC 2.0');
   }
 }
-function parseMessage(
+export function parseMessage(
   obj: unknown,
   transformer: CombinedDataTransformer,
 ): TRPCClientOutgoingMessage {

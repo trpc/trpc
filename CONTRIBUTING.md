@@ -64,7 +64,7 @@ This package contains the core and server-side functionality. If something is sh
 
 #### Building a Router
 
-This is where tRPC has the most interaction with users, so it should be treated with a great deal of importance. We care about offering a simple, intuitive API in which the HTTP layer disappears for the user. Here the user's entry point is [`initTRPC`](packages/server/src/core/initTRPC.ts) where root configuration such as a [data transformer](https://trpc.io/docs/data-transformers) is set and factory functions for router, procedure, middleware, etc. creation are returned.
+This is where tRPC has the most interaction with users, so it should be treated with a great deal of importance. We care about offering a simple, intuitive API in which the HTTP layer disappears for the user. Here the user's entrypoint is [`initTRPC`](packages/server/src/core/initTRPC.ts) where root configuration such as a [data transformer](https://trpc.io/docs/data-transformers) is set and factory functions for router, procedure, middleware, etc. creation are returned.
 
 The most complex types are also in this area because we must keep track of the context, meta, middleware, and each procedure and its inputs and outputs. If you are ever struggling to understand a type, feel free to ask for help on [Discord](https://trpc.io/discord).
 
