@@ -19,7 +19,7 @@
     "@cloudflare/workers-types": "^4.0.0",
     "@effect/schema": "^0.17.2",
     "@fastify/busboy": "^1.2.1",
-    "@fastify/websocket": "^7.1.2",
+    "@fastify/websocket": "^8.0.0",
     "@miniflare/core": "^2.9.0",
     "@tanstack/react-query": "^4.18.0",
     "@testing-library/dom": "^9.0.0",
