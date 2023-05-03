@@ -3,13 +3,7 @@ import * as trpcNext from '@trpc/server/src/adapters/next';
 import EventEmitter from 'events';
 import { z } from 'zod';
 
-function mockReq({
-  query,
-  method = 'GET',
-  headers = {},
-  body,
-  parseBody = true,
-}: {
+function mockReq(opts: {
   query: Record<string, any>;
   headers?: Record<string, string>;
   method?:
@@ -26,18 +20,20 @@ function mockReq({
 }) {
   const req = new EventEmitter() as any;
 
-  req.method = method;
-  req.query = query;
+  req.method = opts.method;
+  req.query = opts.query;
+  const headers = opts.headers ?? {};
+  req.headers = headers;
   if (req.method === 'POST') {
     if (
       'content-type' in headers &&
       headers['content-type'] === 'application/json' &&
-      parseBody
+      opts.parseBody
     ) {
-      req.body = JSON.parse(body);
+      req.body = JSON.parse(opts.body);
     } else {
       setImmediate(() => {
-        req.emit('data', body);
+        req.emit('data', opts.body);
         req.emit('end');
       });
     }
@@ -93,7 +89,7 @@ describe('string inputs are properly serialized and deserialized', () => {
     const { res, end } = mockRes();
     await handler(req, res);
     const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
-    expect(res.statusCode).toBe(200);
+
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -101,6 +97,7 @@ describe('string inputs are properly serialized and deserialized', () => {
         },
       }
     `);
+    expect(res.statusCode).toBe(200);
   });
 });
 
