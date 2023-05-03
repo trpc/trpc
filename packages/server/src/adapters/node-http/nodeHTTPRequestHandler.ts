@@ -2,38 +2,25 @@
 import { AnyRouter } from '../../core';
 import { HTTPRequest, ResolveHTTPRequestOptionsContextFn } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { getPostBody } from './internals/getPostBody';
+import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
+import { NodeHTTPContentTypeHandler } from './internals/contentType';
 import {
-  NodeHTTPHandlerOptions,
   NodeHTTPRequest,
+  NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
 
-type NodeHTTPRequestHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest extends NodeHTTPRequest,
-  TResponse extends NodeHTTPResponse,
-> = {
-  req: TRequest;
-  res: TResponse;
-  path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const handleViaMiddleware =
-    opts.middleware ??
-    ((_req, _res, next) => {
-      return next();
-    });
+  const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
-    if (err) {
-      throw err;
-    }
+    if (err) throw err;
 
     //
     // Build tRPC dependencies
@@ -47,11 +34,34 @@ export async function nodeHTTPRequestHandler<
       });
     };
 
-    const bodyResult = await getPostBody(opts);
-
     const query = opts.req.query
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
+
+    const jsonContentTypeHandler =
+      defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
+        TRequest,
+        TResponse
+      >;
+
+    const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
+      jsonContentTypeHandler,
+    ];
+
+    const contentTypeHandler =
+      contentTypeHandlers.find((handler) =>
+        handler.isMatch({
+          ...opts,
+          query,
+        }),
+      ) ??
+      // fallback to json
+      jsonContentTypeHandler;
+
+    const bodyResult = await contentTypeHandler.getBody({
+      ...opts,
+      query,
+    });
 
     const req: HTTPRequest = {
       method: opts.req.method!,
@@ -59,9 +69,6 @@ export async function nodeHTTPRequestHandler<
       query,
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
-
-    //
-    // Invoke tRPC
 
     const result = await resolveHTTPResponse({
       batching: opts.batching,
@@ -78,24 +85,19 @@ export async function nodeHTTPRequestHandler<
           req: opts.req,
         });
       },
+      contentTypeHandler,
     });
-
-    //
-    // Handle result
 
     const { res } = opts;
     if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
       res.statusCode = result.status;
     }
-
     for (const [key, value] of Object.entries(result.headers ?? {})) {
       if (typeof value === 'undefined') {
         continue;
       }
-
       res.setHeader(key, value);
     }
-
     res.end(result.body);
   });
 }
