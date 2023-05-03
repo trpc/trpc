@@ -4,7 +4,12 @@ import { getPostBody } from './getPostBody';
 test('has body', async () => {
   const body = {};
   const resolvedBody = await getPostBody({
-    req: { body },
+    req: {
+      body,
+      headers: {
+        'content-type': 'application/json',
+      },
+    },
   } as any);
   expect(resolvedBody).toMatchInlineSnapshot(`
     Object {
@@ -26,6 +31,8 @@ test('req as eventemitter', async () => {
     );
     events.emit('end');
   }, 5);
+
+  (events as any).headers = {};
   const result = await getPostBody({
     req: events,
   } as any);
