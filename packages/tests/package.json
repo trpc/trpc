@@ -29,7 +29,7 @@
     "@trpc/client": "10.24.0",
     "@trpc/next": "10.24.0",
     "@trpc/react-query": "10.24.0",
-    "@trpc/server": "10.24.0",
+    "@trpc/server": "10.23.1",
     "@types/node": "^18.7.20",
     "@types/testing-library__jest-dom": "^5.14.5",
     "@vitest/coverage-istanbul": "^0.28.5",
