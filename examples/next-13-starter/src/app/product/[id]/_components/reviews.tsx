@@ -13,7 +13,6 @@ export async function Reviews(props: {
   productId: string;
   data: Promise<RouterOutputs['reviews']['list']>;
 }) {
-  const reviews = await props.data;
   const me = (await getServerSession(authOptions))?.user;
 
   return (
@@ -51,7 +50,11 @@ export async function Reviews(props: {
               await new Promise((resolve) => setTimeout(resolve, 1000));
 
               // TODO: trpc.reviews.list.revalidate({ productId: props.productId });
-              revalidateTag('reviews.list');
+              const tag = `reviews.list?input=${JSON.stringify({
+                productId: props.productId,
+              })}`;
+              console.log('Revalidating tag', tag);
+              revalidateTag(tag);
             }}
           >
             <Input name="text" />

@@ -13,14 +13,17 @@ export const api = createTRPCNextAppRouterReactServer<AppRouter>({
         (runtime) => {
           return (ctx) => {
             const { op } = ctx;
-            const { path } = op;
+            const { path, input, type } = op;
+            const tag = `${path}?input=${JSON.stringify(input)}`;
+
+            type === 'query' && console.log('Fetching with tag', tag);
 
             const link = httpLink({
               url: getUrl(),
               fetch: (url, opts) => {
                 return fetch(url, {
                   ...opts,
-                  next: { tags: [path] },
+                  next: type === 'query' ? { tags: [tag] } : undefined,
                 });
               },
               // FIXME: We need the headers - but server actions just breaks with them...
