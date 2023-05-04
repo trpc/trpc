@@ -12,6 +12,7 @@
 import { AnyTRPCInstance } from '@trpc/server/core/initTRPC';
 import { ErrorMessage } from '@trpc/server/internals/types';
 import { CombinedDataTransformer } from '@trpc/server/transformer';
+import { Maybe } from '@trpc/server/types';
 import { streamMultipart } from '@web3-storage/multipart-parser';
 import { Readable } from 'node:stream';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
@@ -134,17 +135,19 @@ export function experimental_createFormDataMiddleware<
 ) {
   return (t as unknown as TInstance).middleware(async (opts) => {
     // TODO: ideally we wouldn't force this to be added by the user, would be better to have the Adapter provide this
-    if ('req' in opts.ctx && isMultipartFormDataRequest(opts.ctx.req)) {
-      const rawInput = await parseMultipartFormData(
-        opts.ctx.req,
-        config?.uploadHandler ?? createMemoryUploadHandler(),
-      );
 
-      return opts.next({
-        rawInput: rawInput,
-      });
-    } else {
+    const req = opts.ctx.req as Maybe<NodeHTTPRequest>;
+    if (!req || !isMultipartFormDataRequest(req)) {
       return opts.next();
     }
+
+    const rawInput = await parseMultipartFormData(
+      req,
+      config?.uploadHandler ?? createMemoryUploadHandler(),
+    );
+
+    return opts.next({
+      rawInput: rawInput,
+    });
   });
 }
