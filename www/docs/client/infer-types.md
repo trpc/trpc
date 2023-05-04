@@ -55,7 +55,7 @@ Let's assume we have this example router:
 // @include: server
 ```
 
-Using the helpers, you can infer the types of the procedures. The following example shows how to infer the types of the `create` procedure under the `post` namespace, using the example `appRouter`:
+Using the helpers, we can infer the types of our router. The following example shows how to infer the types of the `post.create` procedure:
 
 ```ts twoslash title="client.ts"
 // @module: esnext
