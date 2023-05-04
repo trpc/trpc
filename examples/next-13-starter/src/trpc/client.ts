@@ -9,17 +9,24 @@ export const api = createTRPCNextAppRouterClient<AppRouter>({
       transformer,
       links: [
         loggerLink(),
-        splitLink({
-          condition: (op) => !!op.context.skipBatch,
-          true: httpLink({
-            url: getUrl(),
-            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
-          }),
-          false: httpBatchLink({
-            url: getUrl(),
-            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
-          }),
-        }),
+        (runtime) => {
+          return (ctx) => {
+            const { op } = ctx;
+            const { path } = op;
+
+            const link = httpLink({
+              url: getUrl(),
+              fetch: (url, opts) => {
+                return fetch(url, {
+                  ...opts,
+                  next: { tags: [path] },
+                });
+              },
+            })(runtime);
+
+            return link(ctx);
+          };
+        },
       ],
     };
   },

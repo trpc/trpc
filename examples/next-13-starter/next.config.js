@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // eslint: {
-  //   ignoreDuringBuilds: true,
-  // },
   experimental: {
-    appDir: true,
+    serverActions: true,
   },
   images: {
     domains: ['images.clerk.dev', 'avatars.githubusercontent.com'],

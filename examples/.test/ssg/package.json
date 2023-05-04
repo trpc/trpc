@@ -17,7 +17,7 @@
     "@trpc/next": "^10.23.0",
     "@trpc/react-query": "^10.23.0",
     "@trpc/server": "^10.23.0",
-    "next": "^13.2.1",
+    "next": "^13.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "superjson": "^1.7.4",
@@ -26,8 +26,8 @@
   "devDependencies": {
     "@playwright/test": "^1.26.1",
     "@types/node": "^18.7.20",
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.5",
+    "@types/react": "^18.2.5",
+    "@types/react-dom": "^18.2.3",
     "eslint": "^8.30.0",
     "start-server-and-test": "^1.12.0",
     "typescript": "^4.8.3"

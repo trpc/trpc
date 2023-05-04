@@ -1,8 +1,8 @@
 import { TRPCError, initTRPC } from '@trpc/server';
 import { User } from 'next-auth';
-import { getToken } from 'next-auth/jwt';
-import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth/next';
 import { z } from 'zod';
+import { authOptions } from '~/app/api/auth/[...nextauth]/opts';
 import { transformer } from '~/trpc/shared';
 import { db } from '../db';
 
@@ -20,7 +20,7 @@ type CreateContextOptions = {
  *
  * @see https://create.t3.gg/en/usage/trpc#-servertrpccontextts
  */
-const createInnerTRPCContext = (opts: CreateContextOptions) => {
+export const createInnerTRPCContext = (opts: CreateContextOptions) => {
   return {
     user: opts.user,
     db,
@@ -33,17 +33,18 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContext = async (opts: { req: NextRequest }) => {
-  const token = await getToken({ req: opts.req });
+export const createTRPCContext = async (opts: { req: Request }) => {
+  // const sesh = await getServerSession(authOptions);
+  // const token = await getToken({ req: opts.req });
 
-  const user = token
-    ? {
-        id: token.sub as string,
-        name: token.name,
-        image: token.picture,
-        email: token.email,
-      }
-    : null;
+  // FIXME: We need the headers - but server actions just breaks with them...
+  // hardcode a user for now
+  const user = {
+    name: 'Julius Marminge',
+    email: 'julius0216@outlook.com',
+    image: 'https://avatars.githubusercontent.com/u/51714798?v=4',
+    id: '51714798',
+  };
 
   return createInnerTRPCContext({
     user,

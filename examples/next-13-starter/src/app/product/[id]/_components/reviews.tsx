@@ -1,15 +1,20 @@
+import { getServerSession } from 'next-auth/next';
+import { revalidateTag } from 'next/cache';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { api } from 'trpc-api';
+import { authOptions } from '~/app/api/auth/[...nextauth]/opts';
+import { Button } from '~/components/button';
+import { Input } from '~/components/input';
 import { ProductReviewCard } from '~/components/product-review-card';
 import { RouterOutputs } from '~/trpc/shared';
-import { CreateReviewForm } from './create-review-form';
 
 export async function Reviews(props: {
   productId: string;
   data: Promise<RouterOutputs['reviews']['list']>;
 }) {
   const reviews = await props.data;
-  const me = await api.me.query();
+  const me = (await getServerSession(authOptions))?.user;
 
   return (
     <div className="space-y-6">
@@ -33,43 +38,63 @@ export async function Reviews(props: {
       {me && (
         <div className="space-y-4">
           <div className="text-lg font-medium text-white">Write a Review</div>
-          <CreateReviewForm
-            productId={props.productId}
-            // handleSubmit={async (text, rating) => {
-            //   'use server';
-            //   const review = await api.reviews.create.mutate({
-            //     productId: props.productId,
-            //     rating,
-            //     text,
-            //   });
-            //   console.log('server says review', { review });
-            // }}
-          />
+          <form
+            className="space-y-2"
+            action={async (fd) => {
+              'use server';
+
+              await api.reviews.create.mutate({
+                productId: props.productId,
+                text: fd.get('text') as string,
+                rating: Math.floor(Math.random() * 5) + 1,
+              });
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              revalidateTag('reviews.list');
+            }}
+          >
+            <Input name="text" />
+            <Button type="submit" className="w-full">
+              Submit
+            </Button>
+          </form>
         </div>
       )}
-      <div className="space-y-8">
-        {reviews.map((review) => {
-          return <ProductReviewCard key={review.id} review={review} />;
-        })}
-      </div>
+      <Suspense fallback={<ReviewsList.Skeleton />}>
+        {/** @ts-expect-error - Async Server Component */}
+        <ReviewsList
+          data={api.reviews.list.query({ productId: props.productId })}
+        />
+      </Suspense>
     </div>
   );
 }
 
-export function ReviewsSkeleton(props: { n?: number }) {
+async function ReviewsList(props: {
+  data: Promise<RouterOutputs['reviews']['list']>;
+}) {
+  const reviews = await props.data;
+
   return (
-    <div className="space-y-6">
-      <div className="relative h-7 w-2/5 overflow-hidden rounded-lg bg-gray-900 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent" />
-      <div className="space-y-8">
-        {Array.from({ length: props.n ?? 3 }).map((_, i) => (
-          <div key={i} className="space-y-4">
-            <div className="h-6 w-2/6 rounded-lg bg-gray-900" />
-            <div className="h-4 w-1/6 rounded-lg bg-gray-900" />
-            <div className="h-4 w-full rounded-lg bg-gray-900" />
-            <div className="h-4 w-4/6 rounded-lg bg-gray-900" />
-          </div>
-        ))}
-      </div>
+    <div className="space-y-8">
+      {reviews.map((review) => {
+        return <ProductReviewCard key={review.id} review={review} />;
+      })}
     </div>
   );
 }
+
+ReviewsList.Skeleton = function Skeleton(props: { n?: number }) {
+  const { n = 3 } = props;
+  return (
+    <div className="space-y-8">
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i} className="space-y-4">
+          <div className="h-6 w-2/6 rounded-lg bg-gray-900" />
+          <div className="h-4 w-1/6 rounded-lg bg-gray-900" />
+          <div className="h-4 w-full rounded-lg bg-gray-900" />
+          <div className="h-4 w-4/6 rounded-lg bg-gray-900" />
+        </div>
+      ))}
+    </div>
+  );
+};

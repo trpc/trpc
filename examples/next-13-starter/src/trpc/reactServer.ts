@@ -1,9 +1,4 @@
-import {
-  createTRPCUntypedClient,
-  httpBatchLink,
-  httpLink,
-  splitLink,
-} from '@trpc/client';
+import { createTRPCUntypedClient, httpLink } from '@trpc/client';
 import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-server';
 import { headers } from 'next/headers';
 import { cache } from 'react';
@@ -15,25 +10,29 @@ export const api = createTRPCNextAppRouterReactServer<AppRouter>({
     createTRPCUntypedClient({
       transformer,
       links: [
-        splitLink({
-          condition: (op) => !!op.context.skipBatch,
-          true: httpLink({
-            url: getUrl(),
-            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
-            headers() {
-              const { connection: _, ...h } = Object.fromEntries(headers());
-              return h;
-            },
-          }),
-          false: httpBatchLink({
-            url: getUrl(),
-            // fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }),
-            headers() {
-              const { connection: _, ...h } = Object.fromEntries(headers());
-              return h;
-            },
-          }),
-        }),
+        (runtime) => {
+          return (ctx) => {
+            const { op } = ctx;
+            const { path } = op;
+
+            const link = httpLink({
+              url: getUrl(),
+              fetch: (url, opts) => {
+                return fetch(url, {
+                  ...opts,
+                  next: { tags: [path] },
+                });
+              },
+              // FIXME: We need the headers - but server actions just breaks with them...
+              // headers: async () => {
+              //   const { connection: _, ...h } = Object.fromEntries(headers());
+              //   return h;
+              // },
+            })(runtime);
+
+            return link(ctx);
+          };
+        },
       ],
     }),
   ),

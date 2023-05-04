@@ -1,28 +1,7 @@
-import NextAuth, { DefaultSession, NextAuthOptions } from 'next-auth';
-import GithubProvider from 'next-auth/providers/github';
+import NextAuth from 'next-auth';
+import { authOptions } from './opts';
 
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-    } & DefaultSession['user'];
-  }
-}
-
-const authOptions: NextAuthOptions = {
-  providers: [
-    GithubProvider({
-      clientId: process.env.GITHUB_ID as string,
-      clientSecret: process.env.GITHUB_SECRET as string,
-    }),
-  ],
-  callbacks: {
-    session({ session, token }) {
-      if (session.user && token.sub) session.user.id = token.sub;
-      return session;
-    },
-  },
-};
+// export const runtime = 'edge';
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

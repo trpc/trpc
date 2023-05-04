@@ -4,10 +4,10 @@ import {
   RecommendedProducts,
   RecommendedProductsSkeleton,
 } from './_components/recommended';
-import { Reviews, ReviewsSkeleton } from './_components/reviews';
+import { Reviews } from './_components/reviews';
 import { SingleProduct } from './_components/single-product';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 export default async function Page(props: { params: { id: string } }) {
   return (
@@ -19,23 +19,15 @@ export default async function Page(props: { params: { id: string } }) {
         {/* @ts-expect-error Async Server Component */}
         <RecommendedProducts
           path="/product"
-          data={api.products.list.query(
-            { filter: props.params.id, delay: 500 },
-            { context: { skipBatch: true } },
-          )}
+          data={api.products.list.query({
+            filter: props.params.id,
+            delay: 500,
+          })}
         />
       </Suspense>
 
-      <Suspense fallback={<ReviewsSkeleton />}>
-        {/* @ts-expect-error Async Server Component */}
-        <Reviews
-          productId={props.params.id}
-          data={api.reviews.list.query(
-            { productId: props.params.id, delay: 1000 },
-            { context: { skipBatch: true } },
-          )}
-        />
-      </Suspense>
+      {/* @ts-expect-error Async Server Component */}
+      <Reviews productId={props.params.id} />
     </div>
   );
 }
