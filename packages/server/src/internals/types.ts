@@ -21,3 +21,11 @@ export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
   input: unknown;
   ctx: undefined | inferRouterContext<TRouter>;
 }) => void;
+
+const errorSymbol = Symbol('error');
+/**
+ * @internal
+ */
+export type ErrorMessage<TMessage extends string> = typeof errorSymbol & {
+  __error: TMessage;
+};

@@ -10,6 +10,7 @@
  */
 
 import { AnyTRPCInstance } from '@trpc/server/core/initTRPC';
+import { ErrorMessage } from '@trpc/server/internals/types';
 import { CombinedDataTransformer } from '@trpc/server/transformer';
 import { streamMultipart } from '@web3-storage/multipart-parser';
 import { Readable } from 'node:stream';
@@ -109,8 +110,6 @@ export { createFileUploadHandler as experimental_createFileUploadHandler } from 
 export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
-
-type ErrorMessage<TMessage extends string> = TMessage;
 
 export function experimental_createFormDataMiddleware<
   TInstance extends AnyTRPCInstance,

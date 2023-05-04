@@ -1,3 +1,4 @@
+import { ErrorMessage } from '@trpc/server/internals/types';
 import { TRPCError, getTRPCErrorFromUnknown } from '../../error/TRPCError';
 import { MaybePromise, Simplify } from '../../types';
 import {
@@ -65,8 +66,6 @@ export interface BuildProcedure<
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
   : Simplify<TType & TWith>;
-
-type ErrorMessage<TMessage extends string> = TMessage;
 
 export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
   inputs: Parser[];
