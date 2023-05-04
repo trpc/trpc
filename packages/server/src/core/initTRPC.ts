@@ -168,4 +168,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
   };
 }
 
-export type AnyTRPCInstance = ReturnType<typeof createTRPCInner<any>>;
+/**
+ * @internal
+ */
+export type AnyTRPCInstance = ReturnType<
+  ReturnType<typeof createTRPCInner<any>>
+>;

@@ -1,4 +1,5 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+/* eslint-disable @typescript-eslint/ban-types */
+import { ignoreErrors, routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -185,4 +186,53 @@ test("passthrough, don't validate/parse the input beyond loading the formData", 
   const formDataRes = await ctx.proxy.passthroughFile.mutate(form);
 
   expect(formDataRes).toEqual(['text']);
+});
+
+test('type test formData middleware', () => {
+  // Good ones
+  {
+    const t = initTRPC.context<CreateHTTPContextOptions>().create();
+
+    experimental_createFormDataMiddleware(t, {});
+  }
+
+  {
+    const t = initTRPC
+      .context<{
+        req: CreateHTTPContextOptions['req'];
+      }>()
+      .create();
+
+    experimental_createFormDataMiddleware(t, {});
+  }
+
+  {
+    const t = initTRPC
+      .context<{
+        req?: CreateHTTPContextOptions['req'];
+      }>()
+      .create();
+
+    experimental_createFormDataMiddleware(t, {});
+  }
+
+  // Bad ones
+  {
+    const t = initTRPC.context<{}>().create();
+
+    // @ts-expect-error - req is missing
+    experimental_createFormDataMiddleware(t, {});
+  }
+
+  // Bad ones
+  {
+    const t = initTRPC
+      .context<{
+        req: null;
+      }>()
+      .create();
+
+    // @ts-expect-error - req is null
+    experimental_createFormDataMiddleware(t, {});
+  }
 });

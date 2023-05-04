@@ -110,15 +110,30 @@ export { composeUploadHandlers as experimental_composeUploadHandlers } from './u
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
 
+type ErrorMessage<TMessage extends string> = TMessage;
+
 export function experimental_createFormDataMiddleware<
-  TTRPCInstance extends ReturnType<AnyTRPCInstance>,
+  TInstance extends AnyTRPCInstance,
 >(
-  t: TTRPCInstance,
+  // narrow that TRPCInstance's ctx type to NodeHTTPRequest
+  t: TInstance extends {
+    _config: {
+      $types: {
+        ctx: {
+          req?: infer $Req;
+        };
+      };
+    };
+  }
+    ? $Req extends NodeHTTPRequest
+      ? TInstance
+      : ErrorMessage<'Your ctx type does not have a `req` property'>
+    : ErrorMessage<'Your ctx type does not have a `req` property'>,
   config?: {
     uploadHandler?: UploadHandler;
   },
 ) {
-  return t.middleware(async (opts) => {
+  return (t as unknown as TInstance).middleware(async (opts) => {
     // TODO: ideally we wouldn't force this to be added by the user, would be better to have the Adapter provide this
     if ('req' in opts.ctx && isMultipartFormDataRequest(opts.ctx.req)) {
       const rawInput = await parseMultipartFormData(
