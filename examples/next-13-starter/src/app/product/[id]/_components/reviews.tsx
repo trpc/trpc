@@ -49,6 +49,8 @@ export async function Reviews(props: {
                 rating: Math.floor(Math.random() * 5) + 1,
               });
               await new Promise((resolve) => setTimeout(resolve, 1000));
+
+              // TODO: trpc.reviews.list.revalidate({ productId: props.productId });
               revalidateTag('reviews.list');
             }}
           >
