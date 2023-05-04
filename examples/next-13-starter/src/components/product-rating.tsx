@@ -8,7 +8,10 @@ export const ProductRating = ({ rating }: { rating: number }) => {
         return (
           <Star
             key={i}
-            className={clsx('w-4', i < rating ? 'text-white' : 'text-gray-500')}
+            className={clsx(
+              'w-4',
+              i < rating ? 'fill-white text-white' : 'text-gray-500',
+            )}
           />
         );
       })}
