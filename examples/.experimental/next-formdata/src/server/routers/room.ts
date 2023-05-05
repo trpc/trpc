@@ -1,26 +1,18 @@
 import {
-  experimental_createFormDataInputStrategy,
+  experimental_createFormDataMiddleware,
   experimental_createMemoryUploadHandler,
   experimental_isMultipartFormDataRequest,
   experimental_parseMultipartFormData,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { uploadFileSchema } from '~/utils/schemas';
 import { writeFileToDisk } from '../../utils/writeFileToDisk';
-import { publicProcedure, router } from '../trpc';
+import { publicProcedure, router, t } from '../trpc';
 
-const formDataProcedure = publicProcedure.use(async (opts) => {
-  if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
-    return opts.next();
-  }
-  const formData = await experimental_parseMultipartFormData(
-    opts.ctx.req,
-    experimental_createMemoryUploadHandler(),
-  );
-
-  return opts.next({
-    rawInput: formData,
-  });
-});
+const formDataProcedure = publicProcedure.use(
+  experimental_createFormDataMiddleware(t, {
+    uploadHandler: experimental_createMemoryUploadHandler(),
+  }),
+);
 
 export const roomRouter = router({
   sendMessage: formDataProcedure

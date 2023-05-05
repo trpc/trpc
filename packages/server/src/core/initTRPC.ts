@@ -13,6 +13,7 @@ import {
 } from '../transformer';
 import { FlatOverwrite, Unwrap } from '../types';
 import {
+  AnyRootConfig,
   CreateRootConfigTypes,
   RootConfig,
   RootConfigTypes,
@@ -140,32 +141,45 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
         );
       }
     }
+
     return {
-      /**
-       * These are just types, they can't be used
-       * @internal
-       */
       _config: config,
-      /**
-       * Builder object for creating procedures
-       */
       procedure: createBuilder<$Config>({
         meta: runtime?.defaultMeta,
       }),
-      /**
-       * Create reusable middlewares
-       */
       middleware: createMiddlewareFactory<$Config>(),
-      /**
-       * Create a router
-       */
       router: createRouterFactory<$Config>(config),
-      /**
-       * Merge Routers
-       */
       mergeRouters,
-    };
+    } as TTRPCInstance<$Config>;
   };
 }
 
-export type AnyTRPCInstance = ReturnType<typeof createTRPCInner<any>>;
+type TTRPCInstance<TConfig extends AnyRootConfig> = {
+  /**
+   * These are just types, they can't be used
+   * @internal
+   */
+  _config: TConfig;
+  /**
+   * Builder object for creating procedures
+   */
+  procedure: ReturnType<typeof createBuilder<TConfig>>;
+  /**
+   * Create reusable middlewares
+   */
+  middleware: ReturnType<typeof createMiddlewareFactory<TConfig>>;
+  /**
+   * Create a router
+   */
+  router: ReturnType<typeof createRouterFactory<TConfig>>;
+  /**
+   * Merge Routers
+   */
+  mergeRouters: typeof mergeRouters;
+};
+
+// function inferAnyT() {
+//   return createTRPCInner<any>()<any>();
+// }
+
+export type AnyTRPCInstance = TTRPCInstance<any>;

@@ -123,7 +123,7 @@ export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
 
 export function experimental_createFormDataMiddleware<
-  TTRPCInstance extends ReturnType<AnyTRPCInstance>,
+  TTRPCInstance extends AnyTRPCInstance,
 >(
   t: TTRPCInstance,
   config?: {

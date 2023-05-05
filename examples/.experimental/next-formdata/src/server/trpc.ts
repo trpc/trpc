@@ -23,7 +23,7 @@ export async function createContext(opts: trpcNext.CreateNextContextOptions) {
 
 export type Context = inferAsyncReturnType<typeof createContext>;
 
-const t = initTRPC.context<Context>().create({
+export const t = initTRPC.context<Context>().create({
   errorFormatter(opts) {
     return {
       ...opts.shape,
@@ -38,6 +38,7 @@ const t = initTRPC.context<Context>().create({
     };
   },
 });
+
 /**
  * Unprotected procedure
  **/

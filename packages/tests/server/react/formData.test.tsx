@@ -18,6 +18,7 @@ import {
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
+import SuperJSON from 'superjson';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
@@ -34,7 +35,20 @@ function formDataOrObject<T extends z.ZodRawShape>(input: T) {
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create();
+    // We construct a complete t instance to ensure that customised t's work fine
+    const t = initTRPC
+      .meta<{ foo: number }>()
+      .context<{ randomKey?: string }>()
+      .create({
+        errorFormatter: (a) => {
+          return {
+            ...a.shape,
+            foo: 1,
+          };
+        },
+        transformer: SuperJSON,
+        defaultMeta: { foo: 1 },
+      });
 
     const formDataMiddleware = experimental_createFormDataMiddleware(t, {
       // Totally optional
