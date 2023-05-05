@@ -150,11 +150,11 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       middleware: createMiddlewareFactory<$Config>(),
       router: createRouterFactory<$Config>(config),
       mergeRouters,
-    } as TTRPCInstance<$Config>;
+    } as TRPCInstance<$Config>;
   };
 }
 
-type TTRPCInstance<TConfig extends AnyRootConfig> = {
+type TRPCInstance<TConfig extends AnyRootConfig> = {
   /**
    * These are just types, they can't be used
    * @internal
@@ -178,4 +178,4 @@ type TTRPCInstance<TConfig extends AnyRootConfig> = {
   mergeRouters: typeof mergeRouters;
 };
 
-export type AnyTRPCInstance = TTRPCInstance<any>;
+export type AnyTRPCInstance = TRPCInstance<any>;
