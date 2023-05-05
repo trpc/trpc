@@ -106,9 +106,12 @@ export function awsLambdaRequestHandler<
           return req.headers;
         },
         async getBody() {
-          // TODO: is this right? also non-null assertion
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return Readable.toWeb(Readable.from(event.body!));
+          // TODO: is this correct?
+          if (event.body) {
+            return Readable.toWeb(Readable.from(event.body));
+          }
+
+          return null;
         },
       },
       router: opts.router,

@@ -37,9 +37,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
         return Object.fromEntries(opts.req.headers.entries());
       },
       async getBody() {
-        // TODO: non null assertion? maybe throw instead?
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return opts.req.body!;
+        return opts.req.body;
       },
     },
     createContext,

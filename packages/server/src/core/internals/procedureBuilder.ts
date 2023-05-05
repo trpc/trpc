@@ -307,7 +307,8 @@ function createResolver(
  */
 export interface RequestUtils {
   getHeaders(): Record<string, string | string[] | undefined>;
-  getBody(): Promise<ReadableStream<any>>;
+  // TODO: is any actually correct? It's what Readable.toWeb returns but could be string or uint8array under the hood
+  getBody(): Promise<ReadableStream<any> | null>;
 }
 
 /**
@@ -356,7 +357,18 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
         const result = await middleware({
-          requestUtils: opts.requestUtils,
+          requestUtils: opts.requestUtils ?? {
+            getHeaders() {
+              throw new Error(
+                `RequestUtils are not implemented by the current Adapter. Please request this from the Adapter's author`,
+              );
+            },
+            getBody() {
+              throw new Error(
+                `RequestUtils are not implemented by the current Adapter. Please request this from the Adapter's author`,
+              );
+            },
+          },
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
