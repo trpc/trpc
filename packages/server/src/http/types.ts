@@ -7,10 +7,6 @@ export interface HTTPRequest {
   query: URLSearchParams;
   headers: HTTPHeaders;
   body: unknown;
-  /**
-   * The original http request from the host server
-   */
-  raw: unknown;
 }
 
 /**

@@ -281,14 +281,6 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
             procedureTypes.includes(path[0] as ProcedureType)
           ) {
             return callProcedure({
-              requestUtils: {
-                getHeaders() {
-                  return {};
-                },
-                getBody() {
-                  throw new Error('Not Implemented / Supported');
-                },
-              },
               procedures: _def.procedures,
               path: args[0] as string,
               rawInput: args[1],
@@ -308,14 +300,6 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
           }
 
           return procedure({
-            requestUtils: {
-              getHeaders() {
-                return {};
-              },
-              getBody() {
-                throw new Error('Not Implemented / Supported');
-              },
-            },
             path: fullPath,
             rawInput: args[0],
             ctx,

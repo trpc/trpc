@@ -58,7 +58,6 @@ export async function nodeHTTPRequestHandler<
     });
 
     const req: HTTPRequest = {
-      raw: opts.req,
       method: opts.req.method!,
       headers: opts.req.headers,
       query,

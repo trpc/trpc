@@ -42,7 +42,6 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   }
 
   return {
-    raw: event,
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,

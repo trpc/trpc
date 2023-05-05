@@ -178,8 +178,4 @@ type TTRPCInstance<TConfig extends AnyRootConfig> = {
   mergeRouters: typeof mergeRouters;
 };
 
-// function inferAnyT() {
-//   return createTRPCInner<any>()<any>();
-// }
-
 export type AnyTRPCInstance = TTRPCInstance<any>;

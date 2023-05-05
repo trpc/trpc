@@ -307,7 +307,6 @@ function createResolver(
  */
 export interface RequestUtils {
   getHeaders(): Record<string, string | string[] | undefined>;
-  // TODO: is any actually correct? It's what Readable.toWeb returns but could be string or uint8array under the hood
   getBody(): Promise<ReadableStream<any> | null>;
 }
 

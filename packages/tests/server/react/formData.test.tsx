@@ -50,12 +50,17 @@ const ctx = konn()
         defaultMeta: { foo: 1 },
       });
 
-    const formDataMiddleware = experimental_createFormDataMiddleware(t, {
-      // Totally optional
-      uploadHandler: experimental_createMemoryUploadHandler(),
-    });
+    const formDataMiddleware = experimental_createFormDataMiddleware(
+      t.middleware,
+      {
+        // Totally optional
+        uploadHandler: experimental_createMemoryUploadHandler(),
+      },
+    );
 
-    const defaultFormDataMiddleware = experimental_createFormDataMiddleware(t);
+    const defaultFormDataMiddleware = experimental_createFormDataMiddleware(
+      t.middleware,
+    );
 
     const appRouter = t.router({
       polymorphic: t.procedure

@@ -20,6 +20,28 @@ import {
   createMemoryUploadHandler,
 } from './uploadHandler';
 
+function getContentType(
+  headers: Record<string, string | string[] | undefined>,
+): string {
+  const contentType = headers['content-type'] || '';
+
+  if (typeof contentType === 'string') {
+    return contentType;
+  }
+
+  if (Array.isArray(contentType)) {
+    if (contentType.length > 1) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        'Multiple Content-Type header values were found. The first one will be used',
+      );
+    }
+    return contentType[0] ?? '';
+  }
+
+  return '';
+}
+
 /**
  * Allows you to handle multipart forms (file uploads) for your app.
  *
@@ -32,11 +54,8 @@ async function parseMultipartFormData(
 ): Promise<FormData> {
   const headers = utils.getHeaders();
   const stream = await utils.getBody();
-  let contentType = headers['content-type'] || '';
-  if (Array.isArray(contentType)) {
-    // TODO: what do?
-    contentType = contentType[0] || '';
-  }
+  const contentType = getContentType(headers);
+
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
   if (!boundary || type !== 'multipart/form-data') {
@@ -69,15 +88,11 @@ async function parseMultipartFormData(
 function isMultipartFormDataRequest(
   headers: Record<string, string | string[] | undefined>,
 ) {
-  let contentTypeHeader = headers['content-type'];
-  if (Array.isArray(contentTypeHeader)) {
-    contentTypeHeader = contentTypeHeader[0];
-  }
-  contentTypeHeader ??= '';
+  const contentType = getContentType(headers);
 
   return (
-    contentTypeHeader.startsWith('multipart/form-data') ||
-    contentTypeHeader === 'application/x-www-form-urlencoded'
+    contentType.startsWith('multipart/form-data') ||
+    contentType === 'application/x-www-form-urlencoded'
   );
 }
 
@@ -123,14 +138,17 @@ export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
 
 export function experimental_createFormDataMiddleware<
-  TTRPCInstance extends AnyTRPCInstance,
+  TMiddlewareFactory extends AnyTRPCInstance['middleware'],
 >(
-  t: TTRPCInstance,
+  /**
+   * The value of `t.middleware`
+   */
+  middleware: TMiddlewareFactory,
   config?: {
     uploadHandler?: UploadHandler;
   },
 ) {
-  return t.middleware(async (opts) => {
+  return middleware(async (opts) => {
     if (opts.rawInput instanceof FormData) {
       // we have a form data request, pass through
       return opts.next();

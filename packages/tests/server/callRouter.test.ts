@@ -13,14 +13,6 @@ test('deprecated: call proc directly', async () => {
     ctx: {},
     path: 'asd',
     type: 'query',
-    requestUtils: {
-      getHeaders() {
-        return {};
-      },
-      getBodyStream() {
-        throw new Error('Not Implemented / Supported');
-      },
-    },
     rawInput: {},
   });
 

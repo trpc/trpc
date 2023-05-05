@@ -9,7 +9,7 @@ import { writeFileToDisk } from '../../utils/writeFileToDisk';
 import { publicProcedure, router, t } from '../trpc';
 
 const formDataProcedure = publicProcedure.use(
-  experimental_createFormDataMiddleware(t, {
+  experimental_createFormDataMiddleware(t.middleware, {
     uploadHandler: experimental_createMemoryUploadHandler(),
   }),
 );
