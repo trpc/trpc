@@ -43,7 +43,7 @@
     "package.json"
   ],
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^4.29.5",
     "@trpc/client": "10.25.0",
     "@trpc/react-query": "10.25.0",
     "@trpc/server": "10.25.0",
@@ -55,7 +55,7 @@
     "react-ssr-prepass": "^1.5.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^4.29.5",
     "@trpc/client": "10.25.0",
     "@trpc/react-query": "10.25.0",
     "@trpc/server": "10.25.0",
