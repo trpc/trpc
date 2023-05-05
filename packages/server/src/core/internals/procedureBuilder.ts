@@ -307,7 +307,7 @@ function createResolver(
  */
 export interface RequestUtils {
   getHeaders(): Record<string, string | string[] | undefined>;
-  getBodyStream(): Promise<ReadableStream<any>>;
+  getBody(): Promise<ReadableStream<any>>;
 }
 
 /**
@@ -315,7 +315,7 @@ export interface RequestUtils {
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  requestUtils: RequestUtils;
+  requestUtils?: RequestUtils;
   rawInput: unknown;
   input?: unknown;
   path: string;

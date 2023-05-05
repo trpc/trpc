@@ -285,7 +285,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
                 getHeaders() {
                   return {};
                 },
-                getBodyStream() {
+                getBody() {
                   throw new Error('Not Implemented / Supported');
                 },
               },
@@ -312,7 +312,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
               getHeaders() {
                 return {};
               },
-              getBodyStream() {
+              getBody() {
                 throw new Error('Not Implemented / Supported');
               },
             },

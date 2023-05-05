@@ -170,7 +170,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             getHeaders() {
               return req.headers;
             },
-            getBodyStream() {
+            getBody() {
               throw new Error(
                 'Not Supported: stream / formdata is not supported in websockets / subscriptions',
               );

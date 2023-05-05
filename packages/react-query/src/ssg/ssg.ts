@@ -45,7 +45,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
             getHeaders() {
               return {};
             },
-            getBodyStream() {
+            getBody() {
               throw new Error('Not Implemented / Supported');
             },
           },
@@ -73,7 +73,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
             getHeaders() {
               return {};
             },
-            getBodyStream() {
+            getBody() {
               throw new Error('Not Implemented / Supported');
             },
           },
@@ -102,7 +102,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
             getHeaders() {
               return {};
             },
-            getBodyStream() {
+            getBody() {
               throw new Error('Not Implemented / Supported');
             },
           },
@@ -131,7 +131,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
             getHeaders() {
               return {};
             },
-            getBodyStream() {
+            getBody() {
               throw new Error('Not Implemented / Supported');
             },
           },

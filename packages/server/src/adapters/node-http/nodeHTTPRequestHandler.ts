@@ -70,7 +70,7 @@ export async function nodeHTTPRequestHandler<
         getHeaders() {
           return opts.req.headers;
         },
-        async getBodyStream() {
+        async getBody() {
           return Readable.toWeb(opts.req);
         },
       },

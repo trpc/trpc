@@ -50,7 +50,7 @@ export async function fastifyRequestHandler<
       getHeaders() {
         return opts.req.headers;
       },
-      async getBodyStream() {
+      async getBody() {
         // TODO: looks like 3rd party lib might be needed? https://github.com/fastify/fastify-multipart
         throw new Error(
           'Not Implemented: tRPC does not currently support streams / form-data with Fastify Adapter',

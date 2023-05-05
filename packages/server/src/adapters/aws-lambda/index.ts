@@ -105,7 +105,7 @@ export function awsLambdaRequestHandler<
         getHeaders() {
           return req.headers;
         },
-        async getBodyStream() {
+        async getBody() {
           // TODO: is this right? also non-null assertion
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           return Readable.toWeb(Readable.from(event.body!));

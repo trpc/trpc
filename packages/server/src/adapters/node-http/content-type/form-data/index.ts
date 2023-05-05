@@ -31,7 +31,7 @@ async function parseMultipartFormData(
   uploadHandler: UploadHandler,
 ): Promise<FormData> {
   const headers = utils.getHeaders();
-  const stream = await utils.getBodyStream();
+  const stream = await utils.getBody();
   let contentType = headers['content-type'] || '';
   if (Array.isArray(contentType)) {
     // TODO: what do?
