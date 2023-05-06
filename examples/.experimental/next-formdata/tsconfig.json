@@ -19,8 +19,7 @@
       "~/*": ["src/*"]
     },
     "typeRoots": ["./node_modules/@types"],
-    "types": ["node"],
-    "noErrorTruncation": true
+    "types": ["node"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
