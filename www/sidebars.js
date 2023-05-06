@@ -9,11 +9,11 @@ module.exports = {
         id: 'main/introduction',
       },
       items: [
+        'main/getting-started',
+        'main/concepts',
         'main/quickstart',
-        'main/awesome-trpc',
+        'main/videos-and-community-resources',
         'main/example-apps',
-        'main/contributing',
-        'main/sponsors',
       ],
     },
     {
@@ -28,6 +28,7 @@ module.exports = {
       items: [
         'server/routers',
         'server/procedures',
+        'server/validators',
         'server/merging-routers',
         'server/context',
         'server/middlewares',
@@ -50,7 +51,6 @@ module.exports = {
         },
         'server/server-side-calls',
         'server/authorization',
-        'server/output-validation',
         'server/error-handling',
         'server/error-formatting',
         'server/data-transformers',
@@ -138,7 +138,6 @@ module.exports = {
       },
       items: [
         'further/faq',
-        'further/love',
         'further/rpc',
         'further/subscriptions',
         'further/further-reading',
@@ -158,6 +157,17 @@ module.exports = {
     {
       type: 'doc',
       id: 'migration/migrate-from-v9-to-v10',
+    },
+    {
+      type: 'category',
+      label: 'Community',
+      collapsed: true,
+      items: [
+        'community/awesome-trpc',
+        'community/contributing',
+        'community/love',
+        'community/sponsors',
+      ],
     },
   ],
 };

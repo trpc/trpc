@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/docs/server/output-validation",
+      "destination": "/docs/server/validators",
+      "permanent": true
+    },
+    {
       "source": "/docs/server/infer-types",
       "destination": "/docs/client/infer-types",
       "permanent": true
@@ -323,6 +328,26 @@
     {
       "source": "/docs/nextjs/ssg-helpers",
       "destination": "/docs/nextjs/server-side-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/awesome-trpc",
+      "destination": "/docs/community/awesome-trpc",
+      "permanent": true
+    },
+    {
+      "source": "/docs/contributing",
+      "destination": "/docs/community/contributing",
+      "permanent": true
+    },
+    {
+      "source": "/docs/love",
+      "destination": "/docs/community/love",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sponsors",
+      "destination": "/docs/community/sponsors",
       "permanent": true
     }
   ]

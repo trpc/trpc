@@ -25,7 +25,8 @@ import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
+    const { ctx } = opts;
     if (typeof window !== 'undefined') {
       // during client requests
       return {
@@ -90,7 +91,7 @@ import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     return {
       transformer: superjson, // optional - adds superjson serialization
       links: [
@@ -135,7 +136,8 @@ export async function getServerSideProps(
   // check if post exists - `prefetch` doesn't change its behavior
   // based on the result of the query (including throws), so if we
   // want to change the logic here in gSSP, we need to use `fetch`.
-  if (helpers.post.exists.fetch({ id })) {
+  const postExists = await helpers.post.exists.fetch({ id });
+  if (postExists) {
     // prefetch `post.byId`
     await helpers.post.byId.prefetch({ id });
   } else {

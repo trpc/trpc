@@ -19,15 +19,15 @@ const appRouter = t.router({
   post: t.router({
     byId: t.procedure
       .input(z.string())
-      .query(({ input }) => {
+      .query((opts) => {
         // imaginary db call
         return { id: 1, title: 'tRPC is the best!' };
     }),
     create: t.procedure
       .input(z.object({ title: z.string(), text: z.string() }))
-      .mutation(({ input }) => {
+      .mutation((opts) => {
         // imaginary db call
-        return { id: "123", ...input, };
+        return { id: "123", ...opts.input, };
     }),
   }),
 });
@@ -68,8 +68,8 @@ const t = initTRPC.context<Context>().create({
   /**
    * @see https://trpc.io/docs/v10/error-formatting
    */
-  errorFormatter({ shape }) {
-    return shape;
+  errorFormatter(opts) {
+    return opts.shape;
   },
 });
 
@@ -106,8 +106,8 @@ export const mergeRouters = t.mergeRouters;
 const appRouter = trpc.router()
   .query('greeting', {
     input: z.string(),
-    resolve({ input }) {
-      return `hello ${input}!`;
+    resolve(opts) {
+      return `hello ${opts.input}!`;
     },
   });
 
@@ -115,7 +115,7 @@ const appRouter = trpc.router()
 const appRouter = router({
   greeting: publicProcedure
     .input(z.string())
-    .query(({ input }) => `hello ${input}!`),
+    .query((opts) => `hello ${opts.input}!`),
 });
 ```
 
@@ -186,12 +186,13 @@ Middlewares are now reusable and can be chained, see the [middleware](/docs/serv
 // v9
 const appRouter = trpc
   .router()
-  .middleware(({ next, ctx }) => {
+  .middleware((opts) => {
+    const { ctx } = opts;
     if (!ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    return next({
+    return opts.next({
       ctx: {
         ...ctx,
         user: ctx.user,
@@ -199,18 +200,19 @@ const appRouter = trpc
     });
   })
   .query('greeting', {
-    resolve({ input }) {
-      return `hello ${ctx.user.name}!`;
+    resolve(opts) {
+      return `hello ${opts.ctx.user.name}!`;
     },
   });
 
 // v10
-export const isAuthed = t.middleware(({ next, ctx }) => {
+export const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
-  return next({
+  return opts.next({
     ctx: {
       // Old context will automatically be spread.
       // Only modify what's changed.
@@ -223,8 +225,8 @@ export const isAuthed = t.middleware(({ next, ctx }) => {
 const protectedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: protectedProcedure.query(({ ctx }) => {
-    return `Hello ${ctx.user.name}!`
+  greeting: protectedProcedure.query((opts) => {
+    return `Hello ${opts.ctx.user.name}!`
   }),
 });
 ```
@@ -325,7 +327,8 @@ const t = initTRPC.context<Context>().create({
   // Optional:
   transformer: superjson,
   // Optional:
-  errorFormatter({ shape }) {
+  errorFormatter(opts) {
+    const { shape } = opts;
     return {
       ...shape,
       data: {
@@ -486,7 +489,7 @@ export const appRouter = router({
   user: router({
     byId: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ input }) => ({ user: { id: input.id } })),
+      .query((opts) => ({ user: { id: opts.input.id } })),
   }),
 });
 ```

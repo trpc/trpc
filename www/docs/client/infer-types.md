@@ -24,15 +24,15 @@ const appRouter = t.router({
     }),
     byId: t.procedure
       .input(z.string())
-      .query(({ input }) => {
+      .query((opts) => {
         // imaginary db call
         return { id: 1, title: 'tRPC is the best!' };
     }),
     create: t.procedure
       .input(z.object({ title: z.string(), text: z.string(), }))
-      .mutation(({ input }) => {
+      .mutation((opts) => {
         // imaginary db call
-        return { id: 1, ...input };
+        return { id: 1, ...opts.input };
     }),
   }),
 });
@@ -55,7 +55,7 @@ Let's assume we have this example router:
 // @include: server
 ```
 
-Using the helpers, you can infer the types of the procedures. The following example shows how to infer the types of the procedures using the example `appRouter`:
+Using the helpers, we can infer the types of our router. The following example shows how to infer the types of the `post.create` procedure:
 
 ```ts twoslash title="client.ts"
 // @module: esnext
