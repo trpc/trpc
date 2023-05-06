@@ -19,6 +19,8 @@ test('context union type is inferred correctly', async () => {
 
   const baseProcedure = t.procedure
     // This line was causing the union to be simplified away
+    // Bug was due to Overwrite mapping away the union
+    // Resolved by "distributing over the union members": https://stackoverflow.com/a/51691257
     .use(async ({ ctx, next }) => {
       expectTypeOf<ContextUnion>(ctx);
 
