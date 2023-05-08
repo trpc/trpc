@@ -1,6 +1,7 @@
 import { Form } from '~/components/form';
 import { Input } from '~/components/input';
 import { trpc } from '~/utils/trpc';
+import { ClientPosts } from './client-posts';
 
 export default async function IndexPage() {
   const greeting = await trpc.greeting.query(
@@ -33,6 +34,8 @@ export default async function IndexPage() {
       >
         <Input name="title" placeholder="Post Title" />
       </Form>
+
+      <ClientPosts />
     </div>
   );
 }

@@ -36,6 +36,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./client": {
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
     "./server": {
       "import": "./dist/server.mjs",
       "require": "./dist/server.js",
@@ -47,6 +52,7 @@
     "src",
     "README.md",
     "package.json",
+    "client",
     "server"
   ],
   "peerDependencies": {

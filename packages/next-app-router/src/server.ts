@@ -9,6 +9,7 @@ import {
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { revalidateTag, unstable_cache } from 'next/cache';
 import { type DecoratedProcedureRecord, type QueryResolver } from './types';
+import { generateCacheTag } from './utils';
 
 export function createTRPCNextAppRouter<TRouter extends AnyRouter>(config: {
   router: TRouter;
@@ -24,9 +25,10 @@ export function createTRPCNextAppRouter<TRouter extends AnyRouter>(config: {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const action = opts.path.pop()!;
     const procedurePath = opts.path.join('.');
-    const cacheTag = input // TODO: Look if these can be tuples and fuzzy matched
-      ? `${procedurePath}?input=${JSON.stringify(input)}`
-      : procedurePath;
+    const cacheTag = generateCacheTag(procedurePath, input);
+
+    // eslint-disable-next-line no-console
+    console.log(`[${action}]: Server cacheTag`, cacheTag);
 
     const type = clientCallTypeToProcedureType(action);
 

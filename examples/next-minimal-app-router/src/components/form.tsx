@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { SubmitButton } from '~/components/button';
+import { Button } from '~/components/button';
 
 // Form that resets after submission
 export function Form(
@@ -15,7 +15,7 @@ export function Form(
   return (
     <form ref={ref} {...props}>
       {props.children}
-      <SubmitButton
+      <Button
         type="submit"
         formAction={async (fd) => {
           await props.action(fd);
@@ -23,7 +23,7 @@ export function Form(
         }}
       >
         Submit
-      </SubmitButton>
+      </Button>
     </form>
   );
 }
