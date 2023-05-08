@@ -16,8 +16,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.13",
     "@types/node": "^18.7.20",
-    "eslint": "^8.30.0",
-    "tsx": "^3.12.3",
+    "eslint": "^8.40.0",
+    "tsx": "^3.12.7",
     "typescript": "^4.8.3"
   }
 }

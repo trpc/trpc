@@ -15,13 +15,13 @@
   "dependencies": {
     "@trpc/client": "^10.25.0",
     "@trpc/server": "^10.25.0",
-    "tsx": "^3.12.3",
+    "tsx": "^3.12.7",
     "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
     "esbuild": "^0.17.10",
-    "eslint": "^8.30.0",
+    "eslint": "^8.40.0",
     "serverless": "^3.18.1",
     "serverless-esbuild": "^1.39.0",
     "serverless-offline": "^12.0.4",
