@@ -41,7 +41,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawInput: pathAndInput[1],
+          async decodeInput() {
+            return pathAndInput[1];
+          },
           ctx,
           type: 'query',
         });
@@ -61,7 +63,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawInput: pathAndInput[1],
+          async decodeInput() {
+            return pathAndInput[1];
+          },
           ctx,
           type: 'query',
         });
@@ -82,7 +86,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawInput: pathAndInput[1],
+          async decodeInput() {
+            return pathAndInput[1];
+          },
           ctx,
           type: 'query',
         });
@@ -103,7 +109,9 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         return callProcedure({
           procedures: router._def.procedures,
           path: pathAndInput[0],
-          rawInput: pathAndInput[1],
+          async decodeInput() {
+            return pathAndInput[1];
+          },
           ctx,
           type: 'query',
         });
