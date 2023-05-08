@@ -288,7 +288,12 @@ function createResolver(
     resolver,
     middlewares: [
       async function resolveMiddleware(opts) {
-        const data = await resolver(opts);
+        // TASK: content-handler body call goes here if not already called?
+
+        const data = await resolver({
+          ...opts,
+          input: opts.input ?? (await opts.decodeInput()),
+        });
         return {
           marker: middlewareMarker,
           ok: true,
@@ -315,9 +320,11 @@ export interface RequestUtils {
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  requestUtils?: RequestUtils;
-  rawInput: unknown;
-  input?: unknown;
+  // TASK: clean up here
+  // requestUtils?: RequestUtils;
+  // rawInput: unknown;
+  // input?: unknown;
+  decodeInput(): Promise<unknown>;
   path: string;
   type: ProcedureType;
 }
@@ -356,22 +363,18 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
         const result = await middleware({
-          requestUtils: opts.requestUtils ?? {
-            getHeaders() {
-              throw new Error(
-                `RequestUtils are not implemented by the current Adapter. Please request this from the Adapter's author`,
-              );
-            },
-            getBody() {
-              throw new Error(
-                `RequestUtils are not implemented by the current Adapter. Please request this from the Adapter's author`,
-              );
-            },
-          },
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: callOpts.rawInput ?? opts.rawInput,
+          // TODO:
+          // TASK: this is a breaking change, but also a necessary evil, how about a LazyProxy hack and mark deprecated?
+          /**
+           * @deprecated
+           */
+          rawInput: callOpts.rawInput,
+          decodeInput() {
+            return opts.decodeInput();
+          },
           meta: _def.meta,
           input: callOpts.input,
           next(_nextOpts?: any) {

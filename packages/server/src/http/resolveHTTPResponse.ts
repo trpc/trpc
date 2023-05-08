@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { createNodeHttpJsonContentDecoder } from '../adapters/node-http/content-decoder/json';
 import {
   AnyRouter,
+  ContentDecoder,
   ProcedureType,
   callProcedure,
   inferRouterContext,
@@ -11,10 +13,6 @@ import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../shared';
 import { Maybe } from '../types';
-import {
-  BaseContentTypeHandler,
-  getJsonContentTypeInputs,
-} from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { HTTPHeaders, HTTPResponse } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
@@ -27,9 +25,7 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
 };
 
-const fallbackContentTypeHandler = {
-  getInputs: getJsonContentTypeInputs,
-};
+const fallbackContentDecoder = createNodeHttpJsonContentDecoder();
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
@@ -37,11 +33,11 @@ interface ResolveHTTPRequestOptions<
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   req: TRequest;
-  requestUtils: RequestUtils;
   path: string;
   error?: Maybe<TRPCError>;
-  contentTypeHandler?: BaseContentTypeHandler<any>;
+  contentDecoder?: ContentDecoder;
   preprocessedBody?: boolean;
+  requestUtils: RequestUtils;
 }
 
 export async function resolveHTTPResponse<
@@ -49,8 +45,7 @@ export async function resolveHTTPResponse<
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { router, req } = opts;
-  const contentTypeHandler =
-    opts.contentTypeHandler ?? fallbackContentTypeHandler;
+  const contentDecoder = opts.contentDecoder ?? fallbackContentDecoder;
 
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {
@@ -127,35 +122,60 @@ export async function resolveHTTPResponse<
       });
     }
 
-    const inputs = await contentTypeHandler.getInputs({
-      isBatchCall,
-      req,
-      router,
-      preprocessedBody: opts.preprocessedBody ?? false,
-    });
+    // TODO: this could probably be moved into a stateful class somewhere?
+    //
+    // Decoder Cache
+
+    const nonDecodedMarker = Symbol('NOT_DECODED');
+    let decodedInput: unknown = nonDecodedMarker;
+    function syncMaybeGetDecodedInput(batchElement: number) {
+      if (decodedInput === nonDecodedMarker) {
+        return undefined;
+      }
+      return (decodedInput as Record<number, unknown>)[batchElement];
+    }
+
+    async function decodeInput(batchElement: number) {
+      if (decodedInput === nonDecodedMarker) {
+        decodedInput = await contentDecoder.decodeInput({
+          isBatchCall,
+          req,
+          router,
+          preprocessedBody: opts.preprocessedBody ?? false,
+          utils: opts.requestUtils,
+        });
+      }
+
+      return (decodedInput as Record<number, unknown>)[batchElement];
+    }
+
+    //
+    // Call Procedure
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
 
     const rawResults = await Promise.all(
       paths.map(async (path, index) => {
-        const input = inputs[index];
-
         try {
           const output = await callProcedure({
-            requestUtils: opts.requestUtils,
             procedures: router._def.procedures,
             path,
-            rawInput: input,
+            async decodeInput() {
+              return await decodeInput(index);
+            },
             ctx,
             type,
           });
+
           return {
-            input,
+            // TODO: maybe this only gets populated if it was decoded already? If not decoded then remains undefined?
+            input: syncMaybeGetDecodedInput(index),
             path,
             data: output,
           };
         } catch (cause) {
+          const input = syncMaybeGetDecodedInput(index);
           const error = getTRPCErrorFromUnknown(cause);
 
           opts.onError?.({ error, path, input, ctx, type: type, req });

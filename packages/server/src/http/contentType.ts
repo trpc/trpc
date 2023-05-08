@@ -26,7 +26,6 @@ export type BodyResult =
 
 export type BaseContentTypeHandler<TOptions> = {
   isMatch(opts: TOptions): boolean;
-  getBody: (opts: TOptions) => MaybePromise<BodyResult>;
   getInputs: GetInputs;
 };
 

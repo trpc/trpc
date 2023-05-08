@@ -9,12 +9,14 @@
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
 
-import { AnyTRPCInstance } from '@trpc/server/core/initTRPC';
-import { RequestUtils } from '@trpc/server/core/internals/procedureBuilder';
-import { CombinedDataTransformer } from '@trpc/server/transformer';
+import { TRPCError } from '@trpc/server/error/TRPCError';
 import { streamMultipart } from '@web3-storage/multipart-parser';
-import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import { UploadHandler, UploadHandlerPart } from './uploadHandler';
+import { createNodeHttpContentDecoder } from '../../internals/contentDecoder';
+import {
+  UploadHandler,
+  UploadHandlerPart,
+  createMemoryUploadHandler,
+} from './uploadHandler';
 
 function getContentType(
   headers: Record<string, string | string[] | undefined>,
@@ -45,11 +47,10 @@ function getContentType(
  * @see https://remix.run/utils/parse-multipart-form-data
  */
 async function parseMultipartFormData(
-  utils: RequestUtils,
+  headers: Record<string, string | string[] | undefined>,
+  bodyStream: ReadableStream<any>,
   uploadHandler: UploadHandler,
 ): Promise<FormData> {
-  const headers = utils.getHeaders();
-  const stream = await utils.getBody();
   const contentType = getContentType(headers);
 
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
@@ -60,7 +61,7 @@ async function parseMultipartFormData(
 
   const formData = new FormData();
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
-    streamMultipart(stream, boundary);
+    streamMultipart(bodyStream, boundary);
 
   for await (const part of parts) {
     if (part.done) break;
@@ -92,71 +93,74 @@ function isMultipartFormDataRequest(
   );
 }
 
-export const nodeHTTPFormDataContentTypeHandler =
-  createNodeHTTPContentTypeHandler({
-    isMatch(opts) {
-      return isMultipartFormDataRequest(opts.req.headers);
-    },
-    getInputs(opts) {
-      const req = opts.req;
-      const unparsedInput = req.query.get('input');
-      if (!unparsedInput) {
-        return {
-          0: undefined,
-        };
-      }
-      const transformer = opts.router._def._config
-        .transformer as CombinedDataTransformer;
-
-      const deserializedInput = transformer.input.deserialize(
-        JSON.parse(unparsedInput),
-      );
-      return {
-        0: deserializedInput,
-      };
-    },
-  });
-
 export { parseMultipartFormData as experimental_parseMultipartFormData };
-export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
-export { createFileUploadHandler as experimental_createFileUploadHandler } from './fileUploadHandler';
-export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
+export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from '../../content-type/form-data/memoryUploadHandler';
+export { createFileUploadHandler as experimental_createFileUploadHandler } from '../../content-type/form-data/fileUploadHandler';
+export { composeUploadHandlers as experimental_composeUploadHandlers } from '../../content-type/form-data/uploadHandler';
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
 
-/**
- * @deprecated
- */
-export function experimental_createFormDataMiddleware<
-  TMiddlewareFactory extends AnyTRPCInstance['middleware'],
->(
-  /**
-   * The value of `t.middleware`
-   */
-  middleware: TMiddlewareFactory,
-  config?: {
-    uploadHandler?: UploadHandler;
-  },
-) {
-  config;
-  return middleware(async (opts) => {
-    return opts.next();
-    // if (opts.rawInput instanceof FormData) {
-    //   // we have a form data request, pass through
-    //   return opts.next();
-    // }
+export function createNodeHttpFormDataDecoder(config?: {
+  uploadHandler?: UploadHandler;
+}) {
+  return createNodeHttpContentDecoder({
+    isMatch(opts) {
+      return isMultipartFormDataRequest(opts.headers);
+    },
+    async decodeInput(opts) {
+      if (isMultipartFormDataRequest(opts.req.headers)) {
+        const bodyStream = await opts.utils.getBody();
+        if (!bodyStream) {
+          throw new TRPCError({
+            message: 'Expected a Multipart Form Request but body returned null',
+            code: 'BAD_REQUEST',
+          });
+        }
 
-    // if (isMultipartFormDataRequest(opts.requestUtils.getHeaders())) {
-    //   const rawInput = await parseMultipartFormData(
-    //     opts.requestUtils,
-    //     config?.uploadHandler ?? createMemoryUploadHandler(),
+        const rawInput = await parseMultipartFormData(
+          opts.req.headers,
+          bodyStream,
+          config?.uploadHandler ?? createMemoryUploadHandler(),
+        );
+
+        return {
+          0: rawInput,
+        };
+      } else {
+        throw new TRPCError({
+          message: 'Expected a Multipart Form Request',
+          code: 'BAD_REQUEST',
+        });
+      }
+    },
+
+    // TODO: what even was all this for?
+    // async getBody(opts) {
+    //   const fields = Object.fromEntries(opts.query);
+
+    //   return {
+    //     ok: true,
+    //     data: fields,
+    //     preprocessed: false,
+    //   };
+    // },
+    // getInputs(opts) {
+    //   const req = opts.req;
+    //   const unparsedInput = req.query.get('input');
+    //   if (!unparsedInput) {
+    //     return {
+    //       0: undefined,
+    //     };
+    //   }
+    //   const transformer = opts.router._def._config
+    //     .transformer as CombinedDataTransformer;
+
+    //   const deserializedInput = transformer.input.deserialize(
+    //     JSON.parse(unparsedInput),
     //   );
-
-    //   return opts.next({
-    //     rawInput: rawInput,
-    //   });
-    // } else {
-    //   return opts.next();
-    // }
+    //   return {
+    //     0: deserializedInput,
+    //   };
+    // },
   });
 }

@@ -3,10 +3,7 @@ import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
-import {
-  ProcedureBuilderMiddleware,
-  RequestUtils,
-} from './internals/procedureBuilder';
+import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
   MiddlewareMarker,
@@ -132,12 +129,16 @@ export type MiddlewareFunction<
   TParamsAfter extends ProcedureParams,
 > = {
   (opts: {
-    requestUtils: RequestUtils;
     ctx: Simplify<TParams['_ctx_out']>;
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
+    // TASK: this has to be removed or proxied
+    /**
+     * @deprecated
+     */
     rawInput: unknown;
+    decodeInput(): Promise<unknown>;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;

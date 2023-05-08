@@ -283,7 +283,9 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
             return callProcedure({
               procedures: _def.procedures,
               path: args[0] as string,
-              rawInput: args[1],
+              async decodeInput() {
+                return args[1];
+              },
               ctx,
               type: path[0] as ProcedureType,
             });
@@ -301,7 +303,9 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
 
           return procedure({
             path: fullPath,
-            rawInput: args[0],
+            async decodeInput() {
+              return args[0];
+            },
             ctx,
             type,
           });
