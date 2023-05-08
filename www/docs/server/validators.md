@@ -366,17 +366,16 @@ export type AppRouter = typeof appRouter;
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash
-import * as t from 'runtypes';
 import { initTRPC } from '@trpc/server';
+import * as T from 'runtypes';
 
-export const t = initTRPC.create();
-
+const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(t.Record({ name: t.String }))
-    .output(t.Record({ greeting: t.String }))
+    .input(T.Record({ name: T.String }))
+    .output(T.Record({ greeting: T.String }))
     .query(({ input }) => {
       //      ^?
       return {
