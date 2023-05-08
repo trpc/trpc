@@ -125,7 +125,7 @@ export const appRouter = t.router({
 You can define a validator without any 3rd party dependencies, with a function.
 
 :::info
-We don't recommend doing making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
+We don't recommend making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
 
 In most cases we recommend you use a [validation library](#library-integrations)
 :::
