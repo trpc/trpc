@@ -79,6 +79,7 @@
       "@tanstack/react-query-devtools": "4.18.0",
       "@trpc/client": "link:./packages/client",
       "@trpc/next": "link:./packages/next",
+      "@trpc/next-app-router": "link:./packages/next-app-router",
       "@trpc/react-query": "link:./packages/react-query",
       "@trpc/server": "link:./packages/server",
       "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter",

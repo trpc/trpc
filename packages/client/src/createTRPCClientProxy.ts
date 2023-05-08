@@ -30,7 +30,7 @@ import {
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter['_def']['record']>;
 
-type Resolver<TProcedure extends AnyProcedure> = (
+export type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferTransformedProcedureOutput<TProcedure>>;
 
@@ -79,6 +79,13 @@ const clientCallTypeMap: Record<keyof DecorateProcedure<any>, ProcedureType> = {
   subscribe: 'subscription',
 };
 
+/** @internal */
+export const clientCallTypeToProcedureType = (
+  clientCallType: string,
+): ProcedureType => {
+  return clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
+};
+
 export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<
     TRouter['_def']['record']
@@ -101,10 +108,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     }
     return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
-      const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any>;
-
-      const procedureType = clientCallTypeMap[clientCallType];
-
+      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
       const fullPath = pathCopy.join('.');
 
       return (client as any)[procedureType](fullPath, ...args);
