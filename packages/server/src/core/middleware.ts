@@ -133,11 +133,8 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    // TASK: this has to be removed or proxied
-    /**
-     * @deprecated
-     */
-    rawInput: unknown;
+    // TODO: TASK: this has to be removed or proxied
+    // rawInput: unknown;
     decodeInput(): Promise<unknown>;
     meta: TParams['_meta'] | undefined;
     next: {
@@ -202,12 +199,15 @@ function isPlainObject(obj: unknown) {
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   const inputMiddleware: ProcedureBuilderMiddleware = async ({
     next,
-    rawInput,
+    decodeInput,
     input,
   }) => {
     let parsedInput: ReturnType<typeof parse>;
+
+    const parseInput = input ?? (await decodeInput());
+
     try {
-      parsedInput = await parse(rawInput);
+      parsedInput = await parse(parseInput);
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',

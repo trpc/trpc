@@ -356,10 +356,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           path: opts.path,
           // TODO:
           // TASK: this is a breaking change, but also a necessary evil, how about a LazyProxy hack and mark deprecated?
-          /**
-           * @deprecated
-           */
-          rawInput: callOpts.rawInput,
+          // rawInput: callOpts.rawInput,
           decodeInput() {
             return opts.decodeInput();
           },
