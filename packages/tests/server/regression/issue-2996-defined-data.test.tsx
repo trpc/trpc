@@ -2,7 +2,6 @@ import { getServerAndReactClient } from '../react/__reactHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 
@@ -10,7 +9,7 @@ const posts = [
   { id: 1, title: 'foo' },
   { id: 2, title: 'bar' },
 ];
-type Post = typeof posts[number];
+type Post = (typeof posts)[number];
 
 const fetchPosts = async () => posts;
 

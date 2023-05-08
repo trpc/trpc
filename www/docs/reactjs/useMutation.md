@@ -2,14 +2,14 @@
 id: useMutation
 title: useMutation()
 sidebar_label: useMutation()
-slug: /useMutation
+slug: /reactjs/usemutation
 ---
 
 :::note
-The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://react-query.tanstack.com/guides/mutations).
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://tanstack.com/query/v4/docs/react/guides/mutations).
 :::
 
-Works like react-query's mutations - [see their docs](https://react-query.tanstack.com/guides/mutations).
+Works like react-query's mutations - [see their docs](https://tanstack.com/query/v4/docs/react/guides/mutations).
 
 ### Example
 
@@ -31,11 +31,11 @@ export const appRouter = t.router({
         name: z.string(),
       }),
     )
-    .mutation(({ input }) => {
+    .mutation((opts) => {
       // Here some login stuff would happen
       return {
         user: {
-          name: input.name,
+          name: opts.input.name,
           role: 'ADMIN',
         },
       };

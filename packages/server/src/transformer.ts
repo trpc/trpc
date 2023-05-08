@@ -65,6 +65,9 @@ export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
 
 /**
  * @public
+ * @deprecated
+ * Deprecated in favor of `CombinedDataTransformerOptions` as this causes issues when doing SSR
+ * - https://github.com/trpc/trpc/issues/4130
  */
 export type ClientDataTransformerOptions =
   | DataTransformer

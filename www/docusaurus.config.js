@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const { parseEnv } = require('./src/utils/env');
+const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
 
 const env = parseEnv(process.env);
 
@@ -47,14 +48,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    announcementBar: {
-      id: 'v10',
-      content:
-        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
-      backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: '#ffffff',
-      isCloseable: true,
-    },
+    //     announcementBar: {
+    //       id: 'v10',
+    //       content:
+    //         "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
+    //       backgroundColor: 'var(--ifm-color-primary-dark)',
+    //       textColor: '#ffffff',
+    //       isCloseable: true,
+    //     },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -72,11 +73,11 @@ module.exports = {
           label: 'Quickstart',
         },
         {
-          to: 'docs/awesome-trpc',
+          to: 'docs/community/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/nextjs',
+          to: 'docs/nextjs/introduction',
           label: 'Using Next.js',
         },
         {
@@ -115,7 +116,7 @@ module.exports = {
             },
             {
               label: 'Usage with Next.js',
-              to: 'docs/nextjs',
+              to: 'docs/nextjs/introduction',
             },
           ],
         },
@@ -163,6 +164,13 @@ module.exports = {
     },
   },
   plugins: [
+    // Sidebar order is decided by the position in the array below
+    ...generateTypedocDocusaurusPlugins([
+      'client',
+      'server',
+      'next',
+      'react-query',
+    ]),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',

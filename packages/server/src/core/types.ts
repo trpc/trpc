@@ -21,7 +21,7 @@ export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
  * @public
  */
-export type ProcedureType = typeof procedureTypes[number];
+export type ProcedureType = (typeof procedureTypes)[number];
 
 export type inferHandlerInput<TProcedure extends AnyProcedure> = ProcedureArgs<
   inferProcedureParams<TProcedure>

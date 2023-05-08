@@ -1,10 +1,14 @@
-import { createSSGHelpers } from './ssg';
-
 export {
-  createSSGHelpers,
   /**
-   * @deprecated - use `createSSGHelpers` instead
+   * @deprecated use `@trpc/react-query/server` instead
    */
-  createSSGHelpers as createProxySSGHelpers,
-};
-export type { DecoratedProcedureSSGRecord } from './ssg';
+  type CreateSSGHelpersOptions,
+  /**
+   * @deprecated use `@trpc/react-query/server` instead
+   */
+  type DecoratedProcedureSSGRecord,
+  /**
+   * @deprecated use `import { createServerSideHelpers } from "@trpc/react-query/server"`
+   */
+  createServerSideHelpers as createProxySSGHelpers,
+} from '../server';

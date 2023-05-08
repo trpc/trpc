@@ -5,14 +5,12 @@ import '../server/___packages';
 import '@trpc/server';
 import { TRPCError, initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { AddressInfo } from 'net';
+import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTinyRPCClient } from './tinyrpc';
 
-if (!global.fetch) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fetch = require('node-fetch');
-  global.fetch = fetch;
-}
+globalThis.fetch = fetch as any;
 
 const t = initTRPC.create({});
 
@@ -59,17 +57,18 @@ const appRouter = router({
 type AppRouter = typeof appRouter;
 
 function createServer() {
-  const app = createHTTPServer({
+  const server = createHTTPServer({
     router: appRouter,
   });
 
-  const { port } = app.listen(0);
+  server.listen(0);
+  const port = (server.address() as AddressInfo).port;
 
   return {
-    port: port!,
+    port: port,
     async close() {
       await new Promise((resolve) => {
-        app.server.close(resolve);
+        server.close(resolve);
       });
     },
   };

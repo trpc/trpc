@@ -18,10 +18,10 @@ Try demo http://websockets.trpc.io/
 ## Setup
 
 ```bash
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter-websockets trpc-prisma-starter-websockets
-cd trpc-prisma-starter-websockets
-yarn
-yarn dx
+pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+cd trpc-prisma-websockets-starter
+pnpm i
+pnpm dx
 ```
 
 ## Deployment

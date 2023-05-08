@@ -2,7 +2,7 @@
 id: authorization
 title: Authorization
 sidebar_label: Authorization
-slug: /authorization
+slug: /server/authorization
 ---
 
 The `createContext` function is called for each incoming request, so here you can add contextual information about the calling user from the request object.
@@ -53,10 +53,10 @@ const appRouter = t.router({
   // open for anyone
   hello: t.procedure
     .input(z.string().nullish())
-    .query(({ input, ctx }) => `hello ${input ?? ctx.user?.name ?? 'world'}`),
+    .query((opts) => `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`),
   // checked in resolver
-  secret: t.procedure.query(({ ctx }) => {
-    if (!ctx.user) {
+  secret: t.procedure.query((opts) => {
+    if (!opts.ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
     return {
@@ -73,11 +73,12 @@ import { TRPCError, initTRPC } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware(({ next, ctx }) => {
+const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  return next({
+  return opts.next({
     ctx: {
       user: ctx.user,
     },
@@ -91,10 +92,10 @@ t.router({
   // this is accessible for everyone
   hello: t.procedure
     .input(z.string().nullish())
-    .query(({ input, ctx }) => `hello ${input ?? ctx.user?.name ?? 'world'}`),
+    .query((opts) => `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`),
   admin: t.router({
     // this is accessible only to admins
-    secret: protectedProcedure.query(({ ctx }) => {
+    secret: protectedProcedure.query((opts) => {
       return {
         secret: 'sauce',
       };

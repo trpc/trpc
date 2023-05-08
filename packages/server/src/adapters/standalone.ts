@@ -19,14 +19,9 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    // if no hostname, set a dummy one
-    const href = req.url!.startsWith('/')
-      ? `http://127.0.0.1${req.url}`
-      : req.url!;
-
-    // get procedure path and remove the leading slash
-    // /procedure -> procedure
-    const path = new URL(href).pathname.slice(1);
+    // Get procedure path and remove the leading slash, `/procedure -> procedure`
+    // Use dummy hostname if one is not provided.
+    const path = new URL(req.url!, 'http://127.0.0.1').pathname.slice(1);
 
     await nodeHTTPRequestHandler({
       ...opts,
@@ -41,18 +36,5 @@ export function createHTTPServer<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   const handler = createHTTPHandler(opts);
-  const server = http.createServer((req, res) => handler(req, res));
-
-  return {
-    server,
-    listen: (port?: number) => {
-      server.listen(port);
-      const actualPort =
-        port === 0 ? ((server.address() as any).port as number) : port;
-
-      return {
-        port: actualPort,
-      };
-    },
-  };
+  return http.createServer((req, res) => handler(req, res));
 }

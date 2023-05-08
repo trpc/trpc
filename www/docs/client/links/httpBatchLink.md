@@ -28,10 +28,10 @@ After that, you can make use of batching by setting all your procedures in a `Pr
 
 ```ts
 const somePosts = await Promise.all([
-  trpc.post.byId.query(1);
-  trpc.post.byId.query(2);
-  trpc.post.byId.query(3);
-])
+  trpc.post.byId.query(1),
+  trpc.post.byId.query(2),
+  trpc.post.byId.query(3),
+]);
 ```
 
 ## `httpBatchLink` Options
@@ -57,7 +57,9 @@ export interface HTTPLinkOptions {
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
    */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  headers?:
+    | HTTPHeaders
+    | ((opts: { opList: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 ```
 

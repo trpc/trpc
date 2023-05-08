@@ -1,10 +1,16 @@
 import { Simplify } from '../../types';
-import { ProcedureParams } from '../procedure';
+import { AnyProcedureParams, ProcedureParams } from '../procedure';
 
 /**
  * @internal
  */
-export type Overwrite<TType, TWith> = Omit<TType, keyof TWith> & TWith;
+export type Overwrite<TType, TWith> = {
+  [K in keyof TType | keyof TWith]: K extends keyof TWith
+    ? TWith[K]
+    : K extends keyof TType
+    ? TType[K]
+    : never;
+};
 /**
  * @internal
  */
@@ -42,7 +48,9 @@ export type UnsetMarker = typeof unsetMarker;
 /**
  * @internal
  */
-export interface ResolveOptions<TParams extends ProcedureParams> {
+export interface ResolveOptions<
+  TParams extends ProcedureParams<AnyProcedureParams>,
+> {
   ctx: Simplify<TParams['_ctx_out']>;
   input: TParams['_input_out'] extends UnsetMarker
     ? undefined

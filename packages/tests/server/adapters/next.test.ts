@@ -23,6 +23,7 @@ function mockReq({
 
   req.method = method;
   req.query = query;
+  req.headers = {};
 
   const socket = {
     destroy: vi.fn(),
@@ -217,6 +218,62 @@ test('PUT request (fails)', async () => {
   });
 
   const handler = trpcNext.createNextApiHandler({
+    router,
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: [],
+    },
+    method: 'PUT',
+  });
+  const { res } = mockRes();
+
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(405);
+});
+
+test('middleware intercepts request', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    middleware: (_req, res, _next) => {
+      res.statusCode = 419;
+      res.end();
+      return;
+    },
+    router,
+  });
+
+  const { req } = mockReq({
+    query: {
+      trpc: [],
+    },
+    method: 'PUT',
+  });
+  const { res } = mockRes();
+
+  await handler(req, res);
+
+  expect(res.statusCode).toBe(419);
+});
+
+test('middleware passes the request', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+
+  const handler = trpcNext.createNextApiHandler({
+    middleware: (_req, _res, next) => {
+      return next();
+    },
     router,
   });
 

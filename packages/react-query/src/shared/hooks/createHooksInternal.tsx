@@ -10,7 +10,13 @@ import {
 } from '@tanstack/react-query';
 import { TRPCClientErrorLike, createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   SSRState,
   TRPCContext,
@@ -44,7 +50,7 @@ export function createRootHooks<
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
-    config?.unstable_overrides?.useMutation?.onSuccess ??
+    (config?.overrides ?? config?.unstable_overrides)?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
   type TError = TRPCClientErrorLike<TRouter>;
@@ -121,6 +127,16 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
+              });
+            },
+            [client, queryClient],
+          ),
+          ensureQueryData: useCallback(
+            (queryKey, opts) => {
+              return queryClient.ensureQueryData({
+                ...opts,
+                queryKey,
+                queryFn: () => client.query(...getClientArgs(queryKey, opts)),
               });
             },
             [client, queryClient],
@@ -231,8 +247,14 @@ export function createRootHooks<
     input: unknown,
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
+    const context = useContext();
+    if (!context) {
+      throw new Error(
+        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+      );
+    }
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
-      useContext();
+      context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
 
     if (
@@ -246,7 +268,8 @@ export function createRootHooks<
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, opts);
     // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery({
       ...ssrOpts,
@@ -316,6 +339,9 @@ export function createRootHooks<
     const queryKey = hashQueryKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 
+    const optsRef = useRef<typeof opts>(opts);
+    optsRef.current = opts;
+
     return useEffect(() => {
       if (!enabled) {
         return;
@@ -327,7 +353,7 @@ export function createRootHooks<
         {
           onStarted: () => {
             if (!isStopped) {
-              opts.onStarted?.();
+              optsRef.current.onStarted?.();
             }
           },
           onData: (data) => {
@@ -337,7 +363,7 @@ export function createRootHooks<
           },
           onError: (err) => {
             if (!isStopped) {
-              opts.onError?.(err);
+              optsRef.current.onError?.(err);
             }
           },
         },

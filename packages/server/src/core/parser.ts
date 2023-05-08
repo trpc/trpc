@@ -18,11 +18,17 @@ export type ParserCustomValidatorEsque<TInput> = (
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
+
+export type ParserScaleEsque<TInput> = {
+  assert(value: unknown): asserts value is TInput;
+};
+
 export type ParserWithoutInput<TInput> =
   | ParserYupEsque<TInput>
   | ParserSuperstructEsque<TInput>
   | ParserCustomValidatorEsque<TInput>
-  | ParserMyZodEsque<TInput>;
+  | ParserMyZodEsque<TInput>
+  | ParserScaleEsque<TInput>;
 
 export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
   TInput,

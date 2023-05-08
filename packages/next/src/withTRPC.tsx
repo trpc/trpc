@@ -92,9 +92,7 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createRootHooks<TRouter, TSSRContext>({
-      unstable_overrides: opts.unstable_overrides,
-    });
+    const trpc = createRootHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
@@ -119,10 +117,15 @@ export function withTRPC<
       });
 
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
-      const hydratedState = trpc.useDehydratedState(
-        trpcClient,
-        props.pageProps.trpcState,
-      );
+
+      // allow normal components to be wrapped, not just app/pages
+      let hydratedState: DehydratedState | undefined;
+      if (props.pageProps) {
+        hydratedState = trpc.useDehydratedState(
+          trpcClient,
+          props.pageProps.trpcState,
+        );
+      }
 
       return (
         <trpc.Provider
@@ -227,9 +230,10 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydratedCacheWithErrors,
-        );
+        pageProps.trpcState =
+          trpcClient.runtime.combinedTransformer.output.serialize(
+            dehydratedCacheWithErrors,
+          );
 
         const appTreeProps = getAppTreeProps(pageProps);
 

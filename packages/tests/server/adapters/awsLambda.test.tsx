@@ -179,6 +179,39 @@ test('test v1 with leading prefix', async () => {
   `);
 });
 
+test('test v1 can find procedure even if resource is not proxied', async () => {
+  const { body, ...result } = await handler(
+    mockAPIGatewayProxyEventV1({
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Robin' },
+      method: 'GET',
+      path: '/leading/prefix/hello',
+      queryStringParameters: {},
+      // No pathParameters since we hit a direct resource, i.e. no {proxy+} on resource
+      resource: '/leading/prefix/hello',
+    }),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body || '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello Robin",
+        },
+      },
+    }
+  `);
+});
+
 test('bad type', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({

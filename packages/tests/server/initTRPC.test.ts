@@ -3,7 +3,6 @@ import {
   DefaultDataTransformer,
   initTRPC,
 } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 
 test('default transformer', () => {
   const t = initTRPC

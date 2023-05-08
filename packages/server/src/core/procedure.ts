@@ -20,49 +20,27 @@ export interface ProcedureOptions {
 }
 
 /**
- * FIXME: this should only take 1 generic argument instead of a list
  * @internal
  */
-export interface ProcedureParams<
-  TConfig extends AnyRootConfig = AnyRootConfig,
-  TContextOut = unknown,
-  TInputIn = unknown,
-  TInputOut = unknown,
-  TOutputIn = unknown,
-  TOutputOut = unknown,
-  TMeta = unknown,
-> {
-  _config: TConfig;
-  /**
-   * @internal
-   */
-  _meta: TMeta;
-  /**
-   * @internal
-   */
-  _ctx_out: TContextOut;
-  /**
-   * @internal
-   */
-  _input_in: TInputIn;
-  /**
-   * @internal
-   */
-  _input_out: TInputOut;
-  /**
-   * @internal
-   */
-  _output_in: TOutputIn;
-  /**
-   * @internal
-   */
-  _output_out: TOutputOut;
-}
+export type AnyProcedureParams = {
+  _config: AnyRootConfig;
+  _meta: unknown;
+  _ctx_out: unknown;
+  _input_in: unknown;
+  _input_out: unknown;
+  _output_in: unknown;
+  _output_out: unknown;
+};
 
 /**
  * @internal
  */
-export type ProcedureArgs<TParams extends ProcedureParams> =
+export type ProcedureParams<TParams extends AnyProcedureParams> = TParams;
+
+/**
+ * @internal
+ */
+export type ProcedureArgs<TParams extends ProcedureParams<AnyProcedureParams>> =
   TParams['_input_in'] extends UnsetMarker
     ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
@@ -75,7 +53,7 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  */
 export interface Procedure<
   TType extends ProcedureType,
-  TParams extends ProcedureParams,
+  TParams extends ProcedureParams<AnyProcedureParams>,
 > {
   _type: TType;
   _def: TParams & ProcedureBuilderDef<TParams>;

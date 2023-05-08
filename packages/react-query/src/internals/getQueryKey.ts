@@ -51,7 +51,8 @@ type GetInfiniteQueryInput<
   ? undefined
   : DeepPartial<TInputWithoutCursor> | undefined;
 
-type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
+/** @internal */
+export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
   cursor?: any;
 }
   ? GetInfiniteQueryInput<TProcedureInput>
@@ -116,3 +117,9 @@ export function getQueryKey<
   const queryKey = getQueryKeyInternal(path, input, type ?? 'any');
   return queryKey;
 }
+
+// TODO: look over if we can't use a single type
+export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
+  string[],
+  { input?: GetQueryProcedureInput<TInput>; type: TType }?,
+];

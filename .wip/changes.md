@@ -1,5 +1,7 @@
 # Changes in v11
 
+- `.unstable_concat()` removed
+
 ## `interop`-mode has been removed
 
 ...

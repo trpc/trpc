@@ -8,10 +8,7 @@ import type {
 import { TRPCError } from '../..';
 import { AnyRouter } from '../../core';
 import { resolveHTTPResponse } from '../../http';
-import {
-  HTTPRequest,
-  ResolveHTTPRequestOptionsContextFn,
-} from '../../http/internals/types';
+import { HTTPRequest, ResolveHTTPRequestOptionsContextFn } from '../../http';
 import type { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,

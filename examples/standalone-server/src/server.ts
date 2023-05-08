@@ -72,7 +72,7 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 // http server
-const { server, listen } = createHTTPServer({
+const server = createHTTPServer({
   router: appRouter,
   createContext,
 });
@@ -88,4 +88,4 @@ applyWSSHandler<AppRouter>({
 // setInterval(() => {
 //   console.log('Connected clients', wss.clients.size);
 // }, 1000);
-listen(2022);
+server.listen(2022);

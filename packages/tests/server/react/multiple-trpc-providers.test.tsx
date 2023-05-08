@@ -36,7 +36,7 @@ const ctx = konn()
 test('multiple trpcProviders', async () => {
   const A = (() => {
     return {
-      trpc: createTRPCReact<typeof ctx['A']['router']>({
+      trpc: createTRPCReact<(typeof ctx)['A']['router']>({
         // No custom context defined -- will use default
       }),
       queryClient: createQueryClient(),
@@ -47,7 +47,7 @@ test('multiple trpcProviders', async () => {
   const B = (() => {
     const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
-      trpc: createTRPCReact<typeof ctx['B']['router']>({
+      trpc: createTRPCReact<(typeof ctx)['B']['router']>({
         context: createContext(null),
         reactQueryContext,
       }),
@@ -59,7 +59,7 @@ test('multiple trpcProviders', async () => {
   const C = (() => {
     const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
-      trpc: createTRPCReact<typeof ctx['C']['router']>({
+      trpc: createTRPCReact<(typeof ctx)['C']['router']>({
         context: createContext(null),
         reactQueryContext,
       }),

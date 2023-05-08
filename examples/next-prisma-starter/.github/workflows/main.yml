@@ -2,6 +2,15 @@ name: E2E-testing
 on: [push]
 jobs:
   e2e:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
     env:
       NODE_ENV: test
       NEXTAUTH_SECRET: supersecret
@@ -37,6 +46,9 @@ jobs:
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+
+      - name: Setup Prisma
+        run: pnpm prebuild
 
       - name: Build and test
         run: pnpm build && pnpm test-start && pnpm test-dev

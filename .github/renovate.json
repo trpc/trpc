@@ -2,5 +2,6 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base", ":preserveSemverRanges"],
   "ignorePaths": ["**/node_modules/**", "**/examples/**"],
-  "updateInternalDeps": true
+  "updateInternalDeps": true,
+  "rollbackPrs": false
 }

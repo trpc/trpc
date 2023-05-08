@@ -4,7 +4,7 @@ import {
   HTTPBaseHandlerOptions,
   HTTPRequest,
   ResolveHTTPRequestOptionsContextFn,
-} from '../../http/internals/types';
+} from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
 

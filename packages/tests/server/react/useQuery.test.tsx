@@ -4,7 +4,6 @@ import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { Suspense, useEffect } from 'react';
 import { z } from 'zod';
@@ -92,7 +91,7 @@ describe('useQuery()', () => {
         return <>...</>;
       }
 
-      type TData = typeof query1['data'];
+      type TData = (typeof query1)['data'];
       expectTypeOf<TData>().toMatchTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
@@ -178,7 +177,7 @@ test('useInfiniteQuery()', async () => {
       return <>...</>;
     }
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
@@ -235,7 +234,7 @@ test('useInfiniteQuery() initialCursor', async () => {
       return <>...</>;
     }
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
@@ -290,7 +289,7 @@ test('useSuspenseInfiniteQuery()', async () => {
     expect(query1.data).not.toBeFalsy();
     expect(data).not.toBeFalsy();
 
-    type TData = typeof query1['data'];
+    type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
       InfiniteData<{
         items: typeof fixtureData;
