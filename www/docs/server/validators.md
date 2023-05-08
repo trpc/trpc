@@ -388,7 +388,6 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-
 ## Contributing your own Validator Library
 
 If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.
