@@ -103,8 +103,8 @@ importers:
         specifier: ^1.3.1
         version: 1.3.1
       rollup-plugin-node-externals:
-        specifier: ^5.0.0
-        version: 5.0.2(rollup@2.79.1)
+        specifier: ^6.0.0
+        version: 6.0.0(rollup@2.79.1)
       rollup-plugin-swc3:
         specifier: ^0.8.0
         version: 0.8.0(@swc/core@1.3.20)(rollup@2.79.1)
@@ -20522,11 +20522,11 @@ packages:
       lodash: 4.17.21
     dev: false
 
-  /rollup-plugin-node-externals@5.0.2(rollup@2.79.1):
-    resolution: {integrity: sha512-UGAPdPjD0PPk4hNcHLnqwqsfNc/u0vaAjWnjkyS6j2jIMB4LLi1pW3TE01eaytJKZactNik2t8AQC33esS9GKw==}
-    engines: {node: '>=14.0.0'}
+  /rollup-plugin-node-externals@6.0.0(rollup@2.79.1):
+    resolution: {integrity: sha512-T3JivXptrPQfz3hWOCLK6cFsHFMKRCipPPHXhqmY2CUuiHcT5EKfuS1uVm8WwBF7L2XYtkantmLyunuLbrY71A==}
+    engines: {node: '>=16.0.0'}
     peerDependencies:
-      rollup: ^2.60.0 || ^3.0.0
+      rollup: ^3.0.0
     dependencies:
       rollup: 2.79.1
     dev: false
