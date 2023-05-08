@@ -16,7 +16,7 @@ export function createTRPCNextAppRouter<TRouter extends AnyRouter>(config: {
 
   createContext: () => MaybePromise<inferRouterContext<TRouter>>;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+   
   return createRecursiveProxy(async (opts) => {
     const [input, callOpts] = opts.args as Parameters<
       QueryResolver<AnyQueryProcedure>

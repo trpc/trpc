@@ -59,7 +59,7 @@
     "@trpc/client": "10.25.0",
     "@trpc/react-query": "10.25.0",
     "@trpc/server": "10.25.0",
-    "next": ">=13.4.0",
+    "next": "13.4.2-canary.2",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0"
   },
@@ -70,7 +70,7 @@
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
     "eslint": "^8.40.0",
-    "next": "^13.4.1",
+    "next": "^13.4.2-canary.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",
