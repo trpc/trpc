@@ -10,12 +10,6 @@ import {
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { initTRPC } from '@trpc/server';
-import {
-  experimental_createFormDataMiddleware,
-  experimental_createMemoryUploadHandler,
-  nodeHTTPFormDataContentTypeHandler,
-} from '@trpc/server/adapters/node-http/content-type/form-data';
-import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import { konn } from 'konn';
 import React, { ReactNode } from 'react';
 import SuperJSON from 'superjson';
@@ -50,21 +44,9 @@ const ctx = konn()
         defaultMeta: { foo: 1 },
       });
 
-    const formDataMiddleware = experimental_createFormDataMiddleware(
-      t.middleware,
-      {
-        // Totally optional
-        uploadHandler: experimental_createMemoryUploadHandler(),
-      },
-    );
-
-    const defaultFormDataMiddleware = experimental_createFormDataMiddleware(
-      t.middleware,
-    );
-
     const appRouter = t.router({
       polymorphic: t.procedure
-        .use(formDataMiddleware)
+
         .input(
           formDataOrObject({
             text: z.string(),
@@ -74,7 +56,7 @@ const ctx = konn()
           return opts.input;
         }),
       uploadFile: t.procedure
-        .use(formDataMiddleware)
+
         .input(
           zfd.formData({
             file: zfd.file(),
@@ -90,8 +72,6 @@ const ctx = konn()
           };
         }),
       passthroughFile: t.procedure
-        .use(defaultFormDataMiddleware)
-        // TODO: an implicit type from the middleware might be nice?
         .input((formData: any) => formData as FormData)
         .mutation(async ({ input }) => {
           if (input instanceof FormData) {
@@ -115,10 +95,6 @@ const ctx = konn()
             // Don't need to attach req or res for this
           };
         },
-        experimental_contentTypeHandlers: [
-          nodeHTTPFormDataContentTypeHandler(),
-          nodeHTTPJSONContentTypeHandler(),
-        ],
       },
       client: ({ httpUrl }) => ({
         links: [

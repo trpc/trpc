@@ -4,15 +4,11 @@ import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
 import { HTTPRequest } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { createNodeHttpFormDataDecoder } from './content-decoder/form-data';
-import { createNodeHttpJsonContentDecoder } from './content-decoder/json';
 import {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
-
-const defaultJSONContentTypeHandler = createNodeHttpJsonContentDecoder();
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -32,16 +28,6 @@ export async function nodeHTTPRequestHandler<
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
-    // TODO: clean up dead options
-    // const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
-    //   jsonContentTypeHandler,
-    // ];
-
-    const contentTypeHandlers = [
-      defaultJSONContentTypeHandler,
-      createNodeHttpFormDataDecoder(),
-    ];
-
     const req: HTTPRequest = {
       method: opts.req.method!,
       headers: opts.req.headers,
@@ -49,11 +35,6 @@ export async function nodeHTTPRequestHandler<
       // TODO: remove this?
       body: undefined,
     };
-
-    const contentTypeHandler =
-      contentTypeHandlers.find((handler) => handler.isMatch(req)) ??
-      // fallback to json
-      defaultJSONContentTypeHandler;
 
     const result = await resolveHTTPResponse({
       requestUtils: {
@@ -82,7 +63,7 @@ export async function nodeHTTPRequestHandler<
           req: opts.req,
         });
       },
-      contentDecoder: contentTypeHandler,
+      customContentDecoders: opts.experimental_contentDecoders,
     });
 
     const { res } = opts;

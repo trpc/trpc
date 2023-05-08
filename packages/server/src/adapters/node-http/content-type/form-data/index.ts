@@ -9,7 +9,6 @@
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
 
-import { AnyTRPCInstance } from '@trpc/server/core/initTRPC';
 import { RequestUtils } from '@trpc/server/core/internals/procedureBuilder';
 import { CombinedDataTransformer } from '@trpc/server/transformer';
 import { streamMultipart } from '@web3-storage/multipart-parser';
@@ -123,40 +122,3 @@ export { createFileUploadHandler as experimental_createFileUploadHandler } from 
 export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
-
-/**
- * @deprecated
- */
-export function experimental_createFormDataMiddleware<
-  TMiddlewareFactory extends AnyTRPCInstance['middleware'],
->(
-  /**
-   * The value of `t.middleware`
-   */
-  middleware: TMiddlewareFactory,
-  config?: {
-    uploadHandler?: UploadHandler;
-  },
-) {
-  config;
-  return middleware(async (opts) => {
-    return opts.next();
-    // if (opts.rawInput instanceof FormData) {
-    //   // we have a form data request, pass through
-    //   return opts.next();
-    // }
-
-    // if (isMultipartFormDataRequest(opts.requestUtils.getHeaders())) {
-    //   const rawInput = await parseMultipartFormData(
-    //     opts.requestUtils,
-    //     config?.uploadHandler ?? createMemoryUploadHandler(),
-    //   );
-
-    //   return opts.next({
-    //     rawInput: rawInput,
-    //   });
-    // } else {
-    //   return opts.next();
-    // }
-  });
-}

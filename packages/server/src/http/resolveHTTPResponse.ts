@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { createNodeHttpFormDataDecoder } from '../adapters/node-http/content-decoder/form-data';
 import { createNodeHttpJsonContentDecoder } from '../adapters/node-http/content-decoder/json';
 import {
   AnyRouter,
@@ -26,6 +27,11 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 };
 
 const fallbackContentDecoder = createNodeHttpJsonContentDecoder();
+const contentDecoders = [
+  fallbackContentDecoder,
+  // TODO: probably while experimental this should be added manually by users, but should be here eventually
+  createNodeHttpFormDataDecoder(),
+];
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
@@ -35,7 +41,7 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
-  contentDecoder?: ContentDecoder;
+  customContentDecoders?: ContentDecoder[];
   preprocessedBody?: boolean;
   requestUtils: RequestUtils;
 }
@@ -45,7 +51,11 @@ export async function resolveHTTPResponse<
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
   const { router, req } = opts;
-  const contentDecoder = opts.contentDecoder ?? fallbackContentDecoder;
+
+  const contentDecoder: ContentDecoder =
+    opts.customContentDecoders?.find((handler) => handler.isMatch(req)) ??
+    contentDecoders.find((handler) => handler.isMatch(req)) ??
+    fallbackContentDecoder;
 
   const batchingEnabled = opts.batching?.enabled ?? true;
   if (req.method === 'HEAD') {

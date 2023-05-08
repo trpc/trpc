@@ -1,8 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
+import { AnyRouter, ContentDecoder, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions } from '../../http';
 import { MaybePromise } from '../../types';
-import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
   [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
@@ -65,10 +64,7 @@ export type NodeHTTPHandlerOptions<
    */
   middleware?: ConnectMiddleware;
   maxBodySize?: number;
-  experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
-    TRequest,
-    TResponse
-  >[];
+  experimental_contentDecoders?: ContentDecoder[];
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
 export type NodeHTTPRequestHandlerOptions<
