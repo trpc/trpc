@@ -1,7 +1,6 @@
-import { SubmitButton } from '~/components/button';
+import { Form } from '~/components/form';
 import { Input } from '~/components/input';
-import { trpc } from '../utils/trpc';
-import { Form } from './form';
+import { trpc } from '~/utils/trpc';
 
 export default async function IndexPage() {
   const greeting = await trpc.greeting.query(
