@@ -25,7 +25,7 @@
     "kysely-planetscale": "^1.3.0",
     "lucide-react": "^0.124.0",
     "nanoid": "^4.0.2",
-    "next": "^13.4.0",
+    "next": "^13.3.4",
     "next-auth": "^4.22.1",
     "prisma-generator-kysely": "^0.0.3",
     "react": "^18.2.0",
@@ -37,13 +37,13 @@
   },
   "devDependencies": {
     "@types/node": "^18.7.20",
-    "@types/react": "^18.2.5",
-    "@types/react-dom": "^18.2.3",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
     "autoprefixer": "^10.4.7",
     "postcss": "^8.4.14",
     "prisma": "^4.12.0",
     "tailwindcss": "^3.3.0",
-    "tsx": "^3.12.3",
+    "tsx": "^3.12.7",
     "typescript": "^4.8.3"
   }
 }

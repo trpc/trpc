@@ -69,13 +69,13 @@
     "@trpc/react-query": "^10.14.0",
     "@trpc/server": "^10.14.0",
     "@types/node": "^18.7.20",
-    "@types/react": "^18.2.5",
-    "eslint": "^8.30.0",
-    "next": "^13.4.0",
+    "@types/react": "^18.2.6",
+    "eslint": "^8.40.0",
+    "next": "^13.3.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",
-    "tsx": "^3.12.3"
+    "tsx": "^3.12.7"
   },
   "publishConfig": {
     "access": "public"

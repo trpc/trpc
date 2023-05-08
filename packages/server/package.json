@@ -144,7 +144,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
-    "@types/ws": "^8.2.0",
+    "@types/ws": "^8.5.4",
     "@web3-storage/multipart-parser": "^1.0.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^4.0.0",
