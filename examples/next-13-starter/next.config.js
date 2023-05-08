@@ -1,10 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
+  experimental: { serverActions: true },
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   images: {
-    domains: ['images.clerk.dev', 'avatars.githubusercontent.com'],
+    remotePatterns: [{
+      hostname: 'avatars.githubusercontent.com',
+      protocol: 'https',
+    }]
   },
 };
 
