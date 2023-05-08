@@ -881,6 +881,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
+      swr:
+        specifier: ^2.1.5
+        version: 2.1.5(react@18.2.0)
       tailwind-merge:
         specifier: ^1.5.1
         version: 1.8.0
@@ -1452,6 +1455,10 @@ importers:
         version: 3.20.2
 
   packages/next-app-router:
+    dependencies:
+      swr:
+        specifier: ^2.1.5
+        version: 2.1.5(react@18.2.0)
     devDependencies:
       '@trpc/client':
         specifier: link:../client
@@ -22343,6 +22350,15 @@ packages:
       css-tree: 2.3.1
       csso: 5.0.5
       picocolors: 1.0.0
+    dev: false
+
+  /swr@2.1.5(react@18.2.0):
+    resolution: {integrity: sha512-/OhfZMcEpuz77KavXST5q6XE9nrOBOVcBLWjMT+oAE/kQHyE3PASrevXCtQDZ8aamntOfFkbVJp7Il9tNBQWrw==}
+    peerDependencies:
+      react: ^16.11.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 18.2.0
+      use-sync-external-store: 1.2.0(react@18.2.0)
     dev: false
 
   /symbol-tree@3.2.4:

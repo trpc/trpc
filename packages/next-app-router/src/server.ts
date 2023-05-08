@@ -8,7 +8,10 @@ import {
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { revalidateTag, unstable_cache } from 'next/cache';
-import { type DecoratedProcedureRecord, type QueryResolver } from './types';
+import {
+  type QueryResolver,
+  type ServerDecoratedProcedureRecord,
+} from './types';
 import { generateCacheTag } from './utils';
 
 export function createTRPCNextAppRouter<TRouter extends AnyRouter>(config: {
@@ -16,7 +19,6 @@ export function createTRPCNextAppRouter<TRouter extends AnyRouter>(config: {
 
   createContext: () => MaybePromise<inferRouterContext<TRouter>>;
 }) {
-   
   return createRecursiveProxy(async (opts) => {
     const [input, callOpts] = opts.args as Parameters<
       QueryResolver<AnyQueryProcedure>
@@ -59,5 +61,5 @@ export function createTRPCNextAppRouter<TRouter extends AnyRouter>(config: {
     }
 
     return callProc();
-  }) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  }) as ServerDecoratedProcedureRecord<TRouter['_def']['record']>;
 }

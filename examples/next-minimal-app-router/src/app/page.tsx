@@ -1,6 +1,6 @@
 import { Form } from '~/components/form';
 import { Input } from '~/components/input';
-import { trpc } from '~/utils/trpc';
+import { trpc } from '~/utils/trpc-server';
 import { ClientPosts } from './client-posts';
 
 export default async function IndexPage() {
