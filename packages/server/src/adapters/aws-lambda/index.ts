@@ -45,7 +45,17 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,
-    body: body,
+    async getBodyJson() {
+      return body ?? null;
+    },
+    async getBodyStream() {
+      // TODO: is this correct?
+      if (body) {
+        return Readable.toWeb(Readable.from(body));
+      }
+
+      return null;
+    },
   };
 }
 
@@ -100,19 +110,6 @@ export function awsLambdaRequestHandler<
     };
 
     const response = await resolveHTTPResponse({
-      requestUtils: {
-        getHeaders() {
-          return req.headers;
-        },
-        async getBody() {
-          // TODO: is this correct?
-          if (event.body) {
-            return Readable.toWeb(Readable.from(event.body));
-          }
-
-          return null;
-        },
-      },
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts?.responseMeta,

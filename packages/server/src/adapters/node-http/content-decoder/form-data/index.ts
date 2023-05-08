@@ -109,7 +109,7 @@ export function createNodeHttpFormDataDecoder(config?: {
     },
     async decodeInput(opts) {
       if (isMultipartFormDataRequest(opts.req.headers)) {
-        const bodyStream = await opts.utils.getBody();
+        const bodyStream = await opts.req.getBodyStream();
         if (!bodyStream) {
           throw new TRPCError({
             message: 'Expected a Multipart Form Request but body returned null',

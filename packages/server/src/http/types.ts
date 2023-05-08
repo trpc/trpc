@@ -2,12 +2,12 @@ import { AnyRouter } from '../core';
 import { BaseHandlerOptions } from '../internals/types';
 import { HTTPHeaders, ResponseMetaFn } from './internals/types';
 
-// TODO: this an RequestUtils fill a similar need, let's bring them together?
 export interface HTTPRequest {
   method: string;
   query: URLSearchParams;
   headers: HTTPHeaders;
-  body: unknown;
+  getBodyJson(): Promise<string | null>;
+  getBodyStream(): Promise<ReadableStream<any> | null>;
 }
 
 /**

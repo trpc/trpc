@@ -24,12 +24,7 @@ export type BodyResult =
     }
   | { ok: false; error: TRPCError };
 
-export type BaseContentTypeHandler<TOptions> = {
-  isMatch(opts: TOptions): boolean;
-  getInputs: GetInputs;
-};
-
-function getRawProcedureInputOrThrow(opts: {
+async function getRawProcedureInputOrThrow(opts: {
   req: HTTPRequest;
   preprocessedBody: boolean;
 }) {
@@ -42,11 +37,8 @@ function getRawProcedureInputOrThrow(opts: {
       const raw = req.query.get('input');
       return JSON.parse(raw!);
     }
-    if (!opts.preprocessedBody && typeof req.body === 'string') {
-      // A mutation with no inputs will have req.body === ''
-      return req.body.length === 0 ? undefined : JSON.parse(req.body);
-    }
-    return req.body;
+
+    return await opts.req.getBodyJson();
   } catch (err) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
@@ -64,8 +56,8 @@ const deserializeInputValue = (
     : rawValue;
 };
 
-export const getJsonContentTypeInputs: GetInputs = (opts) => {
-  const rawInput = getRawProcedureInputOrThrow(opts);
+export const getJsonContentTypeInputs: GetInputs = async (opts) => {
+  const rawInput = await getRawProcedureInputOrThrow(opts);
   const transformer = opts.router._def._config.transformer;
 
   if (!opts.isBatchCall) {

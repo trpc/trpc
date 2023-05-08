@@ -1,4 +1,3 @@
-import { RequestUtils } from '@trpc/server/core/internals/procedureBuilder';
 import { HTTPRequest } from '@trpc/server/http';
 import { AnyRouter } from '../../../core/router';
 
@@ -9,7 +8,6 @@ export type ContentDecoder = {
   isMatch(req: HTTPRequest): boolean;
   decodeInput(opts: {
     req: HTTPRequest;
-    utils: RequestUtils;
     isBatchCall: boolean;
     router: AnyRouter;
     preprocessedBody: boolean;

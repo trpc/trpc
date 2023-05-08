@@ -23,22 +23,16 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     query: url.searchParams,
     method: opts.req.method,
     headers: Object.fromEntries(opts.req.headers),
-    body:
-      opts.req.headers.get('content-type') === 'application/json'
-        ? await opts.req.text()
-        : '',
+    async getBodyJson() {
+      return await opts.req.json();
+    },
+    async getBodyStream() {
+      return opts.req.body;
+    },
   };
 
   const result = await resolveHTTPResponse({
     req,
-    requestUtils: {
-      getHeaders() {
-        return Object.fromEntries(opts.req.headers.entries());
-      },
-      async getBody() {
-        return opts.req.body;
-      },
-    },
     createContext,
     path,
     router: opts.router,

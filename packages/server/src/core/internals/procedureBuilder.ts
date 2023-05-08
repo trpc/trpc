@@ -310,20 +310,8 @@ function createResolver(
 /**
  * @internal
  */
-export interface RequestUtils {
-  getHeaders(): Record<string, string | string[] | undefined>;
-  getBody(): Promise<ReadableStream<any> | null>;
-}
-
-/**
- * @internal
- */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  // TASK: clean up here
-  // requestUtils?: RequestUtils;
-  // rawInput: unknown;
-  // input?: unknown;
   decodeInput(): Promise<unknown>;
   path: string;
   type: ProcedureType;

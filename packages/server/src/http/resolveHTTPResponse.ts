@@ -9,7 +9,6 @@ import {
   inferRouterContext,
   inferRouterError,
 } from '../core';
-import { RequestUtils } from '../core/internals/procedureBuilder';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../shared';
@@ -43,7 +42,6 @@ interface ResolveHTTPRequestOptions<
   error?: Maybe<TRPCError>;
   customContentDecoders?: ContentDecoder[];
   preprocessedBody?: boolean;
-  requestUtils: RequestUtils;
 }
 
 export async function resolveHTTPResponse<
@@ -152,7 +150,6 @@ export async function resolveHTTPResponse<
           req,
           router,
           preprocessedBody: opts.preprocessedBody ?? false,
-          utils: opts.requestUtils,
         });
       }
 

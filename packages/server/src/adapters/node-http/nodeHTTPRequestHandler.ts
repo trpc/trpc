@@ -28,23 +28,29 @@ export async function nodeHTTPRequestHandler<
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
+    // TODO: ensure this remains implemented at the right level
+    const preprocessedBody = false;
+
     const req: HTTPRequest = {
       method: opts.req.method!,
       headers: opts.req.headers,
       query,
-      // TODO: remove this?
-      body: undefined,
+      async getBodyJson() {
+        if (!preprocessedBody && typeof opts.req.body === 'string') {
+          // A mutation with no inputs will have opts.req.body === ''
+          return opts.req.body.length === 0
+            ? undefined
+            : JSON.parse(opts.req.body);
+        }
+
+        return opts.req.body;
+      },
+      async getBodyStream() {
+        return Readable.toWeb(opts.req);
+      },
     };
 
     const result = await resolveHTTPResponse({
-      requestUtils: {
-        getHeaders() {
-          return opts.req.headers;
-        },
-        async getBody() {
-          return Readable.toWeb(opts.req);
-        },
-      },
       batching: opts.batching,
       responseMeta: opts.responseMeta,
       path: opts.path,
@@ -53,8 +59,7 @@ export async function nodeHTTPRequestHandler<
       req,
       // TODO: remove this?
       error: undefined,
-      // TODO: ensure this remains implemented at the right level
-      preprocessedBody: false,
+      preprocessedBody: preprocessedBody,
       // error: bodyResult.ok ? null : bodyResult.error,
       // preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
       onError(o) {

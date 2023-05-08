@@ -40,22 +40,23 @@ export async function fastifyRequestHandler<
     query,
     method: opts.req.method,
     headers: opts.req.headers,
-    body: opts.req.body ?? 'null',
+    async getBodyJson() {
+      throw new Error(
+        'Not Implemented: tRPC does not currently support text with Fastify Adapter',
+      );
+
+      // return opts.req.body;
+    },
+    async getBodyStream() {
+      // TODO: looks like 3rd party lib might be needed? https://github.com/fastify/fastify-multipart
+      throw new Error(
+        'Not Implemented: tRPC does not currently support streams / form-data with Fastify Adapter',
+      );
+    },
   };
 
   const result = await resolveHTTPResponse({
     req,
-    requestUtils: {
-      getHeaders() {
-        return opts.req.headers;
-      },
-      async getBody() {
-        // TODO: looks like 3rd party lib might be needed? https://github.com/fastify/fastify-multipart
-        throw new Error(
-          'Not Implemented: tRPC does not currently support streams / form-data with Fastify Adapter',
-        );
-      },
-    },
     createContext,
     path: opts.path,
     router: opts.router,
