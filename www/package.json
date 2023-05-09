@@ -78,6 +78,7 @@
     "oauth": "^0.10.0",
     "postcss": "^8.4.14",
     "prettier": "^2.8.8",
+    "runtypes": "^6.6.0",
     "scale-codec": "^0.11.0",
     "superstruct": "^1.0.0",
     "tailwindcss": "^3.3.0",
