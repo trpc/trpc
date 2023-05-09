@@ -66,7 +66,7 @@ function isFormData(value: unknown): value is FormData {
 
 function fromEntries(fd: FormData) {
   const result: Record<string, unknown> = {};
-  for (const [key, value] of fd.entries()) {
+  for (const [key, value] of fd) {
     result[key] = value;
   }
   return result;
