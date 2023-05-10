@@ -76,10 +76,13 @@ async function* readLines (reader: ReadableStreamDefaultReader<Uint8Array>) {
 		if (chunkLines.length === 1) {
 			partOfLine += chunkLines[0]
 		} else if (chunkLines.length > 1) {
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
 			yield partOfLine + chunkLines[0]!
 			for (let i = 1; i < chunkLines.length - 1; i++) {
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
 				yield chunkLines[i]!
 			}
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length doesn't change
 			partOfLine = chunkLines[chunkLines.length - 1]!
 		}
 	}
