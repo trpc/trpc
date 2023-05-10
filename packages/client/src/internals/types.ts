@@ -114,6 +114,7 @@ export interface ResponseEsque {
   readonly statusText: string;
   readonly type: ResponseType;
   readonly url: string;
+  readonly body: ReadableStream<Uint8Array> | null;
   clone(): ResponseEsque;
 
   /**

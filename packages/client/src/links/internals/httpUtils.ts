@@ -1,9 +1,11 @@
+import { parseJsonStream } from "./parseJsonStream"
 import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
 import {
   AbortControllerEsque,
+  AbortControllerInstanceEsque,
   FetchEsque,
   RequestInitEsque,
   ResponseEsque,
@@ -118,11 +120,11 @@ export const getBody: GetBody = (opts) => {
   return input !== undefined ? JSON.stringify(input) : undefined;
 };
 
-export type Requester = (
+export type Requester<Result = HTTPResult> = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-) => PromiseAndCancel<HTTPResult>;
+) => PromiseAndCancel<Result>;
 
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
@@ -133,41 +135,73 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
+export const streamingJsonHttpRequested: Requester<AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>> = (opts) => {
+  const ac = opts.AbortController ? new opts.AbortController() : null;
+  const meta = {} as HTTPResult['meta'];
+  const responsePromise = getHttpResponse({
+    ...opts,
+    contentTypeHeader: 'application/json',
+    getUrl,
+    getBody,
+  }, ac);
+  responsePromise.then((_res) => meta.response = _res);
+  const cancel = () => {
+    ac?.abort();
+  };
+  const promise = responsePromise.then(async (res) => {
+    if (!res.body) throw new Error('Received response without body');
+    return parseJsonStream(
+      res.body,
+      (string) => ({
+          json: JSON.parse(string) as TRPCResponse,
+          meta,
+      }),
+      ac?.signal,
+    )
+  })
+
+  return { promise, cancel }
+}
+
 export type HTTPRequestOptions = HTTPBaseRequestOptions &
   ContentOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
+async function getHttpResponse(
+  opts: HTTPRequestOptions,
+  ac?: AbortControllerInstanceEsque | null,
+) {
+  const url = opts.getUrl(opts);
+  const body = opts.getBody(opts);
+  const { type } = opts;
+  const headers = await opts.headers();
+  /* istanbul ignore if -- @preserve */
+  if (type === 'subscription') {
+    throw new Error('Subscriptions should use wsLink');
+  }
+
+  return opts.fetch(url, {
+    method: METHOD[type],
+    signal: ac?.signal,
+    body: body,
+    headers: {
+      ...(opts.contentTypeHeader
+        ? { 'content-type': opts.contentTypeHeader }
+        : {}),
+      ...headers,
+    },
+  });
+}
+
 export function httpRequest(
   opts: HTTPRequestOptions,
 ): PromiseAndCancel<HTTPResult> {
-  const { type } = opts;
   const ac = opts.AbortController ? new opts.AbortController() : null;
+  const meta = {} as HTTPResult['meta'];
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
-    const url = opts.getUrl(opts);
-    const body = opts.getBody(opts);
-
-    const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.headers())
-      .then((headers) => {
-        /* istanbul ignore if -- @preserve */
-        if (type === 'subscription') {
-          throw new Error('Subscriptions should use wsLink');
-        }
-
-        return opts.fetch(url, {
-          method: METHOD[type],
-          signal: ac?.signal,
-          body: body,
-          headers: {
-            ...(opts.contentTypeHeader
-              ? { 'content-type': opts.contentTypeHeader }
-              : {}),
-            ...headers,
-          },
-        });
-      })
+    getHttpResponse(opts, ac)
       .then((_res) => {
         meta.response = _res;
         return _res.json();

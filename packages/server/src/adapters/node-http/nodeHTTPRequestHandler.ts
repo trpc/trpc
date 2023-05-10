@@ -128,10 +128,10 @@ export async function nodeHTTPRequestHandler<
     res.write('{\n');
 
     // each procedure body will be written on a new line of the JSON so they can be parsed independently
-    let counter = 0;
+    let first = true;
     const sendChunk = ([index, body]: [number, string]) => {
-      const comma = counter > 0 ? ',' : '';
-      counter++;
+      const comma = first ? '' : ',';
+      first = false;
       res.write(`${comma}"${index}":${body}\n`);
     };
 
