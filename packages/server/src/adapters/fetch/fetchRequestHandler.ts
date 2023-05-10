@@ -1,5 +1,6 @@
 import { AnyRouter } from '../../core';
 import { HTTPRequest } from '../../http';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
 
@@ -29,7 +30,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
         : '',
   };
 
-  const result = await resolveHTTPResponse({
+  const resultIterator = resolveHTTPResponse({
     req,
     createContext,
     path,
@@ -40,6 +41,19 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       opts?.onError?.({ ...o, req: opts.req });
     },
   });
+
+  // WARNING: this is just to make the build work, not actual implementation of response
+  const { value: responseInit } = await (
+    resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+  ).next();
+  const { value: firstChunk } = await (
+    resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+  ).next();
+  const result = {
+    status: (responseInit as HTTPResponse).status,
+    headers: (responseInit as HTTPResponse).headers,
+    body: (firstChunk as ResponseChunk)[1],
+  };
 
   for (const [key, value] of Object.entries(result.headers ?? {})) {
     /* istanbul ignore if -- @preserve */

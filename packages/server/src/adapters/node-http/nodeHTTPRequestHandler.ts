@@ -2,10 +2,10 @@
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
 import { HTTPRequest } from '../../http';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
-import { HTTPResponse, ResponseChunk } from "../../http/internals/types";
 import {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
@@ -64,7 +64,7 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const resultIterator = await resolveHTTPResponse({
+    const resultIterator = resolveHTTPResponse({
       batching: opts.batching,
       streaming: opts.streaming,
       responseMeta: opts.responseMeta,
@@ -84,18 +84,29 @@ export async function nodeHTTPRequestHandler<
     });
 
     // iterator is expected to first yield the init object (status & headers), of type HTTPResponse
-    const {value: responseInit, done: invalidInit} = await (resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>).next();
+    const { value: responseInit, done: invalidInit } = await (
+      resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+    ).next();
     // then iterator can yield either, of type ResponseChunk
     // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
     // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
-    const {value: firstChunk, done: abort} = await (resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>).next();
+    const { value: firstChunk, done: abort } = await (
+      resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+    ).next();
 
     const { res } = opts;
-    if (invalidInit || (abort && !firstChunk) || typeof responseInit.count === "undefined") {
-      res.statusCode = 500
-      return res.end()
+    if (
+      invalidInit ||
+      (abort && !firstChunk) ||
+      typeof responseInit.count === 'undefined'
+    ) {
+      res.statusCode = 500;
+      return res.end();
     }
-    if ('status' in responseInit && (!res.statusCode || res.statusCode === 200)) {
+    if (
+      'status' in responseInit &&
+      (!res.statusCode || res.statusCode === 200)
+    ) {
       res.statusCode = responseInit.status;
     }
     for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
@@ -109,12 +120,11 @@ export async function nodeHTTPRequestHandler<
     if (abort) {
       if (firstChunk) {
         // case of a full response
-        res.end(firstChunk[1]);
+        return res.end(firstChunk[1]);
       } else {
         // case of a method === "HEAD" response
-        res.end()
+        return res.end();
       }
-      return
     }
 
     // iterator is not exhausted, we can setup the streamed response
@@ -123,21 +133,24 @@ export async function nodeHTTPRequestHandler<
     res.write('{\n');
 
     // each procedure body will be written on a new line of the JSON so they can be parsed independently
-    let counter = 0
+    let counter = 0;
     const sendChunk = ([index, body]: [number, string]) => {
       counter++;
       const comma = counter < expectedChunksCount ? ',' : '';
       res.write(`"${index}":${body}${comma}\n`);
-    }
+    };
 
     // await every procedure
     sendChunk(firstChunk);
-    for await (const chunk of (resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>)) {
+    for await (const chunk of resultIterator as AsyncGenerator<
+      ResponseChunk,
+      ResponseChunk | undefined
+    >) {
       sendChunk(chunk);
     }
 
     // finalize response
     res.write('}');
-    res.end();
+    return res.end();
   });
 }

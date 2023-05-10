@@ -8,7 +8,7 @@ import type {
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPRequest, resolveHTTPResponse } from '../../http';
-import { HTTPResponse } from '../../http/internals/types';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import {
   APIGatewayEvent,
   APIGatewayResult,
@@ -98,7 +98,7 @@ export function awsLambdaRequestHandler<
       return await opts.createContext?.({ event, context });
     };
 
-    const response = await resolveHTTPResponse({
+    const resultIterator = resolveHTTPResponse({
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts?.responseMeta,
@@ -113,6 +113,19 @@ export function awsLambdaRequestHandler<
         });
       },
     });
+
+    // WARNING: this is just to make the build work, not actual implementation of response
+    const { value: responseInit } = await (
+      resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+    ).next();
+    const { value: firstChunk } = await (
+      resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+    ).next();
+    const response = {
+      status: (responseInit as HTTPResponse).status,
+      headers: (responseInit as HTTPResponse).headers,
+      body: (firstChunk as ResponseChunk)[1],
+    };
 
     return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
   };

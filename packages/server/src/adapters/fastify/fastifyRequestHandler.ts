@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
 
@@ -43,7 +44,7 @@ export async function fastifyRequestHandler<
     body: opts.req.body ?? 'null',
   };
 
-  const result = await resolveHTTPResponse({
+  const resultIterator = resolveHTTPResponse({
     req,
     createContext,
     path: opts.path,
@@ -54,6 +55,19 @@ export async function fastifyRequestHandler<
       opts?.onError?.({ ...o, req: opts.req });
     },
   });
+
+  // WARNING: this is just to make the build work, not actual implementation of response
+  const { value: responseInit } = await (
+    resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+  ).next();
+  const { value: firstChunk } = await (
+    resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+  ).next();
+  const result = {
+    status: (responseInit as HTTPResponse).status,
+    headers: (responseInit as HTTPResponse).headers,
+    body: (firstChunk as ResponseChunk)[1],
+  };
 
   const { res } = opts;
 
