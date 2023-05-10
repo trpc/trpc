@@ -95,10 +95,7 @@ export async function nodeHTTPRequestHandler<
     ).next();
 
     const { res } = opts;
-    if (
-      invalidInit ||
-      (abort && !firstChunk)
-    ) {
+    if (invalidInit || (abort && !firstChunk)) {
       res.statusCode = 500;
       return res.end();
     }
@@ -143,7 +140,7 @@ export async function nodeHTTPRequestHandler<
     for await (const chunk of resultIterator as AsyncGenerator<
       ResponseChunk,
       ResponseChunk | undefined
-      >) {
+    >) {
       sendChunk(chunk);
     }
 

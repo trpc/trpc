@@ -1,4 +1,3 @@
-
 import {
   AnyRouter,
   ProcedureType,
@@ -32,7 +31,7 @@ const fallbackContentTypeHandler = {
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest
+  TRequest extends HTTPRequest,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   req: TRequest;
@@ -44,7 +43,7 @@ interface ResolveHTTPRequestOptions<
 
 export async function* resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest
+  TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>) {
   const { router, req } = opts;
 
@@ -54,9 +53,10 @@ export async function* resolveHTTPResponse<
       status: 204,
     };
     yield headResponse;
-    return
+    return;
   }
-  const contentTypeHandler = opts.contentTypeHandler ?? fallbackContentTypeHandler;
+  const contentTypeHandler =
+    opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const batchingEnabled = opts.batching?.enabled ?? true;
   const streamingEnabled = opts.streaming?.enabled ?? true;
   const type =
@@ -71,7 +71,7 @@ export async function* resolveHTTPResponse<
 
   function initResponse(
     untransformedJSON?: TRouterResponse | TRouterResponse[] | undefined,
-    errors: TRPCError[] = []
+    errors: TRPCError[] = [],
   ): HTTPResponse {
     let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
     const headers: HTTPHeaders = {
@@ -132,7 +132,10 @@ export async function* resolveHTTPResponse<
       preprocessedBody: opts.preprocessedBody ?? false,
     });
 
-    const inputToProcedureCall = async (path: string, index: number): Promise<[index: number, response: TRouterResponse]> => {
+    const inputToProcedureCall = async (
+      path: string,
+      index: number,
+    ): Promise<[index: number, response: TRouterResponse]> => {
       const input = inputs[index];
       try {
         const data = await callProcedure({
@@ -168,7 +171,7 @@ export async function* resolveHTTPResponse<
           },
         ];
       }
-    }
+    };
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
@@ -178,12 +181,18 @@ export async function* resolveHTTPResponse<
      */
     if (!isStreamCall || paths.length === 1) {
       // await all responses in parallel, blocking on the slowest
-      const indexedResponses = await Promise.all(paths.map((path, index) => inputToProcedureCall(path, index)))
-      const errors = indexedResponses.flatMap(([, response]) => ('error' in response ? [response.error] : []));
-      const untransformedJSON = indexedResponses.map(([, response]) => response)
+      const indexedResponses = await Promise.all(
+        paths.map((path, index) => inputToProcedureCall(path, index)),
+      );
+      const errors = indexedResponses.flatMap(([, response]) =>
+        'error' in response ? [response.error] : [],
+      );
+      const untransformedJSON = indexedResponses.map(
+        ([, response]) => response,
+      );
 
       // yield header stuff
-      yield initResponse(untransformedJSON, errors)
+      yield initResponse(untransformedJSON, errors);
 
       // return body stuff
       const transformedJSON = transformTRPCResponse(router, untransformedJSON);
@@ -198,7 +207,10 @@ export async function* resolveHTTPResponse<
 
     // await / yield each response in parallel, blocking on none
     const promises = new Map(
-      paths.map((path, index) => [index, Promise.resolve(inputToProcedureCall(path, index))])
+      paths.map((path, index) => [
+        index,
+        Promise.resolve(inputToProcedureCall(path, index)),
+      ]),
     );
 
     // yield minimal headers (cannot know the response body in advance)
@@ -213,7 +225,7 @@ export async function* resolveHTTPResponse<
     }
 
     // return nothing, signalling the request handler to end the streamed response
-    return
+    return;
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled

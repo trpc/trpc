@@ -1,4 +1,4 @@
-import { AnyRouter, ProcedureType } from '@trpc/server'
+import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
@@ -29,19 +29,19 @@ export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
 /**
  * Is it an object with only numeric keys?
  */
-function isObjectArray (value: object): value is Record<number, any> {
-  return Object.keys(value).every(key => !isNaN(key as any))
+function isObjectArray(value: object): value is Record<number, any> {
+  return Object.keys(value).every((key) => !isNaN(key as any));
 }
 
 /**
  * Convert an object with numeric keys to an array
  */
-function objectArrayToArray (value: Record<number, any>): any[] {
-  const array: any[] = []
+function objectArrayToArray(value: Record<number, any>): any[] {
+  const array: any[] = [];
   for (const key in value) {
-    array[key] = value[key]
+    array[key] = value[key];
   }
-  return array
+  return array;
 }
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -166,7 +166,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 // /**
 //  * @param readableStream as given by `(await fetch(url)).body`
 //  * @param parser defaults to `JSON.parse`
-//  * 
+//  *
 //  * @example
 //  * ```ts
 //  * const batch = [ ... ] // the array of items you sent to the server

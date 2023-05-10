@@ -17,7 +17,7 @@ export interface HTTPResponse {
   body?: string;
 }
 
-export type ResponseChunk = [procedureIndex: number, responseBody: string]
+export type ResponseChunk = [procedureIndex: number, responseBody: string];
 
 /**
  * @internal
