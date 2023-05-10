@@ -82,14 +82,18 @@ export async function nodeHTTPRequestHandler<
       contentTypeHandler,
     });
 
-    // iterator is expected to first yield the init object (status & headers)
-    const {value: responseInit} = await resultIterator.next();
-    // then iterator can yield either 
+    // iterator is expected to first yield the init object (status & headers), of type HTTPResponse
+    const {value: responseInit, done: invalidInit} = await resultIterator.next();
+    // then iterator can yield either, of type ResponseChunk
     // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
     // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
     const {value: firstChunk, done: abort} = await resultIterator.next();
 
     const { res } = opts;
+    if (invalidInit || (abort && !firstChunk)) {
+      res.statusCode = 500
+      return res.end()
+    }
     if ('status' in responseInit && (!res.statusCode || res.statusCode === 200)) {
       res.statusCode = responseInit.status;
     }
@@ -102,7 +106,7 @@ export async function nodeHTTPRequestHandler<
 
     // iterator is already exhausted, this means we're not streaming the response
     if (abort) {
-      res.end(result.body);
+      res.end(firstChunk[1]);
       return
     }
 

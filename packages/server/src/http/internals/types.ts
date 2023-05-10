@@ -15,13 +15,14 @@ export interface HTTPResponse {
   status: number;
   headers?: HTTPHeaders;
   body?: string;
+  count?: number
 }
 
 /**
  * @internal
  */
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
-  data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+  data?: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**
    * The different tRPC paths requested

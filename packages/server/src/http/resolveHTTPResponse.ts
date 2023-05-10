@@ -26,6 +26,8 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: "mutation",
 };
 
+type ResponseChunk = [number, string]
+
 const fallbackContentTypeHandler = {
   getInputs: getJsonContentTypeInputs,
 };
@@ -45,7 +47,7 @@ interface ResolveHTTPRequestOptions<
 export async function* resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest
->(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>) {
   const { router, req } = opts;
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
@@ -54,9 +56,10 @@ export async function* resolveHTTPResponse<
   const streamingEnabled = opts.streaming?.enabled ?? true;
   if (req.method === "HEAD") {
     // can be used for lambda warmup
-    return {
+    const headResponse: HTTPResponse = {
       status: 204,
     };
+    yield headResponse;
   }
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ("unknown" as const);
@@ -69,7 +72,7 @@ export async function* resolveHTTPResponse<
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
   function initResponse(earlyErrors: TRPCError[]): HTTPResponse {
-    let status: number | undefined;
+    let status = 200;
     const headers: HTTPHeaders = {
       "Content-Type": "application/json",
     };
@@ -92,7 +95,7 @@ export async function* resolveHTTPResponse<
     return {
       status,
       headers,
-      count: paths.length,
+      count: paths!.length,
     };
   }
 
@@ -133,7 +136,7 @@ export async function* resolveHTTPResponse<
     yield initResponse([]);
 
     let resolveSingleInput: ([index, r]: [number, TRouterResponse]) => void;
-    const promises = paths.map(async (path, index) => {
+    paths.forEach(async (path, index) => {
       const input = inputs[index];
       try {
         const data = await callProcedure({
@@ -176,7 +179,8 @@ export async function* resolveHTTPResponse<
       >((resolve) => (resolveSingleInput = resolve));
       const transformedJSON = transformTRPCResponse(router, untransformedJSON);
       const body = JSON.stringify(transformedJSON);
-      yield [index, body];
+      const chunk: ResponseChunk = [index, body]
+      yield chunk;
     }
   } catch (cause) {
     // we get here if
@@ -209,6 +213,7 @@ export async function* resolveHTTPResponse<
     };
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
     const body = JSON.stringify(transformedJSON);
-    return body;
+    const chunk: ResponseChunk = [-1, body];
+    return chunk;
   }
 }
