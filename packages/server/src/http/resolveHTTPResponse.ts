@@ -49,18 +49,18 @@ export async function* resolveHTTPResponse<
   TRequest extends HTTPRequest
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>) {
   const { router, req } = opts;
-  const contentTypeHandler =
-    opts.contentTypeHandler ?? fallbackContentTypeHandler;
 
-  const batchingEnabled = opts.batching?.enabled ?? true;
-  const streamingEnabled = opts.streaming?.enabled ?? true;
   if (req.method === "HEAD") {
     // can be used for lambda warmup
     const headResponse: HTTPResponse = {
       status: 204,
     };
     yield headResponse;
+    return
   }
+  const contentTypeHandler = opts.contentTypeHandler ?? fallbackContentTypeHandler;
+  const batchingEnabled = opts.batching?.enabled ?? true;
+  const streamingEnabled = opts.streaming?.enabled ?? true;
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ("unknown" as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
@@ -71,8 +71,11 @@ export async function* resolveHTTPResponse<
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
-  function initResponse(earlyErrors: TRPCError[]): HTTPResponse {
-    let status = 200;
+  function initResponse(
+    untransformedJSON: TRouterResponse | TRouterResponse[] | undefined,
+    earlyErrors: TRPCError[]
+  ): HTTPResponse {
+    let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
     const headers: HTTPHeaders = {
       "Content-Type": "application/json",
     };
@@ -82,6 +85,10 @@ export async function* resolveHTTPResponse<
         ctx,
         paths,
         type,
+        data: untransformedJSON ? Array.isArray(untransformedJSON)
+          ? untransformedJSON
+          : [untransformedJSON]
+          : untransformedJSON,
         errors: earlyErrors,
       }) ?? {};
 
@@ -130,13 +137,7 @@ export async function* resolveHTTPResponse<
       preprocessedBody: opts.preprocessedBody ?? false,
     });
 
-    paths = isBatchCall ? opts.path.split(",") : [opts.path];
-    ctx = await opts.createContext();
-
-    yield initResponse([]);
-
-    let resolveSingleInput: ([index, r]: [number, TRouterResponse]) => void;
-    paths.forEach(async (path, index) => {
+    const inputToProcedureCall = async (path: string, index: number): Promise<[index: number, response: TRouterResponse]> => {
       const input = inputs[index];
       try {
         const data = await callProcedure({
@@ -146,20 +147,20 @@ export async function* resolveHTTPResponse<
           ctx,
           type,
         });
-        resolveSingleInput([
+        return [
           index,
           {
             result: {
               data,
             },
           },
-        ]);
+        ];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
 
         opts.onError?.({ error, path, input, ctx, type: type, req });
 
-        resolveSingleInput([
+        return [
           index,
           {
             error: router.getErrorShape({
@@ -170,9 +171,42 @@ export async function* resolveHTTPResponse<
               ctx,
             }),
           },
-        ]);
+        ];
       }
-    });
+    }
+
+    paths = isBatchCall ? opts.path.split(",") : [opts.path];
+    ctx = await opts.createContext();
+
+    /**
+     * when not streaming, do simple 2-step return
+     */
+    if (!isStreamCall) {
+      // await all responses in parallel, blocking on the slowest
+      const indexedResponses = await Promise.all(paths.map((path, index) => inputToProcedureCall(path, index)))
+      const errors = indexedResponses.flatMap(([, response]) => ("error" in response ? [response.error] : []));
+      const untransformedJSON = indexedResponses.map(([, response]) => response)
+
+      // yield header stuff
+      yield initResponse(untransformedJSON, errors)
+
+      // return body stuff
+      const transformedJSON = transformTRPCResponse(router, untransformedJSON);
+      const body = JSON.stringify(transformedJSON);
+      const chunk: ResponseChunk = [-1, body];
+      return chunk;
+    }
+
+    /**
+     * when not streaming, do simple 2-step return
+     */
+
+    // yield minimal headers (cannot know the response body in advance)
+    yield initResponse(undefined, []);
+
+    // await / yield each response in parallel, blocking on none
+    let resolveSingleInput: ([index, r]: [number, TRouterResponse]) => void;
+    paths.forEach(async (path, index) => resolveSingleInput(await inputToProcedureCall(path, index)))
     for (let i = 0; i < paths.length - 1; i++) {
       const [index, untransformedJSON] = await new Promise<
         [number, TRouterResponse]
@@ -182,6 +216,9 @@ export async function* resolveHTTPResponse<
       const chunk: ResponseChunk = [index, body]
       yield chunk;
     }
+
+    // return nothing, signalling the request handler to end the streamed response
+    return
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
@@ -200,7 +237,9 @@ export async function* resolveHTTPResponse<
       req,
     });
 
-    yield initResponse([error]);
+    /**
+     * same as for a non-streamed response, do simple 2-step return
+     */
 
     const untransformedJSON = {
       error: router.getErrorShape({
@@ -211,6 +250,11 @@ export async function* resolveHTTPResponse<
         ctx,
       }),
     };
+
+    // yield header stuff
+    yield initResponse(untransformedJSON, [error]); // WARN: this is cause issues if streaming response has already yielded its headers, meaning that we need to be sure that `serialize` in `transformTRPCResponse` cannot throw
+ 
+    // return body stuff
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
     const body = JSON.stringify(transformedJSON);
     const chunk: ResponseChunk = [-1, body];

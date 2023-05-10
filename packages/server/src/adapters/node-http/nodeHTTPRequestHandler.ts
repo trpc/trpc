@@ -106,7 +106,13 @@ export async function nodeHTTPRequestHandler<
 
     // iterator is already exhausted, this means we're not streaming the response
     if (abort) {
-      res.end(firstChunk[1]);
+      if (firstChunk) {
+        // case of a full response
+        res.end(firstChunk[1]);
+      } else {
+        // case of a method === "HEAD" response
+        res.end()
+      }
       return
     }
 
