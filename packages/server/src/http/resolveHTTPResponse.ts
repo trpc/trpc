@@ -5,25 +5,25 @@ import {
   callProcedure,
   inferRouterContext,
   inferRouterError,
-} from "../core";
-import { TRPCError, getTRPCErrorFromUnknown } from "../error/TRPCError";
-import { TRPCResponse } from "../rpc";
-import { transformTRPCResponse } from "../shared";
-import { Maybe } from "../types";
+} from '../core';
+import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { TRPCResponse } from '../rpc';
+import { transformTRPCResponse } from '../shared';
+import { Maybe } from '../types';
 import {
   BaseContentTypeHandler,
   getJsonContentTypeInputs,
-} from "./contentType";
-import { getHTTPStatusCode } from "./getHTTPStatusCode";
-import { HTTPHeaders, HTTPResponse, ResponseChunk } from "./internals/types";
-import { HTTPBaseHandlerOptions, HTTPRequest } from "./types";
+} from './contentType';
+import { getHTTPStatusCode } from './getHTTPStatusCode';
+import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
+import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
 > = {
-  GET: "query",
-  POST: "mutation",
+  GET: 'query',
+  POST: 'mutation',
 };
 
 const fallbackContentTypeHandler = {
@@ -48,7 +48,7 @@ export async function* resolveHTTPResponse<
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>) {
   const { router, req } = opts;
 
-  if (req.method === "HEAD") {
+  if (req.method === 'HEAD') {
     // can be used for lambda warmup
     const headResponse: HTTPResponse = {
       status: 204,
@@ -60,22 +60,22 @@ export async function* resolveHTTPResponse<
   const batchingEnabled = opts.batching?.enabled ?? true;
   const streamingEnabled = opts.streaming?.enabled ?? true;
   const type =
-    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ("unknown" as const);
+    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let paths: string[] | undefined = undefined;
+  let paths: string[] | undefined;
 
-  const isStreamCall = !!req.query.get("stream");
-  const isBatchCall = isStreamCall || !!req.query.get("batch");
+  const isStreamCall = !!req.query.get('stream');
+  const isBatchCall = isStreamCall || !!req.query.get('batch');
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
   function initResponse(
-    untransformedJSON: TRouterResponse | TRouterResponse[] | undefined,
-    earlyErrors: TRPCError[]
+    untransformedJSON?: TRouterResponse | TRouterResponse[] | undefined,
+    errors: TRPCError[] = []
   ): HTTPResponse {
     let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
     const headers: HTTPHeaders = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
 
     const meta =
@@ -83,11 +83,12 @@ export async function* resolveHTTPResponse<
         ctx,
         paths,
         type,
-        data: untransformedJSON ? Array.isArray(untransformedJSON)
-          ? untransformedJSON
-          : [untransformedJSON]
+        data: untransformedJSON 
+          ? Array.isArray(untransformedJSON)
+            ? untransformedJSON
+            : [untransformedJSON]
           : untransformedJSON,
-        errors: earlyErrors,
+        errors,
       }) ?? {};
 
     for (const [key, value] of Object.entries(meta.headers ?? {})) {
@@ -100,7 +101,7 @@ export async function* resolveHTTPResponse<
     return {
       status,
       headers,
-      count: paths!.length,
+      count: paths?.length,
     };
   }
 
@@ -115,16 +116,16 @@ export async function* resolveHTTPResponse<
       throw new Error(`Batching is not enabled on the server`);
     }
     /* istanbul ignore if -- @preserve */
-    if (type === "subscription") {
+    if (type === 'subscription') {
       throw new TRPCError({
-        message: "Subscriptions should use wsLink",
-        code: "METHOD_NOT_SUPPORTED",
+        message: 'Subscriptions should use wsLink',
+        code: 'METHOD_NOT_SUPPORTED',
       });
     }
-    if (type === "unknown") {
+    if (type === 'unknown') {
       throw new TRPCError({
         message: `Unexpected request method ${req.method}`,
-        code: "METHOD_NOT_SUPPORTED",
+        code: 'METHOD_NOT_SUPPORTED',
       });
     }
 
@@ -173,7 +174,7 @@ export async function* resolveHTTPResponse<
       }
     }
 
-    paths = isBatchCall ? opts.path.split(",") : [opts.path];
+    paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
 
     /**
@@ -182,7 +183,7 @@ export async function* resolveHTTPResponse<
     if (!isStreamCall) {
       // await all responses in parallel, blocking on the slowest
       const indexedResponses = await Promise.all(paths.map((path, index) => inputToProcedureCall(path, index)))
-      const errors = indexedResponses.flatMap(([, response]) => ("error" in response ? [response.error] : []));
+      const errors = indexedResponses.flatMap(([, response]) => ('error' in response ? [response.error] : []));
       const untransformedJSON = indexedResponses.map(([, response]) => response)
 
       // yield header stuff
@@ -200,7 +201,7 @@ export async function* resolveHTTPResponse<
      */
 
     // yield minimal headers (cannot know the response body in advance)
-    yield initResponse(undefined, []);
+    yield initResponse();
 
     // await / yield each response in parallel, blocking on none
     let resolveSingleInput: ([index, r]: [number, TRouterResponse]) => void;
