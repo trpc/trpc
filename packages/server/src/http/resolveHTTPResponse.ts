@@ -64,8 +64,8 @@ export async function* resolveHTTPResponse<
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined;
 
-  const isStreamCall = !!req.query.get('stream');
-  const isBatchCall = isStreamCall || !!req.query.get('batch');
+  const isBatchCall = !!req.query.get('batch');
+  const isStreamCall = isBatchCall && streamingEnabled;
   type TRouterError = inferRouterError<TRouter>;
   type TRouterResponse = TRPCResponse<unknown, TRouterError>;
 
@@ -108,9 +108,6 @@ export async function* resolveHTTPResponse<
   try {
     if (opts.error) {
       throw opts.error;
-    }
-    if (isStreamCall && !streamingEnabled) {
-      throw new Error(`Streaming is not enabled on the server`);
     }
     if (isBatchCall && !batchingEnabled) {
       throw new Error(`Batching is not enabled on the server`);
@@ -180,7 +177,7 @@ export async function* resolveHTTPResponse<
     /**
      * when not streaming, do simple 2-step return
      */
-    if (!isStreamCall) {
+    if (!isStreamCall || paths.length === 1) {
       // await all responses in parallel, blocking on the slowest
       const indexedResponses = await Promise.all(paths.map((path, index) => inputToProcedureCall(path, index)))
       const errors = indexedResponses.flatMap(([, response]) => ('error' in response ? [response.error] : []));
