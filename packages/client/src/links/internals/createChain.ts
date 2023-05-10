@@ -6,7 +6,7 @@ function execute<
   TRouter extends AnyRouter,
   TInput = unknown,
   TOutput = unknown,
-> (
+>(
   links: OperationLink<TRouter, TInput, TOutput>[],
   op: Operation<TInput>,
   index = 0,

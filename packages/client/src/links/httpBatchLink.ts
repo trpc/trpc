@@ -74,7 +74,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
       const fetch = (
         batchOps: Operation[],
-        unitResolver: (index: number, value: NonNullable<HTTPResult>) => void
+        unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
       ) => {
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
@@ -99,14 +99,17 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         });
 
         const batchPromise = promise.then(async (iterator) => {
-          const firstItem = await iterator.next()
+          const firstItem = await iterator.next();
           if (!firstItem.done) {
             // first response is not last, this is indeed a streaming response
-            unitResolver(firstItem.value[0] as unknown as number, firstItem.value[1])
+            unitResolver(
+              firstItem.value[0] as unknown as number,
+              firstItem.value[1],
+            );
             for await (const [index, data] of iterator) {
-              unitResolver(index as unknown as number, data) // force casting to number because `a[0]` and `a["0"]` work the same
+              unitResolver(index as unknown as number, data); // force casting to number because `a[0]` and `a["0"]` work the same
             }
-            return []
+            return [];
           }
           // fallback to regular handling
           const res = firstItem.value!;
@@ -127,7 +130,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         return {
           promise: batchPromise,
           cancel,
-        }
+        };
       };
 
       return { validate, fetch };

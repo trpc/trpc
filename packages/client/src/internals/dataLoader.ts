@@ -113,7 +113,7 @@ export function dataLoader<TKey, TValue>(
         item.batch = null;
         item.reject = null;
         item.resolve = null;
-      }
+      };
       const { promise, cancel } = batchLoader.fetch(
         batch.items.map((_item) => _item.key),
         unitResolver,

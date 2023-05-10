@@ -1,4 +1,3 @@
-import { parseJsonStream } from "./parseJsonStream"
 import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { getFetch } from '../../getFetch';
@@ -11,6 +10,7 @@ import {
   ResponseEsque,
 } from '../../internals/types';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
+import { parseJsonStream } from './parseJsonStream';
 
 /**
  * @internal
@@ -135,16 +135,21 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export const streamingJsonHttpRequested: Requester<AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>> = (opts) => {
+export const streamingJsonHttpRequested: Requester<
+  AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>
+> = (opts) => {
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const meta = {} as HTTPResult['meta'];
-  const responsePromise = getHttpResponse({
-    ...opts,
-    contentTypeHeader: 'application/json',
-    getUrl,
-    getBody,
-  }, ac);
-  responsePromise.then((_res) => meta.response = _res);
+  const responsePromise = getHttpResponse(
+    {
+      ...opts,
+      contentTypeHeader: 'application/json',
+      getUrl,
+      getBody,
+    },
+    ac,
+  );
+  responsePromise.then((_res) => (meta.response = _res));
   const cancel = () => {
     ac?.abort();
   };
@@ -153,15 +158,15 @@ export const streamingJsonHttpRequested: Requester<AsyncGenerator<[index: string
     return parseJsonStream(
       res.body,
       (string) => ({
-          json: JSON.parse(string) as TRPCResponse,
-          meta,
+        json: JSON.parse(string) as TRPCResponse,
+        meta,
       }),
       ac?.signal,
-    )
-  })
+    );
+  });
 
-  return { promise, cancel }
-}
+  return { promise, cancel };
+};
 
 export type HTTPRequestOptions = HTTPBaseRequestOptions &
   ContentOptions & {
