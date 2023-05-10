@@ -39,19 +39,23 @@ export async function* parseJsonStream (
 	}
 
 	for await (const line of lineIterator) {
-		const string = line[line.length - 1] === ','
-			? line.substring(0, line.length - 1)
+		const string = line[0] === ','
+			? line.substring(1, line.length)
 			: line
 
 		if (!string) continue
 		if (string === '}') break
 
 		// parsing index out of start of line "0":{...}
-		let i = 2 // start after first digit to save one iteration
-		for (; i < 6; i++) { // assumes index will never be longer than 4 digits
+		// lines after the first one start with a comma ,"1":{...}
+		const start = 2
+		const end = 6
+		let i = start // start after first digit to save iterations
+		while (i < end) { // assumes index will never be longer than 4 digits
 			if (string[i] === '"') break
+			i++
 		}
-		if (i === 5) throw new Error('Invalid JSON')
+		if (i === end) throw new Error('Invalid JSON')
 
 		const index = string.substring(1, i)
 		const text = string.substring(i + 2)

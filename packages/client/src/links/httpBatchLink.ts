@@ -26,6 +26,24 @@ export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
       }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
+/**
+ * Is it an object with only numeric keys?
+ */
+function isObjectArray (value: object): value is Record<number, any> {
+  return Object.keys(value).every(key => !isNaN(key as any))
+}
+
+/**
+ * Convert an object with numeric keys to an array
+ */
+function objectArrayToArray (value: Record<number, any>): any[] {
+  const array: any[] = []
+  for (const key in value) {
+    array[key] = value[key]
+  }
+  return array
+}
+
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
@@ -81,6 +99,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           promise: promise.then((res) => {
             const resJSON = Array.isArray(res.json)
               ? res.json
+              : isObjectArray(res.json)
+              ? objectArrayToArray(res.json)
               : batchOps.map(() => res.json);
 
             const result = resJSON.map((item) => ({

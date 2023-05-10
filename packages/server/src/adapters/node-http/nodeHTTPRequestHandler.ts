@@ -97,8 +97,7 @@ export async function nodeHTTPRequestHandler<
     const { res } = opts;
     if (
       invalidInit ||
-      (abort && !firstChunk) ||
-      typeof responseInit.count === 'undefined'
+      (abort && !firstChunk)
     ) {
       res.statusCode = 500;
       return res.end();
@@ -128,16 +127,15 @@ export async function nodeHTTPRequestHandler<
     }
 
     // iterator is not exhausted, we can setup the streamed response
-    const expectedChunksCount = responseInit.count;
     res.setHeader('Transfer-Encoding', 'chunked');
     res.write('{\n');
 
     // each procedure body will be written on a new line of the JSON so they can be parsed independently
     let counter = 0;
     const sendChunk = ([index, body]: [number, string]) => {
+      const comma = counter > 0 ? ',' : '';
       counter++;
-      const comma = counter < expectedChunksCount ? ',' : '';
-      res.write(`"${index}":${body}${comma}\n`);
+      res.write(`${comma}"${index}":${body}\n`);
     };
 
     // await every procedure
@@ -145,7 +143,7 @@ export async function nodeHTTPRequestHandler<
     for await (const chunk of resultIterator as AsyncGenerator<
       ResponseChunk,
       ResponseChunk | undefined
-    >) {
+      >) {
       sendChunk(chunk);
     }
 

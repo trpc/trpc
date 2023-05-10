@@ -1,4 +1,4 @@
- 
+
 import {
   AnyRouter,
   ProcedureType,
@@ -83,7 +83,7 @@ export async function* resolveHTTPResponse<
         ctx,
         paths,
         type,
-        data: untransformedJSON 
+        data: untransformedJSON
           ? Array.isArray(untransformedJSON)
             ? untransformedJSON
             : [untransformedJSON]
@@ -101,7 +101,6 @@ export async function* resolveHTTPResponse<
     return {
       status,
       headers,
-      count: paths?.length,
     };
   }
 
@@ -197,19 +196,19 @@ export async function* resolveHTTPResponse<
      * when not streaming, do simple 2-step return
      */
 
+    // await / yield each response in parallel, blocking on none
+    const promises = new Map(
+      paths.map((path, index) => [index, Promise.resolve(inputToProcedureCall(path, index))])
+    );
+
     // yield minimal headers (cannot know the response body in advance)
     yield initResponse();
-
-    // await / yield each response in parallel, blocking on none
-    let resolveSingleInput: ([index, r]: [number, TRouterResponse]) => void;
-    paths.forEach(async (path, index) => resolveSingleInput(await inputToProcedureCall(path, index)))
-    for (let i = 0; i < paths.length - 1; i++) {
-      const [index, untransformedJSON] = await new Promise<
-        [number, TRouterResponse]
-      >((resolve) => (resolveSingleInput = resolve));
+    for (let i = 0; i < paths.length; i++) {
+      const [index, untransformedJSON] = await Promise.race(promises.values());
+      promises.delete(index);
       const transformedJSON = transformTRPCResponse(router, untransformedJSON);
       const body = JSON.stringify(transformedJSON);
-      const chunk: ResponseChunk = [index, body]
+      const chunk: ResponseChunk = [index, body];
       yield chunk;
     }
 
@@ -249,7 +248,7 @@ export async function* resolveHTTPResponse<
 
     // yield header stuff
     yield initResponse(untransformedJSON, [error]); // WARN: this is cause issues if streaming response has already yielded its headers, meaning that we need to be sure that `serialize` in `transformTRPCResponse` cannot throw
- 
+
     // return body stuff
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);
     const body = JSON.stringify(transformedJSON);

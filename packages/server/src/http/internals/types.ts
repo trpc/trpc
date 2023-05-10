@@ -15,7 +15,6 @@ export interface HTTPResponse {
   status: number;
   headers?: HTTPHeaders;
   body?: string;
-  count?: number
 }
 
 export type ResponseChunk = [procedureIndex: number, responseBody: string]
