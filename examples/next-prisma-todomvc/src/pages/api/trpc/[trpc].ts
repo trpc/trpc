@@ -11,4 +11,7 @@ export default createNextApiHandler({
       console.error('Something went wrong', error);
     }
   },
+  streaming: {
+    enabled: true,
+  },
 });
