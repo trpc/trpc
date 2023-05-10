@@ -5,6 +5,7 @@ import { HTTPRequest } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
+import { HTTPResponse, ResponseChunk } from "../../http/internals/types";
 import {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
@@ -83,14 +84,14 @@ export async function nodeHTTPRequestHandler<
     });
 
     // iterator is expected to first yield the init object (status & headers), of type HTTPResponse
-    const {value: responseInit, done: invalidInit} = await resultIterator.next();
+    const {value: responseInit, done: invalidInit} = await (resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>).next();
     // then iterator can yield either, of type ResponseChunk
     // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
     // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
-    const {value: firstChunk, done: abort} = await resultIterator.next();
+    const {value: firstChunk, done: abort} = await (resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>).next();
 
     const { res } = opts;
-    if (invalidInit || (abort && !firstChunk)) {
+    if (invalidInit || (abort && !firstChunk) || typeof responseInit.count === "undefined") {
       res.statusCode = 500
       return res.end()
     }
@@ -116,25 +117,26 @@ export async function nodeHTTPRequestHandler<
       return
     }
 
-    // each procedure body will be written on a new line of the JSON so they can be parsed independently
-    let counter = 0
-    function sendChunk([index, body]: [number, string]) {
-      counter++;
-      const comma = counter < expectedChunksCount ? ',' : '';
-      res.write(`"${index}":${body}${comma}\n`);
-    }
-
     // iterator is not exhausted, we can setup the streamed response
     const expectedChunksCount = responseInit.count;
     res.setHeader('Transfer-Encoding', 'chunked');
     res.write('{\n');
 
+    // each procedure body will be written on a new line of the JSON so they can be parsed independently
+    let counter = 0
+    const sendChunk = ([index, body]: [number, string]) => {
+      counter++;
+      const comma = counter < expectedChunksCount ? ',' : '';
+      res.write(`"${index}":${body}${comma}\n`);
+    }
+
     // await every procedure
     sendChunk(firstChunk);
-    for await (const chunk of resultIterator) {
+    for await (const chunk of (resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>)) {
       sendChunk(chunk);
     }
 
+    // finalize response
     res.write('}');
     res.end();
   });

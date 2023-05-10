@@ -18,6 +18,8 @@ export interface HTTPResponse {
   count?: number
 }
 
+export type ResponseChunk = [procedureIndex: number, responseBody: string]
+
 /**
  * @internal
  */

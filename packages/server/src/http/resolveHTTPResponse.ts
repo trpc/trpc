@@ -15,7 +15,7 @@ import {
   getJsonContentTypeInputs,
 } from "./contentType";
 import { getHTTPStatusCode } from "./getHTTPStatusCode";
-import { HTTPHeaders, HTTPResponse } from "./internals/types";
+import { HTTPHeaders, HTTPResponse, ResponseChunk } from "./internals/types";
 import { HTTPBaseHandlerOptions, HTTPRequest } from "./types";
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -25,8 +25,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   GET: "query",
   POST: "mutation",
 };
-
-type ResponseChunk = [number, string]
 
 const fallbackContentTypeHandler = {
   getInputs: getJsonContentTypeInputs,
