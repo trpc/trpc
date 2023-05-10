@@ -63,8 +63,9 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const result = await resolveHTTPResponse({
+    const resultIterator = await resolveHTTPResponse({
       batching: opts.batching,
+      streaming: opts.streaming,
       responseMeta: opts.responseMeta,
       path: opts.path,
       createContext,
@@ -81,16 +82,50 @@ export async function nodeHTTPRequestHandler<
       contentTypeHandler,
     });
 
+    // iterator is expected to first yield the init object (status & headers)
+    const {value: responseInit} = await resultIterator.next();
+    // then iterator can yield either 
+    // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
+    // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
+    const {value: firstChunk, done: abort} = await resultIterator.next();
+
     const { res } = opts;
-    if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
-      res.statusCode = result.status;
+    if ('status' in responseInit && (!res.statusCode || res.statusCode === 200)) {
+      res.statusCode = responseInit.status;
     }
-    for (const [key, value] of Object.entries(result.headers ?? {})) {
+    for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
       if (typeof value === 'undefined') {
         continue;
       }
       res.setHeader(key, value);
     }
-    res.end(result.body);
+
+    // iterator is already exhausted, this means we're not streaming the response
+    if (abort) {
+      res.end(result.body);
+      return
+    }
+
+    // each procedure body will be written on a new line of the JSON so they can be parsed independently
+    let counter = 0
+    function sendChunk([index, body]: [number, string]) {
+      counter++;
+      const comma = counter < expectedChunksCount ? ',' : '';
+      res.write(`"${index}":${body}${comma}\n`);
+    }
+
+    // iterator is not exhausted, we can setup the streamed response
+    const expectedChunksCount = responseInit.count;
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.write('{\n');
+
+    // await every procedure
+    sendChunk(firstChunk);
+    for await (const chunk of resultIterator) {
+      sendChunk(chunk);
+    }
+
+    res.write('}');
+    res.end();
   });
 }
