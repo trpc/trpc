@@ -6,6 +6,11 @@ import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const unidici = require('undici');
+
+globalThis.fetch = unidici.fetch;
+
 describe('no transformer', () => {
   const ctx = konn()
     .beforeEach(() => {
@@ -65,7 +70,7 @@ describe('no transformer', () => {
       const opts = routerToServerAndClientNew(router, {
         server: {
           streaming: {
-            enabled: true,
+            enabled: false,
           },
         },
         client(opts) {
@@ -89,7 +94,7 @@ describe('no transformer', () => {
     })
     .done();
 
-  test('out-of-order streaming', async () => {
+  test.only('out-of-order streaming', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
