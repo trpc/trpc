@@ -13,9 +13,15 @@ const appRouter = router({
     .input(
       z.object({
         name: z.string().nullish(),
+        wait: z.number().nullish(),
       }),
     )
-    .query(({ input }) => {
+    .query(async (opts) => {
+      const { input } = opts;
+      const wait = input?.wait;
+      if (wait) {
+        await new Promise<void>((resolve) => setTimeout(resolve, wait));
+      }
       // This is what you're returning to your client
       return {
         text: `hello ${input?.name ?? 'world'}`,
