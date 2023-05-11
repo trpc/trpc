@@ -21,6 +21,7 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import './___packages';
 
+// @eslint-ignore-next-line no-var-requires
 const unidici = require('undici');
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
