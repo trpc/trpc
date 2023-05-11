@@ -4,7 +4,7 @@
   "compilerOptions": {
     "types": ["node", "vitest/globals"],
     "paths": {
-      "tslib" : ["./node_modules/tslib/tslib.d.ts"]
+      "tslib": ["./node_modules/tslib/tslib.d.ts"]
     }
   }
 }

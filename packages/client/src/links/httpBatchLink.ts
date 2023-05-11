@@ -7,9 +7,9 @@ import {
   HTTPLinkBaseOptions,
   HTTPResult,
   getUrl,
+  jsonHttpRequester,
   resolveHTTPLinkOptions,
   streamingJsonHttpRequested,
-  jsonHttpRequester,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
@@ -38,7 +38,9 @@ function isObjectArray(value: HTTPResult['json']) {
 /**
  * Convert an object with numeric keys to an array
  */
-function objectArrayToArray(value: Record<number, HTTPResult['json']>): HTTPResult['json'][] {
+function objectArrayToArray(
+  value: Record<number, HTTPResult['json']>,
+): HTTPResult['json'][] {
   const array: HTTPResult['json'][] = [];
   for (const key in value) {
     array[key] = value[key] as HTTPResult['json'];
@@ -53,9 +55,11 @@ function handleFullJsonResponse(
   const resJSON: HTTPResult['json'][] = Array.isArray(res.json)
     ? res.json
     : isObjectArray(res.json)
-      // we need to lie to TS here because we're transforming {"0": "foo", "1": "bar"} into ["foo", "bar"]
-      ? objectArrayToArray(res.json as unknown as Record<number, HTTPResult['json']>)
-      : batchOps.map(() => res.json);
+    ? // we need to lie to TS here because we're transforming {"0": "foo", "1": "bar"} into ["foo", "bar"]
+      objectArrayToArray(
+        res.json as unknown as Record<number, HTTPResult['json']>,
+      )
+    : batchOps.map(() => res.json);
 
   const result = resJSON.map((item) => ({
     meta: res.meta,
@@ -66,7 +70,11 @@ function handleFullJsonResponse(
 }
 
 async function handleStreamedJsonResponse(
-  iterator: AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined, unknown>,
+  iterator: AsyncGenerator<
+    [index: string, data: HTTPResult],
+    HTTPResult | undefined,
+    unknown
+  >,
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
 ): Promise<HTTPResult[]> {
@@ -78,11 +86,8 @@ async function handleStreamedJsonResponse(
   }
 
   do {
-    const index = item.value[0] as unknown as number // force casting to number because `a[0]` and `a["0"]` work the same
-    unitResolver(
-      index,
-      item.value[1],
-    )
+    const index = item.value[0] as unknown as number; // force casting to number because `a[0]` and `a["0"]` work the same
+    unitResolver(index, item.value[1]);
   } while (!(item = await iterator.next()).done);
   return [];
 }
@@ -122,35 +127,41 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        const httpRequesterOptions: Parameters<typeof jsonHttpRequester>[0] & Parameters<typeof streamingJsonHttpRequested>[0] = {
+        const httpRequesterOptions: Parameters<typeof jsonHttpRequester>[0] &
+          Parameters<typeof streamingJsonHttpRequested>[0] = {
           ...resolvedOpts,
-            runtime,
-            type,
-            path,
-            inputs,
-            headers() {
-              if (!opts.headers) {
-                return {};
-              }
-              if (typeof opts.headers === 'function') {
-                return opts.headers({
-                  opList: batchOps as NonEmptyArray<Operation>,
-                });
-              }
-              return opts.headers;
-            },
-        }
+          runtime,
+          type,
+          path,
+          inputs,
+          headers() {
+            if (!opts.headers) {
+              return {};
+            }
+            if (typeof opts.headers === 'function') {
+              return opts.headers({
+                opList: batchOps as NonEmptyArray<Operation>,
+              });
+            }
+            return opts.headers;
+          },
+        };
 
         if (opts.streaming === false) {
           const { promise, cancel } = jsonHttpRequester(httpRequesterOptions);
-          const batchPromise = promise.then((res) => handleFullJsonResponse(res, batchOps));
+          const batchPromise = promise.then((res) =>
+            handleFullJsonResponse(res, batchOps),
+          );
           return {
             promise: batchPromise,
             cancel,
           };
         } else {
-          const { promise, cancel } = streamingJsonHttpRequested(httpRequesterOptions);
-          const batchPromise = promise.then((iterator) => handleStreamedJsonResponse(iterator, batchOps, unitResolver));
+          const { promise, cancel } =
+            streamingJsonHttpRequested(httpRequesterOptions);
+          const batchPromise = promise.then((iterator) =>
+            handleStreamedJsonResponse(iterator, batchOps, unitResolver),
+          );
           return {
             promise: batchPromise,
             cancel,

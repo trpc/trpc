@@ -80,7 +80,7 @@ const textDecoder = new TextDecoder();
 
 async function* readLines(reader: ReadableStreamDefaultReader<Uint8Array>) {
   let partOfLine = '';
-  let chunk: ReadableStreamReadResult<Uint8Array>
+  let chunk: ReadableStreamReadResult<Uint8Array>;
   while (!(chunk = await reader.read()).done) {
     const chunkText = textDecoder.decode(chunk.value);
     const chunkLines = chunkText.split('\n');
