@@ -9,6 +9,87 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
   endpoint: string;
 } & FetchHandlerOptions<TRouter>;
 
+async function iteratorToResponse(
+  iterator: AsyncGenerator<ResponseChunk | HTTPResponse, ResponseChunk | undefined, unknown>,
+  headers: Headers,
+) {
+  const { value: responseInit, done: invalidInit } = await (
+    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+  ).next();
+  const { value: firstChunk, done: abort } = await (
+    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+  ).next();
+
+  if (invalidInit || (abort && !firstChunk)) {
+    return new Response(null, {
+      status: 500,
+      headers,
+    });
+  }
+
+  const status = responseInit.status;
+
+  for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
+    if (typeof value === 'undefined') {
+      continue;
+    }
+    if (typeof value === 'string') {
+      headers.set(key, value);
+      continue;
+    }
+    for (const v of value) {
+      headers.append(key, v);
+    }
+  }
+
+  if (abort) {
+    if (firstChunk) {
+      // case of a full response
+      return new Response(firstChunk[1], {
+        status,
+        headers,
+      })
+    } else {
+      // case of a method === "HEAD" response
+      return new Response(null, {
+        status,
+        headers,
+      })
+    }
+  }
+
+  headers.set('Transfer-Encoding', 'chunked');
+
+  let first = true;
+  const body = new ReadableStream({
+    async start(controller) {
+      controller.enqueue('{\n');
+
+      const sendChunk = ([index, body]: [number, string]) => {
+        const comma = first ? '' : ',';
+        first = false;
+        controller.enqueue(`${comma}"${index}":${body}\n`);
+      };
+
+      sendChunk(firstChunk);
+      for await (const chunk of iterator as AsyncGenerator<
+        ResponseChunk,
+        ResponseChunk | undefined
+      >) {
+        sendChunk(chunk);
+      }
+
+      controller.enqueue('}');
+      controller.close();
+    },
+  });
+
+  return new Response(body, {
+    status,
+    headers,
+  });
+}
+
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -42,39 +123,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     },
   });
 
-  // WARNING: this is just to make the build work, not actual implementation of response
-  const { value: responseInit } = await (
-    resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
-  ).next();
-  const { value: firstChunk } = await (
-    resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
-  ).next();
-  const result = {
-    status: (responseInit as HTTPResponse).status,
-    headers: (responseInit as HTTPResponse).headers,
-    body: (firstChunk as ResponseChunk)[1],
-  };
-
-  for (const [key, value] of Object.entries(result.headers ?? {})) {
-    /* istanbul ignore if -- @preserve */
-    if (typeof value === 'undefined') {
-      continue;
-    }
-
-    if (typeof value === 'string') {
-      resHeaders.set(key, value);
-      continue;
-    }
-
-    for (const v of value) {
-      resHeaders.append(key, v);
-    }
-  }
-
-  const res = new Response(result.body, {
-    status: result.status,
-    headers: resHeaders,
-  });
+  const res = await iteratorToResponse(resultIterator, resHeaders);
 
   return res;
 }
