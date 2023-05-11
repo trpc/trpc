@@ -21,9 +21,9 @@
  * }
  * ```
  */
-export async function* parseJsonStream<T>(
+export async function* parseJsonStream<TReturn>(
   readableStream: ReadableStream<Uint8Array>,
-  parser: (text: string) => T = JSON.parse,
+  parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
 ) {
   const lineIterator = readLines(readableStream.getReader());
@@ -58,7 +58,7 @@ export async function* parseJsonStream<T>(
 
     const index = string.substring(1, i);
     const text = string.substring(i + 2);
-    const result: [index: string, data: T] = [index, parser(text)];
+    const result: [index: string, data: TReturn] = [index, parser(text)];
     yield result;
     if (signal?.aborted) break;
   }

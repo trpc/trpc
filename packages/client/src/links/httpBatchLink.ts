@@ -82,7 +82,7 @@ async function handleStreamedJsonResponse(
 
   // first response is *the only* response, this is not a streaming response
   if (item.done) {
-    return handleFullJsonResponse(item.value!, batchOps);
+    return handleFullJsonResponse(item.value as HTTPResult, batchOps);
   }
 
   do {

@@ -120,11 +120,11 @@ export const getBody: GetBody = (opts) => {
   return input !== undefined ? JSON.stringify(input) : undefined;
 };
 
-export type Requester<Result = HTTPResult> = (
+export type Requester<TResult = HTTPResult> = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-) => PromiseAndCancel<Result>;
+) => PromiseAndCancel<TResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
@@ -149,12 +149,10 @@ export const streamingJsonHttpRequested: Requester<
     },
     ac,
   );
-  responsePromise.then((_res) => (meta.response = _res));
-  const cancel = () => {
-    ac?.abort();
-  };
+  const cancel = () => ac?.abort();
   const promise = responsePromise.then(async (res) => {
     if (!res.body) throw new Error('Received response without body');
+    meta.response = res;
     return parseJsonStream(
       res.body,
       (string) => ({
