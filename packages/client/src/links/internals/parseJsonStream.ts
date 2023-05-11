@@ -1,7 +1,5 @@
 // Adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 
-const textDecoder = new TextDecoder();
-
 /**
  * @param readableStream as given by `(await fetch(url)).body`
  * @param parser defaults to `JSON.parse`
@@ -78,10 +76,13 @@ async function allLinesSink(
   }
 }
 
+const textDecoder = new TextDecoder();
+
 async function* readLines(reader: ReadableStreamDefaultReader<Uint8Array>) {
   let partOfLine = '';
-  for await (const chunk of readChunks(reader)) {
-    const chunkText = textDecoder.decode(chunk);
+  let chunk: ReadableStreamReadResult<Uint8Array>
+  while (!(chunk = await reader.read()).done) {
+    const chunkText = textDecoder.decode(chunk.value);
     const chunkLines = chunkText.split('\n');
     if (chunkLines.length === 1) {
       partOfLine += chunkLines[0];
@@ -97,16 +98,4 @@ async function* readLines(reader: ReadableStreamDefaultReader<Uint8Array>) {
     }
   }
   yield partOfLine;
-}
-
-function readChunks(reader: ReadableStreamDefaultReader<Uint8Array>) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      let readResult = await reader.read();
-      while (!readResult.done) {
-        yield readResult.value;
-        readResult = await reader.read();
-      }
-    },
-  };
 }

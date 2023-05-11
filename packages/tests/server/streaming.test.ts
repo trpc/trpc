@@ -52,7 +52,7 @@ describe('no transformer', () => {
                   value,
                   opId: op.id,
                 });
-                observer.next((value as any).result);
+                observer.next(value);
               },
               error(err) {
                 results.push({
@@ -70,7 +70,7 @@ describe('no transformer', () => {
       const opts = routerToServerAndClientNew(router, {
         server: {
           streaming: {
-            enabled: false,
+            enabled: true,
           },
         },
         client(opts) {
@@ -79,7 +79,7 @@ describe('no transformer', () => {
               linkSpy,
               httpBatchLink({
                 url: opts.httpUrl,
-                streaming: false,
+                streaming: true,
               }),
             ],
           };
@@ -95,7 +95,7 @@ describe('no transformer', () => {
     })
     .done();
 
-  test.only('out-of-order streaming', async () => {
+  test('out-of-order streaming', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
@@ -104,9 +104,9 @@ describe('no transformer', () => {
       await proxy.deferred.query({ wait: 2 }),
     ]);
 
-    expect(results).toBe([3, 1, 2]);
+    expect(results).toEqual([3, 1, 2]);
 
-    expect(ctx.results).toMatchInlineSnapshot();
+    expect(ctx.results).toMatchInlineSnapshot('Array []');
   });
 });
 
@@ -153,7 +153,7 @@ describe('with transformer', () => {
                   value,
                   opId: op.id,
                 });
-                observer.next((value as any).result);
+                observer.next(value);
               },
               error(err) {
                 results.push({
@@ -180,6 +180,7 @@ describe('with transformer', () => {
             links: [
               linkSpy,
               httpBatchLink({
+                streaming: true,
                 url: opts.httpUrl,
               }),
             ],
@@ -205,8 +206,8 @@ describe('with transformer', () => {
       await proxy.deferred.query({ wait: 2 }),
     ]);
 
-    expect(results).toBe([3, 1, 2]);
+    expect(results).toEqual([3, 1, 2]);
 
-    expect(ctx.results).toMatchInlineSnapshot();
+    expect(ctx.results).toMatchInlineSnapshot('Array []');
   });
 });
