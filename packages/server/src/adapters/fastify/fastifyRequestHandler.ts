@@ -4,6 +4,7 @@ import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
+import Stream from "node:stream"
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
@@ -56,31 +57,67 @@ export async function fastifyRequestHandler<
     },
   });
 
-  // WARNING: this is just to make the build work, not actual implementation of response
-  const { value: responseInit } = await (
+  const { value: responseInit, done: invalidInit } = await (
     resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
   ).next();
-  const { value: firstChunk } = await (
+  const { value: firstChunk, done: abort } = await (
     resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
   ).next();
-  const result = {
-    status: (responseInit as HTTPResponse).status,
-    headers: (responseInit as HTTPResponse).headers,
-    body: (firstChunk as ResponseChunk)[1],
-  };
 
   const { res } = opts;
-
-  if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
-    res.statusCode = result.status;
+  if (invalidInit || (abort && !firstChunk)) {
+    res.statusCode = 500;
+    return res.send();
   }
-  for (const [key, value] of Object.entries(result.headers ?? {})) {
-    /* istanbul ignore if -- @preserve */
+  if (
+    'status' in responseInit &&
+    (!res.statusCode || res.statusCode === 200)
+  ) {
+    res.statusCode = responseInit.status;
+  }
+  for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
     if (typeof value === 'undefined') {
       continue;
     }
-
     void res.header(key, value);
   }
-  await res.send(result.body);
+
+  // iterator is already exhausted, this means we're not streaming the response
+  if (abort) {
+    if (firstChunk) {
+      // case of a full response
+      return res.send(firstChunk[1]);
+    } else {
+      // case of a method === "HEAD" response
+      return res.send();
+    }
+  }
+
+  // iterator is not exhausted, we can setup the streamed response
+  res.header('Transfer-Encoding', 'chunked');
+  const readableStream = new Stream.Readable();
+  readableStream.push('{\n');
+  const sendPromise = res.send(readableStream);
+
+  // each procedure body will be written on a new line of the JSON so they can be parsed independently
+  let first = true;
+  const sendChunk = ([index, body]: [number, string]) => {
+    const comma = first ? '' : ',';
+    first = false;
+    readableStream.push(`${comma}"${index}":${body}\n`);
+  };
+
+  // await every procedure
+  sendChunk(firstChunk);
+  for await (const chunk of resultIterator as AsyncGenerator<
+    ResponseChunk,
+    ResponseChunk | undefined
+  >) {
+    sendChunk(chunk);
+  }
+
+  // finalize response
+  readableStream.push('}');
+
+  return sendPromise;
 }
