@@ -79,6 +79,7 @@ describe('no transformer', () => {
               linkSpy,
               httpBatchLink({
                 url: opts.httpUrl,
+                streaming: false,
               }),
             ],
           };
