@@ -17,11 +17,13 @@ export interface HTTPResponse {
   body?: string;
 }
 
+export type ResponseChunk = [procedureIndex: number, responseBody: string];
+
 /**
  * @internal
  */
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
-  data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+  data?: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**
    * The different tRPC paths requested

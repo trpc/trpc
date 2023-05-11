@@ -1333,6 +1333,9 @@ importers:
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
+      tslib:
+        specifier: ^2.5.0
+        version: 2.5.0
       tsx:
         specifier: ^3.12.7
         version: 3.12.7

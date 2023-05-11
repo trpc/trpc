@@ -7,8 +7,8 @@ import {
   HTTPLinkBaseOptions,
   HTTPResult,
   getUrl,
-  jsonHttpRequester,
   resolveHTTPLinkOptions,
+  streamingJsonHttpRequested,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
@@ -24,6 +24,24 @@ export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
     | ((opts: {
         opList: NonEmptyArray<Operation>;
       }) => HTTPHeaders | Promise<HTTPHeaders>);
+}
+
+/**
+ * Is it an object with only numeric keys?
+ */
+function isObjectArray(value: object): value is Record<number, any> {
+  return Object.keys(value).every((key) => !isNaN(key as any));
+}
+
+/**
+ * Convert an object with numeric keys to an array
+ */
+function objectArrayToArray(value: Record<number, any>): any[] {
+  const array: any[] = [];
+  for (const key in value) {
+    array[key] = value[key];
+  }
+  return array;
 }
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -54,11 +72,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         return url.length <= maxURLLength;
       };
 
-      const fetch = (batchOps: Operation[]) => {
+      const fetch = (
+        batchOps: Operation[],
+        unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
+      ) => {
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        const { promise, cancel } = jsonHttpRequester({
+        const { promise, cancel } = streamingJsonHttpRequested({
           ...resolvedOpts,
           runtime,
           type,
@@ -77,19 +98,37 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           },
         });
 
+        const batchPromise = promise.then(async (iterator) => {
+          const firstItem = await iterator.next();
+          if (!firstItem.done) {
+            // first response is not last, this is indeed a streaming response
+            unitResolver(
+              firstItem.value[0] as unknown as number,
+              firstItem.value[1],
+            );
+            for await (const [index, data] of iterator) {
+              unitResolver(index as unknown as number, data); // force casting to number because `a[0]` and `a["0"]` work the same
+            }
+            return [];
+          }
+          // fallback to regular handling
+          const res = firstItem.value!;
+          const resJSON = Array.isArray(res.json)
+            ? res.json
+            : isObjectArray(res.json)
+            ? objectArrayToArray(res.json)
+            : batchOps.map(() => res.json);
+
+          const result = resJSON.map((item) => ({
+            meta: res.meta,
+            json: item,
+          }));
+
+          return result;
+        });
+
         return {
-          promise: promise.then((res) => {
-            const resJSON = Array.isArray(res.json)
-              ? res.json
-              : batchOps.map(() => res.json);
-
-            const result = resJSON.map((item) => ({
-              meta: res.meta,
-              json: item,
-            }));
-
-            return result;
-          }),
+          promise: batchPromise,
           cancel,
         };
       };
