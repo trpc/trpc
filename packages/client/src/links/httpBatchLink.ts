@@ -9,7 +9,7 @@ import {
   getUrl,
   jsonHttpRequester,
   resolveHTTPLinkOptions,
-  streamingJsonHttpRequested,
+  streamingJsonHttpRequester,
 } from './internals/httpUtils';
 import { transformResult } from './internals/transformResult';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
@@ -128,7 +128,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const inputs = batchOps.map((op) => op.input);
 
         const httpRequesterOptions: Parameters<typeof jsonHttpRequester>[0] &
-          Parameters<typeof streamingJsonHttpRequested>[0] = {
+          Parameters<typeof streamingJsonHttpRequester>[0] = {
           ...resolvedOpts,
           runtime,
           type,
@@ -158,7 +158,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           };
         } else {
           const { promise, cancel } =
-            streamingJsonHttpRequested(httpRequesterOptions);
+            streamingJsonHttpRequester(httpRequesterOptions);
           const batchPromise = promise.then((iterator) =>
             handleStreamedJsonResponse(iterator, batchOps, unitResolver),
           );

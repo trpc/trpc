@@ -135,7 +135,7 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export const streamingJsonHttpRequested: Requester<
+export const streamingJsonHttpRequester: Requester<
   AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>
 > = (opts) => {
   const ac = opts.AbortController ? new opts.AbortController() : null;
