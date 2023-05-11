@@ -363,6 +363,30 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [runtypes](https://github.com/pelotom/runtypes)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import * as T from 'runtypes';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(T.Record({ name: T.String }))
+    .output(T.Record({ greeting: T.String }))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Contributing your own Validator Library
 
 If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.
