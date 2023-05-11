@@ -18,14 +18,13 @@ import {
   applyWSSHandler,
 } from '@trpc/server/src/adapters/ws';
 import { IncomingMessage } from 'http';
+import fetch from 'node-fetch';
 import ws from 'ws';
 import './___packages';
 
-const unidici = require('undici');
-
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
+globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
-globalThis.fetch = unidici.fetch;
 
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
