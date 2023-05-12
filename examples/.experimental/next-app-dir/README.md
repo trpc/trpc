@@ -2,8 +2,8 @@
 
 This is a playground repo for an offical tRPC + Next.js App directory
 
-
 > Note: you can already use tRPC with app directory, by:
+>
 > - using `@trpc/client` directly in components (both RSC and non-RSC)
 > - use `@trpc/next` for client components
 
