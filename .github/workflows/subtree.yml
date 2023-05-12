@@ -38,8 +38,8 @@ jobs:
         uses: mad9000/actions-find-and-replace-string@3
         id: findandreplace
         with:
-          source: ${{ github.ref }}
-          find: 'refs/heads/'
+          source: ${{ matrix.path }}
+          find: '.experimental/'
           replace: ''
       - name: Get the above output
         run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
