@@ -1,3 +1,10 @@
+/// <reference lib="dom.iterable" />
+
+// `dom.iterable` types are explicitly required for extracting `FormData` values,
+// as all implementations of `Symbol.iterable` are separated from the main `dom` types.
+// Using triple-slash directive makes sure that it will be available,
+// even if end-user `tsconfig.json` omits it in the `lib` array.
+
 import { AnyRouter } from '@trpc/server';
 import { observable, tap } from '@trpc/server/observable';
 import { TRPCClientError } from '..';
