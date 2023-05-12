@@ -227,7 +227,7 @@ module.exports = {
         },
         gtag: {
           containerId: 'G-7KLX2VFLVR',
-        }
+        },
       },
     ],
     [
