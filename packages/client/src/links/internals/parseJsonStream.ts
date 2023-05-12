@@ -26,7 +26,8 @@ export async function* parseJsonStream<TReturn>(
   parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
 ) {
-  const lineIterator = readLines(readableStream.getReader());
+  const reader = readableStream.getReader();
+  const lineIterator = readLines(reader);
   const firstLine = await lineIterator.next();
 
   if (firstLine.done) return; // this line is just for typescript, we know for a fact that `readLines` yields at least once
