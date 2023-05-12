@@ -35,15 +35,15 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./app-router/server": {
-      "import": "./dist/app-router/server.mjs",
-      "require": "./dist/app-router/server.js",
-      "default": "./dist/app-router/server.js"
+    "./app-dir/server": {
+      "import": "./dist/app-dir/server.mjs",
+      "require": "./dist/app-dir/server.js",
+      "default": "./dist/app-dir/server.js"
     },
-    "./app-router/client": {
-      "import": "./dist/app-router/client.mjs",
-      "require": "./dist/app-router/client.js",
-      "default": "./dist/app-router/client.js"
+    "./app-dir/client": {
+      "import": "./dist/app-dir/client.mjs",
+      "require": "./dist/app-dir/client.js",
+      "default": "./dist/app-dir/client.js"
     }
   },
   "files": [
@@ -51,7 +51,7 @@
     "src",
     "README.md",
     "package.json",
-    "app-router"
+    "app-dir"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",

@@ -23,7 +23,7 @@ jobs:
             minimal,
             minimal-react,
             .experimental/next-formdata,
-            .experimental/next-app-router,
+            .experimental/next-app-dir,
           ]
 
     name: Update downstream ${{ matrix.path }} package

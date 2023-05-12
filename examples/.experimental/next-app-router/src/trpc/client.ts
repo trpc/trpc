@@ -1,7 +1,7 @@
 'use client';
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNextAppRouterClient } from '@trpc/next/app-router/client';
+import { createTRPCNextAppRouterClient } from '@trpc/next/app-dir/client';
 import { AppRouter } from '~/server/router';
 import { getUrl } from './shared';
 

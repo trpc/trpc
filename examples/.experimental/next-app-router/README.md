@@ -1,9 +1,6 @@
-
-
 ## 🚧🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 This is experimental and is subject to change 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
 
 This is a playground repo for an offical tRPC + Next.js App directory
-
 
 ### Current progress
 
@@ -11,26 +8,26 @@ This is a playground repo for an offical tRPC + Next.js App directory
 - [x] Implement caching
 - [ ] Implement cache invalidation on server calls
 - [ ] Implement cache invalidation on client calls
+- [ ] Get community feedback
 - [ ] Make server calls invalidate client calls and vice verse
 - [ ] Proof of concept of server actions
 - [ ] Test it heavily
-- [ ] Get community feedback
+- [ ] Finalize API
 
 ### Contributing
 
 Please join our [Discord](https://trpc.io/discord) if you want to discuss how we approach this.
 
-If you want to change this repo, you go to https://github.com/trpc/trpc/tree/main/examples/.experimental/next-app-router
+If you want to change this repo, you go to https://github.com/trpc/trpc/tree/main/examples/.experimental/next-app-dir
 
 ## Overview
 
 Create a tRPC client that you can use **the same way**, no matter if you are in a server components
 
-Examples: 
+Examples:
 
 - [./src/app/ClientGreeting.tsx](./src/app/ClientGreeting.tsx)
 - [./src/app/ServerGreeting.tsx](./src/app/ServerGreeting.tsx)
-
 
 ### Setup
 
@@ -38,11 +35,9 @@ Examples:
 
 Example: [`/src/app/api/trpc/[trpc]/route.ts`](/src/app/api/trpc/[trpc]/route.ts)
 
-
-#### 2. Create a local tRPC package with different entrypoints for `"use client"` & `"use server"`. 
+#### 2. Create a local tRPC package with different entrypoints for `"use client"` & `"use server"`.
 
 Files of note:
 
 - [`./package.json`](./package.json)
 - [`./src/trpc`](./src/trpc)
-
