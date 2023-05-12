@@ -5,6 +5,7 @@ const nextConfig = {
   },
   experimental: {
     appDir: true,
+    serverActions: true,
   },
   webpack: (config) => {
     config.experiments.topLevelAwait = true;
