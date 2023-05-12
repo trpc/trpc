@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run find-and-replace to remove refs/heads/
+      - name: Run find-and-replace to remove '.experimental/' from above paths
         uses: mad9000/actions-find-and-replace-string@3
         id: findandreplace
         with:
