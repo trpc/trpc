@@ -1,3 +1,5 @@
+'use server';
+
 import { createTRPCUntypedClient, httpBatchLink } from '@trpc/client';
 import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-server';
 import { headers } from 'next/headers';

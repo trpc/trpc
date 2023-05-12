@@ -4,7 +4,7 @@
   "exports": {
     ".": {
       "types": "./client.ts",
-      "react-server": "./reactServer.ts",
+      "react-server": "./server.ts",
       "default": "./client.ts"
     }
   }

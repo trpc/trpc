@@ -10,24 +10,42 @@ export default async function Home() {
   });
 
   return (
-    <main>
-      <div>
-        <Suspense fallback={<>Loading client...</>}>
-          <ClientGreeting />
-        </Suspense>
-      </div>
+    <main
+      style={{
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontSize: '1.1rem',
+      }}
+    >
+      <div
+        style={{
+          width: '12rem',
+          padding: '1rem',
+          background: '#e5e5e5',
+          borderRadius: '0.5rem',
+        }}
+      >
+        <div>
+          <Suspense fallback={<>Loading client...</>}>
+            <ClientGreeting />
+          </Suspense>
+        </div>
 
-      <div>
-        <Suspense fallback={<>Loading Server...</>}>
-          {/* @ts-expect-error RSC + TS not friends yet */}
-          <ServerGreeting />
-        </Suspense>
-      </div>
-      <div>
-        <Suspense fallback={<>Loading stream...</>}>
-          {/** @ts-expect-error - Async Server Component */}
-          <StreamedSC promise={promise} />
-        </Suspense>
+        <div>
+          <Suspense fallback={<>Loading Server...</>}>
+            {/* @ts-expect-error RSC + TS not friends yet */}
+            <ServerGreeting />
+          </Suspense>
+        </div>
+        <div>
+          <Suspense fallback={<>Loading stream...</>}>
+            {/** @ts-expect-error - Async Server Component */}
+            <StreamedSC promise={promise} />
+          </Suspense>
+        </div>
       </div>
     </main>
   );
