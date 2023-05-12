@@ -226,7 +226,7 @@ module.exports = {
           customCss: require.resolve('./src/css/custom.css'),
         },
         gtag: {
-          containerId: 'G-7KLX2VFLVR',
+          trackingID: 'G-7KLX2VFLVR',
         },
       },
     ],
