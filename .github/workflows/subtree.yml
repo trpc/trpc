@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - next-app-router
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -15,13 +16,15 @@ jobs:
       matrix:
         path: [
             #
-            next-prisma-starter,
-            next-prisma-websockets-starter,
-            next-prisma-todomvc,
-            next-minimal-starter,
-            next-big-router,
-            minimal,
-            minimal-react,
+            # next-prisma-starter,
+            # next-prisma-websockets-starter,
+            # next-prisma-todomvc,
+            # next-minimal-starter,
+            # next-big-router,
+            # minimal,
+            # minimal-react,
+            .experimental/next-formdata,
+            # .experimental/next-approuter
           ]
 
     name: Update downstream ${{ matrix.path }} package
@@ -54,7 +57,7 @@ jobs:
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
-          repo: 'trpc/examples-${{ matrix.path }}'
-          path: 'examples/${{ matrix.path }}'
+          repo: 'trpc/examples-${{ matrix.path.replace(".experimental/", "") }}'
+          path: 'examples/${{matrix.path}}
           deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository
