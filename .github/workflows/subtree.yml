@@ -34,6 +34,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Run find-and-replace to remove refs/heads/
+        uses: mad9000/actions-find-and-replace-string@3
+        id: findandreplace
+        with:
+          source: ${{ github.ref }}
+          find: 'refs/heads/'
+          replace: ''
+      - name: Get the above output
+        run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
+
       - uses: pnpm/action-setup@v2.2.4
       - uses: actions/setup-node@v3
         with:
@@ -53,16 +63,6 @@ jobs:
           git config --global user.name "trpc-bot"
           git add .
           git commit -m "chore: sync lockfile"
-
-      - name: Run find-and-replace to remove refs/heads/
-        uses: mad9000/actions-find-and-replace-string@3
-        id: findandreplace
-        with:
-          source: ${{ github.ref }}
-          find: 'refs/heads/'
-          replace: ''
-      - name: Get the above output
-        run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
 
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
