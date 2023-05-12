@@ -10,7 +10,7 @@ const appRouter = t.router({
   greeting: t.procedure
     .input(z.object({ name: z.string() }))
     .query((opts) => {
-      const { input } = req;
+      const { input } = opts;
       return `Hello ${input.name}` as const;
   }),
 });

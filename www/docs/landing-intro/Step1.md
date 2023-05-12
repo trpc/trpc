@@ -13,7 +13,7 @@ const appRouter = router({
   greeting: publicProcedure
     .input(z.object({ name: z.string() }))
     .query((opts) => {
-      const { input } = req;
+      const { input } = opts;
       //      ^?
 
       return `Hello ${input.name}` as const;
