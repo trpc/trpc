@@ -1,0 +1,27 @@
+{
+  "name": "@examples/next-app-dir",
+  "private": true,
+  "version": "10.25.1",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^4.18.0",
+    "@trpc/client": "^10.25.1",
+    "@trpc/next": "^10.25.1",
+    "@trpc/react-query": "^10.25.1",
+    "@trpc/server": "^10.25.1",
+    "@types/node": "^18.7.20",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
+    "next": "^13.3.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "trpc-api": "link:./src/trpc",
+    "typescript": "^4.8.3",
+    "zod": "^3.0.0"
+  }
+}

@@ -124,6 +124,51 @@ importers:
         specifier: ^4.8.3
         version: 4.8.3
 
+  examples/.experimental/next-app-dir:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: 4.18.0
+        version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
+      '@trpc/client':
+        specifier: link:../../../packages/client
+        version: link:../../../packages/client
+      '@trpc/next':
+        specifier: link:../../../packages/next
+        version: link:../../../packages/next
+      '@trpc/react-query':
+        specifier: link:../../../packages/react-query
+        version: link:../../../packages/react-query
+      '@trpc/server':
+        specifier: link:../../../packages/server
+        version: link:../../../packages/server
+      '@types/node':
+        specifier: ^18.7.20
+        version: 18.7.20
+      '@types/react':
+        specifier: ^18.2.6
+        version: 18.2.6
+      '@types/react-dom':
+        specifier: ^18.2.4
+        version: 18.2.4
+      next:
+        specifier: ^13.3.4
+        version: 13.3.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      trpc-api:
+        specifier: link:./src/trpc
+        version: link:src/trpc
+      typescript:
+        specifier: ^4.8.3
+        version: 4.8.3
+      zod:
+        specifier: ^3.0.0
+        version: 3.20.2
+
   examples/.experimental/next-formdata:
     dependencies:
       '@hookform/error-message':
