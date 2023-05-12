@@ -1,7 +1,7 @@
 {
   "name": "@examples/next-app-router",
   "private": true,
-  "version": "10.14.0",
+  "version": "10.25.1",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@trpc/client": "^10.14.0",
-    "@trpc/next-app-router": "^10.14.0",
-    "@trpc/server": "^10.14.0",
+    "@trpc/client": "^10.25.1",
+    "@trpc/next-app-router": "^10.25.1",
+    "@trpc/server": "^10.25.1",
     "@types/node": "^18.7.20",
     "@types/react": "^18.0.9",
     "@types/react-dom": "^18.0.5",
