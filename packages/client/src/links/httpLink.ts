@@ -1,13 +1,13 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
+import { transformResult } from '../shared/transformResult';
 import {
   HTTPLinkBaseOptions,
   Requester,
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import { transformResult } from './internals/transformResult';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
 
 export interface HTTPLinkOptions extends HTTPLinkBaseOptions {

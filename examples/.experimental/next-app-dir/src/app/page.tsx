@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { api } from 'trpc-api';
 import { ClientGreeting } from './ClientGreeting';
 import { ServerGreeting } from './ServerGreeting';
+import { TestMutation } from './TestMutation';
 
 export default async function Home() {
   const promise = new Promise(async (resolve) => {
@@ -46,6 +47,8 @@ export default async function Home() {
             <StreamedSC promise={promise} />
           </Suspense>
         </div>
+        <h2>Mutation play</h2>
+        <TestMutation />
       </div>
     </main>
   );
