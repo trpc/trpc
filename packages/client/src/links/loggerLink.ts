@@ -71,14 +71,6 @@ function isFormData(value: unknown): value is FormData {
   return value instanceof FormData;
 }
 
-function fromEntries(fd: FormData) {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of fd) {
-    result[key] = value;
-  }
-  return result;
-}
-
 // maybe this should be moved to it's own package
 const defaultLogger =
   <TRouter extends AnyRouter>(
@@ -90,7 +82,9 @@ const defaultLogger =
 
     const rawInput = props.input;
 
-    const input = isFormData(rawInput) ? fromEntries(rawInput) : rawInput;
+    const input = isFormData(rawInput)
+      ? Object.fromEntries(rawInput)
+      : rawInput;
 
     const css = `
     background-color: #${direction === 'up' ? light : dark}; 
