@@ -3,7 +3,7 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNextAppRouterReactServer } from '@trpc/next/app-dir/server';
 import { headers } from 'next/headers';
-import { AppRouter } from '~/server/router';
+import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
 
 export const api = createTRPCNextAppRouterReactServer<AppRouter>({
@@ -19,7 +19,10 @@ export const api = createTRPCNextAppRouterReactServer<AppRouter>({
           url: getUrl(),
           headers() {
             // Forward headers from the browser to the API
-            return Object.fromEntries(headers());
+            return {
+              ...Object.fromEntries(headers()),
+              'x-trpc-source': 'rsc',
+            };
           },
         }),
       ],
