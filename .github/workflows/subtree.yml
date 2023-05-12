@@ -58,6 +58,6 @@ jobs:
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
           repo: 'trpc/examples-${{ matrix.path.replace(".experimental/", "") }}'
-          path: 'examples/${{matrix.path}}
+          path: 'examples/${{ matrix.path }}'
           deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository
