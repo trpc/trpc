@@ -227,7 +227,7 @@ module.exports = {
         },
         googleTagManager: {
           containerId: 'G-7KLX2VFLVR',
-        }
+        },
       },
     ],
     [
