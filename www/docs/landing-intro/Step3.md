@@ -9,11 +9,9 @@ const t = initTRPC.create();
 const appRouter = t.router({
   greeting: t.procedure
     .input(z.object({ name: z.string() }))
-    .query((req) => {
+    .query((opts) => {
       const { input } = req;
-      return {
-        text: `Hello ${input.name}` as const,
-      };
+      return `Hello ${input.name}` as const;
   }),
 });
 

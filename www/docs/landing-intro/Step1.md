@@ -12,7 +12,7 @@ const publicProcedure = t.procedure;
 const appRouter = router({
   greeting: publicProcedure
     .input(z.object({ name: z.string() }))
-    .query((req) => {
+    .query((opts) => {
       const { input } = req;
       //      ^?
 
