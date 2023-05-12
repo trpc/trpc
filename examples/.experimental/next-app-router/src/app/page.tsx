@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
-import { ClientGreeting } from './client-greeting';
-import { ServerGreeting } from './server-greeting';
+import { ClientGreeting } from './ClientGreeting';
+import { ServerGreeting } from './ServerGreeting';
 
 export default async function Home() {
   const promise = new Promise(async (resolve) => {
