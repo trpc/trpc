@@ -35,15 +35,15 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./app-router/react-server": {
-      "import": "./dist/app-router/react-server/index.mjs",
-      "require": "./dist/app-router/react-server/index.js",
-      "default": "./dist/app-router/react-server/index.js"
+    "./app-router/server": {
+      "import": "./dist/app-router/server.mjs",
+      "require": "./dist/app-router/server.js",
+      "default": "./dist/app-router/server.js"
     },
     "./app-router/client": {
-      "import": "./dist/app-router/client/index.mjs",
-      "require": "./dist/app-router/client/index.js",
-      "default": "./dist/app-router/client/index.js"
+      "import": "./dist/app-router/client.mjs",
+      "require": "./dist/app-router/client.js",
+      "default": "./dist/app-router/client.js"
     }
   },
   "files": [

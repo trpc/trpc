@@ -1,7 +1,7 @@
 'use server';
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNextAppRouterReactServer } from '@trpc/next/app-router/react-server';
+import { createTRPCNextAppRouterReactServer } from '@trpc/next/app-router/server';
 import { headers } from 'next/headers';
 import { AppRouter } from '~/server/router';
 import { getUrl } from './shared';

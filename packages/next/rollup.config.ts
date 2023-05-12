@@ -3,8 +3,8 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
-  'src/app-router/react-server/index.ts',
-  'src/app-router/client/index.ts',
+  'src/app-router/server.ts',
+  'src/app-router/client.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

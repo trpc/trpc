@@ -8,7 +8,7 @@ import {
 import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { cache } from 'react';
-import { CreateTRPCNextAppRouterOptions } from '../shared';
+import { CreateTRPCNextAppRouterOptions } from './shared';
 
 export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
   opts: CreateTRPCNextAppRouterOptions<TRouter>,

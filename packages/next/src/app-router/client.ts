@@ -9,7 +9,7 @@ import {
   CreateTRPCNextAppRouterOptions,
   UseProcedureRecord,
   createUseProxy,
-} from '../shared';
+} from './shared';
 
 function normalizePromiseArray<TValue>(
   promise: Promise<TValue> | Promise<TValue>[],
