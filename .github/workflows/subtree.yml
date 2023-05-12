@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - next-app-router
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,15 +15,15 @@ jobs:
       matrix:
         path: [
             #
-            # next-prisma-starter,
-            # next-prisma-websockets-starter,
-            # next-prisma-todomvc,
-            # next-minimal-starter,
-            # next-big-router,
-            # minimal,
-            # minimal-react,
+            next-prisma-starter,
+            next-prisma-websockets-starter,
+            next-prisma-todomvc,
+            next-minimal-starter,
+            next-big-router,
+            minimal,
+            minimal-react,
             .experimental/next-formdata,
-            # .experimental/next-approuter
+            .experimental/next-app-router,
           ]
 
     name: Update downstream ${{ matrix.path }} package
