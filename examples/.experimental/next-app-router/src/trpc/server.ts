@@ -1,23 +1,23 @@
 'use server';
 
-import { createTRPCUntypedClient, httpBatchLink } from '@trpc/client';
+import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNextAppRouterReactServer } from '@trpc/next-app-router/react-server';
-import { headers } from 'next/headers';
-import { cache } from 'react';
 import { AppRouter } from '~/server/router';
 import { getUrl } from './shared';
 
 export const api = createTRPCNextAppRouterReactServer<AppRouter>({
-  getClient: cache(() =>
-    createTRPCUntypedClient({
+  config() {
+    return {
       links: [
+        loggerLink({
+          enabled: (op) =>
+            process.env.NODE_ENV === 'development' ||
+            (op.direction === 'down' && op.result instanceof Error),
+        }),
         httpBatchLink({
           url: getUrl(),
-          headers() {
-            return Object.fromEntries(headers());
-          },
         }),
       ],
-    }),
-  ),
+    };
+  },
 });

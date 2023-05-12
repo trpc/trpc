@@ -1,4 +1,8 @@
-import { Resolver, TRPCUntypedClient } from '@trpc/client';
+import {
+  CreateTRPCClientOptions,
+  Resolver,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
@@ -48,3 +52,10 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
     CreateTRPCNextAppRouterBase<TRouter>,
     UseProcedureRecord<TRouter>
   >;
+
+/**
+ * @internal
+ */
+export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
+  config: () => CreateTRPCClientOptions<TRouter>;
+}

@@ -1,21 +1,26 @@
+/// <reference types="next" />
+
 import {
   CreateTRPCProxyClient,
-  TRPCUntypedClient,
   clientCallTypeToProcedureType,
+  createTRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
-
-type CreateTRPCNextAppRouterReactServerOptions<TRouter extends AnyRouter> = {
-  getClient: () => TRPCUntypedClient<TRouter>;
-};
+import { cache } from 'react';
+import { CreateTRPCNextAppRouterOptions } from '../shared';
 
 export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
-  opts: CreateTRPCNextAppRouterReactServerOptions<TRouter>,
+  opts: CreateTRPCNextAppRouterOptions<TRouter>,
 ) {
+  const getClient = cache(() => {
+    const config = opts.config();
+    return createTRPCUntypedClient(config);
+  });
+
   return createRecursiveProxy(({ path, args }) => {
-    // lazily initialize client, presumably this function is wrapped in cache()
-    const client = opts.getClient();
+    // lazily initialize client
+    const client = getClient();
 
     const pathCopy = [...path];
     const procedureType = clientCallTypeToProcedureType(

@@ -1,5 +1,4 @@
 import {
-  CreateTRPCClientOptions,
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
@@ -7,13 +6,10 @@ import { AnyRouter } from '@trpc/server';
 import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import {
   CreateTRPCNextAppRouter,
+  CreateTRPCNextAppRouterOptions,
   UseProcedureRecord,
   createUseProxy,
 } from '../shared';
-
-type CreateTRPCNextAppRouterClientOptions<TRouter extends AnyRouter> = {
-  config: () => CreateTRPCClientOptions<TRouter>;
-};
 
 function normalizePromiseArray<TValue>(
   promise: Promise<TValue> | Promise<TValue>[],
@@ -31,7 +27,7 @@ type QueryResult = {
 };
 
 export function createTRPCNextAppRouterClient<TRouter extends AnyRouter>(
-  opts: CreateTRPCNextAppRouterClientOptions<TRouter>,
+  opts: CreateTRPCNextAppRouterOptions<TRouter>,
 ) {
   const client = createTRPCUntypedClient<TRouter>(opts.config());
   const useProxy = createUseProxy<TRouter>(client);
