@@ -1446,9 +1446,6 @@ importers:
       '@trpc/client':
         specifier: link:../client
         version: link:../client
-      '@trpc/react-query':
-        specifier: link:../react-query
-        version: link:../react-query
       '@trpc/server':
         specifier: link:../server
         version: link:../server
