@@ -16,9 +16,7 @@ const appRouter = router({
       const { input } = req;
       //      ^?
 
-      return {
-        text: `Hello ${input.name}` as const,
-      };
+      return `Hello ${input.name}` as const;
   }),
 });
 
