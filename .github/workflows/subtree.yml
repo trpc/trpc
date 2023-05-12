@@ -57,7 +57,7 @@ jobs:
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
-          repo: 'trpc/examples-${{ replace(matrix.path, ".experimental/", "") }}'
+          repo: 'trpc/examples-${{ matrix.path//.experimental/) }}'
           path: 'examples/${{ matrix.path }}'
           deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository
