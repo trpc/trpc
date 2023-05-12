@@ -10,6 +10,7 @@ import { createRecursiveProxy } from '@trpc/server/shared';
 import { cache } from 'react';
 import { CreateTRPCNextAppRouterOptions } from './shared';
 
+// ts-prune-ignore-next
 export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
   opts: CreateTRPCNextAppRouterOptions<TRouter>,
 ) {

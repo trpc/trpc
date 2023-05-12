@@ -26,6 +26,7 @@ type QueryResult = {
   promise?: Promise<unknown>;
 };
 
+// ts-prune-ignore-next
 export function createTRPCNextAppRouterClient<TRouter extends AnyRouter>(
   opts: CreateTRPCNextAppRouterOptions<TRouter>,
 ) {
