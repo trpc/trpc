@@ -2,7 +2,7 @@
 id: metadata
 title: Metadata
 sidebar_label: Metadata
-slug: /metadata
+slug: /server/metadata
 ---
 
 Procedure metadata allows you to add an optional procedure specific `meta` property which will be available in all [middleware](middlewares) function parameters.
@@ -42,7 +42,8 @@ interface Meta {
 
 export const t = initTRPC.context<Context>().meta<Meta>().create();
 
-const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
+const isAuthed = t.middleware(async (opts) => {
+  const { meta, next, ctx } = opts;
   // only check authorization if enabled
   if (meta?.authRequired && !ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });

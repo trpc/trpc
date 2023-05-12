@@ -12,7 +12,13 @@ import {
 import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { SSRState, TRPCContext } from '../../internals/context';
 import { TRPCContextState } from '../../internals/context';
 import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
@@ -43,7 +49,7 @@ export function createRootHooks<
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
-    config?.unstable_overrides?.useMutation?.onSuccess ??
+    (config?.overrides ?? config?.unstable_overrides)?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
   type TError = TRPCClientErrorLike<TRouter>;
@@ -290,8 +296,9 @@ export function createRootHooks<
       void prefetchQuery(pathAndInput as any, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
-    // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useQuery({
       ...ssrOpts,
@@ -370,6 +377,9 @@ export function createRootHooks<
     const queryKey = hashQueryKey(pathAndInput);
     const { client } = useContext();
 
+    const optsRef = useRef<typeof opts>(opts);
+    optsRef.current = opts;
+
     return useEffect(() => {
       if (!enabled) {
         return;
@@ -382,18 +392,18 @@ export function createRootHooks<
         {
           onStarted: () => {
             if (!isStopped) {
-              opts.onStarted?.();
+              optsRef.current.onStarted?.();
             }
           },
           onData: (data) => {
             if (!isStopped) {
               // FIXME this shouldn't be needed as both should be `unknown` in next major
-              opts.onData(data as any);
+              optsRef.current.onData(data as any);
             }
           },
           onError: (err) => {
             if (!isStopped) {
-              opts.onError?.(err);
+              optsRef.current.onError?.(err);
             }
           },
         },

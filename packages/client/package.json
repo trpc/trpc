@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
-  "version": "10.16.0",
-  "description": "tRPC Client lib",
+  "version": "10.26.0",
+  "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
   "main": "dist/index.js",
@@ -25,7 +25,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen:entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
     "ts-watch": "tsc --project tsconfig.watch.json"
   },
   "exports": {
@@ -69,19 +69,19 @@
     "links"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.16.0"
+    "@trpc/server": "10.26.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "^10.16.0",
+    "@trpc/server": "10.26.0",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
-    "eslint": "^8.30.0",
+    "eslint": "^8.40.0",
     "expect-type": "^0.15.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
-    "tsx": "^3.12.3",
+    "tsx": "^3.12.7",
     "undici": "^5.14.0",
     "vitest": "^0.28.5"
   },

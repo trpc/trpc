@@ -27,7 +27,7 @@ export default function Page() {
         <meta data-rh="true" name="twitter:image" content={ogImageUrl} />
       </Head>
       <h1>A page with Open Graph Image.</h1>
-      <main className="grid grid-cols-2 grid-flow-row">
+      <main className="grid grid-flow-row grid-cols-2">
         <div>
           <h2>Landing</h2>
           <img src={`/api/landing?random=${nonce}`} />

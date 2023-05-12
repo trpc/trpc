@@ -1,7 +1,7 @@
 {
   "name": "@trpc/next",
-  "version": "10.16.0",
-  "description": "tRPC Next lib",
+  "version": "10.26.0",
+  "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
   "main": "dist/index.js",
@@ -26,7 +26,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen:entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src"
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -34,19 +34,30 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./app-dir/server": {
+      "import": "./dist/app-dir/server.mjs",
+      "require": "./dist/app-dir/server.js",
+      "default": "./dist/app-dir/server.js"
+    },
+    "./app-dir/client": {
+      "import": "./dist/app-dir/client.mjs",
+      "require": "./dist/app-dir/client.js",
+      "default": "./dist/app-dir/client.js"
     }
   },
   "files": [
     "dist",
     "src",
     "README.md",
-    "package.json"
+    "package.json",
+    "app-dir"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.16.0",
-    "@trpc/react-query": "10.16.0",
-    "@trpc/server": "10.16.0",
+    "@trpc/client": "10.26.0",
+    "@trpc/react-query": "10.26.0",
+    "@trpc/server": "10.26.0",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
@@ -56,20 +67,20 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.16.0",
-    "@trpc/react-query": "^10.16.0",
-    "@trpc/server": "^10.16.0",
-    "@types/express": "^4.17.12",
+    "@trpc/client": "10.26.0",
+    "@trpc/react-query": "10.26.0",
+    "@trpc/server": "10.26.0",
+    "@types/express": "^4.17.17",
     "@types/node": "^18.7.20",
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.5",
-    "eslint": "^8.30.0",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
+    "eslint": "^8.40.0",
     "express": "^4.17.1",
-    "next": "^13.2.1",
+    "next": "^13.3.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",
-    "tsx": "^3.12.3",
+    "tsx": "^3.12.7",
     "zod": "^3.0.0"
   },
   "publishConfig": {

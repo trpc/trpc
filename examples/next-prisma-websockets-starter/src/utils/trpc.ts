@@ -20,14 +20,14 @@ function getEndingLink(ctx: NextPageContext | undefined) {
     return httpBatchLink({
       url: `${APP_URL}/api/trpc`,
       headers() {
-        if (ctx?.req) {
-          // on ssr, forward client's headers to the server
-          return {
-            ...ctx.req.headers,
-            'x-ssr': '1',
-          };
+        if (!ctx?.req?.headers) {
+          return {};
         }
-        return {};
+        // on ssr, forward client's headers to the server
+        return {
+          ...ctx.req.headers,
+          'x-ssr': '1',
+        };
       },
     });
   }
@@ -69,7 +69,7 @@ export const trpc = createTRPCNext<AppRouter>({
        */
       transformer: superjson,
       /**
-       * @link https://react-query.tanstack.com/reference/QueryClient
+       * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };

@@ -28,14 +28,14 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 
 ```tsx title='server/router.ts'
 export const appRouter = t.router({
-  postById: t.procedure.input(String).query(async ({ input, ctx }) => {
-    const post = await ctx.post.findUnique({
-      where: { id: input },
+  postById: t.procedure.input(String).query(async (opts) => {
+    const post = await opts.ctx.post.findUnique({
+      where: { id: opts.input },
     });
     return post;
   }),
-  relatedPosts: t.procedure.input(String).query(async ({ input, ctx }) => {
-    const posts = await ctx.findRelatedPostsById(input);
+  relatedPosts: t.procedure.input(String).query(async (opts) => {
+    const posts = await opts.ctx.findRelatedPostsById(opts.input);
     return posts;
   }),
 });

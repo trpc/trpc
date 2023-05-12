@@ -4,7 +4,6 @@ import { TRPCClientError, wsLink } from '@trpc/client/src';
 import { inferProcedureParams, initTRPC } from '@trpc/server/src';
 import { Unsubscribable, observable } from '@trpc/server/src/observable';
 import { EventEmitter } from 'events';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 const t = initTRPC
@@ -65,7 +64,7 @@ test('very happy path', async () => {
     }>();
   }
   {
-    type TParams = inferProcedureParams<typeof router['greeting']>;
+    type TParams = inferProcedureParams<(typeof router)['greeting']>;
     type TConfig = TParams['_config'];
     type TContext = TConfig['$types']['ctx'];
     type TError = TConfig['$types']['errorShape'];

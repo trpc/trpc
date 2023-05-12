@@ -4,7 +4,17 @@ import { ProcedureParams } from '../procedure';
 /**
  * @internal
  */
-export type Overwrite<TType, TWith> = Omit<TType, keyof TWith> & TWith;
+export type Overwrite<TType, TWith> = TType extends any
+  ? TWith extends any
+    ? {
+        [K in keyof TType | keyof TWith]: K extends keyof TWith
+          ? TWith[K]
+          : K extends keyof TType
+          ? TType[K]
+          : never;
+      }
+    : never
+  : never;
 /**
  * @internal
  */

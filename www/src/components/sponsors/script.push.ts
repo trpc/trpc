@@ -4,7 +4,7 @@ import { allSponsors } from './script.output';
 
 const sponsors = [...allSponsors].sort((a, b) => b.weight - a.weight);
 
-type Sponsor = typeof allSponsors[number];
+type Sponsor = (typeof allSponsors)[number];
 type ValidLogins = Sponsor['login'];
 
 interface Def {
@@ -18,6 +18,7 @@ const sections: Def = {
   diamond: [
     //
     'tolahq',
+    'github',
   ],
   gold: [
     //
@@ -26,8 +27,6 @@ const sections: Def = {
   silver: [
     //
     'JasonDocton',
-    'pingdotgg',
-    'prisma',
     'flightcontrolhq',
   ],
   bronze: [

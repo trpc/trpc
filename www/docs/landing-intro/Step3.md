@@ -9,11 +9,9 @@ const t = initTRPC.create();
 const appRouter = t.router({
   greeting: t.procedure
     .input(z.object({ name: z.string() }))
-    .query((req) => {
-      const { input } = req;
-      return {
-        text: `Hello ${input.name}` as const,
-      };
+    .query((opts) => {
+      const { input } = opts;
+      return `Hello ${input.name}` as const;
   }),
 });
 
@@ -31,7 +29,7 @@ import type { AppRouter } from './server';
 const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: 'http://localhost:3000/trpc',
+      url: 'http://localhost:3000',
     }),
   ],
 });

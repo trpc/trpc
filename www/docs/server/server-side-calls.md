@@ -2,14 +2,14 @@
 id: server-side-calls
 title: Server Side Calls
 sidebar_label: Server Side Calls
-slug: /server-side-calls
+slug: /server/server-side-calls
 ---
 
-You may need to call your procedure(s) directly from the server, `createCaller()` function returns you an instance of `RouterCaller` able to execute queries and mutations.
+You may need to call your procedure(s) directly from the same server they're hosted in, `router.createCaller()` can be used to achieve this.
 
 :::info
 
-`createCaller` should not be used to call procedures from within other procedures. This creates overhead since you'll need to (potentially) create context again, run through all the middlewares and validate the input with the input parsers - all of these which have already been done when the procedure was initially called. Instead, you should extract the shared logic into a separate function and call that from within the procedures.
+`createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
 
 <div className="flex gap-2 w-full justify-between pt-2">
   <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />
@@ -37,7 +37,7 @@ const router = t.router({
   // Create procedure at path 'greeting'
   greeting: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `Hello ${input.name}`),
+    .query((opts) => `Hello ${opts.input.name}`),
 });
 
 const caller = router.createCaller({});
@@ -59,8 +59,8 @@ const posts = ['One', 'Two', 'Three'];
 const t = initTRPC.create();
 const router = t.router({
   post: t.router({
-    add: t.procedure.input(z.string()).mutation(({ input }) => {
-      posts.push(input);
+    add: t.procedure.input(z.string()).mutation((opts) => {
+      posts.push(opts.input);
       return posts;
     }),
   }),
@@ -96,7 +96,8 @@ type Context = {
 };
 const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware(({ next, ctx }) => {
+const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
@@ -104,7 +105,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
     });
   }
 
-  return next({
+  return opts.next({
     ctx: {
       // Infers that the `user` is non-nullable
       user: ctx.user,
@@ -115,7 +116,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 const protectedProcedure = t.procedure.use(isAuthed);
 
 const router = t.router({
-  secret: protectedProcedure.query(({ ctx }) => ctx.user),
+  secret: protectedProcedure.query((opts) => opts.ctx.user),
 });
 
 {

@@ -19,6 +19,16 @@ const mockRuntime: TRPCClientRuntime = {
     serialize: (v) => v,
     deserialize: (v) => v,
   },
+  combinedTransformer: {
+    input: {
+      serialize: (v) => v,
+      deserialize: (v) => v,
+    },
+    output: {
+      serialize: (v) => v,
+      deserialize: (v) => v,
+    },
+  },
 };
 test('chainer', async () => {
   let attempt = 0;

@@ -19,15 +19,15 @@ const appRouter = t.router({
   post: t.router({
     byId: t.procedure
       .input(z.string())
-      .query(({ input }) => {
+      .query((opts) => {
         // imaginary db call
         return { id: 1, title: 'tRPC is the best!' };
     }),
     create: t.procedure
       .input(z.object({ title: z.string(), text: z.string() }))
-      .mutation(({ input }) => {
+      .mutation((opts) => {
         // imaginary db call
-        return { id: "123", ...input, };
+        return { id: "123", ...opts.input, };
     }),
   }),
 });
@@ -68,8 +68,8 @@ const t = initTRPC.context<Context>().create({
   /**
    * @see https://trpc.io/docs/v10/error-formatting
    */
-  errorFormatter({ shape }) {
-    return shape;
+  errorFormatter(opts) {
+    return opts.shape;
   },
 });
 
@@ -106,8 +106,8 @@ export const mergeRouters = t.mergeRouters;
 const appRouter = trpc.router()
   .query('greeting', {
     input: z.string(),
-    resolve({ input }) {
-      return `hello ${input}!`;
+    resolve(opts) {
+      return `hello ${opts.input}!`;
     },
   });
 
@@ -115,7 +115,7 @@ const appRouter = trpc.router()
 const appRouter = router({
   greeting: publicProcedure
     .input(z.string())
-    .query(({ input }) => `hello ${input}!`),
+    .query((opts) => `hello ${opts.input}!`),
 });
 ```
 
@@ -173,25 +173,26 @@ type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
-See [Inferring types](infer-types) for more.
+See [Inferring types](/docs/client/infer-types) for more.
 
 </details>
 
 <details>
   <summary>Middlewares</summary>
 
-Middlewares are now reusable and can be chained, see the [middleware](middlewares) docs for more.
+Middlewares are now reusable and can be chained, see the [middleware](/docs/server/middlewares) docs for more.
 
 ```ts
 // v9
 const appRouter = trpc
   .router()
-  .middleware(({ next, ctx }) => {
+  .middleware((opts) => {
+    const { ctx } = opts;
     if (!ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    return next({
+    return opts.next({
       ctx: {
         ...ctx,
         user: ctx.user,
@@ -199,18 +200,19 @@ const appRouter = trpc
     });
   })
   .query('greeting', {
-    resolve({ input }) {
-      return `hello ${ctx.user.name}!`;
+    resolve(opts) {
+      return `hello ${opts.ctx.user.name}!`;
     },
   });
 
 // v10
-export const isAuthed = t.middleware(({ next, ctx }) => {
+export const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
-  return next({
+  return opts.next({
     ctx: {
       // Old context will automatically be spread.
       // Only modify what's changed.
@@ -223,8 +225,8 @@ export const isAuthed = t.middleware(({ next, ctx }) => {
 const protectedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
-  greeting: protectedProcedure.query(({ ctx }) => {
-    return `Hello ${ctx.user.name}!`
+  greeting: protectedProcedure.query((opts) => {
+    return `Hello ${opts.ctx.user.name}!`
   }),
 });
 ```
@@ -325,7 +327,8 @@ const t = initTRPC.context<Context>().create({
   // Optional:
   transformer: superjson,
   // Optional:
-  errorFormatter({ shape }) {
+  errorFormatter(opts) {
+    const { shape } = opts;
     return {
       ...shape,
       data: {
@@ -470,7 +473,7 @@ you may need to take note!
 :::
 
 To allow us to make room for some more advanced features like [invalidation across
-whole routers](useContext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
+whole routers](/docs/reactjs/usecontext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
@@ -486,7 +489,7 @@ export const appRouter = router({
   user: router({
     byId: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(({ input }) => ({ user: { id: input.id } })),
+      .query((opts) => ({ user: { id: opts.input.id } })),
   }),
 });
 ```
@@ -573,7 +576,7 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### `queryClient` is no longer exposed through tRPC context
 
-tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](useContext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](/docs/reactjs/usecontext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
 
 ```tsx
 import { useQueryClient } from '@tanstack/react-query';
@@ -586,4 +589,4 @@ const MyComponent = () => {
 
 ### Migrate custom error formatters
 
-You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](error-formatting) for more.
+You will need to move the contents of your `formatError()` into your root `t` router. See the [Error Formatting docs](/docs/server/error-formatting) for more.
