@@ -65,7 +65,9 @@ export function experimental_createServerActionHandler<
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
   ): TRPCActionHandler<TProc> {
+    console.log('setup action');
     return async function actionHandler(input: inferProcedureInput<TProc>) {
+      console.log('---------hello', input);
       // TODO error handling
       // TODO transformers
       // TODO normalize FormData?

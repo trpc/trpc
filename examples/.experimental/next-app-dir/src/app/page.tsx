@@ -47,6 +47,7 @@ export default async function Home() {
             <StreamedSC promise={promise} />
           </Suspense>
         </div>
+
         <h2>Mutation play</h2>
         <TestMutation />
       </div>
