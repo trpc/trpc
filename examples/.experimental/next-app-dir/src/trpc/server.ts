@@ -1,12 +1,12 @@
 'use server';
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNextAppRouterReactServer } from '@trpc/next/app-dir/server';
+import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
 import { headers } from 'next/headers';
 import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
 
-export const api = createTRPCNextAppRouterReactServer<AppRouter>({
+export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
   config() {
     return {
       links: [

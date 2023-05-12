@@ -1,11 +1,11 @@
 'use client';
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { createTRPCNextAppRouterClient } from '@trpc/next/app-dir/client';
+import { experimental_createTRPCNextAppDirClient } from '@trpc/next/app-dir/client';
 import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
 
-export const api = createTRPCNextAppRouterClient<AppRouter>({
+export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
   config() {
     return {
       links: [

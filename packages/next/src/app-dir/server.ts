@@ -11,9 +11,9 @@ import { cache } from 'react';
 import { CreateTRPCNextAppRouterOptions } from './shared';
 
 // ts-prune-ignore-next
-export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
-  opts: CreateTRPCNextAppRouterOptions<TRouter>,
-) {
+export function experimental_createTRPCNextAppDirServer<
+  TRouter extends AnyRouter,
+>(opts: CreateTRPCNextAppRouterOptions<TRouter>) {
   const getClient = cache(() => {
     const config = opts.config();
     return createTRPCUntypedClient(config);
