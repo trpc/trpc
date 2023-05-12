@@ -54,10 +54,20 @@ jobs:
           git add .
           git commit -m "chore: sync lockfile"
 
+      - name: Run find-and-replace to remove refs/heads/
+        uses: mad9000/actions-find-and-replace-string@3
+        id: findandreplace
+        with:
+          source: ${{ github.ref }}
+          find: 'refs/heads/'
+          replace: ''
+      - name: Get the above output
+        run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
+
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
-          repo: 'trpc/examples-${{ matrix.path//\.experimental/a) }}'
+          repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'
           path: 'examples/${{ matrix.path }}'
           deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository
