@@ -225,7 +225,7 @@ module.exports = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-        googleTagManager: {
+        gtag: {
           containerId: 'G-7KLX2VFLVR',
         }
       },
