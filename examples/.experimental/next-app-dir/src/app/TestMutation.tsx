@@ -27,6 +27,16 @@ export function TestMutation() {
         Run server action
       </button>
 
+      <button
+        onClick={() =>
+          testMutation({
+            text: 'hello',
+          })
+        }
+      >
+        Run server action raw debugging
+      </button>
+
       <pre>{JSON.stringify(mutation, null, 4)}</pre>
     </div>
   );

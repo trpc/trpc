@@ -3,6 +3,7 @@
 import {
   CreateTRPCClientOptions,
   TRPCClientError,
+  TRPCLink,
   TRPCRequestOptions,
   createTRPCUntypedClient,
   httpBatchLink,
@@ -82,6 +83,36 @@ export type UseTRPCActionResult<TProc extends AnyProcedure> =
   | UseTRPCActionErrorResult<TProc>
   | UseTRPCActionIdleResult<TProc>;
 
+type ActionContext = {
+  _action: (...args: any[]) => Promise<any>;
+};
+// Maybe this should be configured
+function serverActionLink<
+  TRouter extends AnyRouter = AnyRouter,
+>(opts: {}): TRPCLink<TRouter> {
+  return (runtime) =>
+    ({ op }) =>
+      observable((observer) => {
+        const context = op.context as ActionContext;
+
+        context
+          ._action(op.input)
+          .then((data) => {
+            const transformed = transformResult(data, runtime);
+
+            if (!transformed.ok) {
+              observer.error(TRPCClientError.from(transformed.error, {}));
+              return;
+            }
+            observer.next({
+              context: op.context,
+              result: transformed.result,
+            });
+            observer.complete();
+          })
+          .catch((cause) => observer.error(TRPCClientError.from(cause)));
+      });
+}
 function createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
@@ -92,26 +123,7 @@ function createActionHook<TRouter extends AnyRouter>(
   };
   const client = createTRPCUntypedClient({
     ...opts,
-    links: [
-      ...opts.links,
-      //
-      (runtime) =>
-        ({ op }) =>
-          observable((obs) => {
-            const context = op.context as ActionContext;
-            // transformResult
-            context
-              ._action(op.input)
-              .then((data) => {
-                obs.next({
-                  result: {
-                    data,
-                  },
-                });
-              })
-              .catch((err) => {});
-          }),
-    ],
+    links: [...opts.links, serverActionLink({})],
   });
   return function action<TProc extends AnyProcedure>(
     handler: TRPCActionHandler<TProc>,
@@ -180,10 +192,5 @@ function createActionHook<TRouter extends AnyRouter>(
 }
 
 export const useAction = createActionHook({
-  links: [
-    loggerLink(),
-    httpBatchLink({
-      url: getUrl(),
-    }),
-  ],
+  links: [loggerLink()],
 });
