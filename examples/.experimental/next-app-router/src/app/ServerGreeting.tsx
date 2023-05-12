@@ -1,3 +1,5 @@
+'use server';
+
 import { api } from 'trpc-api';
 
 export const ServerGreeting = async () => {

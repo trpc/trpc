@@ -3,7 +3,7 @@
   "typings": "server.ts",
   "exports": {
     ".": {
-      "types": "./client.ts",
+      "types": "./server.ts",
       "react-server": "./server.ts",
       "default": "./client.ts"
     }
