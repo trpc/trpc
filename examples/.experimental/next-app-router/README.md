@@ -1,4 +1,26 @@
-> 🚧🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 This is experimental and is subject to change 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
+
+
+## 🚧🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 This is experimental and is subject to change 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
+
+This is a playground repo for an offical tRPC + Next.js App directory
+
+
+### Current progress
+
+- [x] Proof of concept
+- [x] Implement caching
+- [ ] Implement cache invalidation on server calls
+- [ ] Implement cache invalidation on client calls
+- [ ] Make server calls invalidate client calls and vice verse
+- [ ] Proof of concept of server actions
+- [ ] Test it heavily
+- [ ] Get community feedback
+
+### Contributing
+
+Please join our [Discord](https://trpc.io/discord) if you want to discuss how we approach this.
+
+If you want to change this repo, you go to https://github.com/trpc/trpc/tree/main/examples/.experimental/next-app-router
 
 ## Overview
 
@@ -10,19 +32,17 @@ Examples:
 - [./src/app/ServerGreeting.tsx](./src/app/ServerGreeting.tsx)
 
 
-### ℹ️ Current limitations
-
-- No cache invalidation
-- No refetching of data
-
-
 ### Setup
 
-#### 1. Create a local tRPC package with different entrypoints for `"use client"` & `"use server"`. 
+#### 1. Create an API handler for tRPC
+
+Example: [`/src/app/api/trpc/[trpc]/route.ts`](/src/app/api/trpc/[trpc]/route.ts)
+
+
+#### 2. Create a local tRPC package with different entrypoints for `"use client"` & `"use server"`. 
 
 Files of note:
 
 - [`./package.json`](./package.json)
 - [`./src/trpc`](./src/trpc)
-
 

@@ -19,16 +19,16 @@ export function createTRPCNextAppRouterReactServer<TRouter extends AnyRouter>(
     return createTRPCUntypedClient(config);
   });
 
-  return createRecursiveProxy(({ path, args }) => {
+  return createRecursiveProxy((opts) => {
     // lazily initialize client
     const client = getClient();
 
-    const pathCopy = [...path];
+    const pathCopy = [...opts.path];
     const procedureType = clientCallTypeToProcedureType(
       pathCopy.pop() as string,
     );
     const fullPath = pathCopy.join('.');
 
-    return (client[procedureType] as any)(fullPath, ...args);
+    return (client[procedureType] as any)(fullPath, ...opts.args);
   }) as CreateTRPCProxyClient<TRouter>;
 }
