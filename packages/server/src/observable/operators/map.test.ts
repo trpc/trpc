@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import { expectTypeOf } from 'expect-type';
 import { map } from '.';
 import { observable } from '../observable';
 

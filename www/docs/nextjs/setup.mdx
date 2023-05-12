@@ -122,9 +122,9 @@ export const appRouter = router({
         text: z.string(),
       }),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input.text}`,
+        greeting: `hello ${opts.input.text}`,
       };
     }),
 });
@@ -180,7 +180,7 @@ function getBaseUrl() {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     return {
       links: [
         httpBatchLink({
@@ -193,7 +193,7 @@ export const trpc = createTRPCNext<AppRouter>({
           // You can pass any HTTP headers you wish here
           async headers() {
             return {
-              authorization: getAuthCookie(),
+              // authorization: getAuthCookie(),
             };
           },
         }),
@@ -263,7 +263,7 @@ The `config`-argument is a function that returns an object that configures the t
 - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
-### `unstable_overrides`: (default: `undefined`)
+### `overrides`: (default: `undefined`) {#overrides}
 
 Configure [overrides for React Query's hooks](/docs/reactjs/usecontext#invalidate-full-cache-on-every-mutation).
 
@@ -282,11 +282,12 @@ import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     /* [...] */
   },
   ssr: true,
-  responseMeta({ clientErrors, ctx }) {
+  responseMeta(opts) {
+    const { clientErrors } = opts;
     if (clientErrors.length) {
       // propagate first http error from API calls
       return {

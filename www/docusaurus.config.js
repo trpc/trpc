@@ -48,14 +48,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    announcementBar: {
-      id: 'v10',
-      content:
-        "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
-      backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: '#ffffff',
-      isCloseable: true,
-    },
+    //     announcementBar: {
+    //       id: 'v10',
+    //       content:
+    //         "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
+    //       backgroundColor: 'var(--ifm-color-primary-dark)',
+    //       textColor: '#ffffff',
+    //       isCloseable: true,
+    //     },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -73,7 +73,7 @@ module.exports = {
           label: 'Quickstart',
         },
         {
-          to: 'docs/awesome-trpc',
+          to: 'docs/community/awesome-trpc',
           label: 'Awesome tRPC Collection',
         },
         {
@@ -225,10 +225,8 @@ module.exports = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-        googleAnalytics: {
-          trackingID: 'UA-198119985-2',
-          // Optional fields.
-          anonymizeIP: true, // Should IPs be anonymized?
+        gtag: {
+          trackingID: 'G-7KLX2VFLVR',
         },
       },
     ],

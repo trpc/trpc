@@ -6,7 +6,7 @@ slug: /reactjs/usequery
 ---
 
 :::note
-The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://react-query.tanstack.com/guides/queries).
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://tanstack.com/query/v4/docs/react/guides/queries).
 :::
 
 ```tsx
@@ -18,8 +18,9 @@ function useQuery(
 interface UseTRPCQueryOptions
   extends UseQueryOptions {
   trpc: {
-    ssr: boolean;
-    abortOnUnmount: boolean;
+    ssr?: boolean;
+    abortOnUnmount?: boolean;
+    context?: Record<string, unknown>;
   }
 }
 ```
@@ -28,6 +29,7 @@ Since `UseTRPCQueryOptions` extends @tanstack/react-query's `UseQueryOptions`, y
 
 - **`trpc.ssr`:** If you have `ssr: true` in your [global config](/docs/nextjs/setup#ssr-boolean-default-false), you can set this to false to disable ssr for this particular query. _Note that this does not work the other way around, i.e., you can not enable ssr on a procedure if your global config is set to false._
 - **`trpc.abortOnUnmount`:** Override the [global config](/docs/nextjs/setup#config-callback) and opt in or out of aborting queries on unmount.
+- **`trpc.context`:** Add extra meta data that could be used in [Links](/docs/links).
 
 :::tip
 If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
@@ -56,9 +58,9 @@ export const appRouter = t.router({
         })
         .nullish(),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input?.text ?? 'world'}`,
+        greeting: `hello ${opts.input?.text ?? 'world'}`,
       };
     }),
 });

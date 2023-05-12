@@ -56,14 +56,34 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   console?: ConsoleEsque;
 }
 
+function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
+
+function fromEntries(fd: FormData) {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of fd) {
+    result[key] = value;
+  }
+  return result;
+}
+
 // maybe this should be moved to it's own package
 const defaultLogger =
   <TRouter extends AnyRouter>(
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
   (props) => {
-    const { direction, input, type, path, context, id } = props;
+    const { direction, type, path, context, id } = props;
     const [light, dark] = palette[type];
+
+    const rawInput = props.input;
+
+    const input = isFormData(rawInput) ? fromEntries(rawInput) : rawInput;
 
     const css = `
     background-color: #${direction === 'up' ? light : dark}; 

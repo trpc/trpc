@@ -11,7 +11,6 @@ import {
   TRPCRequestMessage,
 } from '@trpc/server/src/rpc';
 import { EventEmitter } from 'events';
-import { expectTypeOf } from 'expect-type';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
@@ -641,6 +640,11 @@ test('malformatted JSON', async () => {
 
   expect(res.id).toBe(null);
 
+  // replace "Unexpected token "o" with aaa
+  res.error.message = res.error.message.replace(
+    /^Unexpected token.*/,
+    'Unexpected token [... redacted b/c it is different in node 20]',
+  );
   expect(res).toMatchInlineSnapshot(`
     Object {
       "error": Object {
@@ -650,7 +654,7 @@ test('malformatted JSON', async () => {
           "httpStatus": 400,
           "stack": "[redacted]",
         },
-        "message": "Unexpected token o in JSON at position 1",
+        "message": "Unexpected token [... redacted b/c it is different in node 20]",
       },
       "id": null,
     }
