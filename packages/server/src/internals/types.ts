@@ -10,9 +10,6 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   batching?: {
     enabled: boolean;
   };
-  streaming?: {
-    enabled: boolean;
-  };
   router: TRouter;
 }
 

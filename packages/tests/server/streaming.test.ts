@@ -46,14 +46,7 @@ describe('no transformer', () => {
         };
       };
       const opts = routerToServerAndClientNew(router, {
-        server: {
-          batching: {
-            enabled: true,
-          },
-          streaming: {
-            enabled: true,
-          },
-        },
+        server: {},
         client(opts) {
           return {
             links: [
@@ -132,11 +125,7 @@ describe('with transformer', () => {
         };
       };
       const opts = routerToServerAndClientNew(router, {
-        server: {
-          streaming: {
-            enabled: true,
-          },
-        },
+        server: {},
         client(opts) {
           return {
             transformer: superjson,

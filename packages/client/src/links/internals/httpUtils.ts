@@ -89,6 +89,7 @@ export type GetBody = (
 ) => RequestInitEsque['body'];
 
 export type ContentOptions = {
+  batchModeHeader?: 'stream';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -143,6 +144,7 @@ export const streamingJsonHttpRequester: Requester<
     {
       ...opts,
       contentTypeHeader: 'application/json',
+      batchModeHeader: 'stream',
       getUrl,
       getBody,
     },
@@ -190,6 +192,9 @@ async function getHttpResponse(
     headers: {
       ...(opts.contentTypeHeader
         ? { 'content-type': opts.contentTypeHeader }
+        : {}),
+      ...(opts.batchModeHeader
+        ? { 'x-trpc-batch-mode': opts.batchModeHeader }
         : {}),
       ...headers,
     },

@@ -155,14 +155,13 @@ export async function* resolveHTTPResponse<
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const batchingEnabled = opts.batching?.enabled ?? true;
-  const streamingEnabled = batchingEnabled && (opts.streaming?.enabled ?? false);
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined;
 
   const isBatchCall = !!req.query.get('batch');
-  const isStreamCall = isBatchCall && streamingEnabled;
+  const isStreamCall = isBatchCall && req.headers['x-trpc-batch-mode'] === 'stream';
 
   try {
     if (opts.error) {

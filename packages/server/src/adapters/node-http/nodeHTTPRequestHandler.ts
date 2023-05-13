@@ -66,7 +66,6 @@ export async function nodeHTTPRequestHandler<
 
     const resultIterator = resolveHTTPResponse({
       batching: opts.batching,
-      streaming: opts.streaming,
       responseMeta: opts.responseMeta,
       path: opts.path,
       createContext,
