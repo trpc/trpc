@@ -53,7 +53,7 @@ describe('no transformer', () => {
               linkSpy,
               httpBatchLink({
                 url: opts.httpUrl,
-                streaming: true,
+                mode: 'stream',
               }),
             ],
           };
@@ -132,7 +132,7 @@ describe('with transformer', () => {
             links: [
               linkSpy,
               httpBatchLink({
-                streaming: true,
+                mode: 'stream',
                 url: opts.httpUrl,
               }),
             ],

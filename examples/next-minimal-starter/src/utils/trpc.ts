@@ -24,7 +24,7 @@ export const trpc = createTRPCNext<AppRouter>({
       links: [
         httpBatchLink({
           url: getBaseUrl() + '/api/trpc',
-          streaming: true,
+          mode: 'stream',
         }),
       ],
     };

@@ -16,7 +16,7 @@ import { HTTPHeaders, Operation, TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
   maxURLLength?: number;
-  streaming?: boolean;
+  mode?: 'standard' | 'stream';
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/client/headers
@@ -147,20 +147,20 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           },
         };
 
-        if (opts.streaming === false) {
-          const { promise, cancel } = jsonHttpRequester(httpRequesterOptions);
-          const batchPromise = promise.then((res) =>
-            handleFullJsonResponse(res, batchOps),
+        if (opts.mode === 'stream') {
+          const { promise, cancel } =
+            streamingJsonHttpRequester(httpRequesterOptions);
+          const batchPromise = promise.then((iterator) =>
+            handleStreamedJsonResponse(iterator, batchOps, unitResolver),
           );
           return {
             promise: batchPromise,
             cancel,
           };
         } else {
-          const { promise, cancel } =
-            streamingJsonHttpRequester(httpRequesterOptions);
-          const batchPromise = promise.then((iterator) =>
-            handleStreamedJsonResponse(iterator, batchOps, unitResolver),
+          const { promise, cancel } = jsonHttpRequester(httpRequesterOptions);
+          const batchPromise = promise.then((res) =>
+            handleFullJsonResponse(res, batchOps),
           );
           return {
             promise: batchPromise,
