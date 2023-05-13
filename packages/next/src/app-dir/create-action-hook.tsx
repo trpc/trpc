@@ -48,8 +48,9 @@ export type UseTRPCActionResult<TProc extends AnyProcedure> =
 type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
-// Maybe this should be configured
+
 function serverActionLink<TRouter extends AnyRouter = AnyRouter>(
+  // Maybe this should be configured
   _opts: Record<string, never>,
 ): TRPCLink<TRouter> {
   return (runtime) =>
@@ -75,6 +76,7 @@ function serverActionLink<TRouter extends AnyRouter = AnyRouter>(
           .catch((cause) => observer.error(TRPCClientError.from(cause)));
       });
 }
+
 export function createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
@@ -96,6 +98,7 @@ export function createActionHook<TRouter extends AnyRouter>(
     const [state, setState] = useState<State>({
       status: 'idle',
     });
+
     const mutateAsync = useCallback(
       (input: any, requestOptions?: TRPCRequestOptions) => {
         const idx = ++count.current;
@@ -133,6 +136,7 @@ export function createActionHook<TRouter extends AnyRouter>(
       },
       [handler],
     ) as Result['mutateAsync'];
+
     const mutate: Result['mutate'] = useCallback(
       (...args: any[]) => {
         void mutateAsync(...(args as any)).catch(() => {
