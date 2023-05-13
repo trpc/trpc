@@ -25,7 +25,7 @@ export default async function Home() {
         style={{
           width: '12rem',
           padding: '1rem',
-          background: '#e5e5e5',
+          background: 'hsla(218, 18%, 12%, 1)',
           borderRadius: '0.5rem',
         }}
       >

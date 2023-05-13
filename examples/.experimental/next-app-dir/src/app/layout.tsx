@@ -10,7 +10,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body
+        style={{
+          background: 'hsla(216, 28%, 7%, 1)',
+          color: 'hsla(210, 16%, 80%, 1)',
+        }}
+      >
+        {children}
+      </body>
     </html>
   );
 }
