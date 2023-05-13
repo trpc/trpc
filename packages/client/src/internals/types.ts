@@ -114,7 +114,7 @@ export interface ResponseEsque {
   readonly statusText: string;
   readonly type: ResponseType;
   readonly url: string;
-  readonly body: ReadableStream<Uint8Array> | null;
+  readonly body: ReadableStream<Uint8Array> | NodeJS.ReadableStream | null;
   clone(): ResponseEsque;
 
   /**
