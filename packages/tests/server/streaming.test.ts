@@ -36,7 +36,6 @@ describe('no transformer', () => {
           return observable((observer) => {
             const unsubscribe = next(op).subscribe({
               next(value) {
-                console.log('got value', value.result);
                 orderedResults.push((value.result as any).data);
                 observer.next(value);
               },
@@ -124,7 +123,6 @@ describe('with transformer', () => {
             const unsubscribe = next(op).subscribe({
               next(value) {
                 orderedResults.push((value.result as any).data);
-                console.log('got value', value.result);
                 observer.next(value);
               },
               error: observer.error,
