@@ -11,6 +11,8 @@ import {
   createUseProxy,
 } from './shared';
 
+export * from './create-action-hook';
+
 function normalizePromiseArray<TValue>(
   promise: Promise<TValue> | Promise<TValue>[],
 ) {
