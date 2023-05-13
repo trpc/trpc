@@ -139,7 +139,6 @@ export const streamingJsonHttpRequester: Requester<
   AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>
 > = (opts) => {
   const ac = opts.AbortController ? new opts.AbortController() : null;
-  const meta = {} as HTTPResult['meta'];
   const responsePromise = getHttpResponse(
     {
       ...opts,
@@ -152,7 +151,7 @@ export const streamingJsonHttpRequester: Requester<
   const cancel = () => ac?.abort();
   const promise = responsePromise.then(async (res) => {
     if (!res.body) throw new Error('Received response without body');
-    meta.response = res;
+    const meta: HTTPResult['meta'] = { response: res };
     return parseJsonStream(
       res.body,
       (string) => ({

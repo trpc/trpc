@@ -11,22 +11,25 @@
  * // treating the first result separately in case response was not streamed and we parsed the whole thing
  * const firstRes = responseReader.next()
  * if (firstRes.done) {
- * 	const matches = batch.map((item,i) => [item, firstRes.value[i]])
- * 	return
+ *   const matches = batch.map((item,i) => [item, firstRes.value[i]])
+ *   return
  * }
  * // otherwise, we have have a stream, so finish dealing with the first response and let the rest yield
  * const firstMatch = [batch[firstRes.value[0]], firstRes.value[1]]
  * for await (const [index, data] of responseReader) {
- * 	const match = [batch[index], data] // out-of-order streaming, so we need `index`
+ *   const match = [batch[index], data] // out-of-order streaming, so we need `index`
  * }
  * ```
  */
 export async function* parseJsonStream<TReturn>(
-  readableStream: ReadableStream<Uint8Array>,
+  readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
   parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
 ) {
-  const reader = readableStream.getReader();
+  const reader = 'getReader' in readableStream
+    ? readStandardChunks(readableStream.getReader()) // case for browser, undici, and native node (since version ???)
+    : readNodeChunks(readableStream); // case for node-fetch
+
   const lineIterator = readLines(reader);
   const firstLine = await lineIterator.next();
 
@@ -79,10 +82,13 @@ async function allLinesSink(
 
 const textDecoder = new TextDecoder();
 
-async function* readLines(reader: ReadableStreamDefaultReader<Uint8Array>) {
+async function* readLines(reader: {
+  [Symbol.asyncIterator](): AsyncGenerator<Uint8Array, void, unknown>;
+}) {
   let partOfLine = '';
-  let chunk: ReadableStreamReadResult<Uint8Array>;
-  while (!(chunk = await reader.read()).done) {
+  let chunk: IteratorResult<Uint8Array, void>;
+  const iterator = reader[Symbol.asyncIterator]();
+  while (!(chunk = await iterator.next()).done) {
     const chunkText = textDecoder.decode(chunk.value);
     const chunkLines = chunkText.split('\n');
     if (chunkLines.length === 1) {
@@ -99,4 +105,22 @@ async function* readLines(reader: ReadableStreamDefaultReader<Uint8Array>) {
     }
   }
   yield partOfLine;
+}
+
+async function* readNodeChunks(reader: NodeJS.ReadableStream) {
+  for await (const chunk of reader) {
+    yield chunk as Uint8Array
+  }
+}
+
+function readStandardChunks(reader: ReadableStreamDefaultReader<Uint8Array>) {
+  return {
+    async *[Symbol.asyncIterator]() {
+      let readResult = await reader.read();
+      while (!readResult.done) {
+        yield readResult.value;
+        readResult = await reader.read();
+      }
+    },
+  };
 }

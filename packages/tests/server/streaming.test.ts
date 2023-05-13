@@ -6,16 +6,12 @@ import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const unidici = require('undici');
-
-globalThis.fetch = unidici.fetch;
-
 describe('no transformer', () => {
+  const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create({});
-
+      orderedResults.length = 0;
       const router = t.router({
         deferred: t.procedure
           .input(
@@ -25,17 +21,11 @@ describe('no transformer', () => {
           )
           .query(async (opts) => {
             await new Promise<void>((resolve) =>
-              setTimeout(resolve, opts.input.wait),
+              setTimeout(resolve, opts.input.wait * 10),
             );
             return opts.input.wait;
           }),
       });
-
-      const results: {
-        type: 'next' | 'error';
-        value: unknown;
-        opId: number;
-      }[] = [];
 
       const linkSpy: TRPCLink<typeof router> = () => {
         // here we just got initialized in the app - this happens once per app
@@ -47,21 +37,10 @@ describe('no transformer', () => {
             const unsubscribe = next(op).subscribe({
               next(value) {
                 console.log('got value', value.result);
-                results.push({
-                  type: 'next',
-                  value,
-                  opId: op.id,
-                });
+                orderedResults.push((value.result as any).data);
                 observer.next(value);
               },
-              error(err) {
-                results.push({
-                  type: 'error',
-                  value: err,
-                  opId: op.id,
-                });
-                observer.error(err);
-              },
+              error: observer.error,
             });
             return unsubscribe;
           });
@@ -69,6 +48,9 @@ describe('no transformer', () => {
       };
       const opts = routerToServerAndClientNew(router, {
         server: {
+          batching: {
+            enabled: true,
+          },
           streaming: {
             enabled: true,
           },
@@ -85,10 +67,7 @@ describe('no transformer', () => {
           };
         },
       });
-      return {
-        ...opts,
-        results,
-      };
+      return opts;
     })
     .afterEach(async (opts) => {
       await opts?.close?.();
@@ -99,23 +78,26 @@ describe('no transformer', () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
-      await proxy.deferred.query({ wait: 3 }),
-      await proxy.deferred.query({ wait: 1 }),
-      await proxy.deferred.query({ wait: 2 }),
+      proxy.deferred.query({ wait: 3 }),
+      proxy.deferred.query({ wait: 1 }),
+      proxy.deferred.query({ wait: 2 }),
     ]);
 
+    // batch preserves request order
     expect(results).toEqual([3, 1, 2]);
-
-    expect(ctx.results).toMatchInlineSnapshot('Array []');
+    // streaming preserves response order
+    expect(orderedResults).toEqual([1, 2, 3]);
   });
 });
 
 describe('with transformer', () => {
+  const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
       });
+      orderedResults.length = 0;
 
       const router = t.router({
         deferred: t.procedure
@@ -126,17 +108,11 @@ describe('with transformer', () => {
           )
           .query(async (opts) => {
             await new Promise<void>((resolve) =>
-              setTimeout(resolve, opts.input.wait),
+              setTimeout(resolve, opts.input.wait * 10),
             );
             return opts.input.wait;
           }),
       });
-
-      const results: {
-        type: 'next' | 'error';
-        value: unknown;
-        opId: number;
-      }[] = [];
 
       const linkSpy: TRPCLink<typeof router> = () => {
         // here we just got initialized in the app - this happens once per app
@@ -147,22 +123,11 @@ describe('with transformer', () => {
           return observable((observer) => {
             const unsubscribe = next(op).subscribe({
               next(value) {
+                orderedResults.push((value.result as any).data);
                 console.log('got value', value.result);
-                results.push({
-                  type: 'next',
-                  value,
-                  opId: op.id,
-                });
                 observer.next(value);
               },
-              error(err) {
-                results.push({
-                  type: 'error',
-                  value: err,
-                  opId: op.id,
-                });
-                observer.error(err);
-              },
+              error: observer.error,
             });
             return unsubscribe;
           });
@@ -187,10 +152,7 @@ describe('with transformer', () => {
           };
         },
       });
-      return {
-        ...opts,
-        results,
-      };
+      return opts;
     })
     .afterEach(async (opts) => {
       await opts?.close?.();
@@ -201,13 +163,14 @@ describe('with transformer', () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
-      await proxy.deferred.query({ wait: 3 }),
-      await proxy.deferred.query({ wait: 1 }),
-      await proxy.deferred.query({ wait: 2 }),
+      proxy.deferred.query({ wait: 3 }),
+      proxy.deferred.query({ wait: 1 }),
+      proxy.deferred.query({ wait: 2 }),
     ]);
 
+    // batch preserves request order
     expect(results).toEqual([3, 1, 2]);
-
-    expect(ctx.results).toMatchInlineSnapshot('Array []');
+    // streaming preserves response order
+    expect(orderedResults).toEqual([1, 2, 3]);
   });
 });

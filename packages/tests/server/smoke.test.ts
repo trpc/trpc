@@ -6,10 +6,6 @@ import { Unsubscribable, observable } from '@trpc/server/src/observable'
 import { EventEmitter } from 'events'
 import { z } from 'zod'
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const unidici = require('undici');
-globalThis.fetch = unidici.fetch; // needs "browser like" fetch, for response.body to have the `getReader` method
-
 const t = initTRPC
   .context<{
     foo?: 'bar'
