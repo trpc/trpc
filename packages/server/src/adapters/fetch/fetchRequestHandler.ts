@@ -63,6 +63,7 @@ async function iteratorToResponse(
   }
 
   headers.set('Transfer-Encoding', 'chunked');
+  headers.append('Vary', 'x-trpc-batch-mode');
 
   let first = true;
   const body = new ReadableStream({

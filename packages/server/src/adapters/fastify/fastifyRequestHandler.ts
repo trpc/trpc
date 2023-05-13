@@ -92,6 +92,7 @@ export async function fastifyRequestHandler<
 
   // iterator is not exhausted, we can setup the streamed response
   void res.header('Transfer-Encoding', 'chunked');
+  void res.header('Vary', 'x-trpc-batch-mode');
   const readableStream = new Stream.Readable();
   readableStream.push('{\n');
   const sendPromise = res.send(readableStream);
