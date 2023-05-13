@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useAction } from 'trpc-api';
-import { testMutation } from './TestMutation_action';
+import { testInlinedMutation } from './TestMutation_action';
 
 export function TestMutation() {
   const [text, setText] = useState('');
-  const mutation = useAction(testMutation);
+  const mutation = useAction(testInlinedMutation);
   mutation.status;
   //       ^?
   return (
@@ -29,7 +29,7 @@ export function TestMutation() {
 
       <button
         onClick={() =>
-          testMutation({
+          testInlinedMutation({
             text: 'hello',
           })
         }
