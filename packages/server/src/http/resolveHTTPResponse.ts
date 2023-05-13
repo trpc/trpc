@@ -155,7 +155,7 @@ export async function* resolveHTTPResponse<
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const batchingEnabled = opts.batching?.enabled ?? true;
-  const streamingEnabled = opts.streaming?.enabled ?? true;
+  const streamingEnabled = batchingEnabled && (opts.streaming?.enabled ?? false);
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
