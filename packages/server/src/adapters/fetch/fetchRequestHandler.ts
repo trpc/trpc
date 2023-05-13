@@ -10,7 +10,11 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
 } & FetchHandlerOptions<TRouter>;
 
 async function iteratorToResponse(
-  iterator: AsyncGenerator<ResponseChunk | HTTPResponse, ResponseChunk | undefined, unknown>,
+  iterator: AsyncGenerator<
+    ResponseChunk | HTTPResponse,
+    ResponseChunk | undefined,
+    unknown
+  >,
   headers: Headers,
 ) {
   const { value: responseInit, done: invalidInit } = await (
@@ -48,13 +52,13 @@ async function iteratorToResponse(
       return new Response(firstChunk[1], {
         status,
         headers,
-      })
+      });
     } else {
       // case of a method === "HEAD" response
       return new Response(null, {
         status,
         headers,
-      })
+      });
     }
   }
 

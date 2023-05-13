@@ -1,10 +1,10 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import Stream from 'node:stream';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
-import Stream from "node:stream"
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
@@ -69,10 +69,7 @@ export async function fastifyRequestHandler<
     res.statusCode = 500;
     return res.send();
   }
-  if (
-    'status' in responseInit &&
-    (!res.statusCode || res.statusCode === 200)
-  ) {
+  if ('status' in responseInit && (!res.statusCode || res.statusCode === 200)) {
     res.statusCode = responseInit.status;
   }
   for (const [key, value] of Object.entries(responseInit.headers ?? {})) {

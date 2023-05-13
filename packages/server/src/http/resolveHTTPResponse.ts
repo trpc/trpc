@@ -161,7 +161,8 @@ export async function* resolveHTTPResponse<
   let paths: string[] | undefined;
 
   const isBatchCall = !!req.query.get('batch');
-  const isStreamCall = isBatchCall && req.headers['x-trpc-batch-mode'] === 'stream';
+  const isStreamCall =
+    isBatchCall && req.headers['x-trpc-batch-mode'] === 'stream';
 
   try {
     if (opts.error) {

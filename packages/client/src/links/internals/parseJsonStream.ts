@@ -26,9 +26,10 @@ export async function* parseJsonStream<TReturn>(
   parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
 ) {
-  const reader = 'getReader' in readableStream
-    ? readStandardChunks(readableStream.getReader()) // case for browser, undici, and native node (since version ???)
-    : readNodeChunks(readableStream); // case for node-fetch
+  const reader =
+    'getReader' in readableStream
+      ? readStandardChunks(readableStream.getReader()) // case for browser, undici, and native node (since version ???)
+      : readNodeChunks(readableStream); // case for node-fetch
 
   const lineIterator = readLines(reader);
   const firstLine = await lineIterator.next();
@@ -109,7 +110,7 @@ async function* readLines(reader: {
 
 async function* readNodeChunks(reader: NodeJS.ReadableStream) {
   for await (const chunk of reader) {
-    yield chunk as Uint8Array
+    yield chunk as Uint8Array;
   }
 }
 
