@@ -177,7 +177,9 @@ If you are overriding the `fetch` implementation in the `httpBatchLink` paramete
 - either `response.body.getReader()` is a function that returns a `ReadableStreamDefaultReader<Uint8Array>` object
 - or `response.body` is a `Uint8Array` `Buffer`
 
-> ⚠️ `stream` _mode_ is not supported on aws lambda. It should not break anything if enabled, but will not have any effect.
+> ⚠️ for **aws lambda**, `stream` _mode_ is not supported. It should not break anything if enabled, but will not have any effect.
+
+> ⚠️ for **cloudflare workers**, you need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors)
 
 ## Reference
 

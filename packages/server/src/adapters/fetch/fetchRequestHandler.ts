@@ -67,14 +67,19 @@ async function iteratorToResponse(
   headers.append('Vary', 'x-trpc-batch-mode');
 
   let first = true;
-  const body = new ReadableStream({
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
     async start(controller) {
-      controller.enqueue('{\n');
+
+      const enqueue = (chunk: string) =>
+        controller.enqueue(encoder.encode(chunk));
+
+      enqueue('{\n');
 
       const sendChunk = ([index, body]: [number, string]) => {
         const comma = first ? '' : ',';
         first = false;
-        controller.enqueue(`${comma}"${index}":${body}\n`);
+        enqueue(`${comma}"${index}":${body}\n`);
       };
 
       sendChunk(firstChunk);
@@ -85,12 +90,12 @@ async function iteratorToResponse(
         sendChunk(chunk);
       }
 
-      controller.enqueue('}');
+      enqueue('}');
       controller.close();
     },
   });
 
-  return new Response(body, {
+  return new Response(stream, {
     status,
     headers,
   });
