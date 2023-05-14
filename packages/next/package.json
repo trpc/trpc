@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.25.1",
+  "version": "10.26.0",
   "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
@@ -34,19 +34,30 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./app-dir/server": {
+      "import": "./dist/app-dir/server.mjs",
+      "require": "./dist/app-dir/server.js",
+      "default": "./dist/app-dir/server.js"
+    },
+    "./app-dir/client": {
+      "import": "./dist/app-dir/client.mjs",
+      "require": "./dist/app-dir/client.js",
+      "default": "./dist/app-dir/client.js"
     }
   },
   "files": [
     "dist",
     "src",
     "README.md",
-    "package.json"
+    "package.json",
+    "app-dir"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.25.1",
-    "@trpc/react-query": "10.25.1",
-    "@trpc/server": "10.25.1",
+    "@trpc/client": "10.26.0",
+    "@trpc/react-query": "10.26.0",
+    "@trpc/server": "10.26.0",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
@@ -56,9 +67,9 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.25.1",
-    "@trpc/react-query": "10.25.1",
-    "@trpc/server": "10.25.1",
+    "@trpc/client": "10.26.0",
+    "@trpc/react-query": "10.26.0",
+    "@trpc/server": "10.26.0",
     "@types/express": "^4.17.17",
     "@types/node": "^18.7.20",
     "@types/react": "^18.2.6",

@@ -18,6 +18,7 @@ const sections: Def = {
   diamond: [
     //
     'tolahq',
+    'github',
   ],
   gold: [
     //
@@ -26,8 +27,6 @@ const sections: Def = {
   silver: [
     //
     'JasonDocton',
-    'pingdotgg',
-    'prisma',
     'flightcontrolhq',
   ],
   bronze: [

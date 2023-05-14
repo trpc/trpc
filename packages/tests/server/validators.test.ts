@@ -3,6 +3,7 @@ import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server/src';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
+import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
 import * as yup from 'yup';
@@ -270,6 +271,29 @@ test('effect schema - [not officially supported]', async () => {
   await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
 	[TRPCClientError: error(s) found
 	└─ Expected a generic object, actual "13"]
+`);
+  await close();
+});
+
+test('runtypes', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(T.Record({ text: T.String })).query(({ input }) => {
+      expectTypeOf(input).toMatchTypeOf<{ text: string }>();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query({ text: '123' });
+  expect(res.input).toMatchObject({ text: '123' });
+
+  // @ts-expect-error this only accepts a `number`
+  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
+  [TRPCClientError: Expected { text: string; }, but was string]
 `);
   await close();
 });

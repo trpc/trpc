@@ -225,10 +225,8 @@ module.exports = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
-        googleAnalytics: {
-          trackingID: 'UA-198119985-2',
-          // Optional fields.
-          anonymizeIP: true, // Should IPs be anonymized?
+        gtag: {
+          trackingID: 'G-7KLX2VFLVR',
         },
       },
     ],
