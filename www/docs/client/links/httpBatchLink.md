@@ -147,6 +147,8 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## Streaming mode (experimental)
 
+> ⚠️ `stream` _mode_ is experimental and may change in the future.
+
 When batching requests together, the default behavior is to wait for all requests to finish before sending the response. This is called `standard` _mode_. If you want to send responses as soon as they are ready, you can use `stream` _mode_. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
@@ -174,6 +176,9 @@ If you are overriding the `fetch` implementation in the `httpBatchLink` paramete
 
 - either `response.body.getReader()` is a function that returns a `ReadableStreamDefaultReader<Uint8Array>` object
 - or `response.body` is a `Uint8Array` `Buffer`
+
+
+> ⚠️ `stream` _mode_ is not supported on aws lambda. It should not break anything if enabled, but will not have any effect.
 
 ## Reference
 
