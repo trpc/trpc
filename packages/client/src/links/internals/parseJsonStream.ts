@@ -1,5 +1,7 @@
 // Adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 
+import { TRPCClientError } from 'packages/client/src/TRPCClientError';
+
 /**
  * @param readableStream as given by `(await fetch(url)).body`
  * @param parser defaults to `JSON.parse`
@@ -59,7 +61,10 @@ export async function* parseJsonStream<TReturn>(
       if (string[i] === '"') break;
       i++;
     }
-    if (i === end) throw new Error('Invalid JSON');
+    if (i === end)
+      throw new TRPCClientError(
+        'Invalid JSON string response format: a multiline JSON string was received but it does not conform to the expected format for streamed responses. Do you have intermediaries between the server and the client that might be reformatting the response?',
+      );
 
     const index = string.substring(1, i);
     const text = string.substring(i + 2);
