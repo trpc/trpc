@@ -57,10 +57,9 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
-function serverActionLink<TRouter extends AnyRouter = AnyRouter>(
-  // Maybe this should be configured
-  _opts: Record<string, never>,
-): TRPCLink<TRouter> {
+export function serverActionLink<
+  TRouter extends AnyRouter = AnyRouter,
+>(): TRPCLink<TRouter> {
   return (runtime) =>
     ({ op }) =>
       observable((observer) => {
@@ -93,10 +92,7 @@ export function createActionHook<TRouter extends AnyRouter>(
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
-  const client = createTRPCUntypedClient({
-    ...opts,
-    links: [...opts.links, serverActionLink({})],
-  });
+  const client = createTRPCUntypedClient(opts);
   return function useAction<TProc extends AnyProcedure>(
     handler: TRPCActionHandler<TProc>,
   ) {
