@@ -100,15 +100,32 @@ export async function fastifyRequestHandler<
       : 'x-trpc-batch-mode',
   );
   const readableStream = new Readable();
-  readableStream.push('{\n');
+  readableStream._read = () => { }; // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
   const sendPromise = res.send(readableStream);
+  sendChunkedResponse(readableStream, firstChunk, resultIterator as AsyncGenerator<
+    ResponseChunk,
+    ResponseChunk | undefined
+  >);
+
+  return sendPromise;
+}
+
+async function sendChunkedResponse(
+  stream: Readable,
+  firstChunk: ResponseChunk,
+  resultIterator: AsyncGenerator<
+    ResponseChunk,
+    ResponseChunk | undefined
+  >,
+) {
+  stream.push('{\n');
 
   // each procedure body will be written on a new line of the JSON so they can be parsed independently
   let first = true;
   const sendChunk = ([index, body]: [number, string]) => {
     const comma = first ? '' : ',';
     first = false;
-    readableStream.push(`${comma}"${index}":${body}\n`);
+    stream.push(`${comma}"${index}":${body}\n`);
   };
 
   // await every procedure
@@ -121,7 +138,6 @@ export async function fastifyRequestHandler<
   }
 
   // finalize response
-  readableStream.push('}');
-
-  return sendPromise;
+  stream.push('}');
+  stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
 }
