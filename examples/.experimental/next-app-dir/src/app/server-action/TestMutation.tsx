@@ -29,7 +29,7 @@ export function TestMutation() {
       <button
         onClick={async () => {
           const res = await testInlinedMutation({
-            text: 'hello',
+            text: '',
           });
           console.log(res);
           //          ^?

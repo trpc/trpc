@@ -129,7 +129,11 @@ type RouterCaller<TDef extends AnyRouterDef> = (
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
   createCaller: RouterCaller<TDef>;
-  // FIXME rename me and deprecate
+
+  /**
+   * @deprecated
+   * FIXME: use the new standalone `getErrorShape` instead
+   */
   getErrorShape(opts: {
     error: TRPCError;
     type: ProcedureType | 'unknown';
