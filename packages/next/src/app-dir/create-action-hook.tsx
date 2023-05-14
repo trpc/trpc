@@ -57,7 +57,7 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
-export function serverActionLink<
+export function experimental_serverActionLink<
   TRouter extends AnyRouter = AnyRouter,
 >(): TRPCLink<TRouter> {
   return (runtime) =>
@@ -84,7 +84,7 @@ export function serverActionLink<
       });
 }
 
-export function createActionHook<TRouter extends AnyRouter>(
+export function eperimental_createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
   // TODO decouple TRPCClient more?

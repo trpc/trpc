@@ -2,9 +2,9 @@
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import {
-  createActionHook,
+  eperimental_createActionHook,
   experimental_createTRPCNextAppDirClient,
-  serverActionLink,
+  experimental_serverActionLink,
 } from '@trpc/next/app-dir/client';
 import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
@@ -31,6 +31,6 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
   },
 });
 
-export const useAction = createActionHook({
-  links: [loggerLink(), serverActionLink()],
+export const useAction = eperimental_createActionHook({
+  links: [loggerLink(), experimental_serverActionLink()],
 });
