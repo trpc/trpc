@@ -1,15 +1,15 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { ReadableStream as MiniflareReadableStream } from 'stream/web'
 import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
 } from '@trpc/server/adapters/fetch';
-import { tap, observable } from '@trpc/server/observable';
+import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
+import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { z } from 'zod';
 
 // miniflare does an instanceof check
@@ -84,9 +84,7 @@ async function startServer() {
   const mf = new Miniflare({
     script: '//',
     port,
-    compatibilityFlags: [
-      "streams_enable_constructors",
-    ],
+    compatibilityFlags: ['streams_enable_constructors'],
   });
   const globalScope = await mf.getGlobalScope();
   globalScope.addEventListener('fetch', (event: FetchEvent) => {
@@ -186,7 +184,7 @@ test('streaming', async () => {
   ]);
   expect(results).toEqual([3, 1, 2]);
   expect(orderedResults).toEqual([1, 2, 3]);
-})
+});
 
 test('query with headers', async () => {
   const client = createTRPCProxyClient<AppRouter>({
