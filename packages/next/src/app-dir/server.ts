@@ -72,11 +72,8 @@ export function experimental_createServerActionHandler<
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
   ): TRPCActionHandler<TProc> {
-    console.log('setup action');
     return async function actionHandler(input: inferProcedureInput<TProc>) {
-      console.log('---------hello', input);
-      // TODO transformers
-      // TODO normalize FormData?
+      // TODO normalize FormData so we can call the fn the same no matter of context?
       const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
       try {
         const ctx = await opts.createContext();
