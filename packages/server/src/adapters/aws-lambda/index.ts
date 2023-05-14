@@ -13,6 +13,7 @@ import {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
+  RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE,
   UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
   getHTTPMethod,
   getPath,
@@ -114,19 +115,49 @@ export function awsLambdaRequestHandler<
       },
     });
 
-    // WARNING: this is just to make the build work, not actual implementation of response
-    const { value: responseInit } = await (
+    const { value: responseInit, done: invalidInit } = await (
       resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
     ).next();
-    const { value: firstChunk } = await (
+    const { value: firstChunk, done: abort } = await (
       resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
     ).next();
-    const response = {
-      status: (responseInit as HTTPResponse).status,
-      headers: (responseInit as HTTPResponse).headers,
-      body: (firstChunk as ResponseChunk)[1],
-    };
 
+    if (invalidInit) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE,
+      });
+    }
+
+    if (abort) {
+      const response = {
+        status: responseInit.status,
+        headers: responseInit.headers,
+        body: firstChunk ? firstChunk[1] : undefined,
+      };
+      return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+    }
+
+    /**
+     * WARNING: the implementation below does not support streaming responses.
+     * It will buffer the entire response in memory before returning it.
+     * 
+     * For streaming support, see https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/,
+     * and look at implementation in other adapteds.
+     */
+    const responseArray: string[] = [];
+    responseArray[firstChunk[0]] = firstChunk[1];
+    for await (const [index, data] of resultIterator as AsyncGenerator<
+      ResponseChunk,
+      ResponseChunk | undefined
+    >) {
+      responseArray[index] = data;
+    }
+    const response = {
+      status: responseInit.status,
+      headers: responseInit.headers,
+      body: '[' + responseArray.join(',') + ']',
+    };
     return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
   };
 }

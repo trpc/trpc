@@ -152,3 +152,6 @@ export type APIGatewayPayloadFormatVersion =
 export const UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE =
   'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
   'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html';
+
+export const RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE =
+  'Failed to initialize response accumulator.';
