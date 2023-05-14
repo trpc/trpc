@@ -1,6 +1,6 @@
 // Adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 
-import { TRPCClientError } from 'packages/client/src/TRPCClientError';
+import { TRPCClientError } from '../../TRPCClientError';
 
 /**
  * @param readableStream as given by `(await fetch(url)).body`
