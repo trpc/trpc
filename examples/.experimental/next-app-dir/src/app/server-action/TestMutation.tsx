@@ -8,7 +8,6 @@ export function TestMutation() {
   const [text, setText] = useState('');
   const mutation = useAction(testInlinedMutation);
   mutation.status;
-  //        ^?
   return (
     <>
       <input
@@ -28,11 +27,21 @@ export function TestMutation() {
       </button>
 
       <button
-        onClick={() =>
-          testInlinedMutation({
+        onClick={async () => {
+          const res = await testInlinedMutation({
             text: 'hello',
-          })
-        }
+          });
+          console.log(res);
+          //          ^?
+          if ('result' in res) {
+            res.result;
+            res.result.data;
+            //           ^?
+          } else {
+            res.error;
+            //   ^?
+          }
+        }}
       >
         Run server action raw debugging
       </button>

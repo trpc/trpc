@@ -49,16 +49,16 @@ export function experimental_createTRPCNextAppDirServer<
 type ActionResult<TProcedure extends AnyProcedure> = TRPCResponse<
   inferTransformedProcedureOutput<TProcedure>,
   TProcedure['_def']['_config']['$types']['errorShape']
-> & {
-  // TODO: make this a Symbol?
-  $proc: TProcedure;
-};
+>;
 /**
  * @internal
  */
-export type TRPCActionHandler<TProcedure extends AnyProcedure> = (
+export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
   ...args: inferHandlerInput<TProcedure>
-) => Promise<ActionResult<TProcedure>>;
+) => Promise<ActionResult<TProcedure>>) & {
+  // TODO: make this a Symbol?
+  $proc: TProcedure;
+};
 /**
  * @internal
  */
