@@ -106,7 +106,8 @@ export function experimental_createServerActionHandler<
           path: 'serverAction',
           type: proc._type,
         });
-        shape.code;
+
+        // TODO: send the right HTTP header?!
 
         return transformTRPCResponse(t._config, {
           // FIXME: typecast shouldn't be needed
