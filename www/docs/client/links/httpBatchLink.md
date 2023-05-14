@@ -177,7 +177,6 @@ If you are overriding the `fetch` implementation in the `httpBatchLink` paramete
 - either `response.body.getReader()` is a function that returns a `ReadableStreamDefaultReader<Uint8Array>` object
 - or `response.body` is a `Uint8Array` `Buffer`
 
-
 > ⚠️ `stream` _mode_ is not supported on aws lambda. It should not break anything if enabled, but will not have any effect.
 
 ## Reference

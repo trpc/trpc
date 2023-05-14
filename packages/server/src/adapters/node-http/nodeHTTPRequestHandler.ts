@@ -125,7 +125,10 @@ export async function nodeHTTPRequestHandler<
     // iterator is not exhausted, we can setup the streamed response
     res.setHeader('Transfer-Encoding', 'chunked');
     const vary = res.getHeader('Vary');
-    res.setHeader('Vary', vary ? 'x-trpc-batch-mode, ' + vary : 'x-trpc-batch-mode');
+    res.setHeader(
+      'Vary',
+      vary ? 'x-trpc-batch-mode, ' + vary : 'x-trpc-batch-mode',
+    );
     res.write('{\n');
 
     // each procedure body will be written on a new line of the JSON so they can be parsed independently
