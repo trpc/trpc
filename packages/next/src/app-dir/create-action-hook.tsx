@@ -22,7 +22,7 @@ interface UseTRPCActionBaseResult<TProc extends AnyProcedure> {
 interface UseTRPCActionSuccessResult<TProc extends AnyProcedure>
   extends UseTRPCActionBaseResult<TProc> {
   data: inferTransformedProcedureOutput<TProc>;
-  error?: undefined;
+  error?: never;
   status: 'success';
 }
 
