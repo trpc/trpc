@@ -8,7 +8,7 @@ export function TestMutation() {
   const [text, setText] = useState('');
   const mutation = useAction(testInlinedMutation);
   mutation.status;
-  //       ^?
+  //        ^?
   return (
     <>
       <input
