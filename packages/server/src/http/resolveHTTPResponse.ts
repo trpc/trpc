@@ -93,7 +93,10 @@ export async function resolveHTTPResponse<
       status = meta.status;
     }
 
-    const transformedJSON = transformTRPCResponse(router, untransformedJSON);
+    const transformedJSON = transformTRPCResponse(
+      router._def._config,
+      untransformedJSON,
+    );
 
     const body = JSON.stringify(transformedJSON);
 

@@ -8,11 +8,17 @@ import {
   AnyProcedure,
   AnyRouter,
   MaybePromise,
+  getTRPCErrorFromUnknown,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
-import { AnyTRPCInstance, createRecursiveProxy } from '@trpc/server/shared';
+import {
+  AnyTRPCInstance,
+  createRecursiveProxy,
+  getErrorShape,
+  transformTRPCResponse,
+} from '@trpc/server/shared';
 import { cache } from 'react';
 import { CreateTRPCNextAppRouterOptions } from './shared';
 
@@ -56,7 +62,7 @@ export type AnyTRPCActionHandler = TRPCActionHandler<AnyProcedure>;
 export function experimental_createServerActionHandler<
   TInstance extends AnyTRPCInstance,
 >(
-  _t: AnyTRPCInstance,
+  t: AnyTRPCInstance,
   opts: {
     createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
   },
@@ -71,15 +77,34 @@ export function experimental_createServerActionHandler<
       // TODO error handling
       // TODO transformers
       // TODO normalize FormData?
-      return proc({
-        input: undefined,
-        ctx: await opts.createContext(),
-        path: 'serverAction',
-        rawInput: input,
-        type: proc._type,
-      }) as inferProcedureOutput<TProc> & {
-        $proc: TProc;
-      };
+      const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
+      try {
+        const ctx = await opts.createContext();
+        const data = await proc({
+          input: undefined,
+          ctx,
+          path: 'serverAction',
+          rawInput: input,
+          type: proc._type,
+        });
+
+        const transformedJSON = transformTRPCResponse(t._config, {
+          result: {
+            data,
+          },
+        });
+        return transformedJSON;
+      } catch (cause) {
+        const error = getTRPCErrorFromUnknown(cause);
+        getErrorShape({
+          config: t._config,
+          ctx,
+          error,
+          input,
+          path: 'serverAction',
+          type: proc._type,
+        });
+      }
     } as TRPCActionHandler<TProc>;
   };
 }

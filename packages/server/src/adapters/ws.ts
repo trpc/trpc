@@ -121,7 +121,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
-        JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
+        JSON.stringify(
+          transformTRPCResponse(router._def._config, untransformedJSON),
+        ),
       );
     }
 

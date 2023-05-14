@@ -6,3 +6,5 @@ export * from './transformTRPCResponse';
 export type { SerializeObject } from './internal/serialize';
 
 export type { AnyTRPCInstance } from '../core/initTRPC';
+
+export { getErrorShape } from './getErrorShape';
