@@ -133,7 +133,7 @@ export function awsLambdaRequestHandler<
       const response = {
         status: responseInit.status,
         headers: responseInit.headers,
-        body: firstChunk ? firstChunk[1] : undefined,
+        body: firstChunk?.[1],
       };
       return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
     }
