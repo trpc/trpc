@@ -88,10 +88,15 @@ describe('no transformer', () => {
 
     const results = await Promise.all([
       proxy.deferred.query({ wait: 1 }),
-      proxy.error.query(),
+      proxy.error.query().catch((err) => err),
     ]);
 
-    expect(results).toMatchInlineSnapshot();
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        1,
+        [TRPCClientError: INTERNAL_SERVER_ERROR],
+      ]
+    `);
   });
 });
 
@@ -117,6 +122,9 @@ describe('with transformer', () => {
             );
             return opts.input.wait;
           }),
+        error: t.procedure.query(() => {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -172,5 +180,20 @@ describe('with transformer', () => {
     expect(results).toEqual([3, 1, 2]);
     // streaming preserves response order
     expect(orderedResults).toEqual([1, 2, 3]);
+  });
+  test('out-of-order streaming with error', async () => {
+    const { proxy } = ctx;
+
+    const results = await Promise.all([
+      proxy.deferred.query({ wait: 1 }),
+      proxy.error.query().catch((err) => err),
+    ]);
+
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        1,
+        [TRPCClientError: INTERNAL_SERVER_ERROR],
+      ]
+    `);
   });
 });
