@@ -139,12 +139,12 @@ async function inputToProcedureCall<
 }
 
 /**
- * This generator function has 2 ways of returning data: what it yields and what it returns.
+ * This generator function has 2 ways of "returning data": what it yields and what it returns.
  * It also has 2 "steps": the first yield, reserved for header / status (`HTTPResponse`),
  * and the following yield/return, reserved for the body (`ResponseChunk`).
- * 
+ *
  * - The first yield is always a `HTTPResponse`, and there should always be a first yield.
- * 
+ *
  * After the first yield, you can either:
  * - return a response chunk (`ResponseChunk`), with index -1 (`[-1, string]`),
  * signaling that this is the entire response, no streaming.
@@ -306,9 +306,15 @@ export async function* resolveHTTPResponse<
     };
 
     // yield header stuff
+    /**
+     * WARN: this can cause issues if streaming response has already yielded its headers,
+     * because this would be the second time we yield headers.
+     * For this condition to be realized, we need to be sure that `serialize` in
+     * `transformTRPCResponse` cannot throw.
+     */
     yield initResponse(ctx, paths, type, opts.responseMeta, untransformedJSON, [
       error,
-    ]); // WARN: this can cause issues if streaming response has already yielded its headers, meaning that we need to be sure that `serialize` in `transformTRPCResponse` cannot throw
+    ]);
 
     // return body stuff
     const transformedJSON = transformTRPCResponse(router, untransformedJSON);

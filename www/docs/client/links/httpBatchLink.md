@@ -146,7 +146,8 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 ## Streaming mode
-When batching requests together, the default behavior is to wait for all requests to finish before sending the response. This is called `standard` *mode*. If you want to send responses as soon as they are ready, you can use `stream` *mode*. This is useful for long-running requests.
+
+When batching requests together, the default behavior is to wait for all requests to finish before sending the response. This is called `standard` _mode_. If you want to send responses as soon as they are ready, you can use `stream` _mode_. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
@@ -163,12 +164,14 @@ const client = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-Using the `stream` *mode* will:
+Using the `stream` _mode_ will:
+
 - Cause the requests to be sent with a `X-Trpc-Batch-Mode: stream` header
 - Cause the response to be sent with a `Transfer-Encoding: chunked` and `Vary: x-trpc-batch-mode` headers
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
 If you are overriding the `fetch` implementation in the `httpBatchLink` parameters, you should make sure that it supports streaming: the `response.body` returned by the `fetch` implementation should be of type `ReadableStream<Uint8Array> | NodeJS.ReadableStream`, meaning that:
+
 - either `response.body.getReader()` is a function that returns a `ReadableStreamDefaultReader<Uint8Array>` object
 - or `response.body` is a `Uint8Array` `Buffer`
 

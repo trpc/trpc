@@ -34,6 +34,7 @@ async function iteratorToResponse(
   const status = responseInit.status;
 
   for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
+    /* istanbul ignore if -- @preserve */
     if (typeof value === 'undefined') {
       continue;
     }
