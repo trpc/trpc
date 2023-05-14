@@ -1,4 +1,3 @@
-import { AnyRouter } from '../core/router';
 import { AnyRootConfig } from '../internals';
 import { TRPCResponse, TRPCResponseMessage } from '../rpc';
 

@@ -14,7 +14,7 @@ export const testInlinedMutation = createAction(
   publicProcedure
     .input(
       z.object({
-        text: z.string(),
+        text: z.string().min(1),
       }),
     )
     .mutation(async (opts) => {

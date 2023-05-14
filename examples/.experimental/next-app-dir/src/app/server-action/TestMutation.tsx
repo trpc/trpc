@@ -20,7 +20,7 @@ export function TestMutation() {
       <button
         onClick={() =>
           mutation.mutate({
-            text: 'world',
+            text,
           })
         }
       >

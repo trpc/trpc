@@ -67,6 +67,7 @@ export function experimental_createServerActionHandler<
     createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
   },
 ) {
+  const config = t._config;
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
@@ -74,7 +75,6 @@ export function experimental_createServerActionHandler<
     console.log('setup action');
     return async function actionHandler(input: inferProcedureInput<TProc>) {
       console.log('---------hello', input);
-      // TODO error handling
       // TODO transformers
       // TODO normalize FormData?
       const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
@@ -88,7 +88,7 @@ export function experimental_createServerActionHandler<
           type: proc._type,
         });
 
-        const transformedJSON = transformTRPCResponse(t._config, {
+        const transformedJSON = transformTRPCResponse(config, {
           result: {
             data,
           },
@@ -96,13 +96,19 @@ export function experimental_createServerActionHandler<
         return transformedJSON;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
-        getErrorShape({
-          config: t._config,
+        const shape = getErrorShape({
+          config,
           ctx,
           error,
           input,
           path: 'serverAction',
           type: proc._type,
+        });
+        shape.code;
+
+        return transformTRPCResponse(t._config, {
+          // FIXME: typecast shouldn't be needed
+          error: shape as any,
         });
       }
     } as TRPCActionHandler<TProc>;

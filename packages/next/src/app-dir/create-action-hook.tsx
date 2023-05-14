@@ -40,10 +40,18 @@ interface UseTRPCActionIdleResult<TProc extends AnyProcedure>
   status: 'idle';
 }
 
+interface UseTRPCActionLoadingResult<TProc extends AnyProcedure>
+  extends UseTRPCActionBaseResult<TProc> {
+  data?: never;
+  error?: never;
+  status: 'loading';
+}
+
 export type UseTRPCActionResult<TProc extends AnyProcedure> =
   | UseTRPCActionSuccessResult<TProc>
   | UseTRPCActionErrorResult<TProc>
-  | UseTRPCActionIdleResult<TProc>;
+  | UseTRPCActionIdleResult<TProc>
+  | UseTRPCActionLoadingResult<TProc>;
 
 type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
@@ -109,6 +117,9 @@ export function createActionHook<TRouter extends AnyRouter>(
           },
         } as ActionContext;
 
+        setState({
+          status: 'loading',
+        });
         return client
           .mutation('serverAction', input, {
             ...requestOptions,
