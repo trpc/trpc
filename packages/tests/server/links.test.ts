@@ -195,6 +195,101 @@ describe('batching', () => {
 
     await close();
   });
+  
+  test('query streaming', async () => {
+    const metaCall = vi.fn();
+
+    const t = initTRPC.create();
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
+    const { httpPort, close } = routerToServerAndClientNew(router, {
+      server: {
+        createContext() {
+          metaCall();
+          return {};
+        },
+        batching: {
+          enabled: true,
+        },
+      },
+    });
+    const links = [
+      httpBatchLink({
+        url: `http://localhost:${httpPort}`,
+        unstable_mode: 'stream',
+      })(mockRuntime),
+    ];
+    const chain1 = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'deferred',
+        input: { wait: 2 },
+        context: {},
+      },
+    });
+
+    const chain2 = createChain({
+      links,
+      op: {
+        id: 2,
+        type: 'query',
+        path: 'deferred',
+        input: { wait: 1 },
+        context: {},
+      },
+    });
+
+    const results = await Promise.all([
+      observableToPromise(chain1).promise,
+      observableToPromise(chain2).promise,
+    ]);
+    for (const res of results) {
+      expect(res?.context?.response).toBeTruthy();
+      res.context!.response = '[redacted]';
+    }
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "result": Object {
+            "data": 2,
+            "type": "data",
+          },
+        },
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "result": Object {
+            "data": 1,
+            "type": "data",
+          },
+        },
+      ]
+    `);
+
+    expect(metaCall).toHaveBeenCalledTimes(1);
+
+    await close();
+  });
 
   test('batching on maxURLLength', async () => {
     const createContextFn = vi.fn();
