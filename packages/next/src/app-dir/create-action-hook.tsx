@@ -84,7 +84,7 @@ export function experimental_serverActionLink<
       });
 }
 
-export function eperimental_createActionHook<TRouter extends AnyRouter>(
+export function experimental_createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
   // TODO decouple TRPCClient more?

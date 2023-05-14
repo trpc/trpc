@@ -2,7 +2,7 @@
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import {
-  eperimental_createActionHook,
+  experimental_createActionHook,
   experimental_createTRPCNextAppDirClient,
   experimental_serverActionLink,
 } from '@trpc/next/app-dir/client';
@@ -31,6 +31,6 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
   },
 });
 
-export const useAction = eperimental_createActionHook({
+export const useAction = experimental_createActionHook({
   links: [loggerLink(), experimental_serverActionLink()],
 });
