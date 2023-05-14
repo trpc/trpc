@@ -10,7 +10,7 @@ export function TestMutation() {
   mutation.status;
   //       ^?
   return (
-    <div className="flex w-full flex-col gap-4 text-center text-xl md:max-w-xl">
+    <>
       <input
         type={'text'}
         value={text}
@@ -38,6 +38,6 @@ export function TestMutation() {
       </button>
 
       <pre>{JSON.stringify(mutation, null, 4)}</pre>
-    </div>
+    </>
   );
 }

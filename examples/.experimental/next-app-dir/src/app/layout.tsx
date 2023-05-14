@@ -16,7 +16,28 @@ export default function RootLayout({
           color: 'hsla(210, 16%, 80%, 1)',
         }}
       >
-        {children}
+        <main
+          style={{
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            fontSize: '1.1rem',
+          }}
+        >
+          <div
+            style={{
+              width: '14rem',
+              padding: '1rem',
+              background: 'hsla(218, 18%, 12%, 1)',
+              borderRadius: '0.5rem',
+              color: 'hsla(210, 16%, 80%, 1)',
+            }}
+          >
+            {children}
+          </div>
+        </main>
       </body>
     </html>
   );
