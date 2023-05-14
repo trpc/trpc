@@ -138,6 +138,22 @@ async function inputToProcedureCall<
   }
 }
 
+/**
+ * This generator function has 2 ways of returning data: what it yields and what it returns.
+ * It also has 2 "steps": the first yield, reserved for header / status (`HTTPResponse`),
+ * and the following yield/return, reserved for the body (`ResponseChunk`).
+ * 
+ * - The first yield is always a `HTTPResponse`, and there should always be a first yield.
+ * 
+ * After the first yield, you can either:
+ * - return a response chunk (`ResponseChunk`), with index -1 (`[-1, string]`),
+ * signaling that this is the entire response, no streaming.
+ *
+ * or
+ *
+ * - yield as many response chunks as needed (zero chunks is allowed for a response without a body),
+ * and signal the end of the response by returning `undefined`.
+ */
 export async function* resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
@@ -223,7 +239,8 @@ export async function* resolveHTTPResponse<
       );
 
       // return body stuff
-      const transformedJSON = transformTRPCResponse(router, untransformedJSON);
+      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!;
+      const transformedJSON = transformTRPCResponse(router, result);
       const body = JSON.stringify(transformedJSON);
       const chunk: ResponseChunk = [-1, body];
       return chunk;

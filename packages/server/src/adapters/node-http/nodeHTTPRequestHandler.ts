@@ -94,7 +94,7 @@ export async function nodeHTTPRequestHandler<
     ).next();
 
     const { res } = opts;
-    if (invalidInit || (abort && !firstChunk)) {
+    if (invalidInit) {
       res.statusCode = 500;
       return res.end();
     }
