@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import Stream from 'node:stream';
+import { Readable } from 'node:stream';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
@@ -94,7 +94,7 @@ export async function fastifyRequestHandler<
   // iterator is not exhausted, we can setup the streamed response
   void res.header('Transfer-Encoding', 'chunked');
   void res.header('Vary', 'x-trpc-batch-mode');
-  const readableStream = new Stream.Readable();
+  const readableStream = new Readable();
   readableStream.push('{\n');
   const sendPromise = res.send(readableStream);
 

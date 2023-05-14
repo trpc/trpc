@@ -145,7 +145,7 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-## Streaming mode
+## Streaming mode (experimental)
 
 When batching requests together, the default behavior is to wait for all requests to finish before sending the response. This is called `standard` _mode_. If you want to send responses as soon as they are ready, you can use `stream` _mode_. This is useful for long-running requests.
 
