@@ -100,12 +100,13 @@ export async function fastifyRequestHandler<
       : 'x-trpc-batch-mode',
   );
   const readableStream = new Readable();
-  readableStream._read = () => { }; // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
+  readableStream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154
   const sendPromise = res.send(readableStream);
-  sendChunkedResponse(readableStream, firstChunk, resultIterator as AsyncGenerator<
-    ResponseChunk,
-    ResponseChunk | undefined
-  >);
+  void sendChunkedResponse(
+    readableStream,
+    firstChunk,
+    resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>,
+  );
 
   return sendPromise;
 }
@@ -113,10 +114,7 @@ export async function fastifyRequestHandler<
 async function sendChunkedResponse(
   stream: Readable,
   firstChunk: ResponseChunk,
-  resultIterator: AsyncGenerator<
-    ResponseChunk,
-    ResponseChunk | undefined
-  >,
+  resultIterator: AsyncGenerator<ResponseChunk, ResponseChunk | undefined>,
 ) {
   stream.push('{\n');
 
@@ -130,10 +128,7 @@ async function sendChunkedResponse(
 
   // await every procedure
   sendChunk(firstChunk);
-  for await (const chunk of resultIterator as AsyncGenerator<
-    ResponseChunk,
-    ResponseChunk | undefined
-  >) {
+  for await (const chunk of resultIterator) {
     sendChunk(chunk);
   }
 

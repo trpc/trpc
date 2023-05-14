@@ -24,7 +24,7 @@ async function iteratorToResponse(
     iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
   ).next();
 
-  if (invalidInit || (abort && !firstChunk)) {
+  if (invalidInit) {
     return new Response(null, {
       status: 500,
       headers,
@@ -70,7 +70,6 @@ async function iteratorToResponse(
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-
       const enqueue = (chunk: string) =>
         controller.enqueue(encoder.encode(chunk));
 
