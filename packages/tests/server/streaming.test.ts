@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { TRPCLink, httpBatchLink } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { TRPCError, initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -25,6 +25,9 @@ describe('no transformer', () => {
             );
             return opts.input.wait;
           }),
+        error: t.procedure.query(() => {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -79,6 +82,16 @@ describe('no transformer', () => {
     expect(results).toEqual([3, 1, 2]);
     // streaming preserves response order
     expect(orderedResults).toEqual([1, 2, 3]);
+  });
+  test('out-of-order streaming with error', async () => {
+    const { proxy } = ctx;
+
+    const results = await Promise.all([
+      proxy.deferred.query({ wait: 1 }),
+      proxy.error.query(),
+    ]);
+
+    expect(results).toMatchInlineSnapshot();
   });
 });
 
