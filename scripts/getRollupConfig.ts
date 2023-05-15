@@ -119,8 +119,9 @@ function lib({ input, packageDir }: Options): RollupOptions {
                     console.log(`New module '${module.id}': ${module.size} bytes`)
                   }
                 }
-              } catch {
-                console.log('No previous bundle analysis found')
+              } catch (err) {
+                console.log('No previous bundle analysis found', previousAnalysisFilePath, analysisFilePath)
+                console.log(err)
               }
             }
           }
