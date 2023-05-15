@@ -110,7 +110,7 @@ function logGithubMessage(
 }
 
 function difference(before: number, after: number) {
-  const percent = before ? (after / before) * 100 : after ? Infinity : 0;
+  const percent = before ? (after / before) * 100 - 100 : after ? Infinity : 0;
   const absolute = after - before;
   return { percent, absolute };
 }
