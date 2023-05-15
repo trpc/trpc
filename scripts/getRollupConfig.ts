@@ -7,6 +7,8 @@ import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
 import typescript from 'rollup-plugin-typescript2';
+import analyze from 'rollup-plugin-analyzer'
+import { readFileSync, writeFile } from "fs"
 
 const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
@@ -54,6 +56,7 @@ function types({ input, packageDir }: Options): RollupOptions {
 }
 
 function lib({ input, packageDir }: Options): RollupOptions {
+  let analyzePluginIterations = 0;
   return {
     input,
     output: [
@@ -90,6 +93,38 @@ function lib({ input, packageDir }: Options): RollupOptions {
           externalHelpers: true,
         },
       }),
+      !isWatchMode &&
+        analyze({
+          summaryOnly: process.env.CI ? undefined : true,
+          skipFormatted: process.env.CI ? true : undefined,
+          onAnalysis: (analysis) => {
+            if (analyzePluginIterations > 0) {
+              throw ''; // We only want reports on the first output
+            }
+            analyzePluginIterations++;
+            const analysisFilePath = path.resolve(packageDir, 'dist', 'bundle-analysis.json');
+            writeFile(analysisFilePath, JSON.stringify(analysis, undefined, 2), () => {})
+            if (process.env.CI) {
+              // Find previous analysis file on CI
+              const previousAnalysisFilePath = path.resolve('~', 'download', 'previous-bundle-analysis', packageDir, 'dist', 'bundle-analysis.json');
+              try {
+                const prevStr = readFileSync(previousAnalysisFilePath, 'utf8')
+                const prevAnalysis = JSON.parse(prevStr)
+                console.log(`Bundle size change: ${analysis.bundleSize - prevAnalysis.bundleSize} bytes`)
+                for (const module of analysis.modules) {
+                  const prevModule = prevAnalysis.modules.find((m: any) => m.id === module.id)
+                  if (prevModule) {
+                    console.log(`Module '${module.id}' size change: ${module.size - prevModule.size} bytes (${(module.size / prevModule.size * 100).toFixed(2)}%)`)
+                  } else {
+                    console.log(`New module '${module.id}': ${module.size} bytes`)
+                  }
+                }
+              } catch {
+                console.log('No previous bundle analysis found')
+              }
+            }
+          }
+        }),
     ],
   };
 }
