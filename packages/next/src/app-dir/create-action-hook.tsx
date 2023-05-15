@@ -6,52 +6,66 @@ import {
   createTRPCUntypedClient,
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
-import { AnyProcedure, AnyRouter, ProcedureArgs, Simplify } from '@trpc/server';
+import {
+  AnyProcedure,
+  AnyRouter,
+  DefaultDataTransformer,
+  ProcedureOptions,
+  inferHandlerInput,
+} from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { Serialize } from '@trpc/server/shared';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
 
-interface UseTRPCActionBaseResult<TProc extends AnyProcedure> {
-  mutate: (...args: ProcedureArgs<TProc['_def']>) => void;
-  mutateAsync: (
-    ...args: ProcedureArgs<TProc['_def']>
-  ) => Promise<inferTransformedProcedureOutput<TProc>>;
+type Def = {
+  input?: any;
+  output?: any;
+  errorShape: any;
+};
+
+type MutationArgs<TDef extends Def> = TDef['input'] extends void
+  ? [input?: undefined | void, opts?: ProcedureOptions]
+  : [input: TDef['input'], opts?: ProcedureOptions];
+
+interface UseTRPCActionBaseResult<TDef extends Def> {
+  mutate: (...args: MutationArgs<TDef>) => void;
+  mutateAsync: (...args: MutationArgs<TDef>) => Promise<Def['output']>;
 }
 
-interface UseTRPCActionSuccessResult<TProc extends AnyProcedure>
-  extends UseTRPCActionBaseResult<TProc> {
-  data: inferTransformedProcedureOutput<TProc>;
+interface UseTRPCActionSuccessResult<TDef extends Def>
+  extends UseTRPCActionBaseResult<TDef> {
+  data: TDef['output'];
   error?: never;
   status: 'success';
 }
 
-interface UseTRPCActionErrorResult<TProc extends AnyProcedure>
-  extends UseTRPCActionBaseResult<TProc> {
+interface UseTRPCActionErrorResult<TDef extends Def>
+  extends UseTRPCActionBaseResult<TDef> {
   data?: never;
-  error: TRPCClientError<TProc>;
+  error: TDef['errorShape'];
   status: 'error';
 }
 
-interface UseTRPCActionIdleResult<TProc extends AnyProcedure>
-  extends UseTRPCActionBaseResult<TProc> {
+interface UseTRPCActionIdleResult<TDef extends Def>
+  extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'idle';
 }
 
-interface UseTRPCActionLoadingResult<TProc extends AnyProcedure>
-  extends UseTRPCActionBaseResult<TProc> {
+interface UseTRPCActionLoadingResult<TDef extends Def>
+  extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'loading';
 }
 
-export type UseTRPCActionResult<TProc extends AnyProcedure> =
-  | UseTRPCActionSuccessResult<TProc>
-  | UseTRPCActionErrorResult<TProc>
-  | UseTRPCActionIdleResult<TProc>
-  | UseTRPCActionLoadingResult<TProc>;
+export type UseTRPCActionResult<TDef extends Def> =
+  | UseTRPCActionSuccessResult<TDef>
+  | UseTRPCActionErrorResult<TDef>
+  | UseTRPCActionIdleResult<TDef>
+  | UseTRPCActionLoadingResult<TDef>;
 
 type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
@@ -97,7 +111,15 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
     handler: TRPCActionHandler<TProc>,
   ) {
     const count = useRef(0);
-    type Result = UseTRPCActionResult<TProc>;
+
+    type ProcDef = TProc['_def'];
+    type Result = UseTRPCActionResult<{
+      input: inferHandlerInput<TProc>[0];
+      output: ProcDef['transformer'] extends DefaultDataTransformer
+        ? Serialize<ProcDef['_output_in']>
+        : ProcDef['_output_in'];
+      errorShape: ProcDef['_config']['$types']['errorShape'];
+    }>;
     type State = Omit<Result, 'mutate' | 'mutateAsync'>;
     const [state, setState] = useState<State>({
       status: 'idle',
@@ -146,7 +168,7 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
 
     const mutate: Result['mutate'] = useCallback(
       (...args: any[]) => {
-        void mutateAsync(...(args as any)).catch(() => {
+        void (mutateAsync as any)(...args).catch(() => {
           // ignored
         });
       },
@@ -160,6 +182,6 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
         mutateAsync,
       }),
       [mutate, mutateAsync, state],
-    ) as Simplify<UseTRPCActionResult<TProc>>;
+    ) as Result;
   };
 }

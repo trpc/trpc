@@ -7,6 +7,8 @@ import { testMutation } from './TestMutation_action';
 export function TestMutation() {
   const [text, setText] = useState('');
   const mutation = useAction(testMutation);
+  //     ^?
+
   mutation.status;
   return (
     <>
