@@ -128,7 +128,9 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log(err)
                 console.log(prevStr)
                 console.log('cwd', process.cwd())
-                console.log(path.resolve('.'))
+                console.log('.', path.resolve('.'))
+                console.log('..', path.resolve('..'))
+                console.log('/', path.resolve('/'))
                 try {
                   const files = readdirSync(path.resolve('.', 'downloads', 'previous-bundle-analysis'))
                   console.log('artifact', ...files)
@@ -140,6 +142,14 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 try {
                   const files = readdirSync(path.resolve('.'))
                   console.log('root', ...files)
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve('..'))
+                  console.log('..', ...files)
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve('../..'))
+                  console.log('../..', ...files)
                 } catch {}
               }
             }
