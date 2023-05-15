@@ -10,7 +10,7 @@ import { createAction, publicProcedure } from '~/server/trpc';
  * Wrap the procedure in a `createAction` call to
  * make it server-action friendly
  */
-export const testInlinedMutation = createAction(
+export const testMutation = createAction(
   publicProcedure
     .input(
       z.object({

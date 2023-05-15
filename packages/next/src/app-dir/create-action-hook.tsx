@@ -6,7 +6,7 @@ import {
   createTRPCUntypedClient,
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
-import { AnyProcedure, AnyRouter, ProcedureArgs } from '@trpc/server';
+import { AnyProcedure, AnyRouter, ProcedureArgs, Simplify } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -160,6 +160,6 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
         mutateAsync,
       }),
       [mutate, mutateAsync, state],
-    ) as UseTRPCActionResult<TProc>;
+    ) as Simplify<UseTRPCActionResult<TProc>>;
   };
 }
