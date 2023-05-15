@@ -115,7 +115,7 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
     type ProcDef = TProc['_def'];
     type Result = UseTRPCActionResult<{
       input: inferHandlerInput<TProc>[0];
-      output: ProcDef['transformer'] extends DefaultDataTransformer
+      output: ProcDef['_config']['transformer'] extends DefaultDataTransformer
         ? Serialize<ProcDef['_output_out']>
         : ProcDef['_output_out'];
       errorShape: ProcDef['_config']['$types']['errorShape'];
