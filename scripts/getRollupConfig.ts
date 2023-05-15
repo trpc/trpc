@@ -108,7 +108,8 @@ function lib({ input, packageDir }: Options): RollupOptions {
               const previousAnalysisDir = 'downloads/previous-bundle-analysis'
 
               const currentPath = path.resolve(packageDir, analysisFilePath)
-              const prevPath = path.resolve(runnerRoot, previousAnalysisDir, path.relative(path.resolve(runnerRoot, 'packages'), packageDir), analysisFilePath)
+              const relative = path.relative(path.resolve(runnerRoot, 'packages'), packageDir)
+              const prevPath = path.resolve(runnerRoot, previousAnalysisDir, relative, analysisFilePath)
 
               writeFile(currentPath, JSON.stringify(analysis, undefined, 2), () => {})
               
@@ -136,6 +137,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log('..', path.resolve('..'))
                 console.log('/', path.resolve('/'))
                 console.log('currentPath', currentPath)
+                console.log('relative', relative)
                 console.log('prevPath', prevPath)
                 
                 try {
@@ -149,6 +151,14 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 try {
                   const files = readdirSync(path.resolve('../../downloads/previous-bundle-analysis'))
                   console.log('../../downloads/previous-bundle-analysis', ...files)
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve(runnerRoot, previousAnalysisDir))
+                  console.log('runnerRoot/previousAnalysisDir', ...files)
+                } catch {}
+                try {
+                  const files = readdirSync(prevPath)
+                  console.log('prevPath', ...files)
                 } catch {}
               }
             }
