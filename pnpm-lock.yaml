@@ -159,6 +159,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
+      superjson:
+        specifier: ^1.7.4
+        version: 1.11.0
       trpc-api:
         specifier: link:./src/trpc
         version: link:src/trpc

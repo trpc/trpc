@@ -19,7 +19,10 @@ export const testMutation = createAction(
     )
     .mutation(async (opts) => {
       console.log('testMutation', opts);
-      return '...... we did stuff!';
+      return {
+        text: 'Hello world',
+        date: new Date(),
+      };
     }),
 );
 
