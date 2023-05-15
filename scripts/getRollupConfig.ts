@@ -107,12 +107,15 @@ function lib({ input, packageDir }: Options): RollupOptions {
               const analysisFilePath = 'dist/bundle-analysis.json'
               const previousAnalysisDir = 'downloads/previous-bundle-analysis'
 
-              writeFile(path.resolve(packageDir, analysisFilePath), JSON.stringify(analysis, undefined, 2), () => {})
+              const currentPath = path.resolve(packageDir, analysisFilePath)
+              const prevPath = path.resolve(runnerRoot, previousAnalysisDir, path.relative(path.resolve(runnerRoot, 'packages'), packageDir), analysisFilePath)
+
+              writeFile(currentPath, JSON.stringify(analysis, undefined, 2), () => {})
               
               // Find previous analysis file on CI
               let prevStr: string
               try {
-                prevStr = readFileSync(path.resolve(runnerRoot, previousAnalysisDir, packageDir, analysisFilePath), 'utf8')
+                prevStr = readFileSync(prevPath, 'utf8')
                 const prevAnalysis = JSON.parse(prevStr)
                 console.log(`Bundle size change: ${analysis.bundleSize - prevAnalysis.bundleSize} bytes`)
                 for (const module of analysis.modules) {
@@ -132,7 +135,9 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log('.', path.resolve('.'))
                 console.log('..', path.resolve('..'))
                 console.log('/', path.resolve('/'))
-                path.relative(path.resolve('.'), path.resolve('/'))
+                console.log('currentPath', currentPath)
+                console.log('prevPath', prevPath)
+                
                 try {
                   const files = readdirSync(path.resolve('../..'))
                   console.log('../..', ...files)
