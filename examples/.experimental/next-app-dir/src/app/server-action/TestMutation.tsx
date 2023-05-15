@@ -10,6 +10,10 @@ export function TestMutation() {
   //     ^?
 
   mutation.status;
+  mutation.data;
+  //        ^?
+  mutation.error;
+  //       ^?
   return (
     <>
       <p>

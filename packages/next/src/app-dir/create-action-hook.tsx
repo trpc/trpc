@@ -43,7 +43,7 @@ interface UseTRPCActionSuccessResult<TDef extends Def>
 interface UseTRPCActionErrorResult<TDef extends Def>
   extends UseTRPCActionBaseResult<TDef> {
   data?: never;
-  error: TDef['errorShape'];
+  error: TRPCClientError<TDef['errorShape']>;
   status: 'error';
 }
 
