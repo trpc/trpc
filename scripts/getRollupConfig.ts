@@ -102,14 +102,17 @@ function lib({ input, packageDir }: Options): RollupOptions {
               throw ''; // We only want reports on the first output
             }
             analyzePluginIterations++;
-            const analysisFilePath = path.resolve(packageDir, 'dist', 'bundle-analysis.json');
-            writeFile(analysisFilePath, JSON.stringify(analysis, undefined, 2), () => {})
             if (process.env.CI) {
+              const runnerRoot = '/home/runner/work/***/***'
+              const analysisFilePath = 'dist/bundle-analysis.json'
+              const previousAnalysisDir = 'downloads/previous-bundle-analysis'
+
+              writeFile(path.resolve(packageDir, analysisFilePath), JSON.stringify(analysis, undefined, 2), () => {})
+              
               // Find previous analysis file on CI
-              const previousAnalysisFilePath = path.resolve('.', 'downloads', 'previous-bundle-analysis', packageDir, 'dist', 'bundle-analysis.json');
               let prevStr: string
               try {
-                prevStr = readFileSync(previousAnalysisFilePath, 'utf8')
+                prevStr = readFileSync(path.resolve(runnerRoot, previousAnalysisDir, packageDir, analysisFilePath), 'utf8')
                 const prevAnalysis = JSON.parse(prevStr)
                 console.log(`Bundle size change: ${analysis.bundleSize - prevAnalysis.bundleSize} bytes`)
                 for (const module of analysis.modules) {
@@ -122,8 +125,6 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 }
               } catch (err) {
                 console.log('No previous bundle analysis found')
-                console.log('previousAnalysisFilePath', previousAnalysisFilePath)
-                console.log('analysisFilePath', analysisFilePath)
                 console.log('packageDir', packageDir)
                 console.log(err)
                 console.log(prevStr)
@@ -131,25 +132,18 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log('.', path.resolve('.'))
                 console.log('..', path.resolve('..'))
                 console.log('/', path.resolve('/'))
-                try {
-                  const files = readdirSync(path.resolve('.', 'downloads', 'previous-bundle-analysis'))
-                  console.log('artifact', ...files)
-                } catch {}
-                try {
-                  const files = readdirSync(path.resolve('.', 'downloads'))
-                  console.log('downloads', ...files)
-                } catch {}
-                try {
-                  const files = readdirSync(path.resolve('.'))
-                  console.log('root', ...files)
-                } catch {}
-                try {
-                  const files = readdirSync(path.resolve('..'))
-                  console.log('..', ...files)
-                } catch {}
+                path.relative(path.resolve('.'), path.resolve('/'))
                 try {
                   const files = readdirSync(path.resolve('../..'))
                   console.log('../..', ...files)
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve('../../downloads'))
+                  console.log('../../downloads', ...files)
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve('../../downloads/previous-bundle-analysis'))
+                  console.log('../../downloads/previous-bundle-analysis', ...files)
                 } catch {}
               }
             }
