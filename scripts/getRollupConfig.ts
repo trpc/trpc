@@ -103,7 +103,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
             }
             analyzePluginIterations++;
             if (process.env.CI) {
-              const runnerRoot = '/home/runner/work/***/***'
+              const runnerRoot = '../..'
               const analysisFilePath = 'dist/bundle-analysis.json'
               const previousAnalysisDir = 'downloads/previous-bundle-analysis'
 
