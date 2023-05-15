@@ -54,12 +54,12 @@ jobs:
         uses: dawidd6/action-download-artifact@v2
         with:
           name: bundle-analysis
-          # branch: main # once this workflow is merged, uncomment this: we should always only compare with `main`, not current branch
+          branch: main
           path: ./downloads/previous-bundle-analysis
           if_no_artifact_found: ignore
 
       - name: Build
-        run: pnpm turbo --filter "@trpc/*" build --force # temporarily forcing cache bypass for debugging purposes
+        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
