@@ -195,7 +195,7 @@ describe('batching', () => {
 
     await close();
   });
-  
+
   test('query streaming', async () => {
     const metaCall = vi.fn();
 
