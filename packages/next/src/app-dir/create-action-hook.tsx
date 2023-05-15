@@ -18,11 +18,11 @@ import { Serialize } from '@trpc/server/shared';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
 
-type Def = {
+interface Def {
   input?: any;
   output?: any;
   errorShape: any;
-};
+}
 
 type MutationArgs<TDef extends Def> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: ProcedureOptions]
