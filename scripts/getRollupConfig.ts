@@ -106,7 +106,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
             writeFile(analysisFilePath, JSON.stringify(analysis, undefined, 2), () => {})
             if (process.env.CI) {
               // Find previous analysis file on CI
-              const previousAnalysisFilePath = path.resolve('~', 'download', 'previous-bundle-analysis', packageDir, 'dist', 'bundle-analysis.json');
+              const previousAnalysisFilePath = path.resolve('.', 'downloads', 'previous-bundle-analysis', packageDir, 'dist', 'bundle-analysis.json');
               let prevStr: string
               try {
                 prevStr = readFileSync(previousAnalysisFilePath, 'utf8')
@@ -127,14 +127,20 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log('packageDir', packageDir)
                 console.log(err)
                 console.log(prevStr)
-                {
-                  const files = readdirSync(path.resolve('~', 'download', 'previous-bundle-analysis'))
+                console.log('cwd', process.cwd())
+                console.log(path.resolve('.'))
+                try {
+                  const files = readdirSync(path.resolve('.', 'downloads', 'previous-bundle-analysis'))
                   console.log('artifact', ...files)
-                }
-                {
-                  const files = readdirSync(path.resolve('~', 'download'))
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve('.', 'downloads'))
                   console.log('downloads', ...files)
-                }
+                } catch {}
+                try {
+                  const files = readdirSync(path.resolve('.'))
+                  console.log('root', ...files)
+                } catch {}
               }
             }
           }

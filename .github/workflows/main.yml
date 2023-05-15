@@ -55,7 +55,7 @@ jobs:
         with:
           name: bundle-analysis
           # branch: main # once this workflow is merged, uncomment this: we should always only compare with `main`, not current branch
-          path: ~/download/previous-bundle-analysis
+          path: ./downloads/previous-bundle-analysis
           if_no_artifact_found: ignore
 
       - name: Build
