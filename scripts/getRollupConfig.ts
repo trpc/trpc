@@ -120,7 +120,10 @@ function lib({ input, packageDir }: Options): RollupOptions {
                   }
                 }
               } catch (err) {
-                console.log('No previous bundle analysis found', previousAnalysisFilePath, analysisFilePath)
+                console.log('No previous bundle analysis found')
+                console.log('previousAnalysisFilePath', previousAnalysisFilePath)
+                console.log('analysisFilePath', analysisFilePath)
+                console.log('packageDir', packageDir)
                 console.log(err)
               }
             }
