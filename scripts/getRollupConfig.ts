@@ -8,7 +8,7 @@ import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
 import typescript from 'rollup-plugin-typescript2';
 import analyze from 'rollup-plugin-analyzer'
-import { readFileSync, writeFile } from "fs"
+import { readFileSync, readdirSync, writeFile } from "fs"
 
 const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
@@ -127,6 +127,14 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log('packageDir', packageDir)
                 console.log(err)
                 console.log(prevStr)
+                {
+                  const files = readdirSync(path.resolve('~', 'download', 'previous-bundle-analysis'))
+                  console.log('artifact', ...files)
+                }
+                {
+                  const files = readdirSync(path.resolve('~', 'download'))
+                  console.log('downloads', ...files)
+                }
               }
             }
           }
