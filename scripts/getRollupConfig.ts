@@ -107,8 +107,9 @@ function lib({ input, packageDir }: Options): RollupOptions {
             if (process.env.CI) {
               // Find previous analysis file on CI
               const previousAnalysisFilePath = path.resolve('~', 'download', 'previous-bundle-analysis', packageDir, 'dist', 'bundle-analysis.json');
+              let prevStr: string
               try {
-                const prevStr = readFileSync(previousAnalysisFilePath, 'utf8')
+                prevStr = readFileSync(previousAnalysisFilePath, 'utf8')
                 const prevAnalysis = JSON.parse(prevStr)
                 console.log(`Bundle size change: ${analysis.bundleSize - prevAnalysis.bundleSize} bytes`)
                 for (const module of analysis.modules) {
@@ -125,6 +126,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
                 console.log('analysisFilePath', analysisFilePath)
                 console.log('packageDir', packageDir)
                 console.log(err)
+                console.log(prevStr)
               }
             }
           }
