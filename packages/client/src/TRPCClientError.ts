@@ -9,12 +9,12 @@ import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
 
 type ErrorInferrable = AnyRouter | AnyProcedure | TRPCErrorShape<number>;
 
-type inferErrorShape<TRouterOrProcedure extends ErrorInferrable> =
-  TRouterOrProcedure extends AnyRouter
-    ? inferRouterError<TRouterOrProcedure>
-    : TRouterOrProcedure extends AnyProcedure
-    ? TRouterOrProcedure['_def']['_config']['$types']['errorShape']
-    : TRouterOrProcedure;
+type inferErrorShape<TInferrable extends ErrorInferrable> =
+  TInferrable extends AnyRouter
+    ? inferRouterError<TInferrable>
+    : TInferrable extends AnyProcedure
+    ? TInferrable['_def']['_config']['$types']['errorShape']
+    : TInferrable;
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
