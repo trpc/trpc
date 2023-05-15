@@ -51,10 +51,12 @@ jobs:
         run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Download previous bundle analysis
-        uses: actions/download-artifact@v3
+        uses: dawidd6/action-download-artifact@v2
         with:
           name: bundle-analysis
+          # branch: main # once this workflow is merged, uncomment this: we should always only compare with `main`, not self
           path: ~/download/previous-bundle-analysis
+          if_no_artifact_found: ignore
 
       - name: Build
         run: pnpm turbo --filter "@trpc/*" build
