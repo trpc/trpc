@@ -342,6 +342,7 @@ export function createRootHooks<
     ]);
 
     const hook = __useMutation({
+      ...defaultOpts,
       ...opts,
       mutationKey: [actualPath.split('.')],
       mutationFn: (input) => {
