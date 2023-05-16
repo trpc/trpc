@@ -337,6 +337,10 @@ export function createRootHooks<
     const queryClient = useQueryClient({ context: ReactQueryContext });
     const actualPath = Array.isArray(path) ? path[0] : path;
 
+    const defaultOpts = queryClient.getMutationDefaults([
+      actualPath.split('.'),
+    ]);
+
     const hook = __useMutation({
       ...opts,
       mutationKey: [actualPath.split('.')],
@@ -347,12 +351,13 @@ export function createRootHooks<
       },
       context: ReactQueryContext,
       onSuccess(...args) {
-        const originalFn = () => opts?.onSuccess?.(...args);
+        const originalFn = () =>
+          opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
         return mutationSuccessOverride({
           originalFn,
           queryClient,
-          meta: opts?.meta ?? {},
+          meta: opts?.meta ?? defaultOpts?.meta ?? {},
         });
       },
     }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
