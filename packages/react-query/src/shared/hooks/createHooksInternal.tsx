@@ -286,16 +286,23 @@ export function createRootHooks<
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       context;
 
+    const defaultOpts = queryClient.getQueryDefaults(
+      getArrayQueryKey(pathAndInput, 'query'),
+    );
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
-      opts?.enabled !== false &&
+      (opts?.enabled ?? defaultOpts?.enabled) !== false &&
       !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, 'query'))
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', {
+      ...defaultOpts,
+      ...opts,
+    });
 
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
@@ -438,19 +445,29 @@ export function createRootHooks<
       abortOnUnmount,
     } = useContext();
 
+    const defaultOpts = queryClient.getQueryDefaults(
+      getArrayQueryKey(pathAndInput, 'infinite'),
+    );
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
-      opts?.enabled !== false &&
+      (opts?.enabled ?? defaultOpts?.enabled) !== false &&
       !queryClient
         .getQueryCache()
         .find(getArrayQueryKey(pathAndInput, 'infinite'))
     ) {
-      void prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      void prefetchInfiniteQuery(
+        pathAndInput as any,
+        { ...defaultOpts, ...opts } as any,
+      );
     }
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', {
+      ...defaultOpts,
+      ...opts,
+    });
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
