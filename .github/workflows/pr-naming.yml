@@ -8,8 +8,6 @@ on:
 
 jobs:
   test:
-    # Job name is Greeting
-    name: PR naming convention
     # This job runs on Linux
     runs-on: 'ubuntu-latest'
     steps:
