@@ -1,8 +1,9 @@
-name: PR naming convention
+name: Pull Request naming convention
 # This workflow is triggered on pushes to the repository.
 on:
   pull_request:
     types:
+      - opened
       - edited
 
 jobs:
