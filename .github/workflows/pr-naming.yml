@@ -1,14 +1,17 @@
 name: Pull Request naming convention
 # This workflow is triggered on pushes to the repository.
 on:
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - edited
 
 jobs:
   test:
-    # This job runs on Linux
+    # allowlist:
+    # - chore: x
+    # - fix(`...`): x
+    # - feat(`...`): x
     runs-on: 'ubuntu-latest'
     steps:
       - uses: deepakputhraya/action-pr-title@master
