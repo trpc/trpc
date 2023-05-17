@@ -8,7 +8,10 @@ on:
 
 jobs:
   test:
-    # This job runs on Linux
+    # allowlist:
+    # - chore: x
+    # - fix(`...`): x
+    # - feat(`...`): x
     runs-on: 'ubuntu-latest'
     steps:
       - uses: deepakputhraya/action-pr-title@master
