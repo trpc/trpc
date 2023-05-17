@@ -59,3 +59,12 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
 export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
   config: () => CreateTRPCClientOptions<TRouter>;
 }
+
+/**
+ * @internal
+ */
+export function generateCacheTag(procedurePath: string, input: any) {
+  return input
+    ? `${procedurePath}?input=${JSON.stringify(input)}`
+    : procedurePath;
+}

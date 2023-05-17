@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { api } from 'trpc-api';
 import { ClientGreeting } from './ClientGreeting';
 import { ServerGreeting } from './ServerGreeting';
+import { ServerInvoker } from './ServerInvoker';
 
 export default async function Home() {
   const promise = new Promise(async (resolve) => {
@@ -35,15 +36,22 @@ export default async function Home() {
         </div>
 
         <div>
-          <Suspense fallback={<>Loading Server...</>}>
+          <Suspense fallback={<>Loading Server (fetched)...</>}>
             {/* @ts-expect-error RSC + TS not friends yet */}
             <ServerGreeting />
           </Suspense>
         </div>
         <div>
-          <Suspense fallback={<>Loading stream...</>}>
+          <Suspense fallback={<>Loading stream (fetched)...</>}>
             {/** @ts-expect-error - Async Server Component */}
             <StreamedSC promise={promise} />
+          </Suspense>
+        </div>
+
+        <div>
+          <Suspense fallback={<>Loading Server (invoked)...</>}>
+            {/* @ts-expect-error RSC + TS not friends yet */}
+            <ServerInvoker />
           </Suspense>
         </div>
       </div>

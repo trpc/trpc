@@ -44,6 +44,16 @@
       "import": "./dist/app-dir/client.mjs",
       "require": "./dist/app-dir/client.js",
       "default": "./dist/app-dir/client.js"
+    },
+    "./app-dir/links/nextCache": {
+      "import": "./dist/app-dir/links/nextCache.mjs",
+      "require": "./dist/app-dir/links/nextCache.js",
+      "default": "./dist/app-dir/links/nextCache.js"
+    },
+    "./app-dir/links/nextFetch": {
+      "import": "./dist/app-dir/links/nextFetch.mjs",
+      "require": "./dist/app-dir/links/nextFetch.js",
+      "default": "./dist/app-dir/links/nextFetch.js"
     }
   },
   "files": [
@@ -76,7 +86,7 @@
     "@types/react-dom": "^18.2.4",
     "eslint": "^8.40.0",
     "express": "^4.17.1",
-    "next": "^13.3.4",
+    "next": "^13.4.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",

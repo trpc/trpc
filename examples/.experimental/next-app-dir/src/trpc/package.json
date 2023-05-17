@@ -1,10 +1,10 @@
 {
   "name": "trpc-api",
-  "typings": "server.ts",
+  "typings": "server-fetcher.ts",
   "exports": {
     ".": {
-      "types": "./server.ts",
-      "react-server": "./server.ts",
+      "types": "./server-fetcher.ts",
+      "react-server": "./server-fetcher.ts",
       "default": "./client.ts"
     }
   }
