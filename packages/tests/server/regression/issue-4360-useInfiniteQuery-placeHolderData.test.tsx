@@ -1,15 +1,7 @@
 import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from '../react/__reactHelpers';
-import {
-  DehydratedState,
-  InfiniteData,
-  dehydrate,
-} from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
-import React from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2'];
