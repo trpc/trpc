@@ -1,14 +1,48 @@
 /// <reference types="next" />
 
 import {
-  CreateTRPCProxyClient,
+  Resolver,
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
+  AnyRouter,
+  AnySubscriptionProcedure,
+  ProcedureRouterRecord,
+} from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
+import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
-import { CreateTRPCNextAppRouterOptions } from './shared';
+import { CreateTRPCNextAppRouterOptions, generateCacheTag } from './shared';
+
+export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
+  TProcedure extends AnyQueryProcedure
+    ? {
+        query: Resolver<TProcedure>;
+        revalidate: () => void;
+      }
+    : TProcedure extends AnyMutationProcedure
+    ? {
+        mutate: Resolver<TProcedure>;
+      }
+    : TProcedure extends AnySubscriptionProcedure
+    ? {
+        subscribe: Resolver<TProcedure>;
+      }
+    : never;
+
+export type ServerDecoratedProcedureRecord<
+  TProcedures extends ProcedureRouterRecord,
+> = {
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+    ? ServerDecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+    : TProcedures[TKey] extends AnyProcedure
+    ? DecorateProcedureServer<TProcedures[TKey]>
+    : never;
+};
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -24,11 +58,16 @@ export function experimental_createTRPCNextAppDirServer<
     const client = getClient();
 
     const pathCopy = [...callOpts.path];
-    const procedureType = clientCallTypeToProcedureType(
-      pathCopy.pop() as string,
-    );
-    const fullPath = pathCopy.join('.');
+    const action = pathCopy.pop() as string;
 
-    return (client[procedureType] as any)(fullPath, ...callOpts.args);
-  }) as CreateTRPCProxyClient<TRouter>;
+    const procedurePath = pathCopy.join('.');
+    const procedureType = clientCallTypeToProcedureType(action);
+    const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
+
+    if (action === 'revalidate') {
+      return revalidateTag(cacheTag);
+    }
+
+    return (client[procedureType] as any)(procedurePath, ...callOpts.args);
+  }) as ServerDecoratedProcedureRecord<TRouter['_def']['record']>;
 }

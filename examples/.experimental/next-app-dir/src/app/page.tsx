@@ -23,7 +23,7 @@ export default async function Home() {
     >
       <div
         style={{
-          width: '12rem',
+          width: '24rem',
           padding: '1rem',
           background: '#e5e5e5',
           borderRadius: '0.5rem',
@@ -54,6 +54,15 @@ export default async function Home() {
             <ServerInvoker />
           </Suspense>
         </div>
+
+        <form
+          action={async () => {
+            'use server';
+            api.greeting.revalidate();
+          }}
+        >
+          <button type="submit">Revalidate</button>
+        </form>
       </div>
     </main>
   );
