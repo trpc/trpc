@@ -14,7 +14,7 @@ jobs:
       - uses: deepakputhraya/action-pr-title@master
         with:
           allowed_prefixes: 'feat,fix,chore' # title should start with the given prefix
-          regex: '/^(chore|docs|(feat|fix|chore)\(`[^`]*`\)): /' # Regex the title should match.
+          regex: '^(chore|docs|(feat|fix|chore)\(`[^`]*`\)): ' # Regex the title should match.
           prefix_case_sensitive: true # title prefix are case insensitive
           min_length: 5 # Min length of the title
           github_token: ${{ github.token }} # Default: ${{ github.token }}
