@@ -141,36 +141,36 @@ function resolveJsonPaths(packageDir: string) {
   console.log(".", path.resolve("."));
   console.log("..", path.resolve(".."));
   console.log("../..", path.resolve("../.."));
-  {
+  try {
     const p = path.resolve(runnerRoot);
     const files = readdirSync(p);
     console.log(p, "runnerRoot", files);
-  }
-  {
+  } catch {}
+  try {
     const p = path.resolve(runnerRoot, previousAnalysisDir);
     const files = readdirSync(p);
     console.log(p, "runnerRoot/previousAnalysisDir", files);
-  }
-  {
+  } catch {}
+  try {
     const p = path.resolve(runnerRoot, 'downloads');
     const files = readdirSync(p);
     console.log(p, "runnerRoot/downloads", files);
-  }
-  {
+  } catch {}
+  try {
     const p = path.resolve('../..');
     const files = readdirSync(p);
     console.log(p, "../..", files);
-  }
-  {
+  } catch {}
+  try {
     const p = path.resolve('../..', 'downloads');
     const files = readdirSync(p);
     console.log(p, "../../downloads", files);
-  }
-  {
+  } catch {}
+  try {
     const p = path.resolve('../..', 'downloads/previous-bundle-analysis');
     const files = readdirSync(p);
     console.log(p, "../../downloads/previous-bundle-analysis", files);
-  }
+  } catch {}
 
   return { currentPath, prevPath };
 }
