@@ -71,6 +71,7 @@ jobs:
 
       - name: Upload new bundle analysis
         uses: actions/upload-artifact@v3
+        if: contains(github.ref, "main")
         with:
           name: bundle-analysis
           path: packages/**/dist/bundle-analysis.json
