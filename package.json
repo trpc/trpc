@@ -63,6 +63,7 @@
     "prettier": "^2.8.8",
     "prettier-plugin-tailwindcss": "^0.3.0",
     "rollup": "^2.79.1",
+    "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-multi-input": "^1.4.1",
     "rollup-plugin-node-externals": "^5.1.3",
