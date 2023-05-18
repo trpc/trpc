@@ -12,7 +12,7 @@ type NextFetchLinkOptions<TBatch extends boolean> = {
   batch?: TBatch;
 } & (TBatch extends true ? HttpBatchLinkOptions : HTTPLinkOptions);
 
-export function nextFetchLink<
+export function experimental_nextHttpLink<
   TRouter extends AnyRouter,
   TBatch extends boolean,
 >(opts: NextFetchLinkOptions<TBatch>): TRPCLink<TRouter> {

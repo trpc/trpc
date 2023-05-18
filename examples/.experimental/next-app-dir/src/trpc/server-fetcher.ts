@@ -1,7 +1,7 @@
 'use server';
 
 import { loggerLink } from '@trpc/client';
-import { nextFetchLink } from '@trpc/next/app-dir/links/nextFetch';
+import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
 import { headers } from 'next/headers';
 import { AppRouter } from '~/server/routers/_app';
@@ -16,7 +16,7 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
         }),
-        nextFetchLink({
+        experimental_nextHttpLink({
           batch: false,
           url: getUrl(),
           headers() {

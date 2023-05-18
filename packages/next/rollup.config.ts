@@ -6,7 +6,7 @@ export const input = [
   'src/app-dir/server.ts',
   'src/app-dir/client.ts',
   'src/app-dir/links/nextCache.ts',
-  'src/app-dir/links/nextFetch.ts',
+  'src/app-dir/links/nextHttp.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
