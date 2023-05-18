@@ -120,7 +120,8 @@ function difference(before: number, after: number) {
 }
 
 function resolveJsonPaths(packageDir: string) {
-  const runnerRoot = '../..';
+  // TODO: should find a better way to match current w/ downloaded artifacts
+  const runnerRoot = '..';
   const analysisFilePath = 'dist/bundle-analysis.json';
   const previousAnalysisDir = 'downloads/previous-bundle-analysis';
   const currentPath = path.resolve(packageDir, analysisFilePath);
