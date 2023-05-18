@@ -86,15 +86,21 @@ describe('no transformer', () => {
   test('out-of-order streaming with error', async () => {
     const { proxy } = ctx;
 
-    const results = await Promise.all([
+    const results = await Promise.allSettled([
       proxy.deferred.query({ wait: 1 }),
-      proxy.error.query().catch((err) => err),
+      proxy.error.query(),
     ]);
 
     expect(results).toMatchInlineSnapshot(`
       Array [
-        1,
-        [TRPCClientError: INTERNAL_SERVER_ERROR],
+        Object {
+          "status": "fulfilled",
+          "value": 1,
+        },
+        Object {
+          "reason": [TRPCClientError: INTERNAL_SERVER_ERROR],
+          "status": "rejected",
+        },
       ]
     `);
   });
@@ -184,15 +190,21 @@ describe('with transformer', () => {
   test('out-of-order streaming with error', async () => {
     const { proxy } = ctx;
 
-    const results = await Promise.all([
+    const results = await Promise.allSettled([
       proxy.deferred.query({ wait: 1 }),
-      proxy.error.query().catch((err) => err),
+      proxy.error.query(),
     ]);
 
     expect(results).toMatchInlineSnapshot(`
       Array [
-        1,
-        [TRPCClientError: INTERNAL_SERVER_ERROR],
+        Object {
+          "status": "fulfilled",
+          "value": 1,
+        },
+        Object {
+          "reason": [TRPCClientError: INTERNAL_SERVER_ERROR],
+          "status": "rejected",
+        },
       ]
     `);
   });
