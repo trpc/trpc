@@ -96,6 +96,9 @@ importers:
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
+      rollup-plugin-analyzer:
+        specifier: ^4.0.0
+        version: 4.0.0
       rollup-plugin-delete:
         specifier: ^2.0.0
         version: 2.0.0
@@ -21000,6 +21003,11 @@ packages:
     hasBin: true
     dependencies:
       glob: 7.2.3
+
+  /rollup-plugin-analyzer@4.0.0:
+    resolution: {integrity: sha512-LL9GEt3bkXp6Wa19SNR5MWcvHNMvuTFYg+eYBZN2OIFhSWN+pEJUQXEKu5BsOeABob3x9PDaLKW7w5iOJnsESQ==}
+    engines: {node: '>=8.0.0'}
+    dev: false
 
   /rollup-plugin-delete@2.0.0:
     resolution: {integrity: sha512-/VpLMtDy+8wwRlDANuYmDa9ss/knGsAgrDhM+tEwB1npHwNu4DYNmDfUL55csse/GHs9Q+SMT/rw9uiaZ3pnzA==}
