@@ -94,6 +94,8 @@ The `links` array that you add to the tRPC client config should have at least on
 
 [`httpBatchLink`](./httpBatchLink.md) is the recommended terminating link by tRPC.
 
+[`httpBatchStreamLink`](./httpBatchStreamLink.md) is the equivalent of `httpBatchLink` but for responses are streamed back individually instead of all together.
+
 [`httpLink`](./httpLink.md) and [`wsLink`](./wsLink.md) are other examples of terminating links.
 
 ## Managing context

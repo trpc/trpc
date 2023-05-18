@@ -5,6 +5,7 @@ import {
   TRPCClientRuntime,
   createTRPCProxyClient,
   httpBatchLink,
+  httpBatchStreamLink,
   httpLink,
   loggerLink,
 } from '@trpc/client/src';
@@ -228,9 +229,8 @@ describe('batching', () => {
       },
     });
     const links = [
-      httpBatchLink({
+      httpBatchStreamLink({
         url: `http://localhost:${httpPort}`,
-        unstable_mode: 'stream',
       })(mockRuntime),
     ];
     const chain1 = createChain({

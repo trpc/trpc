@@ -1,7 +1,12 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import {
+  TRPCLink,
+  createTRPCProxyClient,
+  httpBatchLink,
+  httpBatchStreamLink,
+} from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
@@ -169,10 +174,9 @@ test('streaming', async () => {
   const client = createTRPCProxyClient<AppRouter>({
     links: [
       linkSpy,
-      httpBatchLink({
+      httpBatchStreamLink({
         url,
         fetch: fetch as any,
-        unstable_mode: 'stream',
       }),
     ],
   });
