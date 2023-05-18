@@ -59,7 +59,7 @@ jobs:
           if_no_artifact_found: ignore
 
       - name: Build
-        run: pnpm turbo --filter "@trpc/*" build
+        run: pnpm turbo --filter "@trpc/*" build --force # TEMP: remove --force when pipeline for bundle analysis has ran once
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
