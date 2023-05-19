@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { api } from 'trpc-api';
-import { TestMutation } from '../TestMutation';
 import { ClientGreeting } from './ClientGreeting';
 import { ServerGreeting } from './ServerGreeting';
 
