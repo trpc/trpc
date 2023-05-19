@@ -5,7 +5,7 @@ import type {
 } from 'next/types';
 import { AnyRouter } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getErrorShape } from '../shared';
+import { getErrorShape } from '../shared/getErrorShape';
 import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,

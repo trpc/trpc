@@ -16,7 +16,7 @@ import {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
-import { getErrorShape } from '../shared';
+import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { CombinedDataTransformer } from '../transformer';
 import {
