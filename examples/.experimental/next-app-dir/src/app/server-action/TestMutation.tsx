@@ -24,11 +24,7 @@ function NiceFormTestMutation() {
   const mutation = useAction(testAction);
   return (
     <>
-      <p>
-        Check the network tab and the server console to see that we called this.
-        If you don't pass an input, it will fail validation and not reach the
-        procedure.
-      </p>
+      <p>Check the console for the logger output.</p>
       <form
         action={testAction}
         onSubmit={(e) => {
