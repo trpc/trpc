@@ -1157,7 +1157,7 @@ importers:
         specifier: ^1.1.1
         version: 1.2.1
       next:
-        specifier: 13.4.3
+        specifier: ^13.4.3
         version: 13.4.3(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
