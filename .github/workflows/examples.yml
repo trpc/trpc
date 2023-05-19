@@ -45,8 +45,8 @@ jobs:
             .test/big-router-declaration,
             soa,
             vercel-edge-runtime,
-            ./experimental/next-formdata,
-            ./experimental/next-app-dir,
+            experimental/next-formdata,
+            experimental/next-app-dir,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
