@@ -1,11 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { useAction } from 'trpc-api';
 import { testAction } from './_actions';
 
-function FormTestMutation() {
-  const mutation = useAction(testAction);
+function RawFormTestMutation() {
+  return (
+    <>
+      <p>
+        Check the network tab and the server console to see that we called this.
+        If you don't pass an input, it will fail validation and not reach the
+        procedure.
+      </p>
+      <form action={testAction}>
+        <input type="text" name="text" />
+        <button type="submit">Run server action raw debugging</button>
+      </form>
+    </>
+  );
 }
 
 function RawTestMutation() {
@@ -132,30 +144,49 @@ export function TestMutation() {
   //        ^?
   mutation.error;
   //       ^?
+
+  const components: {
+    Component: React.ComponentType;
+    title: ReactNode;
+  }[] = [
+    {
+      title: (
+        <>
+          <code>UseActionTestMutation</code> -{' '}
+          <code>useAction(testAction)</code>
+        </>
+      ),
+      Component: UseActionTestMutation,
+    },
+    {
+      title: (
+        <>
+          <code>RawTestMutation</code>
+          Raw inline call <code>testAction(....)</code>
+        </>
+      ),
+      Component: RawTestMutation,
+    },
+    {
+      title: (
+        <>
+          <code>&lt;form action=x</code> without any extras
+        </>
+      ),
+      Component: RawFormTestMutation,
+    },
+  ];
   return (
     <>
       <ul className="details-ul">
-        <details>
-          <summary>
-            <code>UseActionTestMutation</code> -{' '}
-            <code>useAction(testAction)</code>
-          </summary>
-          <div>
-            <UseActionTestMutation />
-          </div>
-        </details>
-
-        <details>
-          <summary>
-            <code>
-              <code>RawTestMutation</code>
-              Raw inline call <code>testAction(....)</code>
-            </code>
-          </summary>
-          <div>
-            <RawTestMutation />
-          </div>
-        </details>
+        {components.map((it, index) => (
+          <details key={index}>
+            <summary>{it.title}</summary>
+            <div>
+              <it.Component />
+            </div>
+          </details>
+        ))}
       </ul>
 
       <style jsx>{`

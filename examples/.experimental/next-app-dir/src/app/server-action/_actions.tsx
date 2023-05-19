@@ -18,7 +18,7 @@ export const testAction = createAction(
       }),
     )
     .mutation(async (opts) => {
-      console.log('testMutation', opts);
+      console.log('testMutation called', opts);
       return {
         text: 'Hello world',
         date: new Date(),
