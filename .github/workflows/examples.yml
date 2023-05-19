@@ -96,12 +96,20 @@ jobs:
 
       - run: node -v
 
+      - name: Run find-and-replace to remove '.experimental/' from above paths
+        uses: mad9000/actions-find-and-replace-string@4
+        id: findandreplace
+        with:
+          source: ${{ matrix.path }}
+          find: '.experimental/'
+          replace: ''
+
       - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+        run: pnpm turbo --filter ${{ steps.findandreplace.outputs.value }} test-dev
       - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+        run: pnpm turbo --filter ${{ steps.findandreplace.outputs.value }} build type-check
       - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+        run: pnpm turbo --filter ${{ steps.findandreplace.outputs.value }} test-start
 
   e2e-deno:
     env:
