@@ -58,7 +58,7 @@
     "@trpc/client": "10.26.0",
     "@trpc/react-query": "10.26.0",
     "@trpc/server": "10.26.0",
-    "next": "13.4.2",
+    "next": "13.4.3",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
