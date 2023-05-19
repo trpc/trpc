@@ -15,8 +15,10 @@ This is a playground repo for an offical tRPC + Next.js App directory
 - [ ] Implement cache invalidation on client calls
 - [ ] Get community feedback
 - [ ] Make server calls invalidate client calls and vice verse
-- [ ] Proof of concept of server actions
+- [x] Proof of concept of server actions
 - [ ] Test it heavily
+  - [ ] Remove codecov ignore
+  - [ ] Delete all fixme/todo comments
 - [ ] Finalize API
 
 ### Contributing
