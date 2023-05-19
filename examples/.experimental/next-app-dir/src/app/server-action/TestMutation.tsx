@@ -20,6 +20,38 @@ function RawFormTestMutation() {
   );
 }
 
+function NiceFormTestMutation() {
+  const mutation = useAction(testAction);
+  return (
+    <>
+      <p>
+        Check the network tab and the server console to see that we called this.
+        If you don't pass an input, it will fail validation and not reach the
+        procedure.
+      </p>
+      <form
+        action={testAction}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          mutation.mutate(formData);
+        }}
+      >
+        <input type="text" name="text" />
+        <button type="submit">Run server action raw debugging</button>
+
+        <pre
+          style={{
+            overflowX: 'scroll',
+          }}
+        >
+          {JSON.stringify(mutation, null, 4)}
+        </pre>
+      </form>
+    </>
+  );
+}
+
 function RawTestMutation() {
   const [text, setText] = useState('');
   const mutation = useAction(testAction);
@@ -174,6 +206,14 @@ export function TestMutation() {
         </>
       ),
       Component: RawFormTestMutation,
+    },
+    {
+      title: (
+        <>
+          <code>Nice form</code> with <code>useAction</code>
+        </>
+      ),
+      Component: NiceFormTestMutation,
     },
   ];
   return (
