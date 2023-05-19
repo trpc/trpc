@@ -112,8 +112,8 @@ import { experimental_createServerActionHandler } from './server';
         </>
       );
     }
-    // mount it
 
+    // mount it
     const utils = render(<MyComponent />);
 
     // get the contents of pre
@@ -148,6 +148,6 @@ import { experimental_createServerActionHandler } from './server';
 
     const lastState = allStates.at(-1);
     assert(lastState?.status === 'success');
-    expect(lastState?.data).toMatchInlineSnapshot(`"hello world"`);
+    expect(lastState.data).toMatchInlineSnapshot(`"hello world"`);
   });
 }
