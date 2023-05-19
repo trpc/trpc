@@ -8,8 +8,8 @@ import {
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
-import { transformTRPCResponse } from '../shared';
 import { getErrorShape } from '../shared/getErrorShape';
+import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { Maybe } from '../types';
 import {
   BaseContentTypeHandler,
