@@ -206,7 +206,7 @@ export function TestMutation() {
     {
       title: (
         <>
-          <code>Nice form</code> with <code>useAction</code>
+          <code>&lt;form&gt;</code> with <code>useAction</code>
         </>
       ),
       Component: NiceFormTestMutation,
