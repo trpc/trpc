@@ -8,7 +8,7 @@ import {
 } from '../core';
 import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
-import { transformTRPCResponse } from '../shared';
+import { getErrorShape, transformTRPCResponse } from '../shared';
 import { Maybe } from '../types';
 import {
   BaseContentTypeHandler,
@@ -173,7 +173,8 @@ export async function resolveHTTPResponse<
 
       if (obj.error) {
         return {
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error: obj.error,
             type,
             path,
@@ -211,7 +212,8 @@ export async function resolveHTTPResponse<
     });
     return endResponse(
       {
-        error: router.getErrorShape({
+        error: getErrorShape({
+          config: router._def._config,
           error,
           type,
           path: undefined,

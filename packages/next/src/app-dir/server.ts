@@ -140,7 +140,6 @@ export function experimental_createServerActionHandler<
         // TODO: send the right HTTP header?!
 
         return transformTRPCResponse(t._config, {
-          // FIXME: typecast shouldn't be needed
           error: shape as any,
         });
       }

@@ -16,6 +16,7 @@ import {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
+import { getErrorShape } from '../shared';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { CombinedDataTransformer } from '../transformer';
 import {
@@ -213,7 +214,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             respond({
               id,
               jsonrpc,
-              error: router.getErrorShape({
+              error: getErrorShape({
+                config: router._def._config,
                 error,
                 type,
                 path,
@@ -265,7 +267,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         respond({
           id,
           jsonrpc,
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error,
             type,
             path,
@@ -291,7 +294,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
         respond({
           id: null,
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error,
             type: 'unknown',
             path: undefined,
@@ -338,7 +342,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         });
         respond({
           id: null,
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error,
             type: 'unknown',
             path: undefined,

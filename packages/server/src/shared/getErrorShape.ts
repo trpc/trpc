@@ -14,7 +14,7 @@ export function getErrorShape<TConfig extends AnyRootConfig>(opts: {
   path: string | undefined;
   input: unknown;
   ctx: undefined | TConfig['$types']['ctx'];
-}) {
+}): TConfig['$types']['errorShape'] {
   const { path, error, config } = opts;
   const { code } = opts.error;
   const shape: DefaultErrorShape = {

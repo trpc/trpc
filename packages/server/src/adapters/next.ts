@@ -5,6 +5,7 @@ import type {
 } from 'next/types';
 import { AnyRouter } from '../core';
 import { TRPCError } from '../error/TRPCError';
+import { getErrorShape } from '../shared';
 import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
@@ -32,7 +33,8 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
     const path = getPath();
 
     if (path === null) {
-      const error = opts.router.getErrorShape({
+      const error = getErrorShape({
+        config: opts.router._def._config,
         error: new TRPCError({
           message:
             'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
