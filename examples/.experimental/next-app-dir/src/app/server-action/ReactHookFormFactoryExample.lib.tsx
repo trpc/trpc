@@ -1,7 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  UseTRPCActionResult,
+  inferActionResultProps,
+} from '@trpc/next/app-dir/client';
 import { TRPCActionHandler } from '@trpc/next/app-dir/server';
+import { AnyProcedure, Simplify } from '@trpc/server';
 import { useRef } from 'react';
 import {
   FormProvider,
@@ -28,15 +33,12 @@ function useZodForm<TSchema extends z.ZodType>(
   return form;
 }
 
-export function createForm<TAction extends TRPCActionHandler<any>>(opts: {
-  action: TAction;
-  schema: { _input: TAction['$proc']['_def']['_input_in'] } & z.ZodSchema<any>;
-  hookProps?: Omit<
-    UseFormProps<TAction['$proc']['_def']['_input_in']>,
-    'resolver'
-  >;
+export function createForm<TProc extends AnyProcedure>(opts: {
+  action: TRPCActionHandler<TProc>;
+  schema: { _input: TProc['_def']['_input_in'] } & z.ZodSchema<any>;
+  hookProps?: Omit<UseFormProps<TProc['_def']['_input_in']>, 'resolver'>;
 }) {
-  type FormValues = TAction['$proc']['_def']['_input_in'];
+  type FormValues = TProc['_def']['_input_in'];
   function Form(
     props: Omit<
       JSX.IntrinsicElements['form'],
@@ -44,6 +46,7 @@ export function createForm<TAction extends TRPCActionHandler<any>>(opts: {
     > & {
       render: (renderProps: {
         form: UseFormReturn<FormValues>;
+        action: UseTRPCActionResult<Simplify<inferActionResultProps<TProc>>>;
       }) => React.ReactNode;
     },
   ) {
@@ -62,10 +65,10 @@ export function createForm<TAction extends TRPCActionHandler<any>>(opts: {
           action={opts.action}
           ref={ref}
           onSubmit={hook.handleSubmit(() =>
-            action.mutateAsync(new FormData(ref.current!)),
+            action.mutateAsync(new FormData(ref.current!) as any),
           )}
         >
-          {render({ form: hook })}
+          {render({ form: hook, action })}
         </form>
       </FormProvider>
     );

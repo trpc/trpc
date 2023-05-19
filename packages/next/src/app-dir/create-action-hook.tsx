@@ -103,6 +103,15 @@ export function experimental_serverActionLink<
       });
 }
 
+/**
+ * @internal
+ */
+export type inferActionResultProps<TProc extends AnyProcedure> = {
+  input: inferHandlerInput<TProc>[0];
+  output: TProc['_def']['_output_out'];
+  errorShape: TProc['_def']['_config']['$types']['errorShape'];
+};
+
 export function experimental_createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {

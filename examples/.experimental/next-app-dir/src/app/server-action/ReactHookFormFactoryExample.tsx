@@ -19,7 +19,7 @@ export function ReactHookFormFactoryExample() {
       <MyForm
         className="my-form"
         render={(props) => {
-          const { form } = props;
+          const { form, action } = props;
 
           return (
             <>
@@ -46,13 +46,13 @@ export function ReactHookFormFactoryExample() {
                   4,
                 )}
               </pre>
-              <h2>Mutation state</h2>
+              <h2>Action state</h2>
               <pre
                 style={{
                   overflowX: 'scroll',
                 }}
               >
-                {JSON.stringify(mutation, null, 4)}
+                {JSON.stringify(action, null, 4)}
               </pre>
             </>
           );
