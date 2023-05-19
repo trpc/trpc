@@ -69,7 +69,7 @@ describe('without transformer', () => {
 
     const formData = new FormData();
     formData.append('text', 'there');
-    expect(await action(formData as any)).toMatchInlineSnapshot(`
+    expect(await action(formData)).toMatchInlineSnapshot(`
       Object {
         "result": Object {
           "data": "hello there",
@@ -281,7 +281,7 @@ describe('with transformer', () => {
               e.preventDefault();
 
               const formData = new FormData(e.currentTarget);
-              mutation.mutate(formData as any);
+              mutation.mutate(formData);
             }}
           >
             <input type="text" name="text" defaultValue="world" />
@@ -329,5 +329,80 @@ describe('with transformer', () => {
     const lastState = allStates.at(-1);
     assert(lastState?.status === 'success');
     expect(lastState.data).toMatchInlineSnapshot('"world"');
+  });
+});
+
+describe('type tests', () => {
+  const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+    try {
+      await fn();
+    } catch {
+      // ignore
+    }
+  };
+
+  const instance = initTRPC
+    .context<{
+      foo: string;
+    }>()
+    .create({});
+  const { procedure } = instance;
+
+  const createAction = experimental_createServerActionHandler(instance, {
+    createContext() {
+      return {
+        foo: 'bar',
+      };
+    },
+  });
+
+  const useAction = experimental_createActionHook({
+    links: [experimental_serverActionLink()],
+  });
+
+  test('assert input is sent', async () => {
+    ignoreErrors(async () => {
+      const action = createAction(
+        procedure.input(z.string()).mutation((opts) => opts.input),
+      );
+      const hook = useAction(action);
+      // @ts-expect-error this requires an input
+      await action();
+      // @ts-expect-error this requires an input
+      hook.mutate();
+
+      // @ts-expect-error this requires an input
+      await hook.mutateAsync();
+    });
+  });
+
+  test('assert types is correct', async () => {
+    ignoreErrors(async () => {
+      const action = createAction(
+        procedure.input(z.date().optional()).mutation((opts) => opts.input),
+      );
+      const hook = useAction(action);
+      // @ts-expect-error wrong type
+      await action('bleh');
+      // @ts-expect-error wrong type
+      hook.mutate('bleh');
+
+      hook.mutate();
+      await action();
+    });
+  });
+
+  test('assert no input', async () => {
+    ignoreErrors(async () => {
+      const action = createAction(procedure.mutation((opts) => opts.input));
+      const hook = useAction(action);
+      // @ts-expect-error this takes no input
+      await action(null);
+      // @ts-expect-error this takes no input
+      hook.mutate(null);
+
+      // @ts-expect-error this takes no input
+      await hook.mutateAsync(null);
+    });
   });
 });

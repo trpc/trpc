@@ -51,7 +51,7 @@ export function experimental_createTRPCNextAppDirServer<
  * @internal
  */
 export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
-  ...args: inferHandlerInput<TProcedure>
+  input: inferHandlerInput<TProcedure>[0] | FormData,
 ) => Promise<
   TRPCResponse<
     inferTransformedProcedureOutput<TProcedure>,
@@ -90,7 +90,9 @@ export function experimental_createServerActionHandler<
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
   ): TRPCActionHandler<TProc> {
-    return async function actionHandler(rawInput: inferProcedureInput<TProc>) {
+    return async function actionHandler(
+      rawInput: inferProcedureInput<TProc> | FormData,
+    ) {
       const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
       try {
         const ctx = await createContext();

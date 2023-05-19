@@ -27,7 +27,7 @@ interface Def {
 
 type MutationArgs<TDef extends Def> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: ProcedureOptions]
-  : [input: TDef['input'], opts?: ProcedureOptions];
+  : [input: TDef['input'] | FormData, opts?: ProcedureOptions];
 
 interface UseTRPCActionBaseResult<TDef extends Def> {
   mutate: (...args: MutationArgs<TDef>) => void;
