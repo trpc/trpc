@@ -252,4 +252,82 @@ describe('with transformer', () => {
     expect(lastState.data).toMatchInlineSnapshot('1970-01-01T00:00:00.000Z');
     expect(lastState.data).toBeInstanceOf(Date);
   });
+
+  test('FormData', async () => {
+    const action = createAction(
+      procedure
+        .input(
+          z.object({
+            text: z.string(),
+          }),
+        )
+        .mutation((opts) => opts.input.text),
+    );
+
+    const allStates: Omit<
+      UseTRPCActionResult<any>,
+      'mutate' | 'mutateAsync'
+    >[] = [] as any[];
+
+    function MyComponent() {
+      const mutation = useAction(action);
+      const { mutate, mutateAsync, ...other } = mutation;
+      allStates.push(other);
+
+      return (
+        <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+
+              const formData = new FormData(e.currentTarget);
+              mutation.mutate(formData as any);
+            }}
+          >
+            <input type="text" name="text" defaultValue="world" />
+            <button role="trigger" type="submit">
+              click me
+            </button>
+          </form>
+        </>
+      );
+    }
+
+    // mount it
+    const utils = render(<MyComponent />);
+
+    // get the contents of pre
+    expect(allStates.at(-1)).toMatchInlineSnapshot(`
+      Object {
+        "status": "idle",
+      }
+    `);
+
+    // click the button
+    userEvent.click(utils.getByRole('trigger'));
+
+    // wait to finish
+    await waitFor(() => {
+      assert(allStates.at(-1)?.status === 'success');
+    });
+
+    expect(allStates).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "status": "idle",
+        },
+        Object {
+          "status": "loading",
+        },
+        Object {
+          "data": "world",
+          "status": "success",
+        },
+      ]
+    `);
+
+    const lastState = allStates.at(-1);
+    assert(lastState?.status === 'success');
+    expect(lastState.data).toMatchInlineSnapshot('"world"');
+  });
 });
