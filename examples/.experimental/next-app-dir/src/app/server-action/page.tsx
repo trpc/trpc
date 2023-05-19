@@ -3,6 +3,7 @@ import { FormWithUseActionExample } from './FormWithUseActionExample';
 import { RawExample } from './RawExample';
 import { RawFormExample } from './RawFormExample';
 import { ReactHookFormExample } from './ReactHookFormExample';
+import { ReactHookFormFactoryExample } from './ReactHookFormFactoryExample';
 import { UseActionExample } from './UseActionExample';
 
 export default async function Home() {
@@ -47,10 +48,18 @@ export default async function Home() {
     {
       title: (
         <>
-          <code>&lt;form&gt;</code> with <code>react-hook-form</code>
+          <code>&lt;form&gt;</code> with <code>react-hook-form</code> (verbose)
         </>
       ),
       Component: ReactHookFormExample,
+    },
+    {
+      title: (
+        <>
+          <code>&lt;form&gt;</code> with <code>react-hook-form</code> factory
+        </>
+      ),
+      Component: ReactHookFormFactoryExample,
     },
   ];
   return (

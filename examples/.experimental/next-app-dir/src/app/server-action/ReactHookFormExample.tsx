@@ -7,7 +7,6 @@ import { useAction } from 'trpc-api';
 import { z } from 'zod';
 import { rhfAction } from './ReactHookFormExample.action';
 import { rhfActionSchema } from './ReactHookFormExample.schema';
-import { testAction } from './_actions';
 
 /**
  * Reusable hook for zod + react-hook-form
@@ -37,7 +36,7 @@ export function ReactHookFormExample() {
       <p>Check the console for the logger output.</p>
       <FormProvider {...form}>
         <form
-          action={testAction}
+          action={rhfAction}
           ref={formRef}
           onSubmit={form.handleSubmit(async () => {
             await mutation.mutateAsync(new FormData(formRef.current!));
