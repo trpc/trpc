@@ -11,6 +11,7 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   createContext: () => Promise<inferRouterContext<TRouter>>;
 };
 
+// ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {

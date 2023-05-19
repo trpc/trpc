@@ -12,6 +12,7 @@ type NextFetchLinkOptions<TBatch extends boolean> = {
   batch?: TBatch;
 } & (TBatch extends true ? HttpBatchLinkOptions : HTTPLinkOptions);
 
+// ts-prune-ignore-next
 export function experimental_nextHttpLink<
   TRouter extends AnyRouter,
   TBatch extends boolean,

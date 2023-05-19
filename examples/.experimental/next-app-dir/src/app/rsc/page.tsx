@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { api } from 'trpc-api';
+import { api } from 'trpc-api/server-http';
 import { ClientGreeting } from './ClientGreeting';
 import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
