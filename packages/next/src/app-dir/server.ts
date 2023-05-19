@@ -6,6 +6,7 @@ import {
 } from '@trpc/client';
 import {
   AnyProcedure,
+  AnyRootConfig,
   AnyRouter,
   MaybePromise,
   getTRPCErrorFromUnknown,
@@ -14,7 +15,6 @@ import {
 } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
-  AnyTRPCInstance,
   createRecursiveProxy,
   getErrorShape,
   inferTransformedProcedureOutput,
@@ -74,7 +74,9 @@ function isFormData(value: unknown): value is FormData {
 }
 
 export function experimental_createServerActionHandler<
-  TInstance extends AnyTRPCInstance,
+  TInstance extends {
+    _config: AnyRootConfig;
+  },
 >(
   t: TInstance,
   opts: {
