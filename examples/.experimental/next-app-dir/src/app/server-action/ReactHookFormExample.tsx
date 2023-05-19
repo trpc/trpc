@@ -39,6 +39,7 @@ export function ReactHookFormExample() {
           action={rhfAction}
           ref={formRef}
           onSubmit={form.handleSubmit(async () => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             await mutation.mutateAsync(new FormData(formRef.current!));
           })}
         >

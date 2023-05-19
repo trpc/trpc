@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /**
  * This file is meant to become a library that can be used to generate forms.
  * Massive work-in-progress and TBD if it becomes a lib.
