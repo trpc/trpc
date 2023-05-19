@@ -59,6 +59,11 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -66,7 +71,8 @@
     "src",
     "README.md",
     "package.json",
-    "links"
+    "links",
+    "shared"
   ],
   "peerDependencies": {
     "@trpc/server": "10.26.0"
