@@ -9,7 +9,7 @@ import {
 } from '@trpc/server/rpc';
 import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
-import { transformResult } from './internals/transformResult';
+import { transformResult } from '../shared/transformResult';
 import { Operation, TRPCLink } from './types';
 
 type WSCallbackResult<TRouter extends AnyRouter, TOutput> = TRPCResponseMessage<

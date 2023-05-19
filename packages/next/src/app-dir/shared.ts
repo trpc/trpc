@@ -4,11 +4,13 @@ import {
   TRPCUntypedClient,
 } from '@trpc/client';
 import {
+  AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
   Filter,
   ProtectedIntersection,
   ThenArg,
+  inferHandlerInput,
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 
@@ -68,3 +70,30 @@ export function generateCacheTag(procedurePath: string, input: any) {
     ? `${procedurePath}?input=${JSON.stringify(input)}`
     : procedurePath;
 }
+
+export function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
+
+/**
+ * @internal
+ */
+export interface ActionHandlerDef {
+  input?: any;
+  output?: any;
+  errorShape: any;
+}
+
+// ts-prune-ignore-next
+/**
+ * @internal
+ */
+export type inferActionDef<TProc extends AnyProcedure> = {
+  input: inferHandlerInput<TProc>[0];
+  output: TProc['_def']['_output_out'];
+  errorShape: TProc['_def']['_config']['$types']['errorShape'];
+};
