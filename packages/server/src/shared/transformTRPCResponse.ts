@@ -1,13 +1,13 @@
-import { AnyRouter } from '../core/router';
+import { AnyRootConfig } from '../internals';
 import { TRPCResponse, TRPCResponseMessage } from '../rpc';
 
 function transformTRPCResponseItem<
   TResponseItem extends TRPCResponse | TRPCResponseMessage,
->(router: AnyRouter, item: TResponseItem): TResponseItem {
+>(config: AnyRootConfig, item: TResponseItem): TResponseItem {
   if ('error' in item) {
     return {
       ...item,
-      error: router._def._config.transformer.output.serialize(item.error),
+      error: config.transformer.output.serialize(item.error),
     };
   }
 
@@ -16,9 +16,7 @@ function transformTRPCResponseItem<
       ...item,
       result: {
         ...item.result,
-        data: router._def._config.transformer.output.serialize(
-          item.result.data,
-        ),
+        data: config.transformer.output.serialize(item.result.data),
       },
     };
   }
@@ -35,8 +33,8 @@ export function transformTRPCResponse<
     | TRPCResponse[]
     | TRPCResponseMessage
     | TRPCResponseMessage[],
->(router: AnyRouter, itemOrItems: TResponse) {
+>(config: AnyRootConfig, itemOrItems: TResponse) {
   return Array.isArray(itemOrItems)
-    ? itemOrItems.map((item) => transformTRPCResponseItem(router, item))
-    : transformTRPCResponseItem(router, itemOrItems);
+    ? itemOrItems.map((item) => transformTRPCResponseItem(config, item))
+    : transformTRPCResponseItem(config, itemOrItems);
 }

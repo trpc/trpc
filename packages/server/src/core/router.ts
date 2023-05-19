@@ -2,7 +2,7 @@ import { TRPCError } from '../error/TRPCError';
 import { DefaultErrorShape, defaultFormatter } from '../error/formatter';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { createRecursiveProxy } from '../shared';
+import { createRecursiveProxy } from '../shared/createProxy';
 import { defaultTransformer } from '../transformer';
 import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
@@ -129,7 +129,11 @@ type RouterCaller<TDef extends AnyRouterDef> = (
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
   createCaller: RouterCaller<TDef>;
-  // FIXME rename me and deprecate
+
+  /**
+   * @deprecated
+   * FIXME: use the new standalone `getErrorShape` instead
+   */
   getErrorShape(opts: {
     error: TRPCError;
     type: ProcedureType | 'unknown';
