@@ -7,6 +7,7 @@ import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
 import typescript from 'rollup-plugin-typescript2';
+import analyzeSizeChange from './analyzeSizeChange';
 
 const isWatchMode = process.argv.includes('--watch');
 const extensions = ['.ts', '.tsx'];
@@ -90,6 +91,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
           externalHelpers: true,
         },
       }),
+      !isWatchMode && analyzeSizeChange(packageDir),
     ],
   };
 }

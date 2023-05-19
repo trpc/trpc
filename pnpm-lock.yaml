@@ -7,14 +7,14 @@ overrides:
   '@trpc/next': link:./packages/next
   '@trpc/react-query': link:./packages/react-query
   '@trpc/server': link:./packages/server
-  '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter
-  '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter
-  '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc
-  '@examples/legacy-next-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter
-  '@examples/trpc-next-prisma-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-starter
-  '@examples/next-websockets-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-websockets-starter
-  '@examples/trpc-next-prisma-todomvc>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc
-  '@examples/legacy-next-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter
+  '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
+  '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
+  '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
+  '@examples/legacy-next-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter
+  '@examples/trpc-next-prisma-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
+  '@examples/next-websockets-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
+  '@examples/trpc-next-prisma-todomvc>prisma': https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc
+  '@examples/legacy-next-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter
   '@types/testing-library__jest-dom': link:./packages/tests/vendor/@types/testing-library__jest-dom
 
 importers:
@@ -39,18 +39,6 @@ importers:
       '@swc/core':
         specifier: 1.3.3
         version: 1.3.3
-      '@testing-library/dom':
-        specifier: ^9.0.0
-        version: 9.0.0
-      '@testing-library/jest-dom':
-        specifier: ^5.16.5
-        version: 5.16.5
-      '@testing-library/react':
-        specifier: ^14.0.0
-        version: 14.0.0(react-dom@18.2.0)(react@18.2.0)
-      '@testing-library/user-event':
-        specifier: ^14.4.3
-        version: 14.4.3(@testing-library/dom@9.0.0)
       '@types/node':
         specifier: ^18.7.20
         version: 18.7.20
@@ -103,11 +91,14 @@ importers:
         specifier: ^2.8.8
         version: 2.8.8
       prettier-plugin-tailwindcss:
-        specifier: ^0.2.8
-        version: 0.2.8(@ianvs/prettier-plugin-sort-imports@3.7.2)(prettier@2.8.8)
+        specifier: ^0.3.0
+        version: 0.3.0(@ianvs/prettier-plugin-sort-imports@3.7.2)(prettier@2.8.8)
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
+      rollup-plugin-analyzer:
+        specifier: ^4.0.0
+        version: 4.0.0
       rollup-plugin-delete:
         specifier: ^2.0.0
         version: 2.0.0
@@ -123,9 +114,6 @@ importers:
       rollup-plugin-typescript2:
         specifier: ^0.32.1
         version: 0.32.1(rollup@2.79.1)(typescript@4.8.3)
-      superjson:
-        specifier: ^1.7.4
-        version: 1.11.0
       ts-prune:
         specifier: ^0.10.3
         version: 0.10.3
@@ -138,9 +126,6 @@ importers:
       typescript:
         specifier: ^4.8.3
         version: 4.8.3
-      vitest:
-        specifier: ^0.28.5
-        version: 0.28.5(@vitest/ui@0.28.5)(jsdom@21.1.0)
 
   examples/.experimental/next-app-dir:
     dependencies:
@@ -177,9 +162,6 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
-      superjson:
-        specifier: ^1.7.4
-        version: 1.11.0
       trpc-api:
         specifier: link:./src/trpc
         version: link:src/trpc
@@ -254,8 +236,8 @@ importers:
   examples/.interop/next-prisma-starter:
     dependencies:
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter(prisma@4.12.0)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -312,8 +294,8 @@ importers:
         specifier: ^8.40.0
         version: 8.40.0
       eslint-config-next:
-        specifier: ^13.3.4
-        version: 13.3.4(eslint@8.40.0)(typescript@4.8.3)
+        specifier: ^13.4.2
+        version: 13.4.2(eslint@8.40.0)(typescript@4.8.3)
       eslint-config-prettier:
         specifier: ^8.8.0
         version: 8.8.0(eslint@8.40.0)
@@ -333,8 +315,8 @@ importers:
         specifier: ^2.8.8
         version: 2.8.8
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -975,8 +957,8 @@ importers:
   examples/next-prisma-starter:
     dependencies:
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter(prisma@4.12.0)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -1030,8 +1012,8 @@ importers:
         specifier: ^8.40.0
         version: 8.40.0
       eslint-config-next:
-        specifier: ^13.3.4
-        version: 13.3.4(eslint@8.40.0)(typescript@4.8.3)
+        specifier: ^13.4.2
+        version: 13.4.2(eslint@8.40.0)(typescript@4.8.3)
       eslint-config-prettier:
         specifier: ^8.8.0
         version: 8.8.0(eslint@8.40.0)
@@ -1051,8 +1033,8 @@ importers:
         specifier: ^2.8.8
         version: 2.8.8
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-starter'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1072,8 +1054,8 @@ importers:
   examples/next-prisma-todomvc:
     dependencies:
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.12.0)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -1142,8 +1124,8 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-todomvc'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1154,8 +1136,8 @@ importers:
   examples/next-prisma-websockets-starter:
     dependencies:
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter(prisma@4.12.0)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -1230,8 +1212,8 @@ importers:
         specifier: ^8.40.0
         version: 8.40.0
       eslint-config-next:
-        specifier: ^13.3.4
-        version: 13.3.4(eslint@8.40.0)(typescript@4.8.3)
+        specifier: ^13.4.2
+        version: 13.4.2(eslint@8.40.0)(typescript@4.8.3)
       eslint-config-prettier:
         specifier: ^8.8.0
         version: 8.8.0(eslint@8.40.0)
@@ -1254,8 +1236,8 @@ importers:
         specifier: ^2.8.8
         version: 2.8.8
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-websockets-starter'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -5244,7 +5226,7 @@ packages:
     resolution: {integrity: sha512-TI+rCtooWHr3QJ27kJxfjutghu44DLnasDMwpDqCXVTal9RLp3RSYNh4NdBrRP2cQAoG9A8juOQl6P6oZG4JxA==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/code-frame': 7.21.4
+      '@babel/code-frame': 7.18.6
       '@babel/parser': 7.20.15
       '@babel/types': 7.20.7
 
@@ -5260,7 +5242,7 @@ packages:
     resolution: {integrity: sha512-d3tN8fkVJwFLkHkBN479SOsw4DMZnz8cdbL/gvuDuzy3TS6Nfw80HuQqhw1pITbIruHyh7d1fMA47kWzmcUEGA==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/code-frame': 7.21.4
+      '@babel/code-frame': 7.18.6
       '@babel/generator': 7.20.14
       '@babel/helper-environment-visitor': 7.18.9
       '@babel/helper-function-name': 7.19.0
@@ -8777,8 +8759,8 @@ packages:
   /@next/env@13.4.2:
     resolution: {integrity: sha512-Wqvo7lDeS0KGwtwg9TT9wKQ8raelmUxt+TQKWvG/xKfcmDXNOtCuaszcfCF8JzlBG1q0VhpI6CKaRMbVPMDWgw==}
 
-  /@next/eslint-plugin-next@13.3.4:
-    resolution: {integrity: sha512-mvS+HafOPy31oJbAi920WJXMdjbyb4v5FAMr9PeGZfRIdEcsLkA3mU/ZvmwzovJgP3nAWw2e2yM8iIFW8VpvIA==}
+  /@next/eslint-plugin-next@13.4.2:
+    resolution: {integrity: sha512-ZeFWgrxwckxTpYM+ANeUL9E7LOGPbZKmI94LJIjbDU69iEIgqd4WD0l2pVbOJMr/+vgoZmJ9Dx1m0WJ7WScXHA==}
     dependencies:
       glob: 7.1.7
     dev: true
@@ -9351,12 +9333,12 @@ packages:
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
 
-  /@prisma/engines-version@4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7:
-    resolution: {integrity: sha512-JIHNj5jlXb9mcaJwakM0vpgRYJIAurxTUqM0iX0tfEQA5XLZ9ONkIckkhuAKdAzocZ+80GYg7QSsfpjg7OxbOA==}
+  /@prisma/engines-version@4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c:
+    resolution: {integrity: sha512-3jum8/YSudeSN0zGW5qkpz+wAN2V/NYCQ+BPjvHYDfWatLWlQkqy99toX0GysDeaUoBIJg1vaz2yKqiA3CFcQw==}
     dev: false
 
-  /@prisma/engines@4.12.0:
-    resolution: {integrity: sha512-0alKtnxhNB5hYU+ymESBlGI4b9XrGGSdv7Ud+8TE/fBNOEhIud0XQsAR+TrvUZgS4na5czubiMsODw0TUrgkIA==}
+  /@prisma/engines@4.14.1:
+    resolution: {integrity: sha512-APqFddPVHYmWNKqc+5J5SqrLFfOghKOLZxobmguDUacxOwdEutLsbXPVhNnpFDmuQWQFbXmrTTPoRrrF6B1MWA==}
     requiresBuild: true
 
   /@resvg/resvg-wasm@2.0.0-alpha.4:
@@ -14043,8 +14025,8 @@ packages:
     optionalDependencies:
       source-map: 0.6.1
 
-  /eslint-config-next@13.3.4(eslint@8.40.0)(typescript@4.8.3):
-    resolution: {integrity: sha512-TknEcP+EdTqLvJ2zMY1KnWqcx8ZHl1C2Tjjbq3qmtWcHRU5oxe1PAsz3vrKG3NOzonSaPcB2SpCSfYqcgj6nfA==}
+  /eslint-config-next@13.4.2(eslint@8.40.0)(typescript@4.8.3):
+    resolution: {integrity: sha512-zjLJ9B9bbeWSo5q+iHfdt8gVYyT+y2BpWDfjR6XMBtFRSMKRGjllDKxnuKBV1q2Y/QpwLM2PXHJTMRyblCmRAg==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
       typescript: '>=3.3.1'
@@ -14052,7 +14034,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@next/eslint-plugin-next': 13.3.4
+      '@next/eslint-plugin-next': 13.4.2
       '@rushstack/eslint-patch': 1.2.0
       '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@4.8.3)
       eslint: 8.40.0
@@ -19930,8 +19912,8 @@ packages:
       fast-diff: 1.2.0
     dev: true
 
-  /prettier-plugin-tailwindcss@0.2.8(@ianvs/prettier-plugin-sort-imports@3.7.2)(prettier@2.8.8):
-    resolution: {integrity: sha512-KgPcEnJeIijlMjsA6WwYgRs5rh3/q76oInqtMXBA/EMcamrcYJpyhtRhyX1ayT9hnHlHTuO8sIifHF10WuSDKg==}
+  /prettier-plugin-tailwindcss@0.3.0(@ianvs/prettier-plugin-sort-imports@3.7.2)(prettier@2.8.8):
+    resolution: {integrity: sha512-009/Xqdy7UmkcTBpwlq7jsViDqXAYSOMLDrHAdTMlVZOrKfM2o9Ci7EMWTMZ7SkKBFTG04UM9F9iM2+4i6boDA==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': '*'
@@ -19944,6 +19926,7 @@ packages:
       prettier-plugin-css-order: '*'
       prettier-plugin-import-sort: '*'
       prettier-plugin-jsdoc: '*'
+      prettier-plugin-marko: '*'
       prettier-plugin-organize-attributes: '*'
       prettier-plugin-organize-imports: '*'
       prettier-plugin-style-order: '*'
@@ -19967,6 +19950,8 @@ packages:
       prettier-plugin-import-sort:
         optional: true
       prettier-plugin-jsdoc:
+        optional: true
+      prettier-plugin-marko:
         optional: true
       prettier-plugin-organize-attributes:
         optional: true
@@ -21003,6 +20988,11 @@ packages:
     hasBin: true
     dependencies:
       glob: 7.2.3
+
+  /rollup-plugin-analyzer@4.0.0:
+    resolution: {integrity: sha512-LL9GEt3bkXp6Wa19SNR5MWcvHNMvuTFYg+eYBZN2OIFhSWN+pEJUQXEKu5BsOeABob3x9PDaLKW7w5iOJnsESQ==}
+    engines: {node: '>=8.0.0'}
+    dev: false
 
   /rollup-plugin-delete@2.0.0:
     resolution: {integrity: sha512-/VpLMtDy+8wwRlDANuYmDa9ss/knGsAgrDhM+tEwB1npHwNu4DYNmDfUL55csse/GHs9Q+SMT/rw9uiaZ3pnzA==}
@@ -24217,11 +24207,11 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter(prisma@4.12.0)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter'
+  '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter(prisma@4.14.1)':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter'
     name: '@prisma/client'
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -24230,15 +24220,15 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter'
+      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter(prisma@4.12.0)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter'
+  '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter'
     name: '@prisma/client'
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -24247,15 +24237,15 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-websockets-starter'
+      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter(prisma@4.12.0)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter'
+  '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter'
     name: '@prisma/client'
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -24264,15 +24254,15 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-starter'
+      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.12.0)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc'
+  '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)':
+    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc}
+    id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc'
     name: '@prisma/client'
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     requiresBuild: true
     peerDependencies:
@@ -24281,46 +24271,46 @@ packages:
       prisma:
         optional: true
     dependencies:
-      '@prisma/engines-version': 4.12.0-67.659ef412370fa3b41cd7bf6e94587c1dfb7f67e7
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-todomvc'
+      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540exampleslegacy-next-starter':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter}
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter}
     name: prisma
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.12.0
+      '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplesnext-websockets-starter':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-websockets-starter}
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.12.0
+      '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-starter':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-starter}
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.12.0
+      '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%2540examplestrpc-next-prisma-todomvc':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc}
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc':
+    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
-    version: 4.12.0
+    version: 4.14.1
     engines: {node: '>=14.17'}
     hasBin: true
     requiresBuild: true
     dependencies:
-      '@prisma/engines': 4.12.0
+      '@prisma/engines': 4.14.1
