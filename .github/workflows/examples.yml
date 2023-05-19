@@ -96,10 +96,10 @@ jobs:
 
       - run: node -v
 
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - name: Run test-start
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
