@@ -1,3 +1,6 @@
+/**
+ * This file is generated. Do not modify manually.
+ */
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,22 +21,6 @@ import {
 } from 'react-hook-form';
 import { z } from 'zod';
 import { useAction } from '~/trpc/client';
-
-/**
- * Reusable hook for zod + react-hook-form
- */
-function useZodForm<TSchema extends z.ZodType>(
-  props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
-    schema: TSchema;
-  },
-) {
-  const form = useForm<TSchema['_input']>({
-    ...props,
-    resolver: zodResolver(props.schema, undefined),
-  });
-
-  return form;
-}
 
 export function createForm<TProc extends AnyProcedure>(opts: {
   action: TRPCActionHandler<TProc>;

@@ -63,10 +63,6 @@ export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
   // TODO: make this a Symbol?
   $proc: TProcedure;
 };
-/**
- * @internal
- */
-export type AnyTRPCActionHandler = TRPCActionHandler<AnyProcedure>;
 
 export function experimental_createServerActionHandler<
   TInstance extends {
