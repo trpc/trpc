@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAction } from 'trpc-api';
-import { testAction } from './TestMutation_action';
+import { testAction } from './_actions';
 
 function FormTestMutation() {
   const mutation = useAction(testAction);
