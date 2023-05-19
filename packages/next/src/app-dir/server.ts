@@ -8,6 +8,7 @@ import {
   AnyProcedure,
   AnyRootConfig,
   AnyRouter,
+  CombinedDataTransformer,
   MaybePromise,
   getTRPCErrorFromUnknown,
   inferHandlerInput,
@@ -21,7 +22,7 @@ import {
   transformTRPCResponse,
 } from '@trpc/server/shared';
 import { cache } from 'react';
-import { CreateTRPCNextAppRouterOptions } from './shared';
+import { CreateTRPCNextAppRouterOptions, isFormData } from './shared';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -65,14 +66,6 @@ export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
  */
 export type AnyTRPCActionHandler = TRPCActionHandler<AnyProcedure>;
 
-function isFormData(value: unknown): value is FormData {
-  if (typeof FormData === 'undefined') {
-    // FormData is not supported
-    return false;
-  }
-  return value instanceof FormData;
-}
-
 export function experimental_createServerActionHandler<
   TInstance extends {
     _config: AnyRootConfig;
@@ -91,6 +84,8 @@ export function experimental_createServerActionHandler<
   const config = t._config;
   const { normalizeFormData = true, createContext } = opts;
 
+  const transformer = config.transformer as CombinedDataTransformer;
+
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
@@ -103,12 +98,11 @@ export function experimental_createServerActionHandler<
           input: undefined,
           ctx,
           path: 'serverAction',
-
           // Normalizes formdata so we can use `z.object({})` etc on the server
           rawInput:
             normalizeFormData && isFormData(rawInput)
               ? Object.fromEntries(rawInput.entries())
-              : rawInput,
+              : transformer.input.deserialize(rawInput),
           type: proc._type,
         });
 

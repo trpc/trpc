@@ -17,6 +17,7 @@ import { observable } from '@trpc/server/observable';
 import { Serialize } from '@trpc/server/shared';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
+import { isFormData } from './shared';
 
 interface Def {
   input?: any;
@@ -80,7 +81,11 @@ export function experimental_serverActionLink<
         const context = op.context as ActionContext;
 
         context
-          ._action(op.input)
+          ._action(
+            isFormData(op.input)
+              ? op.input
+              : runtime.transformer.serialize(op.input),
+          )
           .then((data) => {
             const transformed = transformResult(data, runtime);
 

@@ -59,3 +59,14 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
 export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
   config: () => CreateTRPCClientOptions<TRouter>;
 }
+
+/**
+ * @internal
+ */
+export function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
