@@ -1,6 +1,6 @@
 'use client';
 
-import { useAction } from 'trpc-api';
+import { useEffect, useRef } from 'react';
 import { rhfAction } from './ReactHookFormExample.action';
 import { rhfActionSchema } from './ReactHookFormExample.schema';
 import { createForm } from './ReactHookFormFactoryExample.lib';
@@ -10,12 +10,42 @@ const MyForm = createForm({
   schema: rhfActionSchema,
 });
 
-export function ReactHookFormFactoryExample() {
-  const mutation = useAction(rhfAction);
+function FormState() {
+  const context = MyForm.useFormContext();
+  const textValue = MyForm.useWatch({
+    name: 'text',
+  });
 
   return (
     <>
-      <p>Check the console for the logger output.</p>
+      <h2>FormState</h2>
+      <ul>
+        <li>IsSubmitting? {context.formState.isSubmitting ? 'yes' : 'no'}</li>
+        <li>Field value: {textValue}</li>
+      </ul>
+    </>
+  );
+}
+
+function RenderCount() {
+  const renderCount = useRef(1);
+  useEffect(() => {
+    renderCount.current++;
+  });
+  return (
+    <>
+      <h2>Render count</h2>
+      <ul>
+        <li>Render count: {renderCount.current}</li>
+      </ul>
+    </>
+  );
+}
+
+export function ReactHookFormFactoryExample() {
+  return (
+    <>
+      <p>This is a playground for an imaginary form abstraction</p>
       <MyForm
         className="my-form"
         render={(props) => {
@@ -31,21 +61,7 @@ export function ReactHookFormFactoryExample() {
               </div>
 
               <h2>Form state</h2>
-              <pre
-                style={{
-                  overflowX: 'scroll',
-                }}
-              >
-                {JSON.stringify(
-                  {
-                    formState: {
-                      isSubmitting: form.formState.isSubmitting,
-                    },
-                  },
-                  null,
-                  4,
-                )}
-              </pre>
+              <FormState />
               <h2>Action state</h2>
               <pre
                 style={{
@@ -54,6 +70,7 @@ export function ReactHookFormFactoryExample() {
               >
                 {JSON.stringify(action, null, 4)}
               </pre>
+              <RenderCount />
             </>
           );
         }}

@@ -13,6 +13,8 @@ import {
   UseFormProps,
   UseFormReturn,
   useForm,
+  useFormContext,
+  useWatch,
 } from 'react-hook-form';
 import { z } from 'zod';
 import { useAction } from '~/trpc/client';
@@ -73,6 +75,9 @@ export function createForm<TProc extends AnyProcedure>(opts: {
       </FormProvider>
     );
   }
+
+  Form.useWatch = useWatch<FormValues>;
+  Form.useFormContext = useFormContext<FormValues>;
 
   return Form;
 }
