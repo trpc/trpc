@@ -9,13 +9,14 @@ import { transformResult } from '@trpc/client/shared';
 import {
   AnyProcedure,
   AnyRouter,
-  DefaultDataTransformer,
+  MaybePromise,
   ProcedureOptions,
+  Simplify,
   inferHandlerInput,
 } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { Serialize } from '@trpc/server/shared';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
 import { isFormData } from './shared';
 
@@ -115,33 +116,48 @@ export type inferActionResultProps<TProc extends AnyProcedure> = {
   errorShape: TProc['_def']['_config']['$types']['errorShape'];
 };
 
+interface UseTRPCActionOptions<TDef extends Def> {
+  onSuccess?: (result: TDef['output']) => void | MaybePromise<void>;
+  onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
+}
+
 // ts-prune-ignore-next
 export function experimental_createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
-  // TODO decouple TRPCClient more?
-
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
   const client = createTRPCUntypedClient(opts);
   return function useAction<TProc extends AnyProcedure>(
     handler: TRPCActionHandler<TProc>,
+    useActionOpts?: UseTRPCActionOptions<
+      Simplify<inferActionResultProps<TProc>>
+    >,
   ) {
     const count = useRef(0);
 
     type ProcDef = TProc['_def'];
     type Result = UseTRPCActionResult<{
       input: inferHandlerInput<TProc>[0];
-      output: ProcDef['_config']['transformer'] extends DefaultDataTransformer
-        ? Serialize<ProcDef['_output_out']>
-        : ProcDef['_output_out'];
+      output: inferTransformedProcedureOutput<TProc>;
       errorShape: ProcDef['_config']['$types']['errorShape'];
     }>;
     type State = Omit<Result, 'mutate' | 'mutateAsync'>;
     const [state, setState] = useState<State>({
       status: 'idle',
     });
+
+    const actionOptsRef = useRef(useActionOpts);
+    actionOptsRef.current = useActionOpts;
+
+    useEffect(() => {
+      return () => {
+        // cleanup after unmount to prevent calling hook opts after unmount
+        count.current = -1;
+        actionOptsRef.current = undefined;
+      };
+    }, []);
 
     const mutateAsync = useCallback(
       (input: any, requestOptions?: TRPCRequestOptions) => {
@@ -161,7 +177,8 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
             ...requestOptions,
             context,
           })
-          .then((data) => {
+          .then(async (data) => {
+            await actionOptsRef.current?.onSuccess?.(data as any);
             if (idx !== count.current) {
               return;
             }
@@ -170,13 +187,17 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
               data: data as any,
             });
           })
+          .catch(async (error) => {
+            await actionOptsRef.current?.onError?.(error);
+            throw error;
+          })
           .catch((error) => {
             if (idx !== count.current) {
               return;
             }
             setState({
               status: 'error',
-              error,
+              error: TRPCClientError.from(error, {}),
             });
             throw error;
           });
