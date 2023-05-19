@@ -105,7 +105,7 @@ export function experimental_createServerActionHandler<
           } catch {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
-              message: 'Failed to parse form data',
+              message: 'Failed to convert FormData to an object',
             });
           }
         } else if (rawInput && !isFormData(rawInput)) {
