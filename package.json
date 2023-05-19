@@ -72,6 +72,7 @@
     "rollup-plugin-node-externals": "^5.1.3",
     "rollup-plugin-swc3": "^0.8.1",
     "rollup-plugin-typescript2": "^0.32.1",
+    "superjson": "^1.7.4",
     "ts-prune": "^0.10.3",
     "tsx": "^3.12.7",
     "turbo": "^1.9.3",
