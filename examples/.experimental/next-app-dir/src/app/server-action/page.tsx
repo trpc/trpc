@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
-import { NiceFormTestMutation } from './NiceFormTestMutation';
-import { RawFormTestMutation } from './RawFormTestMutation';
-import { RawTestMutation } from './RawTestMutation';
-import { UseActionTestMutation } from './UseActionTestMutation';
+import { FormWithUseActionExample } from './FormWithUseActionExample';
+import { RawExample } from './RawExample';
+import { RawFormExample } from './RawFormExample';
+import { UseActionExample } from './UseActionExample';
 
 export default async function Home() {
   const components: {
@@ -16,7 +16,7 @@ export default async function Home() {
           <code>useAction(testAction)</code>
         </>
       ),
-      Component: UseActionTestMutation,
+      Component: UseActionExample,
     },
     {
       title: (
@@ -25,7 +25,7 @@ export default async function Home() {
           Raw inline call <code>testAction(....)</code>
         </>
       ),
-      Component: RawTestMutation,
+      Component: RawExample,
     },
     {
       title: (
@@ -33,7 +33,7 @@ export default async function Home() {
           <code>&lt;form action=x</code> without any extras
         </>
       ),
-      Component: RawFormTestMutation,
+      Component: RawFormExample,
     },
     {
       title: (
@@ -41,7 +41,7 @@ export default async function Home() {
           <code>&lt;form&gt;</code> with <code>useAction</code>
         </>
       ),
-      Component: NiceFormTestMutation,
+      Component: FormWithUseActionExample,
     },
   ];
   return (

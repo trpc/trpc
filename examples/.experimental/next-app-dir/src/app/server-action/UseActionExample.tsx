@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAction } from 'trpc-api';
 import { testAction } from './_actions';
 
-export function UseActionTestMutation() {
+export function UseActionExample() {
   const [text, setText] = useState('');
   const mutation = useAction(testAction);
 

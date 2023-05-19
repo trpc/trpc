@@ -2,7 +2,7 @@
 
 import { testAction } from './_actions';
 
-export function RawFormTestMutation() {
+export function RawFormExample() {
   return (
     <>
       <p>

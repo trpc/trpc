@@ -1,18 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useAction } from 'trpc-api';
 import { testAction } from './_actions';
 
-export function RawTestMutation() {
+export function RawExample() {
   const [text, setText] = useState('');
-  const mutation = useAction(testAction);
-  //     ^?
-  mutation.status;
-  mutation.data;
-  //        ^?
-  mutation.error;
-  //       ^?
+
   return (
     <>
       <label>

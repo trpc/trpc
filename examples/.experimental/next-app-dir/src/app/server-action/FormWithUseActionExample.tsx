@@ -3,7 +3,7 @@
 import { useAction } from 'trpc-api';
 import { testAction } from './_actions';
 
-export function NiceFormTestMutation() {
+export function FormWithUseActionExample() {
   const mutation = useAction(testAction);
   return (
     <>
