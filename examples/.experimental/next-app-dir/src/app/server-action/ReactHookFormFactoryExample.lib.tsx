@@ -1,5 +1,6 @@
 /**
- * This file is generated. Do not modify manually.
+ * This file is meant to become a library that can be used to generate forms.
+ * Massive work-in-progress and TBD if it becomes a lib.
  */
 'use client';
 
