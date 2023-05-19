@@ -140,7 +140,7 @@ export function experimental_createServerActionHandler<
         // TODO: send the right HTTP header?!
 
         return transformTRPCResponse(t._config, {
-          error: shape as any,
+          error: shape,
         });
       }
     } as TRPCActionHandler<TProc>;
