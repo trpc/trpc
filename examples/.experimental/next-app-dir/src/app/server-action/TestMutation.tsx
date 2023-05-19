@@ -9,7 +9,7 @@ function RawFormTestMutation() {
     <>
       <p>
         Check the network tab and the server console to see that we called this.
-        If you don't pass an input, it will fail validation and not reach the
+        If you don not pass an input, it will fail validation and not reach the
         procedure.
       </p>
       <form action={testAction}>
