@@ -20,12 +20,21 @@ function RawTestMutation() {
   //       ^?
   return (
     <>
+      <label>
+        Text to send: <br />
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+      </label>
+      <br />
       <button
         onClick={async () => {
           const res = await testAction({
-            text: '',
+            text,
           });
-          console.log(res);
+          console.log('result', res);
           //          ^?
           if ('result' in res) {
             res.result;
