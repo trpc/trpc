@@ -1,24 +1,19 @@
 import {
-  CreateTRPCClientOptions,
-  TRPCClientError,
+  CreateTRPCClientOptions, createTRPCUntypedClient, TRPCClientError,
   TRPCLink,
-  TRPCRequestOptions,
-  createTRPCUntypedClient,
+  TRPCRequestOptions
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
 import {
   AnyProcedure,
-  AnyRouter,
-  MaybePromise,
+  AnyRouter, inferHandlerInput, MaybePromise,
   ProcedureOptions,
-  Simplify,
-  inferHandlerInput,
+  Simplify
 } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
-import { isFormData } from './shared';
+import { ActionHandlerDef, isFormData } from './shared';
 
 interface Def {
   input?: any;
@@ -129,20 +124,15 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
     _action: (...args: any[]) => Promise<any>;
   };
   const client = createTRPCUntypedClient(opts);
-  return function useAction<TProc extends AnyProcedure>(
-    handler: TRPCActionHandler<TProc>,
+  return function useAction<TDef extends ActionHandlerDef>(
+    handler: TRPCActionHandler<TDef>,
     useActionOpts?: UseTRPCActionOptions<
-      Simplify<inferActionResultProps<TProc>>
+      Simplify<TDef>
     >,
   ) {
     const count = useRef(0);
 
-    type ProcDef = TProc['_def'];
-    type Result = UseTRPCActionResult<{
-      input: inferHandlerInput<TProc>[0];
-      output: inferTransformedProcedureOutput<TProc>;
-      errorShape: ProcDef['_config']['$types']['errorShape'];
-    }>;
+    type Result = UseTRPCActionResult<TDef>;
     type State = Omit<Result, 'mutate' | 'mutateAsync'>;
     const [state, setState] = useState<State>({
       status: 'idle',

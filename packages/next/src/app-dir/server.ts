@@ -10,21 +10,25 @@ import {
   AnyRouter,
   CombinedDataTransformer,
   MaybePromise,
+  Simplify,
   TRPCError,
   getTRPCErrorFromUnknown,
-  inferHandlerInput,
   inferProcedureInput,
 } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
   createRecursiveProxy,
   getErrorShape,
-  inferTransformedProcedureOutput,
   transformTRPCResponse,
 } from '@trpc/server/shared';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
-import { CreateTRPCNextAppRouterOptions, isFormData } from './shared';
+import {
+  ActionHandlerDef,
+  CreateTRPCNextAppRouterOptions,
+  inferActionDef,
+  isFormData,
+} from './shared';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -52,17 +56,9 @@ export function experimental_createTRPCNextAppDirServer<
 /**
  * @internal
  */
-export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
-  input: inferHandlerInput<TProcedure>[0] | FormData,
-) => Promise<
-  TRPCResponse<
-    inferTransformedProcedureOutput<TProcedure>,
-    TProcedure['_def']['_config']['$types']['errorShape']
-  >
->) & {
-  // TODO: make this a Symbol?
-  $proc: TProcedure;
-};
+export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
+  input: TDef['input'] | FormData,
+) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
 export function experimental_createServerActionHandler<
   TInstance extends {
@@ -87,7 +83,7 @@ export function experimental_createServerActionHandler<
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
-  ): TRPCActionHandler<TProc> {
+  ): TRPCActionHandler<Simplify<inferActionDef<TProc>>> {
     return async function actionHandler(
       rawInput: inferProcedureInput<TProc> | FormData,
     ) {
@@ -139,6 +135,6 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<TProc>;
+    } as TRPCActionHandler<inferActionDef<TProc>>;
   };
 }
