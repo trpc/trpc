@@ -1,14 +1,18 @@
 import {
-  CreateTRPCClientOptions, createTRPCUntypedClient, TRPCClientError,
+  CreateTRPCClientOptions,
+  TRPCClientError,
   TRPCLink,
-  TRPCRequestOptions
+  TRPCRequestOptions,
+  createTRPCUntypedClient,
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
 import {
   AnyProcedure,
-  AnyRouter, inferHandlerInput, MaybePromise,
+  AnyRouter,
+  MaybePromise,
   ProcedureOptions,
-  Simplify
+  Simplify,
+  inferHandlerInput,
 } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -126,9 +130,7 @@ export function experimental_createActionHook<TRouter extends AnyRouter>(
   const client = createTRPCUntypedClient(opts);
   return function useAction<TDef extends ActionHandlerDef>(
     handler: TRPCActionHandler<TDef>,
-    useActionOpts?: UseTRPCActionOptions<
-      Simplify<TDef>
-    >,
+    useActionOpts?: UseTRPCActionOptions<Simplify<TDef>>,
   ) {
     const count = useRef(0);
 
