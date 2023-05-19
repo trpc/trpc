@@ -11,6 +11,7 @@ import {
   inferActionResultProps,
 } from '@trpc/next/app-dir/client';
 import { TRPCActionHandler } from '@trpc/next/app-dir/server';
+import { ActionHandlerDef } from '@trpc/next/dist/app-dir/shared';
 import { AnyProcedure, Simplify } from '@trpc/server';
 import { useRef } from 'react';
 import {
@@ -24,12 +25,12 @@ import {
 import { z } from 'zod';
 import { useAction } from '~/trpc/client';
 
-export function createForm<TProc extends AnyProcedure>(opts: {
-  action: TRPCActionHandler<TProc>;
-  schema: { _input: TProc['_def']['_input_in'] } & z.ZodSchema<any>;
-  hookProps?: Omit<UseFormProps<TProc['_def']['_input_in']>, 'resolver'>;
+export function createForm<TDef extends ActionHandlerDef>(opts: {
+  action: TRPCActionHandler<TDef>;
+  schema: { _input: TDef['input'] } & z.ZodSchema<any>;
+  hookProps?: Omit<UseFormProps<TDef['input']>, 'resolver'>;
 }) {
-  type FormValues = TProc['_def']['_input_in'];
+  type FormValues = TDef['input'];
   function Form(
     props: Omit<
       JSX.IntrinsicElements['form'],
@@ -37,7 +38,7 @@ export function createForm<TProc extends AnyProcedure>(opts: {
     > & {
       render: (renderProps: {
         form: UseFormReturn<FormValues>;
-        action: UseTRPCActionResult<Simplify<inferActionResultProps<TProc>>>;
+        action: UseTRPCActionResult<TDef>;
       }) => React.ReactNode;
     },
   ) {

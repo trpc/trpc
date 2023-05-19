@@ -57,7 +57,7 @@ export function ReactHookFormFactoryExample() {
                 <input type="text" {...form.register('text')} />
               </div>
               <div>
-                <button type="submit">Run server action raw debugging</button>
+                <button type="submit">Submit</button>
               </div>
 
               <h2>Form state</h2>
