@@ -10,6 +10,7 @@ import {
   AnyRouter,
   CombinedDataTransformer,
   MaybePromise,
+  TRPCError,
   getTRPCErrorFromUnknown,
   inferHandlerInput,
   inferProcedureInput,
@@ -76,7 +77,7 @@ export function experimental_createServerActionHandler<
   opts: {
     createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
     /**
-     * Skip normalizing form data into an object
+     * Transform form data to a `Record` before passing it to the procedure
      * @default true
      */
     normalizeFormData?: boolean;
@@ -97,15 +98,25 @@ export function experimental_createServerActionHandler<
       const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
       try {
         const ctx = await createContext();
+        if (normalizeFormData && isFormData(rawInput)) {
+          // Normalizes formdata so we can use `z.object({})` etc on the server
+          try {
+            rawInput = formDataToObject(rawInput);
+          } catch {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to parse form data',
+            });
+          }
+        } else if (rawInput && !isFormData(rawInput)) {
+          rawInput = transformer.input.deserialize(rawInput);
+        }
+
         const data = await proc({
           input: undefined,
           ctx,
           path: 'serverAction',
-          // Normalizes formdata so we can use `z.object({})` etc on the server
-          rawInput:
-            normalizeFormData && isFormData(rawInput)
-              ? formDataToObject(rawInput)
-              : transformer.input.deserialize(rawInput),
+          rawInput,
           type: proc._type,
         });
 
