@@ -7,8 +7,14 @@ import { testAction } from './_actions';
 export function UseActionExample() {
   const [text, setText] = useState('');
   const mutation = useAction(testAction, {
-    onSuccess(data) {},
-    onError(error) {},
+    onSuccess(data) {
+      data;
+      // ^?
+    },
+    onError(error) {
+      error;
+      // ^?
+    },
   });
 
   return (
