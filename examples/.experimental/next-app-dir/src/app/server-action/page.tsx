@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { FormWithUseActionExample } from './FormWithUseActionExample';
 import { RawExample } from './RawExample';
 import { RawFormExample } from './RawFormExample';
+import { ReactHookFormExample } from './ReactHookFormExample';
 import { UseActionExample } from './UseActionExample';
 
 export default async function Home() {
@@ -42,6 +43,14 @@ export default async function Home() {
         </>
       ),
       Component: FormWithUseActionExample,
+    },
+    {
+      title: (
+        <>
+          <code>&lt;form&gt;</code> with <code>react-hook-form</code>
+        </>
+      ),
+      Component: ReactHookFormExample,
     },
   ];
   return (
