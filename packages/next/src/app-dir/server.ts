@@ -65,29 +65,48 @@ export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
  */
 export type AnyTRPCActionHandler = TRPCActionHandler<AnyProcedure>;
 
+function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
+
 export function experimental_createServerActionHandler<
   TInstance extends AnyTRPCInstance,
 >(
-  t: AnyTRPCInstance,
+  t: TInstance,
   opts: {
     createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
+    /**
+     * Skip normalizing form data into an object
+     * @default true
+     */
+    normalizeFormData?: boolean;
   },
 ) {
   const config = t._config;
+  const { normalizeFormData = true, createContext } = opts;
+
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
   ): TRPCActionHandler<TProc> {
-    return async function actionHandler(input: inferProcedureInput<TProc>) {
-      // TODO normalize FormData so we can call the fn the same no matter of context?
+    return async function actionHandler(rawInput: inferProcedureInput<TProc>) {
       const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
       try {
-        const ctx = await opts.createContext();
+        const ctx = await createContext();
         const data = await proc({
           input: undefined,
           ctx,
           path: 'serverAction',
-          rawInput: input,
+
+          // Normalizes formdata so we can use `z.object({})` etc on the server
+          rawInput:
+            normalizeFormData && isFormData(rawInput)
+              ? Object.fromEntries(rawInput.entries())
+              : rawInput,
           type: proc._type,
         });
 
@@ -103,7 +122,7 @@ export function experimental_createServerActionHandler<
           config,
           ctx,
           error,
-          input,
+          input: rawInput,
           path: 'serverAction',
           type: proc._type,
         });
