@@ -5,5 +5,17 @@ export async function ServerInvokedGreeting() {
     text: 'i never hit an api endpoint',
   });
 
-  return <>{data}</>;
+  return (
+    <div>
+      {data}
+      <form
+        action={async () => {
+          'use server';
+          api.greeting.revalidate();
+        }}
+      >
+        <button type="submit">Revalidate invoked</button>
+      </form>
+    </div>
+  );
 }

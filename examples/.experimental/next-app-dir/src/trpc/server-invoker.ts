@@ -4,6 +4,7 @@ import { loggerLink } from '@trpc/client';
 import { experimental_nextCacheLink } from '@trpc/next/app-dir/links/nextCache';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
 import { headers } from 'next/headers';
+import SuperJSON from 'superjson';
 import { appRouter } from '~/server/routers/_app';
 
 /**
@@ -12,6 +13,7 @@ import { appRouter } from '~/server/routers/_app';
 export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
+      transformer: SuperJSON,
       links: [
         loggerLink({
           enabled: (op) =>

@@ -30,6 +30,24 @@ export default async function Home() {
           <StreamedSC promise={promise} />
         </Suspense>
       </div>
+      <form
+        action={async () => {
+          'use server';
+          api.greeting.revalidate();
+        }}
+      >
+        <button type="submit">Revalidate Http Calls</button>
+      </form>
+
+      <div
+        style={{
+          width: '30%',
+          margin: '1rem 0',
+          height: 2,
+          background: 'hsla(210, 16%, 80%, 1)',
+        }}
+      />
+
       <div>
         <Suspense fallback={<>Loading Server...</>}>
           {/* @ts-expect-error RSC + TS not friends yet */}
