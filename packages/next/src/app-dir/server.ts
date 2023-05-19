@@ -22,6 +22,7 @@ import {
   transformTRPCResponse,
 } from '@trpc/server/shared';
 import { cache } from 'react';
+import { formDataToObject } from './formDataToObject';
 import { CreateTRPCNextAppRouterOptions, isFormData } from './shared';
 
 // ts-prune-ignore-next
@@ -103,7 +104,7 @@ export function experimental_createServerActionHandler<
           // Normalizes formdata so we can use `z.object({})` etc on the server
           rawInput:
             normalizeFormData && isFormData(rawInput)
-              ? Object.fromEntries(rawInput.entries())
+              ? formDataToObject(rawInput)
               : transformer.input.deserialize(rawInput),
           type: proc._type,
         });
