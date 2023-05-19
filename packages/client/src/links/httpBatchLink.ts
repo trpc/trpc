@@ -3,6 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
 import { NonEmptyArray } from '../internals/types';
+import { transformResult } from '../shared/transformResult';
 import {
   HTTPLinkBaseOptions,
   HTTPResult,
@@ -10,7 +11,6 @@ import {
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import { transformResult } from './internals/transformResult';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
