@@ -10,25 +10,24 @@ import {
 } from './create-action-hook';
 import { experimental_createServerActionHandler } from './server';
 
-{
-  const instance = initTRPC
-    .context<{
-      foo: string;
-    }>()
-    .create({});
-  const { procedure } = instance;
+const instance = initTRPC
+  .context<{
+    foo: string;
+  }>()
+  .create({});
+const { procedure } = instance;
 
-  const createAction = experimental_createServerActionHandler(instance, {
-    createContext() {
-      return {
-        foo: 'bar',
-      };
-    },
-  });
+const createAction = experimental_createServerActionHandler(instance, {
+  createContext() {
+    return {
+      foo: 'bar',
+    };
+  },
+});
 
-  test('server actions smoke test', async () => {
-    const action = createAction(procedure.mutation((opts) => opts.ctx));
-    expect(await action()).toMatchInlineSnapshot(`
+test('server actions smoke test', async () => {
+  const action = createAction(procedure.mutation((opts) => opts.ctx));
+  expect(await action()).toMatchInlineSnapshot(`
       Object {
         "result": Object {
           "data": Object {
@@ -37,24 +36,24 @@ import { experimental_createServerActionHandler } from './server';
         },
       }
     `);
-  });
+});
 
-  test('normalize FormData', async () => {
-    const action = createAction(
-      procedure
-        .input(
-          z.object({
-            text: z.string(),
-          }),
-        )
-        .mutation((opts) => `hello ${opts.input.text}` as const),
-    );
+test('normalize FormData', async () => {
+  const action = createAction(
+    procedure
+      .input(
+        z.object({
+          text: z.string(),
+        }),
+      )
+      .mutation((opts) => `hello ${opts.input.text}` as const),
+  );
 
-    expect(
-      await action({
-        text: 'there',
-      }),
-    ).toMatchInlineSnapshot(`
+  expect(
+    await action({
+      text: 'there',
+    }),
+  ).toMatchInlineSnapshot(`
       Object {
         "result": Object {
           "data": "hello there",
@@ -62,76 +61,74 @@ import { experimental_createServerActionHandler } from './server';
       }
     `);
 
-    const formData = new FormData();
-    formData.append('text', 'there');
-    expect(await action(formData as any)).toMatchInlineSnapshot(`
+  const formData = new FormData();
+  formData.append('text', 'there');
+  expect(await action(formData as any)).toMatchInlineSnapshot(`
       Object {
         "result": Object {
           "data": "hello there",
         },
       }
     `);
+});
+
+test('an actual client', async () => {
+  const action = createAction(
+    procedure
+      .input(
+        z.object({
+          text: z.string(),
+        }),
+      )
+      .mutation((opts) => `hello ${opts.input.text}` as const),
+  );
+
+  const useAction = experimental_createActionHook({
+    links: [experimental_serverActionLink()],
   });
+  const allStates: Omit<UseTRPCActionResult<any>, 'mutate' | 'mutateAsync'>[] =
+    [] as any[];
 
-  test('an actual client', async () => {
-    const action = createAction(
-      procedure
-        .input(
-          z.object({
-            text: z.string(),
-          }),
-        )
-        .mutation((opts) => `hello ${opts.input.text}` as const),
+  function MyComponent() {
+    const mutation = useAction(action);
+    const { mutate, mutateAsync, ...other } = mutation;
+    allStates.push(other);
+
+    return (
+      <>
+        <button
+          role="trigger"
+          onClick={() => {
+            mutation.mutate({
+              text: 'world',
+            });
+          }}
+        >
+          click me
+        </button>
+      </>
     );
+  }
 
-    const useAction = experimental_createActionHook({
-      links: [experimental_serverActionLink()],
-    });
-    const allStates: Omit<
-      UseTRPCActionResult<any>,
-      'mutate' | 'mutateAsync'
-    >[] = [] as any[];
+  // mount it
+  const utils = render(<MyComponent />);
 
-    function MyComponent() {
-      const mutation = useAction(action);
-      const { mutate, mutateAsync, ...other } = mutation;
-      allStates.push(other);
-
-      return (
-        <>
-          <button
-            role="trigger"
-            onClick={() => {
-              mutation.mutate({
-                text: 'world',
-              });
-            }}
-          >
-            click me
-          </button>
-        </>
-      );
-    }
-
-    // mount it
-    const utils = render(<MyComponent />);
-
-    // get the contents of pre
-    expect(allStates.at(-1)).toMatchInlineSnapshot(`
+  // get the contents of pre
+  expect(allStates.at(-1)).toMatchInlineSnapshot(`
       Object {
         "status": "idle",
       }
     `);
 
-    // click the button
-    userEvent.click(utils.getByRole('trigger'));
+  // click the button
+  userEvent.click(utils.getByRole('trigger'));
 
-    // wait to finish
-    await waitFor(() => {
-      assert(allStates.at(-1)?.status === 'success');
-    });
+  // wait to finish
+  await waitFor(() => {
+    assert(allStates.at(-1)?.status === 'success');
+  });
 
-    expect(allStates).toMatchInlineSnapshot(`
+  expect(allStates).toMatchInlineSnapshot(`
       Array [
         Object {
           "status": "idle",
@@ -146,8 +143,7 @@ import { experimental_createServerActionHandler } from './server';
       ]
     `);
 
-    const lastState = allStates.at(-1);
-    assert(lastState?.status === 'success');
-    expect(lastState.data).toMatchInlineSnapshot(`"hello world"`);
-  });
-}
+  const lastState = allStates.at(-1);
+  assert(lastState?.status === 'success');
+  expect(lastState.data).toMatchInlineSnapshot(`"hello world"`);
+});
