@@ -1,30 +1,9 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRef } from 'react';
-import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
 import { useAction } from 'trpc-api';
-import { z } from 'zod';
 import { rhfAction } from './ReactHookFormExample.action';
 import { rhfActionSchema } from './ReactHookFormExample.schema';
 import { createForm } from './ReactHookFormFactoryExample.lib';
-import { testAction } from './_actions';
-
-/**
- * Reusable hook for zod + react-hook-form
- */
-function useZodForm<TSchema extends z.ZodType>(
-  props: Omit<UseFormProps<TSchema['_input']>, 'resolver'> & {
-    schema: TSchema;
-  },
-) {
-  const form = useForm<TSchema['_input']>({
-    ...props,
-    resolver: zodResolver(props.schema, undefined),
-  });
-
-  return form;
-}
 
 const MyForm = createForm({
   action: rhfAction,
