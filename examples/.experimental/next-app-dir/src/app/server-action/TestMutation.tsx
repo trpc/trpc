@@ -225,29 +225,34 @@ export function TestMutation() {
         ))}
       </ul>
 
-      <style jsx>{`
-        details {
-          padding: 1rem 0.5rem;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 0.5rem;
-        }
-        details > summary {
-          padding: 0.5rem;
-        }
-        details > div {
-          padding: 1rem;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 0.25rem;
-        }
-
-        .details-ul {
-          display: grid;
-          grid-gap: 1rem;
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-      `}</style>
+      <style
+        type="text/css"
+        dangerouslySetInnerHTML={{
+          __html: `
+            .details-ul {
+              display: grid;
+              grid-gap: 1rem;
+              list-style: none;
+              margin: 0;
+              padding: 0;
+            }
+        
+            .details-ul > details {
+              padding: 1rem 0.5rem;
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 0.5rem;
+            }
+            .details-ul > details > summary {
+              padding: 0.5rem;
+            }
+            .details-ul > details > div {
+              padding: 1rem;
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 0.25rem;
+            }
+          `,
+        }}
+      />
     </>
   );
 }
