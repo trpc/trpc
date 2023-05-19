@@ -3,7 +3,11 @@
  */
 
 /** @type {import("next").NextConfig} */
-module.exports = {
+const config = {
+  experimental: {
+    // ssr prepass seems broken since they enabled app dir by default. explicitly disable it
+    appDir: false,
+  },
   serverRuntimeConfig: {
     // Will only be available on the server side
   },
@@ -15,3 +19,5 @@ module.exports = {
   /** We run eslint as a separate task in CI */
   eslint: { ignoreDuringBuilds: !!process.env.CI },
 };
+
+module.exports = config;

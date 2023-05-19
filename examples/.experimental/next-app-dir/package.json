@@ -17,7 +17,7 @@
     "@types/node": "^18.7.20",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
-    "next": "^13.3.4",
+    "next": "^13.4.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "trpc-api": "link:./src/trpc",
