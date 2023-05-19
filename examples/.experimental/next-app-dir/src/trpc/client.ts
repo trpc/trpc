@@ -13,7 +13,7 @@ import { getUrl } from './shared';
 export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
   config() {
     return {
-      // transformer: superjson,
+      transformer: superjson,
       links: [
         loggerLink({
           enabled: (op) =>
@@ -35,5 +35,5 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
 
 export const useAction = experimental_createActionHook({
   links: [loggerLink(), experimental_serverActionLink()],
-  // transformer: superjson,
+  transformer: superjson,
 });
