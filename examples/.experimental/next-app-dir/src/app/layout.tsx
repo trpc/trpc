@@ -18,7 +18,7 @@ export default function RootLayout({
       >
         <main
           style={{
-            padding: '2rem',
+            padding: '3rem',
             fontSize: '1.1rem',
           }}
         >

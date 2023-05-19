@@ -46,16 +46,17 @@ export function experimental_createTRPCNextAppDirServer<
   }) as CreateTRPCProxyClient<TRouter>;
 }
 
-type ActionResult<TProcedure extends AnyProcedure> = TRPCResponse<
-  inferTransformedProcedureOutput<TProcedure>,
-  TProcedure['_def']['_config']['$types']['errorShape']
->;
 /**
  * @internal
  */
 export type TRPCActionHandler<TProcedure extends AnyProcedure> = ((
   ...args: inferHandlerInput<TProcedure>
-) => Promise<ActionResult<TProcedure>>) & {
+) => Promise<
+  TRPCResponse<
+    inferTransformedProcedureOutput<TProcedure>,
+    TProcedure['_def']['_config']['$types']['errorShape']
+  >
+>) & {
   // TODO: make this a Symbol?
   $proc: TProcedure;
 };
