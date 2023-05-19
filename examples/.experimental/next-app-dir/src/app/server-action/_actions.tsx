@@ -1,7 +1,6 @@
 'use server';
 
 import { z } from 'zod';
-import { createPost } from '~/server/routers/_app';
 import { createAction, publicProcedure } from '~/server/trpc';
 
 /**
@@ -25,8 +24,3 @@ export const testAction = createAction(
       };
     }),
 );
-
-/**
- * You can also reuse procedures from your router API
- */
-export const testRouterProcedure = createAction(createPost);
