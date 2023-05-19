@@ -62,6 +62,7 @@ interface UseTRPCActionLoadingResult<TDef extends Def>
   status: 'loading';
 }
 
+// ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends Def> =
   | UseTRPCActionSuccessResult<TDef>
   | UseTRPCActionErrorResult<TDef>
@@ -72,6 +73,7 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
+// ts-prune-ignore-next
 export function experimental_serverActionLink<
   TRouter extends AnyRouter = AnyRouter,
 >(): TRPCLink<TRouter> {
@@ -103,6 +105,7 @@ export function experimental_serverActionLink<
       });
 }
 
+// ts-prune-ignore-next
 /**
  * @internal
  */
@@ -112,6 +115,7 @@ export type inferActionResultProps<TProc extends AnyProcedure> = {
   errorShape: TProc['_def']['_config']['$types']['errorShape'];
 };
 
+// ts-prune-ignore-next
 export function experimental_createActionHook<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {

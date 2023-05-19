@@ -7,7 +7,16 @@ import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { CreateTRPCNextAppRouterOptions } from './shared';
 
-export * from './create-action-hook';
+export {
+  // ts-prune-ignore-next
+  experimental_createActionHook,
+  // ts-prune-ignore-next
+  experimental_serverActionLink,
+  // ts-prune-ignore-next
+  type UseTRPCActionResult,
+  // ts-prune-ignore-next
+  type inferActionResultProps,
+} from './create-action-hook';
 
 // function normalizePromiseArray<TValue>(
 //   promise: Promise<TValue> | Promise<TValue>[],
