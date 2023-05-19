@@ -1,6 +1,6 @@
 ## 🚧🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 This is experimental and is subject to change 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
 
-This is a playground repo for an offical tRPC + Next.js App directory
+This is a playground repo for an offical tRPC + Next.js App directory adapter.
 
 > Note: you can already use tRPC with app directory, by:
 >
