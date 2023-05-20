@@ -32,8 +32,24 @@ async function parseMultipartFormData(
   }
 
   const formData = new FormData();
+
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
-    streamMultipart(request.body, boundary);
+    streamMultipart(
+      new ReadableStream(
+        {
+          pull(controller) {
+            const chunk: unknown = request.read();
+            if (chunk == null) {
+              controller.close();
+              return;
+            }
+            controller.enqueue(chunk);
+          },
+        },
+        { highWaterMark: request.readableHighWaterMark },
+      ),
+      boundary,
+    );
 
   for await (const part of parts) {
     if (part.done) break;
