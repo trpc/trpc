@@ -115,49 +115,65 @@ export function awsLambdaRequestHandler<
       },
     });
 
-    const { value: responseInit, done: invalidInit } = await (
-      resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
-    ).next();
-    const { value: firstChunk, done: abort } = await (
-      resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
-    ).next();
+    const response = await accumulateIteratorIntoResponseFormat(
+      resultIterator as AsyncGenerator<
+        ResponseChunk,
+        ResponseChunk | undefined
+      >,
+    );
+    return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+  };
+}
 
-    if (invalidInit) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE,
-      });
-    }
+/**
+ * WARNING: the implementation below does not support streaming responses.
+ * It will buffer the entire response in memory before returning it.
+ *
+ * For streaming support, see https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/,
+ * and look at implementation in other adapters.
+ */
+export async function accumulateIteratorIntoResponseFormat(
+  iterator: AsyncGenerator<
+    ResponseChunk | HTTPResponse,
+    ResponseChunk | undefined,
+    unknown
+  >,
+) {
+  const { value: responseInit, done: invalidInit } = await (
+    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+  ).next();
+  const { value: firstChunk, done: abort } = await (
+    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+  ).next();
 
-    if (abort) {
-      const response = {
-        status: responseInit.status,
-        headers: responseInit.headers,
-        body: firstChunk?.[1],
-      };
-      return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
-    }
+  if (invalidInit) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE,
+    });
+  }
 
-    /**
-     * WARNING: the implementation below does not support streaming responses.
-     * It will buffer the entire response in memory before returning it.
-     *
-     * For streaming support, see https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/,
-     * and look at implementation in other adapteds.
-     */
-    const responseArray: string[] = [];
-    responseArray[firstChunk[0]] = firstChunk[1];
-    for await (const [index, data] of resultIterator as AsyncGenerator<
-      ResponseChunk,
-      ResponseChunk | undefined
-    >) {
-      responseArray[index] = data;
-    }
+  if (abort) {
     const response = {
       status: responseInit.status,
       headers: responseInit.headers,
-      body: '[' + responseArray.join(',') + ']',
+      body: firstChunk?.[1],
     };
-    return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+    return response;
+  }
+
+  const responseArray: string[] = [];
+  responseArray[firstChunk[0]] = firstChunk[1];
+  for await (const [index, data] of iterator as AsyncGenerator<
+    ResponseChunk,
+    ResponseChunk | undefined
+  >) {
+    responseArray[index] = data;
+  }
+  const response = {
+    status: responseInit.status,
+    headers: responseInit.headers,
+    body: '[' + responseArray.join(',') + ']',
   };
+  return response;
 }

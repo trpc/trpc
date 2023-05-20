@@ -1,3 +1,4 @@
+import { HTTPResponse, ResponseChunk } from '@trpc/server/http/internals/types';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
@@ -457,4 +458,27 @@ test('test base64 encoded apigateway proxy integration', async () => {
       },
     }
   `);
+});
+
+test('iterator to response', async () => {
+  const iterator = (async function* () {
+    yield { status: 200, headers: { 'x-hello': ['world'] } } as HTTPResponse;
+    yield [1, JSON.stringify({ foo: 'bar' })] as ResponseChunk;
+    yield [0, JSON.stringify({ q: 'a' })] as ResponseChunk;
+    return undefined;
+  })();
+  const response = await trpcLambda.accumulateIteratorIntoResponseFormat(
+    iterator,
+  );
+  expect(response.status).toBe(200);
+  expect(response.headers).toMatchInlineSnapshot(`
+    Object {
+      "x-hello": Array [
+        "world",
+      ],
+    }
+  `);
+  expect(response.body).toMatchInlineSnapshot(
+    '"[{\\"q\\":\\"a\\"},{\\"foo\\":\\"bar\\"}]"',
+  );
 });

@@ -11,7 +11,10 @@ import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
+  iteratorToResponse,
 } from '@trpc/server/adapters/fetch';
+import { ResponseChunk } from '@trpc/server/http/internals/types';
+import { HTTPResponse } from '@trpc/server/http/internals/types';
 import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
@@ -234,4 +237,27 @@ test('response with headers', async () => {
   });
 
   await client.foo.query();
+});
+
+test('iterator to response', async () => {
+  const iterator = (async function* () {
+    yield { status: 200, headers: { 'x-hello': ['world'] } } as HTTPResponse;
+    yield [1, JSON.stringify({ foo: 'bar' })] as ResponseChunk;
+    yield [0, JSON.stringify({ q: 'a' })] as ResponseChunk;
+    return undefined;
+  })();
+  const response = await iteratorToResponse(
+    iterator,
+    new Headers({ vary: 'yolo' }),
+  );
+  expect(response.status).toBe(200);
+  expect(response.headers.get('x-hello')).toBe('world');
+  expect(response.headers.get('vary')).toContain('yolo');
+  expect(response.headers.get('vary')).toContain('x-trpc-batch-mode');
+  expect(await response.text()).toMatchInlineSnapshot(`
+    "{
+    \\"1\\":{\\"foo\\":\\"bar\\"}
+    ,\\"0\\":{\\"q\\":\\"a\\"}
+    }"
+  `);
 });

@@ -9,7 +9,7 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
   endpoint: string;
 } & FetchHandlerOptions<TRouter>;
 
-async function iteratorToResponse(
+export async function iteratorToResponse(
   iterator: AsyncGenerator<
     ResponseChunk | HTTPResponse,
     ResponseChunk | undefined,
