@@ -19,43 +19,37 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
 import { ActionHandlerDef, isFormData } from './shared';
 
-interface Def {
-  input?: any;
-  output?: any;
-  errorShape: any;
-}
-
-type MutationArgs<TDef extends Def> = TDef['input'] extends void
+type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: ProcedureOptions]
   : [input: TDef['input'] | FormData, opts?: ProcedureOptions];
 
-interface UseTRPCActionBaseResult<TDef extends Def> {
+interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutate: (...args: MutationArgs<TDef>) => void;
-  mutateAsync: (...args: MutationArgs<TDef>) => Promise<Def['output']>;
+  mutateAsync: (...args: MutationArgs<TDef>) => Promise<TDef['output']>;
 }
 
-interface UseTRPCActionSuccessResult<TDef extends Def>
+interface UseTRPCActionSuccessResult<TDef extends ActionHandlerDef>
   extends UseTRPCActionBaseResult<TDef> {
   data: TDef['output'];
   error?: never;
   status: 'success';
 }
 
-interface UseTRPCActionErrorResult<TDef extends Def>
+interface UseTRPCActionErrorResult<TDef extends ActionHandlerDef>
   extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error: TRPCClientError<TDef['errorShape']>;
   status: 'error';
 }
 
-interface UseTRPCActionIdleResult<TDef extends Def>
+interface UseTRPCActionIdleResult<TDef extends ActionHandlerDef>
   extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'idle';
 }
 
-interface UseTRPCActionLoadingResult<TDef extends Def>
+interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
   extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
@@ -63,7 +57,7 @@ interface UseTRPCActionLoadingResult<TDef extends Def>
 }
 
 // ts-prune-ignore-next
-export type UseTRPCActionResult<TDef extends Def> =
+export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
   | UseTRPCActionSuccessResult<TDef>
   | UseTRPCActionErrorResult<TDef>
   | UseTRPCActionIdleResult<TDef>
@@ -115,7 +109,7 @@ export type inferActionResultProps<TProc extends AnyProcedure> = {
   errorShape: TProc['_def']['_config']['$types']['errorShape'];
 };
 
-interface UseTRPCActionOptions<TDef extends Def> {
+interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => void | MaybePromise<void>;
   onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
 }
