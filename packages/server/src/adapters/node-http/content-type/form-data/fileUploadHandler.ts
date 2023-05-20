@@ -10,12 +10,13 @@
 /**
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-node/upload/fileUploadHandler.ts
  */
+
 import { randomBytes } from 'node:crypto';
 import { createReadStream, createWriteStream, statSync } from 'node:fs';
 import { mkdir, rm, stat as statAsync, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
-import { Readable, finished } from 'node:stream';
+import { finished, type Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import { streamSlice } from './streamSlice';
 import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
@@ -240,15 +241,15 @@ export class NodeOnDiskFile implements File {
     });
   }
 
-  stream(): ReadableStream<any>;
+  stream(): ReadableStream;
   stream(): NodeJS.ReadableStream;
-  stream(): ReadableStream<any> | NodeJS.ReadableStream {
+  stream(): ReadableStream | NodeJS.ReadableStream {
     let stream: Readable = createReadStream(this.filepath);
     if (this.slicer) {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));
     }
 
-    return Readable.toWeb(stream);
+    return stream;
   }
 
   async text(): Promise<string> {

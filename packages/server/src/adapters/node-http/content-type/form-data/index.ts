@@ -10,7 +10,6 @@
  */
 import { CombinedDataTransformer } from '@trpc/server/transformer';
 import { streamMultipart } from '@web3-storage/multipart-parser';
-import { Readable } from 'node:stream';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { NodeHTTPRequest } from '../../types';
 import { UploadHandler, UploadHandlerPart } from './uploadHandler';
@@ -34,7 +33,7 @@ async function parseMultipartFormData(
 
   const formData = new FormData();
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
-    streamMultipart(Readable.toWeb(request), boundary);
+    streamMultipart(request.body, boundary);
 
   for await (const part of parts) {
     if (part.done) break;
