@@ -1,4 +1,4 @@
-import { Transform, type TransformCallback } from 'node:stream';
+import { Transform, TransformCallback } from 'node:stream';
 
 class SliceStream extends Transform {
   #start: number;
