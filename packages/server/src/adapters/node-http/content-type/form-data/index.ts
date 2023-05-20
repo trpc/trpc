@@ -36,8 +36,8 @@ async function parseMultipartFormData(
     streamMultipart(
       new ReadableStream(
         {
-          async pull(controller) {
-            const chunk: unknown | null = await request.read();
+          pull(controller) {
+            const chunk: Buffer | null = request.read();
             if (chunk == null) {
               controller.close();
               return;
