@@ -1,5 +1,5 @@
-import { initTRPC } from 'npm:@trpc/server';
-import { z } from 'npm:zod';
+import { initTRPC } from "npm:@trpc/server";
+import { z } from "npm:zod";
 
 let id = 0;
 
@@ -7,7 +7,7 @@ const db = {
   posts: [
     {
       id: ++id,
-      title: 'hello',
+      title: "hello",
     },
   ],
 };
@@ -34,7 +34,7 @@ const postRouter = router({
 export const appRouter = router({
   post: postRouter,
   hello: publicProcedure.input(z.string().nullish()).query(({ input }) => {
-    return `hello ${input ?? 'world'}`;
+    return `hello ${input ?? "world"}`;
   }),
 });
 

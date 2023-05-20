@@ -4,13 +4,13 @@
 Install Deno then run:
 
 ```sh
-deno run --allow-net=:8000 --allow-env ./src/index.ts
+deno task dev
 ```
 
 Run the client in another terminal:
 
 ```sh
-deno run --allow-net ./src/client.ts
+deno task client
 ```
 
 ---

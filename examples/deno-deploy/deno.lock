@@ -1,0 +1,29 @@
+{
+  "version": "2",
+  "remote": {
+    "https://deno.land/std@0.188.0/async/delay.ts": "73aa04cec034c84fc748c7be49bb15cac3dd43a57174bfdb7a4aec22c248f0dd"
+  },
+  "npm": {
+    "specifiers": {
+      "@trpc/client": "@trpc/client@10.27.1_@trpc+server@10.27.1",
+      "@trpc/server": "@trpc/server@10.27.1",
+      "zod": "zod@3.21.4"
+    },
+    "packages": {
+      "@trpc/client@10.27.1_@trpc+server@10.27.1": {
+        "integrity": "sha512-e9Syj6F41OHDSUg3JvT67fgoD22UbxPzYgp9Bno13NFpyeJc6vkXRlAgDc8ZuouqUPQuouJWll/I90CsuxEqvA==",
+        "dependencies": {
+          "@trpc/server": "@trpc/server@10.27.1"
+        }
+      },
+      "@trpc/server@10.27.1": {
+        "integrity": "sha512-oMTNpei0+CAet0BuDdBE9cup0SseJAOlWRhWhcTAU05rETsJnzCA5DfNkf+aP3XiAM8rMJfrTfC0Z3aeADhHaA==",
+        "dependencies": {}
+      },
+      "zod@3.21.4": {
+        "integrity": "sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==",
+        "dependencies": {}
+      }
+    }
+  }
+}
