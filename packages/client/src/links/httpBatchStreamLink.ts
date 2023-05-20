@@ -1,23 +1,23 @@
-import { AnyRouter, ProcedureType } from '@trpc/server'
-import { observable } from '@trpc/server/observable'
-import { TRPCClientError } from '../TRPCClientError'
-import { dataLoader } from '../internals/dataLoader'
-import { NonEmptyArray } from '../internals/types'
-import { HttpBatchLinkOptions } from './httpBatchLink'
+import { AnyRouter, ProcedureType } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+import { TRPCClientError } from '../TRPCClientError';
+import { dataLoader } from '../internals/dataLoader';
+import { NonEmptyArray } from '../internals/types';
+import { transformResult } from '../shared/transformResult';
+import { HttpBatchLinkOptions } from './httpBatchLink';
 import {
   HTTPResult,
   getUrl,
   resolveHTTPLinkOptions,
   streamingJsonHttpRequester,
-} from './internals/httpUtils'
-import { transformResult } from './internals/transformResult'
-import { Operation, TRPCLink } from './types'
+} from './internals/httpUtils';
+import { Operation, TRPCLink } from './types';
 
 /**
  * Is it an object with only numeric keys?
  */
 function isObjectArray(value: HTTPResult['json']) {
-  return Object.keys(value).every((key) => !isNaN(key as any))
+  return Object.keys(value).every((key) => !isNaN(key as any));
 }
 
 /**
@@ -26,11 +26,11 @@ function isObjectArray(value: HTTPResult['json']) {
 function objectArrayToArray(
   value: Record<number, HTTPResult['json']>,
 ): HTTPResult['json'][] {
-  const array: HTTPResult['json'][] = []
+  const array: HTTPResult['json'][] = [];
   for (const key in value) {
-    array[key] = value[key] as HTTPResult['json']
+    array[key] = value[key] as HTTPResult['json'];
   }
-  return array
+  return array;
 }
 
 function handleFullJsonResponse(
@@ -40,18 +40,18 @@ function handleFullJsonResponse(
   const resJSON: HTTPResult['json'][] = Array.isArray(res.json)
     ? res.json
     : isObjectArray(res.json)
-      ? // we need to lie to TS here because we're transforming {"0": "foo", "1": "bar"} into ["foo", "bar"]
+    ? // we need to lie to TS here because we're transforming {"0": "foo", "1": "bar"} into ["foo", "bar"]
       objectArrayToArray(
         res.json as unknown as Record<number, HTTPResult['json']>,
       )
-      : batchOps.map(() => res.json)
+    : batchOps.map(() => res.json);
 
   const result = resJSON.map((item) => ({
     meta: res.meta,
     json: item,
-  }))
+  }));
 
-  return result
+  return result;
 }
 
 async function handleStreamedJsonResponse(
@@ -63,36 +63,36 @@ async function handleStreamedJsonResponse(
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
 ): Promise<HTTPResult[]> {
-  let item = await iterator.next()
+  let item = await iterator.next();
 
   // first response is *the only* response, this is not a streaming response
   if (item.done) {
-    return handleFullJsonResponse(item.value as HTTPResult, batchOps)
+    return handleFullJsonResponse(item.value as HTTPResult, batchOps);
   }
 
   do {
-    const index = item.value[0] as unknown as number // force casting to number because `a[0]` and `a["0"]` work the same
-    unitResolver(index, item.value[1])
-  } while (!(item = await iterator.next()).done)
-  return []
+    const index = item.value[0] as unknown as number; // force casting to number because `a[0]` and `a["0"]` work the same
+    unitResolver(index, item.value[1]);
+  } while (!(item = await iterator.next()).done);
+  return [];
 }
 
 export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,
 ): TRPCLink<TRouter> {
-  const resolvedOpts = resolveHTTPLinkOptions(opts)
+  const resolvedOpts = resolveHTTPLinkOptions(opts);
   // initialized config
   return (runtime) => {
-    const maxURLLength = opts.maxURLLength || Infinity
+    const maxURLLength = opts.maxURLLength || Infinity;
 
     const batchLoader = (type: ProcedureType) => {
       const validate = (batchOps: Operation[]) => {
         if (maxURLLength === Infinity) {
           // escape hatch for quick calcs
-          return true
+          return true;
         }
-        const path = batchOps.map((op) => op.path).join(',')
-        const inputs = batchOps.map((op) => op.input)
+        const path = batchOps.map((op) => op.path).join(',');
+        const inputs = batchOps.map((op) => op.input);
 
         const url = getUrl({
           ...resolvedOpts,
@@ -100,17 +100,17 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           type,
           path,
           inputs,
-        })
+        });
 
-        return url.length <= maxURLLength
-      }
+        return url.length <= maxURLLength;
+      };
 
       const fetch = (
         batchOps: Operation[],
         unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
       ) => {
-        const path = batchOps.map((op) => op.path).join(',')
-        const inputs = batchOps.map((op) => op.input)
+        const path = batchOps.map((op) => op.path).join(',');
+        const inputs = batchOps.map((op) => op.input);
 
         const httpRequesterOptions: Parameters<
           typeof streamingJsonHttpRequester
@@ -122,65 +122,65 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           inputs,
           headers() {
             if (!opts.headers) {
-              return {}
+              return {};
             }
             if (typeof opts.headers === 'function') {
               return opts.headers({
                 opList: batchOps as NonEmptyArray<Operation>,
-              })
+              });
             }
-            return opts.headers
+            return opts.headers;
           },
-        }
+        };
 
         const { promise, cancel } =
-          streamingJsonHttpRequester(httpRequesterOptions)
+          streamingJsonHttpRequester(httpRequesterOptions);
         const batchPromise = promise.then((iterator) =>
           handleStreamedJsonResponse(iterator, batchOps, unitResolver),
-        )
+        );
         return {
           promise: batchPromise,
           cancel,
-        }
-      }
+        };
+      };
 
-      return { validate, fetch }
-    }
+      return { validate, fetch };
+    };
 
-    const query = dataLoader<Operation, HTTPResult>(batchLoader('query'))
-    const mutation = dataLoader<Operation, HTTPResult>(batchLoader('mutation'))
+    const query = dataLoader<Operation, HTTPResult>(batchLoader('query'));
+    const mutation = dataLoader<Operation, HTTPResult>(batchLoader('mutation'));
     const subscription = dataLoader<Operation, HTTPResult>(
       batchLoader('subscription'),
-    )
+    );
 
-    const loaders = { query, subscription, mutation }
+    const loaders = { query, subscription, mutation };
     return ({ op }) => {
       return observable((observer) => {
-        const loader = loaders[op.type]
-        const { promise, cancel } = loader.load(op)
+        const loader = loaders[op.type];
+        const { promise, cancel } = loader.load(op);
 
         promise
           .then((res) => {
-            const transformed = transformResult(res.json, runtime)
+            const transformed = transformResult(res.json, runtime);
 
             if (!transformed.ok) {
               observer.error(
                 TRPCClientError.from(transformed.error, {
                   meta: res.meta,
                 }),
-              )
-              return
+              );
+              return;
             }
             observer.next({
               context: res.meta,
               result: transformed.result,
-            })
-            observer.complete()
+            });
+            observer.complete();
           })
-          .catch((err) => observer.error(TRPCClientError.from(err)))
+          .catch((err) => observer.error(TRPCClientError.from(err)));
 
-        return cancel
-      })
-    }
-  }
+        return cancel;
+      });
+    };
+  };
 }
