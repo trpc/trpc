@@ -32,7 +32,6 @@ async function parseMultipartFormData(
   }
 
   const formData = new FormData();
-
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
     streamMultipart(
       new ReadableStream(
