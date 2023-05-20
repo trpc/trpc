@@ -1,17 +1,17 @@
-import { routerToServerAndClientNew } from './___testHelpers';
-import { TRPCLink, httpBatchStreamLink } from '@trpc/client';
-import { TRPCError, initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
-import { konn } from 'konn';
-import superjson from 'superjson';
-import { z } from 'zod';
+import { routerToServerAndClientNew } from './___testHelpers'
+import { TRPCLink, unstable_httpBatchStreamLink } from '@trpc/client'
+import { TRPCError, initTRPC } from '@trpc/server'
+import { observable } from '@trpc/server/observable'
+import { konn } from 'konn'
+import superjson from 'superjson'
+import { z } from 'zod'
 
 describe('no transformer', () => {
-  const orderedResults: number[] = [];
+  const orderedResults: number[] = []
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC.create({});
-      orderedResults.length = 0;
+      const t = initTRPC.create({})
+      orderedResults.length = 0
       const router = t.router({
         deferred: t.procedure
           .input(
@@ -22,13 +22,13 @@ describe('no transformer', () => {
           .query(async (opts) => {
             await new Promise<void>((resolve) =>
               setTimeout(resolve, opts.input.wait * 10),
-            );
-            return opts.input.wait;
+            )
+            return opts.input.wait
           }),
         error: t.procedure.query(() => {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' })
         }),
-      });
+      })
 
       const linkSpy: TRPCLink<typeof router> = () => {
         // here we just got initialized in the app - this happens once per app
@@ -39,56 +39,56 @@ describe('no transformer', () => {
           return observable((observer) => {
             const unsubscribe = next(op).subscribe({
               next(value) {
-                orderedResults.push((value.result as any).data);
-                observer.next(value);
+                orderedResults.push((value.result as any).data)
+                observer.next(value)
               },
               error: observer.error,
-            });
-            return unsubscribe;
-          });
-        };
-      };
+            })
+            return unsubscribe
+          })
+        }
+      }
       const opts = routerToServerAndClientNew(router, {
         server: {},
         client(opts) {
           return {
             links: [
               linkSpy,
-              httpBatchStreamLink({
+              unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
               }),
             ],
-          };
+          }
         },
-      });
-      return opts;
+      })
+      return opts
     })
     .afterEach(async (opts) => {
-      await opts?.close?.();
+      await opts?.close?.()
     })
-    .done();
+    .done()
 
   test('out-of-order streaming', async () => {
-    const { proxy } = ctx;
+    const { proxy } = ctx
 
     const results = await Promise.all([
       proxy.deferred.query({ wait: 3 }),
       proxy.deferred.query({ wait: 1 }),
       proxy.deferred.query({ wait: 2 }),
-    ]);
+    ])
 
     // batch preserves request order
-    expect(results).toEqual([3, 1, 2]);
+    expect(results).toEqual([3, 1, 2])
     // streaming preserves response order
-    expect(orderedResults).toEqual([1, 2, 3]);
-  });
+    expect(orderedResults).toEqual([1, 2, 3])
+  })
   test('out-of-order streaming with error', async () => {
-    const { proxy } = ctx;
+    const { proxy } = ctx
 
     const results = await Promise.allSettled([
       proxy.deferred.query({ wait: 1 }),
       proxy.error.query(),
-    ]);
+    ])
 
     expect(results).toMatchInlineSnapshot(`
       Array [
@@ -101,18 +101,18 @@ describe('no transformer', () => {
           "status": "rejected",
         },
       ]
-    `);
-  });
-});
+    `)
+  })
+})
 
 describe('with transformer', () => {
-  const orderedResults: number[] = [];
+  const orderedResults: number[] = []
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
-      });
-      orderedResults.length = 0;
+      })
+      orderedResults.length = 0
 
       const router = t.router({
         deferred: t.procedure
@@ -124,13 +124,13 @@ describe('with transformer', () => {
           .query(async (opts) => {
             await new Promise<void>((resolve) =>
               setTimeout(resolve, opts.input.wait * 10),
-            );
-            return opts.input.wait;
+            )
+            return opts.input.wait
           }),
         error: t.procedure.query(() => {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' })
         }),
-      });
+      })
 
       const linkSpy: TRPCLink<typeof router> = () => {
         // here we just got initialized in the app - this happens once per app
@@ -141,15 +141,15 @@ describe('with transformer', () => {
           return observable((observer) => {
             const unsubscribe = next(op).subscribe({
               next(value) {
-                orderedResults.push((value.result as any).data);
-                observer.next(value);
+                orderedResults.push((value.result as any).data)
+                observer.next(value)
               },
               error: observer.error,
-            });
-            return unsubscribe;
-          });
-        };
-      };
+            })
+            return unsubscribe
+          })
+        }
+      }
       const opts = routerToServerAndClientNew(router, {
         server: {},
         client(opts) {
@@ -157,41 +157,41 @@ describe('with transformer', () => {
             transformer: superjson,
             links: [
               linkSpy,
-              httpBatchStreamLink({
+              unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
               }),
             ],
-          };
+          }
         },
-      });
-      return opts;
+      })
+      return opts
     })
     .afterEach(async (opts) => {
-      await opts?.close?.();
+      await opts?.close?.()
     })
-    .done();
+    .done()
 
   test('out-of-order streaming', async () => {
-    const { proxy } = ctx;
+    const { proxy } = ctx
 
     const results = await Promise.all([
       proxy.deferred.query({ wait: 3 }),
       proxy.deferred.query({ wait: 1 }),
       proxy.deferred.query({ wait: 2 }),
-    ]);
+    ])
 
     // batch preserves request order
-    expect(results).toEqual([3, 1, 2]);
+    expect(results).toEqual([3, 1, 2])
     // streaming preserves response order
-    expect(orderedResults).toEqual([1, 2, 3]);
-  });
+    expect(orderedResults).toEqual([1, 2, 3])
+  })
   test('out-of-order streaming with error', async () => {
-    const { proxy } = ctx;
+    const { proxy } = ctx
 
     const results = await Promise.allSettled([
       proxy.deferred.query({ wait: 1 }),
       proxy.error.query(),
-    ]);
+    ])
 
     expect(results).toMatchInlineSnapshot(`
       Array [
@@ -204,6 +204,6 @@ describe('with transformer', () => {
           "status": "rejected",
         },
       ]
-    `);
-  });
-});
+    `)
+  })
+})

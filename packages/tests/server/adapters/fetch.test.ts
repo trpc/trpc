@@ -1,55 +1,55 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
-import { Response as MiniflareResponse } from '@miniflare/core';
+import { Response as MiniflareResponse } from '@miniflare/core'
 import {
   TRPCLink,
   createTRPCProxyClient,
   httpBatchLink,
-  httpBatchStreamLink,
-} from '@trpc/client';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+  unstable_httpBatchStreamLink,
+} from '@trpc/client'
+import { inferAsyncReturnType, initTRPC } from '@trpc/server'
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
   iteratorToResponse,
-} from '@trpc/server/adapters/fetch';
-import { ResponseChunk } from '@trpc/server/http/internals/types';
-import { HTTPResponse } from '@trpc/server/http/internals/types';
-import { observable, tap } from '@trpc/server/observable';
-import { Miniflare } from 'miniflare';
-import { ReadableStream as MiniflareReadableStream } from 'stream/web';
-import { z } from 'zod';
+} from '@trpc/server/adapters/fetch'
+import { ResponseChunk } from '@trpc/server/http/internals/types'
+import { HTTPResponse } from '@trpc/server/http/internals/types'
+import { observable, tap } from '@trpc/server/observable'
+import { Miniflare } from 'miniflare'
+import { ReadableStream as MiniflareReadableStream } from 'stream/web'
+import { z } from 'zod'
 
 // miniflare does an instanceof check
-globalThis.Response = MiniflareResponse as any;
+globalThis.Response = MiniflareResponse as any
 // miniflare must use the web stream "polyfill"
-globalThis.ReadableStream = MiniflareReadableStream as any;
+globalThis.ReadableStream = MiniflareReadableStream as any
 
-const port = 8788;
-const url = `http://localhost:${port}`;
+const port = 8788
+const url = `http://localhost:${port}`
 
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
     if (req.headers.get('authorization') === 'meow') {
       return {
         name: 'KATT',
-      };
+      }
     }
-    return null;
-  };
+    return null
+  }
 
   return {
     user: getUser(),
     resHeaders,
-  };
-};
+  }
+}
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = inferAsyncReturnType<typeof createContext>
 
 function createAppRouter() {
-  const t = initTRPC.context<Context>().create();
-  const router = t.router;
-  const publicProcedure = t.procedure;
+  const t = initTRPC.context<Context>().create()
+  const router = t.router
+  const publicProcedure = t.procedure
 
   const appRouter = router({
     hello: publicProcedure
@@ -64,8 +64,8 @@ function createAppRouter() {
         text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
       })),
     foo: publicProcedure.query(({ ctx }) => {
-      ctx.resHeaders.set('x-foo', 'bar');
-      return 'foo';
+      ctx.resHeaders.set('x-foo', 'bar')
+      return 'foo'
     }),
     deferred: publicProcedure
       .input(
@@ -76,25 +76,25 @@ function createAppRouter() {
       .query(async (opts) => {
         await new Promise<void>((resolve) =>
           setTimeout(resolve, opts.input.wait * 10),
-        );
-        return opts.input.wait;
+        )
+        return opts.input.wait
       }),
-  });
+  })
 
-  return appRouter;
+  return appRouter
 }
 
-type AppRouter = ReturnType<typeof createAppRouter>;
+type AppRouter = ReturnType<typeof createAppRouter>
 
 async function startServer() {
-  const router = createAppRouter();
+  const router = createAppRouter()
 
   const mf = new Miniflare({
     script: '//',
     port,
     compatibilityFlags: ['streams_enable_constructors'],
-  });
-  const globalScope = await mf.getGlobalScope();
+  })
+  const globalScope = await mf.getGlobalScope()
   globalScope.addEventListener('fetch', (event: FetchEvent) => {
     const response = fetchRequestHandler({
       endpoint: '',
@@ -104,36 +104,36 @@ async function startServer() {
       responseMeta() {
         return {
           headers: {},
-        };
+        }
       },
-    });
-    event.respondWith(response);
-  });
-  const server = await mf.startServer();
+    })
+    event.respondWith(response)
+  })
+  const server = await mf.startServer()
 
   const client = createTRPCProxyClient<typeof router>({
     links: [httpBatchLink({ url, fetch: fetch as any })],
-  });
+  })
 
   return {
     close: () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
-          err ? reject(err) : resolve();
+          err ? reject(err) : resolve()
         }),
       ),
     router,
     client,
-  };
+  }
 }
 
-let t: inferAsyncReturnType<typeof startServer>;
+let t: inferAsyncReturnType<typeof startServer>
 beforeAll(async () => {
-  t = await startServer();
-});
+  t = await startServer()
+})
 afterAll(async () => {
-  await t.close();
-});
+  await t.close()
+})
 
 test('simple query', async () => {
   expect(
@@ -144,17 +144,17 @@ test('simple query', async () => {
     Object {
       "text": "hello test",
     }
-  `);
+  `)
 
   expect(await t.client.hello.query()).toMatchInlineSnapshot(`
     Object {
       "text": "hello world",
     }
-  `);
-});
+  `)
+})
 
 test('streaming', async () => {
-  const orderedResults: number[] = [];
+  const orderedResults: number[] = []
   const linkSpy: TRPCLink<AppRouter> = () => {
     // here we just got initialized in the app - this happens once per app
     // useful for storing cache for instance
@@ -164,34 +164,34 @@ test('streaming', async () => {
       return observable((observer) => {
         const unsubscribe = next(op).subscribe({
           next(value) {
-            orderedResults.push((value.result as any).data);
-            observer.next(value);
+            orderedResults.push((value.result as any).data)
+            observer.next(value)
           },
           error: observer.error,
-        });
-        return unsubscribe;
-      });
-    };
-  };
+        })
+        return unsubscribe
+      })
+    }
+  }
 
   const client = createTRPCProxyClient<AppRouter>({
     links: [
       linkSpy,
-      httpBatchStreamLink({
+      unstable_httpBatchStreamLink({
         url,
         fetch: fetch as any,
       }),
     ],
-  });
+  })
 
   const results = await Promise.all([
     client.deferred.query({ wait: 3 }),
     client.deferred.query({ wait: 1 }),
     client.deferred.query({ wait: 2 }),
-  ]);
-  expect(results).toEqual([3, 1, 2]);
-  expect(orderedResults).toEqual([1, 2, 3]);
-});
+  ])
+  expect(results).toEqual([3, 1, 2])
+  expect(orderedResults).toEqual([1, 2, 3])
+})
 
 test('query with headers', async () => {
   const client = createTRPCProxyClient<AppRouter>({
@@ -202,14 +202,14 @@ test('query with headers', async () => {
         headers: { authorization: 'meow' },
       }),
     ],
-  });
+  })
 
   expect(await client.hello.query()).toMatchInlineSnapshot(`
     Object {
       "text": "hello KATT",
     }
-  `);
-});
+  `)
+})
 
 test('response with headers', async () => {
   const customLink: TRPCLink<AppRouter> = () => {
@@ -217,13 +217,13 @@ test('response with headers', async () => {
       return next(op).pipe(
         tap({
           next(result) {
-            const context = result.context as { response: Response };
-            expect(context.response.headers.get('x-foo')).toBe('bar');
+            const context = result.context as { response: Response }
+            expect(context.response.headers.get('x-foo')).toBe('bar')
           },
         }),
-      );
-    };
-  };
+      )
+    }
+  }
 
   const client = createTRPCProxyClient<AppRouter>({
     links: [
@@ -234,30 +234,30 @@ test('response with headers', async () => {
         headers: { authorization: 'meow' },
       }),
     ],
-  });
+  })
 
-  await client.foo.query();
-});
+  await client.foo.query()
+})
 
 test('iterator to response', async () => {
   const iterator = (async function* () {
-    yield { status: 200, headers: { 'x-hello': ['world'] } } as HTTPResponse;
-    yield [1, JSON.stringify({ foo: 'bar' })] as ResponseChunk;
-    yield [0, JSON.stringify({ q: 'a' })] as ResponseChunk;
-    return undefined;
-  })();
+    yield { status: 200, headers: { 'x-hello': ['world'] } } as HTTPResponse
+    yield [1, JSON.stringify({ foo: 'bar' })] as ResponseChunk
+    yield [0, JSON.stringify({ q: 'a' })] as ResponseChunk
+    return undefined
+  })()
   const response = await iteratorToResponse(
     iterator,
     new Headers({ vary: 'yolo' }),
-  );
-  expect(response.status).toBe(200);
-  expect(response.headers.get('x-hello')).toBe('world');
-  expect(response.headers.get('vary')).toContain('yolo');
-  expect(response.headers.get('vary')).toContain('x-trpc-batch-mode');
+  )
+  expect(response.status).toBe(200)
+  expect(response.headers.get('x-hello')).toBe('world')
+  expect(response.headers.get('vary')).toContain('yolo')
+  expect(response.headers.get('vary')).toContain('x-trpc-batch-mode')
   expect(await response.text()).toMatchInlineSnapshot(`
     "{
     \\"1\\":{\\"foo\\":\\"bar\\"}
     ,\\"0\\":{\\"q\\":\\"a\\"}
     }"
-  `);
-});
+  `)
+})
