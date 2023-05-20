@@ -5,3 +5,5 @@ export function createContext(opts?: FetchCreateContextFnOptions) {
     headers: opts && Object.fromEntries(opts.req.headers),
   };
 }
+
+export type Context = Awaited<ReturnType<typeof createContext>>;

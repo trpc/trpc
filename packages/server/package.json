@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.26.0",
+  "version": "10.27.1",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -155,7 +155,7 @@
     "fastify-plugin": "^4.5.0",
     "hash-sum": "^2.0.0",
     "myzod": "^1.3.1",
-    "next": "^13.3.4",
+    "next": "^13.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",

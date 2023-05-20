@@ -44,6 +44,10 @@
     "@manypkg/cli": "^0.20.0",
     "@rollup/plugin-node-resolve": "^15.0.2",
     "@swc/core": "1.3.3",
+    "@testing-library/dom": "^9.0.0",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.4.3",
     "@types/node": "^18.7.20",
     "@types/prettier": "^2.7.2",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
@@ -69,10 +73,12 @@
     "rollup-plugin-node-externals": "^5.1.3",
     "rollup-plugin-swc3": "^0.8.1",
     "rollup-plugin-typescript2": "^0.32.1",
+    "superjson": "^1.7.4",
     "ts-prune": "^0.10.3",
     "tsx": "^3.12.7",
     "turbo": "^1.9.3",
-    "typescript": "^4.8.3"
+    "typescript": "^4.8.3",
+    "vitest": "^0.28.5"
   },
   "pnpm": {
     "overrides": {
@@ -82,14 +88,14 @@
       "@trpc/next": "link:./packages/next",
       "@trpc/react-query": "link:./packages/react-query",
       "@trpc/server": "link:./packages/server",
-      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-starter",
-      "@examples/next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplesnext-websockets-starter",
-      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=examplestrpc-next-prisma-todomvc",
-      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.12.0.tgz?id=exampleslegacy-next-starter",
-      "@examples/trpc-next-prisma-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-starter",
-      "@examples/next-websockets-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplesnext-websockets-starter",
-      "@examples/trpc-next-prisma-todomvc>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40examplestrpc-next-prisma-todomvc",
-      "@examples/legacy-next-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.12.0.tgz?id=%40exampleslegacy-next-starter",
+      "@examples/trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter",
+      "@examples/next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter",
+      "@examples/trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc",
+      "@examples/legacy-next-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter",
+      "@examples/trpc-next-prisma-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter",
+      "@examples/next-websockets-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter",
+      "@examples/trpc-next-prisma-todomvc>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc",
+      "@examples/legacy-next-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter",
       "@types/testing-library__jest-dom": "link:./packages/tests/vendor/@types/testing-library__jest-dom"
     }
   }
