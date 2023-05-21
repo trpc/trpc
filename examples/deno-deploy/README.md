@@ -4,7 +4,7 @@
 Install Deno then run:
 
 ```sh
-deno task dev
+deno task server
 ```
 
 Run the client in another terminal:
