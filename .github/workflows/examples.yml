@@ -163,4 +163,4 @@ jobs:
         if: ${{ matrix.dir == 'deno-deploy' }}
         run: |
           cd ./examples/${{ matrix.dir }}
-          pnpm dlx start-server-and-test "deno task server" http://localhost:8000 "deno task client"
+          pnpm dlx start-server-and-test "deno task server" http://127.0.0.1:8000 "deno task client"
