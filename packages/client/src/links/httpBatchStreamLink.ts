@@ -1,9 +1,6 @@
 import { NonEmptyArray } from '../internals/types';
 import { RequesterFn } from './httpBatchLink';
-import {
-  HTTPResult,
-  streamingJsonHttpRequester,
-} from './internals/httpUtils';
+import { HTTPResult, streamingJsonHttpRequester } from './internals/httpUtils';
 import { Operation } from './types';
 
 /**
@@ -84,10 +81,7 @@ export const unstable_streamRequester: RequesterFn = (
   type,
   opts,
 ) => {
-  return (
-    batchOps,
-    unitResolver,
-  ) => {
+  return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
 
@@ -122,4 +116,4 @@ export const unstable_streamRequester: RequesterFn = (
       cancel,
     };
   };
-}
+};

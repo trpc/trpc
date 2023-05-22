@@ -144,7 +144,6 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-
 ## Streaming requester (experimental)
 
 > ⚠️ `streamRequester` is experimental and may change in the future.
@@ -152,7 +151,11 @@ export const trpc = createTRPCNext<AppRouter>({
 When batching requests together, the default behavior is to wait for all requests to finish before sending the response. This standard behavior uses the `batchRequester` under the hood. If you want to send responses as soon as they are ready, you can use the `streamRequester` instead. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpBatchLink, unstable_streamRequester } from '@trpc/client';
+import {
+  createTRPCProxyClient,
+  httpBatchLink,
+  unstable_streamRequester,
+} from '@trpc/client';
 import type { AppRouter } from '../server';
 
 const client = createTRPCProxyClient<AppRouter>({

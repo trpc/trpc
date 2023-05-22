@@ -7,12 +7,18 @@ import { transformResult } from '../shared/transformResult';
 import {
   HTTPLinkBaseOptions,
   HTTPResult,
+  ResolvedHTTPLinkOptions,
   getUrl,
   jsonHttpRequester,
   resolveHTTPLinkOptions,
-  ResolvedHTTPLinkOptions,
 } from './internals/httpUtils';
-import { CancelFn, HTTPHeaders, Operation, TRPCClientRuntime, TRPCLink } from './types';
+import {
+  CancelFn,
+  HTTPHeaders,
+  Operation,
+  TRPCClientRuntime,
+  TRPCLink,
+} from './types';
 
 /**
  * @internal
@@ -26,14 +32,16 @@ export type RequesterFn = (
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
 ) => {
-  promise: Promise<{
+  promise: Promise<
+    {
       meta: {
-          response: ResponseEsque;
+        response: ResponseEsque;
       };
       json: any;
-  }[]>;
+    }[]
+  >;
   cancel: CancelFn;
-}
+};
 
 export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
   maxURLLength?: number;
@@ -46,8 +54,8 @@ export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
     | ((opts: {
         opList: NonEmptyArray<Operation>;
       }) => HTTPHeaders | Promise<HTTPHeaders>);
-      
-  requester?: RequesterFn
+
+  requester?: RequesterFn;
 }
 
 export const batchRequester: RequesterFn = (
@@ -95,7 +103,7 @@ export const batchRequester: RequesterFn = (
       cancel,
     };
   };
-}
+};
 
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HttpBatchLinkOptions,

@@ -28,7 +28,7 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
    * batched HTTP request with a streamed response,
    * because in that case, the headers are evaluated
    * eagerly, before the responses are ready.
-   * 
+   *
    * This only applies to `httpBatchLink` using the
    * `streamRequester` option.
    */

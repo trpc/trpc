@@ -5,8 +5,8 @@ import {
   TRPCLink,
   createTRPCProxyClient,
   createWSClient,
-  splitLink,
   httpBatchLink,
+  splitLink,
   unstable_streamRequester,
   wsLink,
 } from '@trpc/client/src';
