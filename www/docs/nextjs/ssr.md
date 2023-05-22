@@ -131,7 +131,15 @@ export async function getServerSideProps(
     ctx: {},
     transformer: superjson, // optional - adds superjson serialization
   });
-  const id = context.params?.id as string;
+
+  const idResult = z.string.nonempty.safeParse(context.params?.id);
+  if (!idResult.success) {
+    return {
+      props: { id: null },
+      notFound: true,
+    };
+  }
+  const id = idResult.data
 
   // check if post exists - `prefetch` doesn't change its behavior
   // based on the result of the query (including throws), so if we
