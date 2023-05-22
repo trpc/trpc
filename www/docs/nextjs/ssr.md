@@ -137,16 +137,16 @@ export async function getServerSideProps(
   // based on the result of the query (including throws), so if we
   // want to change the logic here in gSSP, we need to use `fetch`.
   const postExists = await helpers.post.exists.fetch({ id });
-  if (postExists) {
-    // prefetch `post.byId`
-    await helpers.post.byId.prefetch({ id });
-  } else {
-    // if post doesn't exist, return 404
+  if (!postExists) {
     return {
       props: { id },
       notFound: true,
     };
   }
+
+  // prefetch `post.byId`
+  await helpers.post.byId.prefetch({ id });
+
   return {
     props: {
       trpcState: helpers.dehydrate(),
