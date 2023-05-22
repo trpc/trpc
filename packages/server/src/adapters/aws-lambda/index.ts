@@ -126,7 +126,10 @@ export function awsLambdaRequestHandler<
 }
 
 /**
- * WARNING: the implementation below does not support streaming responses.
+ * @internal
+ * 
+ * @warning
+ * the implementation below does not support streaming responses.
  * It will buffer the entire response in memory before returning it.
  *
  * For streaming support, see https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/,

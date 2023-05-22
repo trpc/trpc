@@ -60,6 +60,9 @@ export async function fastifyRequestHandler<
   return iteratorToResponse(resultIterator, opts.res);
 }
 
+/**
+ * @internal
+ */
 export async function iteratorToResponse(
   iterator: AsyncGenerator<
     ResponseChunk | HTTPResponse,
