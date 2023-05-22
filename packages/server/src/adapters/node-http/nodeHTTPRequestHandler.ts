@@ -86,6 +86,9 @@ export async function nodeHTTPRequestHandler<
   });
 }
 
+/**
+ * @internal
+ */
 export async function iteratorToResponse(
   iterator: AsyncGenerator<
     ResponseChunk | HTTPResponse,
