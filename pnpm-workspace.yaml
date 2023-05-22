@@ -6,3 +6,4 @@ packages:
   - 'examples/minimal-react/*'
   - 'www'
   - 'www/og-image'
+  - '!examples/.*/next-app-dir'
