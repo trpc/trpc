@@ -1,17 +1,10 @@
-import { AnyRouter, ProcedureType } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
-import { TRPCClientError } from '../TRPCClientError';
-import { dataLoader } from '../internals/dataLoader';
 import { NonEmptyArray } from '../internals/types';
-import { transformResult } from '../shared/transformResult';
-import { HttpBatchLinkOptions } from './httpBatchLink';
+import { RequesterFn } from './httpBatchLink';
 import {
   HTTPResult,
-  getUrl,
-  resolveHTTPLinkOptions,
   streamingJsonHttpRequester,
 } from './internals/httpUtils';
-import { Operation, TRPCLink } from './types';
+import { Operation } from './types';
 
 /**
  * Is it an object with only numeric keys?
@@ -77,110 +70,56 @@ async function handleStreamedJsonResponse(
   return [];
 }
 
-export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
-  opts: HttpBatchLinkOptions,
-): TRPCLink<TRouter> {
-  const resolvedOpts = resolveHTTPLinkOptions(opts);
-  // initialized config
-  return (runtime) => {
-    const maxURLLength = opts.maxURLLength || Infinity;
+/**
+ * @example
+ * ```ts
+ * httpBatchLink({
+ *   requester: streamRequester,
+ * })
+ * ```
+ */
+export const unstable_streamRequester: RequesterFn = (
+  resolvedOpts,
+  runtime,
+  type,
+  opts,
+) => {
+  return (
+    batchOps,
+    unitResolver,
+  ) => {
+    const path = batchOps.map((op) => op.path).join(',');
+    const inputs = batchOps.map((op) => op.input);
 
-    const batchLoader = (type: ProcedureType) => {
-      const validate = (batchOps: Operation[]) => {
-        if (maxURLLength === Infinity) {
-          // escape hatch for quick calcs
-          return true;
+    const httpRequesterOptions: Parameters<
+      typeof streamingJsonHttpRequester
+    >[0] = {
+      ...resolvedOpts,
+      runtime,
+      type,
+      path,
+      inputs,
+      headers() {
+        if (!opts.headers) {
+          return {};
         }
-        const path = batchOps.map((op) => op.path).join(',');
-        const inputs = batchOps.map((op) => op.input);
-
-        const url = getUrl({
-          ...resolvedOpts,
-          runtime,
-          type,
-          path,
-          inputs,
-        });
-
-        return url.length <= maxURLLength;
-      };
-
-      const fetch = (
-        batchOps: Operation[],
-        unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
-      ) => {
-        const path = batchOps.map((op) => op.path).join(',');
-        const inputs = batchOps.map((op) => op.input);
-
-        const httpRequesterOptions: Parameters<
-          typeof streamingJsonHttpRequester
-        >[0] = {
-          ...resolvedOpts,
-          runtime,
-          type,
-          path,
-          inputs,
-          headers() {
-            if (!opts.headers) {
-              return {};
-            }
-            if (typeof opts.headers === 'function') {
-              return opts.headers({
-                opList: batchOps as NonEmptyArray<Operation>,
-              });
-            }
-            return opts.headers;
-          },
-        };
-
-        const { promise, cancel } =
-          streamingJsonHttpRequester(httpRequesterOptions);
-        const batchPromise = promise.then((iterator) =>
-          handleStreamedJsonResponse(iterator, batchOps, unitResolver),
-        );
-        return {
-          promise: batchPromise,
-          cancel,
-        };
-      };
-
-      return { validate, fetch };
+        if (typeof opts.headers === 'function') {
+          return opts.headers({
+            opList: batchOps as NonEmptyArray<Operation>,
+          });
+        }
+        return opts.headers;
+      },
     };
 
-    const query = dataLoader<Operation, HTTPResult>(batchLoader('query'));
-    const mutation = dataLoader<Operation, HTTPResult>(batchLoader('mutation'));
-    const subscription = dataLoader<Operation, HTTPResult>(
-      batchLoader('subscription'),
+    const { promise, cancel } =
+      streamingJsonHttpRequester(httpRequesterOptions);
+    const batchPromise = promise.then((iterator) =>
+      handleStreamedJsonResponse(iterator, batchOps, unitResolver),
     );
-
-    const loaders = { query, subscription, mutation };
-    return ({ op }) => {
-      return observable((observer) => {
-        const loader = loaders[op.type];
-        const { promise, cancel } = loader.load(op);
-
-        promise
-          .then((res) => {
-            const transformed = transformResult(res.json, runtime);
-
-            if (!transformed.ok) {
-              observer.error(
-                TRPCClientError.from(transformed.error, {
-                  meta: res.meta,
-                }),
-              );
-              return;
-            }
-            observer.next({
-              context: res.meta,
-              result: transformed.result,
-            });
-            observer.complete();
-          })
-          .catch((err) => observer.error(TRPCClientError.from(err)));
-
-        return cancel;
-      });
+    return {
+      promise: batchPromise,
+      cancel,
     };
   };
 }

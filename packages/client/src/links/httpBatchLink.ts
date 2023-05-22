@@ -2,7 +2,7 @@ import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
-import { NonEmptyArray } from '../internals/types';
+import { NonEmptyArray, ResponseEsque } from '../internals/types';
 import { transformResult } from '../shared/transformResult';
 import {
   HTTPLinkBaseOptions,
@@ -10,8 +10,30 @@ import {
   getUrl,
   jsonHttpRequester,
   resolveHTTPLinkOptions,
+  ResolvedHTTPLinkOptions,
 } from './internals/httpUtils';
-import { HTTPHeaders, Operation, TRPCLink } from './types';
+import { CancelFn, HTTPHeaders, Operation, TRPCClientRuntime, TRPCLink } from './types';
+
+/**
+ * @internal
+ */
+export type RequesterFn = (
+  resolvedOpts: ResolvedHTTPLinkOptions,
+  runtime: TRPCClientRuntime,
+  type: ProcedureType,
+  opts: HttpBatchLinkOptions,
+) => (
+  batchOps: Operation[],
+  unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
+) => {
+  promise: Promise<{
+      meta: {
+          response: ResponseEsque;
+      };
+      json: any;
+  }[]>;
+  cancel: CancelFn;
+}
 
 export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
   maxURLLength?: number;
@@ -24,6 +46,55 @@ export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
     | ((opts: {
         opList: NonEmptyArray<Operation>;
       }) => HTTPHeaders | Promise<HTTPHeaders>);
+      
+  requester?: RequesterFn
+}
+
+export const batchRequester: RequesterFn = (
+  resolvedOpts,
+  runtime,
+  type,
+  opts,
+) => {
+  return (batchOps) => {
+    const path = batchOps.map((op) => op.path).join(',');
+    const inputs = batchOps.map((op) => op.input);
+
+    const { promise, cancel } = jsonHttpRequester({
+      ...resolvedOpts,
+      runtime,
+      type,
+      path,
+      inputs,
+      headers() {
+        if (!opts.headers) {
+          return {};
+        }
+        if (typeof opts.headers === 'function') {
+          return opts.headers({
+            opList: batchOps as NonEmptyArray<Operation>,
+          });
+        }
+        return opts.headers;
+      },
+    });
+
+    return {
+      promise: promise.then((res) => {
+        const resJSON = Array.isArray(res.json)
+          ? res.json
+          : batchOps.map(() => res.json);
+
+        const result = resJSON.map((item) => ({
+          meta: res.meta,
+          json: item,
+        }));
+
+        return result;
+      }),
+      cancel,
+    };
+  };
 }
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -54,45 +125,12 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         return url.length <= maxURLLength;
       };
 
-      const fetch = (batchOps: Operation[]) => {
-        const path = batchOps.map((op) => op.path).join(',');
-        const inputs = batchOps.map((op) => op.input);
-
-        const { promise, cancel } = jsonHttpRequester({
-          ...resolvedOpts,
-          runtime,
-          type,
-          path,
-          inputs,
-          headers() {
-            if (!opts.headers) {
-              return {};
-            }
-            if (typeof opts.headers === 'function') {
-              return opts.headers({
-                opList: batchOps as NonEmptyArray<Operation>,
-              });
-            }
-            return opts.headers;
-          },
-        });
-
-        return {
-          promise: promise.then((res) => {
-            const resJSON = Array.isArray(res.json)
-              ? res.json
-              : batchOps.map(() => res.json);
-
-            const result = resJSON.map((item) => ({
-              meta: res.meta,
-              json: item,
-            }));
-
-            return result;
-          }),
-          cancel,
-        };
-      };
+      const fetch = (opts.requester || batchRequester)(
+        resolvedOpts,
+        runtime,
+        type,
+        opts,
+      );
 
       return { validate, fetch };
     };

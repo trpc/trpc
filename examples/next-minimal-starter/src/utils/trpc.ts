@@ -1,4 +1,4 @@
-import { unstable_httpBatchStreamLink } from '@trpc/client';
+import { httpBatchLink, unstable_streamRequester } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
@@ -22,8 +22,9 @@ export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       links: [
-        unstable_httpBatchStreamLink({
+        httpBatchLink({
           url: getBaseUrl() + '/api/trpc',
+          requester: unstable_streamRequester,
         }),
       ],
     };
