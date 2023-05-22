@@ -135,8 +135,7 @@ export function awsLambdaRequestHandler<
 export async function accumulateIteratorIntoResponseFormat(
   iterator: AsyncGenerator<
     ResponseChunk | HTTPResponse,
-    ResponseChunk | undefined,
-    unknown
+    ResponseChunk | undefined
   >,
 ) {
   const { value: responseInit, done: invalidInit } = await (

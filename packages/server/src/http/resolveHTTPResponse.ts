@@ -159,7 +159,13 @@ async function inputToProcedureCall<
 export async function* resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(opts: ResolveHTTPRequestOptions<TRouter, TRequest>) {
+>(
+  opts: ResolveHTTPRequestOptions<TRouter, TRequest>,
+): AsyncGenerator<
+  ResponseChunk | HTTPResponse,
+  ResponseChunk | undefined,
+  never
+> {
   const { router, req } = opts;
 
   if (req.method === 'HEAD') {

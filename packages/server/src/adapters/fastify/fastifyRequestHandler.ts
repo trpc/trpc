@@ -57,14 +57,23 @@ export async function fastifyRequestHandler<
     },
   });
 
+  return iteratorToResponse(resultIterator, opts.res);
+}
+
+export async function iteratorToResponse(
+  iterator: AsyncGenerator<
+    ResponseChunk | HTTPResponse,
+    ResponseChunk | undefined
+  >,
+  res: FastifyReply,
+): Promise<FastifyReply> {
   const { value: responseInit, done: invalidInit } = await (
-    resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
   ).next();
   const { value: firstChunk, done: abort } = await (
-    resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
   ).next();
 
-  const { res } = opts;
   if (invalidInit || (abort && !firstChunk)) {
     res.statusCode = 500;
     return res.send();
@@ -105,7 +114,7 @@ export async function fastifyRequestHandler<
   void sendChunkedResponse(
     readableStream,
     firstChunk,
-    resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>,
+    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>,
   );
 
   return sendPromise;

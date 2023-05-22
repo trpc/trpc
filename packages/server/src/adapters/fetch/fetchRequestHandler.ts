@@ -12,8 +12,7 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
 export async function iteratorToResponse(
   iterator: AsyncGenerator<
     ResponseChunk | HTTPResponse,
-    ResponseChunk | undefined,
-    unknown
+    ResponseChunk | undefined
   >,
   headers: Headers,
 ) {

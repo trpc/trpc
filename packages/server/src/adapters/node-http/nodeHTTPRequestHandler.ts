@@ -82,75 +82,81 @@ export async function nodeHTTPRequestHandler<
       contentTypeHandler,
     });
 
-    // iterator is expected to first yield the init object (status & headers), of type HTTPResponse
-    const { value: responseInit, done: invalidInit } = await (
-      resultIterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
-    ).next();
-    // then iterator can yield either, of type ResponseChunk
-    // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
-    // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
-    const { value: firstChunk, done: abort } = await (
-      resultIterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
-    ).next();
+    return iteratorToResponse(resultIterator, opts.res);
+  });
+}
 
-    const { res } = opts;
-    if (invalidInit) {
-      res.statusCode = 500;
+export async function iteratorToResponse(
+  iterator: AsyncGenerator<
+    ResponseChunk | HTTPResponse,
+    ResponseChunk | undefined
+  >,
+  res: NodeHTTPResponse,
+) {
+  // iterator is expected to first yield the init object (status & headers), of type HTTPResponse
+  const { value: responseInit, done: invalidInit } = await (
+    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
+  ).next();
+  // then iterator can yield either, of type ResponseChunk
+  // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
+  // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
+  const { value: firstChunk, done: abort } = await (
+    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
+  ).next();
+
+  if (invalidInit) {
+    res.statusCode = 500;
+    return res.end();
+  }
+  if ('status' in responseInit && (!res.statusCode || res.statusCode === 200)) {
+    res.statusCode = responseInit.status;
+  }
+  for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
+    /* istanbul ignore if -- @preserve */
+    if (typeof value === 'undefined') {
+      continue;
+    }
+    res.setHeader(key, value);
+  }
+
+  // iterator is already exhausted, this means we're not streaming the response
+  if (abort) {
+    if (firstChunk) {
+      // case of a full response
+      return res.end(firstChunk[1]);
+    } else {
+      // case of a method === "HEAD" response
       return res.end();
     }
-    if (
-      'status' in responseInit &&
-      (!res.statusCode || res.statusCode === 200)
-    ) {
-      res.statusCode = responseInit.status;
-    }
-    for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
-      /* istanbul ignore if -- @preserve */
-      if (typeof value === 'undefined') {
-        continue;
-      }
-      res.setHeader(key, value);
-    }
+  }
 
-    // iterator is already exhausted, this means we're not streaming the response
-    if (abort) {
-      if (firstChunk) {
-        // case of a full response
-        return res.end(firstChunk[1]);
-      } else {
-        // case of a method === "HEAD" response
-        return res.end();
-      }
-    }
+  // iterator is not exhausted, we can setup the streamed response
+  res.setHeader('Transfer-Encoding', 'chunked');
+  const vary = res.getHeader('Vary');
+  res.setHeader(
+    'Vary',
+    vary ? 'x-trpc-batch-mode, ' + vary : 'x-trpc-batch-mode',
+  );
+  res.write('{\n');
 
-    // iterator is not exhausted, we can setup the streamed response
-    res.setHeader('Transfer-Encoding', 'chunked');
-    const vary = res.getHeader('Vary');
-    res.setHeader(
-      'Vary',
-      vary ? 'x-trpc-batch-mode, ' + vary : 'x-trpc-batch-mode',
-    );
-    res.write('{\n');
+  // each procedure body will be written on a new line of the JSON so they can be parsed independently
+  let first = true;
+  const sendChunk = ([index, body]: [number, string]) => {
+    const comma = first ? '' : ',';
+    first = false;
+    res.write(`${comma}"${index}":${body}\n`);
+  };
 
-    // each procedure body will be written on a new line of the JSON so they can be parsed independently
-    let first = true;
-    const sendChunk = ([index, body]: [number, string]) => {
-      const comma = first ? '' : ',';
-      first = false;
-      res.write(`${comma}"${index}":${body}\n`);
-    };
+  // await every procedure
+  sendChunk(firstChunk);
+  for await (const chunk of iterator as AsyncGenerator<
+    ResponseChunk,
+    ResponseChunk | undefined
+  >) {
+    sendChunk(chunk);
+  }
 
-    // await every procedure
-    sendChunk(firstChunk);
-    for await (const chunk of resultIterator as AsyncGenerator<
-      ResponseChunk,
-      ResponseChunk | undefined
-    >) {
-      sendChunk(chunk);
-    }
-
-    // finalize response
-    res.write('}');
-    return res.end();
-  });
+  // finalize response
+  res.write('}');
+  return res.end();
 }
