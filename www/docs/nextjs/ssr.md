@@ -132,7 +132,7 @@ export async function getServerSideProps(
     transformer: superjson, // optional - adds superjson serialization
   });
 
-  const idResult = z.string.nonempty.safeParse(context.params?.id);
+  const idResult = z.string().nonempty().safeParse(context.params?.id);
   if (!idResult.success) {
     return {
       props: { id: null },
