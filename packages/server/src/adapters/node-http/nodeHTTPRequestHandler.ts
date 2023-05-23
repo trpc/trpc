@@ -138,7 +138,7 @@ export async function iteratorToResponse(
   const vary = res.getHeader('Vary');
   res.setHeader(
     'Vary',
-    vary ? 'x-trpc-batch-mode, ' + vary : 'x-trpc-batch-mode',
+    vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
   );
   res.write('{\n');
 

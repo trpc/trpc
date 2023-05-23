@@ -25,7 +25,7 @@ test('iterator to response', async () => {
   expect(res.statusCode).toBe(200);
   expect(res.headers.get('x-hello')).toBe('world');
   expect(res.headers.get('vary')).toContain('yolo');
-  expect(res.headers.get('vary')).toContain('x-trpc-batch-mode');
+  expect(res.headers.get('vary')).toContain('trpc-batch-mode');
   expect(res.end).toHaveBeenCalledOnce();
   expect(res.body).toMatchInlineSnapshot(`
 		"{

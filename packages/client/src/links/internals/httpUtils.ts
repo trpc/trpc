@@ -194,7 +194,7 @@ async function getHttpResponse(
         ? { 'content-type': opts.contentTypeHeader }
         : {}),
       ...(opts.batchModeHeader
-        ? { 'x-trpc-batch-mode': opts.batchModeHeader }
+        ? { 'trpc-batch-mode': opts.batchModeHeader }
         : {}),
       ...headers,
     },
