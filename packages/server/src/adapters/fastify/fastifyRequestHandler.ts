@@ -108,8 +108,8 @@ export async function iteratorToResponse(
   void res.header(
     'Vary',
     res.hasHeader('Vary')
-      ? 'x-trpc-batch-mode, ' + res.getHeader('Vary')
-      : 'x-trpc-batch-mode',
+      ? 'trpc-batch-mode, ' + res.getHeader('Vary')
+      : 'trpc-batch-mode',
   );
   const readableStream = new Readable();
   readableStream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154

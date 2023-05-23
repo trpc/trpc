@@ -15,7 +15,7 @@ test('iterator to response', async () => {
   expect(response.status).toBe(200);
   expect(response.headers.get('x-hello')).toBe('world');
   expect(response.headers.get('vary')).toContain('yolo');
-  expect(response.headers.get('vary')).toContain('x-trpc-batch-mode');
+  expect(response.headers.get('vary')).toContain('trpc-batch-mode');
   expect(await response.text()).toMatchInlineSnapshot(`
     "{
     \\"1\\":{\\"foo\\":\\"bar\\"}
