@@ -1,6 +1,6 @@
 import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from '../react/__reactHelpers';
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import { z } from 'zod';
 
