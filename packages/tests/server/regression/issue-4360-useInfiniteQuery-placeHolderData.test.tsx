@@ -83,3 +83,32 @@ test('with input', async () => {
     );
   });
 });
+
+test('good placeholderData', () => {
+  const { proxy } = ctx;
+
+  ignoreErrors(() => {
+    proxy.post.list.useInfiniteQuery(
+      { foo: 'bar' },
+      {
+        placeholderData() {
+          return {
+            pageParams: [undefined],
+            pages: [
+              {
+                items: ['1', '2', '3'],
+              },
+            ],
+          };
+        },
+        getNextPageParam(lastPage) {
+          return lastPage.next;
+        },
+        onSuccess: (data) => {
+          if (data.pages[0]?.next) {
+          }
+        },
+      },
+    );
+  });
+});
