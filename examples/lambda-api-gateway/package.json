@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@trpc/client": "^10.27.2",
-    "@trpc/server": "^10.27.1",
+    "@trpc/server": "^10.27.2",
     "tsx": "^3.12.7",
     "zod": "^3.0.0"
   },
