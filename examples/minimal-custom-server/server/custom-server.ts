@@ -28,13 +28,13 @@ const augmentResponse = (res:ServerResponse<IncomingMessage>) =>
     }
   })
 
-type AugmentedHandler = (req:AugmentedRequest, res:AugmentedResponse) => void
+type AugmentedHandler = (req:AugmentedRequest, res:AugmentedResponse) => Promise<void>
 
 // We are only creating a custom server here to show how we can use trpc with
 // any server and make sure type checking works throught your application
 const createCustomServer = (requestListner:AugmentedHandler) => 
   createServer((req, res) => {
-    requestListner(augmentRequest(req), augmentResponse(res))
+    return requestListner(augmentRequest(req), augmentResponse(res))
   })
 
 

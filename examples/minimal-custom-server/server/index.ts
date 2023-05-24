@@ -49,6 +49,6 @@ createCustomServer((req, res) => {
   // Do some more custom stuff with your server before calling the custom handler
   // The handler could be middlewear that your server runs
   // In this example, you could just pass handler to createCustomServer directly
-  handler(req, res);
+  return handler(req, res);
 }).listen(3000);
 
