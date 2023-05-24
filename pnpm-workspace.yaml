@@ -3,6 +3,7 @@ packages:
   - 'examples/*'
   - 'examples/.*/*'
   - 'examples/minimal/*'
+  - 'examples/minimal-custom-server/*'
   - 'examples/minimal-react/*'
   - 'www'
   - 'www/og-image'
