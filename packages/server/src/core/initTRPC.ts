@@ -4,7 +4,7 @@ import {
   ErrorFormatterShape,
   defaultFormatter,
 } from '../error/formatter';
-import { createFlatProxy } from '../shared';
+import { createFlatProxy } from '../shared/createProxy';
 import {
   DataTransformerOptions,
   DefaultDataTransformer,

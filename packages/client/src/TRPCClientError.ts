@@ -5,24 +5,26 @@ import {
   Maybe,
   inferRouterError,
 } from '@trpc/server';
-import { TRPCErrorResponse } from '@trpc/server/rpc';
+import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
 
-type RouterOrProcedure = AnyRouter | AnyProcedure;
+type ErrorInferrable = AnyRouter | AnyProcedure | TRPCErrorShape<number>;
 
-type inferErrorShape<TRouterOrProcedure extends RouterOrProcedure> =
-  TRouterOrProcedure extends AnyRouter
-    ? inferRouterError<TRouterOrProcedure>
-    : TRouterOrProcedure['_def']['_config']['$types']['errorShape'];
+type inferErrorShape<TInferrable extends ErrorInferrable> =
+  TInferrable extends AnyRouter
+    ? inferRouterError<TInferrable>
+    : TInferrable extends AnyProcedure
+    ? TInferrable['_def']['_config']['$types']['errorShape']
+    : TInferrable;
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
   readonly shape: Maybe<TShape>;
   readonly data: Maybe<TShape['data']>;
 }
-export type TRPCClientErrorLike<TRouterOrProcedure extends RouterOrProcedure> =
+export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
   TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
-export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
+export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
@@ -55,7 +57,7 @@ export class TRPCClientError<TRouterOrProcedure extends RouterOrProcedure>
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
-  public static from<TRouterOrProcedure extends RouterOrProcedure>(
+  public static from<TRouterOrProcedure extends ErrorInferrable>(
     cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
