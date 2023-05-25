@@ -1,6 +1,14 @@
+import { TRPCResponse } from '@trpc/server/rpc';
 // Adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 
 import { TRPCClientError } from '../../TRPCClientError';
+import {
+  HTTPResult,
+  Requester,
+  fetchHTTPResponse,
+  getBody,
+  getUrl,
+} from '../internals/httpUtils';
 
 /**
  * @param readableStream as given by `(await fetch(url)).body`
@@ -130,3 +138,34 @@ function readStandardChunks(reader: ReadableStreamDefaultReader<Uint8Array>) {
     },
   };
 }
+
+export const streamingJsonHttpRequester: Requester<
+  AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>
+> = (opts) => {
+  const ac = opts.AbortController ? new opts.AbortController() : null;
+  const responsePromise = fetchHTTPResponse(
+    {
+      ...opts,
+      contentTypeHeader: 'application/json',
+      batchModeHeader: 'stream',
+      getUrl,
+      getBody,
+    },
+    ac,
+  );
+  const cancel = () => ac?.abort();
+  const promise = responsePromise.then(async (res) => {
+    if (!res.body) throw new Error('Received response without body');
+    const meta: HTTPResult['meta'] = { response: res };
+    return parseJsonStream(
+      res.body,
+      (string) => ({
+        json: JSON.parse(string) as TRPCResponse,
+        meta,
+      }),
+      ac?.signal,
+    );
+  });
+
+  return { promise, cancel };
+};

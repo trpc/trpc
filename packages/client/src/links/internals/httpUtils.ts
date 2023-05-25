@@ -10,7 +10,6 @@ import {
   ResponseEsque,
 } from '../../internals/types';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
-import { parseJsonStream } from './parseJsonStream';
 
 /**
  * @internal
@@ -136,43 +135,12 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export const streamingJsonHttpRequester: Requester<
-  AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>
-> = (opts) => {
-  const ac = opts.AbortController ? new opts.AbortController() : null;
-  const responsePromise = getHttpResponse(
-    {
-      ...opts,
-      contentTypeHeader: 'application/json',
-      batchModeHeader: 'stream',
-      getUrl,
-      getBody,
-    },
-    ac,
-  );
-  const cancel = () => ac?.abort();
-  const promise = responsePromise.then(async (res) => {
-    if (!res.body) throw new Error('Received response without body');
-    const meta: HTTPResult['meta'] = { response: res };
-    return parseJsonStream(
-      res.body,
-      (string) => ({
-        json: JSON.parse(string) as TRPCResponse,
-        meta,
-      }),
-      ac?.signal,
-    );
-  });
-
-  return { promise, cancel };
-};
-
 export type HTTPRequestOptions = HTTPBaseRequestOptions &
   ContentOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
-async function getHttpResponse(
+export async function fetchHTTPResponse(
   opts: HTTPRequestOptions,
   ac?: AbortControllerInstanceEsque | null,
 ) {
@@ -208,7 +176,7 @@ export function httpRequest(
   const meta = {} as HTTPResult['meta'];
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
-    getHttpResponse(opts, ac)
+    fetchHTTPResponse(opts, ac)
       .then((_res) => {
         meta.response = _res;
         return _res.json();

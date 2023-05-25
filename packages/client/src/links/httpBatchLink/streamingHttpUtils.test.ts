@@ -1,4 +1,4 @@
-import { parseJsonStream } from './parseJsonStream';
+import { parseJsonStream } from './streamingHttpUtils';
 
 describe('parseJsonStream', () => {
   test('regular stringified JSON', async () => {
