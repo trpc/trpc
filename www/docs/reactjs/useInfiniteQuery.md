@@ -2,7 +2,7 @@
 id: useInfiniteQuery
 title: useInfiniteQuery
 sidebar_label: useInfiniteQuery()
-slug: /reactjs/useinfinitequery
+slug: /reactjs/useInfiniteQuery
 ---
 
 :::info
