@@ -1,6 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import myzod from 'myzod';
 import * as t from 'superstruct';
 import * as yup from 'yup';

@@ -15,8 +15,7 @@ const config = {
     sourceType: 'module', // Allows for the use of import
     tsconfigRootDir: __dirname,
     project: [
-      './examples/.interop/*/tsconfig.json',
-      './examples/.test/*/tsconfig.json',
+      './examples/.*/*/tsconfig.json',
       './examples/*/tsconfig.json',
       './packages/*/tsconfig.json',
       './tsconfig.json',
@@ -69,6 +68,16 @@ const config = {
     ],
   },
   overrides: [
+    // {
+    //   files: ['www/**/*', 'examples/next-prisma-websockets-starter/**/*'],
+    //   extends: ['plugin:tailwindcss/recommended'],
+    //   rules: {
+    //     'tailwindcss/classnames-order': 'error',
+    //     'tailwindcss/enforces-negative-arbitrary-values': 'error',
+    //     'tailwindcss/enforces-shorthand': 'error',
+    //     'tailwindcss/no-arbitrary-value': 'warn',
+    //   },
+    // },
     {
       files: ['examples/**/*', 'packages/*/**/*', 'scripts/**/*', 'www/**/*'],
       rules: {
@@ -90,6 +99,7 @@ const config = {
       rules: {
         '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-unused-vars': 'off',
+        'unicorn/filename-case': 'off',
       },
     },
     {

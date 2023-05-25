@@ -2,7 +2,6 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
@@ -76,7 +75,7 @@ test('useMutation', async () => {
       return <>...</>;
     }
 
-    type TData = typeof mutation['data'];
+    type TData = (typeof mutation)['data'];
     expectTypeOf<TData>().toMatchTypeOf<'__mutationResult'>();
 
     return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;

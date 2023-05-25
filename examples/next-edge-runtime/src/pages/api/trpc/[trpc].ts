@@ -35,7 +35,7 @@ export type AppRouter = typeof appRouter;
 
 // We're using the edge-runtime
 export const config = {
-  runtime: 'experimental-edge',
+  runtime: 'edge',
 };
 
 // export API handler

@@ -1,6 +1,5 @@
 import '../___packages';
 import { TRPCError, initTRPC } from '@trpc/server';
-import { expectTypeOf } from 'expect-type';
 
 test('middleware next()', async () => {
   const t = initTRPC.create();

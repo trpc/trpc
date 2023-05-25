@@ -1,0 +1,34 @@
+{
+  "name": "@examples/next-formdata",
+  "version": "10.27.3",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@hookform/error-message": "^2.0.1",
+    "@hookform/resolvers": "^2.9.11",
+    "@tanstack/react-query": "^4.18.0",
+    "@trpc/client": "^10.27.3",
+    "@trpc/next": "^10.27.3",
+    "@trpc/react-query": "^10.27.3",
+    "@trpc/server": "^10.27.3",
+    "next": "^13.4.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.3",
+    "undici": "^5.14.0",
+    "zod": "^3.0.0",
+    "zod-form-data": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.20",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
+    "eslint": "^8.40.0",
+    "typescript": "^4.8.3"
+  }
+}

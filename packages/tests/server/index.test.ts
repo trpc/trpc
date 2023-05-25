@@ -12,7 +12,6 @@ import { httpBatchLink } from '@trpc/client/src';
 import { Maybe, TRPCError, initTRPC } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { observable } from '@trpc/server/src/observable';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 test('smoke test', async () => {

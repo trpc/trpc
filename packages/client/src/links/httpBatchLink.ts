@@ -2,18 +2,28 @@ import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
+import { NonEmptyArray } from '../internals/types';
+import { transformResult } from '../shared/transformResult';
 import {
-  HTTPLinkOptions,
+  HTTPLinkBaseOptions,
   HTTPResult,
   getUrl,
-  httpRequest,
+  jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import { transformResult } from './internals/transformResult';
-import { TRPCLink } from './types';
+import { HTTPHeaders, Operation, TRPCLink } from './types';
 
-export interface HttpBatchLinkOptions extends HTTPLinkOptions {
+export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
   maxURLLength?: number;
+  /**
+   * Headers to be set on outgoing requests or a callback that of said headers
+   * @link http://trpc.io/docs/client/headers
+   */
+  headers?:
+    | HTTPHeaders
+    | ((opts: {
+        opList: NonEmptyArray<Operation>;
+      }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
 export function httpBatchLink<TRouter extends AnyRouter>(
@@ -22,12 +32,10 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   // initialized config
   return (runtime) => {
-    type BatchOperation = { id: number; path: string; input: unknown };
-
     const maxURLLength = opts.maxURLLength || Infinity;
 
     const batchLoader = (type: ProcedureType) => {
-      const validate = (batchOps: BatchOperation[]) => {
+      const validate = (batchOps: Operation[]) => {
         if (maxURLLength === Infinity) {
           // escape hatch for quick calcs
           return true;
@@ -42,19 +50,31 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           path,
           inputs,
         });
+
         return url.length <= maxURLLength;
       };
 
-      const fetch = (batchOps: BatchOperation[]) => {
+      const fetch = (batchOps: Operation[]) => {
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        const { promise, cancel } = httpRequest({
+        const { promise, cancel } = jsonHttpRequester({
           ...resolvedOpts,
           runtime,
           type,
           path,
           inputs,
+          headers() {
+            if (!opts.headers) {
+              return {};
+            }
+            if (typeof opts.headers === 'function') {
+              return opts.headers({
+                opList: batchOps as NonEmptyArray<Operation>,
+              });
+            }
+            return opts.headers;
+          },
         });
 
         return {
@@ -77,11 +97,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       return { validate, fetch };
     };
 
-    const query = dataLoader<BatchOperation, HTTPResult>(batchLoader('query'));
-    const mutation = dataLoader<BatchOperation, HTTPResult>(
-      batchLoader('mutation'),
-    );
-    const subscription = dataLoader<BatchOperation, HTTPResult>(
+    const query = dataLoader<Operation, HTTPResult>(batchLoader('query'));
+    const mutation = dataLoader<Operation, HTTPResult>(batchLoader('mutation'));
+    const subscription = dataLoader<Operation, HTTPResult>(
       batchLoader('subscription'),
     );
 

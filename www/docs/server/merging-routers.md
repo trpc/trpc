@@ -2,7 +2,7 @@
 id: merging-routers
 title: Merging Routers
 sidebar_label: Merging Routers
-slug: /merging-routers
+slug: /server/merging-routers
 ---
 
 Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers.
@@ -44,8 +44,9 @@ export const postRouter = router({
         title: z.string(),
       }),
     )
-    .mutation(({ input }) => {
-      //          ^?
+    .mutation((opts) => {
+      const { input } = opts;
+      //        ^?
       // [...]
     }),
   list: publicProcedure.query(() => {
@@ -64,39 +65,6 @@ export const userRouter = router({
   }),
 });
 
-```
-
-### Defining an inline sub-router
-
-When you define an inline sub-router, you can represent your router as a plain object.
-
-In the below example, `nested1` and `nested2` are equal:
-
-```ts twoslash title="server/_app.ts"
-// @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-
-
-export const middleware = t.middleware;
-export const publicProcedure = t.procedure;
-export const router = t.router;
-
-// @filename: _app.ts
-// ---cut---
-import * as trpc from '@trpc/server';
-import { publicProcedure, router } from './trpc';
-
-const appRouter = router({
-  // Shorthand plain object for creating a sub-router
-  nested1: {
-    proc: publicProcedure.query(() => '...'),
-  },
-  //
-  nested2: router({
-    proc : publicProcedure.query(() => '...'),
-  }),
-});
 ```
 
 ## Merging with `t.mergeRouters`
@@ -139,8 +107,9 @@ export const postRouter = router({
         title: z.string(),
       }),
     )
-    .mutation(({ input }) => {
-      //          ^?
+    .mutation((opts) => {
+      const { input } = opts;
+      //        ^?
       // [...]
     }),
   postList: publicProcedure.query(() => {

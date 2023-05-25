@@ -1,6 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 
 test('meta is undefined in a middleware', () => {

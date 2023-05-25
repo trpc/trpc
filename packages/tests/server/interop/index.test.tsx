@@ -10,7 +10,6 @@ import * as trpc from '@trpc/server/src';
 import { Maybe, TRPCError } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { observable } from '@trpc/server/src/observable';
-import { expectTypeOf } from 'expect-type';
 import { z } from 'zod';
 
 test('smoke test', async () => {

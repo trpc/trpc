@@ -2,7 +2,7 @@
 id: starter-projects
 title: Starter Projects
 sidebar_label: Starter Projects
-slug: /starter-projects
+slug: /nextjs/starter-projects
 ---
 
 Get started quickly with one of the sample projects! Copy the snippet from _Quick start with `create-next-app`_ in the below list to clone the project.

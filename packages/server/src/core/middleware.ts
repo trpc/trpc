@@ -148,6 +148,7 @@ export type MiddlewareFunction<
           _meta: TParams['_meta'];
         }>
       >;
+      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;

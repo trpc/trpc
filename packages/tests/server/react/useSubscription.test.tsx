@@ -3,7 +3,6 @@ import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
 import { EventEmitter } from 'events';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';

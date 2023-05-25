@@ -2,7 +2,7 @@
 id: ssr
 title: Server-Side Rendering
 sidebar_label: Server-Side Rendering (SSR)
-slug: /ssr
+slug: /nextjs/ssr
 ---
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
@@ -11,7 +11,7 @@ To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
 When you enable SSR, tRPC will use `getInitialProps` to prefetch all queries on the server. This results in problems [like this](https://github.com/trpc/trpc/issues/596) when you use `getServerSideProps`, and solving it is out of our hands.
 
 &nbsp;  
-Alternatively, you can leave SSR disabled (the default) and use [SSG Helpers](./ssg-helpers.md) to prefetch queries in `getStaticProps` or `getServerSideProps`.
+Alternatively, you can leave SSR disabled (the default) and use [Server-Side Helpers](server-side-helpers) to prefetch queries in `getStaticProps` or `getServerSideProps`.
 :::
 
 In order to execute queries properly during the server-side render step we need to add extra logic inside our `config`:
@@ -25,7 +25,8 @@ import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
+    const { ctx } = opts;
     if (typeof window !== 'undefined') {
       // during client requests
       return {
@@ -49,23 +50,18 @@ export const trpc = createTRPCNext<AppRouter>({
            * @link https://trpc.io/docs/v10/header
            */
           headers() {
-            if (ctx?.req) {
-              // To use SSR properly, you need to forward the client's headers to the server
-              // This is so you can pass through things like cookies when we're server-side rendering
-
-              // If you're using Node 18, omit the "connection" header
-              const {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                connection: _connection,
-                ...headers
-              } = ctx.req.headers;
-              return {
-                ...headers,
-                // Optional: inform server that it's an SSR request
-                'x-ssr': '1',
-              };
+            if (!ctx?.req?.headers) {
+              return {};
             }
-            return {};
+            // To use SSR properly, you need to forward the client's headers to the server
+            // This is so you can pass through things like cookies when we're server-side rendering
+
+            const {
+              // If you're using Node 18 before 18.15.0, omit the "connection" header
+              connection: _connection,
+              ...headers
+            } = ctx.req.headers;
+            return headers;
           },
         }),
       ],
@@ -99,39 +95,4 @@ If you don't remove the `connection` header, the data fetching will fail with `T
 
 ### Q: Why do I still see network requests being made in the Network tab?
 
-Since we rely on `@tanstack/react-query`, there are some [options](https://tanstack.com/query/v4/docs/react/reference/useQuery) from the library which default to `true` that make client-side requests:
-
-- `refetchOnMount`
-- `refetchOnWindowFocus`
-
-If you want to avoid any client-side request, you can either change the behavior for all queries on the `queryClientConfig`
-
-```ts title='utils/trpc.ts'
-export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
-    return {
-      transformer: superjson,
-      links: [httpBatchLink({ url: `${getBaseUrl()}/api/trpc` })],
-      // Change options globally
-      queryClientConfig: {
-        defaultOptions: {
-          queries: {
-            refetchOnMount: false,
-            refetchOnWindowFocus: false,
-          },
-        },
-      },
-    };
-  },
-  //... rest of options
-});
-```
-
-Or do it on a per query basis:
-
-```ts
-const data = trpc.myQuery.useQuery(
-  {},
-  { refetchOnMount: false, refetchOnWindowFocus: false },
-);
-```
+By default, `@tanstack/react-query` (which we use for the data fetching hooks) refetches data on mount and window refocus, even if it's already got initial data via SSR. This ensures data is always up-to-date. See the page on [SSG](ssg) if you'd like to disable this behavior.

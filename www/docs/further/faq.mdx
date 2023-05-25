@@ -21,7 +21,7 @@ Feel free to contribute to this page with improvements or create a new discussio
 
 ## How do I make a middleware change the type of my `Context`?
 
-See [Context Swapping](middlewares#context-swapping).
+See [Context Extension](/docs/server/middlewares#context-extension).
 
 ## Is tRPC production ready?
 
@@ -38,7 +38,7 @@ Here are some things to check:
 - Make sure you have no type errors in your app
 - In the case that you have a dedicated server and client `tsconfig.json` files without a bundled server monorepo package, make sure you have `"paths": [...]` in your client `tsconfig.json` like your server `tsconfig.json`,so that the client can find the same file.
 
-You can also have a look at our [Awesome tRPC](awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
+You can also have a look at our [Awesome tRPC](/docs/community/awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
 
 ## Is a monorepo mandatory?
 
@@ -56,7 +56,7 @@ No, not currently, in order for tRPC to do that automatically, we need something
 
 ## Can I apply a middleware to a full router?
 
-No, but you can use [base procedures](procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
+No, but you can use [base procedures](/docs/server/procedures#reusable-base-procedures) instead, which offers more flexibility than if this was done on a per-router-level.
 
 ## Does tRPC work with Next.js 13 App Layouts & RSC?
 
@@ -73,8 +73,21 @@ If you encounter a feature in tRPC that is marked as `unstable_` it means that t
 - Specifics of the implementation might change in minor changes - its name and options might change
 - If it exists in tRPC it's already used it in production
 - We very much encourage you to use it
-- If any changes are done to `unstable_features`, they will be included in the release notes (& you'll see type errors)
-- Please report any suggestion on the API design or issues on [github.com/trpc/trpc/issues](https://github.com/trpc/trpc/issues)
+- If any changes are done to `unstable_`-feature, they will be included in the release notes (& you'll see type errors)
+- Please report any suggestion on the API design or issues on [github.com/trpc/trpc/issues](https://github.com/trpc/trpc/issues) or in the `#🧪-unstable-experimental-features` on [our Discord](https://trpc.io/discord)
+
+## Am I safe with using features marked as as `experimental_`? {#experimental}
+
+If you encounter a feature in tRPC that is marked as `experimental_` it means that the API is unstable and is very likely to change during any bump of tRPC.
+
+- Wide range of the feature and its usage might change
+- The feature might not be well-tested
+- We might drop the feature entirely
+- It's up to you to read the latest docs and upgrade without a guided migration path
+- Changes might not be well-documented in the release notes
+- Bugs are not guaranteed to be fixed
+
+We do, however, love input! Please report any suggestion on the API design or issues in the `#🧪-unstable-experimental-features` on [our Discord](https://trpc.io/discord).
 
 ## Is tRPC strict with semver? {#semver}
 
