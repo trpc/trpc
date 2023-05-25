@@ -53,6 +53,7 @@ export function experimental_createTRPCNextAppDirServer<
     const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === 'revalidate') {
+      console.log(`revalidating tag ${cacheTag}`);
       return revalidateTag(cacheTag);
     }
 
@@ -144,4 +145,25 @@ export function experimental_createServerActionHandler<
       }
     } as TRPCActionHandler<inferActionDef<TProc>>;
   };
+}
+
+export async function experimental_revalidateEndpoint(req: Request) {
+  const { cacheTag } = await req.json();
+
+  console.log(`revalidate endpoint got tag ${cacheTag}`);
+
+  if (typeof cacheTag !== 'string') {
+    return new Response(
+      JSON.stringify({
+        revalidated: false,
+        error: 'cacheTag must be a string',
+      }),
+      { status: 400 },
+    );
+  }
+
+  revalidateTag(cacheTag);
+  return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
+    status: 200,
+  });
 }

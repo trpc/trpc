@@ -22,6 +22,8 @@ export function experimental_nextHttpLink<
       const { path, input } = ctx.op;
       const cacheTag = generateCacheTag(path, input);
 
+      console.log(`fetching ${path} with tag ${cacheTag}`);
+
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
       const link = linkFactory({
         url: opts.url,

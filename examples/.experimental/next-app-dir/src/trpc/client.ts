@@ -1,11 +1,12 @@
 'use client';
 
-import { httpBatchLink, loggerLink } from '@trpc/client';
+import { loggerLink } from '@trpc/client';
 import {
   experimental_createActionHook,
   experimental_createTRPCNextAppDirClient,
   experimental_serverActionLink,
 } from '@trpc/next/app-dir/client';
+import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
 import superjson from 'superjson';
 import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
@@ -20,7 +21,8 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
         }),
-        httpBatchLink({
+        experimental_nextHttpLink({
+          batch: false,
           url: getUrl(),
           headers() {
             return {

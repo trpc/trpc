@@ -5,10 +5,10 @@ import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
 export default async function Home() {
-  const promise = new Promise(async (resolve) => {
-    await new Promise((r) => setTimeout(r, 1000)); // wait for demo purposes
-    resolve(api.greeting.query({ text: 'streamed server data' }));
-  });
+  // const promise = new Promise(async (resolve) => {
+  //   await new Promise((r) => setTimeout(r, 1000)); // wait for demo purposes
+  //   resolve(api.greeting.query({ text: 'streamed server data' }));
+  // });
 
   return (
     <>
@@ -24,12 +24,12 @@ export default async function Home() {
           <ServerHttpGreeting />
         </Suspense>
       </div>
-      <div>
+      {/* <div>
         <Suspense fallback={<>Loading stream...</>}>
-          {/** @ts-expect-error - Async Server Component */}
+
           <StreamedSC promise={promise} />
         </Suspense>
-      </div>
+      </div> */}
       <form
         action={async () => {
           'use server';

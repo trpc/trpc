@@ -4,7 +4,7 @@ import {
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
-import { CreateTRPCNextAppRouterOptions } from './shared';
+import { CreateTRPCNextAppRouterOptions, generateCacheTag } from './shared';
 import { NextAppDirDecoratedProcedureRecord } from './types';
 
 export {
@@ -70,16 +70,27 @@ export function experimental_createTRPCNextAppDirClient<
     const pathCopy = [...path];
     const action = pathCopy.pop() as string;
 
-    if (action === 'revalidate') {
-      throw new Error('revalidate is not supported on the client');
-    }
-
     const fullPath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
+    const cacheTag = generateCacheTag(fullPath, args[0]);
+
+    if (action === 'revalidate') {
+      // invalidate client cache
+      cache.delete(cacheTag);
+
+      // invaldiate server cache
+      void fetch('/api/trpc/revalidate', {
+        method: 'POST',
+        body: JSON.stringify({
+          cacheTag,
+        }),
+      });
+
+      return;
+    }
 
     if (procedureType === 'query') {
-      const queryCacheKey = JSON.stringify([path, args[0]]);
-      const cached = cache.get(queryCacheKey);
+      const cached = cache.get(cacheTag);
 
       if (cached?.promise) {
         return cached.promise;
@@ -94,11 +105,7 @@ export function experimental_createTRPCNextAppDirClient<
       return promise;
     }
 
-    const queryCacheKey = JSON.stringify([path, args[0]]);
-
-    cache.set(queryCacheKey, {
-      promise,
-    });
+    cache.set(cacheTag, { promise });
 
     return promise;
   }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;

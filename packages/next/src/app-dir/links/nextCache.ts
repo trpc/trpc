@@ -20,6 +20,8 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
       observable((observer) => {
         const { path, input, type, context } = op;
 
+        console.log({ op });
+
         const cacheTag = generateCacheTag(path, input);
         const revalidate =
           typeof context?.revalidate === 'number' ? context.revalidate : false;
@@ -37,6 +39,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               });
 
             if (type === 'query') {
+              console.log(`invoking query ${path} with tag ${cacheTag}`);
               return unstable_cache(callProc, path.split('.'), {
                 revalidate,
                 tags: [cacheTag],

@@ -19,15 +19,15 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         experimental_nextHttpLink({
-          batch: true,
+          batch: false,
           url: getUrl(),
-          headers() {
-            // Forward headers from the browser to the API
-            return {
-              ...Object.fromEntries(headers()),
-              'x-trpc-source': 'rsc',
-            };
-          },
+          // headers() {
+          //   // Forward headers from the browser to the API
+          //   return {
+          //     // ...Object.fromEntries(headers()),
+          //     'x-trpc-source': 'rsc',
+          //   };
+          // },
         }),
       ],
     };
