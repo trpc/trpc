@@ -6,5 +6,7 @@ import { api } from 'trpc-api';
 export const ClientGreeting = () => {
   const greeting = use(api.greeting.query({ text: 'from client' }));
 
+  api.greeting.revalidate();
+
   return <>{greeting}</>;
 };
