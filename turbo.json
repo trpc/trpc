@@ -1,6 +1,10 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": ["tsconfig.json", "scripts/entrypoints.ts"],
+  "globalDependencies": [
+    "tsconfig.json",
+    "scripts/entrypoints.ts",
+    "scripts/getRollupConfig.ts"
+  ],
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [
