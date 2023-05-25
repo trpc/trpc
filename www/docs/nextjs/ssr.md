@@ -132,14 +132,7 @@ export async function getServerSideProps(
     transformer: superjson, // optional - adds superjson serialization
   });
 
-  const idResult = z.string().nonempty().safeParse(context.params?.id);
-  if (!idResult.success) {
-    return {
-      props: { id: null },
-      notFound: true,
-    };
-  }
-  const id = idResult.data
+  const id = String(context.params?.id);
 
   // check if post exists - `prefetch` doesn't change its behavior
   // based on the result of the query (including throws), so if we
@@ -147,13 +140,9 @@ export async function getServerSideProps(
   const postExists = await helpers.post.exists.fetch({ id });
   if (!postExists) {
     return {
-      props: { id },
       notFound: true,
     };
   }
-
-  // prefetch `post.byId`
-  await helpers.post.byId.prefetch({ id });
 
   return {
     props: {
