@@ -2,7 +2,7 @@
 id: useQuery
 title: useQuery()
 sidebar_label: useQuery()
-slug: /reactjs/usequery
+slug: /reactjs/useQuery
 ---
 
 :::note
