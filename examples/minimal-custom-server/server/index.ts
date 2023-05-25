@@ -1,8 +1,8 @@
+import { z } from 'zod';
 import { createCustomHandler } from './custom-adapter';
 import { createCustomServer } from './custom-server';
-import { z } from 'zod';
 import { db } from './db';
-import { publicProcedure, router, createContext } from './trpc';
+import { createContext, publicProcedure, router } from './trpc';
 
 const appRouter = router({
   userList: publicProcedure.query(async () => {
@@ -35,9 +35,9 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 const handler = createCustomHandler({
-  middleware (req, res, next) {
+  middleware(req, res, next) {
     res.customMethod('Handler middleware');
-    next()
+    next();
   },
   createContext,
   router: appRouter,
@@ -51,4 +51,3 @@ createCustomServer((req, res) => {
   // In this example, you could just pass handler to createCustomServer directly
   return handler(req, res);
 }).listen(3000);
-

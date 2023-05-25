@@ -1,11 +1,14 @@
 import { initTRPC, type inferAsyncReturnType } from '@trpc/server';
-import { CreateCustomContextOptions } from './custom-adapter'; 
+import { CreateCustomContextOptions } from './custom-adapter';
 
 // export createContext that takes CreateCustomContextOptions
-export const createContext = async ({req, res}: CreateCustomContextOptions) => {
+export const createContext = async ({
+  req,
+  res,
+}: CreateCustomContextOptions) => {
   return {
     req,
-    res
+    res,
   };
 };
 
@@ -22,14 +25,15 @@ const t = initTRPC.context<Context>().create();
  * that can be used throughout the router
  */
 
-const runCustomMethod = t.middleware(({next, ctx}) => {
+const runCustomMethod = t.middleware(({ next, ctx }) => {
   ctx.res.customMethod('Procedure middleware');
   return next({
-    ctx: { // update or add more props to the ctx
+    ctx: {
+      // update or add more props to the ctx
       woop: 'WOOP!',
-    }
-  })
-})
+    },
+  });
+});
 
 export const router = t.router;
 export const publicProcedure = t.procedure.use(runCustomMethod);
