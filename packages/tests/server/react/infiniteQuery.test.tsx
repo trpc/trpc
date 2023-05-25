@@ -412,4 +412,21 @@ describe('Infinite Query', () => {
 
     expectTypeOf(trpc.paginatedPosts.useInfiniteQuery).toBeFunction();
   });
+
+  test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
+    ignoreErrors(async () => {
+      // @ts-expect-error 'cursor' is required
+      factory.trpc.postById.useInfiniteQuery;
+      const ssg = createServerSideHelpers({
+        router: factory.appRouter,
+        ctx: {},
+      });
+
+      // good
+      await ssg.paginatedPosts.fetchInfinite({ limit: 1 });
+
+      // @ts-expect-error 'cursor' is required
+      await ssg.postById.fetchInfinite({ limit: 1 });
+    });
+  });
 });
