@@ -9,6 +9,8 @@ import { generateCacheTag } from '../shared';
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   createContext: () => Promise<inferRouterContext<TRouter>>;
+  /** how many seconds the cache should hold before revalidating */
+  staleTime?: number | false;
 };
 
 // ts-prune-ignore-next
@@ -18,13 +20,10 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   return () =>
     ({ op }) =>
       observable((observer) => {
-        const { path, input, type, context } = op;
-
-        console.log({ op });
+        const { path, input, type } = op;
 
         const cacheTag = generateCacheTag(path, input);
-        const revalidate =
-          typeof context?.revalidate === 'number' ? context.revalidate : false;
+        const revalidate = opts.staleTime ?? false;
 
         const promise = opts
           .createContext()
@@ -40,7 +39,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
 
             if (type === 'query') {
               console.log(`invoking query ${path} with tag ${cacheTag}`);
-              return unstable_cache(callProc, path.split('.'), {
+              return unstable_cache(callProc, undefined, {
                 revalidate,
                 tags: [cacheTag],
               })();

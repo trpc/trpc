@@ -10,6 +10,7 @@ import { generateCacheTag } from '../shared';
 
 type NextFetchLinkOptions<TBatch extends boolean> = {
   batch?: TBatch;
+  staleTime?: number;
 } & (TBatch extends true ? HttpBatchLinkOptions : HTTPLinkOptions);
 
 // ts-prune-ignore-next
@@ -26,11 +27,12 @@ export function experimental_nextHttpLink<
 
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
       const link = linkFactory({
+        headers: opts.headers as any,
         url: opts.url,
         fetch: (url, fetchOpts) => {
           return fetch(url, {
             ...fetchOpts,
-            next: { tags: [cacheTag] },
+            next: { tags: [cacheTag], revalidate: opts.staleTime },
           });
         },
       })(runtime);
