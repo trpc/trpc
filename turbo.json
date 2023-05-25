@@ -1,5 +1,10 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "globalDependencies": [
+    "tsconfig.json",
+    "scripts/entrypoints.ts",
+    "scripts/getRollupConfig.ts"
+  ],
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [
@@ -11,7 +16,8 @@
         "http/**",
         "observable/**",
         "rpc/**",
-        "subscription/**"
+        "subscription/**",
+        "package.json"
       ]
     },
     "codegen:bigBoi": {

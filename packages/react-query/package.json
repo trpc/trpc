@@ -50,7 +50,8 @@
     "package.json",
     "server",
     "shared",
-    "ssg"
+    "ssg",
+    "!**/*.test.*"
   ],
   "eslintConfig": {
     "rules": {
@@ -86,5 +87,8 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }
