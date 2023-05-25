@@ -1,11 +1,11 @@
 import {
-  CreateTRPCProxyClient,
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 import { CreateTRPCNextAppRouterOptions } from './shared';
+import { NextAppDirDecoratedProcedureRecord } from './types';
 
 export {
   // ts-prune-ignore-next
@@ -68,7 +68,14 @@ export function experimental_createTRPCNextAppDirClient<
   return createRecursiveProxy(({ path, args }) => {
     // const pathCopy = [key, ...path];
     const pathCopy = [...path];
-    const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+    const action = pathCopy.pop() as string;
+
+    if (action === 'revalidate') {
+      throw new Error('revalidate is not supported on the client');
+    }
+
+    const fullPath = pathCopy.join('.');
+    const procedureType = clientCallTypeToProcedureType(action);
 
     if (procedureType === 'query') {
       const queryCacheKey = JSON.stringify([path, args[0]]);
@@ -78,8 +85,6 @@ export function experimental_createTRPCNextAppDirClient<
         return cached.promise;
       }
     }
-
-    const fullPath = pathCopy.join('.');
 
     const promise: Promise<unknown> = (client as any)[procedureType](
       fullPath,
@@ -96,6 +101,6 @@ export function experimental_createTRPCNextAppDirClient<
     });
 
     return promise;
-  }) as CreateTRPCProxyClient<TRouter>;
+  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
   // });
 }

@@ -1,19 +1,14 @@
 /// <reference types="next" />
 import {
-  Resolver,
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import {
-  AnyMutationProcedure,
   AnyProcedure,
-  AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-  AnySubscriptionProcedure,
   CombinedDataTransformer,
   MaybePromise,
-  ProcedureRouterRecord,
   Simplify,
   TRPCError,
   getTRPCErrorFromUnknown,
@@ -35,32 +30,7 @@ import {
   inferActionDef,
   isFormData,
 } from './shared';
-
-export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
-  TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-        revalidate: () => void;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnySubscriptionProcedure
-    ? {
-        subscribe: Resolver<TProcedure>;
-      }
-    : never;
-
-export type ServerDecoratedProcedureRecord<
-  TProcedures extends ProcedureRouterRecord,
-> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? ServerDecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedureServer<TProcedures[TKey]>
-    : never;
-};
+import { NextAppDirDecoratedProcedureRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -87,7 +57,7 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as ServerDecoratedProcedureRecord<TRouter['_def']['record']>;
+  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
 }
 
 /**
