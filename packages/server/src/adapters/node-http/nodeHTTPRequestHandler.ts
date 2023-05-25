@@ -28,11 +28,15 @@ export async function nodeHTTPRequestHandler<
     };
 
     // a framework could pre-parse query in a way that could crash URLSearchParams
+    const paramsFromQuery = () =>
+      new URLSearchParams(opts.req.url?.split('?')[1]);
     let query: URLSearchParams;
     try {
-      query = new URLSearchParams(opts.req.query as any);
+      query = opts.req.query
+        ? new URLSearchParams(opts.req.query as any)
+        : paramsFromQuery();
     } catch (err) {
-      query = new URLSearchParams(opts.req.url!.split('?')[1]);
+      query = paramsFromQuery();
     }
 
     const jsonContentTypeHandler =
