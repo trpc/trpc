@@ -144,46 +144,6 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-## Streaming requester (experimental)
-
-> ⚠️ `streamRequester` is experimental and may change in the future.
-
-When batching requests together, the default behavior is to wait for all requests to finish before sending the response. This standard behavior uses the `batchRequester` under the hood. If you want to send responses as soon as they are ready, you can use the `streamRequester` instead. This is useful for long-running requests.
-
-```ts title="client/index.ts"
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-  unstable_streamRequester,
-} from '@trpc/client';
-import type { AppRouter } from '../server';
-
-const client = createTRPCProxyClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: 'http://localhost:3000',
-      // 👇 enable streaming mode
-      requester: unstable_streamRequester,
-    }),
-  ],
-});
-```
-
-Using the `streamRequester` will:
-
-- Cause the requests to be sent with a `Trpc-Batch-Mode: stream` header
-- Cause the response to be sent with a `Transfer-Encoding: chunked` and `Vary: trpc-batch-mode` headers
-- Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
-
-If you are overriding the `fetch` implementation in the `httpBatchLink` parameters, you should make sure that it supports streaming: the `response.body` returned by the `fetch` implementation should be of type `ReadableStream<Uint8Array> | NodeJS.ReadableStream`, meaning that:
-
-- either `response.body.getReader()` is a function that returns a `ReadableStreamDefaultReader<Uint8Array>` object
-- or `response.body` is a `Uint8Array` `Buffer`
-
-> ⚠️ for **aws lambda**, `streamRequester` is not supported. It should not break anything if enabled, but will not have any effect.
-
-> ⚠️ for **cloudflare workers**, you need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors)
-
 ## Reference
 
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchLink.ts)
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchLink/index.ts)

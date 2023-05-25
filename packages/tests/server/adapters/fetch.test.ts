@@ -5,7 +5,7 @@ import {
   TRPCLink,
   createTRPCProxyClient,
   httpBatchLink,
-  unstable_streamRequester,
+  unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
@@ -174,10 +174,9 @@ test('streaming', async () => {
   const client = createTRPCProxyClient<AppRouter>({
     links: [
       linkSpy,
-      httpBatchLink({
+      unstable_httpBatchStreamLink({
         url,
         fetch: fetch as any,
-        requester: unstable_streamRequester,
       }),
     ],
   });

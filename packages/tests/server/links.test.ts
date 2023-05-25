@@ -7,7 +7,7 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
-  unstable_streamRequester,
+  unstable_httpBatchStreamLink,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/retryLink';
@@ -229,9 +229,8 @@ describe('batching', () => {
       },
     });
     const links = [
-      httpBatchLink({
+      unstable_httpBatchStreamLink({
         url: `http://localhost:${httpPort}`,
-        requester: unstable_streamRequester,
       })(mockRuntime),
     ];
     const chain1 = createChain({

@@ -1,7 +1,8 @@
-import { NonEmptyArray } from '../internals/types';
-import { RequesterFn } from './httpBatchLink';
-import { HTTPResult, streamingJsonHttpRequester } from './internals/httpUtils';
-import { Operation } from './types';
+import { NonEmptyArray } from '../../internals/types';
+import { HTTPResult } from '../internals/httpUtils';
+import { Operation } from '../types';
+import { RequesterFn, makeHttpBatchLink } from './genericMakeBatchLink';
+import { streamingJsonHttpRequester } from './streamingHttpUtils';
 
 /**
  * Is it an object with only numeric keys?
@@ -67,20 +68,7 @@ async function handleStreamedJsonResponse(
   return [];
 }
 
-/**
- * @example
- * ```ts
- * httpBatchLink({
- *   requester: streamRequester,
- * })
- * ```
- */
-export const unstable_streamRequester: RequesterFn = (
-  resolvedOpts,
-  runtime,
-  type,
-  opts,
-) => {
+const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
   return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
@@ -117,3 +105,5 @@ export const unstable_streamRequester: RequesterFn = (
     };
   };
 };
+
+export const unstable_httpBatchStreamLink = makeHttpBatchLink(streamRequester);

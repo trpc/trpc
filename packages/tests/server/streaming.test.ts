@@ -1,9 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import {
-  TRPCLink,
-  httpBatchLink,
-  unstable_streamRequester,
-} from '@trpc/client';
+import { TRPCLink, unstable_httpBatchStreamLink } from '@trpc/client';
 import { TRPCError, initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
@@ -58,9 +54,8 @@ describe('no transformer', () => {
           return {
             links: [
               linkSpy,
-              httpBatchLink({
+              unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
-                requester: unstable_streamRequester,
               }),
             ],
           };
@@ -162,9 +157,8 @@ describe('with transformer', () => {
             transformer: superjson,
             links: [
               linkSpy,
-              httpBatchLink({
+              unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
-                requester: unstable_streamRequester,
               }),
             ],
           };
