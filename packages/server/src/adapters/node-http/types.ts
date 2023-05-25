@@ -6,6 +6,7 @@ import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 export type NodeHTTPRequest = IncomingMessage & {
   body?: unknown;
+  query?: unknown;
 };
 export type NodeHTTPResponse = ServerResponse;
 
