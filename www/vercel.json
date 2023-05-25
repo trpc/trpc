@@ -16,7 +16,7 @@
       "permanent": true
     },
     {
-      "source": "/server/api-handler",
+      "source": "/docs/server/api-handler",
       "destination": "/server/adapters",
       "permanent": true
     },
