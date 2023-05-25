@@ -1,5 +1,4 @@
-import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-import { loggerLink } from '@trpc/client/links/loggerLink';
+import { httpBatchLink, loggerLink } from '@trpc/client';
 import { withTRPC } from '@trpc/next';
 import type { NextPage } from 'next';
 import type { AppType, AppProps } from 'next/app';

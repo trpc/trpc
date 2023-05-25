@@ -87,7 +87,7 @@ jobs:
           fi
 
       - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build --force
+        run: pnpm turbo --filter "@trpc/*" build
 
       - uses: actions/setup-node@v3
         with:
@@ -97,9 +97,9 @@ jobs:
       - run: node -v
 
       - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev --force
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - name: Run test-start
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
