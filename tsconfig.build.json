@@ -16,5 +16,5 @@
     "jsx": "react",
     "esModuleInterop": true
   },
-  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx"]
 }
