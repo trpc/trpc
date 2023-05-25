@@ -11,7 +11,8 @@
         "http/**",
         "observable/**",
         "rpc/**",
-        "subscription/**"
+        "subscription/**",
+        "package.json"
       ]
     },
     "codegen:bigBoi": {
