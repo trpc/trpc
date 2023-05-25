@@ -1,6 +1,6 @@
-import { TRPCResponse } from '@trpc/server/rpc';
-// Adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
+// Stream parsing adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 
+import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../../TRPCClientError';
 import {
   HTTPBaseRequestOptions,
@@ -20,10 +20,10 @@ import { HTTPHeaders } from '../types';
  */
 export function parseJsonStream<TReturn>(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
-  parser: (text: string) => TReturn = JSON.parse,
   onFull: (res: TReturn) => void,
   onSingle: (index: number, res: TReturn) => void,
   onDone: () => void,
+  parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
 ) {
   let isFirstLine = true;
@@ -74,12 +74,12 @@ export function parseJsonStream<TReturn>(
     }
   };
 
-  void readLines(readableStream, onLine, onLinesDone);
+  readLines(readableStream, onLine, onLinesDone);
 }
 
 const textDecoder = new TextDecoder();
 
-async function readLines(
+function readLines(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
   onLine: (line: string) => void,
   onDone: () => void,
@@ -109,13 +109,13 @@ async function readLines(
   };
 
   if ('getReader' in readableStream) {
-    await readStandardChunks(readableStream.getReader(), onChunk, onChunksDone);
+    void readStandardChunks(readableStream.getReader(), onChunk, onChunksDone);
   } else {
-    await readNodeChunks(readableStream, onChunk, onChunksDone);
+    readNodeChunks(readableStream, onChunk, onChunksDone);
   }
 }
 
-async function readNodeChunks(
+function readNodeChunks(
   reader: NodeJS.ReadableStream,
   onChunk: (chunk: Uint8Array) => void,
   onDone: () => void,
@@ -162,13 +162,13 @@ export const streamingJsonHttpRequester = (
     const meta: HTTPResult['meta'] = { response: res };
     return parseJsonStream(
       res.body,
+      onFull,
+      onSingle,
+      onDone,
       (string) => ({
         json: JSON.parse(string) as TRPCResponse,
         meta,
       }),
-      onFull,
-      onSingle,
-      onDone,
       ac?.signal,
     );
   });

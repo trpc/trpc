@@ -19,7 +19,6 @@ describe('parseJsonStream', () => {
     );
     parseJsonStream(
       stream,
-      JSON.parse,
       (data) => {
         fullData = data;
         promiseResolution();
@@ -53,7 +52,6 @@ describe('parseJsonStream', () => {
     );
     parseJsonStream(
       stream,
-      JSON.parse,
       (data) => {
         fullData = data;
         promiseResolution();
