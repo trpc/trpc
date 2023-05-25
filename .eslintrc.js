@@ -2,13 +2,13 @@
 const config = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['prettier', 'no-only-tests', 'unicorn', 'turbo'],
+  plugins: ['no-only-tests', 'unicorn', 'turbo'],
   extends: [
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'plugin:prettier/recommended',
+    'prettier',
   ],
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
