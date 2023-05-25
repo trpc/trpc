@@ -25,7 +25,8 @@ import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
+    const { ctx } = opts;
     if (typeof window !== 'undefined') {
       // during client requests
       return {
@@ -80,98 +81,6 @@ const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
 };
 
 export default trpc.withTRPC(MyApp);
-```
-
-## Using server-side helpers
-
-```tsx title='utils/trpc.ts'
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import superjson from 'superjson';
-import type { AppRouter } from './api/trpc/[trpc]';
-export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
-    return {
-      transformer: superjson, // optional - adds superjson serialization
-      links: [
-        httpBatchLink({
-          url: `${getBaseUrl()}/api/trpc`,
-        }),
-      ],
-    },
-  },
-});
-```
-
-```tsx title='pages/_app.tsx'
-import type { AppProps } from 'next/app';
-import React from 'react';
-import { trpc } from '~/utils/trpc';
-
-const MyApp: AppType = ({ Component, pageProps }: AppProps) => {
-  return <Component {...pageProps} />;
-};
-export default trpc.withTRPC(MyApp);
-```
-
-```tsx title='pages/posts/[id].tsx'
-import { createServerSideHelpers } from '@trpc/react-query/server';
-import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { prisma } from 'server/context';
-import { appRouter } from 'server/routers/_app';
-import superjson from 'superjson';
-import { trpc } from 'utils/trpc';
-
-export async function getServerSideProps(
-  context: GetServerSidePropsContext<{ id: string }>,
-) {
-  const helpers = createServerSideHelpers({
-    router: appRouter,
-    ctx: {},
-    transformer: superjson, // optional - adds superjson serialization
-  });
-  const id = context.params?.id as string;
-
-  // check if post exists - `prefetch` doesn't change its behavior
-  // based on the result of the query (including throws), so if we
-  // want to change the logic here in gSSP, we need to use `fetch`.
-  if (helpers.post.exists.fetch({ id })) {
-    // prefetch `post.byId`
-    await helpers.post.byId.prefetch({ id });
-  } else {
-    // if post doesn't exist, return 404
-    return {
-      props: { id },
-      notFound: true,
-    };
-  }
-  return {
-    props: {
-      trpcState: helpers.dehydrate(),
-      id,
-    },
-  };
-}
-export default function PostViewPage(
-  props: InferGetServerSidePropsType<typeof getServerSideProps>,
-) {
-  const { id } = props;
-  const postQuery = trpc.post.byId.useQuery({ id });
-  if (postQuery.status !== 'success') {
-    // won't happen since the query has been prefetched
-    return <>Loading...</>;
-  }
-  const { data } = postQuery;
-  return (
-    <>
-      <h1>{data.title}</h1>
-      <em>Created {data.createdAt.toLocaleDateString('en-us')}</em>
-      <p>{data.text}</p>
-      <h2>Raw data:</h2>
-      <pre>{JSON.stringify(data, null, 4)}</pre>
-    </>
-  );
-}
 ```
 
 ## FAQ

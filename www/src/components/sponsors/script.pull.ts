@@ -180,39 +180,32 @@ async function main() {
       .filter((it) => it.privacyLevel === 'PUBLIC')
       // overrides
       .map((sponsor) => {
-        switch (sponsor.login) {
-          case 't3dotgg':
-            return {
-              ...sponsor,
-              monthlyPriceInDollars: 5,
-            };
-        }
+        // switch (sponsor.login) {
+        //   case 't3dotgg':
+        //     return {
+        //       ...sponsor,
+        //       monthlyPriceInDollars: 5,
+        //     };
+        // }
         return sponsor;
       });
 
-    // add manual sponsors
-    rawList.push(
-      {
-        __typename: 'Organization',
-        name: 'Ping.gg',
-        imgSrc: 'https://avatars.githubusercontent.com/u/89191727?v=4',
-        monthlyPriceInDollars: 250,
-        link: 'https://ping.gg/?ref=trpc',
-        privacyLevel: 'PUBLIC',
-        login: 'pingdotgg',
-        createdAt: 1645488994_000,
-      },
-      {
-        __typename: 'Organization',
-        name: 'Tola',
-        imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
-        monthlyPriceInDollars: 2110,
-        link: 'https://tolahq.com/?ref=trpc',
-        privacyLevel: 'PUBLIC',
-        login: 'tolahq',
-        createdAt: 1659304800_000,
-      },
+    fs.writeFileSync(
+      __dirname + '/script.output.raw.json',
+      JSON.stringify(rawList, null, 2),
     );
+
+    // add manual sponsors
+    rawList.push({
+      __typename: 'Organization',
+      name: 'Tola',
+      imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
+      monthlyPriceInDollars: 1110,
+      link: 'https://tolahq.com/?ref=trpc',
+      privacyLevel: 'PUBLIC',
+      login: 'tolahq',
+      createdAt: 1659304800_000,
+    });
     const list = rawList.map((sponsor) => {
       // calculate total value
       const MONTH_MS = 30 * 24 * 60 * 60 * 1000;

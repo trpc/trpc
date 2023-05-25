@@ -42,7 +42,8 @@ interface Meta {
 
 export const t = initTRPC.context<Context>().meta<Meta>().create();
 
-const isAuthed = t.middleware(async ({ meta, next, ctx }) => {
+const isAuthed = t.middleware(async (opts) => {
+  const { meta, next, ctx } = opts;
   // only check authorization if enabled
   if (meta?.authRequired && !ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });

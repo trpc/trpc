@@ -37,7 +37,7 @@ const router = t.router({
   // Create procedure at path 'greeting'
   greeting: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `Hello ${input.name}`),
+    .query((opts) => `Hello ${opts.input.name}`),
 });
 
 const caller = router.createCaller({});
@@ -59,8 +59,8 @@ const posts = ['One', 'Two', 'Three'];
 const t = initTRPC.create();
 const router = t.router({
   post: t.router({
-    add: t.procedure.input(z.string()).mutation(({ input }) => {
-      posts.push(input);
+    add: t.procedure.input(z.string()).mutation((opts) => {
+      posts.push(opts.input);
       return posts;
     }),
   }),
@@ -96,7 +96,8 @@ type Context = {
 };
 const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware(({ next, ctx }) => {
+const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
@@ -104,7 +105,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
     });
   }
 
-  return next({
+  return opts.next({
     ctx: {
       // Infers that the `user` is non-nullable
       user: ctx.user,
@@ -115,7 +116,7 @@ const isAuthed = t.middleware(({ next, ctx }) => {
 const protectedProcedure = t.procedure.use(isAuthed);
 
 const router = t.router({
-  secret: protectedProcedure.query(({ ctx }) => ctx.user),
+  secret: protectedProcedure.query((opts) => opts.ctx.user),
 });
 
 {

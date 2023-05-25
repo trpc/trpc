@@ -1,3 +1,10 @@
+/// <reference lib="dom.iterable" />
+
+// `dom.iterable` types are explicitly required for extracting `FormData` values,
+// as all implementations of `Symbol.iterable` are separated from the main `dom` types.
+// Using triple-slash directive makes sure that it will be available,
+// even if end-user `tsconfig.json` omits it in the `lib` array.
+
 import { AnyRouter } from '@trpc/server';
 import { observable, tap } from '@trpc/server/observable';
 import { TRPCClientError } from '..';
@@ -56,14 +63,28 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   console?: ConsoleEsque;
 }
 
+function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
+
 // maybe this should be moved to it's own package
 const defaultLogger =
   <TRouter extends AnyRouter>(
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
   (props) => {
-    const { direction, input, type, path, context, id } = props;
+    const { direction, type, path, context, id } = props;
     const [light, dark] = palette[type];
+
+    const rawInput = props.input;
+
+    const input = isFormData(rawInput)
+      ? Object.fromEntries(rawInput)
+      : rawInput;
 
     const css = `
     background-color: #${direction === 'up' ? light : dark}; 
