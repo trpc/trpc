@@ -65,24 +65,24 @@ function ErrorOverlay(props: { url: string; dismiss: () => void }) {
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 overflow-hidden bg-zinc-900">
       <div className="flex flex-col items-center justify-center gap-4">
-        <div className="text-5xl font-bold text-zinc-900 dark:text-zinc-100">
+        <div className="text-5xl font-bold text-zinc-200 dark:text-zinc-100">
           ⚠️
         </div>
-        <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+        <div className="text-xl font-bold text-zinc-200 dark:text-zinc-100">
           Heads up!
         </div>
-        <div className="w-full max-w-xl text-lg font-medium text-zinc-700 dark:text-zinc-200">
+        <div className="w-full max-w-xl text-lg font-medium text-zinc-400 dark:text-zinc-200">
           WebContainers require modern Web APIs that likely aren&apos;t
           supported by your browser. Either open this page in a Chrome, or
-          download this sandbox from Stackblitz and run it locally.
+          download this sandbox from StackBlitz and run it locally.
         </div>
-        <div className="w-full max-w-xl text-lg font-medium text-zinc-700 dark:text-zinc-200">
+        <div className="w-full max-w-xl text-lg font-medium text-zinc-400 dark:text-zinc-200">
           You can dismiss this warning to see the code, although you&apos;ll
           likely see unexpected errors.
         </div>
         <div className="flex gap-4">
           <Button variant="primary" href={props.url}>
-            Open in Stackblitz
+            Open in StackBlitz
           </Button>
           <button
             onClick={props.dismiss}

@@ -32,14 +32,14 @@ body:
   - type: input
     attributes:
       label: Link to reproduction
-      description: Please provide a link to a reproduction of the bug. This can be a link to a repository or a Stackblitz/CodeSandbox etc. Feel free to use our minimal reproduction template https://stackblitz.com/github/trpc/examples-next-minimal-starter
+      description: Please provide a link to a reproduction of the bug. This can be a link to a repository or a StackBlitz/CodeSandbox etc. Feel free to use our minimal reproduction template https://stackblitz.com/github/trpc/examples-next-minimal-starter
       placeholder: https://stackblitz.com/github/trpc/examples-next-minimal-starter
     validations:
       required: true
   - type: textarea
     attributes:
       label: To reproduce
-      description: Describe how to reproduce your bug. Can be either code or a link to a reproduction repo, Stackblitz etc.
+      description: Describe how to reproduce your bug. Can be either code or a link to a reproduction repo, StackBlitz etc.
     validations:
       required: true
   - type: textarea
