@@ -11,10 +11,25 @@ describe('parseJsonStream', () => {
         controller.close();
       },
     });
-    const iterator = parseJsonStream(stream);
-    const data = await iterator.next();
-    expect(data.value).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
-    expect(data.done).toBe(true);
+    let fullData: any;
+    const itemsArray: any[] = [];
+    let promiseResolution: () => void;
+    const promise = new Promise<void>(
+      (resolve) => (promiseResolution = resolve),
+    );
+    parseJsonStream(
+      stream,
+      JSON.parse,
+      (data) => {
+        fullData = data;
+        promiseResolution();
+      },
+      (index, data) => (itemsArray[index] = data),
+      () => promiseResolution(),
+    );
+    await promise;
+    expect(itemsArray).toEqual([]);
+    expect(fullData).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
   });
   test('multiline streamed JSON', async () => {
     const encoder = new TextEncoder();
@@ -30,10 +45,24 @@ describe('parseJsonStream', () => {
         controller.close();
       },
     });
-    const results: any[] = [];
-    for await (const [index, body] of parseJsonStream(stream)) {
-      results[index as unknown as number] = body;
-    }
-    expect(results).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
+    let fullData: any;
+    const itemsArray: any[] = [];
+    let promiseResolution: () => void;
+    const promise = new Promise<void>(
+      (resolve) => (promiseResolution = resolve),
+    );
+    parseJsonStream(
+      stream,
+      JSON.parse,
+      (data) => {
+        fullData = data;
+        promiseResolution();
+      },
+      (index, data) => (itemsArray[index] = data),
+      () => promiseResolution(),
+    );
+    await promise;
+    expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
+    expect(fullData).toEqual(undefined);
   });
 });

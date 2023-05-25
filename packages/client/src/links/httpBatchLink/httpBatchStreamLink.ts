@@ -45,29 +45,6 @@ function handleFullJsonResponse(
   return result;
 }
 
-async function handleStreamedJsonResponse(
-  iterator: AsyncGenerator<
-    [index: string, data: HTTPResult],
-    HTTPResult | undefined,
-    unknown
-  >,
-  batchOps: Operation[],
-  unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
-): Promise<HTTPResult[]> {
-  let item = await iterator.next();
-
-  // first response is *the only* response, this is not a streaming response
-  if (item.done) {
-    return handleFullJsonResponse(item.value as HTTPResult, batchOps);
-  }
-
-  do {
-    const index = item.value[0] as unknown as number; // force casting to number because `a[0]` and `a["0"]` work the same
-    unitResolver(index, item.value[1]);
-  } while (!(item = await iterator.next()).done);
-  return [];
-}
-
 const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
   return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');
@@ -94,14 +71,26 @@ const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
       },
     };
 
-    const { promise, cancel } =
-      streamingJsonHttpRequester(httpRequesterOptions);
-    const batchPromise = promise.then((iterator) =>
-      handleStreamedJsonResponse(iterator, batchOps, unitResolver),
+    let resolveStream: (arr: HTTPResult[]) => void;
+    let cancelStream: () => void;
+    const streamPromise = new Promise<HTTPResult[]>((resolve, reject) => {
+      resolveStream = resolve;
+      cancelStream = reject;
+    });
+
+    const cancelRequest = streamingJsonHttpRequester(
+      httpRequesterOptions,
+      (fullRes) => resolveStream(handleFullJsonResponse(fullRes, batchOps)),
+      (index, singleRes) => unitResolver(index, singleRes),
+      () => resolveStream([]),
     );
+
     return {
-      promise: batchPromise,
-      cancel,
+      promise: streamPromise,
+      cancel: () => {
+        cancelRequest();
+        cancelStream();
+      },
     };
   };
 };
