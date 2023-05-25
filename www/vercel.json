@@ -17,7 +17,7 @@
     },
     {
       "source": "/server/api-handler",
-      "destination": "/server/adapters/intro",
+      "destination": "/server/adapters",
       "permanent": true
     },
     {
@@ -173,11 +173,6 @@
     {
       "source": "/docs/standalone",
       "destination": "/docs/server/adapters/standalone",
-      "permanent": true
-    },
-    {
-      "source": "/docs/api-handler",
-      "destination": "/docs/server/api-handler",
       "permanent": true
     },
     {
