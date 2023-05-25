@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "globalDependencies": ["tsconfig.json", "scripts/entrypoints.ts"],
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [

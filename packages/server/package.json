@@ -169,5 +169,8 @@
     "ws": "^8.0.0",
     "yup": "^1.0.0",
     "zod": "^3.0.0"
-  }
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }

@@ -94,5 +94,8 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }
