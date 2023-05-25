@@ -4,6 +4,5 @@
     "declarationDir": "dist",
     "declarationMap": true
   },
-  "include": ["src"],
-  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx"]
+  "include": ["src"]
 }
