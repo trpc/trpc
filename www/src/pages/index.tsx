@@ -109,7 +109,6 @@ function TryItOut() {
     if (typeof window === 'undefined') return false;
 
     const ua = window.navigator.userAgent;
-    console.log({ ua });
     const supportsWebContainers = ua.includes('Chrome');
     // || ua.includes('Firefox'); // Firefox should support WebContainers, but doesn't look like they work in embeds
     // || ua.includes('Safari'); // TODO: check version & verify we have necessary headers allowed
