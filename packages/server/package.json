@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.27.1",
+  "version": "10.27.3",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -130,7 +130,8 @@
     "rpc",
     "observable",
     "subscription",
-    "shared"
+    "shared",
+    "!**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
@@ -168,5 +169,8 @@
     "ws": "^8.0.0",
     "yup": "^1.0.0",
     "zod": "^3.0.0"
-  }
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }
