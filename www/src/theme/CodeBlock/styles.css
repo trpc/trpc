@@ -148,6 +148,7 @@ pre .code-container {
 
 pre code {
   white-space: pre;
+  display: inline-block;
   -webkit-overflow-scrolling: touch;
 }
 

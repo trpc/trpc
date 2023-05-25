@@ -49,9 +49,9 @@ import { z } from 'zod';
 export const t = initTRPC.create();
 
 const appRouter = t.router({
-  getUser: t.procedure.input(z.string()).query((req) => {
-    req.input; // string
-    return { id: req.input, name: 'Bilbo' };
+  getUser: t.procedure.input(z.string()).query((opts) => {
+    opts.input; // string
+    return { id: opts.input, name: 'Bilbo' };
   }),
 });
 

@@ -3,14 +3,14 @@ import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import { dataLoader } from '../internals/dataLoader';
 import { NonEmptyArray } from '../internals/types';
+import { transformResult } from '../shared/transformResult';
 import {
   HTTPLinkBaseOptions,
   HTTPResult,
   getUrl,
-  httpRequest,
+  jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import { transformResult } from './internals/transformResult';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
 
 export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
@@ -58,7 +58,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const path = batchOps.map((op) => op.path).join(',');
         const inputs = batchOps.map((op) => op.input);
 
-        const { promise, cancel } = httpRequest({
+        const { promise, cancel } = jsonHttpRequester({
           ...resolvedOpts,
           runtime,
           type,

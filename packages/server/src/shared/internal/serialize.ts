@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { FilterKeys } from '../../types';
+import { FilterKeys, Simplify } from '../../types';
 
 /**
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -30,16 +30,16 @@ type JsonReturnable = JsonPrimitive | undefined;
 
 // prettier-ignore
 export type Serialize<T> =
- IsAny<T> extends true ? any :
- T extends JsonReturnable ? T :
- T extends Map<any,any> | Set<any> ? object : 
- T extends NonJsonPrimitive ? never :
- T extends { toJSON(): infer U } ? U :
- T extends [] ? [] :
- T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
- T extends ReadonlyArray<infer U> ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
- T extends object ? SerializeObject<UndefinedToOptional<T>> :
- never;
+  IsAny<T> extends true ? any :
+  T extends JsonReturnable ? T :
+  T extends Map<any, any> | Set<any> ? object :
+  T extends NonJsonPrimitive ? never :
+  T extends { toJSON(): infer U } ? U :
+  T extends [] ? [] :
+  T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
+  T extends ReadonlyArray<infer U> ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
+  T extends object ? Simplify<SerializeObject<UndefinedToOptional<T>>> :
+  never;
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {

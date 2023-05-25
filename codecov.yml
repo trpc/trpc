@@ -3,6 +3,8 @@ comment: false # do not comment PR with the result
 
 ignore:
   - '**/deprecated/**'
+  - '**/form-data/**'
+  - '**/app-dir/**'
 coverage:
   range: 50..90 # coverage lower than 50 is red, higher than 90 green, between color code
 

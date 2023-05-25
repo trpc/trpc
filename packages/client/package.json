@@ -1,7 +1,7 @@
 {
   "name": "@trpc/client",
-  "version": "10.20.0",
-  "description": "tRPC Client lib",
+  "version": "10.27.3",
+  "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
   "main": "dist/index.js",
@@ -59,6 +59,11 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
+    },
+    "./shared": {
+      "import": "./dist/shared/index.mjs",
+      "require": "./dist/shared/index.js",
+      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -66,22 +71,23 @@
     "src",
     "README.md",
     "package.json",
-    "links"
+    "links",
+    "shared"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.20.0"
+    "@trpc/server": "10.27.3"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "^10.20.0",
+    "@trpc/server": "10.27.3",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.7.20",
-    "eslint": "^8.30.0",
+    "eslint": "^8.40.0",
     "expect-type": "^0.15.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
-    "tsx": "^3.12.3",
+    "tsx": "^3.12.7",
     "undici": "^5.14.0",
     "vitest": "^0.28.5"
   },
