@@ -4,6 +4,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
+  "eslint.rules.customizations": [{ "rule": "*", "severity": "warn" }],
   "files.exclude": {
     "packages/client/{links}": true,
     "packages/react-query/{shared,ssg}": true,

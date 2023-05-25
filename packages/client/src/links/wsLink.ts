@@ -120,6 +120,14 @@ export function createWSClient(opts: WebSocketClientOptions) {
     }
   }
 
+  function closeActiveSubscriptions() {
+    Object.values(pendingRequests).forEach((req) => {
+      if (req.type === 'subscription') {
+        req.callbacks.complete();
+      }
+    });
+  }
+
   function resumeSubscriptionOnReconnect(req: TRequest) {
     if (outgoing.some((r) => r.id === req.op.id)) {
       return;
@@ -281,6 +289,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     close: () => {
       state = 'closed';
       onClose?.();
+      closeActiveSubscriptions();
       closeIfNoPending(activeConnection);
       clearTimeout(connectTimer as any);
       connectTimer = null;
@@ -304,14 +313,6 @@ class TRPCWebSocketClosedError extends Error {
   }
 }
 
-class TRPCSubscriptionEndedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'TRPCSubscriptionEndedError';
-    Object.setPrototypeOf(this, TRPCSubscriptionEndedError.prototype);
-  }
-}
-
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions,
 ): TRPCLink<TRouter> {
@@ -323,28 +324,15 @@ export function wsLink<TRouter extends AnyRouter>(
 
         const input = runtime.transformer.serialize(op.input);
 
-        let isDone = false;
         const unsub = client.request(
           { type, path, input, id, context },
           {
             error(err) {
-              isDone = true;
               observer.error(err as TRPCClientError<any>);
               unsub();
             },
             complete() {
-              if (!isDone) {
-                isDone = true;
-                observer.error(
-                  TRPCClientError.from(
-                    new TRPCSubscriptionEndedError(
-                      'Operation ended prematurely',
-                    ),
-                  ),
-                );
-              } else {
-                observer.complete();
-              }
+              observer.complete();
             },
             next(message) {
               const transformed = transformResult(message, runtime);
@@ -360,7 +348,6 @@ export function wsLink<TRouter extends AnyRouter>(
               if (op.type !== 'subscription') {
                 // if it isn't a subscription we don't care about next response
 
-                isDone = true;
                 unsub();
                 observer.complete();
               }
@@ -368,7 +355,6 @@ export function wsLink<TRouter extends AnyRouter>(
           },
         );
         return () => {
-          isDone = true;
           unsub();
         };
       });
