@@ -20,9 +20,15 @@ export function experimental_nextHttpLink<
 >(opts: NextFetchLinkOptions<TBatch>): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
-      const { path, input } = ctx.op;
+      const { path, input, context } = ctx.op;
       const cacheTag = generateCacheTag(path, input);
-      const revalidate = opts.revalidate ?? false;
+
+      // Let per-request revalidate override global revalidate
+      const requestRevalidate =
+        typeof context.revalidate === 'number' || context.revalidate === false
+          ? context.revalidate
+          : opts.revalidate;
+      const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
       console.log(
         `fetching ${path} with tag ${cacheTag} - revalidate is set to ${revalidate}`,
