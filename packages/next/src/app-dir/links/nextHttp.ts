@@ -27,7 +27,7 @@ export function experimental_nextHttpLink<
       const requestRevalidate =
         typeof context.revalidate === 'number' || context.revalidate === false
           ? context.revalidate
-          : opts.revalidate;
+          : undefined;
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
       console.log(
