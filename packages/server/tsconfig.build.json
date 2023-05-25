@@ -5,5 +5,5 @@
     "declarationMap": true
   },
   "include": ["src"],
-  "exclude": ["**/*.test.{ts,tsx}"]
+  "exclude": ["test", "**/*.test.ts"]
 }
