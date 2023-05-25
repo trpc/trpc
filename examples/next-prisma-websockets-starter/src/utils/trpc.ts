@@ -1,4 +1,9 @@
-import { httpBatchLink, loggerLink, wsLink, createWSClient } from '@trpc/client';
+import {
+  httpBatchLink,
+  loggerLink,
+  wsLink,
+  createWSClient,
+} from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { inferProcedureOutput } from '@trpc/server';
 import { NextPageContext } from 'next';
