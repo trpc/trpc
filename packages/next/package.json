@@ -51,7 +51,8 @@
     "src",
     "README.md",
     "package.json",
-    "app-dir"
+    "app-dir",
+    "**/*.test.*"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",

@@ -72,7 +72,8 @@
     "README.md",
     "package.json",
     "links",
-    "shared"
+    "shared",
+    "**/*.test.*"
   ],
   "peerDependencies": {
     "@trpc/server": "10.27.3"

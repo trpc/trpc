@@ -130,7 +130,8 @@
     "rpc",
     "observable",
     "subscription",
-    "shared"
+    "shared",
+    "**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"

@@ -50,7 +50,8 @@
     "package.json",
     "server",
     "shared",
-    "ssg"
+    "ssg",
+    "**/*.test.*"
   ],
   "eslintConfig": {
     "rules": {

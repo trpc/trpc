@@ -100,6 +100,8 @@ export function generateEntrypoints(inputs: string[]) {
     pkgJson.files.push(topLevel);
   });
 
+  pkgJson.files.push('**/*.test.*');
+
   // write package.json
   const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
     parser: 'json-stringify',
