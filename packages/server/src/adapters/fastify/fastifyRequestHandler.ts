@@ -77,7 +77,7 @@ export async function iteratorToResponse(
     iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
   ).next();
 
-  if (invalidInit || (abort && !firstChunk)) {
+  if (invalidInit) {
     res.statusCode = 500;
     return res.send();
   }
