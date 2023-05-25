@@ -24,7 +24,7 @@
     "react-hook-form": "^7.43.3",
     "superjson": "^1.7.4",
     "trpc-api": "link:./src/trpc",
-    "typescript": "^4.8.3",
+    "typescript": "^5.0.4",
     "zod": "^3.0.0"
   }
 }
