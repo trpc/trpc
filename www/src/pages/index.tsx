@@ -72,7 +72,7 @@ function ErrorOverlay(props: { url: string; dismiss: () => void }) {
           Heads up!
         </div>
         <div className="w-full max-w-xl text-lg font-medium text-zinc-700 dark:text-zinc-200">
-          WebContainers require modern Web APIs that likely isn&apos;t supported
+          WebContainers require modern Web APIs that likely aren&apos;t supported
           by your browser. Either open this page in a different browser, or
           download this sandbox from Stackblitz and run it locally.
         </div>
