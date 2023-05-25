@@ -21,7 +21,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         experimental_nextCacheLink({
-          staleTime: 5,
+          revalidate: 5,
           router: appRouter,
           createContext: async () => {
             const h = Object.fromEntries(headers().entries());

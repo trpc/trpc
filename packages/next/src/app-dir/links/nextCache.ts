@@ -10,7 +10,7 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
-  staleTime?: number | false;
+  revalidate?: number | false;
 };
 
 // ts-prune-ignore-next
@@ -23,7 +23,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const { path, input, type } = op;
 
         const cacheTag = generateCacheTag(path, input);
-        const revalidate = opts.staleTime ?? false;
+        const revalidate = opts.revalidate ?? false;
 
         const promise = opts
           .createContext()
