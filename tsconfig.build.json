@@ -15,5 +15,6 @@
     "moduleResolution": "node",
     "jsx": "react",
     "esModuleInterop": true
-  }
+  },
+  "exclude": ["**/*.test.{ts,tsx}"]
 }
