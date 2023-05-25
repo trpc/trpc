@@ -248,7 +248,7 @@ export class NodeOnDiskFile implements File {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));
     }
 
-    return Readable.toWeb(stream);
+    return Readable.toWeb(stream) as ReadableStream<any>;
   }
 
   async text(): Promise<string> {
