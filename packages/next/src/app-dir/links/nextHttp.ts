@@ -10,7 +10,7 @@ import { generateCacheTag } from '../shared';
 
 type NextFetchLinkOptions<TBatch extends boolean> = {
   batch?: TBatch;
-  staleTime?: number;
+  revalidate?: number | false;
 } & (TBatch extends true ? HttpBatchLinkOptions : HTTPLinkOptions);
 
 // ts-prune-ignore-next
@@ -22,6 +22,7 @@ export function experimental_nextHttpLink<
     return (ctx) => {
       const { path, input } = ctx.op;
       const cacheTag = generateCacheTag(path, input);
+      const revalidate = opts.revalidate ?? false;
 
       console.log(`fetching ${path} with tag ${cacheTag}`);
 
@@ -32,7 +33,10 @@ export function experimental_nextHttpLink<
         fetch: (url, fetchOpts) => {
           return fetch(url, {
             ...fetchOpts,
-            next: { tags: [cacheTag], revalidate: opts.staleTime },
+            next: {
+              revalidate,
+              tags: [cacheTag],
+            },
           });
         },
       })(runtime);
