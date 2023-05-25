@@ -73,7 +73,7 @@
     "package.json",
     "links",
     "shared",
-    "**/*.test.*"
+    "!**/*.test.*"
   ],
   "peerDependencies": {
     "@trpc/server": "10.27.3"

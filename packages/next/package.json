@@ -52,7 +52,7 @@
     "README.md",
     "package.json",
     "app-dir",
-    "**/*.test.*"
+    "!**/*.test.*"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",

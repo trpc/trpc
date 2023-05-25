@@ -51,7 +51,7 @@
     "server",
     "shared",
     "ssg",
-    "**/*.test.*"
+    "!**/*.test.*"
   ],
   "eslintConfig": {
     "rules": {

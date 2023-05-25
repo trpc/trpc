@@ -131,7 +131,7 @@
     "observable",
     "subscription",
     "shared",
-    "**/*.test.*"
+    "!**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
