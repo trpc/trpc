@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { api } from 'trpc-api';
 import { ClientGreeting } from './ClientGreeting';
 import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
@@ -12,11 +11,11 @@ export default async function Home() {
 
   return (
     <>
-      <div>
+      {/* <div>
         <Suspense fallback={<>Loading client...</>}>
           <ClientGreeting />
         </Suspense>
-      </div>
+      </div> */}
 
       <div>
         <Suspense fallback={<>Loading Server...</>}>
@@ -30,14 +29,6 @@ export default async function Home() {
           <StreamedSC promise={promise} />
         </Suspense>
       </div> */}
-      <form
-        action={async () => {
-          'use server';
-          api.greeting.revalidate();
-        }}
-      >
-        <button type="submit">Revalidate Http Calls</button>
-      </form>
 
       <div
         style={{

@@ -163,6 +163,7 @@ export async function experimental_revalidateEndpoint(req: Request) {
   }
 
   revalidateTag(cacheTag);
+  console.log(`revalidated tag ${cacheTag}`);
   return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
     status: 200,
   });

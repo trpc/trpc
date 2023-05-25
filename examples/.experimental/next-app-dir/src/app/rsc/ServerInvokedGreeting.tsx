@@ -5,20 +5,20 @@
 import { api } from '~/trpc/server-invoker';
 
 export async function ServerInvokedGreeting() {
-  const data = await api.greeting.query({
+  const greeting = await api.greeting.query({
     text: 'i never hit an api endpoint',
   });
 
   return (
     <div>
-      {data}
+      {greeting}
       <form
         action={async () => {
           'use server';
           api.greeting.revalidate({ text: 'i never hit an api endpoint' });
         }}
       >
-        <button type="submit">Revalidate invoked</button>
+        <button type="submit">Revalidate</button>
       </form>
     </div>
   );

@@ -38,7 +38,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               });
 
             if (type === 'query') {
-              console.log(`invoking query ${path} with tag ${cacheTag}`);
+              console.log(`invoking ${path} with tag ${cacheTag}`);
               return unstable_cache(callProc, undefined, {
                 revalidate,
                 tags: [cacheTag],
