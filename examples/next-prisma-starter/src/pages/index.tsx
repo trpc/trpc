@@ -34,97 +34,128 @@ const IndexPage: NextPageWithLayout = () => {
   // }, [postsQuery.data, utils]);
 
   return (
-    <>
-      <h1>Welcome to your tRPC starter!</h1>
-      <p>
-        If you get stuck, check <a href="https://trpc.io">the docs</a>, write a
-        message in our <a href="https://trpc.io/discord">Discord-channel</a>, or
-        write a message in{' '}
-        <a href="https://github.com/trpc/trpc/discussions">
+    <div className="flex flex-col bg-gray-800 py-8">
+      <h1 className="text-4xl font-bold">
+        Welcome to your tRPC with Prisma starter!
+      </h1>
+      <p className="text-gray-400">
+        If you get stuck, check{' '}
+        <Link className="underline" href="https://trpc.io">
+          the docs
+        </Link>
+        , write a message in our{' '}
+        <Link className="underline" href="https://trpc.io/discord">
+          Discord-channel
+        </Link>
+        , or write a message in{' '}
+        <Link
+          className="underline"
+          href="https://github.com/trpc/trpc/discussions"
+        >
           GitHub Discussions
-        </a>
+        </Link>
         .
       </p>
 
-      <h2>
-        Latest Posts
-        {postsQuery.status === 'loading' && '(loading)'}
-      </h2>
+      <div className="flex flex-col py-8 items-start gap-y-2">
+        <div className="flex flex-col"></div>
+        <h2 className="text-3xl font-semibold">
+          Latest Posts
+          {postsQuery.status === 'loading' && '(loading)'}
+        </h2>
 
-      <button
-        onClick={() => postsQuery.fetchPreviousPage()}
-        disabled={
-          !postsQuery.hasPreviousPage || postsQuery.isFetchingPreviousPage
-        }
-      >
-        {postsQuery.isFetchingPreviousPage
-          ? 'Loading more...'
-          : postsQuery.hasPreviousPage
-          ? 'Load More'
-          : 'Nothing more to load'}
-      </button>
+        <button
+          className="bg-gray-900 p-2 rounded-md font-semibold disabled:bg-gray-700 disabled:text-gray-400"
+          onClick={() => postsQuery.fetchPreviousPage()}
+          disabled={
+            !postsQuery.hasPreviousPage || postsQuery.isFetchingPreviousPage
+          }
+        >
+          {postsQuery.isFetchingPreviousPage
+            ? 'Loading more...'
+            : postsQuery.hasPreviousPage
+            ? 'Load More'
+            : 'Nothing more to load'}
+        </button>
 
-      {postsQuery.data?.pages.map((page, index) => (
-        <Fragment key={page.items[0]?.id || index}>
-          {page.items.map((item) => (
-            <article key={item.id}>
-              <h3>{item.title}</h3>
-              <Link href={`/post/${item.id}`}>View more</Link>
-            </article>
-          ))}
-        </Fragment>
-      ))}
+        {postsQuery.data?.pages.map((page, index) => (
+          <Fragment key={page.items[0]?.id || index}>
+            {page.items.map((item) => (
+              <article key={item.id}>
+                <h3 className="text-2xl font-semibold">{item.title}</h3>
+                <Link className="text-gray-400" href={`/post/${item.id}`}>
+                  View more
+                </Link>
+              </article>
+            ))}
+          </Fragment>
+        ))}
+      </div>
 
       <hr />
 
-      <h3>Add a Post</h3>
+      <div className="flex flex-col py-8 items-center">
+        <h2 className="text-3xl font-semibold pb-2">Add a Post</h2>
 
-      <form
-        onSubmit={async (e) => {
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @see https://react-hook-form.com/
-           * @see https://kitchen-sink.trpc.io/react-hook-form
-           */
-          e.preventDefault();
-          const $form = e.currentTarget;
-          const values = Object.fromEntries(new FormData($form));
-          type Input = inferProcedureInput<AppRouter['post']['add']>;
-          //    ^?
-          const input: Input = {
-            title: values.title as string,
-            text: values.text as string,
-          };
-          try {
-            await addPost.mutateAsync(input);
+        <form
+          className="py-2 w-4/6"
+          onSubmit={async (e) => {
+            /**
+             * In a real app you probably don't want to use this manually
+             * Checkout React Hook Form - it works great with tRPC
+             * @see https://react-hook-form.com/
+             * @see https://kitchen-sink.trpc.io/react-hook-form
+             */
+            e.preventDefault();
+            const $form = e.currentTarget;
+            const values = Object.fromEntries(new FormData($form));
+            type Input = inferProcedureInput<AppRouter['post']['add']>;
+            //    ^?
+            const input: Input = {
+              title: values.title as string,
+              text: values.text as string,
+            };
+            try {
+              await addPost.mutateAsync(input);
 
-            $form.reset();
-          } catch (cause) {
-            console.error({ cause }, 'Failed to add post');
-          }
-        }}
-      >
-        <label htmlFor="title">Title:</label>
-        <br />
-        <input
-          id="title"
-          name="title"
-          type="text"
-          disabled={addPost.isLoading}
-        />
+              $form.reset();
+            } catch (cause) {
+              console.error({ cause }, 'Failed to add post');
+            }
+          }}
+        >
+          <div className="flex flex-col gap-y-4 font-semibold">
+            <input
+              className="focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
+              id="title"
+              name="title"
+              type="text"
+              placeholder="Title"
+              disabled={addPost.isLoading}
+            />
+            <textarea
+              className="resize-none focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
+              id="text"
+              name="text"
+              placeholder="Text"
+              disabled={addPost.isLoading}
+              rows={6}
+            />
 
-        <br />
-        <label htmlFor="text">Text:</label>
-        <br />
-        <textarea id="text" name="text" disabled={addPost.isLoading} />
-        <br />
-        <input type="submit" disabled={addPost.isLoading} />
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
-    </>
+            <div className="flex justify-center">
+              <input
+                className="cursor-pointer bg-gray-900 p-2 rounded-md px-16"
+                type="submit"
+                disabled={addPost.isLoading}
+              />
+              {addPost.error && (
+                <p style={{ color: 'red' }}>{addPost.error.message}</p>
+              )}
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
