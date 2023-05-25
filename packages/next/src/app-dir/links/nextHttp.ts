@@ -24,7 +24,9 @@ export function experimental_nextHttpLink<
       const cacheTag = generateCacheTag(path, input);
       const revalidate = opts.revalidate ?? false;
 
-      console.log(`fetching ${path} with tag ${cacheTag}`);
+      console.log(
+        `fetching ${path} with tag ${cacheTag} - revalidate is set to ${revalidate}`,
+      );
 
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
       const link = linkFactory({

@@ -19,6 +19,7 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         experimental_nextHttpLink({
+          revalidate: 2,
           batch: false,
           url: getUrl(),
           headers() {
