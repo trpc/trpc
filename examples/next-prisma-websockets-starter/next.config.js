@@ -4,10 +4,6 @@
 
 /** @type {import("next").NextConfig} */
 const config = {
-  experimental: {
-    // ssr prepass seems broken since they enabled app dir by default. explicitly disable it
-    appDir: false,
-  },
   serverRuntimeConfig: {
     // Will only be available on the server side
   },

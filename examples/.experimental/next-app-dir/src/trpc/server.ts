@@ -3,12 +3,14 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
 import { headers } from 'next/headers';
+import superjson from 'superjson';
 import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
 
 export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
   config() {
     return {
+      transformer: superjson,
       links: [
         loggerLink({
           enabled: (op) =>
@@ -29,3 +31,5 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
     };
   },
 });
+
+// export const createAction =
