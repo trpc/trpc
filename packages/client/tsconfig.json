@@ -2,9 +2,6 @@
   "extends": "../../tsconfig.json",
   "include": ["src"],
   "compilerOptions": {
-    "types": ["node", "vitest/globals"],
-    "paths": {
-      "tslib": ["./node_modules/tslib/tslib.d.ts"]
-    }
+    "types": ["node", "vitest/globals"]
   }
 }
