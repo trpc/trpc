@@ -31,7 +31,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   };
 
   let resolve: (value: Response) => void;
-  const promise = new Promise<Response>((r) => resolve = r);
+  const promise = new Promise<Response>((r) => (resolve = r));
   let status = 200;
 
   const onHead = (head: HTTPResponse) => {
@@ -49,7 +49,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       }
     }
     status = head.status;
-  }
+  };
 
   let isStream = false;
   let controller: ReadableStreamController<any>;
@@ -83,7 +83,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     const comma = isStream ? ',' : '';
     controller.enqueue(encoder.encode(`${comma}"${index}":${string}\n`));
     isStream = true;
-  }
+  };
 
   void resolveHTTPResponse(
     {

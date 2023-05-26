@@ -65,7 +65,10 @@ export async function nodeHTTPRequestHandler<
     };
 
     const onHead = (head: HTTPResponse) => {
-      if ('status' in head && (!opts.res.statusCode || opts.res.statusCode === 200)) {
+      if (
+        'status' in head &&
+        (!opts.res.statusCode || opts.res.statusCode === 200)
+      ) {
         opts.res.statusCode = head.status;
       }
       for (const [key, value] of Object.entries(head.headers ?? {})) {
@@ -75,7 +78,7 @@ export async function nodeHTTPRequestHandler<
         }
         opts.res.setHeader(key, value);
       }
-    }
+    };
 
     let isStream = false;
     const onChunk = ([index, string]: ResponseChunk) => {
@@ -87,13 +90,16 @@ export async function nodeHTTPRequestHandler<
       if (!isStream) {
         opts.res.setHeader('Transfer-Encoding', 'chunked');
         const vary = opts.res.getHeader('Vary');
-        opts.res.setHeader('Vary', vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode');
+        opts.res.setHeader(
+          'Vary',
+          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
+        );
         opts.res.write('{\n');
       }
       const comma = isStream ? ',' : '';
       opts.res.write(`${comma}"${index}":${string}\n`);
       isStream = true;
-    }
+    };
 
     await resolveHTTPResponse(
       {

@@ -46,7 +46,7 @@ export async function fastifyRequestHandler<
   };
 
   let resolve: (value: FastifyReply) => void;
-  const promise = new Promise<FastifyReply>((r) => resolve = r);
+  const promise = new Promise<FastifyReply>((r) => (resolve = r));
 
   const onHead = (head: HTTPResponse) => {
     if (!opts.res.statusCode || opts.res.statusCode === 200) {
@@ -59,7 +59,7 @@ export async function fastifyRequestHandler<
       }
       void opts.res.header(key, value);
     }
-  }
+  };
 
   let isStream = false;
   let stream: Readable;
@@ -85,7 +85,7 @@ export async function fastifyRequestHandler<
     const comma = isStream ? ',' : '';
     stream.push(`${comma}"${index}":${string}\n`);
     isStream = true;
-  }
+  };
 
   void resolveHTTPResponse(
     {

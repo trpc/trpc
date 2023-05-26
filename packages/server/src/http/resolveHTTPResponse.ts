@@ -183,7 +183,10 @@ export async function resolveHTTPResponse<
 
   const isBatchCall = !!req.query.get('batch');
   const isStreamCall =
-    isBatchCall && onHead && onChunk && req.headers['trpc-batch-mode'] === 'stream';
+    isBatchCall &&
+    onHead &&
+    onChunk &&
+    req.headers['trpc-batch-mode'] === 'stream';
 
   try {
     if (opts.error) {
@@ -343,9 +346,14 @@ export async function resolveHTTPResponse<
      * For this condition to be realized, we need to be sure that `serialize` in
      * `transformTRPCResponse` cannot throw.
      */
-    const headResponse = initResponse(ctx, paths, type, opts.responseMeta, untransformedJSON, [
-      error,
-    ]);
+    const headResponse = initResponse(
+      ctx,
+      paths,
+      type,
+      opts.responseMeta,
+      untransformedJSON,
+      [error],
+    );
     onHead?.(headResponse);
 
     // return body stuff
@@ -354,7 +362,7 @@ export async function resolveHTTPResponse<
       untransformedJSON,
     );
     const body = JSON.stringify(transformedJSON);
-    
+
     const chunk: ResponseChunk = [-1, body];
     onChunk?.(chunk);
 
