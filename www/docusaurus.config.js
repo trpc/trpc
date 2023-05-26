@@ -120,7 +120,7 @@ module.exports = {
             },
             {
               label: 'FAQ / Troubleshooting',
-              to: 'docs/further/faq',
+              to: 'docs/faq',
             },
           ],
         },
