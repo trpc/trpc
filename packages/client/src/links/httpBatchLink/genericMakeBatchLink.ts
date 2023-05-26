@@ -44,14 +44,7 @@ export type RequesterFn = (
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
 ) => {
-  promise: Promise<
-    {
-      meta: {
-        response: ResponseEsque;
-      };
-      json: any;
-    }[]
-  >;
+  promise: Promise<HTTPResult[]>;
   cancel: CancelFn;
 };
 
