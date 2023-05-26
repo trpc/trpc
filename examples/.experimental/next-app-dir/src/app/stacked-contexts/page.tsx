@@ -207,7 +207,7 @@ export default function DefaultPage() {
     <CacheProvider fallback="Loading page....">
       <ShowContext timeout={300} />
       <CacheProvider fallback="Loading child...">
-        <ShowContext timeout={350} />
+        <ShowContext timeout={1000} />
       </CacheProvider>
     </CacheProvider>
   );
