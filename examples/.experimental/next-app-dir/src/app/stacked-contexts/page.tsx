@@ -120,7 +120,8 @@ function CacheProvider(props: {
         cache,
         onSettled: () =>
           refCount.current === 0 ? refCountZeroDeferred : onSettledRef.current,
-        exec: (opts) => {
+        exec(opts) {
+          type $Output = ReturnType<typeof opts.fn>;
           let entry = cache[opts.key];
           console.log('[exec] key', opts.key);
           console.log('[exec] current cache', JSON.stringify(cache, null, 4));
@@ -130,7 +131,7 @@ function CacheProvider(props: {
               promise: !!entry.promise,
             });
             if (entry.promise) {
-              return entry.promise;
+              return entry.promise as $Output;
             }
             console.log('[DEHYDRATING]');
             // Turning hydrated JSON into a promise
@@ -147,7 +148,7 @@ function CacheProvider(props: {
             entry.promise.finally(() => {
               decRef();
             });
-            return entry.promise;
+            return entry.promise as $Output;
           }
           const promise = opts.fn();
           cache[opts.key] = entry = {
