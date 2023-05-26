@@ -13,19 +13,15 @@ import { HTTPHeaders } from '../types';
 
 /**
  * @param readableStream as given by `(await fetch(url)).body`
- * @param parser defaults to `JSON.parse`
- * @param onFull called when the first line is not `{`, so we had to give up on parsing as a newline-delimited stream
  * @param onSingle called for each line of the stream
- * @param onDone called when the stream is exhausted (only after `onSingle`, if `onFull` was called `onDone` will not be called)
+ * @param parser defaults to `JSON.parse`
  */
-export function parseJsonStream<TReturn>(
+export async function parseJsonStream<TReturn>(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
-  onFull: (res: TReturn) => void,
   onSingle: (index: number, res: TReturn) => void,
-  onDone: () => void,
   parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
-) {
+): Promise<TReturn | undefined> {
   let isFirstLine = true;
   let isFullSink = false;
   let fullAccumulator = '';
@@ -34,6 +30,7 @@ export function parseJsonStream<TReturn>(
     if (isFirstLine) {
       isFirstLine = false;
       if (line !== '{') {
+        // unexpected format, don't try to parse it as a stream
         isFullSink = true;
         fullAccumulator = line;
       }
@@ -66,23 +63,20 @@ export function parseJsonStream<TReturn>(
     onSingle(index as unknown as number, parser(text));
   };
 
-  const onLinesDone = () => {
-    if (isFullSink) {
-      onFull(parser(fullAccumulator));
-    } else {
-      onDone();
-    }
-  };
-
-  readLines(readableStream, onLine, onLinesDone);
+  await readLines(readableStream, onLine);
+  
+  if (isFullSink) {
+    return parser(fullAccumulator);
+  } else {
+    return undefined;
+  }
 }
 
 const textDecoder = new TextDecoder();
 
-function readLines(
+async function readLines(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
   onLine: (line: string) => void,
-  onDone: () => void,
 ) {
   let partOfLine = '';
 
@@ -103,47 +97,41 @@ function readLines(
     }
   };
 
-  const onChunksDone = () => {
-    onLine(partOfLine);
-    onDone();
-  };
-
   if ('getReader' in readableStream) {
-    void readStandardChunks(readableStream.getReader(), onChunk, onChunksDone);
+    await readStandardChunks(readableStream.getReader(), onChunk);
   } else {
-    readNodeChunks(readableStream, onChunk, onChunksDone);
+    await readNodeChunks(readableStream, onChunk);
   }
+
+  onLine(partOfLine);
 }
 
 function readNodeChunks(
   reader: NodeJS.ReadableStream,
   onChunk: (chunk: Uint8Array) => void,
-  onDone: () => void,
 ) {
-  reader.on('data', onChunk);
-  reader.on('end', onDone);
+  return new Promise<void>((resolve) => {
+    reader.on('data', onChunk);
+    reader.on('end', resolve);
+  })
 }
 
 async function readStandardChunks(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   onChunk: (chunk: Uint8Array) => void,
-  onDone: () => void,
 ) {
   let readResult = await reader.read();
   while (!readResult.done) {
     onChunk(readResult.value);
     readResult = await reader.read();
   }
-  onDone();
 }
 
 export const streamingJsonHttpRequester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-  onFull: (res: HTTPResult) => void,
   onSingle: (index: number, res: HTTPResult) => void,
-  onDone: () => void,
 ) => {
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const responsePromise = fetchHTTPResponse(
@@ -157,14 +145,12 @@ export const streamingJsonHttpRequester = (
     ac,
   );
   const cancel = () => ac?.abort();
-  void responsePromise.then(async (res) => {
+  const promise = responsePromise.then(async (res) => {
     if (!res.body) throw new Error('Received response without body');
     const meta: HTTPResult['meta'] = { response: res };
     return parseJsonStream(
       res.body,
-      onFull,
       onSingle,
-      onDone,
       (string) => ({
         json: JSON.parse(string) as TRPCResponse,
         meta,
@@ -173,5 +159,5 @@ export const streamingJsonHttpRequester = (
     );
   });
 
-  return cancel;
+  return { cancel, promise };
 };

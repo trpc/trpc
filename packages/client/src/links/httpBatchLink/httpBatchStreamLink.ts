@@ -71,26 +71,21 @@ const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
       },
     };
 
-    let resolveStream: (arr: HTTPResult[]) => void;
-    let cancelStream: () => void;
-    const streamPromise = new Promise<HTTPResult[]>((resolve, reject) => {
-      resolveStream = resolve;
-      cancelStream = reject;
-    });
-
-    const cancelRequest = streamingJsonHttpRequester(
+    const {cancel, promise} = streamingJsonHttpRequester(
       httpRequesterOptions,
-      (fullRes) => resolveStream(handleFullJsonResponse(fullRes, batchOps)),
-      (index, singleRes) => unitResolver(index, singleRes),
-      () => resolveStream([]),
+      (index, res) => unitResolver(index, res),
     );
+
+    const streamPromise = promise.then((res) => {
+      // line-by-line parsing was abandoned, this should contain *all* procedure results
+      if (res) return handleFullJsonResponse(res, batchOps)
+      // line-by-line parsing was successful, procedure results have been individually sent to `unitResolver`
+      else return []
+    })
 
     return {
       promise: streamPromise,
-      cancel: () => {
-        cancelRequest();
-        cancelStream();
-      },
+      cancel,
     };
   };
 };

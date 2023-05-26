@@ -11,22 +11,11 @@ describe('parseJsonStream', () => {
         controller.close();
       },
     });
-    let fullData: any;
     const itemsArray: any[] = [];
-    let promiseResolution: () => void;
-    const promise = new Promise<void>(
-      (resolve) => (promiseResolution = resolve),
-    );
-    parseJsonStream(
+    const fullData = await parseJsonStream(
       stream,
-      (data) => {
-        fullData = data;
-        promiseResolution();
-      },
       (index, data) => (itemsArray[index] = data),
-      () => promiseResolution(),
     );
-    await promise;
     expect(itemsArray).toEqual([]);
     expect(fullData).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
   });
@@ -44,22 +33,16 @@ describe('parseJsonStream', () => {
         controller.close();
       },
     });
-    let fullData: any;
+    const orderReceived: any[] = [];
     const itemsArray: any[] = [];
-    let promiseResolution: () => void;
-    const promise = new Promise<void>(
-      (resolve) => (promiseResolution = resolve),
-    );
-    parseJsonStream(
+    const fullData = await parseJsonStream(
       stream,
-      (data) => {
-        fullData = data;
-        promiseResolution();
+      (index, data) => {
+        orderReceived.push(index);
+        itemsArray[index] = data
       },
-      (index, data) => (itemsArray[index] = data),
-      () => promiseResolution(),
     );
-    await promise;
+    expect(orderReceived).toEqual(["0", "2", "1"]);
     expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
     expect(fullData).toEqual(undefined);
   });
