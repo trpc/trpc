@@ -5,81 +5,161 @@ import { Deferred } from './Deferred';
 
 interface Context {
   id: string;
-  cache: Record<string, {}>;
+  cache: Record<
+    string,
+    {
+      promise?: Promise<unknown>;
+      error?: unknown;
+      data?: unknown;
+    }
+  >;
 
-  onSettled: Promise<void>;
+  onSettled: () => Promise<void>;
   exec: <TData>(opts: {
-    cacheKey: string;
+    key: string;
     fn: () => Promise<TData>;
   }) => Promise<TData>;
+}
+
+function dehydrateCache(
+  obj: Record<
+    string,
+    {
+      promise?: unknown;
+    }
+  >,
+) {
+  const cache: Record<string, {}> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    // omit promise
+    const { promise, ...rest } = value;
+    cache[key] = {
+      ...rest,
+    };
+
+    if (!Object.keys(rest).length) {
+      throw new Error(`No data for ${key}`);
+    }
+  }
+  return cache;
 }
 
 const context = React.createContext<Context>(null as any);
 
 function CacheProviderHydrator() {
   const ctx = React.useContext(context);
-  React.use(ctx.onSettled);
+  console.log('[CacheProviderHydrator] waiting for idx', ctx.onSettled().id);
+  React.use(ctx.onSettled());
 
-  console.log('id', ctx.id, ctx.cache);
+  const dehydrated = JSON.stringify(dehydrateCache(ctx.cache), null, 4);
+
+  console.log('[CacheProviderHydrator] dehydrating', dehydrated);
+
   return (
     <script
       dangerouslySetInnerHTML={{
         __html: `
-            window.cache = window.cache || {};
-            window.cache[${ctx.id}] = ${JSON.stringify(ctx.cache, null, 4)};
+            window._cache = window._cache || {};
+            window._cache[_${ctx.id}] = ${dehydrated};
         `,
       }}
     />
   );
 }
 
+const refCountZeroDeferred = new Deferred<void>();
+refCountZeroDeferred.resolve();
+
 function CacheProvider(props: {
   children: React.ReactNode;
   fallback?: React.SuspenseProps['fallback'];
 }) {
-  const cacheRef = React.useRef<Record<string, {}>>({});
-  const [onSettled, setOnSettled] = React.useState<Deferred<void>>(() => {
-    const deferred = new Deferred<void>();
-    deferred.resolve();
-    return deferred;
-  });
-  let opCount = React.useRef(0);
-  const cache = cacheRef.current;
-
   const id = React.useId();
+  const [cache] = React.useState<Context['cache']>(() => {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+    const cache = (window as any)._cache?.[`_${id}`];
+    console.log('full cache', (window as any)._cache);
+    console.log('cache for hydration', cache);
+    return cache ?? {};
+  });
+
+  const onSettledRef = React.useRef<Deferred<void>>(refCountZeroDeferred);
+
+  let refCount = React.useRef(0);
+  const incRef = React.useCallback(() => {
+    refCount.current++;
+    console.log('REFCOUNT', refCount.current);
+    if (refCount.current === 1) {
+      console.log('REFCOUNT ONE --- recreating deferred');
+      onSettledRef.current = new Deferred<void>();
+    }
+  }, []);
+  const decRef = React.useCallback(() => {
+    refCount.current--;
+    if (refCount.current === 0) {
+      console.log('[REFCOUNT ZERO]');
+      onSettledRef.current.resolve();
+    }
+  }, []);
   return (
     <context.Provider
       value={{
         id,
         // ...
         cache,
-        onSettled,
+        onSettled: () =>
+          refCount.current === 0 ? refCountZeroDeferred : onSettledRef.current,
         exec: (opts) => {
-          if (opCount.current === 0) {
-            setOnSettled(new Deferred<void>());
-          }
-          opCount.current++;
-          const cached = cache[opts.cacheKey];
-          if (cache[opts.cacheKey]) {
+          let entry = cache[opts.key];
+          console.log('[exec] key', opts.key);
+          console.log('[exec] current cache', JSON.stringify(cache, null, 4));
+          if (entry) {
+            incRef();
+            console.log('[exec] was cached', {
+              promise: !!entry.promise,
+            });
+            if (entry.promise) {
+              return entry.promise;
+            }
+            console.log('[DEHYDRATING]');
+            // Turning hydrated JSON into a promise
+
+            if (entry.data) {
+              console.log('[DEHYDRATING]: hydrated data', entry.data);
+              entry.promise = Promise.resolve(entry.data);
+            } else if (entry.error) {
+              console.log('[DEHYDRATING]: hydrated error', entry.error);
+              entry.promise = Promise.reject(entry.error);
+            } else {
+              throw new Error('Failed dehydrating');
+            }
+            entry.promise.finally(() => {
+              decRef();
+            });
+            return entry.promise;
           }
           const promise = opts.fn();
+          cache[opts.key] = entry = {
+            promise,
+          };
+          incRef();
 
           promise
             .then((data) => {
-              cache[opts.cacheKey] = {
+              console.log('got data', {
+                key: opts.key,
                 data,
-              };
+              });
+              entry.data = data;
             })
             .catch((error) => {
-              cache[opts.cacheKey] = {
-                error,
-              };
+              entry.error = error;
             })
             .finally(() => {
-              opCount.current--;
-              if (opCount.current === 0) {
-                onSettled.resolve();
-              }
+              decRef();
             });
 
           return promise;
@@ -95,6 +175,8 @@ function CacheProvider(props: {
 }
 
 async function fetchRandom() {
+  console.log('[FETCHING]');
+  await new Promise((resolve) => setTimeout(resolve, 300));
   return Math.random();
 }
 function ShowContext() {
@@ -102,7 +184,7 @@ function ShowContext() {
 
   const myData = React.use(
     ctx.exec({
-      cacheKey: 'something',
+      key: 'something',
       fn: () => fetchRandom(),
     }),
   );
@@ -114,9 +196,9 @@ export default function DefaultPage() {
   return (
     <CacheProvider fallback="Loading page....">
       <ShowContext />
-      <CacheProvider fallback="Loading child...">
+      {/* <CacheProvider fallback="Loading child...">
         <ShowContext />
-      </CacheProvider>
+      </CacheProvider> */}
     </CacheProvider>
   );
 }

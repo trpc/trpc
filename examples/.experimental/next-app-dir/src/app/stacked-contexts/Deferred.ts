@@ -1,3 +1,5 @@
+let tmp_idx = 0;
+
 /**
  * https://stackoverflow.com/a/44905352
  */
@@ -6,8 +8,10 @@ export class Deferred<T> implements Promise<T> {
   private _resolveSelf!: (value: T | PromiseLike<T>) => void;
   private _rejectSelf!: (reason?: unknown) => void;
   private promise: Promise<T>;
+  public readonly id;
 
   public constructor() {
+    this.id = tmp_idx++;
     this.promise = new Promise<T>((resolve, reject) => {
       this._resolveSelf = resolve;
       this._rejectSelf = reject;
