@@ -140,32 +140,28 @@ async function inputToProcedureCall<
   }
 }
 
-/**
- * This generator function has 2 ways of "returning data": what it yields and what it returns.
- * It also has 2 "steps": the first yield, reserved for header / status (`HTTPResponse`),
- * and the following yield/return, reserved for the body (`ResponseChunk`).
- *
- * - The first yield is always a `HTTPResponse`, and there should always be a first yield.
- *
- * After the first yield, you can either:
- * - return a response chunk (`ResponseChunk`), with index -1 (`[-1, string]`),
- * signaling that this is the entire response, no streaming.
- *
- * or
- *
- * - yield as many response chunks as needed (zero chunks is allowed for a response without a body),
- * and signal the end of the response by returning `undefined`.
- */
-export async function* resolveHTTPResponse<
+export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
   opts: ResolveHTTPRequestOptions<TRouter, TRequest>,
-): AsyncGenerator<
-  ResponseChunk | HTTPResponse,
-  ResponseChunk | undefined,
-  never
-> {
+  /**
+   * Called as soon as the response head is known,
+   * when streaming the response head will be determined
+   * **without** knowing the response body.
+   *
+   * Without this callback, streaming is disabled.
+   */
+  onHead?: (headResponse: Omit<HTTPResponse, 'body'>) => void,
+  /**
+   * Called for every procedure with `[index, result]`,
+   * or if not streaming (or error) a single time with `[-1, result]`
+   * where `result` is already stringified & transformed and ready to be sent.
+   *
+   * Without this callback, streaming is disabled.
+   */
+  onChunk?: (chunk: ResponseChunk) => void,
+): Promise<HTTPResponse> {
   const { router, req } = opts;
 
   if (req.method === 'HEAD') {
@@ -173,8 +169,9 @@ export async function* resolveHTTPResponse<
     const headResponse: HTTPResponse = {
       status: 204,
     };
-    yield headResponse;
-    return;
+    onHead?.(headResponse);
+    onChunk?.([-1, '']);
+    return headResponse;
   }
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
@@ -186,7 +183,7 @@ export async function* resolveHTTPResponse<
 
   const isBatchCall = !!req.query.get('batch');
   const isStreamCall =
-    isBatchCall && req.headers['trpc-batch-mode'] === 'stream';
+    isBatchCall && onHead && onChunk && req.headers['trpc-batch-mode'] === 'stream';
 
   try {
     if (opts.error) {
@@ -237,7 +234,7 @@ export async function* resolveHTTPResponse<
       );
 
       // yield header stuff
-      yield initResponse(
+      const headResponse = initResponse(
         ctx,
         paths,
         type,
@@ -245,6 +242,7 @@ export async function* resolveHTTPResponse<
         untransformedJSON,
         errors,
       );
+      onHead?.(headResponse);
 
       // return body stuff
       const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
@@ -253,8 +251,15 @@ export async function* resolveHTTPResponse<
         result,
       );
       const body = JSON.stringify(transformedJSON);
+
       const chunk: ResponseChunk = [-1, body];
-      return chunk;
+      onChunk?.(chunk);
+
+      return {
+        status: headResponse.status,
+        headers: headResponse.headers,
+        body,
+      };
     }
 
     /**
@@ -272,7 +277,11 @@ export async function* resolveHTTPResponse<
     );
 
     // yield minimal headers (cannot know the response body in advance)
-    yield initResponse(ctx, paths, type, opts.responseMeta);
+    const headResponse = initResponse(ctx, paths, type, opts.responseMeta);
+    onHead(headResponse);
+
+    const bodyParts = Array(paths.length) as string[];
+
     for (let i = 0; i < paths.length; i++) {
       const [index, untransformedJSON] = await Promise.race(promises.values());
       promises.delete(index);
@@ -281,12 +290,19 @@ export async function* resolveHTTPResponse<
         untransformedJSON,
       );
       const body = JSON.stringify(transformedJSON);
+
+      bodyParts[index] = body;
+
       const chunk: ResponseChunk = [index, body];
-      yield chunk;
+      onChunk(chunk);
     }
 
     // return nothing, signalling the request handler to end the streamed response
-    return;
+    return {
+      status: headResponse.status,
+      headers: headResponse.headers,
+      body: `[${bodyParts.join(',')}]`,
+    };
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
@@ -327,9 +343,10 @@ export async function* resolveHTTPResponse<
      * For this condition to be realized, we need to be sure that `serialize` in
      * `transformTRPCResponse` cannot throw.
      */
-    yield initResponse(ctx, paths, type, opts.responseMeta, untransformedJSON, [
+    const headResponse = initResponse(ctx, paths, type, opts.responseMeta, untransformedJSON, [
       error,
     ]);
+    onHead?.(headResponse);
 
     // return body stuff
     const transformedJSON = transformTRPCResponse(
@@ -337,7 +354,14 @@ export async function* resolveHTTPResponse<
       untransformedJSON,
     );
     const body = JSON.stringify(transformedJSON);
+    
     const chunk: ResponseChunk = [-1, body];
-    return chunk;
+    onChunk?.(chunk);
+
+    return {
+      status: headResponse.status,
+      headers: headResponse.headers,
+      body,
+    };
   }
 }

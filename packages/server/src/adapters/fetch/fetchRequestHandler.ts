@@ -9,99 +9,6 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
   endpoint: string;
 } & FetchHandlerOptions<TRouter>;
 
-/**
- * @internal
- */
-export async function iteratorToResponse(
-  iterator: AsyncGenerator<
-    ResponseChunk | HTTPResponse,
-    ResponseChunk | undefined
-  >,
-  headers: Headers,
-) {
-  const { value: responseInit, done: invalidInit } = await (
-    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
-  ).next();
-  const { value: firstChunk, done: abort } = await (
-    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
-  ).next();
-
-  if (invalidInit) {
-    return new Response(null, {
-      status: 500,
-      headers,
-    });
-  }
-
-  const status = responseInit.status;
-
-  for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
-    /* istanbul ignore if -- @preserve */
-    if (typeof value === 'undefined') {
-      continue;
-    }
-    if (typeof value === 'string') {
-      headers.set(key, value);
-      continue;
-    }
-    for (const v of value) {
-      headers.append(key, v);
-    }
-  }
-
-  if (abort) {
-    if (firstChunk) {
-      // case of a full response
-      return new Response(firstChunk[1], {
-        status,
-        headers,
-      });
-    } else {
-      // case of a method === "HEAD" response
-      return new Response(null, {
-        status,
-        headers,
-      });
-    }
-  }
-
-  headers.set('Transfer-Encoding', 'chunked');
-  headers.append('Vary', 'trpc-batch-mode');
-
-  let first = true;
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      const enqueue = (chunk: string) =>
-        controller.enqueue(encoder.encode(chunk));
-
-      enqueue('{\n');
-
-      const sendChunk = ([index, body]: [number, string]) => {
-        const comma = first ? '' : ',';
-        first = false;
-        enqueue(`${comma}"${index}":${body}\n`);
-      };
-
-      sendChunk(firstChunk);
-      for await (const chunk of iterator as AsyncGenerator<
-        ResponseChunk,
-        ResponseChunk | undefined
-      >) {
-        sendChunk(chunk);
-      }
-
-      enqueue('}');
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    status,
-    headers,
-  });
-}
-
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -123,19 +30,81 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
         : '',
   };
 
-  const resultIterator = resolveHTTPResponse({
-    req,
-    createContext,
-    path,
-    router: opts.router,
-    batching: opts.batching,
-    responseMeta: opts.responseMeta,
-    onError(o) {
-      opts?.onError?.({ ...o, req: opts.req });
+  let resolve: (value: Response) => void;
+  const promise = new Promise<Response>((r) => resolve = r);
+  let status = 200;
+
+  const onHead = (head: HTTPResponse) => {
+    for (const [key, value] of Object.entries(head.headers ?? {})) {
+      /* istanbul ignore if -- @preserve */
+      if (typeof value === 'undefined') {
+        continue;
+      }
+      if (typeof value === 'string') {
+        resHeaders.set(key, value);
+        continue;
+      }
+      for (const v of value) {
+        resHeaders.append(key, v);
+      }
+    }
+    status = head.status;
+  }
+
+  let isStream = false;
+  let controller: ReadableStreamController<any>;
+  let encoder: TextEncoder;
+  const onChunk = ([index, string]: ResponseChunk) => {
+    if (index === -1) {
+      // full response, no streaming
+      const response = new Response(string || null, {
+        status,
+        headers: resHeaders,
+      });
+      resolve(response);
+      return;
+    }
+    if (!isStream) {
+      resHeaders.set('Transfer-Encoding', 'chunked');
+      resHeaders.append('Vary', 'trpc-batch-mode');
+      encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(c) {
+          controller = c;
+          controller.enqueue(encoder.encode('{\n'));
+        },
+      });
+      const response = new Response(stream, {
+        status,
+        headers: resHeaders,
+      });
+      resolve(response);
+    }
+    const comma = isStream ? ',' : '';
+    controller.enqueue(encoder.encode(`${comma}"${index}":${string}\n`));
+    isStream = true;
+  }
+
+  void resolveHTTPResponse(
+    {
+      req,
+      createContext,
+      path,
+      router: opts.router,
+      batching: opts.batching,
+      responseMeta: opts.responseMeta,
+      onError(o) {
+        opts?.onError?.({ ...o, req: opts.req });
+      },
     },
+    onHead,
+    onChunk,
+  ).then(() => {
+    if (isStream) {
+      controller.enqueue(encoder.encode('}'));
+      controller.close();
+    }
   });
 
-  const res = await iteratorToResponse(resultIterator, resHeaders);
-
-  return res;
+  return promise;
 }

@@ -8,12 +8,11 @@ import type {
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
 import { HTTPRequest, resolveHTTPResponse } from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
+import { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
-  RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE,
   UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
   getHTTPMethod,
   getPath,
@@ -99,7 +98,7 @@ export function awsLambdaRequestHandler<
       return await opts.createContext?.({ event, context });
     };
 
-    const resultIterator = resolveHTTPResponse({
+    const response = await resolveHTTPResponse({
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts?.responseMeta,
@@ -115,67 +114,6 @@ export function awsLambdaRequestHandler<
       },
     });
 
-    const response = await accumulateIteratorIntoResponseFormat(
-      resultIterator as AsyncGenerator<
-        ResponseChunk,
-        ResponseChunk | undefined
-      >,
-    );
     return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
   };
-}
-
-/**
- * @internal
- *
- * @warning
- * the implementation below does not support streaming responses.
- * It will buffer the entire response in memory before returning it.
- *
- * For streaming support, see https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/,
- * and look at implementation in other adapters.
- */
-export async function accumulateIteratorIntoResponseFormat(
-  iterator: AsyncGenerator<
-    ResponseChunk | HTTPResponse,
-    ResponseChunk | undefined
-  >,
-) {
-  const { value: responseInit, done: invalidInit } = await (
-    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
-  ).next();
-  const { value: firstChunk, done: abort } = await (
-    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
-  ).next();
-
-  if (invalidInit) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: RESPONSE_ACCUMULATOR_FAILED_INITIALIZATION_ERROR_MESSAGE,
-    });
-  }
-
-  if (abort) {
-    const response = {
-      status: responseInit.status,
-      headers: responseInit.headers,
-      body: firstChunk?.[1],
-    };
-    return response;
-  }
-
-  const responseArray: string[] = [];
-  responseArray[firstChunk[0]] = firstChunk[1];
-  for await (const [index, data] of iterator as AsyncGenerator<
-    ResponseChunk,
-    ResponseChunk | undefined
-  >) {
-    responseArray[index] = data;
-  }
-  const response = {
-    status: responseInit.status,
-    headers: responseInit.headers,
-    body: '[' + responseArray.join(',') + ']',
-  };
-  return response;
 }

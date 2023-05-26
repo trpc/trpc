@@ -64,99 +64,64 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const resultIterator = resolveHTTPResponse({
-      batching: opts.batching,
-      responseMeta: opts.responseMeta,
-      path: opts.path,
-      createContext,
-      router: opts.router,
-      req,
-      error: bodyResult.ok ? null : bodyResult.error,
-      preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
-      onError(o) {
-        opts?.onError?.({
-          ...o,
-          req: opts.req,
-        });
+    const onHead = (head: HTTPResponse) => {
+      if ('status' in head && (!opts.res.statusCode || opts.res.statusCode === 200)) {
+        opts.res.statusCode = head.status;
+      }
+      for (const [key, value] of Object.entries(head.headers ?? {})) {
+        /* istanbul ignore if -- @preserve */
+        if (typeof value === 'undefined') {
+          continue;
+        }
+        opts.res.setHeader(key, value);
+      }
+    }
+
+    let isStream = false;
+    const onChunk = ([index, string]: ResponseChunk) => {
+      if (index === -1) {
+        // full response, no streaming
+        opts.res.end(string);
+        return;
+      }
+      if (!isStream) {
+        opts.res.setHeader('Transfer-Encoding', 'chunked');
+        const vary = opts.res.getHeader('Vary');
+        opts.res.setHeader('Vary', vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode');
+        opts.res.write('{\n');
+      }
+      const comma = isStream ? ',' : '';
+      opts.res.write(`${comma}"${index}":${string}\n`);
+      isStream = true;
+    }
+
+    await resolveHTTPResponse(
+      {
+        batching: opts.batching,
+        responseMeta: opts.responseMeta,
+        path: opts.path,
+        createContext,
+        router: opts.router,
+        req,
+        error: bodyResult.ok ? null : bodyResult.error,
+        preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
+        onError(o) {
+          opts?.onError?.({
+            ...o,
+            req: opts.req,
+          });
+        },
+        contentTypeHandler,
       },
-      contentTypeHandler,
-    });
+      onHead,
+      onChunk,
+    );
 
-    return iteratorToResponse(resultIterator, opts.res);
+    if (isStream) {
+      opts.res.write('}');
+      opts.res.end();
+    }
+
+    return opts.res;
   });
-}
-
-/**
- * @internal
- */
-export async function iteratorToResponse(
-  iterator: AsyncGenerator<
-    ResponseChunk | HTTPResponse,
-    ResponseChunk | undefined
-  >,
-  res: NodeHTTPResponse,
-) {
-  // iterator is expected to first yield the init object (status & headers), of type HTTPResponse
-  const { value: responseInit, done: invalidInit } = await (
-    iterator as AsyncGenerator<HTTPResponse, HTTPResponse | undefined>
-  ).next();
-  // then iterator can yield either, of type ResponseChunk
-  // - the full response (streaming disabled or error body) => `done === true`, passed via `return`
-  // - the body associated with the first resolved procedure => `done === false`, passed via `yield`
-  const { value: firstChunk, done: abort } = await (
-    iterator as AsyncGenerator<ResponseChunk, ResponseChunk | undefined>
-  ).next();
-
-  if (invalidInit) {
-    res.statusCode = 500;
-    return res.end();
-  }
-  if ('status' in responseInit && (!res.statusCode || res.statusCode === 200)) {
-    res.statusCode = responseInit.status;
-  }
-  for (const [key, value] of Object.entries(responseInit.headers ?? {})) {
-    /* istanbul ignore if -- @preserve */
-    if (typeof value === 'undefined') {
-      continue;
-    }
-    res.setHeader(key, value);
-  }
-
-  // iterator is already exhausted, this means we're not streaming the response
-  if (abort) {
-    if (firstChunk) {
-      // case of a full response
-      return res.end(firstChunk[1]);
-    } else {
-      // case of a method === "HEAD" response
-      return res.end();
-    }
-  }
-
-  // iterator is not exhausted, we can setup the streamed response
-  res.setHeader('Transfer-Encoding', 'chunked');
-  const vary = res.getHeader('Vary');
-  res.setHeader('Vary', vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode');
-  res.write('{\n');
-
-  // each procedure body will be written on a new line of the JSON so they can be parsed independently
-  let first = true;
-  const sendChunk = ([index, body]: [number, string]) => {
-    const comma = first ? '' : ',';
-    first = false;
-    res.write(`${comma}"${index}":${body}\n`);
-  };
-
-  // await every procedure
-  sendChunk(firstChunk);
-  for await (const chunk of iterator as AsyncGenerator<
-    ResponseChunk,
-    ResponseChunk | undefined
-  >) {
-    sendChunk(chunk);
-  }
-
-  // finalize response
-  res.write('}');
-  return res.end();
 }
