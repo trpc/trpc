@@ -43,7 +43,7 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: pnpm turbo lint
+        run: pnpm turbo lint -- --concurrency=1
 
       - name: Run ts-prune
         run: pnpm lint-prune
