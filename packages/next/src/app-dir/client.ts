@@ -38,6 +38,53 @@ declare global {
     trpcCache?: Record<string, QueryResult>;
   }
 }
+export class Deferred<TValue> implements Promise<TValue> {
+  private _resolveSelf: any;
+  private _rejectSelf: any;
+  private promise: Promise<TValue>;
+  [Symbol.toStringTag]: 'Promise';
+
+  constructor() {
+    this[Symbol.toStringTag] = 'Promise';
+    this.promise = new Promise((resolve, reject) => {
+      this._resolveSelf = resolve;
+      this._rejectSelf = reject;
+    });
+  }
+
+  public then<TResult1 = TValue, TResult2 = never>(
+    onfulfilled?:
+      | ((value: TValue) => TResult1 | PromiseLike<TResult1>)
+      | undefined
+      | null,
+    onrejected?:
+      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+      | undefined
+      | null,
+  ): Promise<TResult1 | TResult2> {
+    return this.promise.then(onfulfilled, onrejected);
+  }
+
+  public catch<TResult = never>(
+    onrejected?:
+      | ((reason: any) => TResult | PromiseLike<TResult>)
+      | undefined
+      | null,
+  ): Promise<TValue | TResult> {
+    return this.promise.catch(onrejected);
+  }
+
+  public resolve(val: TValue) {
+    this._resolveSelf(val);
+  }
+  public reject(reason: any) {
+    this._rejectSelf(reason);
+  }
+
+  public finally() {
+    throw new Error('UNimpl');
+  }
+}
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
@@ -49,9 +96,10 @@ export function experimental_createTRPCNextAppDirClient<
   const __serverCache: Record<string, QueryResult> = {};
   const getCache = (): Record<string, QueryResult> => {
     if (typeof window === 'undefined') {
-      console.log('[getCache]: using server cache', __serverCache);
+      console.log('[getCache]: using server cache');
       return __serverCache;
     }
+    console.log('[getCache]: using window cache', window.trpcCache);
     if (!window.trpcCache) {
       window.trpcCache = {};
     }
@@ -59,18 +107,55 @@ export function experimental_createTRPCNextAppDirClient<
     return window.trpcCache;
   };
 
+  let refCount = 0;
+  let idx = 0;
+
+  const createOnsettledDefferred = () => {
+    const onSettledDeferred = new Deferred<void>();
+    onSettledDeferred.__id = idx++;
+
+    return onSettledDeferred;
+  };
+  const refCountZeroDeferred = Promise.resolve();
+  let onSettledDeferred = createOnsettledDefferred();
+  onSettledDeferred.resolve();
+
   return createFlatProxy<
     NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']> & {
       cache: Record<string, QueryResult>;
+      onSettled: () => Promise<void>;
     }
   >((key) => {
-    const cache = getCache();
-
     if (key === 'cache') {
-      return cache;
+      return getCache();
+    }
+
+    const refCountIncrement = () => {
+      console.log('[REF] inc');
+      refCount++;
+      if (refCount === 1) {
+        onSettledDeferred = createOnsettledDefferred();
+      }
+    };
+    const refCountDecrement = () => {
+      console.log('[REF] dec');
+      refCount--;
+      if (refCount === 0) {
+        onSettledDeferred.resolve();
+      }
+    };
+    if (key === 'onSettled') {
+      return async () => {
+        console.log('Asked for onSettled', {
+          refCount,
+          idx: onSettledDeferred.__id,
+        });
+        return refCount === 0 ? refCountZeroDeferred : onSettledDeferred;
+      };
     }
 
     return createRecursiveProxy(({ path, args }) => {
+      const cache = getCache();
       const pathCopy = [key, ...path];
       const action = pathCopy.pop() as string;
 
@@ -94,22 +179,36 @@ export function experimental_createTRPCNextAppDirClient<
 
       // only use record cache on client? server can rely on next.js cache
       // and get  a cached response when doing the `fetch`?
-      if (procedureType === 'query' && typeof window !== 'undefined') {
+      if (procedureType === 'query') {
         const cached = cache[cacheTag];
 
-        console.log('[query]: cahced?', !!cached);
+        console.log('[query]: cached?', !!cached);
         console.log('[query]: has promise', !!cached?.promise);
+
+        // wait 1 ms and check again
 
         if (cached) {
           if (!cached.promise) {
+            console.log('[DEHYDRATING]');
             // Turning hydrated JSON into a promise
+
             if (cached.data) {
+              console.log('[DEHYDRATING]: hydrated data', cached.data);
               cached.promise = Promise.resolve(cached.data);
             } else if (cached.error) {
+              console.log('[DEHYDRATING]: hydrated error', cached.error);
               cached.promise = Promise.reject(cached.error);
+            } else {
+              throw new Error('Failed dehydrating');
             }
           }
+          console.log('returning promise');
 
+          refCountIncrement();
+
+          cached.promise.finally(() => {
+            refCountDecrement();
+          });
           return cached.promise;
         }
       }
@@ -122,11 +221,15 @@ export function experimental_createTRPCNextAppDirClient<
         return promise;
       }
 
-      console.log('[query]: setting cache', cacheTag);
+      console.log('---------------------- [query]: setting cache', cacheTag);
       cache[cacheTag] = { promise };
+
+      refCountIncrement();
+      console.log({ refCount });
 
       promise
         .then((data) => {
+          console.log('[query]: resolved', data);
           cache[cacheTag] = {
             ...cache[cacheTag],
             data,
@@ -134,11 +237,15 @@ export function experimental_createTRPCNextAppDirClient<
           };
         })
         .catch((error) => {
+          console.log('[query]: rejected', error);
           cache[cacheTag] = {
             ...cache[cacheTag],
             error,
             data: null,
           };
+        })
+        .finally(() => {
+          refCountDecrement();
         });
 
       return promise;

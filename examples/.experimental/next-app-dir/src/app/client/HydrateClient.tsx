@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, SuspenseProps, useEffect } from 'react';
+import { Suspense, SuspenseProps, use, useEffect } from 'react';
 import { api } from '~/trpc/client';
 
 function hydrateCache(
@@ -19,8 +19,30 @@ function hydrateCache(
     cache[key] = {
       ...rest,
     };
+
+    if (!Object.keys(rest).length) {
+      throw new Error(`No data for ${key}`);
+    }
   }
+  console.log('[HYDRATING]', cache, obj);
   return cache;
+}
+
+function Hydratorz() {
+  console.log('--- waiting for being settled');
+  use(api.onSettled());
+  console.log('api settled');
+
+  return (
+    <script
+      className="___hydrate"
+      dangerouslySetInnerHTML={{
+        __html: `window.trpcCache = ${JSON.stringify(
+          hydrateCache(api.cache),
+        )};`,
+      }}
+    />
+  );
 }
 export function HydrateClient(props: {
   fallback?: SuspenseProps['fallback'];
@@ -35,16 +57,8 @@ export function HydrateClient(props: {
   return (
     <Suspense {...props}>
       {/* Stop listening to spy */}
-
-      <script
-        className="___hydrate"
-        dangerouslySetInnerHTML={{
-          __html: `window.trpcCache = ${JSON.stringify(
-            hydrateCache(api.cache),
-          )};`,
-        }}
-      />
       {props.children}
+      <Hydratorz />
     </Suspense>
   );
 }

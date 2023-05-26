@@ -41,6 +41,7 @@ export function experimental_nextHttpLink<
         fetch: (url, fetchOpts) => {
           return fetch(url, {
             ...fetchOpts,
+            // cache: 'no-cache',
             next: {
               revalidate,
               tags: [cacheTag],
