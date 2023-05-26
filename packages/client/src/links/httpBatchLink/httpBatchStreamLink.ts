@@ -45,29 +45,6 @@ function handleFullJsonResponse(
   return result;
 }
 
-async function handleStreamedJsonResponse(
-  iterator: AsyncGenerator<
-    [index: string, data: HTTPResult],
-    HTTPResult | undefined,
-    unknown
-  >,
-  batchOps: Operation[],
-  unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
-): Promise<HTTPResult[]> {
-  let item = await iterator.next();
-
-  // first response is *the only* response, this is not a streaming response
-  if (item.done) {
-    return handleFullJsonResponse(item.value as HTTPResult, batchOps);
-  }
-
-  do {
-    const index = item.value[0] as unknown as number; // force casting to number because `a[0]` and `a["0"]` work the same
-    unitResolver(index, item.value[1]);
-  } while (!(item = await iterator.next()).done);
-  return [];
-}
-
 const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
   return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');
@@ -94,13 +71,20 @@ const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
       },
     };
 
-    const { promise, cancel } =
-      streamingJsonHttpRequester(httpRequesterOptions);
-    const batchPromise = promise.then((iterator) =>
-      handleStreamedJsonResponse(iterator, batchOps, unitResolver),
+    const {cancel, promise} = streamingJsonHttpRequester(
+      httpRequesterOptions,
+      (index, res) => unitResolver(index, res),
     );
+
+    const streamPromise = promise.then((res) => {
+      // line-by-line parsing was abandoned, this should contain *all* procedure results
+      if (res) return handleFullJsonResponse(res, batchOps)
+      // line-by-line parsing was successful, procedure results have been individually sent to `unitResolver`
+      else return []
+    })
+
     return {
-      promise: batchPromise,
+      promise: streamPromise,
       cancel,
     };
   };

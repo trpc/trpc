@@ -1,71 +1,56 @@
-import { TRPCResponse } from '@trpc/server/rpc';
-// Adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
+// Stream parsing adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 
+import { TRPCResponse } from '@trpc/server/rpc';
 import { TRPCClientError } from '../../TRPCClientError';
 import {
+  HTTPBaseRequestOptions,
   HTTPResult,
-  Requester,
   fetchHTTPResponse,
   getBody,
   getUrl,
 } from '../internals/httpUtils';
+import { HTTPHeaders } from '../types';
 
 /**
  * @param readableStream as given by `(await fetch(url)).body`
+ * @param onSingle called for each line of the stream
  * @param parser defaults to `JSON.parse`
- *
- * @example
- * ```ts
- * const batch = [ ... ] // the array of items you sent to the server
- * const responseReader = parseJsonStream(response.body)
- * // treating the first result separately in case response was not streamed and we parsed the whole thing
- * const firstRes = responseReader.next()
- * if (firstRes.done) {
- *   const matches = batch.map((item,i) => [item, firstRes.value[i]])
- *   return
- * }
- * // otherwise, we have have a stream, so finish dealing with the first response and let the rest yield
- * const firstMatch = [batch[firstRes.value[0]], firstRes.value[1]]
- * for await (const [index, data] of responseReader) {
- *   const match = [batch[index], data] // out-of-order streaming, so we need `index`
- * }
- * ```
  */
-export async function* parseJsonStream<TReturn>(
+export async function parseJsonStream<TReturn>(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
+  onSingle: (index: number, res: TReturn) => void,
   parser: (text: string) => TReturn = JSON.parse,
   signal?: AbortSignal,
-) {
-  const reader =
-    'getReader' in readableStream
-      ? readStandardChunks(readableStream.getReader()) // case for browser, undici, and native node (since version ???)
-      : readNodeChunks(readableStream); // case for node-fetch
+): Promise<TReturn | undefined> {
+  let isFirstLine = true;
+  let isFullSink = false;
+  let fullAccumulator = '';
+  const onLine = (line: string) => {
+    if (signal?.aborted) return;
+    if (isFirstLine) {
+      isFirstLine = false;
+      if (line !== '{') {
+        // unexpected format, don't try to parse it as a stream
+        isFullSink = true;
+        fullAccumulator = line;
+      }
+      return;
+    }
+    if (isFullSink) {
+      fullAccumulator += line;
+      return;
+    }
 
-  const lineIterator = readLines(reader);
-  const firstLine = await lineIterator.next();
-
-  if (firstLine.done) return; // this line is just for typescript, we know for a fact that `readLines` yields at least once
-
-  // if format isn't correct immediately, exhaust the stream and parse it all
-  if (firstLine.value !== '{') {
-    const text = await allLinesSink(firstLine.value, lineIterator);
-    return parser(text);
-  }
-
-  for await (const line of lineIterator) {
-    if (signal?.aborted) break;
     const string = line[0] === ',' ? line.substring(1, line.length) : line;
-
-    if (!string) continue;
-    if (string === '}') break;
+    if (!string) return;
+    if (string === '}') return;
 
     // parsing index out of start of line "0":{...}
     // lines after the first one start with a comma ,"1":{...}
-    const start = 2;
-    const end = 6;
-    let i = start; // start after first digit to save iterations
+    const start = 2; // start after first digit to save iterations
+    const end = 6; // assumes index will never be longer than 4 digits
+    let i = start;
     while (i < end) {
-      // assumes index will never be longer than 4 digits
       if (string[i] === '"') break;
       i++;
     }
@@ -73,75 +58,81 @@ export async function* parseJsonStream<TReturn>(
       throw new TRPCClientError(
         'Invalid JSON string response format: a multiline JSON string was received but it does not conform to the expected format for streamed responses. Do you have intermediaries between the server and the client that might be reformatting the response?',
       );
-
     const index = string.substring(1, i);
     const text = string.substring(i + 2);
-    const result: [index: string, data: TReturn] = [index, parser(text)];
-    yield result;
-    if (signal?.aborted) break;
-  }
-  return;
-}
+    onSingle(index as unknown as number, parser(text));
+  };
 
-async function allLinesSink(
-  init: string,
-  iterator: AsyncGenerator<string, void>,
-) {
-  while (true) {
-    const line = await iterator.next();
-    if (line.done) return init;
-    init += '\n' + line.value;
+  await readLines(readableStream, onLine);
+  
+  if (isFullSink) {
+    return parser(fullAccumulator);
+  } else {
+    return undefined;
   }
 }
 
 const textDecoder = new TextDecoder();
 
-async function* readLines(reader: {
-  [Symbol.asyncIterator](): AsyncGenerator<Uint8Array, void, unknown>;
-}) {
+async function readLines(
+  readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
+  onLine: (line: string) => void,
+) {
   let partOfLine = '';
-  let chunk: IteratorResult<Uint8Array, void>;
-  const iterator = reader[Symbol.asyncIterator]();
-  while (!(chunk = await iterator.next()).done) {
-    const chunkText = textDecoder.decode(chunk.value);
+
+  const onChunk = (chunk: Uint8Array) => {
+    const chunkText = textDecoder.decode(chunk);
     const chunkLines = chunkText.split('\n');
     if (chunkLines.length === 1) {
       partOfLine += chunkLines[0];
     } else if (chunkLines.length > 1) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
-      yield partOfLine + chunkLines[0]!;
+      onLine(partOfLine + chunkLines[0]!);
       for (let i = 1; i < chunkLines.length - 1; i++) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
-        yield chunkLines[i]!;
+        onLine(chunkLines[i]!);
       }
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length doesn't change
       partOfLine = chunkLines[chunkLines.length - 1]!;
     }
-  }
-  yield partOfLine;
-}
-
-async function* readNodeChunks(reader: NodeJS.ReadableStream) {
-  for await (const chunk of reader) {
-    yield chunk as Uint8Array;
-  }
-}
-
-function readStandardChunks(reader: ReadableStreamDefaultReader<Uint8Array>) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      let readResult = await reader.read();
-      while (!readResult.done) {
-        yield readResult.value;
-        readResult = await reader.read();
-      }
-    },
   };
+
+  if ('getReader' in readableStream) {
+    await readStandardChunks(readableStream.getReader(), onChunk);
+  } else {
+    await readNodeChunks(readableStream, onChunk);
+  }
+
+  onLine(partOfLine);
 }
 
-export const streamingJsonHttpRequester: Requester<
-  AsyncGenerator<[index: string, data: HTTPResult], HTTPResult | undefined>
-> = (opts) => {
+function readNodeChunks(
+  reader: NodeJS.ReadableStream,
+  onChunk: (chunk: Uint8Array) => void,
+) {
+  return new Promise<void>((resolve) => {
+    reader.on('data', onChunk);
+    reader.on('end', resolve);
+  })
+}
+
+async function readStandardChunks(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  onChunk: (chunk: Uint8Array) => void,
+) {
+  let readResult = await reader.read();
+  while (!readResult.done) {
+    onChunk(readResult.value);
+    readResult = await reader.read();
+  }
+}
+
+export const streamingJsonHttpRequester = (
+  opts: HTTPBaseRequestOptions & {
+    headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+  },
+  onSingle: (index: number, res: HTTPResult) => void,
+) => {
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const responsePromise = fetchHTTPResponse(
     {
@@ -159,6 +150,7 @@ export const streamingJsonHttpRequester: Requester<
     const meta: HTTPResult['meta'] = { response: res };
     return parseJsonStream(
       res.body,
+      onSingle,
       (string) => ({
         json: JSON.parse(string) as TRPCResponse,
         meta,
@@ -167,5 +159,5 @@ export const streamingJsonHttpRequester: Requester<
     );
   });
 
-  return { promise, cancel };
+  return { cancel, promise };
 };

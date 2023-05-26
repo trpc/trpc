@@ -11,10 +11,13 @@ describe('parseJsonStream', () => {
         controller.close();
       },
     });
-    const iterator = parseJsonStream(stream);
-    const data = await iterator.next();
-    expect(data.value).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
-    expect(data.done).toBe(true);
+    const itemsArray: any[] = [];
+    const fullData = await parseJsonStream(
+      stream,
+      (index, data) => (itemsArray[index] = data),
+    );
+    expect(itemsArray).toEqual([]);
+    expect(fullData).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
   });
   test('multiline streamed JSON', async () => {
     const encoder = new TextEncoder();
@@ -30,10 +33,17 @@ describe('parseJsonStream', () => {
         controller.close();
       },
     });
-    const results: any[] = [];
-    for await (const [index, body] of parseJsonStream(stream)) {
-      results[index as unknown as number] = body;
-    }
-    expect(results).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
+    const orderReceived: any[] = [];
+    const itemsArray: any[] = [];
+    const fullData = await parseJsonStream(
+      stream,
+      (index, data) => {
+        orderReceived.push(index);
+        itemsArray[index] = data
+      },
+    );
+    expect(orderReceived).toEqual(["0", "2", "1"]);
+    expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
+    expect(fullData).toEqual(undefined);
   });
 });

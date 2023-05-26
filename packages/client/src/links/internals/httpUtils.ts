@@ -120,11 +120,11 @@ export const getBody: GetBody = (opts) => {
   return input !== undefined ? JSON.stringify(input) : undefined;
 };
 
-export type Requester<TResult = HTTPResult> = (
+export type Requester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-) => PromiseAndCancel<TResult>;
+) => PromiseAndCancel<HTTPResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
