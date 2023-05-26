@@ -10,3 +10,39 @@ When mounted in the browser
 4. Tries to fetch <-- hits hydration boundary and gets hydration error
 
 ### Proposed solution
+
+```tsx
+
+function PostComments() {
+    return <></>
+}
+
+function Post() {
+    return <></>;
+}
+
+function PostPage() {
+    return (
+        <HydrateClient>
+            <Post />
+            <HydrateClient>
+                <PostComments />
+            </HydrateClient>
+        </HydrateClient>
+    )
+}
+
+
+function Child1() {
+  api.greeting.query({ text: "Child 1" });
+
+  return <Child2 />;
+}
+
+function Child2() {
+    api.greeting.query({ text: "Child 2" });
+}
+
+
+
+```
