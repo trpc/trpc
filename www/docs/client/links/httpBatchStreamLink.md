@@ -38,23 +38,9 @@ Compared to a regular `httpBatchLink`, a `unstable_httpBatchStreamLink` will:
 
 ## Compatibility (client-side)
 
-### Browser support
+Browser support should be identical to [`fetch`](https://caniuse.com/fetch) support.
 
-| Chrome | Edge | Firefox | Opera | Safari |
-| ------ | ---- | ------- | ----- | ------ |
-| 63     | 79   | 57      | 50    | 12     |
-
-| Chrome Android | Firefox for Android | Opera Android | Safari on iOS | Samsung Internet | WebView Android |
-| -------------- | ------------------- | ------------- | ------------- | ---------------- | --------------- |
-| 63             | 57                  | 46            | 12            | 8.0              | 63              |
-
-| Deno | Node.js |
-| ---- | ------- |
-| 1.0  | 10.0.0  |
-
-### Other runtimes
-
-The `fetch` implementation should support streaming, meaning that the response obtained by `await fetch(...)` should have a `body` property of type `ReadableStream<Uint8Array> | NodeJS.ReadableStream`, meaning that:
+For runtimes other than the browser ones, the `fetch` implementation should support streaming, meaning that the response obtained by `await fetch(...)` should have a `body` property of type `ReadableStream<Uint8Array> | NodeJS.ReadableStream`, meaning that:
 
 - either `response.body.getReader` is a function that returns a `ReadableStreamDefaultReader<Uint8Array>` object
 - or `response.body` is a `Uint8Array` `Buffer`
