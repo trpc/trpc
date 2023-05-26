@@ -8,7 +8,10 @@ interface Context {
   cache: Record<string, {}>;
 
   onSettled: Promise<void>;
-  exec: (opts: { cacheKey: string; fn: () => Promise<unknown> }) => any;
+  exec: <TData>(opts: {
+    cacheKey: string;
+    fn: () => Promise<TData>;
+  }) => Promise<TData>;
 }
 
 const context = React.createContext<Context>(null as any);
@@ -17,6 +20,7 @@ function CacheProviderHydrator() {
   const ctx = React.useContext(context);
   React.use(ctx.onSettled);
 
+  console.log('id', ctx.id, ctx.cache);
   return (
     <script
       dangerouslySetInnerHTML={{
@@ -55,9 +59,12 @@ function CacheProvider(props: {
             setOnSettled(new Deferred<void>());
           }
           opCount.current++;
+          const cached = cache[opts.cacheKey];
+          if (cache[opts.cacheKey]) {
+          }
+          const promise = opts.fn();
 
-          opts
-            .fn()
+          promise
             .then((data) => {
               cache[opts.cacheKey] = {
                 data,
@@ -74,6 +81,8 @@ function CacheProvider(props: {
                 onSettled.resolve();
               }
             });
+
+          return promise;
         },
       }}
     >
@@ -85,9 +94,20 @@ function CacheProvider(props: {
   );
 }
 
+async function fetchRandom() {
+  return Math.random();
+}
 function ShowContext() {
   const ctx = React.use(context);
-  return <pre>{JSON.stringify(ctx.cache, null, 4)}</pre>;
+
+  const myData = React.use(
+    ctx.exec({
+      cacheKey: 'something',
+      fn: () => fetchRandom(),
+    }),
+  );
+
+  return <pre>{JSON.stringify(myData, null, 4)}</pre>;
 }
 
 export default function DefaultPage() {
