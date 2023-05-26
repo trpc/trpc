@@ -20,10 +20,15 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   return () =>
     ({ op }) =>
       observable((observer) => {
-        const { path, input, type } = op;
+        const { path, input, type, context } = op;
 
         const cacheTag = generateCacheTag(path, input);
-        const revalidate = opts.revalidate ?? false;
+        // Let per-request revalidate override global revalidate
+        const requestRevalidate =
+          typeof context.revalidate === 'number' || context.revalidate === false
+            ? context.revalidate
+            : undefined;
+        const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
         const promise = opts
           .createContext()

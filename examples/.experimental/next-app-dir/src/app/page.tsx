@@ -21,6 +21,16 @@ export default function Index() {
       </li>
       <li>
         <Link
+          href="/client"
+          style={{
+            color: 'hsla(210, 16%, 80%, 1)',
+          }}
+        >
+          Client Side Data Fetching
+        </Link>
+      </li>
+      <li>
+        <Link
           href="/server-action"
           style={{
             color: 'hsla(210, 16%, 80%, 1)',

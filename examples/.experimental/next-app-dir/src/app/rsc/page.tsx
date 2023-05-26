@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { ClientGreeting } from './ClientGreeting';
 import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
@@ -11,12 +10,6 @@ export default async function Home() {
 
   return (
     <>
-      {/* <div>
-        <Suspense fallback={<>Loading client...</>}>
-          <ClientGreeting />
-        </Suspense>
-      </div> */}
-
       <div>
         <Suspense fallback={<>Loading Server...</>}>
           {/* @ts-expect-error RSC + TS not friends yet */}

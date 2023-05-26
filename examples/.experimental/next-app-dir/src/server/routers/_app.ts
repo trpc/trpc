@@ -24,7 +24,9 @@ export const appRouter = router({
     )
     .query(async (opts) => {
       console.log('request from', opts.ctx.headers?.['x-trpc-source']);
-      return `hello ${opts.input.text} - ${new Date().toLocaleTimeString()}`;
+      return `hello ${opts.input.text} - ${
+        new Date().toISOString().split('T')[1]
+      }`;
     }),
 
   createPost,
