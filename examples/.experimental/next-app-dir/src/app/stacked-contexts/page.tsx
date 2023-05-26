@@ -49,7 +49,7 @@ const context = React.createContext<Context>(null as any);
 
 function CacheProviderHydrator() {
   const ctx = React.useContext(context);
-  console.log('[CacheProviderHydrator] waiting for idx', ctx.onSettled().id);
+  console.log('[CacheProviderHydrator] to settle');
   React.use(ctx.onSettled());
 
   const dehydrated = JSON.stringify(dehydrateCache(ctx.cache), null, 4);
@@ -183,18 +183,19 @@ function CacheProvider(props: {
   );
 }
 
-async function fetchRandom() {
+async function fetchRandom(timeout: number) {
   console.log('[FETCHING]');
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, timeout));
+  console.log('[FETCHED]');
   return Math.random();
 }
-function ShowContext() {
+function ShowContext(props: { timeout: number }) {
   const ctx = React.use(context);
 
   const myData = React.use(
     ctx.exec({
       key: 'something',
-      fn: () => fetchRandom(),
+      fn: () => fetchRandom(props.timeout),
     }),
   );
 
@@ -204,9 +205,9 @@ function ShowContext() {
 export default function DefaultPage() {
   return (
     <CacheProvider fallback="Loading page....">
-      <ShowContext />
+      <ShowContext timeout={300} />
       <CacheProvider fallback="Loading child...">
-        <ShowContext />
+        <ShowContext timeout={350} />
       </CacheProvider>
     </CacheProvider>
   );
