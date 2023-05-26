@@ -64,7 +64,7 @@ export async function parseJsonStream<TReturn>(
   };
 
   await readLines(readableStream, onLine);
-  
+
   if (isFullSink) {
     return parser(fullAccumulator);
   } else {
@@ -113,7 +113,7 @@ function readNodeChunks(
   return new Promise<void>((resolve) => {
     reader.on('data', onChunk);
     reader.on('end', resolve);
-  })
+  });
 }
 
 async function readStandardChunks(

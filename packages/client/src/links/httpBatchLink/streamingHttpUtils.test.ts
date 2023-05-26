@@ -35,14 +35,11 @@ describe('parseJsonStream', () => {
     });
     const orderReceived: any[] = [];
     const itemsArray: any[] = [];
-    const fullData = await parseJsonStream(
-      stream,
-      (index, data) => {
-        orderReceived.push(index);
-        itemsArray[index] = data
-      },
-    );
-    expect(orderReceived).toEqual(["0", "2", "1"]);
+    const fullData = await parseJsonStream(stream, (index, data) => {
+      orderReceived.push(index);
+      itemsArray[index] = data;
+    });
+    expect(orderReceived).toEqual(['0', '2', '1']);
     expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
     expect(fullData).toEqual(undefined);
   });

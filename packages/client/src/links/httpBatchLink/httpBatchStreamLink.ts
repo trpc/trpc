@@ -71,17 +71,17 @@ const streamRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
       },
     };
 
-    const {cancel, promise} = streamingJsonHttpRequester(
+    const { cancel, promise } = streamingJsonHttpRequester(
       httpRequesterOptions,
       (index, res) => unitResolver(index, res),
     );
 
     const streamPromise = promise.then((res) => {
       // line-by-line parsing was abandoned, this should contain *all* procedure results
-      if (res) return handleFullJsonResponse(res, batchOps)
+      if (res) return handleFullJsonResponse(res, batchOps);
       // line-by-line parsing was successful, procedure results have been individually sent to `unitResolver`
-      else return []
-    })
+      else return [];
+    });
 
     return {
       promise: streamPromise,
