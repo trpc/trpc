@@ -55,13 +55,20 @@ function CacheProviderHydrator() {
   const dehydrated = JSON.stringify(dehydrateCache(ctx.cache), null, 4);
 
   console.log('[CacheProviderHydrator] dehydrating', dehydrated);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (mounted) {
+    return null;
+  }
 
   return (
     <script
       dangerouslySetInnerHTML={{
         __html: `
             window._cache = window._cache || {};
-            window._cache[_${ctx.id}] = ${dehydrated};
+            window._cache["_${ctx.id}"] = ${dehydrated};
         `,
       }}
     />
@@ -83,6 +90,7 @@ function CacheProvider(props: {
     const cache = (window as any)._cache?.[`_${id}`];
     console.log('full cache', (window as any)._cache);
     console.log('cache for hydration', cache);
+
     return cache ?? {};
   });
 
@@ -196,9 +204,9 @@ export default function DefaultPage() {
   return (
     <CacheProvider fallback="Loading page....">
       <ShowContext />
-      {/* <CacheProvider fallback="Loading child...">
+      <CacheProvider fallback="Loading child...">
         <ShowContext />
-      </CacheProvider> */}
+      </CacheProvider>
     </CacheProvider>
   );
 }
