@@ -1,3 +1,5 @@
+import { NodeOnDiskFile } from "./fileUploadHandler"
+
 /**
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
@@ -10,7 +12,7 @@ export type UploadHandlerPart = {
 
 export type UploadHandler = (
   part: UploadHandlerPart,
-) => Promise<File | string | null | undefined>;
+) => Promise<NodeOnDiskFile | File | string | null | undefined>;
 
 export function composeUploadHandlers(
   ...handlers: UploadHandler[]
