@@ -25,7 +25,7 @@
     "zod-form-data": "^2.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.7.20",
+    "@types/node": "^18.16.16",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
     "eslint": "^8.40.0",
