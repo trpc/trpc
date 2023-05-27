@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
+import { HTTPBaseHandlerOptions, HTTPRequest, getBatchStreamFormatter } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
@@ -63,6 +63,7 @@ export async function fastifyRequestHandler<
 
   let isStream = false;
   let stream: Readable;
+  const formatter = getBatchStreamFormatter();
   const onChunk = ([index, string]: ResponseChunk) => {
     if (index === -1) {
       // full response, no streaming
@@ -80,11 +81,9 @@ export async function fastifyRequestHandler<
       stream = new Readable();
       stream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154
       resolve(opts.res.send(stream));
-      stream.push('{\n');
+      isStream = true;
     }
-    const comma = isStream ? ',' : '';
-    stream.push(`${comma}"${index}":${string}\n`);
-    isStream = true;
+    stream.push(formatter(index, string));
   };
 
   void resolveHTTPResponse(
@@ -103,7 +102,7 @@ export async function fastifyRequestHandler<
     onChunk,
   ).then(() => {
     if (isStream) {
-      stream.push('}');
+      stream.push(formatter.end());
       stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
     }
   });

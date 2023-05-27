@@ -1,5 +1,5 @@
 import { AnyRouter } from '../../core';
-import { HTTPRequest } from '../../http';
+import { HTTPRequest, getBatchStreamFormatter } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
@@ -54,6 +54,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   let isStream = false;
   let controller: ReadableStreamController<any>;
   let encoder: TextEncoder;
+  const formatter = getBatchStreamFormatter();
   const onChunk = ([index, string]: ResponseChunk) => {
     if (index === -1) {
       // full response, no streaming
@@ -69,9 +70,8 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       resHeaders.append('Vary', 'trpc-batch-mode');
       encoder = new TextEncoder();
       const stream = new ReadableStream({
-        async start(c) {
+        start(c) {
           controller = c;
-          controller.enqueue(encoder.encode('{\n'));
         },
       });
       const response = new Response(stream, {
@@ -79,10 +79,9 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
         headers: resHeaders,
       });
       resolve(response);
+      isStream = true;
     }
-    const comma = isStream ? ',' : '';
-    controller.enqueue(encoder.encode(`${comma}"${index}":${string}\n`));
-    isStream = true;
+    controller.enqueue(encoder.encode(formatter(index, string)));
   };
 
   void resolveHTTPResponse(
@@ -101,7 +100,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     onChunk,
   ).then(() => {
     if (isStream) {
-      controller.enqueue(encoder.encode('}'));
+      controller.enqueue(encoder.encode(formatter.end()));
       controller.close();
     }
   });

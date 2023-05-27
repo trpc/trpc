@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
-import { HTTPRequest } from '../../http';
+import { HTTPRequest, getBatchStreamFormatter } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
@@ -80,6 +80,7 @@ export async function nodeHTTPRequestHandler<
       }
     };
 
+    const formatter = getBatchStreamFormatter();
     let isStream = false;
     const onChunk = ([index, string]: ResponseChunk) => {
       if (index === -1) {
@@ -94,11 +95,9 @@ export async function nodeHTTPRequestHandler<
           'Vary',
           vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
         );
-        opts.res.write('{\n');
+        isStream = true;
       }
-      const comma = isStream ? ',' : '';
-      opts.res.write(`${comma}"${index}":${string}\n`);
-      isStream = true;
+      opts.res.write(formatter(index, string));
     };
 
     await resolveHTTPResponse(
@@ -124,7 +123,7 @@ export async function nodeHTTPRequestHandler<
     );
 
     if (isStream) {
-      opts.res.write('}');
+      opts.res.write(formatter.end());
       opts.res.end();
     }
 
