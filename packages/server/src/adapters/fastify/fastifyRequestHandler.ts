@@ -1,7 +1,11 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions, HTTPRequest, getBatchStreamFormatter } from '../../http';
+import {
+  HTTPBaseHandlerOptions,
+  HTTPRequest,
+  getBatchStreamFormatter,
+} from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
