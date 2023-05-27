@@ -68,7 +68,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     if (!isStream) {
       resHeaders.set('Transfer-Encoding', 'chunked');
       resHeaders.append('Vary', 'trpc-batch-mode');
-      encoder = new TextEncoder();
       const stream = new ReadableStream({
         start(c) {
           controller = c;
@@ -79,26 +78,25 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
         headers: resHeaders,
       });
       resolve(response);
+      encoder = new TextEncoder();
       isStream = true;
     }
     controller.enqueue(encoder.encode(formatter(index, string)));
   };
 
-  void resolveHTTPResponse(
-    {
-      req,
-      createContext,
-      path,
-      router: opts.router,
-      batching: opts.batching,
-      responseMeta: opts.responseMeta,
-      onError(o) {
-        opts?.onError?.({ ...o, req: opts.req });
-      },
+  void resolveHTTPResponse({
+    req,
+    createContext,
+    path,
+    router: opts.router,
+    batching: opts.batching,
+    responseMeta: opts.responseMeta,
+    onError(o) {
+      opts?.onError?.({ ...o, req: opts.req });
     },
     onHead,
     onChunk,
-  ).then(() => {
+  }).then(() => {
     if (isStream) {
       controller.enqueue(encoder.encode(formatter.end()));
       controller.close();

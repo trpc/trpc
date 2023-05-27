@@ -29,8 +29,9 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
    * because in that case, the headers are evaluated
    * eagerly, before the responses are ready.
    *
-   * This only applies to `httpBatchLink` using the
-   * `streamRequester` option.
+   * This only applies to `unstable_httpBatchStreamLink`,
+   * but type is shared and has thus been made optional
+   * everywhere.
    */
   data?: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;

@@ -40,6 +40,22 @@ interface ResolveHTTPRequestOptions<
   error?: Maybe<TRPCError>;
   contentTypeHandler?: BaseContentTypeHandler<any>;
   preprocessedBody?: boolean;
+  /**
+   * Called as soon as the response head is known,
+   * when streaming the response head will be determined
+   * **without** knowing the response body.
+   *
+   * Without this callback, streaming is disabled.
+   */
+  onHead?: (headResponse: Omit<HTTPResponse, 'body'>) => void;
+  /**
+   * Called for every procedure with `[index, result]`,
+   * or if not streaming (or error) a single time with `[-1, result]`
+   * where `result` is already stringified & transformed and ready to be sent.
+   *
+   * Without this callback, streaming is disabled.
+   */
+  onChunk?: (chunk: ResponseChunk) => void;
 }
 
 function initResponse<TRouter extends AnyRouter, TRequest extends HTTPRequest>(
@@ -143,26 +159,8 @@ async function inputToProcedureCall<
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(
-  opts: ResolveHTTPRequestOptions<TRouter, TRequest>,
-  /**
-   * Called as soon as the response head is known,
-   * when streaming the response head will be determined
-   * **without** knowing the response body.
-   *
-   * Without this callback, streaming is disabled.
-   */
-  onHead?: (headResponse: Omit<HTTPResponse, 'body'>) => void,
-  /**
-   * Called for every procedure with `[index, result]`,
-   * or if not streaming (or error) a single time with `[-1, result]`
-   * where `result` is already stringified & transformed and ready to be sent.
-   *
-   * Without this callback, streaming is disabled.
-   */
-  onChunk?: (chunk: ResponseChunk) => void,
-): Promise<HTTPResponse> {
-  const { router, req } = opts;
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<HTTPResponse> {
+  const { router, req, onHead, onChunk } = opts;
 
   if (req.method === 'HEAD') {
     // can be used for lambda warmup

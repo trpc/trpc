@@ -90,21 +90,19 @@ export async function fastifyRequestHandler<
     stream.push(formatter(index, string));
   };
 
-  void resolveHTTPResponse(
-    {
-      req,
-      createContext,
-      path: opts.path,
-      router: opts.router,
-      batching: opts.batching,
-      responseMeta: opts.responseMeta,
-      onError(o) {
-        opts?.onError?.({ ...o, req: opts.req });
-      },
+  void resolveHTTPResponse({
+    req,
+    createContext,
+    path: opts.path,
+    router: opts.router,
+    batching: opts.batching,
+    responseMeta: opts.responseMeta,
+    onError(o) {
+      opts?.onError?.({ ...o, req: opts.req });
     },
     onHead,
     onChunk,
-  ).then(() => {
+  }).then(() => {
     if (isStream) {
       stream.push(formatter.end());
       stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154

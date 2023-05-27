@@ -100,27 +100,25 @@ export async function nodeHTTPRequestHandler<
       opts.res.write(formatter(index, string));
     };
 
-    await resolveHTTPResponse(
-      {
-        batching: opts.batching,
-        responseMeta: opts.responseMeta,
-        path: opts.path,
-        createContext,
-        router: opts.router,
-        req,
-        error: bodyResult.ok ? null : bodyResult.error,
-        preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
-        onError(o) {
-          opts?.onError?.({
-            ...o,
-            req: opts.req,
-          });
-        },
-        contentTypeHandler,
+    await resolveHTTPResponse({
+      batching: opts.batching,
+      responseMeta: opts.responseMeta,
+      path: opts.path,
+      createContext,
+      router: opts.router,
+      req,
+      error: bodyResult.ok ? null : bodyResult.error,
+      preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
+      onError(o) {
+        opts?.onError?.({
+          ...o,
+          req: opts.req,
+        });
       },
+      contentTypeHandler,
       onHead,
       onChunk,
-    );
+    });
 
     if (isStream) {
       opts.res.write(formatter.end());
