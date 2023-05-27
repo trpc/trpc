@@ -1,6 +1,25 @@
 {
-  "extends": "@tsconfig/node-lts-strictest-esm/tsconfig.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "lib": [
+      "es2022"
+    ],
+    "target": "es2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "checkJs": true,
     "declaration": true,
     "emitDeclarationOnly": true,
     "module": "nodenext",
@@ -8,6 +27,7 @@
     "noEmitOnError": true,
     "outDir": "build",
     "rootDir": "src",
+    "verbatimModuleSyntax": true
   },
   "include": [
     "src",

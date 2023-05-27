@@ -7,7 +7,6 @@
     "build": "rm -rf build && tsc"
   },
   "devDependencies": {
-    "@tsconfig/node-lts-strictest-esm": "^18.12.1",
     "@types/node": "^18.16.16",
     "typescript": "^5.0.4"
   },
