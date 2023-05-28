@@ -13,7 +13,7 @@ Run the client in another terminal:
 deno run --allow-net ./src/client.ts
 ```
 
-Note: Deno Deploy does [not currently support npm specifiers](https://github.com/denoland/deploy_feedback/issues/314). 
+Note: Deno Deploy does [not currently support npm specifiers](https://github.com/denoland/deploy_feedback/issues/314).
 
 ---
 
