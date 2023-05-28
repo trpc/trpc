@@ -418,9 +418,15 @@ importers:
         specifier: link:../../../packages/server
         version: link:../../../packages/server
     devDependencies:
-      '@tsconfig/node-lts-strictest-esm':
-        specifier: ^18.12.1
-        version: 18.12.1
+      '@tsconfig/esm':
+        specifier: ^1.0.3
+        version: 1.0.3
+      '@tsconfig/node-lts':
+        specifier: ^18.12.2
+        version: 18.12.2
+      '@tsconfig/strictest':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -10028,8 +10034,16 @@ packages:
     resolution: {integrity: sha512-ffTXxGIP/IRMCjuzHd6M4/HdIrw1bMfC7Bv8hMkTadnePkpe0lG0oDSdbRpSDZb2rQMAgpbWiR10BvxvNYwYrg==}
     dev: true
 
-  /@tsconfig/node-lts-strictest-esm@18.12.1:
-    resolution: {integrity: sha512-LvBLmaC6Q/txTddLc11OeMHF9XjJFzlilkETJuvBlUvHy9pPiMsoH3nxWZM1FMSO53zp4mJP6gzOzxKEq0me7Q==}
+  /@tsconfig/esm@1.0.3:
+    resolution: {integrity: sha512-Gp56rIc3R8ab032nXMUitmc7YIb4nAi8DQ6Qt47tuL0Ssn9LIOm+o2FQmqPu3jX4z0TsqgzWwkmVygxcq+yHYg==}
+    dev: true
+
+  /@tsconfig/node-lts@18.12.2:
+    resolution: {integrity: sha512-1zbWpsZkChnemJsRm+G2EyjuPueNPkjBEfp08ET1uCv0CUL/5AK1IZvFtEsw7ZyEqojIydye3mwt6k8isULj4A==}
+    dev: true
+
+  /@tsconfig/strictest@2.0.1:
+    resolution: {integrity: sha512-7JHHCbyCsGUxLd0pDbp24yz3zjxw2t673W5oAP6HCEdr/UUhaRhYd3SSnUsGCk+VnPVJVA4mXROzbhI+nyIk+w==}
     dev: true
 
   /@types/aria-query@5.0.1:
