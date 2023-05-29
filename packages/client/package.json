@@ -82,7 +82,7 @@
     "@testing-library/dom": "^9.0.0",
     "@trpc/server": "10.28.0",
     "@types/isomorphic-fetch": "^0.0.36",
-    "@types/node": "^18.7.20",
+    "@types/node": "^18.16.16",
     "eslint": "^8.40.0",
     "expect-type": "^0.15.0",
     "isomorphic-fetch": "^3.0.0",
