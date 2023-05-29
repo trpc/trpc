@@ -5,7 +5,7 @@ import {
   DeepPartial,
   inferProcedureInput,
 } from '@trpc/server';
-import { DecorateProcedure, DecoratedProcedureRecord } from '../shared';
+import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 export type QueryType = 'query' | 'infinite' | 'any';
 

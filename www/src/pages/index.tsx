@@ -16,9 +16,9 @@ import { Iframe } from '../components/Iframe';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
-import { TwitterWall } from '../components/TwitterWall';
 import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
 import { TopSponsors } from '../components/sponsors/TopSponsors';
+import { TwitterWall } from '../components/TwitterWall';
 import { cn } from '../utils/cn';
 import { searchParams } from '../utils/searchParams';
 

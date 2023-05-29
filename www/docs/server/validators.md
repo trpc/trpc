@@ -47,7 +47,7 @@ export const appRouter = t.router({
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 export const t = initTRPC.create();

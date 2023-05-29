@@ -1,6 +1,6 @@
 import {
-  CreateTRPCProxyClient,
   clientCallTypeToProcedureType,
+  CreateTRPCProxyClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';

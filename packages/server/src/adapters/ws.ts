@@ -2,14 +2,14 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import {
   AnyRouter,
-  ProcedureType,
   callProcedure,
   inferRouterContext,
+  ProcedureType,
 } from '../core';
-import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
 import { BaseHandlerOptions } from '../internals/types';
-import { Unsubscribable, isObservable } from '../observable';
+import { isObservable, Unsubscribable } from '../observable';
 import {
   JSONRPC2,
   TRPCClientOutgoingMessage,

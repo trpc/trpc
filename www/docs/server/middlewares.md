@@ -124,7 +124,7 @@ Below we have an example of a middleware that changes properties of a context, t
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.context<Context>().create();
 const publicProcedure = t.procedure;
@@ -174,7 +174,7 @@ Below we have an example of a middleware that extends a base middleware(foo). Li
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
