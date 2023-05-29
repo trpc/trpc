@@ -55,15 +55,15 @@ import { z } from 'zod';
 export const t = initTRPC.create();
 
 export const appRouter = t.router({
-  getUser: t.procedure.input(z.string()).query((req) => {
-    return { id: req.input, name: 'Bilbo' };
+  getUser: t.procedure.input(z.string()).query((opts) => {
+    return { id: opts.input, name: 'Bilbo' };
   }),
   createUser: t.procedure
     .input(z.object({ name: z.string().min(5) }))
-    .mutation(async (req) => {
+    .mutation(async (opts) => {
       // use your ORM of choice
       return await UserModel.create({
-        data: req.input,
+        data: opts.input,
       });
     }),
 });

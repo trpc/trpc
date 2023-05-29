@@ -3,5 +3,7 @@
   "extends": ["config:base", ":preserveSemverRanges"],
   "ignorePaths": ["**/node_modules/**", "**/examples/**"],
   "updateInternalDeps": true,
-  "rollbackPrs": false
+  "npm": {
+    "rollbackPrs": false
+  }
 }

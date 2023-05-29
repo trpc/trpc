@@ -125,7 +125,7 @@ export const appRouter = t.router({
 You can define a validator without any 3rd party dependencies, with a function.
 
 :::info
-We don't recommend doing making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
+We don't recommend making a custom validator unless you have a specific need, but it's important to understand that there's no magic here - it's _just typescript_!
 
 In most cases we recommend you use a [validation library](#library-integrations)
 :::
@@ -352,6 +352,30 @@ export const appRouter = t.router({
   hello: publicProcedure
     .input(S.parse(S.struct({ name: S.string })))
     .output(S.parse(S.struct({ greeting: S.string })))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [runtypes](https://github.com/pelotom/runtypes)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import * as T from 'runtypes';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(T.Record({ name: T.String }))
+    .output(T.Record({ greeting: T.String }))
     .query(({ input }) => {
       //      ^?
       return {
