@@ -18,7 +18,6 @@ export async function nodeHTTPRequestHandler<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  // eslint-disable-next-line max-params
   const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
