@@ -7,9 +7,11 @@
     "build": "rm -rf build && tsc"
   },
   "devDependencies": {
-    "@tsconfig/node-lts-strictest-esm": "^18.12.1",
-    "@types/node": "^18.7.20",
-    "typescript": "^4.8.3"
+    "@tsconfig/esm": "^1.0.3",
+    "@tsconfig/node-lts": "^18.12.2",
+    "@tsconfig/strictest": "^2.0.1",
+    "@types/node": "^18.16.16",
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "@trpc/client": "^10.28.0",
