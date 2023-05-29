@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.27.1",
+  "version": "10.28.0",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -130,7 +130,8 @@
     "rpc",
     "observable",
     "subscription",
-    "shared"
+    "shared",
+    "!**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
@@ -141,7 +142,7 @@
     "@types/aws-lambda": "^8.10.97",
     "@types/express": "^4.17.17",
     "@types/hash-sum": "^1.0.0",
-    "@types/node": "^18.7.20",
+    "@types/node": "^18.16.16",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
     "@types/ws": "^8.2.0",
@@ -163,10 +164,13 @@
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
     "tsx": "^3.12.7",
-    "typescript": "^4.8.3",
+    "typescript": "^5.0.4",
     "vitest": "^0.28.5",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
     "zod": "^3.0.0"
-  }
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }

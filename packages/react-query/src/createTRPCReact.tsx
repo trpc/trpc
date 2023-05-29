@@ -101,43 +101,37 @@ export type DecorateProcedure<
         type?: QueryType,
       ) => QueryKey;
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
-    } & (inferProcedureInput<TProcedure> extends { cursor?: any }
+    } & (inferProcedureInput<TProcedure> extends { cursor?: any } | void
       ? {
-          useInfiniteQuery: <
-            _TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-            TData = inferTransformedProcedureOutput<TProcedure>,
-          >(
+          useInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
             opts?: UseTRPCInfiniteQueryOptions<
               TPath,
               inferProcedureInput<TProcedure>,
-              TData,
+              inferTransformedProcedureOutput<TProcedure>,
               TRPCClientErrorLike<TProcedure>
             >,
           ) => UseTRPCInfiniteQueryResult<
-            TData,
+            inferTransformedProcedureOutput<TProcedure>,
             TRPCClientErrorLike<TProcedure>
           >;
         } & (TFlags extends 'ExperimentalSuspense'
           ? {
-              useSuspenseInfiniteQuery: <
-                _TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-                TData = inferTransformedProcedureOutput<TProcedure>,
-              >(
+              useSuspenseInfiniteQuery: (
                 input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
                 opts?: Omit<
                   UseTRPCInfiniteQueryOptions<
                     TPath,
                     inferProcedureInput<TProcedure>,
-                    TData,
+                    inferTransformedProcedureOutput<TProcedure>,
                     TRPCClientErrorLike<TProcedure>
                   >,
                   'enabled' | 'suspense'
                 >,
               ) => [
-                InfiniteData<TData>,
+                InfiniteData<inferTransformedProcedureOutput<TProcedure>>,
                 UseTRPCInfiniteQuerySuccessResult<
-                  TData,
+                  inferTransformedProcedureOutput<TProcedure>,
                   TRPCClientErrorLike<TProcedure>
                 >,
               ];
