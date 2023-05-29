@@ -1,8 +1,8 @@
 import {
   DefaultErrorShape,
+  defaultFormatter,
   ErrorFormatter,
   ErrorFormatterShape,
-  defaultFormatter,
 } from '../error/formatter';
 import { createFlatProxy } from '../shared/createProxy';
 import {
@@ -14,10 +14,10 @@ import {
 import { FlatOverwrite, Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
+  isServerDefault,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-  isServerDefault,
 } from './internals/config';
 import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';

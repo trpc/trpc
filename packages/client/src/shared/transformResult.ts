@@ -4,9 +4,9 @@ import type {
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCClientRuntime } from '../links';
 import { isObject } from '../links/internals/isObject';
+import { TRPCClientError } from '../TRPCClientError';
 
 // FIXME:
 // - the generics here are probably unnecessary

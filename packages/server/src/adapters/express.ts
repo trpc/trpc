@@ -1,9 +1,9 @@
 import type * as express from 'express';
 import { AnyRouter } from '../core';
-import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
+  nodeHTTPRequestHandler,
 } from './node-http';
 
 export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<

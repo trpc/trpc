@@ -1,8 +1,8 @@
 import {
-  DehydrateOptions,
-  DehydratedState,
-  InfiniteData,
   dehydrate,
+  DehydratedState,
+  DehydrateOptions,
+  InfiniteData,
 } from '@tanstack/react-query';
 import {
   AnyRouter,

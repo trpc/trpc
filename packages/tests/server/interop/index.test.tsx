@@ -4,8 +4,7 @@
 import { waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { waitFor } from '@testing-library/react';
-import { HTTPHeaders, TRPCClientError } from '@trpc/client/src';
-import { httpBatchLink } from '@trpc/client/src';
+import { httpBatchLink, HTTPHeaders, TRPCClientError } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
 import { Maybe, TRPCError } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';

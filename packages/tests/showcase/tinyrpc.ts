@@ -6,9 +6,9 @@ import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
-  ProcedureRouterRecord,
   inferProcedureInput,
   inferProcedureOutput,
+  ProcedureRouterRecord,
 } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
 
