@@ -1,5 +1,5 @@
-import { AnyRouter, ProcedureType, inferRouterError } from '@trpc/server';
-import { Observer, UnsubscribeFn, observable } from '@trpc/server/observable';
+import { AnyRouter, inferRouterError, ProcedureType } from '@trpc/server';
+import { observable, Observer, UnsubscribeFn } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
@@ -7,9 +7,9 @@ import {
   TRPCRequestMessage,
   TRPCResponseMessage,
 } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import { retryDelay } from '../internals/retryDelay';
 import { transformResult } from '../shared/transformResult';
+import { TRPCClientError } from '../TRPCClientError';
 import { Operation, TRPCLink } from './types';
 
 type WSCallbackResult<TRouter extends AnyRouter, TOutput> = TRPCResponseMessage<

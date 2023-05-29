@@ -5,8 +5,8 @@ import {
 } from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
 import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import { ResponseEsque } from '../internals/types';
+import { TRPCClientError } from '../TRPCClientError';
 
 /**
  * @internal

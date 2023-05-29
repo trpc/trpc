@@ -1,5 +1,5 @@
-import { createQueryClient } from '../../__queryClient';
 import { legacyRouterToServerAndClient } from '../__legacyRouterToServerAndClient';
+import { createQueryClient } from '../../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import * as trpcReact from '@trpc/react-query/src';

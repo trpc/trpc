@@ -15,7 +15,7 @@ import { createReadStream, createWriteStream, statSync } from 'node:fs';
 import { mkdir, rm, stat as statAsync, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
-import { Readable, finished } from 'node:stream';
+import { finished, Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import { streamSlice } from './streamSlice';
 import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
