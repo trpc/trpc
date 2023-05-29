@@ -1,8 +1,8 @@
 import { getServerAndReactClient } from '../react/__reactHelpers';
 import {
+  dehydrate,
   DehydratedState,
   InfiniteData,
-  dehydrate,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

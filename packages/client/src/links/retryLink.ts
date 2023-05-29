@@ -1,7 +1,7 @@
 /* istanbul ignore file -- @preserve */
 // We're not actually exporting this link
 import { AnyRouter } from '@trpc/server';
-import { Unsubscribable, observable } from '@trpc/server/observable';
+import { observable, Unsubscribable } from '@trpc/server/observable';
 import { TRPCLink } from './types';
 
 export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {

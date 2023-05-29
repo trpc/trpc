@@ -53,7 +53,7 @@ The below example takes a user input and [authorizes](https://en.wikipedia.org/w
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 const t = initTRPC.context<{ signGuestBook: () => Promise<void> }>().create();

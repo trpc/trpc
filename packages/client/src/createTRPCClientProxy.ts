@@ -17,7 +17,6 @@ import {
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
-import { TRPCClientError } from './TRPCClientError';
 import { TRPCClient } from './createTRPCClient';
 import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {
@@ -25,6 +24,7 @@ import {
   TRPCUntypedClient,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
+import { TRPCClientError } from './TRPCClientError';
 
 /** @public */
 export type inferRouterProxyClient<TRouter extends AnyRouter> =

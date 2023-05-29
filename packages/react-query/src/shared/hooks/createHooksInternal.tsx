@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
-  DehydratedState,
-  QueryClient,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQueries as __useQueries,
   useQuery as __useQuery,
+  DehydratedState,
   hashQueryKey,
+  QueryClient,
   useQueryClient,
 } from '@tanstack/react-query';
-import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
+import { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
 import React, {
@@ -19,9 +19,12 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { SSRState, TRPCContext } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
-import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextState,
+} from '../../internals/context';
+import { getArrayQueryKey, QueryType } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';

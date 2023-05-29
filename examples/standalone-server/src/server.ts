@@ -4,8 +4,8 @@ import {
   createHTTPServer,
 } from '@trpc/server/adapters/standalone';
 import {
-  CreateWSSContextFnOptions,
   applyWSSHandler,
+  CreateWSSContextFnOptions,
 } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import { WebSocketServer } from 'ws';
