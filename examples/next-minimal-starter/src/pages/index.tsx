@@ -5,12 +5,15 @@ import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
-  const result1 = trpc.greeting.useQuery({
-    name: 'wait a bit longer',
-    wait: 2000,
-  });
-  const result2 = trpc.greeting.useQuery({ name: 'wait a bit', wait: 1000 });
+  const result = trpc.greeting.useQuery({ name: 'client' });
 
+  if (!result.data) {
+    return (
+      <div style={styles}>
+        <h1>Loading...</h1>
+      </div>
+    );
+  }
   return (
     <div style={styles}>
       {/**
@@ -19,10 +22,7 @@ export default function IndexPage() {
        * 💡 Tip: CMD+Click (or CTRL+Click) on `text` to go to the server definition
        * 💡 Tip: Secondary click on `text` and "Rename Symbol" to rename it both on the client & server
        */}
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div>result1: {result1.data ? result1.data.text : '...waiting'}</div>
-        <div>result2: {result2.data ? result2.data.text : '...waiting'}</div>
-      </div>
+      <h1>{result.data.text}</h1>
     </div>
   );
 }
