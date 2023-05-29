@@ -128,6 +128,10 @@ const config = {
       version: 'detect',
     },
   },
+  ignorePatterns: [
+    //
+    'examples/next-big-router/src/server/routers/*.ts',
+  ],
 };
 
 module.exports = config;
