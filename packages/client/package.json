@@ -84,7 +84,7 @@
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.16.16",
     "eslint": "^8.40.0",
-    "expect-type": "^0.15.0",
+    "expect-type": "^0.16.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
