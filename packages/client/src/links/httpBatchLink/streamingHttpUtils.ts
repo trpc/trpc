@@ -47,27 +47,21 @@ export async function parseJsonStream<TReturn>(opts: {
       return;
     }
 
+    if (!line || line === '}') {
+      return;
+    }
+
+    // removing comma from start of line
     const string = line[0] === ',' ? line.substring(1, line.length) : line;
-    if (!string) return;
-    if (string === '}') return;
 
     // parsing index out of start of line "0":{...}
-    // lines after the first one start with a comma ,"1":{...}
-    const start = 2; // start after first digit to save iterations
-    const end = 6; // assumes index will never be longer than 4 digits
-    let i = start;
-    while (i < end) {
-      if (string[i] === '"') break;
-      i++;
-    }
-    if (i === end)
-      throw new TRPCClientError(
-        'Invalid JSON string response format: a multiline JSON string was received but it does not conform to the expected format for streamed responses. Do you have intermediaries between the server and the client that might be reformatting the response?',
-      );
-    const index = string.substring(1, i);
-    const text = string.substring(i + 2);
+    const indexOfColon = string.indexOf(':');
 
-    opts.onSingle(index as unknown as number, parse(text));
+    const indexAsStr = string.substring(1, indexOfColon - 1);
+
+    const text = string.substring(indexAsStr.length + 3);
+
+    opts.onSingle(Number(indexAsStr), parse(text));
   };
 
   await readLines(opts.readableStream, onLine);

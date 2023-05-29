@@ -42,7 +42,7 @@ describe('parseJsonStream', () => {
         itemsArray[index] = data;
       },
     });
-    expect(orderReceived).toEqual(['0', '2', '1']);
+    expect(orderReceived).toEqual([0, 2, 1]);
     expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
     expect(fullData).toEqual(undefined);
   });
