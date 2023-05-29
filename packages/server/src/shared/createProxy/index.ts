@@ -18,6 +18,7 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
       }
       return createInnerProxy(callback, [...path, key]);
     },
+    // eslint-disable-next-line max-params
     apply(_1, _2, args) {
       const isApply = path[path.length - 1] === 'apply';
       return callback({

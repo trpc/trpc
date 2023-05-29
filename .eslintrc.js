@@ -66,6 +66,7 @@ const config = {
         },
       },
     ],
+    'max-params': ['error', 2],
   },
   overrides: [
     // {

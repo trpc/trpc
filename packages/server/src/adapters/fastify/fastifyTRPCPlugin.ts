@@ -17,6 +17,8 @@ export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<
   FastifyReply
 >;
 
+// TODO: refactor to not need `max-params` rule
+// eslint-disable-next-line max-params
 export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   fastify: FastifyInstance,
   opts: FastifyTRPCPluginOptions<TRouter>,
@@ -25,6 +27,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   fastify.addContentTypeParser(
     'application/json',
     { parseAs: 'string' },
+    // eslint-disable-next-line max-params
     function (_, body, _done) {
       _done(null, body);
     },

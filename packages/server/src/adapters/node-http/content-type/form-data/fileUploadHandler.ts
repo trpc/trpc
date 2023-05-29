@@ -189,6 +189,7 @@ export class NodeOnDiskFile {
   lastModified = 0;
   webkitRelativePath = '';
 
+  // eslint-disable-next-line max-params
   constructor(
     private filepath: string,
     public type: string,
@@ -208,6 +209,7 @@ export class NodeOnDiskFile {
     return stats.size;
   }
 
+  // eslint-disable-next-line max-params
   slice(start?: number, end?: number, type?: string): NodeOnDiskFile {
     if (typeof start === 'number' && start < 0) start = this.size + start;
     if (typeof end === 'number' && end < 0) end = this.size + end;

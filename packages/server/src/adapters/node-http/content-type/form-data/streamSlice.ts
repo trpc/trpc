@@ -13,6 +13,7 @@ class SliceStream extends Transform {
     this.#end = end;
   }
 
+  // eslint-disable-next-line max-params
   _transform(chunk: any, _: BufferEncoding, done: TransformCallback): void {
     this.#offset += chunk.length;
 
