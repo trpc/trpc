@@ -8,6 +8,7 @@
     "rollup.config.ts",
     ".eslintrc.js"
   ],
+  "exclude": [],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
