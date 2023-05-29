@@ -12,10 +12,10 @@ describe('parseJsonStream', () => {
       },
     });
     const itemsArray: any[] = [];
-    const fullData = await parseJsonStream(
-      stream,
-      (index, data) => (itemsArray[index] = data),
-    );
+    const fullData = await parseJsonStream({
+      readableStream: stream,
+      onSingle: (index, data) => (itemsArray[index] = data),
+    });
     expect(itemsArray).toEqual([]);
     expect(fullData).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);
   });
@@ -35,9 +35,12 @@ describe('parseJsonStream', () => {
     });
     const orderReceived: any[] = [];
     const itemsArray: any[] = [];
-    const fullData = await parseJsonStream(stream, (index, data) => {
-      orderReceived.push(index);
-      itemsArray[index] = data;
+    const fullData = await parseJsonStream({
+      readableStream: stream,
+      onSingle: (index, data) => {
+        orderReceived.push(index);
+        itemsArray[index] = data;
+      },
     });
     expect(orderReceived).toEqual(['0', '2', '1']);
     expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);

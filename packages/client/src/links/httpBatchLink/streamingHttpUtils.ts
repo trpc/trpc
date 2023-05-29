@@ -11,22 +11,28 @@ import {
 } from '../internals/httpUtils';
 import { HTTPHeaders } from '../types';
 
-/**
- * @param readableStream as given by `(await fetch(url)).body`
- * @param onSingle called for each line of the stream
- * @param parser defaults to `JSON.parse`
- */
-export async function parseJsonStream<TReturn>(
-  readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
-  onSingle: (index: number, res: TReturn) => void,
-  parser: (text: string) => TReturn = JSON.parse,
-  signal?: AbortSignal,
-): Promise<TReturn | undefined> {
+export async function parseJsonStream<TReturn>(opts: {
+  /**
+   * As given by `(await fetch(url)).body`
+   */
+  readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream;
+  /**
+   * Called for each line of the stream
+   */
+  onSingle: (index: number, res: TReturn) => void;
+  /**
+   * Called when the stream is finished
+   */
+  parse?: (text: string) => TReturn;
+  signal?: AbortSignal;
+}): Promise<TReturn | undefined> {
+  const parse = opts.parse ?? JSON.parse;
+
   let isFirstLine = true;
   let isFullSink = false;
   let fullAccumulator = '';
   const onLine = (line: string) => {
-    if (signal?.aborted) return;
+    if (opts.signal?.aborted) return;
     if (isFirstLine) {
       isFirstLine = false;
       if (line !== '{') {
@@ -60,13 +66,14 @@ export async function parseJsonStream<TReturn>(
       );
     const index = string.substring(1, i);
     const text = string.substring(i + 2);
-    onSingle(index as unknown as number, parser(text));
+
+    opts.onSingle(index as unknown as number, parse(text));
   };
 
-  await readLines(readableStream, onLine);
+  await readLines(opts.readableStream, onLine);
 
   if (isFullSink) {
-    return parser(fullAccumulator);
+    return parse(fullAccumulator);
   } else {
     return undefined;
   }
@@ -148,15 +155,15 @@ export const streamingJsonHttpRequester = (
   const promise = responsePromise.then(async (res) => {
     if (!res.body) throw new Error('Received response without body');
     const meta: HTTPResult['meta'] = { response: res };
-    return parseJsonStream(
-      res.body,
+    return parseJsonStream({
+      readableStream: res.body,
       onSingle,
-      (string) => ({
+      parse: (string) => ({
         json: JSON.parse(string) as TRPCResponse,
         meta,
       }),
-      ac?.signal,
-    );
+      signal: ac?.signal,
+    });
   });
 
   return { cancel, promise };
