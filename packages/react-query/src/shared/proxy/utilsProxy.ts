@@ -108,7 +108,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
-            inferProcedureInput<TProcedure> extends { cursor?: any }
+            inferProcedureInput<TProcedure> extends { cursor?: any } | void
               ? 'infinite'
               : 'query'
           >

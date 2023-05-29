@@ -62,7 +62,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
         id: post.id,
       },
     })),
-    // https://nextjs.org/docs/api-reference/data-fetching/get-static-paths#fallback-blocking
+    // https://nextjs.org/docs/pages/api-reference/functions/get-static-paths#fallback-blocking
     fallback: 'blocking',
   };
 };
