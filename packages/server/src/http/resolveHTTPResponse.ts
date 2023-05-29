@@ -281,7 +281,7 @@ export async function resolveHTTPResponse<
     const headResponse = initResponse(ctx, paths, type, opts.responseMeta);
     onHead(headResponse);
 
-    const bodyParts = Array(paths.length) as string[];
+    const bodyParts = new Array(paths.length) as string[];
 
     for (let i = 0; i < paths.length; i++) {
       const [index, untransformedJSON] = await Promise.race(promises.values());
