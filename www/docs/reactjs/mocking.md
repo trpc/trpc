@@ -221,6 +221,7 @@ PASS component/cats/BestCat.spec.tsx
 
 ## Further reference
 
+- You can see a sample repository that implements mocking at [cehrlich/msw-trpc-example](https://github.com/c-ehrlich/msw-trpc-example).
 - For information about more complex Mock Service Worker functionality, [visit their documentation](https://mswjs.io/docs/recipes/mocking-error-responses)
 - To contribute to `msw-trpc`, visit their [Github repo](https://github.com/maloguertin/msw-trpc)
 - To learn more about the benefits of simulating the environment your tests will be used in more closely, check out Kent C. Dodds's [article on the subject](https://kentcdodds.com/blog/stop-mocking-fetch)
