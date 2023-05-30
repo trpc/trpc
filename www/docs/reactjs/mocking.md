@@ -19,7 +19,7 @@ The examples below use [Vitest](https://vitest.dev/), [React Testing Library](ht
 For tRPC's hooks to work, they require [context](https://trpc.io/docs/context) that describes the URL of the backend and the structure of the API.
 
 - In React, you achieve this by wrapping your component tree with the `trpc.Provider` and `QueryClientProvider` components.
-- In Next.js, this step is abstracted in `_app.ts` by using `trpc.withTRPC(MyApp)`.
+- In Next.js, this step is abstracted in `_app.tsx` by using `trpc.withTRPC(MyApp)`.
 
 We still need this context when using our components in an isolated environment, because they still need to be capable of making requests that we will later intercept and pass through the mocked version of our API. For this, we will need to create and use a mocked provider.
 
