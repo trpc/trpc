@@ -50,7 +50,7 @@ const mockedTRPC = createTRPCReact<AppRouter>({
 
 ### 2. Create your mocked tRPC provider
 
-Now we just need to create a wrapper that exposes the client. This process is similar to [the React setup](https://trpc.io/docs/react#3-add-trpc-providers) however we don't need to utilize the `useState` hook because our tests are not using SSR.
+Now we need to create a wrapper that exposes the client. This process is similar to [the React setup](https://trpc.io/docs/react#3-add-trpc-providers) however we don't need to utilize the `useState` hook because our tests are not using SSR.
 
 ```ts title='mockedTRPCProvider.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -208,9 +208,9 @@ describe('BestCat', () => {
 
 Let's break our test down a little to understand what's going on. We'll start by looking at what our `test` block is doing, and then return to our `server` setup and teardown.
 
-The very first thing we do is make sure that our client (`trpc`) has access to its context (`MockedTRPCProvider`). Happily, we've made this easy to do by utilizing our new `renderWithProviders` function. After that, we are correctly anticipating that when we first render the component, we need to asynchronously wait for the data to load before we can assert on the anticipated response.
+First we render our `<BestCat />` component with the necessary context using the `renderWithProviders` function that we created earlier. Then we assert that the component will start out in loading state, as it needs to asynchronously wait for the data to load. Finally we assert what the component will look like after it has received a response from the server.
 
-The component is now successfully making calls from its client when we run the test, however, we now need to intercept those calls and mock a response. This is where our `server` comes in. Inside of `setupServer`, we can define the requests that our `Cat` component uses so we can intercept them and return a mocked response. Because `trpcMsw` uses the shape of our `AppRouter`, we can use our existing typing to quickly define the request handler we need.
+The component is now successfully making calls from its tRPC client when being tested. But we don't want it to make those calls to a real server. This is where our mocked `server` comes in. Inside of `setupServer`, we can define the requests that our `Cat` component uses so we can intercept them and return a mocked response. Because `trpcMsw` uses the shape of our `AppRouter`, we can use our existing typing to quickly define the request handler we need.
 
 With our server listening, our component's network call is now being intercepted at the lowest possible network level, simulated by MSW, and a response is being sent back in exactly the way our React component expects. Critically, we didn't need to mock or adapt any of the component's standard behaviors to isolate it. We should now receive:
 
