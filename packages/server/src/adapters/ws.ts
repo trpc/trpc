@@ -2,20 +2,21 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import {
   AnyRouter,
-  ProcedureType,
   callProcedure,
   inferRouterContext,
+  ProcedureType,
 } from '../core';
-import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { getCauseFromUnknown } from '../error/utils';
 import { BaseHandlerOptions } from '../internals/types';
-import { Unsubscribable, isObservable } from '../observable';
+import { isObservable, Unsubscribable } from '../observable';
 import {
   JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
+import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { CombinedDataTransformer } from '../transformer';
 import {
@@ -121,7 +122,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
-        JSON.stringify(transformTRPCResponse(router, untransformedJSON)),
+        JSON.stringify(
+          transformTRPCResponse(router._def._config, untransformedJSON),
+        ),
       );
     }
 
@@ -211,7 +214,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
             respond({
               id,
               jsonrpc,
-              error: router.getErrorShape({
+              error: getErrorShape({
+                config: router._def._config,
                 error,
                 type,
                 path,
@@ -263,7 +267,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         respond({
           id,
           jsonrpc,
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error,
             type,
             path,
@@ -289,7 +294,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
         respond({
           id: null,
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error,
             type: 'unknown',
             path: undefined,
@@ -336,7 +342,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         });
         respond({
           id: null,
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error,
             type: 'unknown',
             path: undefined,

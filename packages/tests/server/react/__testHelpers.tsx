@@ -2,20 +2,20 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  TRPCWebSocketClient,
   createWSClient,
   httpBatchLink,
   splitLink,
+  TRPCWebSocketClient,
   wsLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { OutputWithCursor } from '@trpc/react-query/shared';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 export type Post = {
   id: string;
@@ -68,14 +68,16 @@ export function createAppRouter() {
     }),
     paginatedPosts: t.procedure
       .input(
-        z.object({
-          limit: z.number().min(1).max(100).nullish(),
-          cursor: z.number().nullish(),
-        }),
+        z
+          .object({
+            limit: z.number().min(1).max(100).default(50),
+            cursor: z.number().nullish().default(null),
+          })
+          .default({}),
       )
       .query(({ input }) => {
         const items: typeof db.posts = [];
-        const limit = input.limit ?? 50;
+        const limit = input.limit;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
         for (let index = 0; index < db.posts.length; index++) {

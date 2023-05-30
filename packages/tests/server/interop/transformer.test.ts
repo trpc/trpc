@@ -1,10 +1,10 @@
 import { routerToServerAndClientNew, waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import {
-  TRPCClientError,
   createWSClient,
   httpBatchLink,
   httpLink,
+  TRPCClientError,
   wsLink,
 } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';

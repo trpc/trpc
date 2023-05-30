@@ -8,6 +8,7 @@
     "rollup.config.ts",
     ".eslintrc.js"
   ],
+  "exclude": [],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
@@ -23,6 +24,6 @@
       "@trpc/next/*": ["packages/next/src/*"],
       "$test/*": ["test/*"]
     },
-    "types": ["node"]
+    "types": ["node", "vitest/globals"]
   }
 }

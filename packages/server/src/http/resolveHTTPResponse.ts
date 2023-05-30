@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   AnyRouter,
-  ProcedureType,
   callProcedure,
   inferRouterContext,
   inferRouterError,
+  ProcedureType,
 } from '../core';
-import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
-import { transformTRPCResponse } from '../shared';
+import { getErrorShape } from '../shared/getErrorShape';
+import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { Maybe } from '../types';
 import {
   BaseContentTypeHandler,
@@ -93,7 +94,10 @@ export async function resolveHTTPResponse<
       status = meta.status;
     }
 
-    const transformedJSON = transformTRPCResponse(router, untransformedJSON);
+    const transformedJSON = transformTRPCResponse(
+      router._def._config,
+      untransformedJSON,
+    );
 
     const body = JSON.stringify(transformedJSON);
 
@@ -170,7 +174,8 @@ export async function resolveHTTPResponse<
 
       if (obj.error) {
         return {
-          error: router.getErrorShape({
+          error: getErrorShape({
+            config: router._def._config,
             error: obj.error,
             type,
             path,
@@ -208,7 +213,8 @@ export async function resolveHTTPResponse<
     });
     return endResponse(
       {
-        error: router.getErrorShape({
+        error: getErrorShape({
+          config: router._def._config,
           error,
           type,
           path: undefined,

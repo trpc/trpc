@@ -1,18 +1,20 @@
 {
   "name": "@examples/internal-types-export",
-  "version": "10.26.0",
+  "version": "10.28.1",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "rm -rf build && tsc"
   },
   "devDependencies": {
-    "@tsconfig/node-lts-strictest-esm": "^18.12.1",
-    "@types/node": "^18.7.20",
-    "typescript": "^4.8.3"
+    "@tsconfig/esm": "^1.0.3",
+    "@tsconfig/node-lts": "^18.12.2",
+    "@tsconfig/strictest": "^2.0.1",
+    "@types/node": "^18.16.16",
+    "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@trpc/client": "^10.26.0",
-    "@trpc/server": "^10.25.1"
+    "@trpc/client": "^10.28.1",
+    "@trpc/server": "^10.28.1"
   }
 }

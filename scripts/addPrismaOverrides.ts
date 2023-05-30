@@ -1,6 +1,6 @@
-import fg from 'fast-glob';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import fg from 'fast-glob';
 import prettier from 'prettier';
 import type { PackageJson } from './entrypoints';
 
