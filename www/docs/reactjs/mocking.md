@@ -34,6 +34,8 @@ import type { AppRouter } from '../path/to/server/trpc';
 Next, create a set of React hooks from your `AppRouter` type signature with `createTRPCReact`.
 
 ```ts title='mockedTRPCProvider.ts'
+import { createTRPCReact } from '@trpc/react-query';
+
 const mockedTRPC = createTRPCReact<AppRouter>({
   unstable_overrides: {
     useMutation: {
@@ -51,7 +53,10 @@ const mockedTRPC = createTRPCReact<AppRouter>({
 Now we just need to create a wrapper that exposes the client. This process is similar to [the React setup](https://trpc.io/docs/react#3-add-trpc-providers) however we don't need to utilize the `useState` hook because our tests are not using SSR.
 
 ```ts title='mockedTRPCProvider.ts'
-// @ts-expect-error tRPC utilizes global fetch
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// we've tested cross-fetch, but most fetch polyfills should work
+import fetch from 'cross-fetch';
+
 global.fetch = fetch;
 
 const mockedTRPCClient = mockedTRPC.createClient({
@@ -80,6 +85,9 @@ export const MockedTRPCProvider = (props: { children: React.ReactNode }) => {
 To use this mocked provider easily with `@testing-library/react`, we can export a custom render hook that wraps our rendered component in our new `MockedTRPCProvider`.
 
 ```ts title='mockedTRPCProvider.ts'
+import { render, type RenderOptions } from '@testing-library/react';
+import { type ReactElement } from 'react';
+
 export const renderWithProviders = (
   ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'>,
