@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRef, useState } from 'react';
-import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { trpc } from '~/utils/trpc';
+import { useRef, useState } from 'react';
+import { FormProvider, useForm, UseFormProps } from 'react-hook-form';
+import { z } from 'zod';
 
 /**
  * zod-form-data wraps zod in an effect where the original type is a `FormData`

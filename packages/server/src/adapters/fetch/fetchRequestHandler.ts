@@ -1,5 +1,5 @@
 import { AnyRouter } from '../../core';
-import { HTTPRequest, getBatchStreamFormatter } from '../../http';
+import { getBatchStreamFormatter, HTTPRequest } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';

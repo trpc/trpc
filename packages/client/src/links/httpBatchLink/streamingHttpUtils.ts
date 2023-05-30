@@ -2,11 +2,11 @@
 
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
-  HTTPBaseRequestOptions,
-  HTTPResult,
   fetchHTTPResponse,
   getBody,
   getUrl,
+  HTTPBaseRequestOptions,
+  HTTPResult,
 } from '../internals/httpUtils';
 import { HTTPHeaders } from '../types';
 

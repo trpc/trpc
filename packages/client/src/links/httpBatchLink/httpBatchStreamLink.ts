@@ -1,7 +1,7 @@
 import { NonEmptyArray } from '../../internals/types';
 import { HTTPResult } from '../internals/httpUtils';
 import { Operation } from '../types';
-import { RequesterFn, makeHttpBatchLink } from './genericMakeBatchLink';
+import { makeHttpBatchLink, RequesterFn } from './genericMakeBatchLink';
 import { streamingJsonHttpRequester } from './streamingHttpUtils';
 
 /**

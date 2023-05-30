@@ -1,14 +1,14 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { TRPCClientError } from '../../TRPCClientError';
 import { dataLoader } from '../../internals/dataLoader';
 import { NonEmptyArray } from '../../internals/types';
 import { transformResult } from '../../shared/transformResult';
+import { TRPCClientError } from '../../TRPCClientError';
 import {
+  getUrl,
   HTTPLinkBaseOptions,
   HTTPResult,
   ResolvedHTTPLinkOptions,
-  getUrl,
   resolveHTTPLinkOptions,
 } from '../internals/httpUtils';
 import {

@@ -10,10 +10,10 @@ import {
 } from '../core/middleware';
 import { Procedure } from '../core/procedure';
 import {
+  createRouterFactory,
   ProcedureRecord as NewProcedureRecord,
   Router as NewRouter,
   RouterDef,
-  createRouterFactory,
 } from '../core/router';
 import {
   AnyRouter as AnyOldRouter,

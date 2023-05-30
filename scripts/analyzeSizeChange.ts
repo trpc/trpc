@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, writeFile } from 'node:fs';
+import { readdirSync, readFileSync, writeFile } from 'node:fs';
 import path from 'node:path';
 import analyze from 'rollup-plugin-analyzer';
 

@@ -1,11 +1,11 @@
+import http from 'http';
 import { waitError } from '../___testHelpers';
 import {
-  TRPCClientError,
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
+  TRPCClientError,
 } from '@trpc/client';
-import http from 'http';
 import fetch from 'node-fetch';
 
 type Handler = (opts: {

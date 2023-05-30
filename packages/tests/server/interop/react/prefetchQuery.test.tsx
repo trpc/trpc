@@ -1,8 +1,8 @@
 import { createQueryClient } from '../../__queryClient';
 import { createLegacyAppRouter } from './__testHelpers';
 import {
-  QueryClientProvider,
   dehydrate,
+  QueryClientProvider,
   useQueryClient,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';

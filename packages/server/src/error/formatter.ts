@@ -1,8 +1,8 @@
 import { ProcedureType } from '../core';
 import {
-  TRPCErrorShape,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
+  TRPCErrorShape,
 } from '../rpc';
 import { TRPCError } from './TRPCError';
 

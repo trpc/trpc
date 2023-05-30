@@ -1,10 +1,11 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
+import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import {
-  TRPCLink,
   createTRPCProxyClient,
   httpBatchLink,
+  TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
@@ -14,7 +15,6 @@ import {
 } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
-import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { z } from 'zod';
 
 // miniflare does an instanceof check

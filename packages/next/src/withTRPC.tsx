@@ -3,19 +3,19 @@
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
 import {
+  dehydrate,
   DehydratedState,
   Hydrate,
   QueryClient,
   QueryClientProvider,
-  dehydrate,
 } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions } from '@trpc/client';
 import {
+  createReactQueryHooks,
+  createTRPCClient,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
-  createReactQueryHooks,
-  createTRPCClient,
 } from '@trpc/react-query';
 import {
   CreateTRPCReactOptions,

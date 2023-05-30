@@ -1,7 +1,7 @@
 import { NonEmptyArray } from '../../internals/types';
 import { jsonHttpRequester } from '../internals/httpUtils';
 import { Operation } from '../types';
-import { RequesterFn, makeHttpBatchLink } from './genericMakeBatchLink';
+import { makeHttpBatchLink, RequesterFn } from './genericMakeBatchLink';
 
 const batchRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
   return (batchOps) => {
