@@ -102,7 +102,6 @@ export const renderWithProviders = (
 :::note
 
 - If you already have a similar function to render a component with providers in tests, you may choose to import `MockedTRPCProvider` to that function instead, this is a simple example for demonstration purposes.
-- If you don't want to use a custom hook like the one illustrated, you may also choose to simply use the return value of the function.
 
 :::
 
