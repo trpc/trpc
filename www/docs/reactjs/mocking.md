@@ -28,7 +28,7 @@ We still need this context when using our components in an isolated environment,
 Create a new file for your `MockedTRPCProvider` and import your `AppRouter` type from where your standard tRPC router is defined. This will ensure that your mocks have the same type signature as your API.
 
 ```ts title='mockedTRPCProvider.ts'
-import type { AppRouter } from "../path/to/server/trpc";
+import type { AppRouter } from '../path/to/server/trpc';
 ```
 
 Next, create a set of React hooks from your `AppRouter` type signature with `createTRPCReact`.
@@ -56,7 +56,7 @@ global.fetch = fetch;
 
 const mockedTRPCClient = mockedTRPC.createClient({
   transformer: superjson,
-  links: [httpLink({ url: "http://localhost:3000/api/trpc" })],
+  links: [httpLink({ url: 'http://localhost:3000/api/trpc' })],
 });
 
 const mockedQueryClient = new QueryClient();
@@ -82,7 +82,7 @@ To use this mocked provider easily with `@testing-library/react`, we can export 
 ```ts title='mockedTRPCProvider.ts'
 export const renderWithProviders = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
+  options?: Omit<RenderOptions, 'wrapper'>,
 ) => {
   return render(ui, {
     wrapper: (props) => <MockedTRPCProvider {...props} />,
@@ -111,8 +111,8 @@ To mock data using your router, start by installing both packages into your dev 
 To utilize tRPC's typing superpowers, we can create an `mswTrpc` constant which generates a typed set of handlers for MSW, based on the shape of your `AppRouter`. This enables us to build handlers specific to our tests rapidly and with type-safety.
 
 ```ts title='mockedTRPCProvider.ts'
-import type { AppRouter } from "path/to/your/router";
-import { createTRPCMsw } from "msw-trpc";
+import { createTRPCMsw } from 'msw-trpc';
+import type { AppRouter } from 'path/to/your/router';
 
 // YOUR PROVIDER
 
@@ -170,24 +170,24 @@ export default const BestCat = () => {
 Finally, we want to verify that our component is working as we anticipated, so we write a test.
 
 ```ts title='component/cats/BestCat.spec.tsx'
-describe("BestCat", () => {
+describe('BestCat', () => {
   const server = setupServer(
     trpcMsw.cats.bestCat.query((req, res, ctx) => {
-      const input = req.getInput()
+      const input = req.getInput();
       // 🚨 You can console.log here to view your request being captured
       return res(
         ctx.status(200),
         ctx.data({
           bestCat: `Hey ${input.name}! The best cat is Mozzie!`,
-        })
+        }),
       );
-    })
+    }),
   );
-  
+
   beforeAll(() => server.listen());
   afterAll(() => server.close());
-  
-  test("should render the result of our query", async () => {
+
+  test('should render the result of our query', async () => {
     renderWithProviders(<BestCat />);
     expect(screen.getByText(/Data unavaliable/i)).toBeVisible();
     await waitFor(() => {
