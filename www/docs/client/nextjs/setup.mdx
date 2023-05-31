@@ -2,7 +2,7 @@
 id: setup
 title: Set up with Next.js
 sidebar_label: Setup
-slug: /nextjs/setup
+slug: client/nextjs/setup
 ---
 
 import TabItem from '@theme/TabItem';
@@ -208,7 +208,7 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 :::note
-`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
 :::
 
 ### 5. Configure `_app.tsx`

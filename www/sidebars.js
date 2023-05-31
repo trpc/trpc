@@ -61,70 +61,83 @@ module.exports = {
     {
       type: 'category',
       label: 'Client Usage',
-      collapsed: true,
+      collapsed: false, // TKTK maybe do collapse it?
       link: {
         type: 'doc',
         id: 'client/introduction',
       },
       items: [
-        'client/setup',
-        'client/aborting-procedure-calls',
-        'client/infer-types',
+        'client/overview',
+        // 'client/setup',
+        // 'client/aborting-procedure-calls',
+        // 'client/infer-types',
         {
           type: 'category',
-          label: 'Links',
+          label: 'React Query Integration',
           collapsed: true,
+          // TKTK either make this a separate article or put it in setup
           link: {
             type: 'doc',
-            id: 'client/links/links',
+            id: 'client/react/introduction',
           },
           items: [
-            'client/links/httpLink',
-            'client/links/httpBatchLink',
-            'client/links/wsLink',
-            'client/links/splitLink',
-            'client/links/loggerLink',
+            'client/react/setup',
+            'client/react/aborting-procedure-calls',
+            'client/react/infer-types',
+            'client/react/useQuery',
+            'client/react/useMutation',
+            'client/react/useInfiniteQuery',
+            'client/react/useContext',
+            'client/react/useQueries',
+            'client/react/getQueryKey',
           ],
         },
-        'client/headers',
-        'client/cors',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'React Query Integration',
-      collapsed: true,
-      link: {
-        type: 'doc',
-        id: 'reactjs/introduction',
-      },
-      items: [
-        'reactjs/setup',
-        'reactjs/aborting-procedure-calls',
-        'reactjs/infer-types',
-        'reactjs/useQuery',
-        'reactjs/useMutation',
-        'reactjs/useInfiniteQuery',
-        'reactjs/useContext',
-        'reactjs/useQueries',
-        'reactjs/getQueryKey',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Next.js Integration',
-      collapsed: true,
-      link: {
-        type: 'doc',
-        id: 'nextjs/introduction',
-      },
-      items: [
-        'nextjs/setup',
-        'nextjs/aborting-procedure-calls',
-        'nextjs/ssr',
-        'nextjs/ssg',
-        'nextjs/server-side-helpers',
-        'nextjs/starter-projects',
+        {
+          type: 'category',
+          label: 'Next.js Integration',
+          collapsed: true,
+          // TKTK either make this a separate article or put it in setup
+          link: {
+            type: 'doc',
+            id: 'client/nextjs/introduction',
+          },
+          items: [
+            'client/nextjs/setup',
+            'client/nextjs/aborting-procedure-calls',
+            'client/nextjs/ssr',
+            'client/nextjs/ssg',
+            'client/nextjs/server-side-helpers',
+            'client/nextjs/starter-projects',
+          ],
+        },
+        'client/other-integrations',
+        {
+          type: 'category',
+          label: 'Advanced Concepts',
+          collapsed: true,
+          items: [
+            'client/advanced/aborting-procedure-calls',
+            {
+              type: 'category',
+              label: 'Links',
+              collapsed: true,
+              // TKTK make this a separate article
+              link: {
+                type: 'doc',
+                id: 'client/advanced/links/links',
+              },
+              items: [
+                'client/advanced/links/httpLink',
+                'client/advanced/links/httpBatchLink',
+                'client/advanced/links/wsLink',
+                'client/advanced/links/splitLink',
+                'client/advanced/links/loggerLink',
+              ],
+            },
+            'client/advanced/headers',
+            'client/advanced/cors',
+          ],
+        },
       ],
     },
     {
