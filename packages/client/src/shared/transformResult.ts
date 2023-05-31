@@ -1,12 +1,12 @@
-import { AnyRouter, inferRouterError } from '@trpc/server';
-import {
+import type { AnyRouter, inferRouterError } from '@trpc/server';
+import type {
   TRPCResponse,
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '@trpc/server/rpc';
-import { TRPCClientRuntime } from '..';
-import { TRPCClientError } from '../../TRPCClientError';
-import { isObject } from './isObject';
+import type { TRPCClientRuntime } from '../links';
+import { isObject } from '../links/internals/isObject';
+import { TRPCClientError } from '../TRPCClientError';
 
 // FIXME:
 // - the generics here are probably unnecessary

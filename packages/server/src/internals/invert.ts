@@ -6,6 +6,9 @@ type Invert<TType extends Record<PropertyKey, PropertyKey>> = {
   [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
 };
 
+/**
+ * @internal
+ */
 export function invert<TRecord extends Record<PropertyKey, PropertyKey>>(
   obj: TRecord,
 ): Invert<TRecord> {
