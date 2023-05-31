@@ -26,6 +26,8 @@ jobs:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v2
+        with:
+          version: 8.5.1
 
       - name: Use Node ${{ matrix.node }}
         uses: actions/setup-node@v3
