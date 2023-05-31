@@ -68,8 +68,11 @@ module.exports = {
           type: 'category',
           label: 'React Query Integration',
           collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/react/introduction',
+          },
           items: [
-            'client/react/introduction',
             'client/react/setup',
             'client/react/infer-types',
             'client/react/useQuery',
@@ -85,8 +88,11 @@ module.exports = {
           type: 'category',
           label: 'Next.js Integration',
           collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/nextjs/introduction',
+          },
           items: [
-            'client/nextjs/introduction',
             'client/nextjs/setup',
             'client/nextjs/ssr',
             'client/nextjs/ssg',
