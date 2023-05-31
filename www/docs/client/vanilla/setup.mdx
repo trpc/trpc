@@ -40,13 +40,13 @@ pnpm add @trpc/client @trpc/server
 
 ### 2. Import your App Router
 
-import ImportAppRouter from '../partials/_import-approuter.mdx';
+import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 <ImportAppRouter />
 
 ### 3. Initialize the tRPC client
 
-Create a tRPC client with the `createTRPCProxyClient` method, and add a `links` array with a [terminating link](./advanced/links/index.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](./advanced/links/index.md).
+Create a tRPC client with the `createTRPCProxyClient` method, and add a `links` array with a [terminating link](../advanced/links/overview.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../advanced/links/overview.md).
 
 ```ts title='client.ts'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';

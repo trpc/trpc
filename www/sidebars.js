@@ -87,8 +87,8 @@ module.exports = {
           collapsed: true,
           items: [
             'client/nextjs/introduction',
-            'client/nextjs/setup',
             'client/nextjs/aborting-procedure-calls',
+            'client/nextjs/setup',
             'client/nextjs/ssr',
             'client/nextjs/ssg',
             'client/nextjs/server-side-helpers',
@@ -101,10 +101,10 @@ module.exports = {
           label: 'Vanilla Client',
           collapsed: true,
           items: [
-            'client/introduction',
-            'client/setup',
-            'client/aborting-procedure-calls',
-            'client/infer-types',
+            'client/vanilla/introduction',
+            'client/vanilla/setup',
+            'client/vanilla/aborting-procedure-calls',
+            'client/vanilla/infer-types',
           ],
         },
         {
@@ -112,17 +112,12 @@ module.exports = {
           label: 'Advanced Concepts',
           collapsed: true,
           items: [
-            'client/advanced/aborting-procedure-calls',
             {
               type: 'category',
               label: 'Links',
               collapsed: true,
-              // TKTK make this a separate article
-              link: {
-                type: 'doc',
-                id: 'client/advanced/links/links',
-              },
               items: [
+                'client/advanced/links/overview',
                 'client/advanced/links/httpLink',
                 'client/advanced/links/httpBatchLink',
                 'client/advanced/links/wsLink',
