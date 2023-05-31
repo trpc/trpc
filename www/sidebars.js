@@ -61,26 +61,15 @@ module.exports = {
     {
       type: 'category',
       label: 'Client Usage',
-      collapsed: false, // TKTK maybe do collapse it?
-      link: {
-        type: 'doc',
-        id: 'client/introduction',
-      },
+      collapsed: true,
       items: [
         'client/overview',
-        // 'client/setup',
-        // 'client/aborting-procedure-calls',
-        // 'client/infer-types',
         {
           type: 'category',
           label: 'React Query Integration',
           collapsed: true,
-          // TKTK either make this a separate article or put it in setup
-          link: {
-            type: 'doc',
-            id: 'client/react/introduction',
-          },
           items: [
+            'client/react/introduction',
             'client/react/setup',
             'client/react/aborting-procedure-calls',
             'client/react/infer-types',
@@ -96,12 +85,8 @@ module.exports = {
           type: 'category',
           label: 'Next.js Integration',
           collapsed: true,
-          // TKTK either make this a separate article or put it in setup
-          link: {
-            type: 'doc',
-            id: 'client/nextjs/introduction',
-          },
           items: [
+            'client/nextjs/introduction',
             'client/nextjs/setup',
             'client/nextjs/aborting-procedure-calls',
             'client/nextjs/ssr',
@@ -111,6 +96,17 @@ module.exports = {
           ],
         },
         'client/other-integrations',
+        {
+          type: 'category',
+          label: 'Vanilla Client',
+          collapsed: true,
+          items: [
+            'client/introduction',
+            'client/setup',
+            'client/aborting-procedure-calls',
+            'client/infer-types',
+          ],
+        },
         {
           type: 'category',
           label: 'Advanced Concepts',
