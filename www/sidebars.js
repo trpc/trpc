@@ -71,7 +71,6 @@ module.exports = {
           items: [
             'client/react/introduction',
             'client/react/setup',
-            'client/react/aborting-procedure-calls',
             'client/react/infer-types',
             'client/react/useQuery',
             'client/react/useMutation',
@@ -79,6 +78,7 @@ module.exports = {
             'client/react/useContext',
             'client/react/useQueries',
             'client/react/getQueryKey',
+            'client/react/aborting-procedure-calls',
           ],
         },
         {
@@ -87,11 +87,11 @@ module.exports = {
           collapsed: true,
           items: [
             'client/nextjs/introduction',
-            'client/nextjs/aborting-procedure-calls',
             'client/nextjs/setup',
             'client/nextjs/ssr',
             'client/nextjs/ssg',
             'client/nextjs/server-side-helpers',
+            'client/nextjs/aborting-procedure-calls',
             'client/nextjs/starter-projects',
           ],
         },
@@ -103,8 +103,8 @@ module.exports = {
           items: [
             'client/vanilla/introduction',
             'client/vanilla/setup',
-            'client/vanilla/aborting-procedure-calls',
             'client/vanilla/infer-types',
+            'client/vanilla/aborting-procedure-calls',
           ],
         },
         {
