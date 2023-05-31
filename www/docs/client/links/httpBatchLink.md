@@ -39,7 +39,7 @@ const somePosts = await Promise.all([
 The `httpBatchLink` function takes an options object that has the `HTTPBatchLinkOptions` shape.
 
 ```ts
-export interface HttpBatchLinkOptions extends HTTPLinkOptions {
+export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   maxURLLength?: number;
 }
 

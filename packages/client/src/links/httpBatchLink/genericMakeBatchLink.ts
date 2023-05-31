@@ -1,9 +1,9 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { TRPCClientError } from '../../TRPCClientError';
 import { dataLoader } from '../../internals/dataLoader';
 import { NonEmptyArray } from '../../internals/types';
 import { transformResult } from '../../shared/transformResult';
-import { TRPCClientError } from '../../TRPCClientError';
 import {
   getUrl,
   HTTPLinkBaseOptions,
@@ -19,7 +19,7 @@ import {
   TRPCLink,
 } from '../types';
 
-export interface HttpBatchLinkOptions extends HTTPLinkBaseOptions {
+export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
   maxURLLength?: number;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
@@ -39,7 +39,7 @@ export type RequesterFn = (
   resolvedOpts: ResolvedHTTPLinkOptions,
   runtime: TRPCClientRuntime,
   type: ProcedureType,
-  opts: HttpBatchLinkOptions,
+  opts: HTTPBatchLinkOptions,
 ) => (
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
@@ -50,7 +50,7 @@ export type RequesterFn = (
 
 export function makeHttpBatchLink(requester: RequesterFn) {
   return function httpBatchLink<TRouter extends AnyRouter>(
-    opts: HttpBatchLinkOptions,
+    opts: HTTPBatchLinkOptions,
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
     const maxURLLength = opts.maxURLLength || Infinity;
