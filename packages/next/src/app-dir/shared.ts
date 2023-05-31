@@ -8,9 +8,9 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   Filter,
+  inferHandlerInput,
   ProtectedIntersection,
   ThenArg,
-  inferHandlerInput,
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 

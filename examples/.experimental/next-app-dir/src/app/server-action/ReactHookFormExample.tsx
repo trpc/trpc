@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRef } from 'react';
-import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
+import { FormProvider, useForm, UseFormProps } from 'react-hook-form';
 import { useAction } from 'trpc-api';
 import { z } from 'zod';
 import { rhfAction } from './ReactHookFormExample.action';

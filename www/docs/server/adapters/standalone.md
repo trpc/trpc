@@ -139,9 +139,9 @@ The `middleware` option will accept any function which resembles a connect/node.
 `createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
 ```ts title='server.ts'
+import { createServer } from 'http';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import { createServer } from 'http';
 
 const handler = createHTTPHandler({
   router: appRouter,

@@ -87,7 +87,7 @@ Middlewares are performed before any procedure(s) are called.
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 type Context = {
   user?: {
@@ -152,8 +152,8 @@ how to call a procedure from another, custom endpoint.
 // ---cut---
 import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { appRouter } from '~/server/routers/_app';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 type ResponseData = {
   data?: {

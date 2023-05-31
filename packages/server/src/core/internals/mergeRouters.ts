@@ -3,9 +3,9 @@ import { CombinedDataTransformer, defaultTransformer } from '../../transformer';
 import {
   AnyRouter,
   AnyRouterDef,
+  createRouterFactory,
   Router,
   RouterDef,
-  createRouterFactory,
 } from '../router';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 

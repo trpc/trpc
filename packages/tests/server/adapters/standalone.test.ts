@@ -1,16 +1,16 @@
+import { AddressInfo } from 'net';
+import { NetworkInterfaceInfo, networkInterfaces } from 'os';
 import {
-  TRPCClientError,
   createTRPCProxyClient,
   httpBatchLink,
+  TRPCClientError,
 } from '@trpc/client/src';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
 } from '@trpc/server/src/adapters/standalone';
-import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
-import { NetworkInterfaceInfo, networkInterfaces } from 'os';
 import { z } from 'zod';
 
 const t = initTRPC.create();

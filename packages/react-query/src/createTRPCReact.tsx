@@ -6,9 +6,9 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  inferProcedureInput,
   ProcedureRouterRecord,
   ProtectedIntersection,
-  inferProcedureInput,
 } from '@trpc/server';
 import {
   createFlatProxy,
@@ -18,9 +18,9 @@ import {
 import { useMemo } from 'react';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
-  CreateReactUtilsProxy,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
+  CreateReactUtilsProxy,
 } from './shared';
 import {
   CreateReactQueryHooks,

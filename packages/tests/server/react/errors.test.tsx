@@ -4,7 +4,7 @@ import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client/src';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React from 'react';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 describe('custom error formatter', () => {
   const ctx = konn()
