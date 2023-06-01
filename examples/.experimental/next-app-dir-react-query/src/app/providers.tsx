@@ -61,7 +61,7 @@ function Hydration(props: {
         };
         for (const entry of entries) {
           for (const query of entry.queries) {
-            if (queryClient.getQueryData(query.queryKey)) {
+            if (!queryClient.getQueryData(query.queryKey)) {
               queryClient.setQueryData(query.queryKey, query.state.data);
             }
           }
