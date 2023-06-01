@@ -7,6 +7,7 @@ import {
   QueryClient,
   QueryClientProvider,
   dehydrate,
+  hydrate,
   useQueryClient,
 } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -50,16 +51,16 @@ function Hydration(props: {
         console.log('I only happen on the client');
         console.log('received', entries.length, 'entries');
 
-        // Process entries in reverse order so that we can overwrite the cache with the most recent data
-        const queryEntries = entries
-          .flatMap((entry) => entry.queries)
-          .reverse();
-
-        for (const query of queryEntries) {
-          if (!cache.find(query.queryKey)) {
-            queryClient.setQueryData(query.queryKey, query.state.data);
-          }
+        const combinedEntries: DehydratedState = {
+          queries: [],
+          mutations: [],
+        };
+        for (const entry of entries) {
+          combinedEntries.queries.push(...entry.queries);
+          combinedEntries.mutations.push(...entry.mutations);
         }
+
+        hydrate(queryClient, combinedEntries);
       }}
       onFlush={() => {
         console.log('I only happen on the server');
