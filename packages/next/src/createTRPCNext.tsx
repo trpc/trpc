@@ -22,16 +22,15 @@ export type CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
   TFlags,
-> {
+> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
 } & (TFlags extends 'ExperimentalSuspense'
-? {
-    useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
-  }
-: never);
-
+  ? {
+      useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
+    }
+  : never);
 
 /**
  * @internal
