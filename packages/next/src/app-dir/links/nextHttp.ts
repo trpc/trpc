@@ -30,10 +30,6 @@ export function experimental_nextHttpLink<
           : undefined;
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      console.log(
-        `fetching ${path} with tag ${cacheTag} - revalidate is set to ${revalidate}`,
-      );
-
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
       const link = linkFactory({
         headers: opts.headers as any,

@@ -15,7 +15,9 @@ export async function ServerInvokedGreeting() {
       <form
         action={async () => {
           'use server';
-          api.greeting.revalidate({ text: 'i never hit an api endpoint' });
+          await api.greeting.revalidate({
+            text: 'i never hit an api endpoint',
+          });
         }}
       >
         <button type="submit">Revalidate</button>

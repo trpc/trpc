@@ -29,7 +29,7 @@ function dehydrateCache(
     }
   >,
 ) {
-  const cache: Record<string, {}> = {};
+  const cache: Record<string, Record<string, unknown>> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     // omit promise
@@ -96,7 +96,7 @@ function CacheProvider(props: {
 
   const onSettledRef = React.useRef<Deferred<void>>(refCountZeroDeferred);
 
-  let refCount = React.useRef(0);
+  const refCount = React.useRef(0);
   const incRef = React.useCallback(() => {
     refCount.current++;
     console.log('REFCOUNT', refCount.current);

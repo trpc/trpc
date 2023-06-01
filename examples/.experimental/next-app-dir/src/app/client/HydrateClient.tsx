@@ -11,7 +11,7 @@ function hydrateCache(
     }
   >,
 ) {
-  const cache: Record<string, {}> = {};
+  const cache: Record<string, Record<string, unknown>> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     // omit promise

@@ -9,7 +9,7 @@ export const ServerHttpGreeting = async () => {
       <form
         action={async () => {
           'use server';
-          api.greeting.revalidate({ text: 'from server' });
+          await api.greeting.revalidate({ text: 'from server' });
         }}
       >
         <button type="submit">Revalidate</button>

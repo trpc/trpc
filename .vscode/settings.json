@@ -4,6 +4,11 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
+  "eslint.workingDirectories": [
+    { "pattern": "./examples/**" },
+    { "pattern": "./packages/*" },
+    { "pattern": "./www/*" }
+  ],
   "files.exclude": {
     "packages/client/{links}": true,
     "packages/react-query/{shared,ssg}": true,
