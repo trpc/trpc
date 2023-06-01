@@ -12,37 +12,32 @@ When mounted in the browser
 ### Proposed solution
 
 ```tsx
-
 function PostComments() {
-    return <></>
+  return <></>;
 }
 
 function Post() {
-    return <></>;
+  return <></>;
 }
 
 function PostPage() {
-    return (
-        <HydrateClient>
-            <Post />
-            <HydrateClient>
-                <PostComments />
-            </HydrateClient>
-        </HydrateClient>
-    )
+  return (
+    <HydrateClient>
+      <Post />
+      <HydrateClient>
+        <PostComments />
+      </HydrateClient>
+    </HydrateClient>
+  );
 }
 
-
 function Child1() {
-  api.greeting.query({ text: "Child 1" });
+  api.greeting.query({ text: 'Child 1' });
 
   return <Child2 />;
 }
 
 function Child2() {
-    api.greeting.query({ text: "Child 2" });
+  api.greeting.query({ text: 'Child 2' });
 }
-
-
-
 ```

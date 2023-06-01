@@ -1,7 +1,7 @@
 'use client';
 
-import { Suspense, SuspenseProps, use, useEffect } from 'react';
 import { api } from '~/trpc/client';
+import { Suspense, SuspenseProps, use, useEffect } from 'react';
 
 function hydrateCache(
   obj: Record<
