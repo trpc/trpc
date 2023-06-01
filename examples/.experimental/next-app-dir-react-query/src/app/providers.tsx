@@ -4,14 +4,13 @@
 import {
   ContextOptions,
   DehydratedState,
-  Hydrate,
   QueryClient,
   QueryClientProvider,
   dehydrate,
   useQueryClient,
 } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import React, { use, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { createDataStream } from './lib/UseClientHydrationStreamProvider';
 
 const stream = createDataStream<DehydratedState>();
@@ -20,16 +19,11 @@ function Hydration(props: {
   children: React.ReactNode;
   context?: ContextOptions['context'];
 }) {
-  const streamContext = use(stream.context);
   const queryClient = useQueryClient({
     context: props.context,
   });
   const isSubscribed = useRef(false);
   const seenKeys = useRef(new Set<string>());
-  const [dehydratedState, setDehydratedState] = useState<DehydratedState>({
-    queries: [],
-    mutations: [],
-  });
 
   const cache = queryClient.getQueryCache();
   // On the server, we want to subscribe to cache changes
@@ -90,15 +84,15 @@ export function Providers(props: { children: React.ReactNode }) {
   const [queryClient] = React.useState(
     () =>
       new QueryClient({
-        defaultOptions: {
-          queries: {
-            refetchOnReconnect: false,
-            refetchOnMount: false,
-            refetchInterval: Infinity,
-            refetchOnWindowFocus: false,
-            staleTime: Infinity,
-          },
-        },
+        // defaultOptions: {
+        //   queries: {
+        //     refetchOnReconnect: false,
+        //     refetchOnMount: false,
+        //     refetchInterval: Infinity,
+        //     refetchOnWindowFocus: false,
+        //     staleTime: Infinity,
+        //   },
+        // },
       }),
   );
 

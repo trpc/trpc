@@ -117,14 +117,16 @@ export function createDataStream<TShape>() {
       // Flush stream
       stream.length = 0;
 
-      const html: string[] =
-        count.current === 0
-          ? [
-              `window["${windowKey}"] = window["${windowKey}"] || {};`,
-              `window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];`,
-              `window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`,
-            ]
-          : [`window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`];
+      const html: string[] = [
+        `window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`,
+      ];
+      if (count.current === 0) {
+        // First time we flush, we need to initialize the array
+        html.unshift(
+          `window["${windowKey}"] = window["${windowKey}"] || {};`,
+          `window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];`,
+        );
+      }
       return (
         <script
           key={count.current++}
