@@ -1,11 +1,7 @@
 'use client';
 
 import { Suspense, use } from 'react';
-import {
-  UseClientHydrationStreamProvider,
-  getHydrationStreamContext,
-  createDataStream,
-} from './lib/UseClientHydrationStreamProvider';
+import { createDataStream } from './lib/UseClientHydrationStreamProvider';
 
 interface Shape {
   key: string;
