@@ -50,6 +50,10 @@ export default function DefaultPage() {
       onEntries={(entries) => {
         console.log('received entries', entries, entries.length);
         for (const entry of entries) {
+          if (clientCache[entry.key]) {
+            console.log(`${entry.key} already in cache`);
+            continue;
+          }
           clientCache[entry.key] = entry;
         }
       }}
@@ -64,6 +68,7 @@ export default function DefaultPage() {
       </Suspense>
       <Suspense fallback={<div>waiting for 2 entries....</div>}>
         <MyComponent wait={2000} />
+        <MyComponent wait={3000} />
         <MyComponent wait={3000} />
       </Suspense>
     </HydrationStreamProvider>

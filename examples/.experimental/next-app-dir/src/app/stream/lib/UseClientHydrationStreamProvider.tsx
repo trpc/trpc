@@ -103,9 +103,6 @@ export function UseClientHydrationStreamProvider<TShape>(props: {
     // Flush stream
     stream.length = 0;
 
-    // clear stream
-    setStream([]);
-
     // Calling:
     // window.__stream[id].push()
     console.log(
