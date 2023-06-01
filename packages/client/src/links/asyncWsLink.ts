@@ -71,36 +71,40 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * tries to send the list of messages
    */
+  let lazySocketPromise: Promise<void> | undefined;
   function dispatch() {
-    if (!activeConnection) {
-      createWS()
+    if (!activeConnection && !lazySocketPromise) {
+      lazySocketPromise = createWS()
         .then((connection) => {
           activeConnection = connection;
+          lazySocketPromise = undefined;
         })
         .catch(() => {
           tryReconnect();
         });
-      return
+      return;
     }
     if (state !== 'open' || dispatchTimer) {
       return;
     }
 
-    dispatchTimer = setTimeout(() => {
-      dispatchTimer = null;
+    if (activeConnection) {
+      dispatchTimer = setTimeout(() => {
+        dispatchTimer = null;
 
-      if (activeConnection) {
-        if (outgoing.length === 1) {
-          // single send
-          activeConnection.send(JSON.stringify(outgoing.pop()));
-        } else {
-          // batch send
-          activeConnection.send(JSON.stringify(outgoing));
+        if (activeConnection) {
+          if (outgoing.length === 1) {
+            // single send
+            activeConnection.send(JSON.stringify(outgoing.pop()));
+          } else {
+            // batch send
+            activeConnection.send(JSON.stringify(outgoing));
+          }
         }
-      }
-      // clear
-      outgoing = [];
-    });
+        // clear
+        outgoing = [];
+      });
+    }
   }
   function tryReconnect() {
     if (connectTimer || state === 'closed') {
@@ -118,6 +122,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         closeIfNoPending(oldConnection);
       })
       .catch(() => {
+        connectTimer = null;
         tryReconnect();
       });
   }
