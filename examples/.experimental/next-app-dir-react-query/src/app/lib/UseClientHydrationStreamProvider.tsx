@@ -118,11 +118,11 @@ export function createDataStream<TShape>() {
         <script
           key={count.current++}
           dangerouslySetInnerHTML={{
-            __html: `
-              window["${windowKey}"] = window["${windowKey}"] || {};
-              window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];
-              window["${windowKey}"]["${id}"].push(${serializedCacheArgs});
-          `.trim(),
+            __html: [
+              `window["${windowKey}"] = window["${windowKey}"] || {};`,
+              `window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];`,
+              `window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`,
+            ].join(''),
           }}
         />
       );
