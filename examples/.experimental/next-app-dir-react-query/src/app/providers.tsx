@@ -16,7 +16,12 @@ import { createDataStream } from './lib/UseClientHydrationStreamProvider';
 
 const stream = createDataStream<DehydratedState>();
 
-function Hydration(props: {
+/**
+ * This component is responsible for:
+ * - hydrating the query client on the server
+ * - dehydrating the query client on the server
+ */
+function ReactQueryStreamedHydration(props: {
   children: React.ReactNode;
   context?: ContextOptions['context'];
 }) {
@@ -108,7 +113,9 @@ export function Providers(props: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Hydration>{props.children}</Hydration>
+      <ReactQueryStreamedHydration>
+        {props.children}
+      </ReactQueryStreamedHydration>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
