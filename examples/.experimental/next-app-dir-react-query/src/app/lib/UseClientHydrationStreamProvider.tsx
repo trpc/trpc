@@ -39,16 +39,13 @@ interface HydrationStreamContext<TShape> {
 export function createDataStream<TShape>() {
   const context = createContext<HydrationStreamContext<TShape>>(null as any);
   /**
-   *
-   * Server:
-   * 1. `useServerInsertedHTML()` is called **on the server** whenever a `Suspense`-boundary completes
+
+   * 1. (Happens on server): `useServerInsertedHTML()` is called **on the server** whenever a `Suspense`-boundary completes
    *    - This means that we might have some new entries in the cache that needs to be flushed
-   *    - We pass these to the client by inserting a `<script>`-tag where we do `window.[windowKey][id].push(serializedVersionOfCache)`
-   *
-   * Client:
-   * 2. In `useEffect()`:
-   *   - We check if `window[id]` is set to an array and call `push()` on all the entries
-   *   -
+   *    - We pass these to the client by inserting a `<script>`-tag where we do `window[id].push(serializedVersionOfCache)`
+   * 2. (Happens in browser) In `useEffect()`:
+   *   - We check if `window[id]` is set to an array and call `push()` on all the entries which will call `onEntries()` with the new entries
+   *   - We replace `window[id]` with a `push()`-method that will be called whenever new entries are received
    **/
   function UseClientHydrationStreamProvider(props: {
     children: React.ReactNode;
