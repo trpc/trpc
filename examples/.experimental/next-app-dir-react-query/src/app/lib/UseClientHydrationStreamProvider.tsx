@@ -1,9 +1,7 @@
 import { useServerInsertedHTML } from 'next/navigation';
 import {
-  Context,
   createContext,
   useCallback,
-  useContext,
   useEffect,
   useId,
   useRef,
