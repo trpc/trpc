@@ -218,7 +218,7 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@tanstack/react-query-devtools':
-        specifier: ^4.18.0
+        specifier: 4.18.0
         version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
@@ -256,6 +256,9 @@ importers:
       superjson:
         specifier: ^1.7.4
         version: 1.11.0
+      trpc-api:
+        specifier: link:./src/trpc
+        version: link:src/trpc
       typescript:
         specifier: ^5.0.4
         version: 5.0.4

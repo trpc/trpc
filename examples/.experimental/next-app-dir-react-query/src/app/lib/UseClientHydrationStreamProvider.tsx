@@ -99,10 +99,10 @@ export function createDataStream<TShape>() {
       }
       const _stream = [...stream, ...(onDehydrateRef.current?.() ?? [])];
 
-      console.log('pushing', stream.length, 'entries');
       if (!_stream.length) {
         return null;
       }
+      console.log(`pushing ${_stream.length} entries`);
       const serializedCacheArgs = _stream
         .map((entry) => transformer.serialize(entry))
         .map((entry) => JSON.stringify(entry))
@@ -111,14 +111,6 @@ export function createDataStream<TShape>() {
       // Flush stream
       stream.length = 0;
 
-      // Calling:
-      // window.__stream[id].push()
-      console.log(
-        'calling',
-        `window.__stream["${id}"]`,
-        'with',
-        serializedCacheArgs,
-      );
       return (
         <script
           key={count.current++}
