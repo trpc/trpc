@@ -19,7 +19,7 @@
     "esbuild": "^0.17.10",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.12.7",
-    "typescript": "^5.0.4"
+    "typescript": "^5.1.3"
   },
   "publishConfig": {
     "access": "restricted"
