@@ -5,7 +5,6 @@ dist
 .turbo
 .vercel
 
-node_modules
 package-lock.json
 yarn.lock
 
@@ -25,7 +24,8 @@ packages/*/*
 ## Dont ignore src or test
 !packages/*/src
 !packages/tests/*
-packages/tests/node_modules
+!packages/tests-lib/*
+node_modules
 
 .eslintcache
 

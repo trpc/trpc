@@ -26,7 +26,7 @@ export default defineConfig({
       '@trpc/next/src/': join(__dirname, '../next/src/'),
       'vitest-environment-miniflare': join(
         __dirname,
-        'node_modules/vitest-environment-miniflare',
+        '../tests-lib/node_modules/vitest-environment-miniflare',
       ),
     },
   },
