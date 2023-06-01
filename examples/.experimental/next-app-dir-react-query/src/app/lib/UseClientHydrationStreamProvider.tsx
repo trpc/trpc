@@ -62,9 +62,9 @@ export function createDataStream<TShape>() {
      */
     onEntries: (entries: TShape[]) => void;
     /**
-     * onDehydrate is called on the server when the cache is flushed
+     * onFlush is called on the server when the cache is flushed
      */
-    onFlush?: () => TShape[];
+    onFlush: () => TShape[];
   }) {
     // unique id for the cache provider
     const id = useId();
@@ -93,10 +93,7 @@ export function createDataStream<TShape>() {
 
     // Server: flush cache
     useServerInsertedHTML(() => {
-      console.log('flushing');
-      if (typeof window !== 'undefined') {
-        return null;
-      }
+      // This only happens on the server
       const _stream = [...stream, ...(onDehydrateRef.current?.() ?? [])];
 
       if (!_stream.length) {
