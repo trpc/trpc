@@ -3,9 +3,9 @@
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { publicProcedure, router } from '~/server/trpc';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '~/server/trpc';
 
 const appRouter = router({
   greeting: publicProcedure

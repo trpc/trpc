@@ -6,12 +6,11 @@ import {
   DefaultDataTransformer,
 } from '@trpc/server';
 import {
-  Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
+  Unsubscribable,
 } from '@trpc/server/observable';
-import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
   OperationContext,
@@ -19,6 +18,7 @@ import {
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
+import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer

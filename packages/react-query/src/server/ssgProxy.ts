@@ -1,6 +1,6 @@
 import {
-  DehydrateOptions,
   DehydratedState,
+  DehydrateOptions,
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
@@ -9,8 +9,8 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   Filter,
-  ProtectedIntersection,
   inferHandlerInput,
+  ProtectedIntersection,
 } from '@trpc/server';
 import {
   createFlatProxy,

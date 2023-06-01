@@ -1,9 +1,9 @@
 import {
-  TRPCClientError,
   createTRPCProxyClient,
   httpBatchLink,
+  TRPCClientError,
 } from '@trpc/client/src';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,

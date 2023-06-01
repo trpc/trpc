@@ -2,8 +2,8 @@ import {
   AnyProcedure,
   AnyRouter,
   DefaultErrorShape,
-  Maybe,
   inferRouterError,
+  Maybe,
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
 

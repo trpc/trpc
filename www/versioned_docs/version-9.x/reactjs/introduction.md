@@ -87,8 +87,7 @@ export const trpc = createReactQueryHooks<AppRouter>();
 In your `App.tsx`
 
 ```tsx title='App.tsx'
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { trpc } from './utils/trpc';
 

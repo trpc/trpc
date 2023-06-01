@@ -118,6 +118,10 @@ module.exports = {
               label: 'Usage with Next.js',
               to: 'docs/nextjs/introduction',
             },
+            {
+              label: 'FAQ / Troubleshooting',
+              to: 'docs/faq',
+            },
           ],
         },
         {

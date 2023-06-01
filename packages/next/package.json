@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.27.3",
+  "version": "10.28.2",
   "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
@@ -61,13 +61,14 @@
     "src",
     "README.md",
     "package.json",
-    "app-dir"
+    "app-dir",
+    "!**/*.test.*"
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.27.3",
-    "@trpc/react-query": "10.27.3",
-    "@trpc/server": "10.27.3",
+    "@trpc/client": "10.28.2",
+    "@trpc/react-query": "10.28.2",
+    "@trpc/server": "10.28.2",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
@@ -77,11 +78,11 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.27.3",
-    "@trpc/react-query": "10.27.3",
-    "@trpc/server": "10.27.3",
+    "@trpc/client": "10.28.2",
+    "@trpc/react-query": "10.28.2",
+    "@trpc/server": "10.28.2",
     "@types/express": "^4.17.17",
-    "@types/node": "^18.7.20",
+    "@types/node": "^18.16.16",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
     "eslint": "^8.40.0",
@@ -95,5 +96,8 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }

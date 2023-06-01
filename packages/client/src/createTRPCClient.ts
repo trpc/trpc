@@ -6,7 +6,6 @@ import type {
 } from '@trpc/server';
 import { Unsubscribable } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import { TRPCClientError } from './TRPCClientError';
 import {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
@@ -14,6 +13,7 @@ import {
   TRPCUntypedClient,
 } from './internals/TRPCUntypedClient';
 import { TRPCClientRuntime } from './links';
+import { TRPCClientError } from './TRPCClientError';
 
 /**
  * @deprecated

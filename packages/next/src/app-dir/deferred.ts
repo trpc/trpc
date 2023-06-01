@@ -3,27 +3,28 @@ let tmp_idx = 0;
 /**
  * https://stackoverflow.com/a/44905352
  */
-export class Deferred<T> implements Promise<T> {
+export class Deferred<TType> implements Promise<TType> {
   public readonly [Symbol.toStringTag] = 'Promise' as const;
-  private _resolveSelf!: (value: T | PromiseLike<T>) => void;
+  private _resolveSelf!: (value: TType | PromiseLike<TType>) => void;
   private _rejectSelf!: (reason?: unknown) => void;
-  private promise: Promise<T>;
+  private promise: Promise<TType>;
   public readonly id;
+  public __id = 0;
 
   public constructor() {
     this.id = tmp_idx++;
-    this.promise = new Promise<T>((resolve, reject) => {
+    this.promise = new Promise<TType>((resolve, reject) => {
       this._resolveSelf = resolve;
       this._rejectSelf = reject;
     });
   }
 
-  public finally(onfinally?: (() => void) | null | undefined): Promise<T> {
+  public finally(onfinally?: (() => void) | null | undefined): Promise<TType> {
     return this.promise.finally(onfinally);
   }
-  public then<TResult1 = T, TResult2 = never>(
+  public then<TResult1 = TType, TResult2 = never>(
     onfulfilled?:
-      | ((value: T) => TResult1 | PromiseLike<TResult1>)
+      | ((value: TType) => TResult1 | PromiseLike<TResult1>)
       | undefined
       | null,
     onrejected?:
@@ -39,11 +40,11 @@ export class Deferred<T> implements Promise<T> {
       | ((reason: unknown) => TResult | PromiseLike<TResult>)
       | undefined
       | null,
-  ): Promise<T | TResult> {
+  ): Promise<TType | TResult> {
     return this.promise.catch(onrejected);
   }
 
-  public resolve(val: T) {
+  public resolve(val: TType) {
     this._resolveSelf(val);
   }
   public reject(reason: unknown) {

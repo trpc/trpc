@@ -1,9 +1,9 @@
 import type {
-  Context as APIGWContext,
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
+  Context as APIGWContext,
 } from 'aws-lambda';
 import type { AnyRouter, inferRouterContext } from '../../core';
 import { TRPCError } from '../../error/TRPCError';

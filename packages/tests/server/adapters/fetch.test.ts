@@ -1,7 +1,7 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink, TRPCLink } from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,

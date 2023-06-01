@@ -1,6 +1,6 @@
+import { IncomingMessage, ServerResponse } from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
-import { IncomingMessage, ServerResponse } from 'http';
 import fetch from 'node-fetch';
 
 test('set custom headers in beforeEnd', async () => {

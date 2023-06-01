@@ -6,9 +6,9 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  inferProcedureInput,
   ProcedureRouterRecord,
   ProtectedIntersection,
-  inferProcedureInput,
 } from '@trpc/server';
 import {
   createFlatProxy,
@@ -19,13 +19,13 @@ import { useMemo } from 'react';
 import { QueryKey, QueryType } from './internals/getArrayQueryKey';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
-  CreateReactUtilsProxy,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
+  CreateReactUtilsProxy,
 } from './shared';
 import {
-  CreateReactQueryHooks,
   createHooksInternal,
+  CreateReactQueryHooks,
 } from './shared/hooks/createRootHooks';
 import {
   CreateClient,
@@ -101,7 +101,7 @@ export type DecorateProcedure<
         type?: QueryType,
       ) => QueryKey;
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
-    } & (inferProcedureInput<TProcedure> extends { cursor?: any }
+    } & (inferProcedureInput<TProcedure> extends { cursor?: any } | void
       ? {
           useInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,

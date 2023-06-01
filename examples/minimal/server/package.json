@@ -1,12 +1,12 @@
 {
   "name": "@examples/minimal-server",
-  "version": "10.27.3",
+  "version": "10.28.2",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.27.3",
+    "@trpc/server": "^10.28.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.7.20"
+    "@types/node": "^18.16.16"
   }
 }

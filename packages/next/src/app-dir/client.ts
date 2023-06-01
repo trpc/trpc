@@ -1,11 +1,16 @@
+// FIXME: acttivate lint rule
+/* eslint-disable no-console */
 import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import { Deferred } from './deferred';
 import { CreateTRPCNextAppRouterOptions, generateCacheTag } from './shared';
 import { NextAppDirDecoratedProcedureRecord } from './types';
+
+export { Deferred } from './deferred';
 
 export {
   // ts-prune-ignore-next
@@ -18,15 +23,6 @@ export {
   type inferActionResultProps,
 } from './create-action-hook';
 
-// function normalizePromiseArray<TValue>(
-//   promise: Promise<TValue> | Promise<TValue>[],
-// ) {
-//   if (Array.isArray(promise)) {
-//     return Promise.all(promise);
-//   }
-//   return promise;
-// }
-
 type QueryResult = {
   data?: unknown;
   error?: unknown;
@@ -36,53 +32,6 @@ type QueryResult = {
 declare global {
   interface Window {
     trpcCache?: Record<string, QueryResult>;
-  }
-}
-export class Deferred<TValue> implements Promise<TValue> {
-  private _resolveSelf: any;
-  private _rejectSelf: any;
-  private promise: Promise<TValue>;
-  [Symbol.toStringTag]: 'Promise';
-
-  constructor() {
-    this[Symbol.toStringTag] = 'Promise';
-    this.promise = new Promise((resolve, reject) => {
-      this._resolveSelf = resolve;
-      this._rejectSelf = reject;
-    });
-  }
-
-  public then<TResult1 = TValue, TResult2 = never>(
-    onfulfilled?:
-      | ((value: TValue) => TResult1 | PromiseLike<TResult1>)
-      | undefined
-      | null,
-    onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | undefined
-      | null,
-  ): Promise<TResult1 | TResult2> {
-    return this.promise.then(onfulfilled, onrejected);
-  }
-
-  public catch<TResult = never>(
-    onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | undefined
-      | null,
-  ): Promise<TValue | TResult> {
-    return this.promise.catch(onrejected);
-  }
-
-  public resolve(val: TValue) {
-    this._resolveSelf(val);
-  }
-  public reject(reason: any) {
-    this._rejectSelf(reason);
-  }
-
-  public finally() {
-    throw new Error('UNimpl');
   }
 }
 

@@ -15,7 +15,7 @@ import { createReadStream, createWriteStream, statSync } from 'node:fs';
 import { mkdir, rm, stat as statAsync, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
-import { Readable, finished } from 'node:stream';
+import { finished, Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import { streamSlice } from './streamSlice';
 import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
@@ -184,7 +184,7 @@ export function createFileUploadHandler({
   };
 }
 
-export class NodeOnDiskFile implements File {
+export class NodeOnDiskFile {
   name: string;
   lastModified = 0;
   webkitRelativePath = '';
@@ -208,7 +208,7 @@ export class NodeOnDiskFile implements File {
     return stats.size;
   }
 
-  slice(start?: number, end?: number, type?: string): Blob {
+  slice(start?: number, end?: number, type?: string): NodeOnDiskFile {
     if (typeof start === 'number' && start < 0) start = this.size + start;
     if (typeof end === 'number' && end < 0) end = this.size + end;
 
@@ -248,7 +248,7 @@ export class NodeOnDiskFile implements File {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));
     }
 
-    return Readable.toWeb(stream);
+    return Readable.toWeb(stream) as ReadableStream<Uint8Array>;
   }
 
   async text(): Promise<string> {
