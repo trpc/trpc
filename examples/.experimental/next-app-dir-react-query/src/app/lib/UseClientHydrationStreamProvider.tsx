@@ -93,6 +93,7 @@ export function createDataStream<TShape>() {
 
     // Server: flush cache
     useServerInsertedHTML(() => {
+      console.log('flushing');
       if (typeof window !== 'undefined') {
         return null;
       }
@@ -153,7 +154,6 @@ export function createDataStream<TShape>() {
 
       win.__stream[id] = win.__stream[id] || [];
       const stream: Array<Serialized<TShape>> = win.__stream[id];
-      console.log({ stream });
 
       if (!Array.isArray(win.__stream[id])) {
         throw new Error(`${id} seem to have been registered twice`);

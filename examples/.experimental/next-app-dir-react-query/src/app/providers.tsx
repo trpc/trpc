@@ -5,14 +5,12 @@ import {
   ContextOptions,
   DehydratedState,
   Hydrate,
-  Query,
   QueryClient,
   QueryClientProvider,
   dehydrate,
-  useHydrate,
   useQueryClient,
 } from '@tanstack/react-query';
-import React, { use, useEffect, useRef, cache, useState } from 'react';
+import React, { use, useRef, useState } from 'react';
 import { createDataStream } from './lib/UseClientHydrationStreamProvider';
 
 const stream = createDataStream<DehydratedState>();
@@ -40,9 +38,12 @@ function Hydration(props: {
       switch (event.type) {
         case 'added':
         case 'updated':
-          console.log({
-            event,
-          });
+          console.log(
+            'tracking',
+            event.query.queryHash,
+            'b/c of a',
+            event.type,
+          );
           seenKeys.current.add(event.query.queryHash);
       }
     });
@@ -51,16 +52,27 @@ function Hydration(props: {
   return (
     <stream.Provider
       onEntries={(entries) => {
+        console.log('received', entries.length, 'entries');
+        const combinedEntries: DehydratedState = {
+          queries: [],
+          mutations: [],
+        };
         for (const entry of entries) {
-          setDehydratedState(entry);
+          combinedEntries.queries.push(...entry.queries);
+          combinedEntries.mutations.push(...entry.mutations);
         }
+        setDehydratedState(combinedEntries);
       }}
       onDehydrate={() => {
         const dehydratedState = dehydrate(queryClient, {
           shouldDehydrateQuery(query) {
-            return seenKeys.current.has(query.queryHash);
+            const shouldDehydrate =
+              seenKeys.current.has(query.queryHash) &&
+              query.state.status !== 'loading';
+            return shouldDehydrate;
           },
         });
+        seenKeys.current.clear();
 
         return [dehydratedState];
       }}

@@ -3,12 +3,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 function useWaitQuery(props: { wait: number }) {
   const query = useQuery({
     queryKey: ['wait', props.wait],
     queryFn: async () => {
+      const url = `http://localhost:3000/api/wait?wait=${props.wait}`;
+      console.log('fetching', url);
       const res: string = await (
-        await fetch(`http://localhost:3000/api/wait?wait=${props.wait}`, {
+        await fetch(url, {
           cache: 'no-store',
         })
       ).json();
@@ -28,17 +32,21 @@ function MyComponent(props: { wait: number }) {
 
 export default function Page() {
   return (
-    <>
+    <Suspense>
       <Suspense>
         <MyComponent wait={100} />
       </Suspense>
 
       <Suspense>
         <MyComponent wait={200} />
+        <MyComponent wait={200} />
       </Suspense>
       <Suspense>
         <MyComponent wait={300} />
       </Suspense>
-    </>
+      {/* <Suspense>
+        <MyComponent wait={3000} />
+      </Suspense> */}
+    </Suspense>
   );
 }
