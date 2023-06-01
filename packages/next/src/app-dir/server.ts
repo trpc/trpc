@@ -146,6 +146,7 @@ export function experimental_createServerActionHandler<
   };
 }
 
+// ts-prune-ignore-next
 export async function experimental_revalidateEndpoint(req: Request) {
   const { cacheTag } = await req.json();
 
