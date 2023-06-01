@@ -43,6 +43,24 @@ export declare type QueriesResults<
     : never;
 };
 
+/**
+ * @internal
+ */
+export declare type SuspenseQueriesResults<
+  TQueriesOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
+> = {
+  [TKey in keyof TQueriesOptions]: TQueriesOptions[TKey] extends UseQueryOptionsForUseQueries<
+    infer TQueryFnData,
+    any,
+    infer TData,
+    any
+  >
+    ? unknown extends TData
+      ? TQueryFnData
+      : TData
+    : never;
+};
+
 type GetOptions<TQueryOptions> =
   TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>
     ? TQueryOptions
@@ -82,3 +100,15 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
   ) => readonly [...QueriesOptions<TQueryOptions>],
   context?: UseQueryOptions['context'],
 ) => QueriesResults<TQueryOptions>;
+
+/**
+ * @internal
+ */
+export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = <
+  TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
+>(
+  queriesCallback: (
+    t: UseQueriesProcedureRecord<TRouter>,
+  ) => readonly [...QueriesOptions<TQueryOptions>],
+  context?: UseQueryOptions['context'],
+) => [SuspenseQueriesResults<TQueryOptions>, QueriesResults<TQueryOptions>];

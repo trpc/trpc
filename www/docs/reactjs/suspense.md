@@ -65,6 +65,8 @@ const appRouter = t.router({
         }
         return post;
      }),
+     foo: t.procedure.query(() => 'foo' as const),
+     bar: t.procedure.query(() => 'bar' as const),
   }),
 });
 
@@ -131,6 +133,29 @@ function PostView() {
   const { isFetching, isFetchingNextPage, fetchNextPage, hasNextPage } =
     allPostsQuery;
 
+  return <>{/* ... */}</>;
+}
+```
+
+### `useSuspenseQueries()`
+
+Suspense equivalent of [`useQueries()`](./useQueries.md)
+
+```tsx twoslash
+// @target: esnext
+// @include: server
+// ---cut---
+// @filename: pages/index.tsx
+import React from 'react';
+import { trpc } from '../utils/trpc';
+
+function Demo() {
+  const [results, queries] = trpc.useSuspenseQueries((t) => [
+    t.foo(),
+    t.bar(),
+  ]);
+  results;
+  // ^?
   return <>{/* ... */}</>;
 }
 ```

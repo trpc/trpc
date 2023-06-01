@@ -17,7 +17,7 @@ import {
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
 import { QueryKey, QueryType } from './internals/getArrayQueryKey';
-import { TRPCUseQueries } from './internals/useQueries';
+import { TRPCUseQueries, TRPCUseSuspenseQueries } from './internals/useQueries';
 import {
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
@@ -216,20 +216,28 @@ export type DecoratedProcedureRecord<
 /**
  * @internal
  */
-export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
+export type CreateTRPCReactBase<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TFlags,
+> = {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
-};
+} & (TFlags extends 'ExperimentalSuspense'
+  ? {
+      useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
+    }
+  : never);
 
 export type CreateTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext,
   TFlags,
 > = ProtectedIntersection<
-  CreateTRPCReactBase<TRouter, TSSRContext>,
+  CreateTRPCReactBase<TRouter, TSSRContext, TFlags>,
   DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
 >;
 
