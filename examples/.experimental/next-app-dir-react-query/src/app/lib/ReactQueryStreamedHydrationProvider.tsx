@@ -9,9 +9,10 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import React, { useRef } from 'react';
-import { createDataStream } from './UseClientHydrationStreamProvider';
+import { createHydrationStreamProvider } from './HydrationStreamProvider';
 
-const stream = createDataStream<DehydratedState>();
+const stream = createHydrationStreamProvider<DehydratedState>();
+
 /**
  * This component is responsible for:
  * - hydrating the query client on the server

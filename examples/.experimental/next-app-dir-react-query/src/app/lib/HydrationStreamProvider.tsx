@@ -36,7 +36,26 @@ interface HydrationStreamContext<TShape> {
   };
 }
 
-export function createDataStream<TShape>() {
+export interface HydrationStreamProviderProps<TShape> {
+  children: React.ReactNode;
+  /**
+   * Optional transformer to serialize/deserialize the data
+   * Example devalue, superjson et al
+   */
+  transformer?: DataTransformer;
+  /**
+   * **Client method**
+   * Called in the browser when new entries are received
+   */
+  onEntries: (entries: TShape[]) => void;
+  /**
+   * **Server method**
+   * onFlush is called on the server when the cache is flushed
+   */
+  onFlush?: () => TShape[];
+}
+
+export function createHydrationStreamProvider<TShape>() {
   const context = createContext<HydrationStreamContext<TShape>>(null as any);
   /**
 
