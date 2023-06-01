@@ -1,21 +1,30 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
-  DehydratedState,
-  QueryClient,
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQueries as __useQueries,
   useQuery as __useQuery,
+  DehydratedState,
   hashQueryKey,
+  QueryClient,
   useQueryClient,
 } from '@tanstack/react-query';
-import { TRPCClientErrorLike, createTRPCClient } from '@trpc/client';
+import { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { Observable } from '@trpc/server/observable';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SSRState, TRPCContext } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
-import { QueryType, getArrayQueryKey } from '../../internals/getArrayQueryKey';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  SSRState,
+  TRPCContext,
+  TRPCContextState,
+} from '../../internals/context';
+import { getArrayQueryKey, QueryType } from '../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
@@ -43,7 +52,7 @@ export function createRootHooks<
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
-    config?.unstable_overrides?.useMutation?.onSuccess ??
+    (config?.overrides ?? config?.unstable_overrides)?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
   type TError = TRPCClientErrorLike<TRouter>;
@@ -280,16 +289,23 @@ export function createRootHooks<
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       context;
 
+    const defaultOpts = queryClient.getQueryDefaults(
+      getArrayQueryKey(pathAndInput, 'query'),
+    );
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
-      opts?.enabled !== false &&
+      (opts?.enabled ?? defaultOpts?.enabled) !== false &&
       !queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, 'query'))
     ) {
       void prefetchQuery(pathAndInput as any, opts as any);
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'query', {
+      ...defaultOpts,
+      ...opts,
+    });
 
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
@@ -331,6 +347,10 @@ export function createRootHooks<
     const queryClient = useQueryClient({ context: ReactQueryContext });
     const actualPath = Array.isArray(path) ? path[0] : path;
 
+    const defaultOpts = queryClient.getMutationDefaults([
+      actualPath.split('.'),
+    ]);
+
     const hook = __useMutation({
       ...opts,
       mutationKey: [actualPath.split('.')],
@@ -341,12 +361,13 @@ export function createRootHooks<
       },
       context: ReactQueryContext,
       onSuccess(...args) {
-        const originalFn = () => opts?.onSuccess?.(...args);
+        const originalFn = () =>
+          opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
         return mutationSuccessOverride({
           originalFn,
           queryClient,
-          meta: opts?.meta ?? {},
+          meta: opts?.meta ?? defaultOpts?.meta ?? {},
         });
       },
     }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
@@ -371,6 +392,9 @@ export function createRootHooks<
     const queryKey = hashQueryKey(pathAndInput);
     const { client } = useContext();
 
+    const optsRef = useRef<typeof opts>(opts);
+    optsRef.current = opts;
+
     return useEffect(() => {
       if (!enabled) {
         return;
@@ -383,18 +407,18 @@ export function createRootHooks<
         {
           onStarted: () => {
             if (!isStopped) {
-              opts.onStarted?.();
+              optsRef.current.onStarted?.();
             }
           },
           onData: (data) => {
             if (!isStopped) {
               // FIXME this shouldn't be needed as both should be `unknown` in next major
-              opts.onData(data as any);
+              optsRef.current.onData(data as any);
             }
           },
           onError: (err) => {
             if (!isStopped) {
-              opts.onError?.(err);
+              optsRef.current.onError?.(err);
             }
           },
         },
@@ -424,19 +448,29 @@ export function createRootHooks<
       abortOnUnmount,
     } = useContext();
 
+    const defaultOpts = queryClient.getQueryDefaults(
+      getArrayQueryKey(pathAndInput, 'infinite'),
+    );
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
-      opts?.enabled !== false &&
+      (opts?.enabled ?? defaultOpts?.enabled) !== false &&
       !queryClient
         .getQueryCache()
         .find(getArrayQueryKey(pathAndInput, 'infinite'))
     ) {
-      void prefetchInfiniteQuery(pathAndInput as any, opts as any);
+      void prefetchInfiniteQuery(
+        pathAndInput as any,
+        { ...defaultOpts, ...opts } as any,
+      );
     }
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(pathAndInput, 'infinite', {
+      ...defaultOpts,
+      ...opts,
+    });
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;

@@ -1,8 +1,12 @@
-import { AnyRouter, DataTransformer } from '@trpc/server';
+import {
+  AnyRouter,
+  CombinedDataTransformer,
+  DataTransformer,
+} from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
 import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import { ResponseEsque } from '../internals/types';
+import { TRPCClientError } from '../TRPCClientError';
 
 /**
  * @internal
@@ -48,6 +52,8 @@ export type TRPCFetch = (
 
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
+  // FIXME: we should be able to remove this - added as `withTRPC()` needs it, but we can have it as an extra option on SSR instead
+  combinedTransformer: CombinedDataTransformer;
 }
 
 /**

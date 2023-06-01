@@ -1,4 +1,4 @@
-import { Pack, hierarchy } from '@visx/hierarchy';
+import { hierarchy, Pack } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';

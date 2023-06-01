@@ -1,5 +1,5 @@
 import { inferObservableValue } from '../observable';
-import { inferTransformedProcedureOutput } from '../shared';
+import { inferTransformedProcedureOutput } from '../shared/jsonify';
 import { AnyProcedure, ProcedureArgs } from './procedure';
 import { AnyRouter, AnyRouterDef, Router } from './router';
 

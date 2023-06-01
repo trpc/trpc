@@ -27,11 +27,12 @@ export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
-const isAdmin = middleware(async ({ ctx, next }) => {
+const isAdmin = middleware(async (opts) => {
+  const { ctx } = opts;
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  return next({
+  return opts.next({
     ctx: {
       user: ctx.user,
     },
@@ -80,13 +81,17 @@ export const router = t.router;
 
 declare function logMock(...args: any[]): void;
 // ---cut---
-const loggerMiddleware = middleware(async ({ path, type, next }) => {
+const loggerMiddleware = middleware(async (opts) => {
   const start = Date.now();
-  const result = await next();
+
+  const result = await opts.next();
+
   const durationMs = Date.now() - start;
+  const meta = { path: opts.path, type: opts.type, durationMs };
+
   result.ok
-    ? logMock('OK request timing:', { path, type, durationMs })
-    : logMock('Non-OK request timing', { path, type, durationMs });
+    ? console.log('OK request timing:', meta)
+    : console.error('Non-OK request timing', meta);
 
   return result;
 });
@@ -111,15 +116,15 @@ export const appRouter = router({
 });
 ```
 
-## Context Swapping
+## Context Extension
 
-Context swapping in tRPC is a very powerful feature that allows you to create base procedures that dynamically infers new context in a flexible and typesafe manner.
+"Context Extension" enables middlewares to dynamically add and override keys on a base procedure's context in a typesafe manner.
 
-Below we have an example of a middleware that changes properties of the context, and procedures will receive the new context value:
+Below we have an example of a middleware that changes properties of a context, the changes are then available to all chained consumers, such as other middlewares and procedures:
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.context<Context>().create();
 const publicProcedure = t.procedure;
@@ -135,14 +140,15 @@ type Context = {
   };
 };
 
-const isAuthed = middleware(({ ctx, next }) => {
+const isAuthed = middleware((opts) => {
+  const { ctx } = opts;
   // `ctx.user` is nullable
   if (!ctx.user) {
     //     ^?
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
-  return next({
+  return opts.next({
     ctx: {
       // ✅ user value is known to be non-null now
       user: ctx.user,
@@ -164,11 +170,11 @@ We have prefixed this as `unstable_` as it's a new API, but you're safe to use i
 
 We have a powerful feature called `.pipe()` which allows you to extend middlewares in a typesafe manner.
 
-Below we have an example of a middleware that extends a base middleware(foo). Like the context swapping example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
+Below we have an example of a middleware that extends a base middleware(foo). Like the context extension example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
@@ -177,18 +183,19 @@ const middleware = t.middleware;
 
 // ---cut---
 
-const fooMiddleware = middleware(({ next }) => {
-  return next({
+const fooMiddleware = middleware((opts) => {
+  return opts.next({
     ctx: {
       foo: 'foo' as const,
     },
   });
 });
 
-const barMiddleware = fooMiddleware.unstable_pipe(({ ctx, next }) => {
+const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
+  const { ctx } = opts;
   ctx.foo;
   //   ^?
-  return next({
+  return opts.next({
     ctx: {
       bar: 'bar' as const,
     },
@@ -213,20 +220,22 @@ const t = initTRPC
   }>()
   .create();
 
-const fooMiddleware = t.middleware(({ ctx, next }) => {
+const fooMiddleware = t.middleware((opts) => {
+  const { ctx } = opts;
   ctx.a; // 👈 fooMiddleware expects `ctx.a` to be an object
   //  ^?
-  return next({
+  return opts.next({
     ctx: {
       a: 'a' as const, // 👈 `ctx.a` is no longer an object
     },
   });
 });
 
-const barMiddleware = t.middleware(({ ctx, next }) => {
+const barMiddleware = t.middleware((opts) => {
+  const { ctx } = opts;
   ctx.a; // 👈 barMiddleware expects `ctx.a` to be an object
   //  ^?
-  return next({
+  return opts.next({
     ctx: {
       foo: 'foo' as const,
     },

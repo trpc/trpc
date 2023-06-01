@@ -1,18 +1,18 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
 import {
-  CreateReactUtilsProxy,
-  DecoratedProcedureRecord,
-  TRPCUseQueries,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
+  CreateReactUtilsProxy,
+  DecoratedProcedureRecord,
+  TRPCUseQueries,
 } from '@trpc/react-query/shared';
 import { AnyRouter, ProtectedIntersection } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
-import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
+import { withTRPC, WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
 
 /**
  * @internal
@@ -45,9 +45,7 @@ export function createTRPCNext<
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
 ): CreateTRPCNext<TRouter, TSSRContext, TFlags> {
-  const hooks = createHooksInternal<TRouter, TSSRContext>({
-    unstable_overrides: opts.unstable_overrides,
-  });
+  const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC(opts);

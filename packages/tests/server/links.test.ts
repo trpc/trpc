@@ -1,12 +1,12 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import {
-  OperationLink,
-  TRPCClientError,
-  TRPCClientRuntime,
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
   loggerLink,
+  OperationLink,
+  TRPCClientError,
+  TRPCClientRuntime,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/retryLink';
@@ -18,6 +18,16 @@ const mockRuntime: TRPCClientRuntime = {
   transformer: {
     serialize: (v) => v,
     deserialize: (v) => v,
+  },
+  combinedTransformer: {
+    input: {
+      serialize: (v) => v,
+      deserialize: (v) => v,
+    },
+    output: {
+      serialize: (v) => v,
+      deserialize: (v) => v,
+    },
   },
 };
 test('chainer', async () => {

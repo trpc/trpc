@@ -3,16 +3,13 @@
  */
 import '../server/___packages';
 import '@trpc/server';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTinyRPCClient } from './tinyrpc';
 
-if (!global.fetch) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fetch = require('node-fetch');
-  global.fetch = fetch;
-}
+globalThis.fetch = fetch as any;
 
 const t = initTRPC.create({});
 

@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import * as trpc from '@trpc/server/src';
 import * as trpcNext from '@trpc/server/src/adapters/next';
-import { EventEmitter } from 'events';
 
 function mockReq({
   query,
@@ -23,6 +23,7 @@ function mockReq({
 
   req.method = method;
   req.query = query;
+  req.headers = {};
 
   const socket = {
     destroy: vi.fn(),

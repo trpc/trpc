@@ -2,17 +2,15 @@ import {
   AnyRouter,
   ClientDataTransformerOptions,
   CombinedDataTransformer,
-  DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
 } from '@trpc/server';
 import {
-  Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
+  Unsubscribable,
 } from '@trpc/server/observable';
-import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
   OperationContext,
@@ -20,6 +18,7 @@ import {
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
+import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
@@ -51,7 +50,9 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/data-transformers
          **/
-        transformer?: ClientDataTransformerOptions;
+        transformer?:
+          | /** @deprecated **/ ClientDataTransformerOptions
+          | CombinedDataTransformer;
       };
 
 type TRPCType = 'subscription' | 'query' | 'mutation';
@@ -96,27 +97,40 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    function getTransformer(): DataTransformer {
+    const combinedTransformer: CombinedDataTransformer = (() => {
       const transformer = opts.transformer as
-        | ClientDataTransformerOptions
+        | DataTransformerOptions
         | undefined;
-      if (!transformer)
-        return {
-          serialize: (data) => data,
-          deserialize: (data) => data,
-        };
 
-      if ('input' in transformer)
+      if (!transformer) {
         return {
-          serialize: transformer.input.serialize,
-          deserialize: transformer.output.deserialize,
+          input: {
+            serialize: (data) => data,
+            deserialize: (data) => data,
+          },
+          output: {
+            serialize: (data) => data,
+            deserialize: (data) => data,
+          },
         };
-      return transformer;
-    }
+      }
+      if ('input' in transformer) {
+        return opts.transformer as CombinedDataTransformer;
+      }
+      return {
+        input: transformer,
+        output: transformer,
+      };
+    })();
 
     this.runtime = {
-      transformer: getTransformer(),
+      transformer: {
+        serialize: (data) => combinedTransformer.input.serialize(data),
+        deserialize: (data) => combinedTransformer.output.deserialize(data),
+      },
+      combinedTransformer,
     };
+
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));
   }

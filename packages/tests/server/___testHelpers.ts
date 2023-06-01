@@ -1,27 +1,31 @@
-import './___packages';
+import { IncomingMessage } from 'http';
 import {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
   createTRPCClient,
   createTRPCClientProxy,
   createWSClient,
   httpBatchLink,
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
 } from '@trpc/client/src';
 import { WithTRPCConfig } from '@trpc/next/src';
+import { OnErrorFunction } from '@trpc/server/internals/types';
 import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
 } from '@trpc/server/src/adapters/standalone';
 import {
-  WSSHandlerOptions,
   applyWSSHandler,
+  WSSHandlerOptions,
 } from '@trpc/server/src/adapters/ws';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import './___packages';
 
+// This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
+
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
@@ -38,9 +42,13 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   },
 ) {
   // http
+  type OnError = OnErrorFunction<TRouter, IncomingMessage>;
+
+  const onError = vitest.fn<Parameters<OnError>, void>();
   const httpServer = createHTTPServer({
     router: router,
     createContext: ({ req, res }) => ({ req, res }),
+    onError: onError as OnError,
     ...(opts?.server ?? {
       batching: {
         enabled: true,
@@ -100,6 +108,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     applyWSSHandlerOpts,
     wssHandler,
     wss,
+    onError,
   };
 }
 

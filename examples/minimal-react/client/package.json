@@ -1,7 +1,7 @@
 {
   "name": "@examples/minimal-react-client",
   "private": true,
-  "version": "10.20.0",
+  "version": "10.28.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,18 +11,18 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.20.0",
-    "@trpc/react-query": "^10.20.0",
-    "@trpc/server": "^10.20.0",
+    "@trpc/client": "^10.28.2",
+    "@trpc/react-query": "^10.28.2",
+    "@trpc/server": "^10.28.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.5",
+    "@types/react": "^18.2.6",
+    "@types/react-dom": "^18.2.4",
     "@vitejs/plugin-react": "^3.1.0",
-    "eslint": "^8.30.0",
-    "typescript": "^4.8.3",
+    "eslint": "^8.40.0",
+    "typescript": "^5.0.4",
     "vite": "^4.1.2"
   }
 }

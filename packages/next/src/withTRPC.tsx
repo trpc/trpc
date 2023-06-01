@@ -3,19 +3,19 @@
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
 import {
+  dehydrate,
   DehydratedState,
   Hydrate,
   QueryClient,
   QueryClientProvider,
-  dehydrate,
 } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions } from '@trpc/client';
 import {
+  createReactQueryHooks,
+  createTRPCClient,
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
-  createReactQueryHooks,
-  createTRPCClient,
 } from '@trpc/react-query';
 import {
   CreateTRPCReactOptions,
@@ -93,9 +93,7 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>({
-      unstable_overrides: opts.unstable_overrides,
-    });
+    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
@@ -122,13 +120,10 @@ export function withTRPC<
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
 
       // allow normal components to be wrapped, not just app/pages
-      let hydratedState: DehydratedState | undefined;
-      if (props.pageProps) {
-        hydratedState = trpc.useDehydratedState(
-          trpcClient,
-          props.pageProps.trpcState,
-        );
-      }
+      const hydratedState = trpc.useDehydratedState(
+        trpcClient,
+        props.pageProps?.trpcState,
+      );
 
       return (
         <trpc.Provider
@@ -233,9 +228,10 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydratedCacheWithErrors,
-        );
+        pageProps.trpcState =
+          trpcClient.runtime.combinedTransformer.output.serialize(
+            dehydratedCacheWithErrors,
+          );
 
         const appTreeProps = getAppTreeProps(pageProps);
 

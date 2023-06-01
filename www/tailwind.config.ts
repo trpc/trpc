@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import type { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
 
 const config: Config = {
   content: [
@@ -29,15 +31,31 @@ const config: Config = {
             transform: 'translateY(0)',
           },
         },
+        loader: {
+          to: {
+            opacity: '0.1',
+            transform: 'translateY(-1rem)',
+          },
+        },
       },
       animation: {
         'pop-in': 'pop-in 1s ease-out',
+        loader: 'loader 0.6s infinite alternate',
       },
     },
   },
   darkMode: ['class', '[data-theme="dark"]'],
   plugins: [
-    /* eslint-disable-next-line */
+    plugin(function ({ matchUtilities, theme }) {
+      matchUtilities(
+        {
+          'animation-delay': (value) => ({
+            'animation-delay': value,
+          }),
+        },
+        { values: theme('transitionDelay') },
+      );
+    }),
     require('tailwindcss-elevation')(['responsive']),
   ],
 };

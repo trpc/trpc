@@ -122,9 +122,9 @@ export const appRouter = router({
         text: z.string(),
       }),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input.text}`,
+        greeting: `hello ${opts.input.text}`,
       };
     }),
 });
@@ -140,7 +140,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/routers/_app';
 
 // export API handler
-// @see https://trpc.io/docs/api-handler
+// @see https://trpc.io/docs/server/adapters
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: () => ({}),
@@ -180,7 +180,7 @@ function getBaseUrl() {
 }
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     return {
       links: [
         httpBatchLink({
@@ -263,7 +263,7 @@ The `config`-argument is a function that returns an object that configures the t
 - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
-### `unstable_overrides`: (default: `undefined`)
+### `overrides`: (default: `undefined`) {#overrides}
 
 Configure [overrides for React Query's hooks](/docs/reactjs/usecontext#invalidate-full-cache-on-every-mutation).
 
@@ -282,11 +282,12 @@ import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     /* [...] */
   },
   ssr: true,
-  responseMeta({ clientErrors, ctx }) {
+  responseMeta(opts) {
+    const { clientErrors } = opts;
     if (clientErrors.length) {
       // propagate first http error from API calls
       return {
@@ -306,4 +307,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/usemutation) now that you're using `@trpc/react-query`.
+You can also find information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/useMutation) now that you're using `@trpc/react-query`.

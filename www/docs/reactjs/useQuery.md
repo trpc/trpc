@@ -2,7 +2,7 @@
 id: useQuery
 title: useQuery()
 sidebar_label: useQuery()
-slug: /reactjs/usequery
+slug: /reactjs/useQuery
 ---
 
 :::note
@@ -58,9 +58,9 @@ export const appRouter = t.router({
         })
         .nullish(),
     )
-    .query(({ input }) => {
+    .query((opts) => {
       return {
-        greeting: `hello ${input?.text ?? 'world'}`,
+        greeting: `hello ${opts.input?.text ?? 'world'}`,
       };
     }),
 });

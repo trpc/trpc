@@ -2,7 +2,7 @@
 id: useInfiniteQuery
 title: useInfiniteQuery
 sidebar_label: useInfiniteQuery()
-slug: /reactjs/useinfinitequery
+slug: /reactjs/useInfiniteQuery
 ---
 
 :::info
@@ -28,7 +28,8 @@ export const appRouter = t.router({
       limit: z.number().min(1).max(100).nullish(),
       cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
     }))
-    .query(({ input }) => {
+    .query((opts) => {
+      const { input } = opts;
       const limit = input.limit ?? 50;
       const { cursor } = input;
       const items = await prisma.post.findMany({
@@ -89,7 +90,7 @@ export function MyComponent() {
   const utils = trpc.useContext();
 
   const myMutation = trpc.infinitePosts.add.useMutation({
-    async onMutate({ post }) {
+    async onMutate(opts) {
       await utils.infinitePosts.cancel();
       const allPosts = utils.infinitePosts.getInfiniteData({ limit: 10 });
       // [...]
@@ -109,7 +110,7 @@ export function MyComponent() {
   const utils = trpc.useContext();
 
   const myMutation = trpc.infinitePosts.delete.useMutation({
-    async onMutate({ post }) {
+    async onMutate(opts) {
       await utils.infinitePosts.cancel();
 
       utils.infinitePosts.setInfiniteData({ limit: 10 }, (data) => {

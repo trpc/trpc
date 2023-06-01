@@ -44,10 +44,10 @@ For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/
 
 ## Next.js Example
 
-```ts title='pages/posts/[id].tsx'
+```tsx title='pages/posts/[id].tsx'
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { createContext } from 'server/context';
+import { prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
 import superjson from 'superjson';
 import { trpc } from 'utils/trpc';
@@ -57,13 +57,13 @@ export async function getServerSideProps(
 ) {
   const helpers = createServerSideHelpers({
     router: appRouter,
-    ctx: await createContext(),
+    ctx: {},
     transformer: superjson,
   });
   const id = context.params?.id as string;
 
   /*
-   * Prefetching the `post.byId` query here.
+   * Prefetching the `post.byId` query.
    * `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead.
    */
   await helpers.post.byId.prefetch({ id });
@@ -81,19 +81,17 @@ export default function PostViewPage(
   props: InferGetServerSidePropsType<typeof getServerSideProps>,
 ) {
   const { id } = props;
-
-  // This query will be immediately available as it's prefetched.
   const postQuery = trpc.post.byId.useQuery({ id });
-
+  if (postQuery.status !== 'success') {
+    // won't happen since the query has been prefetched
+    return <>Loading...</>;
+  }
   const { data } = postQuery;
-
   return (
     <>
       <h1>{data.title}</h1>
       <em>Created {data.createdAt.toLocaleDateString()}</em>
-
       <p>{data.text}</p>
-
       <h2>Raw data:</h2>
       <pre>{JSON.stringify(data, null, 4)}</pre>
     </>
