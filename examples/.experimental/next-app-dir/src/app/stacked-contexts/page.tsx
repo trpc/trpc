@@ -1,6 +1,6 @@
 'use client';
 
-import { Deferred } from '@trpc/next/src/app-dir/client';
+import { Deferred } from '@trpc/next/app-dir/client';
 import * as React from 'react';
 
 interface Context {
