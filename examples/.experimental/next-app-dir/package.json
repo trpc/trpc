@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test",
+    "test-dev": "start-server-and-test dev 3000 test:e2e",
+    "test-start": "start-server-and-test start 3000 test:e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^2.9.11",
@@ -26,5 +29,10 @@
     "trpc-api": "link:./src/trpc",
     "typescript": "^5.0.4",
     "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.26.1",
+    "start-server-and-test": "^1.12.0",
+    "wait-port": "^1.0.1"
   }
 }
