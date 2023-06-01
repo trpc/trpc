@@ -79,7 +79,6 @@
     "@trpc/server": "10.28.2"
   },
   "devDependencies": {
-    "@testing-library/dom": "^9.0.0",
     "@trpc/server": "10.28.2",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.16.16",
@@ -89,8 +88,7 @@
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
     "tsx": "^3.12.7",
-    "undici": "^5.14.0",
-    "vitest": "^0.28.5"
+    "undici": "^5.14.0"
   },
   "publishConfig": {
     "access": "public"
