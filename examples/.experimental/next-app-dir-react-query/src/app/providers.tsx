@@ -27,7 +27,7 @@ function Hydration(props: {
   const seenKeys = useRef(new Set<string>());
 
   const cache = queryClient.getQueryCache();
-  // On the server, we want to subscribe to cache changes
+
   if (typeof window === 'undefined' && !isSubscribed.current) {
     // Do we need to care about unsubscribing? I don't think so to be honest
     cache.subscribe((event) => {
@@ -47,23 +47,8 @@ function Hydration(props: {
 
   return (
     <stream.Provider
-      onEntries={(entries) => {
-        console.log('I only happen on the client');
-        console.log('received', entries.length, 'entries');
-
-        const combinedEntries: DehydratedState = {
-          queries: [],
-          mutations: [],
-        };
-        for (const entry of entries) {
-          combinedEntries.queries.push(...entry.queries);
-          combinedEntries.mutations.push(...entry.mutations);
-        }
-
-        hydrate(queryClient, combinedEntries);
-      }}
+      // Happens on server:
       onFlush={() => {
-        console.log('I only happen on the server');
         const dehydratedState = dehydrate(queryClient, {
           shouldDehydrateQuery(query) {
             const shouldDehydrate =
@@ -79,6 +64,26 @@ function Hydration(props: {
         }
 
         return [dehydratedState];
+      }}
+      // Happens in browser:
+      onEntries={(entries) => {
+        const combinedEntries: DehydratedState = {
+          queries: [],
+          mutations: [],
+        };
+        for (const entry of entries) {
+          combinedEntries.queries.push(...entry.queries);
+          combinedEntries.mutations.push(...entry.mutations);
+        }
+
+        console.log(
+          'received',
+          combinedEntries.queries.length,
+          'entries:',
+          combinedEntries.queries.map((q) => q.queryHash),
+        );
+
+        hydrate(queryClient, combinedEntries);
       }}
     >
       {props.children}

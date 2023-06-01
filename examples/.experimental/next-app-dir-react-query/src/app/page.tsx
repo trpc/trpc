@@ -12,6 +12,10 @@ export default function MyPage() {
       </Suspense>
       <Suspense fallback={<div>300</div>}>
         <MyComponent wait={300} />
+
+        <Suspense fallback={<div>300</div>}>
+          <MyComponent wait={600} />
+        </Suspense>
       </Suspense>
       <Suspense fallback={<div>400</div>}>
         <MyComponent wait={400} />
