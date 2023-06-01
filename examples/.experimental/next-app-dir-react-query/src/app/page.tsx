@@ -1,4 +1,4 @@
-import { MyPage } from './MyComponent';
+import { MyPage } from './MyPage';
 
 export default function Page() {
   return (

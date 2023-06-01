@@ -1,9 +1,4 @@
-'use client';
-
 import { useQuery } from '@tanstack/react-query';
-import { Suspense } from 'react';
-
-export const dynamic = 'force-dynamic';
 
 function useWaitQuery(props: { wait: number }) {
   const query = useQuery({
@@ -24,30 +19,9 @@ function useWaitQuery(props: { wait: number }) {
   return [query.data as string, query] as const;
 }
 
-function MyComponent(props: { wait: number }) {
-  console.log('rendering', props.wait);
+export function MyComponent(props: { wait: number }) {
+  //   console.log('rendering', props.wait);
   const [data] = useWaitQuery(props);
 
   return <div>result: {data}</div>;
-}
-
-export function MyPage() {
-  return (
-    <>
-      <Suspense>
-        <MyComponent wait={100} />
-      </Suspense>
-
-      <Suspense>
-        <MyComponent wait={200} />
-        <MyComponent wait={200} />
-      </Suspense>
-      <Suspense>
-        <MyComponent wait={300} />
-      </Suspense>
-      <Suspense>
-        <MyComponent wait={1000} />
-      </Suspense>
-    </>
-  );
 }
