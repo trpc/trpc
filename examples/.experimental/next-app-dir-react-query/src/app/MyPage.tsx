@@ -6,7 +6,7 @@ import { MyComponent } from './MyComponent';
 
 export function MyPage() {
   return (
-    <Suspense>
+    <>
       <Suspense fallback={<div>100</div>}>
         <MyComponent wait={100} />
       </Suspense>
@@ -30,6 +30,10 @@ export function MyPage() {
       </Suspense>
       <Suspense fallback={<div>800</div>}>
         <MyComponent wait={800} />
+        <MyComponent wait={877} />
+        <MyComponent wait={888} />
+        <MyComponent wait={899} />
+        <MyComponent wait={866} />
       </Suspense>
       <Suspense fallback={<div>900</div>}>
         <MyComponent wait={900} />
@@ -37,6 +41,6 @@ export function MyPage() {
       <Suspense fallback={<div>1000</div>}>
         <MyComponent wait={1000} />
       </Suspense>
-    </Suspense>
+    </>
   );
 }

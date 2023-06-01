@@ -53,18 +53,28 @@ function Hydration(props: {
   return (
     <stream.Provider
       onEntries={(entries) => {
+        console.log('I only happen on the client');
         console.log('received', entries.length, 'entries');
         const combinedEntries: DehydratedState = {
           queries: [],
           mutations: [],
         };
         for (const entry of entries) {
-          combinedEntries.queries.push(...entry.queries);
-          combinedEntries.mutations.push(...entry.mutations);
+          for (const query of entry.queries) {
+            if (queryClient.getQueryData(query.queryKey)) {
+              queryClient.setQueryData(query.queryKey, query.state.data);
+            }
+          }
         }
-        setDehydratedState(combinedEntries);
+        if (combinedEntries.queries.length) {
+          console.log(
+            'should start rendering',
+            combinedEntries.queries.map((entry) => entry.queryHash).join(', '),
+          );
+        }
       }}
       onFlush={() => {
+        console.log('I only happen on the server');
         const dehydratedState = dehydrate(queryClient, {
           shouldDehydrateQuery(query) {
             const shouldDehydrate =
@@ -75,10 +85,14 @@ function Hydration(props: {
         });
         seenKeys.current.clear();
 
+        if (!dehydratedState.queries.length) {
+          return [];
+        }
+
         return [dehydratedState];
       }}
     >
-      <Hydrate state={dehydratedState}>{props.children}</Hydrate>
+      {props.children}
     </stream.Provider>
   );
 }
