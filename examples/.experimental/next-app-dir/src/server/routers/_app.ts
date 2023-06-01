@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
+let latestPost = {
+  id: 0,
+  title: 'latest post',
+  content: 'hello world',
+  createdAt: new Date(),
+};
+
 export const createPost = publicProcedure
   .input(
     z.object({
@@ -9,10 +16,13 @@ export const createPost = publicProcedure
     }),
   )
   .mutation(async (opts) => {
-    return {
-      id: '1',
+    latestPost = {
+      id: latestPost.id + 1,
+      createdAt: new Date(),
       ...opts.input,
     };
+
+    return latestPost;
   });
 
 export const appRouter = router({
@@ -28,6 +38,10 @@ export const appRouter = router({
     }),
 
   createPost,
+
+  getLatestPost: publicProcedure.query(async () => {
+    return latestPost;
+  }),
 });
 
 export type AppRouter = typeof appRouter;

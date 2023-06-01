@@ -12,7 +12,11 @@ export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
     ? {
         query: Resolver<TProcedure>;
-        revalidate: (input?: unknown) => void;
+        revalidate: (
+          input?: unknown,
+        ) => Promise<
+          { revalidated: true } | { revalidated: false; error: string }
+        >;
       }
     : TProcedure extends AnyMutationProcedure
     ? {
