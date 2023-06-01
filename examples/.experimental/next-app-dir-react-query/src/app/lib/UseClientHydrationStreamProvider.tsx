@@ -47,7 +47,7 @@ export function createDataStream<TShape>() {
    *
    * Client:
    * 2. In `useEffect()`:
-   *   - We check if `window.__stream[id]` is set to an array and call `push()` on all the entries
+   *   - We check if `window[id]` is set to an array and call `push()` on all the entries
    *   -
    **/
   function UseClientHydrationStreamProvider(props: {
@@ -97,13 +97,13 @@ export function createDataStream<TShape>() {
     onDehydrateRef.current = props.onFlush;
     useServerInsertedHTML(() => {
       // This only happens on the server
-      const _stream = [...stream, ...(onDehydrateRef.current?.() ?? [])];
+      stream.push(...(onDehydrateRef.current?.() ?? []));
 
-      if (!_stream.length) {
+      if (!stream.length) {
         return null;
       }
-      console.log(`pushing ${_stream.length} entries`);
-      const serializedCacheArgs = _stream
+      console.log(`pushing ${stream.length} entries`);
+      const serializedCacheArgs = stream
         .map((entry) => transformer.serialize(entry))
         .map((entry) => JSON.stringify(entry))
         .join(',');
@@ -131,9 +131,9 @@ export function createDataStream<TShape>() {
     onEntriesRef.current = props.onEntries;
 
     // Client: consume cache:
-    const push = useCallback(
-      (...serializedCacheEntryRecord: Serialized<TShape>[]) => {
-        const entries = serializedCacheEntryRecord.map((serialized) =>
+    const onEntries = useCallback(
+      (...serializedEntries: Serialized<TShape>[]) => {
+        const entries = serializedEntries.map((serialized) =>
           transformer.deserialize(serialized),
         );
         onEntriesRef.current(entries);
@@ -149,11 +149,11 @@ export function createDataStream<TShape>() {
       if (!Array.isArray(stream)) {
         throw new Error(`${id} seem to have been registered twice`);
       }
-      push(...stream);
+      onEntries(...stream);
 
       // Register our own consumer
       win[id] = {
-        push,
+        push: onEntries,
       };
 
       return () => {
@@ -164,7 +164,7 @@ export function createDataStream<TShape>() {
           },
         };
       };
-    }, [id, push]);
+    }, [id, onEntries]);
     // </client stuff>
 
     return (
