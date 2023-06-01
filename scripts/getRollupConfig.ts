@@ -1,5 +1,5 @@
-import nodeResolve from '@rollup/plugin-node-resolve';
 import path from 'path';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
 // @ts-expect-error no typedefs exist for this plugin

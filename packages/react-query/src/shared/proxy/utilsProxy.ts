@@ -10,14 +10,14 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
+import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
   DeepPartial,
   Filter,
-  ProtectedIntersection,
   inferProcedureInput,
+  ProtectedIntersection,
 } from '@trpc/server';
 import {
   createFlatProxy,
@@ -25,12 +25,12 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import {
+  contextProps,
   DecoratedProxyTRPCContextProps,
+  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
-  contextProps,
 } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
 import { QueryKeyKnown } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 

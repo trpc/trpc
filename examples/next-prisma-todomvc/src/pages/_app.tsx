@@ -1,5 +1,5 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { SSRConfig, appWithTranslation } from 'next-i18next';
+import { appWithTranslation, SSRConfig } from 'next-i18next';
 import { AppProps } from 'next/app';
 import { ComponentProps } from 'react';
 import { trpc } from '../utils/trpc';

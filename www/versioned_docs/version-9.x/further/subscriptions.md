@@ -17,8 +17,8 @@ slug: /subscriptions
 ### Adding a subscription procedure
 
 ```tsx title='server/router.ts'
-import * as trpc from '@trpc/server';
 import { EventEmitter } from 'events';
+import * as trpc from '@trpc/server';
 
 // create a global event emitter (could be replaced by redis, etc)
 const ee = new EventEmitter();

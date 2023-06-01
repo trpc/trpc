@@ -2,9 +2,9 @@
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
+import { AppRouter } from '~/server/routers/_app';
 import { headers } from 'next/headers';
 import superjson from 'superjson';
-import { AppRouter } from '~/server/routers/_app';
 import { getUrl } from './shared';
 
 export const api = experimental_createTRPCNextAppDirServer<AppRouter>({

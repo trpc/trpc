@@ -1,6 +1,6 @@
-import { TRPCError, inferAsyncReturnType, initTRPC } from '@trpc/server';
-import * as trpcExpress from '@trpc/server/adapters/express';
 import { EventEmitter } from 'events';
+import { inferAsyncReturnType, initTRPC, TRPCError } from '@trpc/server';
+import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import { z } from 'zod';
 

@@ -44,33 +44,6 @@ export interface NodeFetchRequestInitEsque {
 }
 
 /**
- * A subset of the standard Headers properties needed by tRPC internally.
- * @see Headers from lib.dom.d.ts
- * @remarks
- * If you need a property that you know exists but doesn't exist on this
- * interface, go ahead and add it.
- */
-export interface HeadersEsque {
-  append(name: string, value: string): void;
-  delete(name: string): void;
-  get(name: string): string | null;
-  has(name: string): boolean;
-  set(name: string, value: string): void;
-  forEach(
-    callbackfn: (value: string, key: string) => void,
-    thisArg?: any,
-  ): void;
-}
-
-export type ResponseType =
-  | 'basic'
-  | 'cors'
-  | 'default'
-  | 'error'
-  | 'opaque'
-  | 'opaqueredirect';
-
-/**
  * A subset of the standard RequestInit properties needed by tRPC internally.
  * @see RequestInit from lib.dom.d.ts
  * @remarks
@@ -102,20 +75,8 @@ export interface RequestInitEsque {
 /**
  * A subset of the standard Response properties needed by tRPC internally.
  * @see Response from lib.dom.d.ts
- * @remarks
- * If you need a property that you know exists but doesn't exist on this
- * interface, go ahead and add it.
  */
 export interface ResponseEsque {
-  readonly headers: HeadersEsque;
-  readonly ok: boolean;
-  readonly redirected: boolean;
-  readonly status: number;
-  readonly statusText: string;
-  readonly type: ResponseType;
-  readonly url: string;
-  clone(): ResponseEsque;
-
   /**
    * @remarks
    * The built-in Response::json() method returns Promise<any>, but

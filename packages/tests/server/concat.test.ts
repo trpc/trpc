@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { TRPCError, initTRPC } from '@trpc/server/src';
+import { initTRPC, TRPCError } from '@trpc/server/src';
 import { konn } from 'konn';
 
 type User = {

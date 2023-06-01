@@ -6,10 +6,10 @@ import type {
 import { AnyRouter } from '../core';
 import { TRPCError } from '../error/TRPCError';
 import { getErrorShape } from '../shared/getErrorShape';
-import { nodeHTTPRequestHandler } from './node-http';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
+  nodeHTTPRequestHandler,
 } from './node-http';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
