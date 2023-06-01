@@ -61,6 +61,10 @@ export function createDataStream<TShape>() {
      * Called in the browser when new entries are received
      */
     onEntries: (entries: TShape[]) => void;
+    /**
+     * onDehydrate is called on the server when the cache is flushed
+     */
+    onDehydrate?: () => TShape[];
   }) {
     // unique id for the cache provider
     const id = useId();
@@ -84,14 +88,21 @@ export function createDataStream<TShape>() {
         }) as unknown as TypedDataTransformer<TShape>,
     );
     const count = useRef(0);
+    const onDehydrateRef = useRef(props.onDehydrate);
+    onDehydrateRef.current = props.onDehydrate;
 
     // Server: flush cache
     useServerInsertedHTML(() => {
-      if (!stream.length || typeof window !== 'undefined') {
+      if (typeof window !== 'undefined') {
         return null;
       }
+      const _stream = [...stream, ...(onDehydrateRef.current?.() ?? [])];
+
       console.log('pushing', stream.length, 'entries');
-      const serializedCacheArgs = stream
+      if (!_stream.length) {
+        return null;
+      }
+      const serializedCacheArgs = _stream
         .map((entry) => transformer.serialize(entry))
         .map((entry) => JSON.stringify(entry))
         .join(',');

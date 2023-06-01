@@ -5,10 +5,12 @@ import { Suspense } from 'react';
 
 function useWaitQuery(props: { wait: number }) {
   const query = useQuery({
-    queryKey: ['posts', props.wait],
+    queryKey: ['wait', props.wait],
     queryFn: async () => {
       const res: string = await (
-        await fetch(`http://localhost:3000/api/wait?wait=${props.wait}`)
+        await fetch(`http://localhost:3000/api/wait?wait=${props.wait}`, {
+          cache: 'no-store',
+        })
       ).json();
       return res;
     },
