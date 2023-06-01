@@ -25,6 +25,7 @@ interface TypedDataTransformer<TData> {
 }
 
 interface HydrationStreamContext<TShape> {
+  id: string;
   stream: {
     /**
      * **Server method**
@@ -66,15 +67,21 @@ export function createDataStream<TShape>() {
      * onFlush is called on the server when the cache is flushed
      */
     onFlush?: () => TShape[];
-    /**
-     * windowKey
-     * @default '__stream'
-     */
-    windowKey?: string;
   }) {
-    const windowKey = props.windowKey ?? '__stream';
     // unique id for the cache provider
-    const id = useId();
+    const id = `_${useId()}`;
+    const idJSON = JSON.stringify(id);
+
+    const [transformer] = useState(
+      () =>
+        (props.transformer ?? {
+          // noop
+          serialize: (obj: any) => obj,
+          deserialize: (obj: any) => obj,
+        }) as unknown as TypedDataTransformer<TShape>,
+    );
+
+    // <server stuff>
     const [stream] = useState<TShape[]>(() => {
       if (typeof window !== 'undefined') {
         return {
@@ -85,20 +92,9 @@ export function createDataStream<TShape>() {
       }
       return [];
     });
-
-    const [transformer] = useState(
-      () =>
-        (props.transformer ?? {
-          // noop
-          serialize: (obj: any) => obj,
-          deserialize: (obj: any) => obj,
-        }) as unknown as TypedDataTransformer<TShape>,
-    );
     const count = useRef(0);
     const onDehydrateRef = useRef(props.onFlush);
     onDehydrateRef.current = props.onFlush;
-
-    // Server: flush cache
     useServerInsertedHTML(() => {
       // This only happens on the server
       const _stream = [...stream, ...(onDehydrateRef.current?.() ?? [])];
@@ -116,15 +112,9 @@ export function createDataStream<TShape>() {
       stream.length = 0;
 
       const html: string[] = [
-        `window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`,
+        `window[${idJSON}] = window[${idJSON}] || [];`,
+        `window[${idJSON}].push(${serializedCacheArgs});`,
       ];
-      if (count.current === 0) {
-        // First time we flush, we need to initialize the array
-        html.unshift(
-          `window["${windowKey}"] = window["${windowKey}"] || {};`,
-          `window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];`,
-        );
-      }
       return (
         <script
           key={count.current++}
@@ -134,7 +124,9 @@ export function createDataStream<TShape>() {
         />
       );
     });
+    // </server stuff>
 
+    // <client stuff>
     const onEntriesRef = useRef(props.onEntries);
     onEntriesRef.current = props.onEntries;
 
@@ -150,25 +142,35 @@ export function createDataStream<TShape>() {
     );
 
     useEffect(() => {
+      const win = window as any;
       // Register cache consumer
-      let container = (window as any)[windowKey];
-      container ||= {};
-      container[id] ||= [];
-      const stream: Array<Serialized<TShape>> = container[id];
+      const stream: Array<Serialized<TShape>> = win[id] ?? [];
 
-      if (!Array.isArray(container[id])) {
+      if (!Array.isArray(stream)) {
         throw new Error(`${id} seem to have been registered twice`);
       }
       push(...stream);
 
       // Register our own consumer
-      container[id] = {
+      win[id] = {
         push,
       };
-    }, [id, push, windowKey]);
+
+      return () => {
+        // Cleanup after unmount
+        win[id] = {
+          push() {
+            // no-op
+          },
+        };
+      };
+    }, [id, push]);
+    // </client stuff>
 
     return (
-      <context.Provider value={{ stream }}>{props.children}</context.Provider>
+      <context.Provider value={{ stream, id }}>
+        {props.children}
+      </context.Provider>
     );
   }
 
