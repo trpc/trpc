@@ -4,6 +4,7 @@ export * from './proxy/useQueriesProxy';
 export type {
   DecoratedProcedureRecord,
   DecorateProcedure,
+  CreateTRPCReactBase,
 } from '../createTRPCReact';
 export type {
   TRPCUseQueries,
