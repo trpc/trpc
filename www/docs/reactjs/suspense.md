@@ -65,8 +65,6 @@ const appRouter = t.router({
         }
         return post;
      }),
-     foo: t.procedure.query(() => 'foo' as const),
-     bar: t.procedure.query(() => 'bar' as const),
   }),
 });
 
