@@ -4,14 +4,15 @@ import { Suspense, use } from 'react';
 import {
   UseClientHydrationStreamProvider,
   getHydrationStreamContext,
+  createDataStream,
 } from './lib/UseClientHydrationStreamProvider';
 
 interface Shape {
   key: string;
   data: unknown;
 }
-const HydrationStreamProvider = UseClientHydrationStreamProvider<Shape>;
-const context = getHydrationStreamContext<Shape>();
+
+const stream = createDataStream<Shape>();
 
 async function wait(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,7 +29,7 @@ const clientCache: Record<string, Shape> = {};
 function MyComponent(props: { wait: number }) {
   const cacheKey = JSON.stringify(props);
 
-  const ctx = use(context);
+  const ctx = use(stream.context);
   // This should be lib code:
   let data: Awaited<ReturnType<typeof wait>>;
 
@@ -46,7 +47,7 @@ function MyComponent(props: { wait: number }) {
 }
 export default function DefaultPage() {
   return (
-    <HydrationStreamProvider
+    <stream.Provider
       onEntries={(entries) => {
         console.log('received entries', entries, entries.length);
         for (const entry of entries) {
@@ -71,6 +72,6 @@ export default function DefaultPage() {
         <MyComponent wait={3000} />
         <MyComponent wait={3000} />
       </Suspense>
-    </HydrationStreamProvider>
+    </stream.Provider>
   );
 }
