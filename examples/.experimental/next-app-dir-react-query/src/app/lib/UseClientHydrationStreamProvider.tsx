@@ -58,10 +58,12 @@ export function createDataStream<TShape>() {
      */
     transformer?: DataTransformer;
     /**
+     * **Client method**
      * Called in the browser when new entries are received
      */
     onEntries: (entries: TShape[]) => void;
     /**
+     * **Server method**
      * onFlush is called on the server when the cache is flushed
      */
     onFlush?: () => TShape[];
