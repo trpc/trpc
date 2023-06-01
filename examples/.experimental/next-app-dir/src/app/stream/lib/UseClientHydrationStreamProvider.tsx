@@ -61,14 +61,18 @@ export function getHydrationStreamContext<TShape>() {
 export function UseClientHydrationStreamProvider<TShape>(props: {
   children: React.ReactNode;
   /**
-   * @default Pass-through
+   * Optional transformer to serialize/deserialize the data
+   * Example devalue, superjson et al
    */
   transformer?: DataTransformer;
+  /**
+   * Called in the browser when new entries are received
+   */
   onEntries: (entries: TShape[]) => void;
 }) {
   // unique id for the cache provider
   const id = useId();
-  const [stream, setStream] = useState<TShape[]>(() => {
+  const [stream] = useState<TShape[]>(() => {
     if (typeof window !== 'undefined') {
       return {
         push() {
