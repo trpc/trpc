@@ -27,7 +27,6 @@
     "@trpc/react-query": "10.28.2",
     "@trpc/server": "10.28.2",
     "@types/node": "^18.16.16",
-    "@types/testing-library__jest-dom": "^5.14.5",
     "@vitest/coverage-istanbul": "^0.28.5",
     "@vitest/ui": "^0.28.5",
     "abort-controller": "^3.0.0",

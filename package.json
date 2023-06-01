@@ -50,6 +50,7 @@
     "@testing-library/user-event": "^14.4.3",
     "@types/node": "^18.16.16",
     "@types/prettier": "^2.7.2",
+    "@types/testing-library__jest-dom": "^5.14.5",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
     "@typescript-eslint/parser": "^5.59.2",
     "eslint": "^8.40.0",
