@@ -7,6 +7,7 @@ import {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
   TRPCUseQueries,
+  TRPCUseSuspenseQueries,
 } from '@trpc/react-query/shared';
 import { AnyRouter, ProtectedIntersection } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
@@ -17,14 +18,20 @@ import { withTRPC, WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
 /**
  * @internal
  */
-export interface CreateTRPCNextBase<
+export type CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
+  TFlags,
 > {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
-}
+} & (TFlags extends 'ExperimentalSuspense'
+? {
+    useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
+  }
+: never);
+
 
 /**
  * @internal
@@ -34,7 +41,7 @@ export type CreateTRPCNext<
   TSSRContext extends NextPageContext,
   TFlags,
 > = ProtectedIntersection<
-  CreateTRPCNextBase<TRouter, TSSRContext>,
+  CreateTRPCNextBase<TRouter, TSSRContext, TFlags>,
   DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
 >;
 

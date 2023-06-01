@@ -20,6 +20,7 @@ export function createReactProxyDecoration<
     // The last arg is for instance `.useMutation` or `.useQuery()`
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const lastArg = pathCopy.pop()!;
+    console.log('lastArg', lastArg);
 
     // The `path` ends up being something like `post.byId`
     const path = pathCopy.join('.');
@@ -39,6 +40,13 @@ export function createReactProxyDecoration<
       return {
         path: pathCopy,
       };
+    }
+
+    if (lastArg === 'useSuspenseQueries') {
+      const cb = args[0] as any;
+      return (hooks as any).useQueries((t) => {
+        return cb(t);
+      });
     }
 
     if (lastArg.startsWith('useSuspense')) {
