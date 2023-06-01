@@ -29,8 +29,9 @@ interface TypedDataTransformer<TData> {
 interface HydrationStreamContext<TShape> {
   stream: {
     /**
+     * **Server method**
      * Push a new entry to the stream
-     * Only call this on the server
+     * Will be ignored on the client
      */
     push: (...shape: TShape[]) => void;
   };
