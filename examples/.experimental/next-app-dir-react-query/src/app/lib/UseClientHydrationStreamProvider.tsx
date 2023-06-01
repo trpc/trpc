@@ -64,7 +64,7 @@ export function createDataStream<TShape>() {
     /**
      * onFlush is called on the server when the cache is flushed
      */
-    onFlush: () => TShape[];
+    onFlush?: () => TShape[];
   }) {
     // unique id for the cache provider
     const id = useId();
