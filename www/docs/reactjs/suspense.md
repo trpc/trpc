@@ -141,21 +141,12 @@ function PostView() {
 
 Suspense equivalent of [`useQueries()`](./useQueries.md)
 
-```tsx twoslash
-// @target: esnext
-// @include: server
-// ---cut---
-// @filename: pages/index.tsx
-import React from 'react';
-import { trpc } from '../utils/trpc';
+```tsx
+const Component = (props: { postIds: string[] }) => {
+  const [posts, postQueries] = trpc.useSuspenseQueries((t) =>
+    props.postIds.map((id) => t.post.byId({ id })),
+  );
 
-function Demo() {
-  const [results, queries] = trpc.useSuspenseQueries((t) => [
-    t.foo(),
-    t.bar(),
-  ]);
-  results;
-  // ^?
-  return <>{/* ... */}</>;
-}
+  return <>{/* [...] */}</>;
+};
 ```
