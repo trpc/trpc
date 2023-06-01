@@ -150,9 +150,6 @@ importers:
       vitest:
         specifier: ^0.28.5
         version: 0.28.5(@vitest/ui@0.28.5)(jsdom@21.1.0)
-      vitest-environment-miniflare:
-        specifier: ^2.12.0
-        version: 2.12.0(vitest@0.28.5)
 
   examples/.experimental/next-app-dir:
     dependencies:
@@ -1739,6 +1736,9 @@ importers:
       typescript:
         specifier: ^5.0.4
         version: 5.0.4
+      vitest-environment-miniflare:
+        specifier: ^2.12.0
+        version: 2.12.0(vitest@0.28.5)
       ws:
         specifier: ^8.0.0
         version: 8.11.0
