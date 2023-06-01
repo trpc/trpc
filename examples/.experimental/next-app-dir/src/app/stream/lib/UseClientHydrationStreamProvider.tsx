@@ -12,18 +12,22 @@ import {
 
 const serializedSymbol = Symbol('serialized');
 
-interface Serializer {
-  stringify: (obj: unknown) => string;
-  parse: (str: string) => unknown;
+interface DataTransformer {
+  serialize(object: any): any;
+  deserialize(object: any): any;
 }
 
-type Serialized<TData> = string & {
+type Serialized<TData> = unknown & {
   [serializedSymbol]: TData;
 };
 
-interface TypedSerializer {
-  stringify: <TData>(obj: TData) => string & Serialized<TData>;
-  parse: <TData>(str: string & Serialized<TData>) => TData;
+type SerializedString<TData> = string & {
+  [serializedSymbol]: TData;
+};
+
+interface TypedDataTransformer<TData> {
+  serialize: (obj: TData) => Serialized<TData>;
+  deserialize: (obj: Serialized<TData>) => TData;
 }
 
 interface HydrationStreamContext<TShape> {
@@ -57,9 +61,9 @@ export function getHydrationStreamContext<TShape>() {
 export function UseClientHydrationStreamProvider<TShape>(props: {
   children: React.ReactNode;
   /**
-   * @default JSON
+   * @default Pass-through
    */
-  serializer?: Serializer;
+  transformer?: DataTransformer;
   onEntries: (entries: TShape[]) => void;
 }) {
   // unique id for the cache provider
@@ -75,22 +79,29 @@ export function UseClientHydrationStreamProvider<TShape>(props: {
     return [];
   });
 
-  const [serializer] = useState(
-    () => (props.serializer ?? JSON) as unknown as TypedSerializer,
+  const [transformer] = useState(
+    () =>
+      (props.transformer ?? {
+        // noop
+        serialize: (obj: any) => obj,
+        deserialize: (obj: any) => obj,
+      }) as unknown as TypedDataTransformer<TShape>,
   );
   const count = useRef(0);
 
   // Server: flush cache
   useServerInsertedHTML(() => {
-    if (!stream.length) {
+    if (!stream.length || typeof window !== 'undefined') {
       return null;
     }
+    console.log('pushing', stream.length, 'entries');
     const serializedCacheArgs = stream
-      .map((entry) => serializer.stringify(entry))
+      .map((entry) => transformer.serialize(entry))
       .map((entry) => JSON.stringify(entry))
       .join(',');
 
-    console.log('serializedCacheArgs', serializedCacheArgs);
+    // Flush stream
+    stream.length = 0;
 
     // clear stream
     setStream([]);
@@ -123,13 +134,12 @@ export function UseClientHydrationStreamProvider<TShape>(props: {
   // Client: consume cache:
   const push = useCallback(
     (...serializedCacheEntryRecord: Serialized<TShape>[]) => {
-      console.log('pushing', serializedCacheEntryRecord);
       const entries = serializedCacheEntryRecord.map((serialized) =>
-        serializer.parse(serialized),
+        transformer.deserialize(serialized),
       );
       onEntriesRef.current(entries);
     },
-    [serializer],
+    [transformer],
   );
 
   useEffect(() => {
@@ -144,7 +154,7 @@ export function UseClientHydrationStreamProvider<TShape>(props: {
     if (!Array.isArray(win.__stream[id])) {
       throw new Error(`${id} seem to have been registered twice`);
     }
-    stream.map((it) => push(it));
+    push(...stream);
 
     // Register our own consumer
     win.__stream[id] = {

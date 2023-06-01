@@ -29,18 +29,20 @@ export default function DefaultPage() {
   return (
     <HydrationStreamProvider
       onEntries={(entries) => {
-        console.log('received entries', entries);
+        console.log('received entries', entries, entries.length);
       }}
     >
-      <Suspense fallback={<div>loading</div>}>
+      <Suspense fallback={<div>waiting for 3</div>}>
+        <MyComponent wait={100} />
+        <MyComponent wait={100} />
+        <MyComponent wait={100} />
+      </Suspense>
+      <Suspense fallback={<div>waiting for 1</div>}>
         <MyComponent wait={1000} />
-        <Suspense fallback={<div>loading child</div>}>
-          <MyComponent wait={2000} />
-        </Suspense>
-
-        <Suspense fallback={<div>loading child slooow</div>}>
-          <MyComponent wait={5000} />
-        </Suspense>
+      </Suspense>
+      <Suspense fallback={<div>waiting for 2</div>}>
+        <MyComponent wait={2000} />
+        <MyComponent wait={3000} />
       </Suspense>
     </HydrationStreamProvider>
   );
