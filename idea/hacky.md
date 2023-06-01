@@ -28,7 +28,7 @@ function MyComponent() {
  *
  * Client:
  * 2. In `useEffect()`:
- *   - We check if `window._trpcCache[id]` is an array and push entries
+ *   - We check if `window._trpcCache[id]` is set to an array and call `push()` on all the entries
  *   -
  **/
 export default function TRPCHydrationProvider({
