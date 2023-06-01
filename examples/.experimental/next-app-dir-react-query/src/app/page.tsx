@@ -3,17 +3,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
-function MyComponent(props: { wait: number }) {
-  const { data } = useQuery({
+function useWaitQuery(props: { wait: number }) {
+  const query = useQuery({
     queryKey: ['posts', props.wait],
     queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, props.wait));
-      return `waited ${props.wait}ms` as const;
+      const res: string = await (
+        await fetch(`http://localhost:3000/api/wait?wait=${props.wait}`)
+      ).json();
+      return res;
     },
     suspense: true,
   });
 
-  return <div>waited {data}</div>;
+  return [query.data as string, query] as const;
+}
+
+function MyComponent(props: { wait: number }) {
+  const [data] = useWaitQuery(props);
+
+  return <div>result: {data}</div>;
 }
 
 export default function Page() {
