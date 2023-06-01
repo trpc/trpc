@@ -43,7 +43,7 @@ export function createDataStream<TShape>() {
    * Server:
    * 1. `useServerInsertedHTML()` is called **on the server** whenever a `Suspense`-boundary completes
    *    - This means that we might have some new entries in the cache that needs to be flushed
-   *    - We pass these to the client by inserting a `<script>`-tag where we do `window.__stream[id].push(serializedVersionOfCache)`
+   *    - We pass these to the client by inserting a `<script>`-tag where we do `window.[windowKey][id].push(serializedVersionOfCache)`
    *
    * Client:
    * 2. In `useEffect()`:
@@ -65,7 +65,13 @@ export function createDataStream<TShape>() {
      * onFlush is called on the server when the cache is flushed
      */
     onFlush?: () => TShape[];
+    /**
+     * windowKey
+     * @default '__stream'
+     */
+    windowKey?: string;
   }) {
+    const windowKey = props.windowKey ?? '__stream';
     // unique id for the cache provider
     const id = useId();
     const [stream] = useState<TShape[]>(() => {
@@ -113,9 +119,9 @@ export function createDataStream<TShape>() {
           key={count.current++}
           dangerouslySetInnerHTML={{
             __html: `
-              window.__stream = window.__stream || {};
-              window.__stream["${id}"] = window.__stream["${id}"] || [];
-              window.__stream["${id}"].push(${serializedCacheArgs});
+              window["${windowKey}"] = window["${windowKey}"] || {};
+              window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];
+              window["${windowKey}"]["${id}"].push(${serializedCacheArgs});
           `.trim(),
           }}
         />
@@ -138,22 +144,21 @@ export function createDataStream<TShape>() {
 
     useEffect(() => {
       // Register cache consumer
-      const win = window as any;
-      win.__stream = win.__stream || {};
+      let container = (window as any)[windowKey];
+      container ||= {};
+      container[id] ||= [];
+      const stream: Array<Serialized<TShape>> = container[id];
 
-      win.__stream[id] = win.__stream[id] || [];
-      const stream: Array<Serialized<TShape>> = win.__stream[id];
-
-      if (!Array.isArray(win.__stream[id])) {
+      if (!Array.isArray(container[id])) {
         throw new Error(`${id} seem to have been registered twice`);
       }
       push(...stream);
 
       // Register our own consumer
-      win.__stream[id] = {
+      container[id] = {
         push,
       };
-    }, [id, push]);
+    }, [id, push, windowKey]);
 
     return (
       <context.Provider value={{ stream }}>{props.children}</context.Provider>
