@@ -1,17 +1,19 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
 import {
-  CreateTRPCReactBase,
-  DecoratedProcedureRecord,
   createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
+  CreateReactUtilsProxy,
+  DecoratedProcedureRecord,
+  TRPCUseQueries,
+  TRPCUseSuspenseQueries,
 } from '@trpc/react-query/shared';
 import { AnyRouter, ProtectedIntersection } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
-import { WithTRPCNoSSROptions, WithTRPCSSROptions, withTRPC } from './withTRPC';
+import { withTRPC, WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
 
 /**
  * @internal
@@ -20,10 +22,15 @@ export type CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
   TFlags,
-> = Omit<
-  CreateTRPCReactBase<TRouter, TSSRContext, TFlags>,
-  'useDehydratedState' | 'Provider' | 'createClient'
->;
+> = {
+  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
+  useQueries: TRPCUseQueries<TRouter>;
+} & (TFlags extends 'ExperimentalSuspense'
+  ? {
+      useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
+    }
+  : never);
 
 /**
  * @internal
