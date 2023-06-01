@@ -114,15 +114,19 @@ export function createDataStream<TShape>() {
       // Flush stream
       stream.length = 0;
 
+      const html: string[] =
+        count.current === 0
+          ? [
+              `window["${windowKey}"] = window["${windowKey}"] || {};`,
+              `window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];`,
+              `window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`,
+            ]
+          : [`window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`];
       return (
         <script
           key={count.current++}
           dangerouslySetInnerHTML={{
-            __html: [
-              `window["${windowKey}"] = window["${windowKey}"] || {};`,
-              `window["${windowKey}"]["${id}"] = window["${windowKey}"]["${id}"] || [];`,
-              `window["${windowKey}"]["${id}"].push(${serializedCacheArgs});`,
-            ].join(''),
+            __html: html.join(''),
           }}
         />
       );
