@@ -10,6 +10,7 @@ import {
   dehydrate,
   useQueryClient,
 } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import React, { use, useRef, useState } from 'react';
 import { createDataStream } from './lib/UseClientHydrationStreamProvider';
 
@@ -63,7 +64,7 @@ function Hydration(props: {
         }
         setDehydratedState(combinedEntries);
       }}
-      onDehydrate={() => {
+      onFlush={() => {
         const dehydratedState = dehydrate(queryClient, {
           shouldDehydrateQuery(query) {
             const shouldDehydrate =
@@ -87,6 +88,7 @@ export function Providers(props: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
+            refetchOnReconnect: false,
             refetchOnMount: false,
             refetchInterval: Infinity,
             refetchOnWindowFocus: false,
@@ -99,6 +101,7 @@ export function Providers(props: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <Hydration>{props.children}</Hydration>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

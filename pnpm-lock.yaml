@@ -209,6 +209,70 @@ importers:
         specifier: ^1.0.1
         version: 1.0.4
 
+  examples/.experimental/next-app-dir-react-query:
+    dependencies:
+      '@hookform/resolvers':
+        specifier: ^2.9.11
+        version: 2.9.11(react-hook-form@7.43.3)
+      '@tanstack/react-query':
+        specifier: 4.18.0
+        version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/react-query-devtools':
+        specifier: ^4.18.0
+        version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
+      '@trpc/client':
+        specifier: link:../../../packages/client
+        version: link:../../../packages/client
+      '@trpc/next':
+        specifier: link:../../../packages/next
+        version: link:../../../packages/next
+      '@trpc/react-query':
+        specifier: link:../../../packages/react-query
+        version: link:../../../packages/react-query
+      '@trpc/server':
+        specifier: link:../../../packages/server
+        version: link:../../../packages/server
+      '@types/node':
+        specifier: ^18.16.16
+        version: 18.16.16
+      '@types/react':
+        specifier: ^18.2.6
+        version: 18.2.6
+      '@types/react-dom':
+        specifier: ^18.2.4
+        version: 18.2.4
+      next:
+        specifier: ^13.4.3
+        version: 13.4.3(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      react-hook-form:
+        specifier: ^7.43.3
+        version: 7.43.3(react@18.2.0)
+      superjson:
+        specifier: ^1.7.4
+        version: 1.11.0
+      typescript:
+        specifier: ^5.0.4
+        version: 5.0.4
+      zod:
+        specifier: ^3.0.0
+        version: 3.21.4
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.26.1
+        version: 1.28.1
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0
+      wait-port:
+        specifier: ^1.0.1
+        version: 1.0.4
+
   examples/.experimental/next-formdata:
     dependencies:
       '@hookform/error-message':
@@ -9810,7 +9874,6 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       remove-accents: 0.4.2
-    dev: true
 
   /@tanstack/query-core@4.18.0:
     resolution: {integrity: sha512-PP4mG8MD08sq64RZCqMfXMYfaj7+Oulwg7xZ/fJoEOdTZNcPIgaOkHajZvUBsNLbi/0ViMvJB4cFkL2Jg2WPbw==}
@@ -9828,7 +9891,6 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       superjson: 1.11.0
       use-sync-external-store: 1.2.0(react@18.2.0)
-    dev: true
 
   /@tanstack/react-query@4.18.0(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-s1kdbGMdVcfUIllzsHUqVUdktBT5uuIRgnvrqFNLjl9TSOXEoBSDrhjsGjao0INQZv8cMpQlgOh3YH9YtN6cKw==}
@@ -20767,7 +20829,6 @@ packages:
 
   /remove-accents@0.4.2:
     resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
-    dev: true
 
   /renderkid@3.0.0:
     resolution: {integrity: sha512-q/7VIQA8lmM1hF+jn+sFSPWGlMkSAeNYcPLmDQx2zzuiDfaLrOmumR8iaUKlenFgh0XRPIUeSPlH3A+AW3Z5pg==}

@@ -64,7 +64,7 @@ export function createDataStream<TShape>() {
     /**
      * onDehydrate is called on the server when the cache is flushed
      */
-    onDehydrate?: () => TShape[];
+    onFlush?: () => TShape[];
   }) {
     // unique id for the cache provider
     const id = useId();
@@ -88,8 +88,8 @@ export function createDataStream<TShape>() {
         }) as unknown as TypedDataTransformer<TShape>,
     );
     const count = useRef(0);
-    const onDehydrateRef = useRef(props.onDehydrate);
-    onDehydrateRef.current = props.onDehydrate;
+    const onDehydrateRef = useRef(props.onFlush);
+    onDehydrateRef.current = props.onFlush;
 
     // Server: flush cache
     useServerInsertedHTML(() => {
