@@ -49,11 +49,15 @@ function Hydration(props: {
       onEntries={(entries) => {
         console.log('I only happen on the client');
         console.log('received', entries.length, 'entries');
-        for (const entry of entries) {
-          for (const query of entry.queries) {
-            if (!cache.find(query.queryKey)) {
-              queryClient.setQueryData(query.queryKey, query.state.data);
-            }
+
+        // Process entries in reverse order so that we can overwrite the cache with the most recent data
+        const queryEntries = entries
+          .flatMap((entry) => entry.queries)
+          .reverse();
+
+        for (const query of queryEntries) {
+          if (!cache.find(query.queryKey)) {
+            queryClient.setQueryData(query.queryKey, query.state.data);
           }
         }
       }}
