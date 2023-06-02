@@ -52,7 +52,7 @@ export async function fastifyRequestHandler<
   let resolve: (value: FastifyReply) => void;
   const promise = new Promise<FastifyReply>((r) => (resolve = r));
 
-  const onHead = (head: HTTPResponse) => {
+  const unstable_onHead = (head: HTTPResponse) => {
     if (!opts.res.statusCode || opts.res.statusCode === 200) {
       opts.res.statusCode = head.status;
     }
@@ -68,7 +68,7 @@ export async function fastifyRequestHandler<
   let isStream = false;
   let stream: Readable;
   const formatter = getBatchStreamFormatter();
-  const onChunk = ([index, string]: ResponseChunk) => {
+  const unstable_onChunk = ([index, string]: ResponseChunk) => {
     if (index === -1) {
       // full response, no streaming
       resolve(opts.res.send(string));
@@ -100,8 +100,8 @@ export async function fastifyRequestHandler<
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
-    onHead,
-    onChunk,
+    unstable_onHead,
+    unstable_onChunk,
   })
     .then(() => {
       if (isStream) {
