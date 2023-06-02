@@ -9,16 +9,44 @@ slug: /links/httpBatchStreamLink
 
 ## Usage
 
-All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
+> All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
 
-## Streaming mode (unstable)
+You can import and add the `httpBatchStreamLink` to the `links` array as such:
+
+```ts title="client/index.ts"
+import { createTRPCProxyClient, httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
+const client = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchStreamLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+```
+
+After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
+
+```ts
+const somePosts = await Promise.all([
+  trpc.post.byId.query(1),
+  trpc.post.byId.query(2),
+  trpc.post.byId.query(3),
+]);
+```
+
+## Streaming mode
 
 > ⚠️ This link is unstable and may change in the future.
 
-When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use this link. This is useful for long-running requests.
+When batching requests together, the behavior of a regular `httpBatchStreamLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use this link. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import {
+  createTRPCProxyClient,
+  unstable_httpBatchStreamLink,
+} from '@trpc/client';
 import type { AppRouter } from '../server';
 
 const client = createTRPCProxyClient<AppRouter>({
@@ -49,10 +77,10 @@ This includes support for `undici`, `node-fetch`, native Node.js fetch implement
 
 ## Compatibility (server-side)
 
-> ⚠️ for **aws lambda**, `unstable_httpBatchStreamLink` is not supported (will simply behave like a regular `httpBatchLink`). It should not break anything if enabled, but will not have any effect.
+> ⚠️ for **aws lambda**, `unstable_httpBatchStreamLink` is not supported (will simply behave like a regular `httpBatchStreamLink`). It should not break anything if enabled, but will not have any effect.
 
 > ⚠️ for **cloudflare workers**, you need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors)
 
 ## Reference
 
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchLink/httpBatchStreamLink.ts)
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchStreamLink.ts)
