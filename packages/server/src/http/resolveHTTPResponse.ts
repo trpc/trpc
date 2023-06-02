@@ -355,13 +355,13 @@ export async function resolveHTTPResponse<
         body,
       };
     }
+
     /**
      * Streaming response:
      * - block on none, call `onChunk` as soon as each response is ready
      * - create headers with minimal data (cannot know the response body in advance)
      * - return void
      */
-
     const headResponse = initResponse({
       ctx,
       paths,
@@ -397,7 +397,6 @@ export async function resolveHTTPResponse<
         onChunk(chunk);
       }
     }
-
     return;
   } catch (cause) {
     // we get here if
