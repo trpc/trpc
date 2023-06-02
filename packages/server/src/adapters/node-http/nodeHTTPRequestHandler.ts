@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
-import { HTTPRequest } from '../../http';
+import { getBatchStreamFormatter, HTTPRequest } from '../../http';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
@@ -63,7 +64,47 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const result = await resolveHTTPResponse({
+    const onHead = (head: HTTPResponse) => {
+      if (
+        'status' in head &&
+        (!opts.res.statusCode || opts.res.statusCode === 200)
+      ) {
+        opts.res.statusCode = head.status;
+      }
+      for (const [key, value] of Object.entries(head.headers ?? {})) {
+        /* istanbul ignore if -- @preserve */
+        if (typeof value === 'undefined') {
+          continue;
+        }
+        opts.res.setHeader(key, value);
+      }
+    };
+
+    const formatter = getBatchStreamFormatter();
+    let isStream = false;
+    const onChunk = ([index, string]: ResponseChunk) => {
+      if (index === -1) {
+        /**
+         * Full response, no streaming. This can happen
+         * - if the response is an error
+         * - if response is empty (HEAD request)
+         */
+        opts.res.end(string);
+        return;
+      }
+      if (!isStream) {
+        opts.res.setHeader('Transfer-Encoding', 'chunked');
+        const vary = opts.res.getHeader('Vary');
+        opts.res.setHeader(
+          'Vary',
+          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
+        );
+        isStream = true;
+      }
+      opts.res.write(formatter(index, string));
+    };
+
+    await resolveHTTPResponse({
       batching: opts.batching,
       responseMeta: opts.responseMeta,
       path: opts.path,
@@ -79,18 +120,16 @@ export async function nodeHTTPRequestHandler<
         });
       },
       contentTypeHandler,
+      onHead,
+      onChunk,
     });
 
-    const { res } = opts;
-    if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
-      res.statusCode = result.status;
+    if (!isStream) {
+      return opts.res;
     }
-    for (const [key, value] of Object.entries(result.headers ?? {})) {
-      if (typeof value === 'undefined') {
-        continue;
-      }
-      res.setHeader(key, value);
-    }
-    res.end(result.body);
+
+    opts.res.write(formatter.end());
+    opts.res.end();
+    return opts.res;
   });
 }
