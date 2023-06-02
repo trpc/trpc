@@ -77,7 +77,7 @@ module.exports = {
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/nextjs/introduction',
+          to: 'docs/client/nextjs/introduction',
           label: 'Using Next.js',
         },
         {
