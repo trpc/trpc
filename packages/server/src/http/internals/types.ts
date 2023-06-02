@@ -17,6 +17,8 @@ export interface HTTPResponse {
   body?: string;
 }
 
+export type ResponseChunk = [procedureIndex: number, responseBody: string];
+
 /**
  * @internal
  */
@@ -29,4 +31,10 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   paths?: string[];
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
+  /**
+   * `true` if the `ResponseMeta` are being
+   * generated without knowing the response data
+   * (e.g. for streaming requests).
+   */
+  eagerGeneration: boolean;
 }) => ResponseMeta;

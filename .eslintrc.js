@@ -39,6 +39,7 @@ const config = {
           'TRPC',
           'RPC',
           'HTTP',
+          'JSON',
           '\\.config\\.js',
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',

@@ -2,7 +2,7 @@ import {
   createTRPCProxyClient,
   httpBatchLink,
   loggerLink,
-} from 'npm:@trpc/client';
+} from 'https://esm.sh/@trpc/client';
 import type { AppRouter } from './router.ts';
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));

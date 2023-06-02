@@ -125,6 +125,7 @@ module.exports = {
                 'client/advanced/links/overview',
                 'client/advanced/links/httpLink',
                 'client/advanced/links/httpBatchLink',
+                'client/advanced/links/httpBatchStreamLink',
                 'client/advanced/links/wsLink',
                 'client/advanced/links/splitLink',
                 'client/advanced/links/loggerLink',

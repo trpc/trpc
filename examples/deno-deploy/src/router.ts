@@ -1,5 +1,5 @@
-import { initTRPC } from 'npm:@trpc/server';
-import { z } from 'npm:zod';
+import { initTRPC } from 'https://esm.sh/@trpc/server';
+import { z } from 'https://esm.sh/zod';
 
 let id = 0;
 
