@@ -101,7 +101,6 @@ module.exports = {
             'client/nextjs/starter-projects',
           ],
         },
-        'client/other-integrations',
         {
           type: 'category',
           label: 'Vanilla Client',
