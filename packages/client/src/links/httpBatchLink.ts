@@ -1,7 +1,10 @@
-import { NonEmptyArray } from '../../internals/types';
-import { jsonHttpRequester } from '../internals/httpUtils';
-import { Operation } from '../types';
-import { makeHttpBatchLink, RequesterFn } from './genericMakeBatchLink';
+import { NonEmptyArray } from '../internals/types';
+import {
+  createHTTPBatchLink,
+  RequesterFn,
+} from './batching/createHTTPBatchLink';
+import { jsonHttpRequester } from './internals/httpUtils';
+import { Operation } from './types';
 
 const batchRequester: RequesterFn = (requesterOpts) => {
   return (batchOps) => {
@@ -43,4 +46,4 @@ const batchRequester: RequesterFn = (requesterOpts) => {
   };
 };
 
-export const httpBatchLink = makeHttpBatchLink(batchRequester);
+export const httpBatchLink = createHTTPBatchLink(batchRequester);

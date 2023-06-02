@@ -1,7 +1,10 @@
-import { NonEmptyArray } from '../../internals/types';
-import { Operation } from '../types';
-import { makeHttpBatchLink, RequesterFn } from './genericMakeBatchLink';
-import { streamingJsonHttpRequester } from './streamingHttpUtils';
+import { NonEmptyArray } from '../internals/types';
+import {
+  createHTTPBatchLink,
+  RequesterFn,
+} from './batching/createHTTPBatchLink';
+import { streamingJsonHttpRequester } from './batching/streamingHttpUtils';
+import { Operation } from './types';
 
 const streamRequester: RequesterFn = (requesterOpts) => {
   return (batchOps, unitResolver) => {
@@ -40,4 +43,5 @@ const streamRequester: RequesterFn = (requesterOpts) => {
   };
 };
 
-export const unstable_httpBatchStreamLink = makeHttpBatchLink(streamRequester);
+export const unstable_httpBatchStreamLink =
+  createHTTPBatchLink(streamRequester);

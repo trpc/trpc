@@ -58,7 +58,7 @@ export type RequesterFn = (
 /**
  * @internal
  */
-export function makeHttpBatchLink(requester: RequesterFn) {
+export function createHTTPBatchLink(requester: RequesterFn) {
   return function httpBatchLink<TRouter extends AnyRouter>(
     opts: HTTPBatchLinkOptions,
   ): TRPCLink<TRouter> {
