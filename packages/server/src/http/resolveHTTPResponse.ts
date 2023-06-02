@@ -71,9 +71,7 @@ function initResponse<
 >(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
-  type:
-    | Exclude<(typeof HTTP_METHOD_PROCEDURE_TYPE_MAP)[string], undefined>
-    | 'unknown';
+  type: ProcedureType | 'unknown';
   responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
   untransformedJSON?:
     | TRPCResponse<unknown, inferRouterError<TRouter>>
