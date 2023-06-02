@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@effect/schema": "^0.19.0",
+    "@effect/schema": "^0.20.0",
     "@fastify/busboy": "^1.2.1",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
