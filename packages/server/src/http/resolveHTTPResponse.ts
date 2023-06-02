@@ -30,7 +30,11 @@ const fallbackContentTypeHandler = {
   getInputs: getJsonContentTypeInputs,
 };
 
-type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<TBaseType, TKey> & Partial<Pick<TBaseType, TKey>>;
+type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
+  TBaseType,
+  TKey
+> &
+  Partial<Pick<TBaseType, TKey>>;
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
@@ -51,7 +55,7 @@ interface ResolveHTTPRequestOptions<
   onHead: (headResponse: Omit<HTTPResponse, 'body'>) => void;
   /**
    * Called for every procedure with `[index, result]`.
-   * 
+   *
    * Will be called a single time with `index = -1` if
    * - response is an error
    * - response is empty (HEAD request)
@@ -61,18 +65,21 @@ interface ResolveHTTPRequestOptions<
   onChunk: (chunk: ResponseChunk) => void;
 }
 
-function initResponse<TRouter extends AnyRouter, TRequest extends HTTPRequest>(initOpts: {
-  ctx: inferRouterContext<TRouter> | undefined,
-  paths: string[] | undefined,
+function initResponse<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+>(initOpts: {
+  ctx: inferRouterContext<TRouter> | undefined;
+  paths: string[] | undefined;
   type:
     | Exclude<(typeof HTTP_METHOD_PROCEDURE_TYPE_MAP)[string], undefined>
-    | 'unknown',
-  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'],
+    | 'unknown';
+  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
   untransformedJSON?:
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
-    | undefined,
-  errors?: TRPCError[],
+    | undefined;
+  errors?: TRPCError[];
 }): HTTPResponse {
   const {
     ctx,
@@ -88,7 +95,7 @@ function initResponse<TRouter extends AnyRouter, TRequest extends HTTPRequest>(i
     'Content-Type': 'application/json',
   };
 
-  const eagerGeneration = !untransformedJSON
+  const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
     ? []
     : Array.isArray(untransformedJSON)
@@ -122,24 +129,19 @@ async function inputToProcedureCall<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(procedureOpts: {
-  opts: Pick<ResolveHTTPRequestOptions<TRouter, TRequest>, 'router' | 'onError' | 'req'>,
-  ctx: inferRouterContext<TRouter> | undefined,
+  opts: Pick<
+    ResolveHTTPRequestOptions<TRouter, TRequest>,
+    'router' | 'onError' | 'req'
+  >;
+  ctx: inferRouterContext<TRouter> | undefined;
   type: Exclude<
     (typeof HTTP_METHOD_PROCEDURE_TYPE_MAP)[string],
     undefined | 'subscription'
-  >,
-  input: unknown,
-  path: string,
-}): Promise<
-  TRPCResponse<unknown, inferRouterError<TRouter>>
-> {
-  const {
-    opts,
-    ctx,
-    type,
-    input,
-    path,
-  } = procedureOpts;
+  >;
+  input: unknown;
+  path: string;
+}): Promise<TRPCResponse<unknown, inferRouterError<TRouter>>> {
+  const { opts, ctx, type, input, path } = procedureOpts;
   try {
     const data = await callProcedure({
       procedures: opts.router._def.procedures,
@@ -185,7 +187,12 @@ async function inputToProcedureCall<
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(opts: Omit<ResolveHTTPRequestOptions<TRouter, TRequest>, 'onHead' | 'onChunk'>): Promise<HTTPResponse>
+>(
+  opts: Omit<
+    ResolveHTTPRequestOptions<TRouter, TRequest>,
+    'onHead' | 'onChunk'
+  >,
+): Promise<HTTPResponse>;
 /**
  * Streaming signature for `resolveHTTPResponse`:
  * @param opts.onHead called as soon as the response head is known
@@ -195,12 +202,17 @@ export async function resolveHTTPResponse<
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>
+>(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>;
 // implementation
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(opts: PartialBy<ResolveHTTPRequestOptions<TRouter, TRequest>, 'onHead' | 'onChunk'>): Promise<HTTPResponse | void> {
+>(
+  opts: PartialBy<
+    ResolveHTTPRequestOptions<TRouter, TRequest>,
+    'onHead' | 'onChunk'
+  >,
+): Promise<HTTPResponse | void> {
   const { router, req, onHead, onChunk } = opts;
 
   if (req.method === 'HEAD') {
@@ -258,8 +270,8 @@ export async function resolveHTTPResponse<
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
     const promises = paths.map((path, index) =>
-      inputToProcedureCall({opts, ctx, type, input: inputs[index], path}),
-    )
+      inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
+    );
 
     if (!isStreamCall) {
       /**
@@ -281,8 +293,8 @@ export async function resolveHTTPResponse<
         responseMeta: opts.responseMeta,
         untransformedJSON,
         errors,
-    });
-    onHead?.(headResponse);
+      });
+      onHead?.(headResponse);
 
       // return body stuff
       const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
@@ -308,12 +320,24 @@ export async function resolveHTTPResponse<
        */
 
       try {
-        const headResponse = initResponse({ctx, paths, type, responseMeta: opts.responseMeta});
+        const headResponse = initResponse({
+          ctx,
+          paths,
+          type,
+          responseMeta: opts.responseMeta,
+        });
         onHead(headResponse);
 
-        const indexedPromises = new Map(promises.map((promise, index) => [index, promise.then(r => [index, r] as const)]));
+        const indexedPromises = new Map(
+          promises.map((promise, index) => [
+            index,
+            promise.then((r) => [index, r] as const),
+          ]),
+        );
         for (let i = 0; i < paths.length; i++) {
-          const [index, untransformedJSON] = await Promise.race(indexedPromises.values());
+          const [index, untransformedJSON] = await Promise.race(
+            indexedPromises.values(),
+          );
           indexedPromises.delete(index);
 
           const transformedJSON = transformTRPCResponse(

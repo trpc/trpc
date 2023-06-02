@@ -96,16 +96,18 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     },
     onHead,
     onChunk,
-  }).then(() => {
-    if (isStream) {
-      controller.enqueue(encoder.encode(formatter.end()));
-      controller.close();
-    }
-  }).catch(() => {
-    if (isStream) {
-      controller.close();
-    }
-  });
+  })
+    .then(() => {
+      if (isStream) {
+        controller.enqueue(encoder.encode(formatter.end()));
+        controller.close();
+      }
+    })
+    .catch(() => {
+      if (isStream) {
+        controller.close();
+      }
+    });
 
   return promise;
 }
