@@ -353,6 +353,7 @@ export async function resolveHTTPResponse<
         // at this point it's too late to fail gracefully
         // because headers were sent and stream has started
         // TODO: we might imagine some protocol using a custom HTTP Trailer to send errors after streaming
+        // eslint-disable-next-line no-console -- not sure what to do with this error
         console.error('Unexpected error in streaming response', cause);
       }
 
