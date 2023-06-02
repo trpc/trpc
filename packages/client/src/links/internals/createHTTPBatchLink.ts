@@ -1,42 +1,16 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { dataLoader } from '../../internals/dataLoader';
-import { NonEmptyArray } from '../../internals/types';
 import { transformResult } from '../../shared/transformResult';
 import { TRPCClientError } from '../../TRPCClientError';
+import { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
+import { CancelFn, Operation, TRPCClientRuntime, TRPCLink } from '../types';
 import {
   getUrl,
-  HTTPLinkBaseOptions,
   HTTPResult,
   ResolvedHTTPLinkOptions,
   resolveHTTPLinkOptions,
-} from '../internals/httpUtils';
-import {
-  CancelFn,
-  HTTPHeaders,
-  Operation,
-  TRPCClientRuntime,
-  TRPCLink,
-} from '../types';
-
-export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
-  maxURLLength?: number;
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/client/headers
-   */
-  headers?:
-    | HTTPHeaders
-    | ((opts: {
-        opList: NonEmptyArray<Operation>;
-      }) => HTTPHeaders | Promise<HTTPHeaders>);
-}
-
-/**
- * @alias HttpBatchLinkOptions
- * @deprecated use `HTTPBatchLinkOptions` instead
- */
-export interface HttpBatchLinkOptions extends HTTPBatchLinkOptions {}
+} from './httpUtils';
 
 /**
  * @internal

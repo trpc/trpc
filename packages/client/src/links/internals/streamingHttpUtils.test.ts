@@ -1,4 +1,4 @@
-import { parseJsonStream } from './streamingHttpUtils';
+import { parseJSONStream } from './streamingHttpUtils';
 
 describe('parseJsonStream', () => {
   test('multiline streamed JSON', async () => {
@@ -16,7 +16,7 @@ describe('parseJsonStream', () => {
     });
     const orderReceived: any[] = [];
     const itemsArray: any[] = [];
-    const fullData = await parseJsonStream({
+    const fullData = await parseJSONStream({
       readableStream: stream,
       onSingle: (index, data) => {
         orderReceived.push(index);

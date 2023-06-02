@@ -21,7 +21,7 @@ import { HTTPHeaders } from '../types';
  * }
  * ```
  */
-export async function parseJsonStream<TReturn>(opts: {
+export async function parseJSONStream<TReturn>(opts: {
   /**
    * As given by `(await fetch(url)).body`
    */
@@ -150,7 +150,7 @@ export const streamingJsonHttpRequester = (
   const promise = responsePromise.then(async (res) => {
     if (!res.body) throw new Error('Received response without body');
     const meta: HTTPResult['meta'] = { response: res };
-    return parseJsonStream({
+    return parseJSONStream({
       readableStream: res.body,
       onSingle,
       parse: (string) => ({

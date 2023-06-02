@@ -2,7 +2,7 @@ import { NonEmptyArray } from '../internals/types';
 import {
   createHTTPBatchLink,
   RequesterFn,
-} from './batching/createHTTPBatchLink';
+} from './internals/createHTTPBatchLink';
 import { jsonHttpRequester } from './internals/httpUtils';
 import { Operation } from './types';
 

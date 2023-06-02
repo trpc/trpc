@@ -2,8 +2,8 @@ import { NonEmptyArray } from '../internals/types';
 import {
   createHTTPBatchLink,
   RequesterFn,
-} from './batching/createHTTPBatchLink';
-import { streamingJsonHttpRequester } from './batching/streamingHttpUtils';
+} from './internals/createHTTPBatchLink';
+import { streamingJsonHttpRequester } from './internals/streamingHttpUtils';
 import { Operation } from './types';
 
 const streamRequester: RequesterFn = (requesterOpts) => {
