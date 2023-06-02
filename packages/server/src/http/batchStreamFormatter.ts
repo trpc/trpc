@@ -12,8 +12,7 @@
  *
  * Expected format:
  * ```json
- * {
- * "1":"response #2"
+ * {"1":"response #2"
  * ,"0":"response #1"
  * }
  * ```
