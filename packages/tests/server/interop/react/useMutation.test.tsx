@@ -244,7 +244,7 @@ describe('useMutation()', () => {
         onError: (_error, _variables, context) => {
           expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
         },
-        // eslint-disable-next-line max-params -- this is react-query's signature, not ours
+        // eslint-disable-next-line max-params
         onSettled: (_data, _error, _variables, context) => {
           expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
         },
