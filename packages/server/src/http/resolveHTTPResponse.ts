@@ -132,10 +132,7 @@ async function inputToProcedureCall<
     'router' | 'onError' | 'req'
   >;
   ctx: inferRouterContext<TRouter> | undefined;
-  type: Exclude<
-    (typeof HTTP_METHOD_PROCEDURE_TYPE_MAP)[string],
-    undefined | 'subscription'
-  >;
+  type: 'query' | 'mutation';
   input: unknown;
   path: string;
 }): Promise<TRPCResponse<unknown, inferRouterError<TRouter>>> {
