@@ -21,7 +21,7 @@ function useWaitQuery(props: { wait: number }) {
   return [query.data as string, query] as const;
 }
 
-export function MyComponent(props: { wait: number }) {
+export function MyRawComponent(props: { wait: number }) {
   const [data] = useWaitQuery(props);
 
   return <div>result: {data}</div>;
