@@ -81,6 +81,7 @@ module.exports = {
           items: [
             'client/links/httpLink',
             'client/links/httpBatchLink',
+            'client/links/httpBatchStreamLink',
             'client/links/wsLink',
             'client/links/splitLink',
             'client/links/loggerLink',
