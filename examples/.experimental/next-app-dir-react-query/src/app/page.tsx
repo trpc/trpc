@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <div style={{ display: 'flex', gap: 16 }}>
       {/* <RQ /> */}
-      <TRPCDynamic />
+      {/* <TRPCDynamic /> */}
       <TRPCWithRandomCaches />
     </div>
   );
