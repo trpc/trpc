@@ -67,7 +67,7 @@
     },
     {
       "source": "/docs/next",
-      "destination": "/docs/nextjs/introduction",
+      "destination": "/docs/client/nextjs/introduction",
       "permanent": true
     },
     {
