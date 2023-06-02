@@ -2,7 +2,7 @@
 id: ssg
 title: Static Site Generation
 sidebar_label: Static Site Generation (SSG)
-slug: /nextjs/ssg
+slug: /client/nextjs/ssg
 ---
 
 :::tip

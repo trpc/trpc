@@ -414,6 +414,41 @@
       "source": "/docs/reactjs/useQuery",
       "destination": "/docs/client/react/useQuery",
       "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/aborting-procedure-calls",
+      "destination": "/docs/client/nextjs/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/introduction",
+      "destination": "/docs/client/nextjs/introduction",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/server-side-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/setup",
+      "destination": "/docs/client/nextjs/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/ssg",
+      "destination": "/docs/client/nextjs/ssg",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/ssr",
+      "destination": "/docs/client/nextjs/ssr",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/starter-projects",
+      "destination": "/docs/client/nextjs/starter-projects",
+      "permanent": true
     }
   ]
 }
