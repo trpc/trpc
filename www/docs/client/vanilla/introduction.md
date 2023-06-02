@@ -2,7 +2,7 @@
 id: introduction
 title: tRPC Client
 sidebar_label: Introduction
-slug: /client/introduction
+slug: /client/vanilla/introduction
 ---
 
 # tRPC Client

@@ -344,6 +344,21 @@
       "source": "/docs/sponsors",
       "destination": "/docs/community/sponsors",
       "permanent": true
+    },
+    {
+      "source": "/docs/client/setup",
+      "destination": "/docs/client/vanilla/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/introduction",
+      "destination": "/docs/client/vanilla/introduction",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/infer-types",
+      "destination": "/docs/client/vanilla/infer-types",
+      "permanent": true
     }
   ]
 }
