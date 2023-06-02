@@ -3,7 +3,7 @@ import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
 export default async function Home() {
-  // const promise = new Promise(async (resolve) => {
+  // const promise = new Promise<string>(async (resolve) => {
   //   await new Promise((r) => setTimeout(r, 1000)); // wait for demo purposes
   //   resolve(api.greeting.query({ text: 'streamed server data' }));
   // });
@@ -34,7 +34,6 @@ export default async function Home() {
 
       <div>
         <Suspense fallback={<>Loading Server...</>}>
-          {/* @ts-expect-error RSC + TS not friends yet */}
           <ServerInvokedGreeting />
         </Suspense>
       </div>
