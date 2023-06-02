@@ -4,7 +4,7 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 export const input = [
   'src/index.ts',
   'src/links/httpLink.ts',
-  'src/links/httpBatchLink.ts',
+  'src/links/httpBatchLink/index.ts',
   'src/links/splitLink.ts',
   'src/links/loggerLink.ts',
   'src/links/wsLink.ts',
