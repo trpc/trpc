@@ -44,7 +44,7 @@ const somePosts = await Promise.all([
 
 > ⚠️ This link is unstable and may change in the future.
 
-When batching requests together, the behavior of a regular `httpBatchStreamLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use this link. This is useful for long-running requests.
+When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use `httpBatchStreamLink` instead. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
 import {
