@@ -257,17 +257,22 @@ export function createRootHooks<
       context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
 
+    const defaultOpts = queryClient.getQueryDefaults(queryKey);
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
-      opts?.enabled !== false &&
+      (opts?.enabled ?? defaultOpts?.enabled) !== false &&
       !queryClient.getQueryCache().find(queryKey)
     ) {
       void prefetchQuery(queryKey, opts as any);
     }
-    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, opts);
-    // request option should take priority over global
+    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+      ...defaultOpts,
+      ...opts,
+    });
+
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
@@ -304,20 +309,24 @@ export function createRootHooks<
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
+    const mutationKey = [path];
+    const defaultOpts = queryClient.getMutationDefaults(mutationKey);
+
     const hook = __useMutation({
       ...opts,
-      mutationKey: [path],
+      mutationKey: mutationKey,
       mutationFn: (input) => {
         return client.mutation(...getClientArgs([path, { input }], opts));
       },
       context: ReactQueryContext,
       onSuccess(...args) {
-        const originalFn = () => opts?.onSuccess?.(...args);
+        const originalFn = () =>
+          opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
         return mutationSuccessOverride({
           originalFn,
           queryClient,
-          meta: opts?.meta ?? {},
+          meta: opts?.meta ?? defaultOpts?.meta ?? {},
         });
       },
     }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
@@ -390,17 +399,22 @@ export function createRootHooks<
     } = useContext();
     const queryKey = getQueryKeyInternal(path, input, 'infinite');
 
+    const defaultOpts = queryClient.getQueryDefaults(queryKey);
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
-      opts?.enabled !== false &&
+      (opts?.enabled ?? defaultOpts?.enabled) !== false &&
       !queryClient.getQueryCache().find(queryKey)
     ) {
-      void prefetchInfiniteQuery(queryKey, opts as any);
+      void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts } as any);
     }
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, opts);
+    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+      ...defaultOpts,
+      ...opts,
+    });
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;

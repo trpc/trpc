@@ -27,7 +27,8 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir: [
+        dir:
+          [
             .test/ssg,
             .test/internal-types-export,
             express-server,
@@ -44,8 +45,7 @@ jobs:
             soa,
             vercel-edge-runtime,
             .experimental/next-formdata,
-            # FIXME: fails b/c of mysterious reasons
-            # .experimental/next-app-dir,
+            .experimental/next-app-dir,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
@@ -54,7 +54,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.4
+      - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v3
         with:
@@ -121,7 +121,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.4
+      - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v3
         with:

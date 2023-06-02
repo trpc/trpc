@@ -8,6 +8,7 @@
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [
+        "app-dir/**",
         "links/**",
         "shared/**",
         "server/**",
