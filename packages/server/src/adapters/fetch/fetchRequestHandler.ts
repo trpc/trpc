@@ -34,7 +34,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   const promise = new Promise<Response>((r) => (resolve = r));
   let status = 200;
 
-  const onHead = (head: HTTPResponse) => {
+  const unstable_onHead = (head: HTTPResponse) => {
     for (const [key, value] of Object.entries(head.headers ?? {})) {
       /* istanbul ignore if -- @preserve */
       if (typeof value === 'undefined') {
@@ -55,7 +55,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   let controller: ReadableStreamController<any>;
   let encoder: TextEncoder;
   const formatter = getBatchStreamFormatter();
-  const onChunk = ([index, string]: ResponseChunk) => {
+  const unstable_onChunk = ([index, string]: ResponseChunk) => {
     if (index === -1) {
       // full response, no streaming
       const response = new Response(string || null, {
@@ -94,8 +94,8 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
-    onHead,
-    onChunk,
+    unstable_onHead,
+    unstable_onChunk,
   })
     .then(() => {
       if (isStream) {

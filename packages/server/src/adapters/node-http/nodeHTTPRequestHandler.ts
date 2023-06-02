@@ -64,7 +64,7 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const onHead = (head: HTTPResponse) => {
+    const unstable_onHead = (head: HTTPResponse) => {
       if (
         'status' in head &&
         (!opts.res.statusCode || opts.res.statusCode === 200)
@@ -82,7 +82,7 @@ export async function nodeHTTPRequestHandler<
 
     const formatter = getBatchStreamFormatter();
     let isStream = false;
-    const onChunk = ([index, string]: ResponseChunk) => {
+    const unstable_onChunk = ([index, string]: ResponseChunk) => {
       if (index === -1) {
         /**
          * Full response, no streaming. This can happen
@@ -120,8 +120,8 @@ export async function nodeHTTPRequestHandler<
         });
       },
       contentTypeHandler,
-      onHead,
-      onChunk,
+      unstable_onHead,
+      unstable_onChunk,
     });
 
     if (!isStream) {
