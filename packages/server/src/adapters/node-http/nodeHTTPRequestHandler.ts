@@ -84,7 +84,11 @@ export async function nodeHTTPRequestHandler<
     let isStream = false;
     const onChunk = ([index, string]: ResponseChunk) => {
       if (index === -1) {
-        // full response, no streaming
+        /**
+         * Full response, no streaming. This can happen
+         * - if the response is an error
+         * - if response is empty (HEAD request)
+         */
         opts.res.end(string);
         return;
       }
@@ -120,11 +124,12 @@ export async function nodeHTTPRequestHandler<
       onChunk,
     });
 
-    if (isStream) {
-      opts.res.write(formatter.end());
-      opts.res.end();
+    if (!isStream) {
+      return opts.res;
     }
 
+    opts.res.write(formatter.end());
+    opts.res.end();
     return opts.res;
   });
 }

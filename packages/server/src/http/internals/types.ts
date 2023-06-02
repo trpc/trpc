@@ -23,17 +23,7 @@ export type ResponseChunk = [procedureIndex: number, responseBody: string];
  * @internal
  */
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
-  /**
-   * `data` can be `undefined` in the case of a
-   * batched HTTP request with a streamed response,
-   * because in that case, the headers are evaluated
-   * eagerly, before the responses are ready.
-   *
-   * This only applies to `unstable_httpBatchStreamLink`,
-   * but type is shared and has thus been made optional
-   * everywhere.
-   */
-  data?: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+  data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**
    * The different tRPC paths requested
@@ -41,4 +31,10 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   paths?: string[];
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
+  /**
+   * `true` if the `ResponseMeta` are being
+   * generated without knowing the response data
+   * (e.g. for streaming requests).
+   */
+  eagerGeneration: boolean;
 }) => ResponseMeta;

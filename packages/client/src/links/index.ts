@@ -2,6 +2,7 @@ export * from './types';
 
 export * from './httpBatchLink';
 export * from './httpBatchLink/httpBatchStreamLink';
+export type { HTTPBatchLinkOptions, HttpBatchLinkOptions } from './httpBatchLink/genericMakeBatchLink';
 export * from './httpLink';
 export * from './loggerLink';
 export * from './splitLink';

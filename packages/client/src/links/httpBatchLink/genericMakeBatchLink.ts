@@ -33,6 +33,12 @@ export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
 }
 
 /**
+ * @alias HttpBatchLinkOptions
+ * @deprecated use `HTTPBatchLinkOptions` instead
+ */
+export interface HttpBatchLinkOptions extends HTTPBatchLinkOptions {}
+
+/**
  * @internal
  */
 export type RequesterFn = (
@@ -49,6 +55,9 @@ export type RequesterFn = (
   cancel: CancelFn;
 };
 
+/**
+ * @internal
+ */
 export function makeHttpBatchLink(requester: RequesterFn) {
   return function httpBatchLink<TRouter extends AnyRouter>(
     opts: HTTPBatchLinkOptions,

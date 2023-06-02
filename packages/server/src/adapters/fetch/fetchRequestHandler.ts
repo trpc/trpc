@@ -84,7 +84,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     controller.enqueue(encoder.encode(formatter(index, string)));
   };
 
-  void resolveHTTPResponse({
+  resolveHTTPResponse({
     req,
     createContext,
     path,
@@ -99,6 +99,10 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   }).then(() => {
     if (isStream) {
       controller.enqueue(encoder.encode(formatter.end()));
+      controller.close();
+    }
+  }).catch(() => {
+    if (isStream) {
       controller.close();
     }
   });
