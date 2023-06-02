@@ -2,7 +2,7 @@
 id: suspense
 title: Suspense (Experimental)
 sidebar_label: Suspense (Experimental)
-slug: /reactjs/suspense
+slug: /client/react/suspense
 ---
 
 :::info

@@ -2,7 +2,7 @@
 id: infer-types
 title: Inferring Types
 sidebar_label: Inferring Types
-slug: /reactjs/infer-types
+slug: /client/react/infer-types
 ---
 
 <!-- Reusable snippet -->

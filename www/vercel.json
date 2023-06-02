@@ -359,6 +359,61 @@
       "source": "/docs/client/infer-types",
       "destination": "/docs/client/vanilla/infer-types",
       "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/aborting-procedure-calls",
+      "destination": "/docs/client/react/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/getQueryKey",
+      "destination": "/docs/client/react/getQueryKey",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/infer-types",
+      "destination": "/docs/client/react/infer-types",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/introduction",
+      "destination": "/docs/client/react/introduction",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/reactjs/setup",
+      "destination": "/docs/client/react/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/suspense",
+      "destination": "/docs/client/react/suspense",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useContext",
+      "destination": "/docs/client/react/useContext",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useInfiniteQuery",
+      "destination": "/docs/client/react/useInfiniteQuery",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useMutation",
+      "destination": "/docs/client/react/useMutation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useQueries",
+      "destination": "/docs/client/react/useQueries",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useQuery",
+      "destination": "/docs/client/react/useQuery",
+      "permanent": true
     }
   ]
 }
