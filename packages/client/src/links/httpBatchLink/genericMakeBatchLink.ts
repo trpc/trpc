@@ -1,9 +1,9 @@
 import { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { TRPCClientError } from '../../TRPCClientError';
 import { dataLoader } from '../../internals/dataLoader';
 import { NonEmptyArray } from '../../internals/types';
 import { transformResult } from '../../shared/transformResult';
+import { TRPCClientError } from '../../TRPCClientError';
 import {
   getUrl,
   HTTPLinkBaseOptions,
@@ -36,10 +36,11 @@ export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
  * @internal
  */
 export type RequesterFn = (
-  resolvedOpts: ResolvedHTTPLinkOptions,
-  runtime: TRPCClientRuntime,
-  type: ProcedureType,
-  opts: HTTPBatchLinkOptions,
+  requesterOpts: ResolvedHTTPLinkOptions & {
+    runtime: TRPCClientRuntime;
+    type: ProcedureType;
+    opts: HTTPBatchLinkOptions;
+  },
 ) => (
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
@@ -77,7 +78,12 @@ export function makeHttpBatchLink(requester: RequesterFn) {
           return url.length <= maxURLLength;
         };
 
-        const fetch = requester(resolvedOpts, runtime, type, opts);
+        const fetch = requester({
+          ...resolvedOpts,
+          runtime,
+          type,
+          opts,
+        });
 
         return { validate, fetch };
       };
@@ -116,9 +122,7 @@ export function makeHttpBatchLink(requester: RequesterFn) {
             })
             .catch((err) => observer.error(TRPCClientError.from(err)));
 
-          return () => {
-            cancel();
-          };
+          return () => cancel();
         });
       };
     };

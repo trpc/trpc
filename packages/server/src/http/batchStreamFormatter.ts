@@ -21,7 +21,7 @@
 export function getBatchStreamFormatter() {
   let first = true;
   function format(index: number, string: string) {
-    const prefix = first ? '{\n' : ',';
+    const prefix = first ? '{' : ',';
     first = false;
     return `${prefix}"${index}":${string}\n`;
   }

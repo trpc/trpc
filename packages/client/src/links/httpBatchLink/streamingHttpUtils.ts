@@ -10,6 +10,17 @@ import {
 } from '../internals/httpUtils';
 import { HTTPHeaders } from '../types';
 
+/**
+ * @internal
+ * @description Take a stream of bytes and call `onLine` with
+ * a JSON object for each line in the stream. Expected stream
+ * format is:
+ * ```json
+ * {"1": {...}
+ * ,"0": {...}
+ * }
+ * ```
+ */
 export async function parseJsonStream<TReturn>(opts: {
   /**
    * As given by `(await fetch(url)).body`
@@ -20,60 +31,43 @@ export async function parseJsonStream<TReturn>(opts: {
    */
   onSingle: (index: number, res: TReturn) => void;
   /**
-   * Called when the stream is finished
+   * Transform text into useable data object (defaults to JSON.parse)
    */
   parse?: (text: string) => TReturn;
   signal?: AbortSignal;
-}): Promise<TReturn | undefined> {
+}): Promise<void> {
   const parse = opts.parse ?? JSON.parse;
 
-  let isFirstLine = true;
-  let isFullSink = false;
-  let fullAccumulator = '';
   const onLine = (line: string) => {
     if (opts.signal?.aborted) return;
-    if (isFirstLine) {
-      isFirstLine = false;
-      if (line !== '{') {
-        // unexpected format, don't try to parse it as a stream
-        isFullSink = true;
-        fullAccumulator = line;
-      }
-      return;
-    }
-    if (isFullSink) {
-      fullAccumulator += line;
-      return;
-    }
-
     if (!line || line === '}') {
       return;
     }
-
-    // removing comma from start of line
-    const string = line[0] === ',' ? line.substring(1, line.length) : line;
-
-    // parsing index out of start of line "0":{...}
-    const indexOfColon = string.indexOf(':');
-
-    const indexAsStr = string.substring(1, indexOfColon - 1);
-
-    const text = string.substring(indexAsStr.length + 3);
+    /**
+     * At this point, `line` can be one of two things:
+     * - The first line of the stream `{"2":{...}`
+     * - A line in the middle of the stream `,"2":{...}`
+     */
+    const indexOfColon = line.indexOf(':');
+    const indexAsStr = line.substring(2, indexOfColon - 1);
+    const text = line.substring(indexOfColon + 1);
 
     opts.onSingle(Number(indexAsStr), parse(text));
   };
 
   await readLines(opts.readableStream, onLine);
-
-  if (isFullSink) {
-    return parse(fullAccumulator);
-  } else {
-    return undefined;
-  }
 }
 
 const textDecoder = new TextDecoder();
 
+/**
+ * Handle transforming a stream of bytes into lines of text.
+ * To avoid using AsyncIterators / AsyncGenerators,
+ * we use a callback for each line.
+ *
+ * @param readableStream can be a NodeJS stream or a WebAPI stream
+ * @param onLine will be called for every line ('\n' delimited) in the stream
+ */
 async function readLines(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
   onLine: (line: string) => void,
@@ -86,19 +80,20 @@ async function readLines(
     if (chunkLines.length === 1) {
       partOfLine += chunkLines[0];
     } else if (chunkLines.length > 1) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked on line above
       onLine(partOfLine + chunkLines[0]!);
       for (let i = 1; i < chunkLines.length - 1; i++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked above
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length checked on line above
         onLine(chunkLines[i]!);
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length doesn't change
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length doesn't change, so is necessarily > 1
       partOfLine = chunkLines[chunkLines.length - 1]!;
     }
   };
 
+  // we handle 2 different types of streams, this if where we figure out which one we have
   if ('getReader' in readableStream) {
-    await readStandardChunks(readableStream.getReader(), onChunk);
+    await readStandardChunks(readableStream, onChunk);
   } else {
     await readNodeChunks(readableStream, onChunk);
   }
@@ -106,20 +101,27 @@ async function readLines(
   onLine(partOfLine);
 }
 
+/**
+ * Handle NodeJS stream
+ */
 function readNodeChunks(
-  reader: NodeJS.ReadableStream,
+  stream: NodeJS.ReadableStream,
   onChunk: (chunk: Uint8Array) => void,
 ) {
   return new Promise<void>((resolve) => {
-    reader.on('data', onChunk);
-    reader.on('end', resolve);
+    stream.on('data', onChunk);
+    stream.on('end', resolve);
   });
 }
 
+/**
+ * Handle WebAPI stream
+ */
 async function readStandardChunks(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
+  stream: ReadableStream<Uint8Array>,
   onChunk: (chunk: Uint8Array) => void,
 ) {
+  const reader = stream.getReader();
   let readResult = await reader.read();
   while (!readResult.done) {
     onChunk(readResult.value);

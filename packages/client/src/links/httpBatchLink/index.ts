@@ -3,27 +3,25 @@ import { jsonHttpRequester } from '../internals/httpUtils';
 import { Operation } from '../types';
 import { makeHttpBatchLink, RequesterFn } from './genericMakeBatchLink';
 
-const batchRequester: RequesterFn = (resolvedOpts, runtime, type, opts) => {
+const batchRequester: RequesterFn = (requesterOpts) => {
   return (batchOps) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
 
     const { promise, cancel } = jsonHttpRequester({
-      ...resolvedOpts,
-      runtime,
-      type,
+      ...requesterOpts,
       path,
       inputs,
       headers() {
-        if (!opts.headers) {
+        if (!requesterOpts.opts.headers) {
           return {};
         }
-        if (typeof opts.headers === 'function') {
-          return opts.headers({
+        if (typeof requesterOpts.opts.headers === 'function') {
+          return requesterOpts.opts.headers({
             opList: batchOps as NonEmptyArray<Operation>,
           });
         }
-        return opts.headers;
+        return requesterOpts.opts.headers;
       },
     });
 

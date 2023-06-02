@@ -220,7 +220,7 @@ export async function resolveHTTPResponse<
     /**
      * when not streaming, do simple 2-step return
      */
-    if (!isStreamCall || paths.length === 1) {
+    if (!isStreamCall) {
       // await all responses in parallel, blocking on the slowest
       const indexedResponses = await Promise.all(
         paths.map((path, index) =>
@@ -298,7 +298,6 @@ export async function resolveHTTPResponse<
       onChunk(chunk);
     }
 
-    // return nothing, signalling the request handler to end the streamed response
     return {
       status: headResponse.status,
       headers: headResponse.headers,
