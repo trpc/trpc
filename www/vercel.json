@@ -449,6 +449,46 @@
       "source": "/docs/nextjs/starter-projects",
       "destination": "/docs/client/nextjs/starter-projects",
       "permanent": true
+    },
+    {
+      "source": "/docs/client/cors",
+      "destination": "/docs/client/advanced/cors",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/headers",
+      "destination": "/docs/client/advanced/headers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/httpBatchLink",
+      "destination": "/docs/client/advanced/links/httpBatchLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/httpLink",
+      "destination": "/docs/client/advanced/links/httpLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/loggerLink",
+      "destination": "/docs/client/advanced/links/loggerLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/overview",
+      "destination": "/docs/client/advanced/links/overview",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/splitLink",
+      "destination": "/docs/client/advanced/links/splitLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/wsLink",
+      "destination": "/docs/client/advanced/links/wsLink",
+      "permanent": true
     }
   ]
 }

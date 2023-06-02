@@ -2,7 +2,7 @@
 id: httpLink
 title: HTTP Link
 sidebar_label: HTTP Link
-slug: /links/httpLink
+slug: /client/advanced/links/httpLink
 ---
 
 `httpLink` is a [**terminating link**](./overview.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
