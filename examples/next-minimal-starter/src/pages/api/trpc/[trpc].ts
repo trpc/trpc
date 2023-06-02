@@ -15,8 +15,7 @@ const appRouter = router({
         name: z.string().nullish(),
       }),
     )
-    .query(async (opts) => {
-      const { input } = opts;
+    .query(({ input }) => {
       // This is what you're returning to your client
       return {
         text: `hello ${input?.name ?? 'world'}`,
