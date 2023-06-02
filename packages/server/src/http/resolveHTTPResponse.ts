@@ -354,52 +354,51 @@ export async function resolveHTTPResponse<
         headers: headResponse.headers,
         body,
       };
-    } else {
-      /**
-       * Streaming response:
-       * - block on none, call `onChunk` as soon as each response is ready
-       * - create headers with minimal data (cannot know the response body in advance)
-       * - return void
-       */
-
-      const headResponse = initResponse({
-        ctx,
-        paths,
-        type,
-        responseMeta: opts.responseMeta,
-      });
-      onHead(headResponse);
-
-      const indexedPromises = new Map(
-        promises.map((promise, index) => [
-          index,
-          promise.then((r) => [index, r] as const),
-        ]),
-      );
-      for (let i = 0; i < paths.length; i++) {
-        const [index, untransformedJSON] = await Promise.race(
-          indexedPromises.values(),
-        );
-        indexedPromises.delete(index);
-
-        try {
-          const transformedJSON = transformTRPCResponse(
-            router._def._config,
-            untransformedJSON,
-          );
-          const body = JSON.stringify(transformedJSON);
-
-          const chunk: ResponseChunk = [index, body];
-          onChunk(chunk);
-        } catch (cause) {
-          const { body } = caughtErrorToData(cause, { opts, ctx, type });
-          const chunk: ResponseChunk = [index, body];
-          onChunk(chunk);
-        }
-      }
-
-      return;
     }
+    /**
+     * Streaming response:
+     * - block on none, call `onChunk` as soon as each response is ready
+     * - create headers with minimal data (cannot know the response body in advance)
+     * - return void
+     */
+
+    const headResponse = initResponse({
+      ctx,
+      paths,
+      type,
+      responseMeta: opts.responseMeta,
+    });
+    onHead(headResponse);
+
+    const indexedPromises = new Map(
+      promises.map((promise, index) => [
+        index,
+        promise.then((r) => [index, r] as const),
+      ]),
+    );
+    for (let i = 0; i < paths.length; i++) {
+      const [index, untransformedJSON] = await Promise.race(
+        indexedPromises.values(),
+      );
+      indexedPromises.delete(index);
+
+      try {
+        const transformedJSON = transformTRPCResponse(
+          router._def._config,
+          untransformedJSON,
+        );
+        const body = JSON.stringify(transformedJSON);
+
+        const chunk: ResponseChunk = [index, body];
+        onChunk(chunk);
+      } catch (cause) {
+        const { body } = caughtErrorToData(cause, { opts, ctx, type });
+        const chunk: ResponseChunk = [index, body];
+        onChunk(chunk);
+      }
+    }
+
+    return;
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
