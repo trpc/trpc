@@ -3,7 +3,7 @@ import {
   createHTTPBatchLink,
   RequesterFn,
 } from './internals/createHTTPBatchLink';
-import { streamingJsonHttpRequester } from './internals/streamingHttpUtils';
+import { streamingJsonHttpRequester } from './internals/parseJSONStream';
 import { Operation } from './types';
 
 const streamRequester: RequesterFn = (requesterOpts) => {
