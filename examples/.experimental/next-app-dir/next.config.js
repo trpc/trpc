@@ -8,7 +8,9 @@ const nextConfig = {
     serverActions: true,
   },
   webpack: (config) => {
-    config.experiments.topLevelAwait = true;
+    if (config.name === 'server')
+      config.optimization.concatenateModules = false;
+
     return config;
   },
 };
