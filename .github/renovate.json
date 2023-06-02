@@ -2,9 +2,21 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base", ":preserveSemverRanges"],
   "ignorePaths": ["**/node_modules/**", "**/examples/**"],
-  "ignoreDeps": ["node", "pnpm"],
   "updateInternalDeps": true,
+  "nvm": {
+    "enabled": false
+  },
   "npm": {
     "rollbackPrs": false
-  }
+  },
+  "packageRules": [
+    {
+      "matchDatasources": ["node-version"],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": ["pnpm"],
+      "enabled": false
+    }
+  ]
 }
