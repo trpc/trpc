@@ -15,7 +15,7 @@ type NextFetchLinkOptions<TBatch extends boolean> = {
    */
   batch?: TBatch;
   /**
-   * How many ms to cache the response on the server
+   * How many seconds to cache the response on the server
    * Set to `false` to stop revalidation
    * Set to 0 to prevent caching
    * @default false
@@ -39,20 +39,12 @@ export function experimental_nextHttpLink<
           ? context.revalidate
           : undefined;
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
-      const noCache = revalidate === 0;
 
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
       const link = linkFactory({
         headers: opts.headers as any,
         url: opts.url,
         fetch: (url, fetchOpts) => {
-          if (noCache) {
-            return fetch(url, {
-              ...fetchOpts,
-              cache: 'no-store',
-            });
-          }
-
           return fetch(url, {
             ...fetchOpts,
             next: {

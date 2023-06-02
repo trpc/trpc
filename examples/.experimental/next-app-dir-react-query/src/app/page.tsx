@@ -161,7 +161,7 @@ function TRPCWithRandomCaches() {
       </fieldset>
 
       <Suspense fallback={<div>900 (revalidated 900ms)</div>}>
-        <MyTRPCComponent wait={900} revalidate={900} />
+        <MyTRPCComponent wait={900} revalidate={0.9} />
       </Suspense>
       <Suspense fallback={<div>1000</div>}>
         <MyTRPCComponent wait={1000} />
