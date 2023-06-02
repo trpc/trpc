@@ -173,6 +173,54 @@ async function inputToProcedureCall<
   }
 }
 
+function caughtErrorToData<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+>(
+  cause: unknown,
+  errorOpts: {
+    opts: Pick<
+      ResolveHTTPRequestOptions<TRouter, TRequest>,
+      'router' | 'onError' | 'req'
+    >;
+    ctx: inferRouterContext<TRouter> | undefined;
+    type:
+      | Exclude<(typeof HTTP_METHOD_PROCEDURE_TYPE_MAP)[string], undefined>
+      | 'unknown';
+  },
+) {
+  const { router, req, onError } = errorOpts.opts;
+  const error = getTRPCErrorFromUnknown(cause);
+  onError?.({
+    error,
+    path: undefined,
+    input: undefined,
+    ctx: errorOpts.ctx,
+    type: errorOpts.type,
+    req,
+  });
+  const untransformedJSON = {
+    error: getErrorShape({
+      config: router._def._config,
+      error,
+      type: errorOpts.type,
+      path: undefined,
+      input: undefined,
+      ctx: errorOpts.ctx,
+    }),
+  };
+  const transformedJSON = transformTRPCResponse(
+    router._def._config,
+    untransformedJSON,
+  );
+  const body = JSON.stringify(transformedJSON);
+  return {
+    error,
+    untransformedJSON,
+    body,
+  };
+}
+
 /**
  * Since `resolveHTTPResponse` is a public API (community adapters),
  * let's give it a strong type signature to increase discoverability.
@@ -319,27 +367,27 @@ export async function resolveHTTPResponse<
        * - return void
        */
 
-      try {
-        const headResponse = initResponse({
-          ctx,
-          paths,
-          type,
-          responseMeta: opts.responseMeta,
-        });
-        onHead(headResponse);
+      const headResponse = initResponse({
+        ctx,
+        paths,
+        type,
+        responseMeta: opts.responseMeta,
+      });
+      onHead(headResponse);
 
-        const indexedPromises = new Map(
-          promises.map((promise, index) => [
-            index,
-            promise.then((r) => [index, r] as const),
-          ]),
+      const indexedPromises = new Map(
+        promises.map((promise, index) => [
+          index,
+          promise.then((r) => [index, r] as const),
+        ]),
+      );
+      for (let i = 0; i < paths.length; i++) {
+        const [index, untransformedJSON] = await Promise.race(
+          indexedPromises.values(),
         );
-        for (let i = 0; i < paths.length; i++) {
-          const [index, untransformedJSON] = await Promise.race(
-            indexedPromises.values(),
-          );
-          indexedPromises.delete(index);
+        indexedPromises.delete(index);
 
+        try {
           const transformedJSON = transformTRPCResponse(
             router._def._config,
             untransformedJSON,
@@ -348,13 +396,11 @@ export async function resolveHTTPResponse<
 
           const chunk: ResponseChunk = [index, body];
           onChunk(chunk);
+        } catch (cause) {
+          const { body } = caughtErrorToData(cause, { opts, ctx, type });
+          const chunk: ResponseChunk = [index, body];
+          onChunk(chunk);
         }
-      } catch (cause) {
-        // at this point it's too late to fail gracefully
-        // because headers were sent and stream has started
-        // TODO: we might imagine some protocol using a custom HTTP Trailer to send errors after streaming
-        // eslint-disable-next-line no-console -- not sure what to do with this error
-        console.error('Unexpected error in streaming response', cause);
       }
 
       return;
@@ -367,27 +413,11 @@ export async function resolveHTTPResponse<
     // - post body is too large
     // - input deserialization fails
     // - `errorFormatter` return value is malformed
-    const error = getTRPCErrorFromUnknown(cause);
-
-    opts.onError?.({
-      error,
-      path: undefined,
-      input: undefined,
+    const { error, untransformedJSON, body } = caughtErrorToData(cause, {
+      opts,
       ctx,
-      type: type,
-      req,
+      type,
     });
-
-    const untransformedJSON = {
-      error: getErrorShape({
-        config: router._def._config,
-        error,
-        type,
-        path: undefined,
-        input: undefined,
-        ctx,
-      }),
-    };
 
     const headResponse = initResponse({
       ctx,
@@ -398,13 +428,6 @@ export async function resolveHTTPResponse<
       errors: [error],
     });
     onHead?.(headResponse);
-
-    // return body stuff
-    const transformedJSON = transformTRPCResponse(
-      router._def._config,
-      untransformedJSON,
-    );
-    const body = JSON.stringify(transformedJSON);
 
     const chunk: ResponseChunk = [-1, body];
     onChunk?.(chunk);
