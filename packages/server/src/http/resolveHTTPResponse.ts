@@ -179,9 +179,7 @@ function caughtErrorToData<
       'router' | 'onError' | 'req'
     >;
     ctx: inferRouterContext<TRouter> | undefined;
-    type:
-      | Exclude<(typeof HTTP_METHOD_PROCEDURE_TYPE_MAP)[string], undefined>
-      | 'unknown';
+    type: ProcedureType | 'unknown';
   },
 ) {
   const { router, req, onError } = errorOpts.opts;
