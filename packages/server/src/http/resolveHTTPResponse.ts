@@ -180,14 +180,16 @@ function caughtErrorToData<
     >;
     ctx: inferRouterContext<TRouter> | undefined;
     type: ProcedureType | 'unknown';
+    path?: string;
+    input?: unknown;
   },
 ) {
   const { router, req, onError } = errorOpts.opts;
   const error = getTRPCErrorFromUnknown(cause);
   onError?.({
     error,
-    path: undefined,
-    input: undefined,
+    path: errorOpts.path,
+    input: errorOpts.input,
     ctx: errorOpts.ctx,
     type: errorOpts.type,
     req,
@@ -197,8 +199,8 @@ function caughtErrorToData<
       config: router._def._config,
       error,
       type: errorOpts.type,
-      path: undefined,
-      input: undefined,
+      path: errorOpts.path,
+      input: errorOpts.input,
       ctx: errorOpts.ctx,
     }),
   };
@@ -344,8 +346,7 @@ export async function resolveHTTPResponse<
         result,
       );
       const body = JSON.stringify(transformedJSON);
-      const chunk: ResponseChunk = [-1, body];
-      onChunk?.(chunk);
+      onChunk?.([-1, body]);
 
       return {
         status: headResponse.status,
@@ -387,12 +388,19 @@ export async function resolveHTTPResponse<
         );
         const body = JSON.stringify(transformedJSON);
 
-        const chunk: ResponseChunk = [index, body];
-        onChunk(chunk);
+        onChunk([index, body]);
       } catch (cause) {
-        const { body } = caughtErrorToData(cause, { opts, ctx, type });
-        const chunk: ResponseChunk = [index, body];
-        onChunk(chunk);
+        const path = paths[index];
+        const input = inputs[index];
+        const { body } = caughtErrorToData(cause, {
+          opts,
+          ctx,
+          type,
+          path,
+          input,
+        });
+
+        onChunk([index, body]);
       }
     }
     return;
@@ -420,8 +428,7 @@ export async function resolveHTTPResponse<
     });
     onHead?.(headResponse);
 
-    const chunk: ResponseChunk = [-1, body];
-    onChunk?.(chunk);
+    onChunk?.([-1, body]);
 
     return {
       status: headResponse.status,
