@@ -36,6 +36,8 @@ export async function parseJSONStream<TReturn>(opts: {
   parse?: (text: string) => TReturn;
   signal?: AbortSignal;
 }): Promise<void> {
+  const textDecoder = new TextDecoder();
+
   const parse = opts.parse ?? JSON.parse;
 
   const onLine = (line: string) => {
@@ -55,10 +57,8 @@ export async function parseJSONStream<TReturn>(opts: {
     opts.onSingle(Number(indexAsStr), parse(text));
   };
 
-  await readLines(opts.readableStream, onLine);
+  await readLines(opts.readableStream, onLine, textDecoder);
 }
-
-const textDecoder = new TextDecoder();
 
 /**
  * Handle transforming a stream of bytes into lines of text.
@@ -71,6 +71,7 @@ const textDecoder = new TextDecoder();
 async function readLines(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
   onLine: (line: string) => void,
+  textDecoder: TextDecoder,
 ) {
   let partOfLine = '';
 
