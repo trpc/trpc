@@ -21,13 +21,16 @@ import { getQueryClient } from '../shared';
 export function createSSGHelpers<TRouter extends AnyRouter>(
   opts: CreateSSGHelpersOptions<TRouter>,
 ) {
-  const { router, transformer, ctx } = opts;
   type TQueries = TRouter['_def']['queries'];
   const queryClient = getQueryClient(opts);
 
-  const serialize = transformer
-    ? ('input' in transformer ? transformer.input : transformer).serialize
-    : (obj: unknown) => obj;
+  const serialize =
+    'transformer' in opts && opts.transformer
+      ? ('input' in opts.transformer
+          ? opts.transformer.input
+          : opts.transformer
+        ).serialize
+      : (obj: unknown) => obj;
 
   const prefetchQuery = async <
     TPath extends keyof TQueries & string,
@@ -38,13 +41,20 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     return queryClient.prefetchQuery({
       queryKey: getArrayQueryKey(pathAndInput, 'query'),
       queryFn: () => {
-        return callProcedure({
-          procedures: router._def.procedures,
-          path: pathAndInput[0],
-          rawInput: pathAndInput[1],
-          ctx,
-          type: 'query',
-        });
+        if ('router' in opts) {
+          const { router, ctx } = opts;
+
+          return callProcedure({
+            procedures: router._def.procedures,
+            path: pathAndInput[0],
+            rawInput: pathAndInput[1],
+            ctx,
+            type: 'query',
+          });
+        }
+
+        const { client } = opts;
+        return client.query(...pathAndInput);
       },
     });
   };
@@ -58,13 +68,20 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     return queryClient.prefetchInfiniteQuery({
       queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
       queryFn: () => {
-        return callProcedure({
-          procedures: router._def.procedures,
-          path: pathAndInput[0],
-          rawInput: pathAndInput[1],
-          ctx,
-          type: 'query',
-        });
+        if ('router' in opts) {
+          const { router, ctx } = opts;
+
+          return callProcedure({
+            procedures: router._def.procedures,
+            path: pathAndInput[0],
+            rawInput: pathAndInput[1],
+            ctx,
+            type: 'query',
+          });
+        }
+
+        const { client } = opts;
+        return client.query(...pathAndInput);
       },
     });
   };
@@ -78,14 +95,21 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   ): Promise<TOutput> => {
     return queryClient.fetchQuery({
       queryKey: getArrayQueryKey(pathAndInput, 'query'),
-      queryFn: () => {
-        return callProcedure({
-          procedures: router._def.procedures,
-          path: pathAndInput[0],
-          rawInput: pathAndInput[1],
-          ctx,
-          type: 'query',
-        });
+      queryFn: async () => {
+        if ('router' in opts) {
+          const { router, ctx } = opts;
+
+          return callProcedure({
+            procedures: router._def.procedures,
+            path: pathAndInput[0],
+            rawInput: pathAndInput[1],
+            ctx,
+            type: 'query',
+          });
+        }
+
+        const { client } = opts;
+        return client.query(...pathAndInput);
       },
     });
   };
@@ -100,13 +124,20 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     return queryClient.fetchInfiniteQuery({
       queryKey: getArrayQueryKey(pathAndInput, 'infinite'),
       queryFn: () => {
-        return callProcedure({
-          procedures: router._def.procedures,
-          path: pathAndInput[0],
-          rawInput: pathAndInput[1],
-          ctx,
-          type: 'query',
-        });
+        if ('router' in opts) {
+          const { router, ctx } = opts;
+
+          return callProcedure({
+            procedures: router._def.procedures,
+            path: pathAndInput[0],
+            rawInput: pathAndInput[1],
+            ctx,
+            type: 'query',
+          });
+        }
+
+        const { client } = opts;
+        return client.query(...pathAndInput);
       },
     });
   };

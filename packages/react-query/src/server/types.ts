@@ -1,3 +1,4 @@
+import { TRPCUntypedClient } from '@trpc/client';
 import {
   AnyRouter,
   ClientDataTransformerOptions,
@@ -5,10 +6,21 @@ import {
 } from '@trpc/server';
 import { CreateTRPCReactQueryClientConfig } from '../shared';
 
-interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
+interface CreateRouterSSGHelpersOptionsBase<TRouter extends AnyRouter> {
+  type: 'router';
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
   transformer?: ClientDataTransformerOptions;
 }
-export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
-  CreateSSGHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
+
+interface CreateClientSSGHelpersOptionsBase<TRouter extends AnyRouter> {
+  type: 'client';
+  client: TRPCUntypedClient<TRouter>;
+  transformer?: ClientDataTransformerOptions;
+}
+
+export type CreateSSGHelpersOptions<TRouter extends AnyRouter> = (
+  | CreateRouterSSGHelpersOptionsBase<TRouter>
+  | CreateClientSSGHelpersOptionsBase<TRouter>
+) &
+  CreateTRPCReactQueryClientConfig;
