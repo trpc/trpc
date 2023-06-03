@@ -138,6 +138,7 @@ export const jsonHttpRequester: Requester = (opts) => {
 export type HTTPRequestOptions = HTTPBaseRequestOptions &
   ContentOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+    TextDecoder?: TextDecoder;
   };
 
 export async function fetchHTTPResponse(

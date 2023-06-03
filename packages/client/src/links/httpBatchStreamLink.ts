@@ -7,6 +7,7 @@ import { streamingJsonHttpRequester } from './internals/parseJSONStream';
 import { Operation } from './types';
 
 const streamRequester: RequesterFn = (requesterOpts) => {
+  const textDecoder = requesterOpts.opts.textDecoder || new global.TextDecoder();
   return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
@@ -14,6 +15,7 @@ const streamRequester: RequesterFn = (requesterOpts) => {
     const { cancel, promise } = streamingJsonHttpRequester(
       {
         ...requesterOpts,
+        textDecoder,
         path,
         inputs,
         headers() {
