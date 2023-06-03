@@ -79,7 +79,7 @@ tRPC combines concepts from [REST](https://www.sitepoint.com/rest-api/) and [Gra
 
 ## Installation
 
-tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/client/react/setup) and [usage with Next.js](/docs/nextjs/setup).
+tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/client/react/setup) and [usage with Next.js](/docs/client/nextjs/setup).
 
 :::info Requirements
 - tRPC requires TypeScript >= 4.7.0
@@ -426,7 +426,7 @@ const trpc = createTRPCProxyClient<AppRouter>({
 });
 ```
 
-Links in tRPC are similar to links in GraphQL, they let us control the data flow **before** being sent to the server. In the example above, we use the [httpBatchLink](/docs/links/httpBatchLink), which automatically batches up multiple calls into a single HTTP request. For more in-depth usage of links, see the [links documentation](/docs/links).
+Links in tRPC are similar to links in GraphQL, they let us control the data flow **before** being sent to the server. In the example above, we use the [httpBatchLink](/docs/client/links/httpBatchLink), which automatically batches up multiple calls into a single HTTP request. For more in-depth usage of links, see the [links documentation](/docs/client/links).
 
 ### 2. Querying & mutating
 

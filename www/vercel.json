@@ -42,27 +42,27 @@
     },
     {
       "source": "/docs/nextjs",
-      "destination": "/docs/nextjs/setup",
+      "destination": "/docs/client/nextjs/setup",
       "permanent": true
     },
     {
       "source": "/docs/ssg-helpers",
-      "destination": "/docs/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/server-side-helpers",
       "permanent": true
     },
     {
       "source": "/docs/ssg",
-      "destination": "/docs/nextjs/ssg",
+      "destination": "/docs/client/nextjs/ssg",
       "permanent": true
     },
     {
       "source": "/docs/ssr",
-      "destination": "/docs/nextjs/ssr",
+      "destination": "/docs/client/nextjs/ssr",
       "permanent": true
     },
     {
       "source": "/docs/starter-projects",
-      "destination": "/docs/nextjs/starter-projects",
+      "destination": "/docs/client/nextjs/starter-projects",
       "permanent": true
     },
     {
@@ -322,7 +322,7 @@
     },
     {
       "source": "/docs/nextjs/ssg-helpers",
-      "destination": "/docs/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/server-side-helpers",
       "permanent": true
     },
     {
@@ -451,43 +451,33 @@
       "permanent": true
     },
     {
-      "source": "/docs/client/cors",
-      "destination": "/docs/client/advanced/cors",
-      "permanent": true
-    },
-    {
-      "source": "/docs/client/headers",
-      "destination": "/docs/client/advanced/headers",
-      "permanent": true
-    },
-    {
       "source": "/docs/links/httpBatchLink",
-      "destination": "/docs/client/advanced/links/httpBatchLink",
+      "destination": "/docs/client/links/httpBatchLink",
       "permanent": true
     },
     {
       "source": "/docs/links/httpLink",
-      "destination": "/docs/client/advanced/links/httpLink",
+      "destination": "/docs/client/links/httpLink",
       "permanent": true
     },
     {
       "source": "/docs/links/loggerLink",
-      "destination": "/docs/client/advanced/links/loggerLink",
+      "destination": "/docs/client/links/loggerLink",
       "permanent": true
     },
     {
       "source": "/docs/links/overview",
-      "destination": "/docs/client/advanced/links/overview",
+      "destination": "/docs/client/links",
       "permanent": true
     },
     {
       "source": "/docs/links/splitLink",
-      "destination": "/docs/client/advanced/links/splitLink",
+      "destination": "/docs/client/links/splitLink",
       "permanent": true
     },
     {
       "source": "/docs/links/wsLink",
-      "destination": "/docs/client/advanced/links/wsLink",
+      "destination": "/docs/client/links/wsLink",
       "permanent": true
     }
   ]

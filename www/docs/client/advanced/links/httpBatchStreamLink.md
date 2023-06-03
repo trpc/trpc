@@ -2,7 +2,7 @@
 id: httpBatchStreamLink
 title: HTTP Batch Stream Link
 sidebar_label: HTTP Batch Stream Link
-slug: /client/advanced/links/httpBatchStreamLink
+slug: /client/links/httpBatchStreamLink
 ---
 
 `unstable_httpBatchStreamLink` is a [**terminating link**](./overview.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
