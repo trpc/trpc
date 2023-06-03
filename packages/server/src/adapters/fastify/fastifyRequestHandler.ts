@@ -52,7 +52,10 @@ export async function fastifyRequestHandler<
   let resolve: (value: FastifyReply) => void;
   const promise = new Promise<FastifyReply>((r) => (resolve = r));
 
-  const unstable_onHead = (head: HTTPResponse) => {
+  let isStream = false;
+  let stream: Readable;
+  let formatter: ReturnType<typeof getBatchStreamFormatter>;
+  const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
     if (!opts.res.statusCode || opts.res.statusCode === 200) {
       opts.res.statusCode = head.status;
     }
@@ -63,18 +66,7 @@ export async function fastifyRequestHandler<
       }
       void opts.res.header(key, value);
     }
-  };
-
-  let isStream = false;
-  let stream: Readable;
-  const formatter = getBatchStreamFormatter();
-  const unstable_onChunk = ([index, string]: ResponseChunk) => {
-    if (index === -1) {
-      // full response, no streaming
-      resolve(opts.res.send(string));
-      return;
-    }
-    if (!isStream) {
+    if (isStreaming) {
       void opts.res.header('Transfer-Encoding', 'chunked');
       void opts.res.header(
         'Vary',
@@ -86,8 +78,17 @@ export async function fastifyRequestHandler<
       stream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154
       resolve(opts.res.send(stream));
       isStream = true;
+      formatter = getBatchStreamFormatter();
     }
-    stream.push(formatter(index, string));
+  };
+
+  const unstable_onChunk = ([index, string]: ResponseChunk) => {
+    if (index === -1) {
+      // full response, no streaming
+      resolve(opts.res.send(string));
+    } else {
+      stream.push(formatter!(index, string));
+    }
   };
 
   resolveHTTPResponse({
@@ -105,7 +106,7 @@ export async function fastifyRequestHandler<
   })
     .then(() => {
       if (isStream) {
-        stream.push(formatter.end());
+        stream.push(formatter!.end());
         stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
       }
     })
