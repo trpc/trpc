@@ -1,6 +1,5 @@
 import { NonEmptyArray } from '../internals/types';
 import { HTTPLinkBaseOptions } from './internals/httpUtils';
-import { TextDecoderEsque } from './internals/streamingUtils';
 import { HTTPHeaders, Operation } from './types';
 
 export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
