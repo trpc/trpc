@@ -3,7 +3,7 @@ import {
   createHTTPBatchLink,
   RequesterFn,
 } from './internals/createHTTPBatchLink';
-import { getTextDecoder } from "./internals/getTextDecoder";
+import { getTextDecoder } from './internals/getTextDecoder';
 import { streamingJsonHttpRequester } from './internals/parseJSONStream';
 import { Operation } from './types';
 

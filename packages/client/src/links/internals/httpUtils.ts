@@ -9,7 +9,7 @@ import {
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
-import { TextDecoderEsque } from "../internals/streamingUtils";
+import { TextDecoderEsque } from '../internals/streamingUtils';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 /**
