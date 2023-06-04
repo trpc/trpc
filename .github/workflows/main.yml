@@ -59,10 +59,10 @@ jobs:
           if_no_artifact_found: ignore
 
       - name: Build
-        run: pnpm turbo --filter "@trpc/*" build
+        run: pnpm turbo --filter "@trpc/*" build --force
 
       - name: Test
-        run: pnpm turbo --filter tests test-ci
+        run: pnpm turbo --filter tests test-ci --force
 
       - uses: codecov/codecov-action@v3
         with:
