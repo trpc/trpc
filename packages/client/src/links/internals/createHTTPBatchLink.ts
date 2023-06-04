@@ -15,11 +15,11 @@ import {
 /**
  * @internal
  */
-export type RequesterFn = (
+export type RequesterFn<T extends HTTPBatchLinkOptions> = (
   requesterOpts: ResolvedHTTPLinkOptions & {
     runtime: TRPCClientRuntime;
     type: ProcedureType;
-    opts: HTTPBatchLinkOptions;
+    opts: T;
   },
 ) => (
   batchOps: Operation[],
@@ -32,9 +32,11 @@ export type RequesterFn = (
 /**
  * @internal
  */
-export function createHTTPBatchLink(requester: RequesterFn) {
+export function createHTTPBatchLink<T extends HTTPBatchLinkOptions>(
+  requester: RequesterFn<T>,
+) {
   return function httpBatchLink<TRouter extends AnyRouter>(
-    opts: HTTPBatchLinkOptions,
+    opts: T,
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
     const maxURLLength = opts.maxURLLength || Infinity;

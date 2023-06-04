@@ -1,4 +1,5 @@
 import { NonEmptyArray } from '../internals/types';
+import { HTTPBatchStreamLinkOptions } from './HTTPBatchStreamLinkOptions';
 import {
   createHTTPBatchLink,
   RequesterFn,
@@ -7,7 +8,9 @@ import { getTextDecoder } from './internals/getTextDecoder';
 import { streamingJsonHttpRequester } from './internals/parseJSONStream';
 import { Operation } from './types';
 
-const streamRequester: RequesterFn = (requesterOpts) => {
+const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions> = (
+  requesterOpts,
+) => {
   const textDecoder = getTextDecoder(requesterOpts.opts.textDecoder);
   return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');

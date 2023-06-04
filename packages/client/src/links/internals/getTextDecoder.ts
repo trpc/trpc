@@ -7,17 +7,11 @@ export function getTextDecoder(
     return customTextDecoder;
   }
 
-  if (
-    typeof window !== 'undefined' &&
-    typeof window.TextDecoder === 'function'
-  ) {
+  if (typeof window !== 'undefined' && window.TextDecoder) {
     return new window.TextDecoder();
   }
 
-  if (
-    typeof globalThis !== 'undefined' &&
-    typeof globalThis.TextDecoder === 'function'
-  ) {
+  if (typeof globalThis !== 'undefined' && globalThis.TextDecoder) {
     return new globalThis.TextDecoder();
   }
 
