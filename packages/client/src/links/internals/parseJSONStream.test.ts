@@ -22,6 +22,7 @@ describe('parseJsonStream', () => {
         orderReceived.push(index);
         itemsArray[index] = data;
       },
+      textDecoder: new TextDecoder(),
     });
     expect(orderReceived).toEqual([0, 2, 1]);
     expect(itemsArray).toEqual([{ a: 1 }, { b: 2 }, { c: 3 }]);

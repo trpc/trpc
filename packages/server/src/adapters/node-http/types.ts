@@ -12,7 +12,17 @@ export type NodeHTTPRequest = IncomingMessage & {
   query?: ParsedQs;
   body?: unknown;
 };
-export type NodeHTTPResponse = ServerResponse;
+export type NodeHTTPResponse = ServerResponse & {
+  /**
+   * Force the partially-compressed response to be flushed to the client.
+   *
+   * Added by compression middleware
+   * (depending on the environment,
+   * e.g. Next <= 12,
+   * e.g. Express w/ `compression()`)
+   */
+  flush?: () => void;
+};
 
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
