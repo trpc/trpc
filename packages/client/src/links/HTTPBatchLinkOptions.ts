@@ -14,12 +14,6 @@ export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
     | ((opts: {
         opList: NonEmptyArray<Operation>;
       }) => HTTPHeaders | Promise<HTTPHeaders>);
-
-  /**
-   * Used for `httpBatchStreamLink`. Will default to the webAPI `TextDecoder`,
-   * but you can use this option if your client runtime doesn't provide it.
-   */
-  textDecoder?: TextDecoderEsque;
 }
 /**
  * @alias HttpBatchLinkOptions
