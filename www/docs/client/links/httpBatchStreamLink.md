@@ -92,7 +92,7 @@ unstable_httpBatchStreamLink({
   url: 'http://localhost:3000',
   textDecoder: new TextDecoder(),
   // ^? textDecoder: { decode: (input: Uint8Array) => string }
-})
+});
 ```
 
 ## Compatibility (server-side)
