@@ -9,6 +9,7 @@ import {
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
+import { TextDecoderEsque } from "../internals/streamingUtils";
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 /**
@@ -138,7 +139,7 @@ export const jsonHttpRequester: Requester = (opts) => {
 export type HTTPRequestOptions = HTTPBaseRequestOptions &
   ContentOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-    TextDecoder?: TextDecoder;
+    TextDecoder?: TextDecoderEsque;
   };
 
 export async function fetchHTTPResponse(
