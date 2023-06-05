@@ -9,6 +9,7 @@ import {
   HTTPBaseRequestOptions,
   HTTPResult,
 } from './httpUtils';
+import { TextDecoderEsque } from './streamingUtils';
 
 /**
  * @internal
@@ -35,6 +36,7 @@ export async function parseJSONStream<TReturn>(opts: {
    */
   parse?: (text: string) => TReturn;
   signal?: AbortSignal;
+  textDecoder: TextDecoderEsque;
 }): Promise<void> {
   const parse = opts.parse ?? JSON.parse;
 
@@ -55,10 +57,8 @@ export async function parseJSONStream<TReturn>(opts: {
     opts.onSingle(Number(indexAsStr), parse(text));
   };
 
-  await readLines(opts.readableStream, onLine);
+  await readLines(opts.readableStream, onLine, opts.textDecoder);
 }
-
-const textDecoder = new TextDecoder();
 
 /**
  * Handle transforming a stream of bytes into lines of text.
@@ -71,6 +71,7 @@ const textDecoder = new TextDecoder();
 async function readLines(
   readableStream: ReadableStream<Uint8Array> | NodeJS.ReadableStream,
   onLine: (line: string) => void,
+  textDecoder: TextDecoderEsque,
 ) {
   let partOfLine = '';
 
@@ -132,6 +133,7 @@ async function readStandardChunks(
 export const streamingJsonHttpRequester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+    textDecoder: TextDecoderEsque;
   },
   onSingle: (index: number, res: HTTPResult) => void,
 ) => {
@@ -150,7 +152,7 @@ export const streamingJsonHttpRequester = (
   const promise = responsePromise.then(async (res) => {
     if (!res.body) throw new Error('Received response without body');
     const meta: HTTPResult['meta'] = { response: res };
-    return parseJSONStream({
+    return parseJSONStream<HTTPResult>({
       readableStream: res.body,
       onSingle,
       parse: (string) => ({
@@ -158,6 +160,7 @@ export const streamingJsonHttpRequester = (
         meta,
       }),
       signal: ac?.signal,
+      textDecoder: opts.textDecoder,
     });
   });
 
