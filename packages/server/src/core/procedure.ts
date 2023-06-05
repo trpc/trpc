@@ -64,10 +64,10 @@ export interface ProcedureParams<
  */
 export type ProcedureArgs<TParams extends ProcedureParams> =
   TParams['_input_in'] extends UnsetMarker
-    ? [input?: undefined | void, opts?: ProcedureOptions]
-    : undefined extends TParams['_input_in']
-    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
-    : [input: TParams['_input_in'], opts?: ProcedureOptions];
+  ? [input?: undefined | void, opts?: ProcedureOptions]
+  : undefined extends TParams['_input_in']
+  ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
+  : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
 /**
  *
@@ -87,7 +87,7 @@ export interface Procedure<
   /**
    * @internal
    */
-  (opts: ProcedureCallOptions): Promise<unknown>;
+  (opts: ProcedureCallOptions): Promise<{ data: unknown } | { generator: AsyncGenerator<unknown> }>;
 }
 
 export type AnyQueryProcedure = Procedure<'query', any>;

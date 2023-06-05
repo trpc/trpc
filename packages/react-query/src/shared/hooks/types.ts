@@ -49,7 +49,9 @@ export interface TRPCUseQueryBaseOptions {
 
 export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
   extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {}
+  TRPCUseQueryBaseOptions {
+  streaming?: boolean;
+}
 
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
@@ -64,7 +66,7 @@ export interface DefinedUseTRPCQueryOptions<
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>
   extends QueryOptions<TData, TError, TData, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {}
+  TRPCUseQueryBaseOptions { }
 
 export type ExtractCursorType<TInput> = TInput extends { cursor: any }
   ? TInput['cursor']
@@ -72,13 +74,13 @@ export type ExtractCursorType<TInput> = TInput extends { cursor: any }
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends UseInfiniteQueryOptions<
-      TOutput,
-      TError,
-      TOutput,
-      TOutput,
-      [TPath, Omit<TInput, 'cursor'>]
-    >,
-    TRPCUseQueryBaseOptions {
+    TOutput,
+    TError,
+    TOutput,
+    TOutput,
+    [TPath, Omit<TInput, 'cursor'>]
+  >,
+  TRPCUseQueryBaseOptions {
   initialCursor?: ExtractCursorType<TInput>;
 }
 
@@ -88,7 +90,9 @@ export interface UseTRPCMutationOptions<
   TOutput,
   TContext = unknown,
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
-    TRPCUseQueryBaseOptions {}
+  TRPCUseQueryBaseOptions {
+  streaming?: boolean;
+}
 
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
@@ -118,7 +122,9 @@ export type CreateClient<TRouter extends AnyRouter> = (
  * @internal
  */
 export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
-  TRPCHookResult;
+  TRPCHookResult & {
+    streamingData: TData | undefined;
+  }
 
 /**
  * @internal
@@ -154,4 +160,6 @@ export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
  * @internal
  */
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
-  UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
+  UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult & {
+    streamingData: TData | undefined;
+  };

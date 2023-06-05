@@ -280,6 +280,9 @@ export function createRootHooks<
     pathAndInput: [path: string, ...args: unknown[]],
     opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
+    const [streamingData, setStreamingData] = useState<unknown | undefined>(
+      undefined,
+    );
     const context = useContext();
     if (!context) {
       throw new Error(
@@ -310,9 +313,11 @@ export function createRootHooks<
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
+    const queryKey = getArrayQueryKey(pathAndInput, 'query') as any;
+
     const hook = __useQuery({
       ...ssrOpts,
-      queryKey: getArrayQueryKey(pathAndInput, 'query') as any,
+      queryKey,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -324,9 +329,22 @@ export function createRootHooks<
           },
         };
 
-        return (client as any).query(
-          ...getClientArgs(pathAndInput, actualOpts),
-        );
+        if (opts?.streaming) {
+          return (async () => {
+            let lastVal: any | undefined;
+            for await (const result of (client as any).queryGenerator(
+              ...getClientArgs(pathAndInput, actualOpts),
+            )) {
+              lastVal = result;
+              setStreamingData(result);
+            }
+            return lastVal;
+          })();
+        } else {
+          return (client as any).query(
+            ...getClientArgs(pathAndInput, actualOpts),
+          );
+        }
       },
       context: ReactQueryContext,
     }) as UseTRPCQueryResult<unknown, TError>;
@@ -334,6 +352,8 @@ export function createRootHooks<
     hook.trpc = useHookResult({
       path: pathAndInput[0],
     });
+
+    hook.streamingData = streamingData;
 
     return hook;
   }
@@ -346,18 +366,36 @@ export function createRootHooks<
     const { client } = useContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
     const actualPath = Array.isArray(path) ? path[0] : path;
+    const [streamingData, setStreamingData] = useState<unknown | undefined>(
+      undefined,
+    );
 
     const defaultOpts = queryClient.getMutationDefaults([
       actualPath.split('.'),
     ]);
 
+    const mutationKey = [actualPath.split('.')];
+
     const hook = __useMutation({
       ...opts,
-      mutationKey: [actualPath.split('.')],
+      mutationKey,
       mutationFn: (input) => {
-        return (client.mutation as any)(
-          ...getClientArgs([actualPath, input], opts),
-        );
+        if (opts?.streaming) {
+          return (async () => {
+            let lastVal: any | undefined;
+            for await (const result of (client.mutationGenerator as any)(
+              ...getClientArgs([actualPath, input], opts),
+            )) {
+              lastVal = result;
+              setStreamingData(result);
+            }
+            return lastVal;
+          })();
+        } else {
+          return (client.mutation as any)(
+            ...getClientArgs([actualPath, input], opts),
+          );
+        }
       },
       context: ReactQueryContext,
       onSuccess(...args) {
@@ -375,6 +413,10 @@ export function createRootHooks<
     hook.trpc = useHookResult({
       path: actualPath,
     });
+
+    if (opts?.streaming && streamingData !== undefined) {
+      hook.streamingData = streamingData;
+    }
 
     return hook;
   }

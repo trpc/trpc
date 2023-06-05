@@ -24,13 +24,21 @@ export type PromiseAndCancel<TValue> = {
 /**
  * @internal
  */
+export type GeneratorAndCancel<TValue> = {
+  generator: AsyncGenerator<TValue>;
+  cancel: CancelFn;
+};
+
+/**
+ * @internal
+ */
 export type OperationContext = Record<string, unknown>;
 /**
  * @internal
  */
 export type Operation<TInput = unknown> = {
   id: number;
-  type: 'query' | 'mutation' | 'subscription';
+  type: 'query' | 'mutation' | 'subscription' | 'queryGenerator' | 'mutationGenerator';
   input: TInput;
   path: string;
   context: OperationContext;
@@ -61,8 +69,8 @@ export interface TRPCClientRuntime {
  */
 export interface OperationResultEnvelope<TOutput> {
   result:
-    | TRPCSuccessResponse<TOutput>['result']
-    | TRPCResultMessage<TOutput>['result'];
+  | TRPCSuccessResponse<TOutput>['result']
+  | TRPCResultMessage<TOutput>['result'];
   context?: OperationContext;
 }
 

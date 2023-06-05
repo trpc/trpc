@@ -18,10 +18,10 @@ export type UndefinedKeys<TType> = {
 export type FlatOverwrite<TType, TWith> = InferOptional<
   {
     [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
-      ? TWith[TKey]
-      : TKey extends keyof TType
-      ? TType[TKey]
-      : never;
+    ? TWith[TKey]
+    : TKey extends keyof TType
+    ? TType[TKey]
+    : never;
   },
   UndefinedKeys<TType> | UndefinedKeys<TWith>
 >;
@@ -70,6 +70,11 @@ export type Dict<TType> = Record<string, TType | undefined>;
 export type MaybePromise<TType> = TType | Promise<TType>;
 
 /**
+ * @public
+ */
+export type MaybePromiseOrGenerator<TType> = TType | Promise<TType> | AsyncGenerator<TType>;
+
+/**
  * @internal
  *
  * Creates a "lower-priority" type inference.
@@ -111,6 +116,6 @@ export type Unwrap<TType> = TType extends (...args: any[]) => infer R
  */
 export type DeepPartial<TObject> = TObject extends object
   ? {
-      [P in keyof TObject]?: DeepPartial<TObject[P]>;
-    }
+    [P in keyof TObject]?: DeepPartial<TObject[P]>;
+  }
   : TObject;

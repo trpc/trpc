@@ -1,28 +1,34 @@
 /**
  * This is a Next.js page.
  */
+import { useEffect } from 'react';
 import { trpc } from '../utils/trpc';
 
 export default function IndexPage() {
   // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
-  const result = trpc.greeting.useQuery({ name: 'client' });
+  const iteratorResult = trpc.greeting.useMutation({ streaming: true });
+  const flatResult = trpc.greetingFlat.useMutation({ streaming: false });
+  const trpcContext = trpc.useContext();
 
-  if (!result.data) {
-    return (
-      <div style={styles}>
-        <h1>Loading...</h1>
-      </div>
-    );
-  }
+  useEffect(() => {
+    iteratorResult.mutateAsync({ name: 'iterator' });
+    flatResult.mutateAsync({ name: 'flat' });
+  }, []);
+
   return (
     <div style={styles}>
-      {/**
-       * The type is defined and can be autocompleted
-       * 💡 Tip: Hover over `data` to see the result type
-       * 💡 Tip: CMD+Click (or CTRL+Click) on `text` to go to the server definition
-       * 💡 Tip: Secondary click on `text` and "Rename Symbol" to rename it both on the client & server
-       */}
-      <h1>{result.data.text}</h1>
+      ITERATOR:
+      {iteratorResult.data ? (
+        <h1>{iteratorResult.data.text}</h1>
+      ) : (
+        <h1>Loading Iterator...</h1>
+      )}
+      FLAT:
+      {flatResult.data ? (
+        <h1>{flatResult.data.text}</h1>
+      ) : (
+        <h1>Loading Flat...</h1>
+      )}
     </div>
   );
 }

@@ -47,7 +47,23 @@ interface MiddlewareErrorResult<_TParams extends ProcedureParams>
  */
 export type MiddlewareResult<TParams extends ProcedureParams> =
   | MiddlewareOKResult<TParams>
-  | MiddlewareErrorResult<TParams>;
+  | MiddlewareErrorResult<TParams>
+  | MiddlewareGeneratorOKResult<TParams>;
+
+export type MiddlewareGeneratorResult<TParams extends ProcedureParams> =
+  MiddlewareGeneratorOKResult<TParams>
+  | MiddlewareGeneratorErrorResult<TParams>;
+
+type MiddlewareGeneratorErrorResult<_TParams extends ProcedureParams> = MiddlewareErrorResult<_TParams>;
+
+/**
+ * @internal
+ */
+interface MiddlewareGeneratorOKResult<_TParams extends ProcedureParams>
+  extends MiddlewareResultBase {
+  ok: true;
+  generator: AsyncGenerator<unknown>;
+}
 
 /**
  * @internal
@@ -73,8 +89,8 @@ export interface MiddlewareBuilder<
       >;
     } extends infer OParams extends ProcedureParams
       ?
-          | MiddlewareBuilder<OParams, $Params>
-          | MiddlewareFunction<OParams, $Params>
+      | MiddlewareBuilder<OParams, $Params>
+      | MiddlewareFunction<OParams, $Params>
       : never,
   ): CreateMiddlewareReturnInput<
     TRoot,
@@ -137,17 +153,15 @@ export type MiddlewareFunction<
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      <$Context>(opts: { ctx: $Context }): Promise<
-        MiddlewareResult<{
-          _config: TParams['_config'];
-          _ctx_out: $Context;
-          _input_in: TParams['_input_in'];
-          _input_out: TParams['_input_out'];
-          _output_in: TParams['_output_in'];
-          _output_out: TParams['_output_out'];
-          _meta: TParams['_meta'];
-        }>
-      >;
+      <$Context>(opts: { ctx: $Context }): Promise<MiddlewareResult<{
+        _config: TParams['_config'];
+        _ctx_out: $Context;
+        _input_in: TParams['_input_in'];
+        _input_out: TParams['_input_out'];
+        _output_in: TParams['_output_in'];
+        _output_out: TParams['_output_out'];
+        _meta: TParams['_meta'];
+      }>>;
       (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
@@ -214,9 +228,9 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     const combinedInput =
       isPlainObject(input) && isPlainObject(parsedInput)
         ? {
-            ...input,
-            ...parsedInput,
-          }
+          ...input,
+          ...parsedInput,
+        }
         : parsedInput;
 
     // TODO fix this typing?
@@ -231,7 +245,16 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
   const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
+    if (next.constructor.name === 'AsyncGeneratorFunction') {
+      throw new Error('Async generators are not supported in output middleware')
+    }
+
     const result = await next();
+
+    if ("generator" in result) {
+      throw new Error('Async generators are not supported in output middleware');
+    }
+
     if (!result.ok) {
       // pass through failures without validating
       return result;

@@ -74,9 +74,9 @@ function initResponse<
   type: ProcedureType | 'unknown';
   responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
   untransformedJSON?:
-    | TRPCResponse<unknown, inferRouterError<TRouter>>
-    | TRPCResponse<unknown, inferRouterError<TRouter>>[]
-    | undefined;
+  | TRPCResponse<unknown, inferRouterError<TRouter>>
+  | TRPCResponse<unknown, inferRouterError<TRouter>>[]
+  | undefined;
   errors?: TRPCError[];
 }): HTTPResponse {
   const {
@@ -97,8 +97,8 @@ function initResponse<
   const data = eagerGeneration
     ? []
     : Array.isArray(untransformedJSON)
-    ? untransformedJSON
-    : [untransformedJSON];
+      ? untransformedJSON
+      : [untransformedJSON];
 
   const meta =
     responseMeta?.({
@@ -135,35 +135,60 @@ async function inputToProcedureCall<
   type: 'query' | 'mutation';
   input: unknown;
   path: string;
-}): Promise<TRPCResponse<unknown, inferRouterError<TRouter>>> {
+}): Promise<{ data: TRPCResponse<unknown, inferRouterError<TRouter>> } | { generator: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>> }> {
   const { opts, ctx, type, input, path } = procedureOpts;
   try {
-    const data = await callProcedure({
+    const result = await callProcedure({
       procedures: opts.router._def.procedures,
       path,
       rawInput: input,
       ctx,
       type,
     });
-    return {
-      result: {
-        data,
-      },
-    };
+
+    if ("generator" in result) {
+      const newGenerator = (async function* () {
+        for await (const r of result.generator) {
+          yield {
+            result: {
+              data: r,
+            }
+          }
+        }
+      })()
+
+      return {
+        generator: newGenerator
+      };
+    } else {
+      return {
+        data:
+        {
+          result: {
+            data: result.data
+          }
+        }
+      }
+    }
+
+
+
   } catch (cause) {
     const error = getTRPCErrorFromUnknown(cause);
 
     opts.onError?.({ error, path, input, ctx, type: type, req: opts.req });
 
     return {
-      error: getErrorShape({
-        config: opts.router._def._config,
-        error,
-        type,
-        path,
-        input,
-        ctx,
-      }),
+      data: {
+        error: getErrorShape({
+          config: opts.router._def._config,
+          error,
+          type,
+          path,
+          input,
+          ctx,
+        }),
+      }
     };
   }
 }
@@ -312,11 +337,13 @@ export async function resolveHTTPResponse<
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
-    const promises = paths.map((path, index) =>
+    const results = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
     );
 
     if (!isStreamCall) {
+      const promises = results.map((r) => r.then((result) => "generator" in result ? lastGeneratorElement(result.generator) : result.data));
+
       /**
        * Non-streaming response:
        * - await all responses in parallel, blocking on the slowest one
@@ -369,22 +396,56 @@ export async function resolveHTTPResponse<
     });
     onHead(headResponse);
 
+    const srcPromises: Promise<{
+      value: unknown,
+      skip: boolean,
+      next?: Promise<IteratorResult<TRPCResponse<unknown, inferRouterError<TRouter>>, any>>,
+      generator?: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>, any, unknown>
+    }>[] = results.map((r) => r.then((result) => {
+      if ("generator" in result) {
+        return ({
+          value: null,
+          skip: true as const,
+          next: result.generator.next(),
+          generator: result.generator,
+        })
+      } else {
+        return {
+          value: result.data,
+          skip: false as const,
+        }
+      }
+    }));
+
     const indexedPromises = new Map(
-      promises.map((promise, index) => [
+      srcPromises.map((promise, index) => [
         index,
         promise.then((r) => [index, r] as const),
-      ]),
+      ])
     );
-    for (let i = 0; i < paths.length; i++) {
-      const [index, untransformedJSON] = await Promise.race(
+
+    while (indexedPromises.size > 0) {
+      const [index, resultWrapper] = await Promise.race(
         indexedPromises.values(),
       );
       indexedPromises.delete(index);
 
+      if (resultWrapper.next && resultWrapper.generator) {
+        indexedPromises.set(index, resultWrapper.next.then(r => [index, {
+          value: r.value,
+          skip: r.done ?? false,
+          next: r.done ? undefined : resultWrapper.generator?.next(),
+          generator: resultWrapper.generator,
+        }]));
+      }
+
+      if (resultWrapper.skip)
+        continue;
+
       try {
         const transformedJSON = transformTRPCResponse(
           router._def._config,
-          untransformedJSON,
+          resultWrapper.value as TRPCResponse,
         );
         const body = JSON.stringify(transformedJSON);
 
@@ -436,4 +497,15 @@ export async function resolveHTTPResponse<
       body,
     };
   }
+}
+
+async function lastGeneratorElement<TType>(generator: AsyncGenerator<TType>) {
+  let lastElement: TType | undefined = undefined;
+  for await (const elem of generator) {
+    lastElement = elem;
+  }
+  if (!lastElement) {
+    throw new Error("Generator was empty");
+  }
+  return lastElement;
 }

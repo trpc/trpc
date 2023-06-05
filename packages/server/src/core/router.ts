@@ -98,10 +98,10 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  */
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
-    : never;
+  ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+  : TProcedures[TKey] extends AnyProcedure
+  ? DecorateProcedure<TProcedures[TKey]>
+  : never;
 };
 
 /**
@@ -200,7 +200,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     if (reservedWordsUsed.size > 0) {
       throw new Error(
         'Reserved words used in `router({})` call: ' +
-          Array.from(reservedWordsUsed).join(', '),
+        Array.from(reservedWordsUsed).join(', '),
       );
     }
 

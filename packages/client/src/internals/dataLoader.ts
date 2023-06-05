@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { CancelFn, PromiseAndCancel } from '../links/types';
+import { CancelFn, GeneratorAndCancel, PromiseAndCancel } from '../links/types';
 
 type BatchItem<TKey, TValue> = {
   aborted: boolean;
   key: TKey;
-  resolve: ((value: TValue) => void) | null;
+  batchCompletePromise: Promise<void>;
+  markBatchComplete: () => void;
+  next: ((value: TValue) => void) | null;
   reject: ((error: Error) => void) | null;
   batch: Batch<TKey, TValue> | null;
 };
@@ -17,6 +19,7 @@ type BatchLoader<TKey, TValue> = {
   fetch: (
     keys: TKey[],
     unitResolver: (index: number, value: NonNullable<TValue>) => void,
+    batchComplete: () => void,
   ) => {
     promise: Promise<TValue[]>;
     cancel: CancelFn;
@@ -109,14 +112,15 @@ export function dataLoader<TKey, TValue>(
       }
       const unitResolver = (index: number, value: NonNullable<TValue>) => {
         const item = batch.items[index]!;
-        item.resolve?.(value);
+        item.next?.(value);
         item.batch = null;
         item.reject = null;
-        item.resolve = null;
+        item.next = null;
       };
       const { promise, cancel } = batchLoader.fetch(
         batch.items.map((_item) => _item.key),
         unitResolver,
+        () => { batch.items.map((item) => item.markBatchComplete()) }
       );
       batch.cancel = cancel;
 
@@ -128,7 +132,7 @@ export function dataLoader<TKey, TValue>(
           }
           for (let i = 0; i < batch.items.length; i++) {
             const item = batch.items[i]!;
-            item.reject?.(new Error('Missing result'));
+            item.reject?.(new Error(`Missing result at ${i}`));
             item.batch = null;
           }
         })
@@ -140,18 +144,93 @@ export function dataLoader<TKey, TValue>(
         });
     }
   }
-  function load(key: TKey): PromiseAndCancel<TValue> {
+
+  function loadGenerator(key: TKey, next?: (val: TValue) => void): GeneratorAndCancel<TValue> {
+    let markBatchComplete: () => void = throwFatalError;
+
+    const batchCompletePromise = new Promise<void>((resolve) => {
+      markBatchComplete = resolve;
+    })
+
     const item: BatchItem<TKey, TValue> = {
       aborted: false,
       key,
       batch: null,
-      resolve: throwFatalError,
+      markBatchComplete,
+      batchCompletePromise,
+      next: throwFatalError,
+      reject: throwFatalError,
+    };
+
+    const generator = async function* () {
+      let addedToPending = false;
+      let anyResults = false;
+
+      // TODO: This can race if a new promise isn't established
+      while (true) {
+        const promise = new Promise<TValue>((resolve, reject) => {
+          item.reject = anyResults ? null : reject;
+          item.next = (val: TValue) => { resolve(val); next?.(val); };
+        });
+
+        if (!addedToPending) {
+          if (!pendingItems) {
+            pendingItems = [];
+          }
+          pendingItems.push(item);
+          addedToPending = true;
+        }
+
+        const raceResult = await Promise.race([
+          promise.then((value) => ({ complete: false as const, value })),
+          item.batchCompletePromise.then(() => ({ complete: true as const }))
+        ]);
+
+        if (!raceResult.complete) {
+          anyResults = true;
+          yield raceResult.value;
+        } else {
+          break;
+        }
+      }
+    }();
+
+    if (!dispatchTimer) {
+      dispatchTimer = setTimeout(dispatch);
+    }
+    const cancel = () => {
+      item.aborted = true;
+
+      if (item.batch?.items.every((item) => item.aborted)) {
+        // All items in the batch have been cancelled
+        item.batch.cancel();
+        item.batch = null;
+      }
+    };
+
+    return { generator, cancel };
+  }
+
+  function load(key: TKey, next?: (val: TValue) => void): PromiseAndCancel<TValue> {
+    let markBatchComplete: () => void = throwFatalError;
+
+    const batchCompletePromise = new Promise<void>((resolve) => {
+      markBatchComplete = resolve;
+    })
+
+    const item: BatchItem<TKey, TValue> = {
+      aborted: false,
+      key,
+      batch: null,
+      batchCompletePromise,
+      markBatchComplete,
+      next: throwFatalError,
       reject: throwFatalError,
     };
 
     const promise = new Promise<TValue>((resolve, reject) => {
       item.reject = reject;
-      item.resolve = resolve;
+      item.next = (val: TValue) => { resolve(val); next?.(val); };
 
       if (!pendingItems) {
         pendingItems = [];
@@ -177,5 +256,6 @@ export function dataLoader<TKey, TValue>(
 
   return {
     load,
+    loadGenerator,
   };
 }

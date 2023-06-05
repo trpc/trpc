@@ -17,12 +17,12 @@ type ConsoleEsque = {
 
 type EnableFnOptions<TRouter extends AnyRouter> =
   | (Operation & {
-      direction: 'up';
-    })
+    direction: 'up';
+  })
   | {
-      direction: 'down';
-      result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
-    };
+    direction: 'down';
+    result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+  };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
 ) => boolean;
@@ -30,19 +30,19 @@ type EnabledFn<TRouter extends AnyRouter> = (
 type LoggerLinkFnOptions<TRouter extends AnyRouter> = Operation &
   (
     | {
-        /**
-         * Request was just initialized
-         */
-        direction: 'up';
-      }
+      /**
+       * Request was just initialized
+       */
+      direction: 'up';
+    }
     | {
-        /**
-         * Request result
-         */
-        direction: 'down';
-        result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
-        elapsedMs: number;
-      }
+      /**
+       * Request result
+       */
+      direction: 'down';
+      result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+      elapsedMs: number;
+    }
   );
 
 type LoggerLinkFn<TRouter extends AnyRouter> = (
@@ -51,7 +51,9 @@ type LoggerLinkFn<TRouter extends AnyRouter> = (
 
 const palette = {
   query: ['72e3ff', '3fb0d8'],
+  queryGenerator: ['72e3ff', '3fb0d8'],
   mutation: ['c5a3fc', '904dfc'],
+  mutationGenerator: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
 export interface LoggerLinkOptions<TRouter extends AnyRouter> {
@@ -76,54 +78,54 @@ const defaultLogger =
   <TRouter extends AnyRouter>(
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
-  (props) => {
-    const { direction, type, path, context, id } = props;
-    const [light, dark] = palette[type];
+    (props) => {
+      const { direction, type, path, context, id } = props;
+      const [light, dark] = palette[type];
 
-    const rawInput = props.input;
+      const rawInput = props.input;
 
-    const input = isFormData(rawInput)
-      ? Object.fromEntries(rawInput)
-      : rawInput;
+      const input = isFormData(rawInput)
+        ? Object.fromEntries(rawInput)
+        : rawInput;
 
-    const css = `
+      const css = `
     background-color: #${direction === 'up' ? light : dark}; 
     color: ${direction === 'up' ? 'black' : 'white'};
     padding: 2px;
   `;
 
-    const parts = [
-      '%c',
-      direction === 'up' ? '>>' : '<<',
-      type,
-      `#${id}`,
-      `%c${path}%c`,
-      '%O',
-    ];
-    const args: any[] = [
-      css,
-      `${css}; font-weight: bold;`,
-      `${css}; font-weight: normal;`,
-    ];
-    if (props.direction === 'up') {
-      args.push({ input, context: context });
-    } else {
-      args.push({
-        input,
-        result: props.result,
-        elapsedMs: props.elapsedMs,
-        context,
-      });
-    }
-    const fn: 'error' | 'log' =
-      props.direction === 'down' &&
-      props.result &&
-      (props.result instanceof Error || 'error' in props.result.result)
-        ? 'error'
-        : 'log';
+      const parts = [
+        '%c',
+        direction === 'up' ? '>>' : '<<',
+        type,
+        `#${id}`,
+        `%c${path}%c`,
+        '%O',
+      ];
+      const args: any[] = [
+        css,
+        `${css}; font-weight: bold;`,
+        `${css}; font-weight: normal;`,
+      ];
+      if (props.direction === 'up') {
+        args.push({ input, context: context });
+      } else {
+        args.push({
+          input,
+          result: props.result,
+          elapsedMs: props.elapsedMs,
+          context,
+        });
+      }
+      const fn: 'error' | 'log' =
+        props.direction === 'down' &&
+          props.result &&
+          (props.result instanceof Error || 'error' in props.result.result)
+          ? 'error'
+          : 'log';
 
-    c[fn].apply(null, [parts.join(' ')].concat(args));
-  };
+      c[fn].apply(null, [parts.join(' ')].concat(args));
+    };
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink<TRouter> {

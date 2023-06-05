@@ -35,48 +35,57 @@ export type Resolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
 ) => Promise<inferTransformedProcedureOutput<TProcedure>>;
 
+/** @internal */
+export type GeneratorResolver<TProcedure extends AnyProcedure> = (
+  ...args: ProcedureArgs<TProcedure['_def']>
+) => AsyncGenerator<inferTransformedProcedureOutput<TProcedure>>;
+
 type SubscriptionResolver<TProcedure extends AnyProcedure> = (
   ...args: [
     input: ProcedureArgs<TProcedure['_def']>[0],
     opts: ProcedureArgs<TProcedure['_def']>[1] &
-      Partial<
-        TRPCSubscriptionObserver<
-          inferTransformedSubscriptionOutput<TProcedure>,
-          TRPCClientError<TProcedure>
-        >
-      >,
+    Partial<
+      TRPCSubscriptionObserver<
+        inferTransformedSubscriptionOutput<TProcedure>,
+        TRPCClientError<TProcedure>
+      >
+    >,
   ]
 ) => Unsubscribable;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnySubscriptionProcedure
-    ? {
-        subscribe: SubscriptionResolver<TProcedure>;
-      }
-    : never;
+  ? {
+    query: Resolver<TProcedure>;
+    queryGenerator: GeneratorResolver<TProcedure>;
+  }
+  : TProcedure extends AnyMutationProcedure
+  ? {
+    mutate: Resolver<TProcedure>;
+    mutateGenerator: GeneratorResolver<TProcedure>;
+  }
+  : TProcedure extends AnySubscriptionProcedure
+  ? {
+    subscribe: SubscriptionResolver<TProcedure>;
+  }
+  : never;
 
 /**
  * @internal
  */
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
-    : never;
+  ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+  : TProcedures[TKey] extends AnyProcedure
+  ? DecorateProcedure<TProcedures[TKey]>
+  : never;
 };
 
 const clientCallTypeMap: Record<keyof DecorateProcedure<any>, ProcedureType> = {
   query: 'query',
+  queryGenerator: 'queryGenerator',
   mutate: 'mutation',
+  mutateGenerator: 'mutationGenerator',
   subscribe: 'subscription',
 };
 
@@ -91,10 +100,10 @@ export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<
     TRouter['_def']['record']
   > extends infer TProcedureRecord
-    ? UntypedClientProperties & keyof TProcedureRecord extends never
-      ? TProcedureRecord
-      : IntersectionError<UntypedClientProperties & keyof TProcedureRecord>
-    : never;
+  ? UntypedClientProperties & keyof TProcedureRecord extends never
+  ? TProcedureRecord
+  : IntersectionError<UntypedClientProperties & keyof TProcedureRecord>
+  : never;
 
 /**
  * @deprecated use `createTRPCProxyClient` instead
@@ -109,8 +118,8 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     }
     return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
-      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
-
+      const callType = pathCopy.pop()!;
+      const procedureType = clientCallTypeToProcedureType(callType);
       const fullPath = pathCopy.join('.');
 
       return (client as any)[procedureType](fullPath, ...args);

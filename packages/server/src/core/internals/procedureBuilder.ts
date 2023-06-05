@@ -1,5 +1,5 @@
 import { getTRPCErrorFromUnknown, TRPCError } from '../../error/TRPCError';
-import { MaybePromise, Simplify } from '../../types';
+import { MaybePromise, MaybePromiseOrGenerator, Simplify } from '../../types';
 import {
   createInputMiddleware,
   createOutputMiddleware,
@@ -50,17 +50,17 @@ export interface BuildProcedure<
   TParams extends ProcedureParams,
   TOutput,
 > extends Procedure<
-    TType,
-    UnsetMarker extends TParams['_output_out']
-      ? OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      : TParams
-  > {}
+  TType,
+  UnsetMarker extends TParams['_output_out']
+  ? OverwriteKnown<
+    TParams,
+    {
+      _output_in: TOutput;
+      _output_out: TOutput;
+    }
+  >
+  : TParams
+> { }
 
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
@@ -90,12 +90,12 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
       ? TParams['_input_out'] extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TParams['_input_out']
-            ? $Parser
-            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : ErrorMessage<'All input parsers did not resolve to an object'>
+      ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+      ? undefined extends TParams['_input_out']
+      ? $Parser
+      : ErrorMessage<'Cannot chain an optional parser to a required parser'>
+      : $Parser
+      : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<{
     _config: TParams['_config'];
@@ -154,7 +154,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   query<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+    ) => MaybePromiseOrGenerator<FallbackValue<TParams['_output_in'], $Output>>,
   ): BuildProcedure<'query', TParams, $Output>;
 
   /**
@@ -163,7 +163,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   mutation<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+    ) => MaybePromiseOrGenerator<FallbackValue<TParams['_output_in'], $Output>>,
   ): BuildProcedure<'mutation', TParams, $Output>;
 
   /**
@@ -282,19 +282,34 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 
 function createResolver(
   _def: AnyProcedureBuilderDef,
-  resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
+  resolver: (opts: ResolveOptions<any>) => MaybePromiseOrGenerator<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
     resolver,
     middlewares: [
-      async function resolveMiddleware(opts) {
-        const data = await resolver(opts);
-        return {
-          marker: middlewareMarker,
-          ok: true,
-          data,
-          ctx: opts.ctx,
-        } as const;
+      function resolveMiddleware(opts) {
+        if (resolver.constructor.name === 'AsyncGeneratorFunction') {
+          const generator = (async function* () {
+            for await (const data of resolver(opts)) {
+              yield data;
+            }
+          })();
+          return Promise.resolve({
+            marker: middlewareMarker,
+            ok: true,
+            generator,
+            ctx: opts.ctx,
+          } as const);
+        } else {
+          return Promise.resolve(resolver(opts)).then((data: any) => {
+            return {
+              marker: middlewareMarker,
+              ok: true,
+              data,
+              ctx: opts.ctx,
+            } as const;
+          });
+        }
       },
     ],
   });
@@ -339,14 +354,14 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         input?: unknown;
         rawInput?: unknown;
       } = {
-        index: 0,
-        ctx: opts.ctx,
-      },
+          index: 0,
+          ctx: opts.ctx,
+        },
     ): Promise<MiddlewareResult<any>> => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
+        const result = middleware({
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
@@ -356,10 +371,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           next(_nextOpts?: any) {
             const nextOpts = _nextOpts as
               | {
-                  ctx?: Record<string, unknown>;
-                  input?: unknown;
-                  rawInput?: unknown;
-                }
+                ctx?: Record<string, unknown>;
+                input?: unknown;
+                rawInput?: unknown;
+              }
               | undefined;
 
             return callRecursive({
@@ -381,11 +396,11 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         });
         return result;
       } catch (cause) {
-        return {
+        return Promise.resolve({
           ok: false,
           error: getTRPCErrorFromUnknown(cause),
           marker: middlewareMarker,
-        };
+        });
       }
     };
 
@@ -399,11 +414,16 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           'No result from middlewares - did you forget to `return next()`?',
       });
     }
+
     if (!result.ok) {
-      // re-throw original error
       throw result.error;
     }
-    return result.data;
+
+    if ("data" in result) {
+      return { data: result.data }
+    } else {
+      return { generator: result.generator }
+    }
   };
   procedure._def = _def;
   procedure.meta = _def.meta;

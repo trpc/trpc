@@ -21,13 +21,15 @@ export type RequesterFn = (
     type: ProcedureType;
     opts: HTTPBatchLinkOptions;
   },
-) => (
-  batchOps: Operation[],
-  unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
-) => {
-  promise: Promise<HTTPResult[]>;
-  cancel: CancelFn;
-};
+) =>
+  (
+    batchOps: Operation[],
+    unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
+    batchComplete: () => void,
+  ) => {
+    promise: Promise<HTTPResult[]>;
+    cancel: CancelFn;
+  };
 
 /**
  * @internal
@@ -79,33 +81,69 @@ export function createHTTPBatchLink(requester: RequesterFn) {
         batchLoader('subscription'),
       );
 
-      const loaders = { query, subscription, mutation };
+      const loaders = { query, subscription, mutation, queryGenerator: query, mutationGenerator: mutation };
       return ({ op }) => {
+        // eslint-disable-next-line no-console
+        console.log("Firing op", op);
         return observable((observer) => {
           const loader = loaders[op.type];
-          const { promise, cancel } = loader.load(op);
 
-          promise
-            .then((res) => {
-              const transformed = transformResult(res.json, runtime);
+          if (!op.type.endsWith("Generator")) {
+            const { promise, cancel } = loader.load(op);
 
-              if (!transformed.ok) {
-                observer.error(
-                  TRPCClientError.from(transformed.error, {
-                    meta: res.meta,
-                  }),
-                );
-                return;
+            promise
+              .then((res) => {
+                const transformed = transformResult(res.json, runtime);
+
+                if (!transformed.ok) {
+                  observer.error(
+                    TRPCClientError.from(transformed.error, {
+                      meta: res.meta,
+                    }),
+                  );
+                  return;
+                }
+                observer.next({
+                  context: res.meta,
+                  result: transformed.result,
+                });
+                observer.complete();
+              })
+              .catch((err) => observer.error(TRPCClientError.from(err)));
+
+            return () => cancel();
+          } else {
+            // eslint-disable-next-line no-console
+            console.log("Calling loadgenerator", op.path);
+            const { generator, cancel } = loader.loadGenerator(op);
+
+            (async () => {
+              for await (const res of generator) {
+                // eslint-disable-next-line no-console
+                console.log("In batch link", res, op.path);
+                const transformed = transformResult(res.json, runtime);
+
+                if (!transformed.ok) {
+                  observer.error(
+                    TRPCClientError.from(transformed.error, {
+                      meta: res.meta,
+                    }),
+                  );
+                  return;
+                }
+                observer.next({
+                  context: res.meta,
+                  result: transformed.result,
+                });
+                // eslint-disable-next-line no-console
+                console.log("Getting another batch link", op.path);
               }
-              observer.next({
-                context: res.meta,
-                result: transformed.result,
-              });
               observer.complete();
-            })
-            .catch((err) => observer.error(TRPCClientError.from(err)));
+            })()
+              .catch((err) => observer.error(TRPCClientError.from(err)));
 
-          return () => cancel();
+            return () => cancel();
+          }
         });
       };
     };

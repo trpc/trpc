@@ -16,8 +16,8 @@ export interface HTTPLinkOptions extends HTTPLinkBaseOptions {
    * @link http://trpc.io/docs/client/headers
    */
   headers?:
-    | HTTPHeaders
-    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  | HTTPHeaders
+  | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 
 export function httpLinkFactory(factoryOpts: { requester: Requester }) {
@@ -33,7 +33,7 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
           const { promise, cancel } = factoryOpts.requester({
             ...resolvedOpts,
             runtime,
-            type,
+            type: stripGenerator(type),
             path,
             input,
             headers() {
@@ -76,3 +76,13 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
 }
 
 export const httpLink = httpLinkFactory({ requester: jsonHttpRequester });
+function stripGenerator(type: "query" | "queryGenerator" | "mutation" | "mutationGenerator" | "subscription"): "query" | "mutation" | "subscription" {
+  if (type === "queryGenerator") {
+    return "query";
+  } else if (type === "mutationGenerator") {
+    return "mutation";
+  } else {
+    return type;
+  }
+}
+

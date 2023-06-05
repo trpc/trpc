@@ -246,11 +246,21 @@ export function createWSClient(opts: WebSocketClientOptions) {
     return conn;
   }
 
+  function stripGenerator(type: 'query' | 'mutation' | 'subscription' | 'queryGenerator' | 'mutationGenerator') {
+    if (type === "queryGenerator") {
+      return "query";
+    } else if (type === "mutationGenerator") {
+      return "mutation";
+    } else {
+      return type;
+    }
+  }
+
   function request(op: Operation, callbacks: TCallbacks): UnsubscribeFn {
     const { type, input, path, id } = op;
     const envelope: TRPCRequestMessage = {
       id,
-      method: type,
+      method: stripGenerator(type),
       params: {
         input,
         path,
@@ -258,7 +268,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     };
     pendingRequests[id] = {
       ws: activeConnection,
-      type,
+      type: stripGenerator(type),
       callbacks,
       op,
     };

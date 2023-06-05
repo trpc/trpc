@@ -30,6 +30,8 @@ export async function parseJSONStream<TReturn>(opts: {
    * Called for each line of the stream
    */
   onSingle: (index: number, res: TReturn) => void;
+
+  onComplete?: () => void;
   /**
    * Transform text into useable data object (defaults to JSON.parse)
    */
@@ -56,6 +58,7 @@ export async function parseJSONStream<TReturn>(opts: {
   };
 
   await readLines(opts.readableStream, onLine);
+  opts.onComplete?.();
 }
 
 const textDecoder = new TextDecoder();
@@ -134,6 +137,7 @@ export const streamingJsonHttpRequester = (
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
   onSingle: (index: number, res: HTTPResult) => void,
+  onComplete?: () => void,
 ) => {
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const responsePromise = fetchHTTPResponse(
@@ -158,6 +162,7 @@ export const streamingJsonHttpRequester = (
         meta,
       }),
       signal: ac?.signal,
+      onComplete,
     });
   });
 

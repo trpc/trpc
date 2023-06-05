@@ -22,40 +22,40 @@ import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
-         **/
-        transformer?: 'You must set a transformer on the backend router';
-      }
-    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
-         **/
-        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
-          ? DataTransformerOptions
-          : TRouter['_def']['_config']['transformer'];
-      }
-    : {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
-         **/
-        transformer?:
-          | /** @deprecated **/ ClientDataTransformerOptions
-          | CombinedDataTransformer;
-      };
+  ? {
+    /**
+     * Data transformer
+     *
+     * You must use the same transformer on the backend and frontend
+     * @link https://trpc.io/docs/data-transformers
+     **/
+    transformer?: 'You must set a transformer on the backend router';
+  }
+  : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
+  ? {
+    /**
+     * Data transformer
+     *
+     * You must use the same transformer on the backend and frontend
+     * @link https://trpc.io/docs/data-transformers
+     **/
+    transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
+    ? DataTransformerOptions
+    : TRouter['_def']['_config']['transformer'];
+  }
+  : {
+    /**
+     * Data transformer
+     *
+     * You must use the same transformer on the backend and frontend
+     * @link https://trpc.io/docs/data-transformers
+     **/
+    transformer?:
+    | /** @deprecated **/ ClientDataTransformerOptions
+    | CombinedDataTransformer;
+  };
 
-type TRPCType = 'subscription' | 'query' | 'mutation';
+type TRPCType = 'subscription' | 'query' | 'mutation' | 'queryGenerator' | "mutationGenerator";
 export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
@@ -75,8 +75,8 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 /** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
   | CreateTRPCClientBaseOptions<TRouter> & {
-      links: TRPCLink<TRouter>[];
-    };
+    links: TRPCLink<TRouter>[];
+  };
 
 /** @internal */
 export type UntypedClientProperties =
@@ -88,6 +88,8 @@ export type UntypedClientProperties =
   | 'query'
   | 'mutation'
   | 'subscription';
+
+type RecursivePromise<TType> = Promise<{ value?: TType, next: RecursivePromise<TType> | null }>;
 
 export class TRPCUntypedClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
@@ -183,6 +185,87 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
 
     return abortablePromise;
   }
+
+
+
+  private async * requestAsAsyncGenerator<TInput = unknown, TOutput = unknown>(opts: {
+    type: TRPCType;
+    input: TInput;
+    path: string;
+    context?: OperationContext;
+    signal?: AbortSignal;
+  }): AsyncGenerator<TOutput> {
+    const req$ = this.$request<TInput, TOutput>(opts);
+
+    let resolveNext: (value: {
+      value?: TOutput;
+      next: RecursivePromise<TOutput> | null;
+    } | PromiseLike<{
+      value?: TOutput;
+      next: RecursivePromise<TOutput> | null;
+    }>) => void;
+
+    let rejectNext: (reason?: any) => void;
+    let promise: RecursivePromise<TOutput> = new Promise((resolve, reject) => {
+      resolveNext = resolve;
+      rejectNext = reject;
+    });
+
+    const unsubscribe = req$.subscribe({
+      next: value => {
+        // eslint-disable-next-line no-console
+        console.log("nextInGenerator", opts.path, value);
+        let resolveNextNext: typeof resolveNext | undefined;
+        let rejectNextNext: typeof rejectNext | undefined;
+
+        promise = new Promise((resolve, reject) => {
+          resolveNextNext = resolve;
+          rejectNextNext = reject;
+        })
+
+        if (value.result.type === 'data') {
+          resolveNext?.({
+            value: value.result.data,
+            next: promise
+          });
+
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          resolveNext = resolveNextNext!;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          rejectNext = rejectNextNext!;
+        }
+      },
+      error: err => {
+        rejectNext(err);
+      },
+      complete: () => {
+        resolveNext?.({
+          value: undefined,
+          next: null
+        });  // signal that the subscribable has completed
+      }
+    });
+
+    try {
+      let currentPromise: RecursivePromise<TOutput> = promise;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      while (true) {
+        const { value, next } = await currentPromise;
+        if (value === undefined)
+          break;
+
+        yield value;
+
+        if (next)
+          currentPromise = next;
+        else
+          break
+      }
+    } finally {
+      unsubscribe.unsubscribe();
+    }
+  }
+
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
       type: 'query',
@@ -192,9 +275,27 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       signal: opts?.signal,
     });
   }
+  public queryGenerator(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+    return this.requestAsAsyncGenerator<unknown, unknown>({
+      type: 'queryGenerator',
+      path,
+      input,
+      context: opts?.context,
+      signal: opts?.signal,
+    });
+  }
   public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
       type: 'mutation',
+      path,
+      input,
+      context: opts?.context,
+      signal: opts?.signal,
+    });
+  }
+  public mutationGenerator(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+    return this.requestAsAsyncGenerator<unknown, unknown>({
+      type: 'mutationGenerator',
       path,
       input,
       context: opts?.context,

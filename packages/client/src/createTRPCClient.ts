@@ -30,6 +30,16 @@ export interface TRPCClient<TRouter extends AnyRouter> {
     opts?: TRPCRequestOptions,
   ): Promise<inferProcedureOutput<TQueries[TPath]>>;
 
+  queryGenerator<
+    TQueries extends TRouter['_def']['queries'],
+    TPath extends string & keyof TQueries,
+    TInput extends inferProcedureInput<TQueries[TPath]>,
+  >(
+    path: TPath,
+    input?: TInput,
+    opts?: TRPCRequestOptions,
+  ): AsyncGenerator<inferProcedureOutput<TQueries[TPath]>>;
+
   mutation<
     TMutations extends TRouter['_def']['mutations'],
     TPath extends string & keyof TMutations,
@@ -39,6 +49,16 @@ export interface TRPCClient<TRouter extends AnyRouter> {
     input?: TInput,
     opts?: TRPCRequestOptions,
   ): Promise<inferTransformedProcedureOutput<TMutations[TPath]>>;
+
+  mutationGenerator<
+    TMutations extends TRouter['_def']['mutations'],
+    TPath extends string & keyof TMutations,
+    TInput extends inferProcedureInput<TMutations[TPath]>,
+  >(
+    path: TPath,
+    input?: TInput,
+    opts?: TRPCRequestOptions,
+  ): AsyncGenerator<inferTransformedProcedureOutput<TMutations[TPath]>>;
 
   subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
