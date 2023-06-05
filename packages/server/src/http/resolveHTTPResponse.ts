@@ -52,12 +52,16 @@ interface ResolveHTTPRequestOptions<
   contentTypeHandler?: BaseContentTypeHandler<any>;
   preprocessedBody?: boolean;
   /**
-   * Called as soon as the response head is known,
-   * with headers that were generated **without** knowing the response body.
+   * Called as soon as the response head is known.
+   * When streaming, headers will have been generated
+   * **without** knowing the response body.
    *
    * Without this callback, streaming is disabled.
    */
-  onHead: (headResponse: Omit<HTTPResponse, 'body'>) => void;
+  unstable_onHead: (
+    headResponse: Omit<HTTPResponse, 'body'>,
+    isStreaming: boolean,
+  ) => void;
   /**
    * Called for every procedure with `[index, result]`.
    *
@@ -67,7 +71,7 @@ interface ResolveHTTPRequestOptions<
    *
    * Without this callback, streaming is disabled.
    */
-  onChunk: (chunk: ResponseChunk) => void;
+  unstable_onChunk: (chunk: ResponseChunk) => void;
 }
 
 function initResponse<
@@ -228,8 +232,8 @@ function caughtErrorToData<
 
 /**
  * Non-streaming signature for `resolveHTTPResponse`:
- * @param opts.onHead `undefined`
- * @param opts.onChunk `undefined`
+ * @param opts.unstable_onHead `undefined`
+ * @param opts.unstable_onChunk `undefined`
  * @returns `Promise<HTTPResponse>`
  */
 export async function resolveHTTPResponse<
@@ -238,13 +242,13 @@ export async function resolveHTTPResponse<
 >(
   opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'onHead' | 'onChunk'
+    'unstable_onHead' | 'unstable_onChunk'
   >,
 ): Promise<HTTPResponse>;
 /**
  * Streaming signature for `resolveHTTPResponse`:
- * @param opts.onHead called as soon as the response head is known
- * @param opts.onChunk called for every procedure with `[index, result]`
+ * @param opts.unstable_onHead called as soon as the response head is known
+ * @param opts.unstable_onChunk called for every procedure with `[index, result]`
  * @returns `Promise<void>` since the response is streamed
  */
 export async function resolveHTTPResponse<
@@ -258,18 +262,18 @@ export async function resolveHTTPResponse<
 >(
   opts: PartialBy<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'onHead' | 'onChunk'
+    'unstable_onHead' | 'unstable_onChunk'
   >,
 ): Promise<HTTPResponse | void> {
-  const { router, req, onHead, onChunk } = opts;
+  const { router, req, unstable_onHead, unstable_onChunk } = opts;
 
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
     const headResponse: HTTPResponse = {
       status: 204,
     };
-    onHead?.(headResponse);
-    onChunk?.([-1, '']);
+    unstable_onHead?.(headResponse, false);
+    unstable_onChunk?.([-1, '']);
     return headResponse;
   }
   const contentTypeHandler =
@@ -283,8 +287,8 @@ export async function resolveHTTPResponse<
   const isBatchCall = !!req.query.get('batch');
   const isStreamCall =
     isBatchCall &&
-    onHead &&
-    onChunk &&
+    unstable_onHead &&
+    unstable_onChunk &&
     req.headers['trpc-batch-mode'] === 'stream';
 
   try {
@@ -350,7 +354,7 @@ export async function resolveHTTPResponse<
         untransformedJSON,
         errors,
       });
-      onHead?.(headResponse);
+      unstable_onHead?.(headResponse, false);
 
       // return body stuff
       const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
@@ -359,7 +363,7 @@ export async function resolveHTTPResponse<
         result,
       );
       const body = JSON.stringify(transformedJSON);
-      onChunk?.([-1, body]);
+      unstable_onChunk?.([-1, body]);
 
       return {
         status: headResponse.status,
@@ -380,7 +384,7 @@ export async function resolveHTTPResponse<
       type,
       responseMeta: opts.responseMeta,
     });
-    onHead(headResponse);
+    unstable_onHead(headResponse, true);
 
     const indexedPromises = new Map(
       promises.map((promise, index) => [
@@ -401,7 +405,7 @@ export async function resolveHTTPResponse<
         );
         const body = JSON.stringify(transformedJSON);
 
-        onChunk([index, body]);
+        unstable_onChunk([index, body]);
       } catch (cause) {
         const path = paths[index];
         const input = inputs[index];
@@ -413,7 +417,7 @@ export async function resolveHTTPResponse<
           input,
         });
 
-        onChunk([index, body]);
+        unstable_onChunk([index, body]);
       }
     }
     return;
@@ -439,9 +443,9 @@ export async function resolveHTTPResponse<
       untransformedJSON,
       errors: [error],
     });
-    onHead?.(headResponse);
+    unstable_onHead?.(headResponse, false);
 
-    onChunk?.([-1, body]);
+    unstable_onChunk?.([-1, body]);
 
     return {
       status: headResponse.status,

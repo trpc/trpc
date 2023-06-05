@@ -2,7 +2,7 @@
 id: setup
 title: Set up with Next.js
 sidebar_label: Setup
-slug: /nextjs/setup
+slug: /client/nextjs/setup
 ---
 
 import TabItem from '@theme/TabItem';
@@ -65,7 +65,7 @@ pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-
 </TabItem>
 </Tabs>
 
-The Next.js integration is actually a combination of our [React Query Integration](/docs/reactjs/introduction) and some Next.js specific integrations.
+The Next.js integration is actually a combination of our [React Query Integration](../react/introduction.mdx) and some Next.js specific integrations.
 
 ### 2. Enable strict mode
 
@@ -208,7 +208,7 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 :::note
-`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
+`createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](../../../versioned_docs/version-9.x/nextjs/introduction.md#4-create-trpc-hooks).
 :::
 
 ### 5. Configure `_app.tsx`
@@ -230,7 +230,7 @@ export default trpc.withTRPC(MyApp);
 
 You're all set!
 
-You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](/docs/reactjs/introduction)
+You can now use the React hooks you have just created to invoke your API. For more detail see the [React Query Integration](../react/introduction.mdx)
 
 ```tsx title='pages/index.tsx'
 import { trpc } from '../utils/trpc';
@@ -255,7 +255,7 @@ export default function IndexPage() {
 The `config`-argument is a function that returns an object that configures the tRPC and React Query clients. This function has a `ctx` input that gives you access to the Next.js `req` object, among other things. The returned value can contain the following properties:
 
 - **Required**:
-- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/links).
+- `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/client/links).
 - Optional:
 - `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
 - `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v4/docs/reference/QueryClient)
@@ -265,7 +265,7 @@ The `config`-argument is a function that returns an object that configures the t
 
 ### `overrides`: (default: `undefined`) {#overrides}
 
-Configure [overrides for React Query's hooks](/docs/reactjs/usecontext#invalidate-full-cache-on-every-mutation).
+Configure [overrides for React Query's hooks](/docs/client/react/usecontext#invalidate-full-cache-on-every-mutation).
 
 ### `ssr`-boolean (default: `false`)
 
@@ -307,4 +307,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find information about [queries](/docs/reactjs/usequery) and [mutations](/docs/reactjs/useMutation) now that you're using `@trpc/react-query`.
+You can also find information about [queries](/docs/client/react/usequery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query`.

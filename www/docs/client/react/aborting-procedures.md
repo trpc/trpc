@@ -2,7 +2,7 @@
 id: aborting-procedure-calls
 title: Aborting Procedure Calls
 sidebar_label: Aborting Procedure Calls
-slug: /reactjs/aborting-procedure-calls
+slug: /client/react/aborting-procedure-calls
 ---
 
 By default, tRPC does not cancel requests via React Query. If you want to opt into this behaviour, you can provide `abortOnUnmount` in your configuration.
