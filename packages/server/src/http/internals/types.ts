@@ -36,5 +36,5 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
    * generated without knowing the response data
    * (e.g. for streaming requests).
    */
-  eagerGeneration: boolean;
+  eagerGeneration?: boolean;
 }) => ResponseMeta;

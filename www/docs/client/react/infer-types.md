@@ -2,7 +2,7 @@
 id: infer-types
 title: Inferring Types
 sidebar_label: Inferring Types
-slug: /reactjs/infer-types
+slug: /client/react/infer-types
 ---
 
 <!-- Reusable snippet -->
@@ -40,7 +40,7 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-In addition to the type inference made available by `@trpc/server` ([see here](/docs/client/infer-types)) this integration also provides some inference helpers for usage purely in React.
+In addition to the type inference made available by `@trpc/server` ([see here](/docs/client/vanilla/infer-types)) this integration also provides some inference helpers for usage purely in React.
 
 ## Infer React Query options based on your router
 

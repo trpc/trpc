@@ -75,7 +75,9 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const onHead = (head: HTTPResponse) => {
+    let isStream = false;
+    let formatter: ReturnType<typeof getBatchStreamFormatter>;
+    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
       if (
         'status' in head &&
         (!opts.res.statusCode || opts.res.statusCode === 200)
@@ -89,21 +91,7 @@ export async function nodeHTTPRequestHandler<
         }
         opts.res.setHeader(key, value);
       }
-    };
-
-    const formatter = getBatchStreamFormatter();
-    let isStream = false;
-    const onChunk = ([index, string]: ResponseChunk) => {
-      if (index === -1) {
-        /**
-         * Full response, no streaming. This can happen
-         * - if the response is an error
-         * - if response is empty (HEAD request)
-         */
-        opts.res.end(string);
-        return;
-      }
-      if (!isStream) {
+      if (isStreaming) {
         opts.res.setHeader('Transfer-Encoding', 'chunked');
         const vary = opts.res.getHeader('Vary');
         opts.res.setHeader(
@@ -111,8 +99,23 @@ export async function nodeHTTPRequestHandler<
           vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
         );
         isStream = true;
+        formatter = getBatchStreamFormatter();
+        opts.res.flushHeaders();
       }
-      opts.res.write(formatter(index, string));
+    };
+
+    const unstable_onChunk = ([index, string]: ResponseChunk) => {
+      if (index === -1) {
+        /**
+         * Full response, no streaming. This can happen
+         * - if the response is an error
+         * - if response is empty (HEAD request)
+         */
+        opts.res.end(string);
+      } else {
+        opts.res.write(formatter!(index, string));
+        opts.res.flush?.();
+      }
     };
 
     await resolveHTTPResponse({
@@ -131,16 +134,15 @@ export async function nodeHTTPRequestHandler<
         });
       },
       contentTypeHandler,
-      onHead,
-      onChunk,
+      unstable_onHead,
+      unstable_onChunk,
     });
 
-    if (!isStream) {
-      return opts.res;
+    if (isStream) {
+      opts.res.write(formatter!.end());
+      opts.res.end();
     }
 
-    opts.res.write(formatter.end());
-    opts.res.end();
     return opts.res;
   });
 }

@@ -40,7 +40,11 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   const promise = new Promise<Response>((r) => (resolve = r));
   let status = 200;
 
-  const onHead = (head: HTTPResponse) => {
+  let isStream = false;
+  let controller: ReadableStreamController<any>;
+  let encoder: TextEncoder;
+  let formatter: ReturnType<typeof getBatchStreamFormatter>;
+  const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
     for (const [key, value] of Object.entries(head.headers ?? {})) {
       /* istanbul ignore if -- @preserve */
       if (typeof value === 'undefined') {
@@ -55,23 +59,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       }
     }
     status = head.status;
-  };
-
-  let isStream = false;
-  let controller: ReadableStreamController<any>;
-  let encoder: TextEncoder;
-  const formatter = getBatchStreamFormatter();
-  const onChunk = ([index, string]: ResponseChunk) => {
-    if (index === -1) {
-      // full response, no streaming
-      const response = new Response(string || null, {
-        status,
-        headers: resHeaders,
-      });
-      resolve(response);
-      return;
-    }
-    if (!isStream) {
+    if (isStreaming) {
       resHeaders.set('Transfer-Encoding', 'chunked');
       resHeaders.append('Vary', 'trpc-batch-mode');
       const stream = new ReadableStream({
@@ -85,9 +73,22 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       });
       resolve(response);
       encoder = new TextEncoder();
+      formatter = getBatchStreamFormatter();
       isStream = true;
     }
-    controller.enqueue(encoder.encode(formatter(index, string)));
+  };
+
+  const unstable_onChunk = ([index, string]: ResponseChunk) => {
+    if (index === -1) {
+      // full response, no streaming
+      const response = new Response(string || null, {
+        status,
+        headers: resHeaders,
+      });
+      resolve(response);
+    } else {
+      controller.enqueue(encoder.encode(formatter!(index, string)));
+    }
   };
 
   resolveHTTPResponse({
@@ -100,12 +101,12 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
-    onHead,
-    onChunk,
+    unstable_onHead,
+    unstable_onChunk,
   })
     .then(() => {
       if (isStream) {
-        controller.enqueue(encoder.encode(formatter.end()));
+        controller.enqueue(encoder.encode(formatter!.end()));
         controller.close();
       }
     })
