@@ -6,7 +6,7 @@ slug: /server/adapters/nextjs
 ---
 
 :::tip
-tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter, but complete documentation is [available here](/docs/client/nextjs/introduction)
+tRPC's support for Next.js is far more expansive than just an adapter. This page covers a brief summary of how to set up the adapter, but complete documentation is [available here](../../client/nextjs/introduction.mdx)
 :::
 
 ## Example app

@@ -62,8 +62,11 @@ module.exports = {
       type: 'category',
       label: 'Client Usage',
       collapsed: true,
+      link: {
+        type: 'doc',
+        id: 'client/overview',
+      },
       items: [
-        'client/overview',
         {
           type: 'category',
           label: 'React Query Integration',
@@ -105,8 +108,11 @@ module.exports = {
           type: 'category',
           label: 'Vanilla Client',
           collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/vanilla/introduction',
+          },
           items: [
-            'client/vanilla/introduction',
             'client/vanilla/setup',
             'client/vanilla/infer-types',
             'client/vanilla/aborting-procedure-calls',
@@ -116,8 +122,11 @@ module.exports = {
           type: 'category',
           label: 'Links',
           collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/links/overview',
+          },
           items: [
-            'client/links/overview',
             'client/links/httpLink',
             'client/links/httpBatchLink',
             'client/links/httpBatchStreamLink',

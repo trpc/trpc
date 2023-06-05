@@ -18,7 +18,7 @@
 
 ## Documentation
 
-Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/client/nextjs/introduction)
+Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/client/nextjs)
 
 ## Installation
 

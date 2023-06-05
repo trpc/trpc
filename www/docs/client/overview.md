@@ -2,7 +2,7 @@
 id: overview
 title: Client Overview
 sidebar_label: Overview
-slug: /client/overview
+slug: /client
 ---
 
 While a tRPC API can be called using normal HTTP requests like any other REST API, you will need a **client** to benefit from tRPC's typesafety.

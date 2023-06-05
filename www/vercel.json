@@ -67,7 +67,7 @@
     },
     {
       "source": "/docs/next",
-      "destination": "/docs/client/nextjs/introduction",
+      "destination": "/docs/client/nextjs",
       "permanent": true
     },
     {
@@ -352,7 +352,7 @@
     },
     {
       "source": "/docs/client/introduction",
-      "destination": "/docs/client/vanilla/introduction",
+      "destination": "/docs/client/vanilla",
       "permanent": true
     },
     {
@@ -377,7 +377,7 @@
     },
     {
       "source": "/docs/reactjs/introduction",
-      "destination": "/docs/client/react/introduction",
+      "destination": "/docs/client/react",
       "permanent": true
     },
     {
@@ -422,7 +422,7 @@
     },
     {
       "source": "/docs/nextjs/introduction",
-      "destination": "/docs/client/nextjs/introduction",
+      "destination": "/docs/client/nextjs",
       "permanent": true
     },
     {
