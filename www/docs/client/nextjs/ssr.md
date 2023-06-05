@@ -2,7 +2,7 @@
 id: ssr
 title: Server-Side Rendering
 sidebar_label: Server-Side Rendering (SSR)
-slug: /nextjs/ssr
+slug: /client/nextjs/ssr
 ---
 
 To enable SSR just set `ssr: true` in your `createTRPCNext` config callback.
@@ -16,7 +16,7 @@ Alternatively, you can leave SSR disabled (the default) and use [Server-Side Hel
 
 In order to execute queries properly during the server-side render step we need to add extra logic inside our `config`:
 
-Additionally, consider [`Response Caching`](../server/caching.md).
+Additionally, consider [`Response Caching`](../../server/caching.md).
 
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';

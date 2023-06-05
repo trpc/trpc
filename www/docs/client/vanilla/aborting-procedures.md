@@ -2,7 +2,7 @@
 id: aborting-procedure-calls
 title: Aborting Procedure Calls
 sidebar_label: Aborting Procedure Calls
-slug: /client/aborting-procedure-calls
+slug: /client/vanilla/aborting-procedure-calls
 ---
 
 tRPC adheres to the industry standard when it comes to aborting procedures. All you have to do is pass an `AbortSignal` to the query or mutation options, and call the `AbortController` instance's `abort` method if you need to cancel the request.

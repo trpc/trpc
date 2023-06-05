@@ -2,10 +2,10 @@
 id: httpBatchLink
 title: HTTP Batch Link
 sidebar_label: HTTP Batch Link
-slug: /links/httpBatchLink
+slug: /client/links/httpBatchLink
 ---
 
-`httpBatchLink` is a [**terminating link**](./index.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
+`httpBatchLink` is a [**terminating link**](./overview.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
 
 ## Usage
 
