@@ -4,7 +4,20 @@
   "ignorePaths": ["**/node_modules/**", "**/examples/**"],
   "ignoreDeps": ["@swc/core"],
   "updateInternalDeps": true,
+  "nvm": {
+    "enabled": false
+  },
   "npm": {
     "rollbackPrs": false
-  }
+  },
+  "packageRules": [
+    {
+      "matchDatasources": ["node-version"],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": ["pnpm"],
+      "enabled": false
+    }
+  ]
 }
