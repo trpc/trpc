@@ -64,7 +64,9 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    const unstable_onHead = (head: HTTPResponse) => {
+    let isStream = false;
+    let formatter: ReturnType<typeof getBatchStreamFormatter>;
+    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
       if (
         'status' in head &&
         (!opts.res.statusCode || opts.res.statusCode === 200)
@@ -78,10 +80,19 @@ export async function nodeHTTPRequestHandler<
         }
         opts.res.setHeader(key, value);
       }
+      if (isStreaming) {
+        opts.res.setHeader('Transfer-Encoding', 'chunked');
+        const vary = opts.res.getHeader('Vary');
+        opts.res.setHeader(
+          'Vary',
+          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
+        );
+        isStream = true;
+        formatter = getBatchStreamFormatter();
+        opts.res.flushHeaders();
+      }
     };
 
-    const formatter = getBatchStreamFormatter();
-    let isStream = false;
     const unstable_onChunk = ([index, string]: ResponseChunk) => {
       if (index === -1) {
         /**
@@ -90,18 +101,10 @@ export async function nodeHTTPRequestHandler<
          * - if response is empty (HEAD request)
          */
         opts.res.end(string);
-        return;
+      } else {
+        opts.res.write(formatter!(index, string));
+        opts.res.flush?.();
       }
-      if (!isStream) {
-        opts.res.setHeader('Transfer-Encoding', 'chunked');
-        const vary = opts.res.getHeader('Vary');
-        opts.res.setHeader(
-          'Vary',
-          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
-        );
-        isStream = true;
-      }
-      opts.res.write(formatter(index, string));
     };
 
     await resolveHTTPResponse({
@@ -124,12 +127,11 @@ export async function nodeHTTPRequestHandler<
       unstable_onChunk,
     });
 
-    if (!isStream) {
-      return opts.res;
+    if (isStream) {
+      opts.res.write(formatter!.end());
+      opts.res.end();
     }
 
-    opts.res.write(formatter.end());
-    opts.res.end();
     return opts.res;
   });
 }
