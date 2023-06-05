@@ -456,6 +456,11 @@
       "permanent": true
     },
     {
+      "source": "/docs/links/httpBatchStreamLink",
+      "destination": "/docs/client/links/httpBatchStreamLink",
+      "permanent": true
+    },
+    {
       "source": "/docs/links/httpLink",
       "destination": "/docs/client/links/httpLink",
       "permanent": true
