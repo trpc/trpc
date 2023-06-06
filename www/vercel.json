@@ -489,6 +489,11 @@
       "source": "/docs/links/wsLink",
       "destination": "/docs/client/links/wsLink",
       "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/:path",
+      "destination": "/docs/client/react/:path",
+      "permanent": true
     }
   ]
 }
