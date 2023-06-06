@@ -83,8 +83,6 @@ export function createHTTPBatchLink(requester: RequesterFn) {
 
       const loaders = { query, subscription, mutation, queryGenerator: query, mutationGenerator: mutation };
       return ({ op }) => {
-        // eslint-disable-next-line no-console
-        console.log("Firing op", op);
         return observable((observer) => {
           const loader = loaders[op.type];
 
@@ -113,14 +111,10 @@ export function createHTTPBatchLink(requester: RequesterFn) {
 
             return () => cancel();
           } else {
-            // eslint-disable-next-line no-console
-            console.log("Calling loadgenerator", op.path);
             const { generator, cancel } = loader.loadGenerator(op);
 
             (async () => {
               for await (const res of generator) {
-                // eslint-disable-next-line no-console
-                console.log("In batch link", res, op.path);
                 const transformed = transformResult(res.json, runtime);
 
                 if (!transformed.ok) {
@@ -135,8 +129,6 @@ export function createHTTPBatchLink(requester: RequesterFn) {
                   context: res.meta,
                   result: transformed.result,
                 });
-                // eslint-disable-next-line no-console
-                console.log("Getting another batch link", op.path);
               }
               observer.complete();
             })()
