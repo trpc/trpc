@@ -405,7 +405,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     };
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive();
+    const result = callRecursive();
 
     if (!result) {
       throw new TRPCError({
@@ -415,15 +415,17 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       });
     }
 
-    if (!result.ok) {
-      throw result.error;
-    }
+    return result.then((r) => {
+      if (!r.ok) {
+        throw r.error;
+      }
 
-    if ("data" in result) {
-      return { data: result.data }
-    } else {
-      return { generator: result.generator }
-    }
+      if ("data" in r) {
+        return { data: r.data }
+      } else {
+        return { generator: r.generator }
+      }
+    })
   };
   procedure._def = _def;
   procedure.meta = _def.meta;
