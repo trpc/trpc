@@ -47,8 +47,8 @@ describe('placeholderData', async () => {
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
-        // @ts-expect-error can't return page data that doesn't match the output type
         placeholderData: {
+          // @ts-expect-error can't return page data that doesn't match the output type
           barbaz: null,
         },
       });
@@ -88,8 +88,8 @@ describe('initialData', async () => {
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
-        // @ts-expect-error can't return page data that doesn't match the output type
         initialData: {
+          // @ts-expect-error can't return page data that doesn't match the output type
           barbaz: null,
         },
       });

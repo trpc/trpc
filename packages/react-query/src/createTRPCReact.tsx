@@ -52,33 +52,33 @@ export interface ProcedureUseQuery<
   TProcedure extends AnyProcedure,
   TPath extends string,
 > {
-  <
-    TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-    TData = inferTransformedProcedureOutput<TProcedure>,
-  >(
+  (
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
       TPath,
       inferProcedureInput<TProcedure>,
-      TQueryFnData,
-      TData,
+      inferTransformedProcedureOutput<TProcedure>,
+      inferTransformedProcedureOutput<TProcedure>,
       TRPCClientErrorLike<TProcedure>
     >,
-  ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+  ): DefinedUseTRPCQueryResult<
+    inferTransformedProcedureOutput<TProcedure>,
+    TRPCClientErrorLike<TProcedure>
+  >;
 
-  <
-    TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-    TData = inferTransformedProcedureOutput<TProcedure>,
-  >(
+  (
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
       TPath,
       inferProcedureInput<TProcedure>,
-      TQueryFnData,
-      TData,
+      inferTransformedProcedureOutput<TProcedure>,
+      inferTransformedProcedureOutput<TProcedure>,
       TRPCClientErrorLike<TProcedure>
     >,
-  ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+  ): UseTRPCQueryResult<
+    inferTransformedProcedureOutput<TProcedure>,
+    TRPCClientErrorLike<TProcedure>
+  >;
 }
 
 /**
