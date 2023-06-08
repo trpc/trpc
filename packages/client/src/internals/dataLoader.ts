@@ -4,7 +4,6 @@ import { CancelFn, GeneratorAndCancel, PromiseAndCancel } from '../links/types';
 type BatchItem<TKey, TValue> = {
   aborted: boolean;
   key: TKey;
-  batchCompletePromise: Promise<void>;
   markBatchComplete: () => void;
   next: ((value: TValue) => void) | null;
   reject: ((error: Error) => void) | null;
@@ -112,10 +111,10 @@ export function dataLoader<TKey, TValue>(
       }
       const unitResolver = (index: number, value: NonNullable<TValue>) => {
         const item = batch.items[index]!;
-        item.next?.(value);
-        item.batch = null;
-        item.reject = null;
-        item.next = null;
+
+        const prevNext = item.next;
+
+        prevNext?.(value);
       };
       const { promise, cancel } = batchLoader.fetch(
         batch.items.map((_item) => _item.key),
@@ -145,55 +144,97 @@ export function dataLoader<TKey, TValue>(
     }
   }
 
-  function loadGenerator(key: TKey, next?: (val: TValue) => void): GeneratorAndCancel<TValue> {
-    let markBatchComplete: () => void = throwFatalError;
+  type PromiseChainNode<TType> = { value: TType, next: Promise<PromiseChainNode<TType>> } | { done: true };
+  type RecursiveNextFunction<TType> = (value: TType) => { next: RecursiveNextFunction<TType>, done: () => void, reject: (err: unknown) => void };
 
-    const batchCompletePromise = new Promise<void>((resolve) => {
-      markBatchComplete = resolve;
+  function startPromiseChain<TType>(): { next: RecursiveNextFunction<TType>, done: () => void, reject: (err: unknown) => void, promise: Promise<PromiseChainNode<TType>> } {
+    let resolver: ((value: PromiseChainNode<TType> | PromiseLike<PromiseChainNode<TType>>) => void) | undefined
+    let rejecter: ((err: unknown) => void) | undefined
+    const promise = new Promise<PromiseChainNode<TType>>((resolve, rejecter) => {
+      resolver = resolve;
+      rejecter = rejecter;
     })
 
+    let done = { current: false };
+    let doneResolver = () => {
+      done.current = true;
+    }
+
+    return {
+      promise: promise,
+      next: (value: TType) => continuePromiseChain(value, done, resolver!),
+      reject: rejecter!,
+      done: doneResolver,
+    }
+  }
+
+  function continuePromiseChain<TType>(
+    value: TType,
+    done: { current: boolean },
+    prevResolver: (value: PromiseChainNode<TType> | PromiseLike<PromiseChainNode<TType>>) => void
+  ) {
+    let newResolver: ((value: PromiseChainNode<TType> | PromiseLike<PromiseChainNode<TType>>) => void) | undefined
+    let newRejecter: ((err: unknown) => void) | undefined
+    const promise: Promise<PromiseChainNode<TType>> = done.current ? Promise.resolve({ done: true }) : new Promise<PromiseChainNode<TType>>((resolve, reject) => {
+      newResolver = resolve;
+      newRejecter = reject
+    })
+
+    prevResolver({
+      value,
+      next: promise,
+    });
+
+    return {
+      promise: promise,
+      next: (innerValue: TType) => continuePromiseChain(innerValue, done, newResolver!),
+      reject: (err: unknown) => newRejecter!(err),
+      done: () => newResolver!({ done: true })
+    }
+  }
+
+  async function* promiseChainToGenerator<TValue>(promise: Promise<PromiseChainNode<TValue>>) {
+    let node = await promise;
+    while (true) {
+      if ("done" in node) {
+        break;
+      }
+      yield node.value;
+      node = await node.next;
+    }
+  }
+
+  function loadGenerator(key: TKey): GeneratorAndCancel<TValue> {
     const item: BatchItem<TKey, TValue> = {
       aborted: false,
       key,
       batch: null,
-      markBatchComplete,
-      batchCompletePromise,
+      markBatchComplete: throwFatalError,
       next: throwFatalError,
       reject: throwFatalError,
     };
 
-    const generator = async function* () {
-      let addedToPending = false;
-      let anyResults = false;
+    const chain = startPromiseChain<TValue>();
 
-      // TODO: This can race if a new promise isn't established
-      while (true) {
-        const promise = new Promise<TValue>((resolve, reject) => {
-          item.reject = anyResults ? null : reject;
-          item.next = (val: TValue) => { resolve(val); next?.(val); };
-        });
-
-        if (!addedToPending) {
-          if (!pendingItems) {
-            pendingItems = [];
-          }
-          pendingItems.push(item);
-          addedToPending = true;
-        }
-
-        const raceResult = await Promise.race([
-          promise.then((value) => ({ complete: false as const, value })),
-          item.batchCompletePromise.then(() => ({ complete: true as const }))
-        ]);
-
-        if (!raceResult.complete) {
-          anyResults = true;
-          yield raceResult.value;
-        } else {
-          break;
-        }
+    function updateItem({ next, reject, done }: ReturnType<typeof chain.next>) {
+      item.next = (value) => { updateItem(next(value)); }
+      item.reject = reject;
+      item.markBatchComplete = () => {
+        item.next = null;
+        item.reject = null;
+        item.batch = null;
+        done();
       }
-    }();
+    }
+
+    updateItem(chain);
+
+    if (!pendingItems) {
+      pendingItems = [];
+    }
+    pendingItems.push(item);
+
+    const generator = promiseChainToGenerator(chain.promise);
 
     if (!dispatchTimer) {
       dispatchTimer = setTimeout(dispatch);
@@ -211,26 +252,24 @@ export function dataLoader<TKey, TValue>(
     return { generator, cancel };
   }
 
-  function load(key: TKey, next?: (val: TValue) => void): PromiseAndCancel<TValue> {
-    let markBatchComplete: () => void = throwFatalError;
-
-    const batchCompletePromise = new Promise<void>((resolve) => {
-      markBatchComplete = resolve;
-    })
-
+  function load(key: TKey): PromiseAndCancel<TValue> {
     const item: BatchItem<TKey, TValue> = {
       aborted: false,
       key,
       batch: null,
-      batchCompletePromise,
-      markBatchComplete,
+      markBatchComplete: () => { },
       next: throwFatalError,
       reject: throwFatalError,
     };
 
     const promise = new Promise<TValue>((resolve, reject) => {
       item.reject = reject;
-      item.next = (val: TValue) => { resolve(val); next?.(val); };
+      item.next = (val: TValue) => {
+        resolve(val);
+        item.batch = null;
+        item.reject = null;
+        item.next = null;
+      };
 
       if (!pendingItems) {
         pendingItems = [];

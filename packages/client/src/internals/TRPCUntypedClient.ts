@@ -214,7 +214,6 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     const unsubscribe = req$.subscribe({
       next: value => {
         // eslint-disable-next-line no-console
-        console.log("nextInGenerator", opts.path, value);
         let resolveNextNext: typeof resolveNext | undefined;
         let rejectNextNext: typeof rejectNext | undefined;
 
