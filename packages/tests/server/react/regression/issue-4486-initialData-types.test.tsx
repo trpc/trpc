@@ -36,7 +36,7 @@ describe('placeholderData', async () => {
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
-        // @ts-expect-error can't return page data that doesn't match the output type
+        // @ts-expect-error can't return data that doesn't match the output type
         placeholderData() {
           return {
             barbaz: null,
@@ -47,10 +47,26 @@ describe('placeholderData', async () => {
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        placeholderData() {
+          return 123;
+        },
+      });
+    });
+
+    ignoreErrors(() => {
+      proxy.post.list.useQuery(undefined, {
         placeholderData: {
-          // @ts-expect-error can't return page data that doesn't match the output type
+          // @ts-expect-error can't return data that doesn't match the output type
           barbaz: null,
         },
+      });
+    });
+
+    ignoreErrors(() => {
+      proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        placeholderData: 123,
       });
     });
   });
@@ -68,6 +84,15 @@ describe('placeholderData', async () => {
         },
       });
     });
+
+    ignoreErrors(() => {
+      proxy.post.list.useQuery(undefined, {
+        placeholderData: {
+          posts: [],
+          foo: 'bar',
+        },
+      });
+    });
   });
 });
 
@@ -77,7 +102,7 @@ describe('initialData', async () => {
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
-        // @ts-expect-error can't return page data that doesn't match the output type
+        // @ts-expect-error can't return data that doesn't match the output type
         initialData() {
           return {
             barbaz: null,
@@ -88,10 +113,26 @@ describe('initialData', async () => {
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        initialData() {
+          return 123;
+        },
+      });
+    });
+
+    ignoreErrors(() => {
+      proxy.post.list.useQuery(undefined, {
         initialData: {
-          // @ts-expect-error can't return page data that doesn't match the output type
+          // @ts-expect-error can't return data that doesn't match the output type
           barbaz: null,
         },
+      });
+    });
+
+    ignoreErrors(() => {
+      proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        initialData: 123,
       });
     });
   });
@@ -106,6 +147,15 @@ describe('initialData', async () => {
             posts: [],
             foo: 'bar',
           };
+        },
+      });
+    });
+
+    ignoreErrors(() => {
+      proxy.post.list.useQuery(undefined, {
+        initialData: {
+          posts: [],
+          foo: 'bar',
         },
       });
     });
