@@ -13,6 +13,18 @@ slug: /rpc
 | `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
 | <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
 
+Nested procedures are separated by dots, so for a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
+
+```ts
+export const appRouter = router({
+  post: router({
+    byId: publicProcedure.input(String).query(async (opts) => {
+      // [...]
+    }),
+  }),
+});
+```
+
 ## Batching
 
 When batching, we combine all parallel procedure calls of the same HTTP method in one request using a data loader.
@@ -69,8 +81,6 @@ export function MyComponent() {
 | ----------------- | --------------------------------------------------------------- |
 | `pathname`        | `/api/trpc/postById,relatedPosts`                               |
 | `search`          | `?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%221%22%7D` \* |
-
-Note that procedures are separated by dots, so a request to `byId` would instead result in a request to `/api/trpc/post.byId,post.related`.
 
 **\*) `input` in the above is the result of:**
 
