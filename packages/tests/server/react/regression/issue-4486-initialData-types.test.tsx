@@ -43,10 +43,25 @@ describe('placeholderData', async () => {
           };
         },
       });
+
+      proxy.post.list.useSuspenseQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        placeholderData() {
+          return {
+            barbaz: null,
+          };
+        },
+      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        placeholderData() {
+          return 123;
+        },
+      });
+      proxy.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData() {
           return 123;
@@ -61,10 +76,20 @@ describe('placeholderData', async () => {
           barbaz: null,
         },
       });
+      proxy.post.list.useSuspenseQuery(undefined, {
+        placeholderData: {
+          // @ts-expect-error can't return data that doesn't match the output type
+          barbaz: null,
+        },
+      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        placeholderData: 123,
+      });
+      proxy.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData: 123,
       });
@@ -83,10 +108,24 @@ describe('placeholderData', async () => {
           };
         },
       });
+      proxy.post.list.useSuspenseQuery(undefined, {
+        placeholderData() {
+          return {
+            posts: [],
+            foo: 'bar',
+          };
+        },
+      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        placeholderData: {
+          posts: [],
+          foo: 'bar',
+        },
+      });
+      proxy.post.list.useSuspenseQuery(undefined, {
         placeholderData: {
           posts: [],
           foo: 'bar',
@@ -109,10 +148,24 @@ describe('initialData', async () => {
           };
         },
       });
+      proxy.post.list.useSuspenseQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        initialData() {
+          return {
+            barbaz: null,
+          };
+        },
+      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        initialData() {
+          return 123;
+        },
+      });
+      proxy.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData() {
           return 123;
@@ -127,10 +180,20 @@ describe('initialData', async () => {
           barbaz: null,
         },
       });
+      proxy.post.list.useSuspenseQuery(undefined, {
+        initialData: {
+          // @ts-expect-error can't return data that doesn't match the output type
+          barbaz: null,
+        },
+      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        // @ts-expect-error can't return data that doesn't match the output type
+        initialData: 123,
+      });
+      proxy.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData: 123,
       });
@@ -149,10 +212,24 @@ describe('initialData', async () => {
           };
         },
       });
+      proxy.post.list.useSuspenseQuery(undefined, {
+        initialData() {
+          return {
+            posts: [],
+            foo: 'bar',
+          };
+        },
+      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
+        initialData: {
+          posts: [],
+          foo: 'bar',
+        },
+      });
+      proxy.post.list.useSuspenseQuery(undefined, {
         initialData: {
           posts: [],
           foo: 'bar',
