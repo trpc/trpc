@@ -111,7 +111,7 @@ function PostView() {
 }
 ```
 
-### `useInfiniteSuspenseQuery()`
+### `useSuspenseInfiniteQuery()`
 
 ```tsx
 // @filename: pages/index.tsx
