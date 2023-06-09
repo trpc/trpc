@@ -7,7 +7,7 @@ slug: /client/react/suspense
 
 :::info
 
-- `useSuspense` & `useSuspenseInfiniteQuery` are hooks used within client components (`"use client"`)
+- `useSuspenseQuery` & `useInfiniteSuspenseQuery` are hooks used within client components (`"use client"`)
 - Ensure you're on the latest version of React
 - If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
@@ -17,7 +17,7 @@ slug: /client/react/suspense
 
 :::tip
 
-`useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
+`useSuspenseQuery` & `useInfiniteSuspenseQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
 
 :::
 
