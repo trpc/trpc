@@ -28,6 +28,10 @@ export default defineConfig({
         __dirname,
         'node_modules/vitest-environment-miniflare',
       ),
+      '@vitest/coverage-istanbul': join(
+        __dirname,
+        'node_modules/@vitest/coverage-istanbul',
+      ),
     },
   },
 });
