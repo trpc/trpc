@@ -6,21 +6,16 @@ import {
 } from '@trpc/server';
 import { CreateTRPCReactQueryClientConfig } from '../shared';
 
-interface CreateRouterSSGHelpersOptionsBase<TRouter extends AnyRouter> {
-  type: 'router';
+interface CreateSSGInternalHelpersOptionsBase<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
   transformer?: ClientDataTransformerOptions;
 }
 
-interface CreateClientSSGHelpersOptionsBase<TRouter extends AnyRouter> {
-  type: 'client';
+interface CreateSSGExternalHelpersOptionsBase<TRouter extends AnyRouter> {
   client: TRPCUntypedClient<TRouter>;
   transformer?: ClientDataTransformerOptions;
 }
 
-export type CreateSSGHelpersOptions<TRouter extends AnyRouter> = (
-  | CreateRouterSSGHelpersOptionsBase<TRouter>
-  | CreateClientSSGHelpersOptionsBase<TRouter>
-) &
-  CreateTRPCReactQueryClientConfig;
+export type CreateSSGInternalHelpersOptions<TRouter extends AnyRouter> = CreateSSGInternalHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
+export type CreateSSGExternalHelpersOptions<TRouter extends AnyRouter> = CreateSSGExternalHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;

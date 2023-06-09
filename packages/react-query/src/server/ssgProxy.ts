@@ -18,7 +18,7 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import { createSSGHelpers } from '../ssg/ssg';
-import { CreateSSGHelpersOptions } from './types';
+import { CreateSSGExternalHelpersOptions, CreateSSGInternalHelpersOptions } from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -62,13 +62,29 @@ export type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
 type AnyDecoratedProcedure = DecorateProcedure<any>;
 
 /**
- * Create functions you can use for server-side rendering / static generation
+ * Create functions you can use for server-side rendering / static generation using the trpc router directly
  */
-export function createServerSideHelpers<TRouter extends AnyRouter>(
-  opts: CreateSSGHelpersOptions<TRouter>,
+export function createServerSideInternalHelpers<TRouter extends AnyRouter>(
+  opts: CreateSSGInternalHelpersOptions<TRouter>,
 ) {
   const helpers = createSSGHelpers(opts);
+  return serverSideHelpersProxyFactory<TRouter>(helpers);
+}
 
+/**
+ * Create functions you can use for server-side rendering / static generation using a trpc flat client
+ */
+export function createServerSideExternalHelpers<TRouter extends AnyRouter>(
+  opts: CreateSSGExternalHelpersOptions<TRouter>,
+) {
+  const helpers = createSSGHelpers(opts);
+  return serverSideHelpersProxyFactory<TRouter>(helpers);
+}
+
+
+export function serverSideHelpersProxyFactory<TRouter extends AnyRouter>(
+  helpers: ReturnType<typeof createSSGHelpers<TRouter>>
+) {
   type CreateServerSideHelpers = ProtectedIntersection<
     {
       queryClient: QueryClient;
