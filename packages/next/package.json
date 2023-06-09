@@ -71,7 +71,6 @@
     "@trpc/client": "10.29.1",
     "@trpc/react-query": "10.29.1",
     "@trpc/server": "10.29.1",
-    "@trpc/tests-lib": "10.29.1",
     "@types/express": "^4.17.17",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.8",

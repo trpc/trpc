@@ -6,7 +6,8 @@
     "scripts",
     "examples",
     "rollup.config.ts",
-    ".eslintrc.js"
+    ".eslintrc.js",
+    "vendor"
   ],
   "exclude": [],
   "compilerOptions": {
