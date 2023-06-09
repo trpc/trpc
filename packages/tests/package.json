@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tests",
-  "version": "10.28.2",
+  "version": "10.29.1",
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
@@ -16,10 +16,10 @@
     "test-ui": "vitest --ui"
   },
   "dependencies": {
-    "@trpc/tests-lib": "10.28.2",
-    "@trpc/client": "10.28.2",
-    "@trpc/next": "10.28.2",
-    "@trpc/react-query": "10.28.2",
-    "@trpc/server": "10.28.2"
+    "@trpc/tests-lib": "10.29.1",
+    "@trpc/client": "10.29.1",
+    "@trpc/next": "10.29.1",
+    "@trpc/react-query": "10.29.1",
+    "@trpc/server": "10.29.1"
   }
 }

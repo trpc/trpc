@@ -77,6 +77,7 @@ export interface RequestInitEsque {
  * @see Response from lib.dom.d.ts
  */
 export interface ResponseEsque {
+  readonly body?: ReadableStream<Uint8Array> | NodeJS.ReadableStream | null;
   /**
    * @remarks
    * The built-in Response::json() method returns Promise<any>, but

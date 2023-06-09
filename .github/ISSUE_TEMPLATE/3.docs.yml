@@ -19,7 +19,7 @@ body:
     attributes:
       label: Link to related docs
       description: Does documentation already exist? Please link that here.
-      placeholder: https://trpc.io/docs/links
+      placeholder: https://trpc.io/docs/client/links
   - type: textarea
     attributes:
       label: Additional information

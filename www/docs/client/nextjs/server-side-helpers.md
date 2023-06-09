@@ -2,7 +2,7 @@
 id: server-side-helpers
 title: Server-Side Helpers
 sidebar_label: Server-Side Helpers
-slug: /nextjs/server-side-helpers
+slug: /client/nextjs/server-side-helpers
 ---
 
 `createServerSideHelpers` provides you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.

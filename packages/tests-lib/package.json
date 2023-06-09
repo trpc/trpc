@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tests-lib",
-  "version": "10.28.2",
+  "version": "10.29.1",
   "private": true,
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
