@@ -1,14 +1,15 @@
 ---
 id: suspense
 title: Suspense (Experimental)
-sidebar_label: Suspense
+sidebar_label: Suspense (Experimental)
 slug: /client/react/suspense
 ---
 
 :::info
 
-- `useSuspenseQuery` & `useSuspenseInfiniteQuery` are _experimental_ features
+- `useSuspenseQuery` & `useSuspenseInfiniteQuery` are _experimental_ features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
 - Ensure you're on the latest version of React
+- When initializing `createTRPCReact` or `createTRPCNext` you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
 - If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
 :::
@@ -74,8 +75,22 @@ export type AppRouter = typeof appRouter;
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server';
 
-export const trpc = createTRPCReact<AppRouter>();
+export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
 
+```
+
+### Enabling Suspense
+
+```ts
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+
+export const trpc = createTRPCReact<
+  AppRouter,
+  unknown,
+  'ExperimentalSuspense'
+>();
 ```
 
 ### `useSuspenseQuery()`
