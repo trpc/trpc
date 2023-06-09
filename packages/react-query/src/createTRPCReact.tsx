@@ -141,8 +141,8 @@ export type DecorateProcedure<
       (TFlags extends 'ExperimentalSuspense'
         ? {
             useSuspenseQuery: <
-              TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-              TData = inferTransformedProcedureOutput<TProcedure>,
+              TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+              TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
             >(
               input: inferProcedureInput<TProcedure>,
               opts?: Omit<
