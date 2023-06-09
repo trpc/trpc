@@ -86,51 +86,23 @@ export interface ProcedureUseQuery<
  */
 export type DecorateProcedure<
   TProcedure extends AnyProcedure,
-  _TFlags,
+  TFlags,
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? {
       /**
        * Method to extract the query key for a procedure
        * @param type - defaults to `any`
-       * @see https://trpc.io/docs/client/react/getQueryKey
+       * @link https://trpc.io/docs/useContext#-the-function-i-want-isnt-here
        * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
        */
       getQueryKey: (
         input: inferProcedureInput<TProcedure>,
         type?: QueryType,
       ) => QueryKey;
-      /**
-       * @see https://trpc.io/docs/client/react/useQuery
-       */
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
-      /**
-       * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
-       */
-      useSuspenseQuery: <
-        TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-        TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-      >(
-        input: inferProcedureInput<TProcedure>,
-        opts?: Omit<
-          UseTRPCQueryOptions<
-            TPath,
-            inferProcedureInput<TProcedure>,
-            TQueryFnData,
-            TData,
-            TRPCClientErrorLike<TProcedure>
-          >,
-          'enabled' | 'suspense'
-        >,
-      ) => [
-        TData,
-        UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
-      ];
     } & (inferProcedureInput<TProcedure> extends { cursor?: any } | void
       ? {
-          /**
-           * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
-           */
           useInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
             opts?: UseTRPCInfiniteQueryOptions<
@@ -143,34 +115,54 @@ export type DecorateProcedure<
             inferTransformedProcedureOutput<TProcedure>,
             TRPCClientErrorLike<TProcedure>
           >;
-          /**
-           * @see https://trpc.io/docs/client/react/suspense
-           */
-          useSuspenseInfiniteQuery: (
-            input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            opts?: Omit<
-              UseTRPCInfiniteQueryOptions<
-                TPath,
-                inferProcedureInput<TProcedure>,
-                inferTransformedProcedureOutput<TProcedure>,
-                TRPCClientErrorLike<TProcedure>
+        } & (TFlags extends 'ExperimentalSuspense'
+          ? {
+              useSuspenseInfiniteQuery: (
+                input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+                opts?: Omit<
+                  UseTRPCInfiniteQueryOptions<
+                    TPath,
+                    inferProcedureInput<TProcedure>,
+                    inferTransformedProcedureOutput<TProcedure>,
+                    TRPCClientErrorLike<TProcedure>
+                  >,
+                  'enabled' | 'suspense'
+                >,
+              ) => [
+                InfiniteData<inferTransformedProcedureOutput<TProcedure>>,
+                UseTRPCInfiniteQuerySuccessResult<
+                  inferTransformedProcedureOutput<TProcedure>,
+                  TRPCClientErrorLike<TProcedure>
+                >,
+              ];
+            }
+          : object)
+      : object) &
+      (TFlags extends 'ExperimentalSuspense'
+        ? {
+            useSuspenseQuery: <
+              TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+              TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+            >(
+              input: inferProcedureInput<TProcedure>,
+              opts?: Omit<
+                UseTRPCQueryOptions<
+                  TPath,
+                  inferProcedureInput<TProcedure>,
+                  TQueryFnData,
+                  TData,
+                  TRPCClientErrorLike<TProcedure>
+                >,
+                'enabled' | 'suspense'
               >,
-              'enabled' | 'suspense'
-            >,
-          ) => [
-            InfiniteData<inferTransformedProcedureOutput<TProcedure>>,
-            UseTRPCInfiniteQuerySuccessResult<
-              inferTransformedProcedureOutput<TProcedure>,
-              TRPCClientErrorLike<TProcedure>
-            >,
-          ];
-        }
-      : object)
+            ) => [
+              TData,
+              UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
+            ];
+          }
+        : object)
   : TProcedure extends AnyMutationProcedure
   ? {
-      /**
-       * @see https://trpc.io/docs/client/react/useMutation
-       */
       useMutation: <TContext = unknown>(
         opts?: UseTRPCMutationOptions<
           inferProcedureInput<TProcedure>,
@@ -187,9 +179,6 @@ export type DecorateProcedure<
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
-      /**
-       * @see https://trpc.io/docs/subscriptions
-       */
       useSubscription: (
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSubscriptionOptions<
@@ -228,9 +217,6 @@ export type DecoratedProcedureRecord<
  * @internal
  */
 export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
-  /**
-   * @see https://trpc.io/docs/client/react/useContext
-   */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
