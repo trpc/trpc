@@ -20,8 +20,6 @@ export const input = [
   'src/shared/index.ts',
 ];
 
-const __dirname = new URL('.', import.meta.url).pathname;
-
 export default function rollup(): RollupOptions[] {
   return buildConfig({
     input,
