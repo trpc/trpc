@@ -86,7 +86,8 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   } as WithTRPCConfig<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
-  const untypedClient = createTRPCUntypedClient<typeof router>(trpcClientOptions);
+  const untypedClient =
+    createTRPCUntypedClient<typeof router>(trpcClientOptions);
   const proxy = createTRPCClientProxy<typeof router>(client);
   return {
     wsClient,

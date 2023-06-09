@@ -1,9 +1,9 @@
+import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { createServerSideExternalHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server/src';
-import { z } from 'zod';
-import { getServerAndReactClient } from './__reactHelpers';
 import { konn } from 'konn';
+import { z } from 'zod';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -37,7 +37,9 @@ const ctx = konn()
 
 test('fetch', async () => {
   const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({ client: untypedClient });
+  const ssg = createServerSideExternalHelpers<typeof appRouter>({
+    client: untypedClient,
+  });
 
   const post = await ssg.post.byId.fetch({ id: '1' });
   expectTypeOf<'__result'>(post);
@@ -45,7 +47,9 @@ test('fetch', async () => {
 
 test('fetchInfinite', async () => {
   const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({ client: untypedClient });
+  const ssg = createServerSideExternalHelpers<typeof appRouter>({
+    client: untypedClient,
+  });
 
   const post = await ssg.post.list.fetchInfinite({});
   expectTypeOf<InfiniteData<'__infResult'>>(post);
@@ -55,7 +59,9 @@ test('fetchInfinite', async () => {
 
 test('prefetch and dehydrate', async () => {
   const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({ client: untypedClient });
+  const ssg = createServerSideExternalHelpers<typeof appRouter>({
+    client: untypedClient,
+  });
   await ssg.post.byId.prefetch({ id: '1' });
 
   const data = JSON.stringify(ssg.dehydrate());
@@ -64,7 +70,9 @@ test('prefetch and dehydrate', async () => {
 
 test('prefetchInfinite and dehydrate', async () => {
   const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({ client: untypedClient });
+  const ssg = createServerSideExternalHelpers<typeof appRouter>({
+    client: untypedClient,
+  });
   await ssg.post.list.prefetchInfinite({});
 
   const data = JSON.stringify(ssg.dehydrate());

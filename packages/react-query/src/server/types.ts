@@ -17,5 +17,9 @@ interface CreateSSGExternalHelpersOptionsBase<TRouter extends AnyRouter> {
   transformer?: ClientDataTransformerOptions;
 }
 
-export type CreateSSGInternalHelpersOptions<TRouter extends AnyRouter> = CreateSSGInternalHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
-export type CreateSSGExternalHelpersOptions<TRouter extends AnyRouter> = CreateSSGExternalHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
+export type CreateSSGInternalHelpersOptions<TRouter extends AnyRouter> =
+  CreateSSGInternalHelpersOptionsBase<TRouter> &
+    CreateTRPCReactQueryClientConfig;
+export type CreateSSGExternalHelpersOptions<TRouter extends AnyRouter> =
+  CreateSSGExternalHelpersOptionsBase<TRouter> &
+    CreateTRPCReactQueryClientConfig;

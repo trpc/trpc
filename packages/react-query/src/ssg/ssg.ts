@@ -11,7 +11,10 @@ import {
   inferProcedureOutput,
 } from '@trpc/server';
 import { getArrayQueryKey } from '../internals/getArrayQueryKey';
-import { CreateSSGExternalHelpersOptions, CreateSSGInternalHelpersOptions } from '../server/types';
+import {
+  CreateSSGExternalHelpersOptions,
+  CreateSSGInternalHelpersOptions,
+} from '../server/types';
 import { getQueryClient } from '../shared';
 
 /**
@@ -19,7 +22,9 @@ import { getQueryClient } from '../shared';
  * @deprecated use `createServerSideHelpers` instead
  */
 export function createSSGHelpers<TRouter extends AnyRouter>(
-  opts: CreateSSGInternalHelpersOptions<TRouter> | CreateSSGExternalHelpersOptions<TRouter>,
+  opts:
+    | CreateSSGInternalHelpersOptions<TRouter>
+    | CreateSSGExternalHelpersOptions<TRouter>,
 ) {
   type TQueries = TRouter['_def']['queries'];
   const queryClient = getQueryClient(opts);

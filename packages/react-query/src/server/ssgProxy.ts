@@ -18,7 +18,10 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import { createSSGHelpers } from '../ssg/ssg';
-import { CreateSSGExternalHelpersOptions, CreateSSGInternalHelpersOptions } from './types';
+import {
+  CreateSSGExternalHelpersOptions,
+  CreateSSGInternalHelpersOptions,
+} from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -81,9 +84,8 @@ export function createServerSideExternalHelpers<TRouter extends AnyRouter>(
   return serverSideHelpersProxyFactory<TRouter>(helpers);
 }
 
-
 export function serverSideHelpersProxyFactory<TRouter extends AnyRouter>(
-  helpers: ReturnType<typeof createSSGHelpers<TRouter>>
+  helpers: ReturnType<typeof createSSGHelpers<TRouter>>,
 ) {
   type CreateServerSideHelpers = ProtectedIntersection<
     {

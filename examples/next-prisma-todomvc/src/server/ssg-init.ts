@@ -1,10 +1,10 @@
 import { createServerSideInternalHelpers } from '@trpc/react-query/server';
 import type { GetStaticPropsContext } from 'next';
-import SuperJSON from 'superjson';
-import { AppRouter, appRouter } from './routers/_app';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { i18n } from 'next-i18next.config';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import SuperJSON from 'superjson';
 import { createInnerTRPCContext } from './context';
+import { AppRouter, appRouter } from './routers/_app';
 
 export async function ssgInit<TParams extends { locale?: string }>(
   opts: GetStaticPropsContext<TParams>,
