@@ -105,7 +105,7 @@ export type DecorateProcedure<
        */
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
       /**
-       * @see https://trpc.io/docs/client/react/useInfiniteQuery
+       * @see https://trpc.io/docs/client/react/suspense
        */
       useSuspenseQuery: <
         TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
