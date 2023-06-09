@@ -7,7 +7,7 @@ slug: /client/react/suspense
 
 :::info
 
-- `useSuspense` & `useSuspenseInfiniteQuery` are _experimental_ features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
+- `useSuspenseQuery` & `useSuspenseInfiniteQuery` are _experimental_ features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
 - Ensure you're on the latest version of React
 - When initializing `createTRPCReact` or `createTRPCNext` you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
 - If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
@@ -18,7 +18,7 @@ slug: /client/react/suspense
 
 :::tip
 
-`useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
+`useSuspenseQuery` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
 
 :::
 
@@ -111,7 +111,7 @@ function PostView() {
 }
 ```
 
-### `useInfiniteSuspenseQuery()`
+### `useSuspenseInfiniteQuery()`
 
 ```tsx
 // @filename: pages/index.tsx
