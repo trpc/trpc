@@ -53,8 +53,8 @@ export interface ProcedureUseQuery<
   TPath extends string,
 > {
   <
-    TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-    TData = inferTransformedProcedureOutput<TProcedure>,
+    TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
@@ -67,8 +67,8 @@ export interface ProcedureUseQuery<
   ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
 
   <
-    TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-    TData = inferTransformedProcedureOutput<TProcedure>,
+    TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
@@ -141,8 +141,8 @@ export type DecorateProcedure<
       (TFlags extends 'ExperimentalSuspense'
         ? {
             useSuspenseQuery: <
-              TQueryFnData = inferTransformedProcedureOutput<TProcedure>,
-              TData = inferTransformedProcedureOutput<TProcedure>,
+              TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+              TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
             >(
               input: inferProcedureInput<TProcedure>,
               opts?: Omit<
