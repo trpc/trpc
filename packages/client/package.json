@@ -87,7 +87,7 @@
     "expect-type": "^0.16.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^3.23.1",
+    "rollup": "^3.24.0",
     "tsx": "^3.12.7",
     "undici": "^5.14.0",
     "vitest": "^0.28.5"

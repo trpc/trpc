@@ -17,6 +17,11 @@ overrides:
   '@examples/legacy-next-starter>prisma': https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter
   '@types/testing-library__jest-dom': link:./packages/tests/vendor/@types/testing-library__jest-dom
 
+patchedDependencies:
+  rollup@3.24.0:
+    hash: ahtr2oyyzgjoy542eoompiunrm
+    path: patches/rollup@3.24.0.patch
+
 importers:
 
   .:
@@ -35,7 +40,7 @@ importers:
         version: 0.20.0
       '@rollup/plugin-node-resolve':
         specifier: ^15.0.2
-        version: 15.0.2(rollup@3.23.1)
+        version: 15.0.2(rollup@3.24.0)
       '@swc/core':
         specifier: 1.3.3
         version: 1.3.3
@@ -106,8 +111,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8)
       rollup:
-        specifier: ^3.23.1
-        version: 3.23.1
+        specifier: ^3.24.0
+        version: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
       rollup-plugin-analyzer:
         specifier: ^4.0.0
         version: 4.0.0
@@ -119,13 +124,13 @@ importers:
         version: 1.4.1
       rollup-plugin-node-externals:
         specifier: ^6.1.1
-        version: 6.1.1(rollup@3.23.1)
+        version: 6.1.1(rollup@3.24.0)
       rollup-plugin-swc3:
         specifier: ^0.8.2
-        version: 0.8.2(@swc/core@1.3.3)(rollup@3.23.1)
+        version: 0.8.2(@swc/core@1.3.3)(rollup@3.24.0)
       rollup-plugin-typescript2:
         specifier: ^0.34.1
-        version: 0.34.1(rollup@3.23.1)(typescript@5.1.3)
+        version: 0.34.1(rollup@3.24.0)(typescript@5.1.3)
       superjson:
         specifier: ^1.7.4
         version: 1.11.0
@@ -136,8 +141,8 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       turbo:
-        specifier: ^1.9.3
-        version: 1.9.3
+        specifier: ^1.10.2
+        version: 1.10.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -1421,8 +1426,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       rollup:
-        specifier: ^3.23.1
-        version: 3.23.1
+        specifier: ^3.24.0
+        version: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
       tsx:
         specifier: ^3.12.7
         version: 3.12.7
@@ -1479,8 +1484,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       rollup:
-        specifier: ^3.23.1
-        version: 3.23.1
+        specifier: ^3.24.0
+        version: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
       tsx:
         specifier: ^3.12.7
         version: 3.12.7
@@ -1524,8 +1529,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       rollup:
-        specifier: ^3.23.1
-        version: 3.23.1
+        specifier: ^3.24.0
+        version: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
       tsx:
         specifier: ^3.12.7
         version: 3.12.7
@@ -1602,8 +1607,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       rollup:
-        specifier: ^3.23.1
-        version: 3.23.1
+        specifier: ^3.24.0
+        version: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
       superjson:
         specifier: ^1.7.4
         version: 1.11.0
@@ -8542,7 +8547,7 @@ packages:
     engines: {node: '>= 10'}
     dev: false
 
-  /@rollup/plugin-node-resolve@15.0.2(rollup@3.23.1):
+  /@rollup/plugin-node-resolve@15.0.2(rollup@3.24.0):
     resolution: {integrity: sha512-Y35fRGUjC3FaurG722uhUuG8YHOJRJQbI6/CkbRkdPotSpDj9NtIN85z1zrcyDcCQIW4qp5mgG72U+gJ0TAFEg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -8551,13 +8556,13 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2(rollup@3.23.1)
+      '@rollup/pluginutils': 5.0.2(rollup@3.24.0)
       '@types/resolve': 1.20.2
       deepmerge: 4.3.1
       is-builtin-module: 3.2.1
       is-module: 1.0.0
       resolve: 1.22.2
-      rollup: 3.23.1
+      rollup: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
     dev: false
 
   /@rollup/pluginutils@4.2.1:
@@ -8568,7 +8573,7 @@ packages:
       picomatch: 2.3.1
     dev: false
 
-  /@rollup/pluginutils@5.0.2(rollup@3.23.1):
+  /@rollup/pluginutils@5.0.2(rollup@3.24.0):
     resolution: {integrity: sha512-pTd9rIsP92h+B6wWwFbW8RkZv4hiR/xKsqre4SIuAOaOEQRxi0lqLke9k2/7WegC85GgUs9pjmOjCUi3In4vwA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -8580,7 +8585,7 @@ packages:
       '@types/estree': 1.0.1
       estree-walker: 2.0.2
       picomatch: 2.3.1
-      rollup: 3.23.1
+      rollup: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
     dev: false
 
   /@rushstack/eslint-patch@1.2.0:
@@ -20356,13 +20361,13 @@ packages:
       fast-glob: 3.2.12
     dev: false
 
-  /rollup-plugin-node-externals@6.1.1(rollup@3.23.1):
+  /rollup-plugin-node-externals@6.1.1(rollup@3.24.0):
     resolution: {integrity: sha512-127OFMkpH5rBVlRHRBDUMk1m1sGuzbGy7so5aj/IkpUb2r3+wOWjR/erUzd2ChEQWPsxsyQG6xpYYvPBAdcBRA==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       rollup: ^3.0.0
     dependencies:
-      rollup: 3.23.1
+      rollup: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
     dev: false
 
   /rollup-plugin-node-polyfills@0.2.1:
@@ -20371,7 +20376,7 @@ packages:
       rollup-plugin-inject: 3.0.2
     dev: true
 
-  /rollup-plugin-swc3@0.8.2(@swc/core@1.3.3)(rollup@3.23.1):
+  /rollup-plugin-swc3@0.8.2(@swc/core@1.3.3)(rollup@3.24.0):
     resolution: {integrity: sha512-8C8rw7Iw3s+RvIooDu0IaXGQDijYFiDpKMuwQPxv3onwa/ysojz3BzG8Lr2AbhX6Hd/2UT2wkerFFwOWQ3ytOQ==}
     engines: {node: '>=12'}
     peerDependencies:
@@ -20382,10 +20387,10 @@ packages:
       '@rollup/pluginutils': 4.2.1
       '@swc/core': 1.3.3
       get-tsconfig: 4.5.0
-      rollup: 3.23.1
+      rollup: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
     dev: false
 
-  /rollup-plugin-typescript2@0.34.1(rollup@3.23.1)(typescript@5.1.3):
+  /rollup-plugin-typescript2@0.34.1(rollup@3.24.0)(typescript@5.1.3):
     resolution: {integrity: sha512-P4cHLtGikESmqi1CA+tdMDUv8WbQV48mzPYt77TSTOPJpERyZ9TXdDgjSDix8Fkqce6soYz3+fa4lrC93IEkcw==}
     peerDependencies:
       rollup: '>=1.26.3'
@@ -20394,7 +20399,7 @@ packages:
       '@rollup/pluginutils': 4.2.1
       find-cache-dir: 3.3.2
       fs-extra: 10.1.0
-      rollup: 3.23.1
+      rollup: 3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm)
       semver: 7.5.0
       tslib: 2.5.0
       typescript: 5.1.3
@@ -20413,12 +20418,13 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
 
-  /rollup@3.23.1:
-    resolution: {integrity: sha512-ybRdFVHOoljGEFILHLd2g/qateqUdjE6YS41WXq4p3C/WwD3xtWxV4FYWETA1u9TeXQc5K8L8zHE5d/scOvrOQ==}
+  /rollup@3.24.0(patch_hash=ahtr2oyyzgjoy542eoompiunrm):
+    resolution: {integrity: sha512-OgraHOIg2YpHQTjl0/ymWfFNBEyPucB7lmhXrQUh38qNOegxLapSPFs9sNr0qKR75awW41D93XafoR2QfhBdUQ==}
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
     optionalDependencies:
       fsevents: 2.3.2
+    patched: true
 
   /rtl-detect@1.0.4:
     resolution: {integrity: sha512-EBR4I2VDSSYr7PkBmFy04uhycIpDKp+21p/jARYXlCSjQksTBQcJ0HFUPOO79EPPH5JS6VAhiIQbycf0O3JAxQ==}
@@ -22118,65 +22124,65 @@ packages:
       - supports-color
     dev: false
 
-  /turbo-darwin-64@1.9.3:
-    resolution: {integrity: sha512-0dFc2cWXl82kRE4Z+QqPHhbEFEpUZho1msHXHWbz5+PqLxn8FY0lEVOHkq5tgKNNEd5KnGyj33gC/bHhpZOk5g==}
+  /turbo-darwin-64@1.10.2:
+    resolution: {integrity: sha512-sVLpVVANByfMgqf7OYPcZM4KiDnjGu7ITvAzBSa9Iwe14yoWLn8utrNsWCRaQEB6kEqBGLPmvL7AKwkl8M2Gqg==}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: false
     optional: true
 
-  /turbo-darwin-arm64@1.9.3:
-    resolution: {integrity: sha512-1cYbjqLBA2zYE1nbf/qVnEkrHa4PkJJbLo7hnuMuGM0bPzh4+AnTNe98gELhqI1mkTWBu/XAEeF5u6dgz0jLNA==}
+  /turbo-darwin-arm64@1.10.2:
+    resolution: {integrity: sha512-TKG91DSoYQjsCft4XBx4lYycVT5n3UQB/nOKgv/WJCSfwshLWulya3yhP8JT5erv9rPF8gwgnx87lrCmT4EAVA==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: false
     optional: true
 
-  /turbo-linux-64@1.9.3:
-    resolution: {integrity: sha512-UuBPFefawEwpuxh5pM9Jqq3q4C8M0vYxVYlB3qea/nHQ80pxYq7ZcaLGEpb10SGnr3oMUUs1zZvkXWDNKCJb8Q==}
+  /turbo-linux-64@1.10.2:
+    resolution: {integrity: sha512-ZIzAkfrzjJFkSM/uEfxU6JjseCsT5PHRu0s0lmYce37ApQbv/HC7tI0cFhuosI30+O8109/mkyZykKE7AQfgqA==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: false
     optional: true
 
-  /turbo-linux-arm64@1.9.3:
-    resolution: {integrity: sha512-vUrNGa3hyDtRh9W0MkO+l1dzP8Co2gKnOVmlJQW0hdpOlWlIh22nHNGGlICg+xFa2f9j4PbQlWTsc22c019s8Q==}
+  /turbo-linux-arm64@1.10.2:
+    resolution: {integrity: sha512-G4uZA+RBQ5S1X/oUxO5KoLL2NDMkrrBZF52+00jQv6UEb9lWDgwzqSwoAGjdXxeDCrqMW5rBVwb/IBIF2/yhwA==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: false
     optional: true
 
-  /turbo-windows-64@1.9.3:
-    resolution: {integrity: sha512-0BZ7YaHs6r+K4ksqWus1GKK3W45DuDqlmfjm/yuUbTEVc8szmMCs12vugU2Zi5GdrdJSYfoKfEJ/PeegSLIQGQ==}
+  /turbo-windows-64@1.10.2:
+    resolution: {integrity: sha512-ObfQO37kGu1jBzFs/L+hybrCXBwdnimotJwzg7pCoSyGijKITlugrpJoPDKlg0eMr3/1Y6KUeHy26vZaDXrbuQ==}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: false
     optional: true
 
-  /turbo-windows-arm64@1.9.3:
-    resolution: {integrity: sha512-QJUYLSsxdXOsR1TquiOmLdAgtYcQ/RuSRpScGvnZb1hY0oLc7JWU0llkYB81wVtWs469y8H9O0cxbKwCZGR4RQ==}
+  /turbo-windows-arm64@1.10.2:
+    resolution: {integrity: sha512-7S6dx4738R/FIT2cxbsunqgHN5LelXzuzkcaZgdkU33oswRf/6KOfOABzQLdTX7Uos59cBSdwayf6KQJxuOXUg==}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     dev: false
     optional: true
 
-  /turbo@1.9.3:
-    resolution: {integrity: sha512-ID7mxmaLUPKG/hVkp+h0VuucB1U99RPCJD9cEuSEOdIPoSIuomcIClEJtKamUsdPLhLCud+BvapBNnhgh58Nzw==}
+  /turbo@1.10.2:
+    resolution: {integrity: sha512-m9sR5XHhuzxUQACf0vI2qCG5OqDYAZiPTaAsTwECnwUF4/cXwEmcYddbLJnO+K9orNvcnjjent5oBNBVQ/o0ow==}
     hasBin: true
     requiresBuild: true
     optionalDependencies:
-      turbo-darwin-64: 1.9.3
-      turbo-darwin-arm64: 1.9.3
-      turbo-linux-64: 1.9.3
-      turbo-linux-arm64: 1.9.3
-      turbo-windows-64: 1.9.3
-      turbo-windows-arm64: 1.9.3
+      turbo-darwin-64: 1.10.2
+      turbo-darwin-arm64: 1.10.2
+      turbo-linux-64: 1.10.2
+      turbo-linux-arm64: 1.10.2
+      turbo-windows-64: 1.10.2
+      turbo-windows-arm64: 1.10.2
     dev: false
 
   /type-check@0.3.2:

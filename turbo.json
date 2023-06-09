@@ -3,6 +3,7 @@
   "globalDependencies": [
     "tsconfig.json",
     "scripts/entrypoints.ts",
+    ".eslintrc.js",
     "scripts/getRollupConfig.ts"
   ],
   "pipeline": {
