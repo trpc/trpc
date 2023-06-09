@@ -42,7 +42,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   const proxy = createTRPCReact<TRouter, unknown, 'ExperimentalSuspense'>();
   const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
 
-  const client = opts.client;
+  const { client, untypedClient } = opts;
 
   function App(props: { children: ReactNode }) {
     return (
@@ -57,6 +57,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   return {
     close: opts.close,
     client,
+    untypedClient,
     queryClient,
     proxy,
     App,
