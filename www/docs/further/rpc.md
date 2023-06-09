@@ -82,7 +82,6 @@ export const appRouter = t.router({
       return post;
     }),
 });
-
 would instead result in a request to `/api/trpc/post.byId`.
 
 
