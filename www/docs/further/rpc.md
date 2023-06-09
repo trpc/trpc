@@ -81,15 +81,10 @@ export const appRouter = t.router({
       });
       return post;
     }),
-    related: t.procedure.input(String).query(async (opts) => {
-      const posts = await opts.ctx.findRelatedPostsById(opts.input);
-      return posts;
-    }),
-  }),
 });
-```
 
-would instead result in a request to `/api/trpc/post.byId,post.related`.
+would instead result in a request to `/api/trpc/post.byId`.
+
 
 **\*) `input` in the above is the result of:**
 
