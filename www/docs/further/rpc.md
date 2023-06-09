@@ -70,6 +70,27 @@ export function MyComponent() {
 | `pathname`        | `/api/trpc/postById,relatedPosts`                               |
 | `search`          | `?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%221%22%7D` \* |
 
+Nested procedures are separated by dots, so for a router like this:
+
+```ts
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(String).query(async (opts) => {
+      const post = await opts.ctx.post.findUnique({
+        where: { id: opts.input },
+      });
+      return post;
+    }),
+    related: t.procedure.input(String).query(async (opts) => {
+      const posts = await opts.ctx.findRelatedPostsById(opts.input);
+      return posts;
+    }),
+  }),
+});
+```
+
+would instead result in a request to `/api/trpc/post.byId,post.related`.
+
 **\*) `input` in the above is the result of:**
 
 ```ts
