@@ -1,7 +1,7 @@
 {
   "name": "@examples/next-app-dir",
   "private": true,
-  "version": "10.29.1",
+  "version": "10.30.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
