@@ -10,6 +10,12 @@ This is a playground repo for an offical tRPC + Next.js App directory adapter.
 > **Warning**
 > Don't use the structure in production unless you are okay with large refactoring.
 
+{% warning %}
+
+**Warning:** If you are using Command Prompt, omit double quote characters (`"`) when using workflow commands.
+
+{% endwarning %}
+
 ### Current progress
 
 - [x] Proof of concept of RSC support
