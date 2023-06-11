@@ -27,8 +27,14 @@ export const publicProcedure = t.procedure;
 
 export const createAction = experimental_createServerActionHandler(t, {
   createContext() {
+    const {
+      // If you're using Node 18 before 18.15.0, omit the "connection" header
+      connection: _connection,
+      ...headersObj
+    } = Object.fromEntries(headers());
+
     return {
-      headers: Object.fromEntries(headers()),
+      headers: headersObj,
     };
   },
 });
