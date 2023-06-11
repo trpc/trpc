@@ -31,7 +31,7 @@ If you want to change this repo, you go to https://github.com/trpc/trpc/tree/mai
 ## Overview
 
 > **Warning**
-> Don't use the structure in production unless you are okay with large refactoring.
+> Don't use this in production unless you are okay with large refactoring.
 
 Create a tRPC client that you can use **the same way**, no matter if you are in a server components
 
