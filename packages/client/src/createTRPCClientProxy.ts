@@ -93,6 +93,9 @@ export const clientCallTypeToProcedureType = (
   return clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
 };
 
+/**
+ * @public
+ */
 export type TRPCProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
