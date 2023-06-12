@@ -28,7 +28,7 @@ import { TRPCClientError } from './TRPCClientError';
 
 /** @public */
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter['_def']['record']>;
+  TRPCProxyClient<TRouter>;
 
 /** @internal */
 export type Resolver<TProcedure extends AnyProcedure> = (
