@@ -11,6 +11,13 @@
 import { Context } from './context';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
+import { loadEnvConfig } from "@next/env";
+
+// Get the current working directory of the Node.js process
+const root = process.cwd();
+
+// Load environment variables from a .env file if NODE_ENV is not "production"
+loadEnvConfig(root, process.env.NODE_ENV !== "production"); 
 
 const t = initTRPC.context<Context>().create({
   /**
