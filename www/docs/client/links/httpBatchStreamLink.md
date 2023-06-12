@@ -2,10 +2,10 @@
 id: httpBatchStreamLink
 title: HTTP Batch Stream Link
 sidebar_label: HTTP Batch Stream Link
-slug: /links/httpBatchStreamLink
+slug: /client/links/httpBatchStreamLink
 ---
 
-`unstable_httpBatchStreamLink` is a [**terminating link**](./index.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
+`unstable_httpBatchStreamLink` is a [**terminating link**](./overview.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
 
 :::info
 We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
@@ -70,7 +70,11 @@ Compared to a regular `httpBatchLink`, a `unstable_httpBatchStreamLink` will:
 
 ## Compatibility (client-side)
 
+### Browsers
+
 Browser support should be identical to [`fetch`](https://caniuse.com/fetch) support.
+
+### Node.js / Deno
 
 For runtimes other than the browser ones, the `fetch` implementation should support streaming, meaning that the response obtained by `await fetch(...)` should have a `body` property of type `ReadableStream<Uint8Array> | NodeJS.ReadableStream`, meaning that:
 
@@ -78,6 +82,18 @@ For runtimes other than the browser ones, the `fetch` implementation should supp
 - or `response.body` is a `Uint8Array` `Buffer`
 
 This includes support for `undici`, `node-fetch`, native Node.js fetch implementation, and WebAPI fetch implementation (browsers).
+
+### React Native
+
+Receiving the stream relies on the `TextDecoder` API, which is not available in React Native. If you still want to enable streaming, you can use a polyfill and pass it to the `httpBatchStreamLink` options:
+
+```ts
+unstable_httpBatchStreamLink({
+  url: 'http://localhost:3000',
+  textDecoder: new TextDecoder(),
+  // ^? textDecoder: { decode: (input: Uint8Array) => string }
+});
+```
 
 ## Compatibility (server-side)
 

@@ -47,12 +47,16 @@ interface ResolveHTTPRequestOptions<
   contentTypeHandler?: BaseContentTypeHandler<any>;
   preprocessedBody?: boolean;
   /**
-   * Called as soon as the response head is known,
-   * with headers that were generated **without** knowing the response body.
+   * Called as soon as the response head is known.
+   * When streaming, headers will have been generated
+   * **without** knowing the response body.
    *
    * Without this callback, streaming is disabled.
    */
-  unstable_onHead: (headResponse: Omit<HTTPResponse, 'body'>) => void;
+  unstable_onHead: (
+    headResponse: Omit<HTTPResponse, 'body'>,
+    isStreaming: boolean,
+  ) => void;
   /**
    * Called for every procedure with `[index, result]`.
    *
@@ -263,7 +267,7 @@ export async function resolveHTTPResponse<
     const headResponse: HTTPResponse = {
       status: 204,
     };
-    unstable_onHead?.(headResponse);
+    unstable_onHead?.(headResponse, false);
     unstable_onChunk?.([-1, '']);
     return headResponse;
   }
@@ -337,7 +341,7 @@ export async function resolveHTTPResponse<
         untransformedJSON,
         errors,
       });
-      unstable_onHead?.(headResponse);
+      unstable_onHead?.(headResponse, false);
 
       // return body stuff
       const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
@@ -367,7 +371,7 @@ export async function resolveHTTPResponse<
       type,
       responseMeta: opts.responseMeta,
     });
-    unstable_onHead(headResponse);
+    unstable_onHead(headResponse, true);
 
     const indexedPromises = new Map(
       promises.map((promise, index) => [
@@ -426,7 +430,7 @@ export async function resolveHTTPResponse<
       untransformedJSON,
       errors: [error],
     });
-    unstable_onHead?.(headResponse);
+    unstable_onHead?.(headResponse, false);
 
     unstable_onChunk?.([-1, body]);
 

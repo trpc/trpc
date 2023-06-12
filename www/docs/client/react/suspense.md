@@ -1,16 +1,15 @@
 ---
 id: suspense
 title: Suspense (Experimental)
-sidebar_label: Suspense (Experimental)
-slug: /reactjs/suspense
+sidebar_label: Suspense
+slug: /client/react/suspense
 ---
 
 :::info
 
-- `useSuspense` & `useSuspenseInfiniteQuery` are _experimental_ features as its implementation may change as a result of the [`use()` proposal & RSC (React Server Components)](https://github.com/reactjs/rfcs/pull/229)
+- `useSuspenseQuery` & `useSuspenseInfiniteQuery` are _experimental_ features
 - Ensure you're on the latest version of React
-- When initializing `createTRPCReact` or `createTRPCNext` you have to pass `'ExperimentalSuspense'` as the **third** generic parameter
-- If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
+- If you use suspense with [tRPC's _automatic_ SSR in Next.js](/docs/client/nextjs/ssr), the full page will crash on the server if a query fails, even if you have an `<ErrorBoundary />`
 
 :::
 
@@ -18,7 +17,7 @@ slug: /reactjs/suspense
 
 :::tip
 
-`useSuspense` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
+`useSuspenseQuery` & `useSuspenseInfiniteQuery` both return a `[data, query]`-_tuple_, to make it easy to directly use your data and renaming the variable to something descriptive
 
 :::
 
@@ -75,22 +74,8 @@ export type AppRouter = typeof appRouter;
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '../server';
 
-export const trpc = createTRPCReact<AppRouter, unknown, 'ExperimentalSuspense'>();
+export const trpc = createTRPCReact<AppRouter>();
 
-```
-
-### Enabling Suspense
-
-```ts
-// @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '../server';
-
-export const trpc = createTRPCReact<
-  AppRouter,
-  unknown,
-  'ExperimentalSuspense'
->();
 ```
 
 ### `useSuspenseQuery()`
@@ -111,7 +96,7 @@ function PostView() {
 }
 ```
 
-### `useInfiniteSuspenseQuery()`
+### `useSuspenseInfiniteQuery()`
 
 ```tsx
 // @filename: pages/index.tsx

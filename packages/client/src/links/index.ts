@@ -3,6 +3,7 @@ export * from './types';
 export * from './httpBatchLink';
 export * from './httpBatchStreamLink';
 export * from './HTTPBatchLinkOptions';
+export * from './HTTPBatchStreamLinkOptions';
 export * from './httpLink';
 export * from './loggerLink';
 export * from './splitLink';

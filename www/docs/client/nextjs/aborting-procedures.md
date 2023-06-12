@@ -2,7 +2,7 @@
 id: aborting-procedure-calls
 title: Aborting Procedure Calls
 sidebar_label: Aborting Procedure Calls
-slug: /nextjs/aborting-procedure-calls
+slug: /client/nextjs/aborting-procedure-calls
 ---
 
 By default, tRPC does not cancel requests on unmount. If you want to opt into this behavior, you can provide `abortOnUnmount` in your configuration callback.

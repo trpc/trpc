@@ -4,6 +4,7 @@ function generateTypedocDocusaurusPlugins(directories) {
     {
       // TypeDoc options
       // https://typedoc.org/guides/options/
+      // skipErrorChecking: true,
       id: directory,
       entryPoints: [`../packages/${directory}/src/index.ts`],
       tsconfig: `../packages/${directory}/tsconfig.build.json`,

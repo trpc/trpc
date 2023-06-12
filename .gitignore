@@ -1,34 +1,28 @@
 *.log
 .DS_Store
-dist
-.next
-.turbo
-.vercel
+dist/
+.next/
+.turbo/
+.vercel/
+.eslintcache
+*.tsbuildinfo
 
-node_modules
+node_modules/
 package-lock.json
 yarn.lock
-
 .yalc
 yalc.lock
 
 coverage/
-__generated__
+playwright/
+__generated__/
 
-*.tsbuildinfo
 
-# Barrel files
-## Ignore all folders
-packages/*/*
-## Dont ignore files
-!packages/*/*.*
-## Dont ignore src or test
-!packages/*/src
-!packages/tests/*
+# Ignore all folders except `src/` in every published package
+packages/*/*/
+!packages/*/src/
+# and all folders inside `tests` package, which is handled separately
+!packages/tests/*/
 packages/tests/node_modules
 
-.eslintcache
-
 examples/next-big-router/src/server/routers
-
-playwright
