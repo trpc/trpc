@@ -66,9 +66,12 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
+type DecoratedProcedureRecord<
+  TRouter extends AnyRouter,
+  TProcedures extends ProcedureRouterRecord,
+> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+    ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
     : never;
@@ -87,13 +90,17 @@ export const clientCallTypeToProcedureType = (
   return clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
 };
 
+export type TRPCProxyClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+
+/**
+ * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
+ */
 export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<
-    TRouter['_def']['record']
-  > extends infer TProcedureRecord
-    ? UntypedClientProperties & keyof TProcedureRecord extends never
-      ? TProcedureRecord
-      : IntersectionError<UntypedClientProperties & keyof TProcedureRecord>
+  TRPCProxyClient<TRouter> extends infer $Client
+    ? UntypedClientProperties & keyof $Client extends never
+      ? TRPCProxyClient<TRouter>
+      : IntersectionError<UntypedClientProperties & keyof $Client>
     : never;
 
 /**
@@ -120,8 +127,24 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-) {
+): TRPCProxyClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
+
   const proxy = createTRPCClientProxy(client as TRPCClient<TRouter>);
-  return proxy;
+
+  return createFlatProxy((key) => {
+    if (key === '__untypedClient') {
+      return client;
+    }
+    return proxy[key];
+  });
+}
+
+/**
+ * Get an untyped client from a proxy client
+ */
+export function getUntypedClient<TRouter extends AnyRouter>(
+  client: TRPCProxyClient<TRouter>,
+): TRPCUntypedClient<TRouter> {
+  return (client as any).__untypedClient;
 }
