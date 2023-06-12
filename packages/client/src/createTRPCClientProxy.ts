@@ -28,10 +28,9 @@ import { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public
- * @deprecated use `TRPCProxyClient<TRouter>` instead
  **/
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
-  TRPCProxyClient<TRouter>;
+  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 /** @internal */
 export type Resolver<TProcedure extends AnyProcedure> = (
@@ -94,19 +93,13 @@ export const clientCallTypeToProcedureType = (
 };
 
 /**
- * @public
- */
-export type TRPCProxyClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
-
-/**
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
 export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
-  TRPCProxyClient<TRouter> extends infer $Client
-    ? UntypedClientProperties & keyof $Client extends never
-      ? TRPCProxyClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $Client>
+  inferRouterProxyClient<TRouter> extends infer TProcedureRecord
+    ? UntypedClientProperties & keyof TProcedureRecord extends never
+      ? inferRouterProxyClient<TRouter>
+      : IntersectionError<UntypedClientProperties & keyof TProcedureRecord>
     : never;
 
 /**
@@ -133,7 +126,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): TRPCProxyClient<TRouter> {
+): inferRouterProxyClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
 
   const proxy = createTRPCClientProxy(client as TRPCClient<TRouter>);
@@ -151,7 +144,7 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
-  client: TRPCProxyClient<TRouter>,
+  client: inferRouterProxyClient<TRouter>,
 ): TRPCUntypedClient<TRouter> {
   return (client as any).__untypedClient;
 }
