@@ -148,6 +148,7 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
 
 /**
  * Get an untyped client from a proxy client
+ * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
   client: TRPCProxyClient<TRouter>,
