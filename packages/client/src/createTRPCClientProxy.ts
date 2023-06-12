@@ -108,7 +108,7 @@ export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCClient<TRouter>,
-) {
+): CreateTRPCProxyClient<TRouter> {
   return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
     if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
@@ -129,8 +129,18 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCProxyClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-) {
+): CreateTRPCProxyClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy(client as TRPCClient<TRouter>);
   return proxy;
+}
+
+/**
+ * Get an untyped client from a proxy client
+ * @internal
+ */
+export function getUntypedClient<TRouter extends AnyRouter>(
+  client: inferRouterProxyClient<TRouter>,
+): TRPCUntypedClient<TRouter> {
+  return (client as any).__untypedClient;
 }
