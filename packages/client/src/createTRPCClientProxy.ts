@@ -26,7 +26,10 @@ import {
 } from './internals/TRPCUntypedClient';
 import { TRPCClientError } from './TRPCClientError';
 
-/** @public */
+/**
+ * @public
+ * @deprecated use `TRPCProxyClient<TRouter>` instead
+ **/
 export type inferRouterProxyClient<TRouter extends AnyRouter> =
   TRPCProxyClient<TRouter>;
 
