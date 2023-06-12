@@ -28,4 +28,6 @@ test('getUntypedClient()', async () => {
 
   expectTypeOf<TRouter>().toEqualTypeOf<typeof ctx.router>();
   expectTypeOf<TRouter>().not.toEqualTypeOf<AnyRouter>();
+
+  expect(await untyped.query('foo')).toBe('bar');
 });
