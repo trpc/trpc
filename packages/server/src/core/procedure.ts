@@ -87,7 +87,7 @@ export interface Procedure<
   /**
    * @internal
    */
-  (opts: ProcedureCallOptions): Promise<{ data: unknown } | { generator: AsyncGenerator<unknown> }>;
+  (opts: ProcedureCallOptions): Promise<{ data: unknown } | { generator: AsyncGenerator<unknown>, done: Promise<void> }>;
 }
 
 export type AnyQueryProcedure = Procedure<'query', any>;

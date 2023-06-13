@@ -135,7 +135,7 @@ async function inputToProcedureCall<
   type: 'query' | 'mutation';
   input: unknown;
   path: string;
-}): Promise<{ data: TRPCResponse<unknown, inferRouterError<TRouter>> } | { generator: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>> }> {
+}): Promise<{ data: TRPCResponse<unknown, inferRouterError<TRouter>> } | { generator: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>>, done: Promise<void> }> {
   const { opts, ctx, type, input, path } = procedureOpts;
   try {
     const result = await callProcedure({
@@ -158,7 +158,8 @@ async function inputToProcedureCall<
       })()
 
       return {
-        generator: newGenerator
+        generator: newGenerator,
+        done: result.done,
       };
     } else {
       return {

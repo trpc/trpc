@@ -289,14 +289,27 @@ function createResolver(
     middlewares: [
       function resolveMiddleware(opts) {
         if (resolver.constructor.name === 'AsyncGeneratorFunction') {
+          let promiseResolve: () => void = () => void 0;
+          let promiseReject: (err: any) => void = (_err: any) => void 0;
+          const promise = new Promise<void>((resolve, reject) => {
+            promiseResolve = resolve;
+            promiseReject = reject;
+          });
+
           const generator = (async function* () {
-            for await (const data of resolver(opts)) {
-              yield data;
+            try {
+              for await (const data of resolver(opts)) {
+                yield data;
+              }
+              promiseResolve();
+            } catch (err) {
+              promiseReject(err);
             }
           })();
           return Promise.resolve({
             marker: middlewareMarker,
             ok: true,
+            done: promise,
             generator,
             ctx: opts.ctx,
           } as const);

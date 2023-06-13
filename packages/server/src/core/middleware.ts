@@ -62,6 +62,7 @@ type MiddlewareGeneratorErrorResult<_TParams extends ProcedureParams> = Middlewa
 interface MiddlewareGeneratorOKResult<_TParams extends ProcedureParams>
   extends MiddlewareResultBase {
   ok: true;
+  done: Promise<void>;
   generator: AsyncGenerator<unknown>;
 }
 
