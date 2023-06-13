@@ -23,7 +23,9 @@ export type UseProcedureRecord<TRouter extends AnyRouter> = {
     AnyRouter | AnyQueryProcedure
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
-    : Resolver<TRouter['_def']['record'][TKey]>;
+    : TRouter['_def']['record'][TKey] extends AnyQueryProcedure
+    ? Resolver<TRouter['_def']['record'][TKey]>
+    : never;
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(

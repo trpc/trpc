@@ -56,7 +56,9 @@ export type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
+    TRouter['_def']['record'][TKey] extends AnyQueryProcedure
+    ? DecorateProcedure<TRouter['_def']['record'][TKey]>
+    : never;
 };
 
 type AnyDecoratedProcedure = DecorateProcedure<any>;

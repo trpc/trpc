@@ -77,3 +77,14 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
+
+/**
+ * @internal
+ */
+export type IfEquals<TObj, TOther, TYes = unknown, TNo = never> = (<
+  TInner,
+>() => TInner extends TObj ? 1 : 2) extends <TInner>() => TInner extends TOther
+  ? 1
+  : 2
+  ? TYes
+  : TNo;

@@ -48,10 +48,12 @@ export type UseQueriesProcedureRecord<
         TRouter['_def']['record'][TKey],
         `${TPath}${TKey & string}.`
       >
-    : GetQueryOptions<
+    : TRouter['_def']['record'][TKey] extends AnyQueryProcedure
+    ? GetQueryOptions<
         TRouter['_def']['record'][TKey],
         `${TPath}${TKey & string}`
-      >;
+      >
+    : never;
 };
 
 /**

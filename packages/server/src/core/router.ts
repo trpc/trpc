@@ -7,6 +7,7 @@ import { defaultTransformer } from '../transformer';
 import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
+import { IfEquals } from './internals/utils';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -76,7 +77,7 @@ export interface RouterDef<
 export type AnyRouterDef<
   TConfig extends AnyRootConfig = AnyRootConfig,
   TOld extends DeprecatedProcedureRouterRecord = any,
-> = RouterDef<TConfig, any, TOld>;
+> = RouterDef<TConfig, ProcedureRouterRecord, TOld>;
 
 /**
  * @internal
@@ -97,11 +98,16 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  * @internal
  */
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
-    : never;
+  [TKey in keyof TProcedures]: IfEquals<
+    TProcedures,
+    ProcedureRouterRecord,
+    unknown,
+    TProcedures[TKey] extends AnyRouter
+      ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+      : TProcedures[TKey] extends AnyProcedure
+      ? DecorateProcedure<TProcedures[TKey]>
+      : never
+  >;
 };
 
 /**

@@ -1,5 +1,9 @@
 import './___packages';
-import { initTRPC } from '@trpc/server/src/core';
+import {
+  AnyRouter,
+  initTRPC,
+  ProcedureRouterRecord,
+} from '@trpc/server/src/core';
 
 const t = initTRPC.create();
 
@@ -33,5 +37,14 @@ describe('router', () => {
         }),
       }),
     ).toThrow('Duplicate key: foo..bar');
+  });
+
+  test('should have proper _def types', async () => {
+    expectTypeOf(t.router({})).not.toBeAny();
+
+    expectTypeOf((t.router({}) as AnyRouter)._def.procedures)
+      .toMatchTypeOf<ProcedureRouterRecord>;
+    expectTypeOf((t.router({}) as AnyRouter)._def.record)
+      .toMatchTypeOf<ProcedureRouterRecord>;
   });
 });

@@ -203,25 +203,41 @@ export type DecorateProcedure<
 /**
  * @internal
  */
+type IfEquals<TObj, TOther, TYes = unknown, TNo = never> = (<
+  TInner,
+>() => TInner extends TObj ? 1 : 2) extends <TInner>() => TInner extends TOther
+  ? 1
+  : 2
+  ? TYes
+  : TNo;
+
+/**
+ * @internal
+ */
 export type DecoratedProcedureRecord<
   TProcedures extends ProcedureRouterRecord,
   TFlags,
   TPath extends string = '',
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? {
-        /**
-         * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
-         */
-        getQueryKey: () => QueryKey;
-      } & DecoratedProcedureRecord<
-        TProcedures[TKey]['_def']['record'],
-        TFlags,
-        `${TPath}${TKey & string}.`
-      >
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey], TFlags, `${TPath}${TKey & string}`>
-    : never;
+  [TKey in keyof TProcedures]: IfEquals<
+    TProcedures,
+    ProcedureRouterRecord,
+    unknown,
+    TProcedures[TKey] extends AnyRouter
+      ? {
+          /**
+           * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
+           */
+          getQueryKey: () => QueryKey;
+        } & DecoratedProcedureRecord<
+          TProcedures[TKey]['_def']['record'],
+          TFlags,
+          `${TPath}${TKey & string}.`
+        >
+      : TProcedures[TKey] extends AnyProcedure
+      ? DecorateProcedure<TProcedures[TKey], TFlags, `${TPath}${TKey & string}`>
+      : never
+  >;
 };
 
 /**
