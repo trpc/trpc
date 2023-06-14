@@ -67,7 +67,7 @@ describe('getTRPCErrorFromUnknown', () => {
     expect(trpcError).toBeInstanceOf(TRPCError);
     expect(trpcError.message).toEqual('morty');
     expect(trpcError.cause).toBe(originalError);
-    expect(trpcError.cause?.message).toEqual('morty');
+    expect((trpcError.cause as Error).message).toEqual('morty');
   });
 
   test('should preserve original stack in case new instance of TRPCError is created', () => {

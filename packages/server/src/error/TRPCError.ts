@@ -20,7 +20,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
 }
 
 export class TRPCError extends Error {
-  public readonly cause?: Error;
+  public readonly cause?: unknown;
   public readonly code;
 
   constructor(opts: {
@@ -31,11 +31,10 @@ export class TRPCError extends Error {
     const message =
       opts.message ?? getMessageFromUnknownError(opts.cause, opts.code);
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore https://github.com/tc39/proposal-error-cause
-    super(message, { cause: opts.cause });
+    super(message);
 
     this.code = opts.code;
     this.name = this.constructor.name;
+    this.cause = opts.cause;
   }
 }
