@@ -149,7 +149,6 @@ export type MiddlewareFunction<
           _output_in: TParams['_output_in'];
           _output_out: TParams['_output_out'];
           _meta: TParams['_meta'];
-          _return: $Context;
         }>
       >;
       (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;

@@ -62,15 +62,6 @@ export interface ProcedureParams<
 /**
  * @internal
  */
-export type MiddlewareParams<
-  TOptions extends ProcedureParams & {
-    _return: unknown;
-  } = ProcedureParams & { _return: unknown },
-> = TOptions;
-
-/**
- * @internal
- */
 export type ProcedureArgs<TParams extends ProcedureParams> =
   TParams['_input_in'] extends UnsetMarker
     ? [input?: undefined | void, opts?: ProcedureOptions]
