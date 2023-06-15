@@ -39,6 +39,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
+    unstable_streamSupport: ['json', 'sse'],
   });
 
   for (const [key, value] of Object.entries(result.headers ?? {})) {

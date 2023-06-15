@@ -53,6 +53,7 @@ export async function fastifyRequestHandler<
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
+    unstable_streamSupport: ['json', 'sse'],
   });
 
   const { res } = opts;
