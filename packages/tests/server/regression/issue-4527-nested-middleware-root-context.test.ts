@@ -21,13 +21,9 @@ test('root context override on nested middlewares', () => {
     return next({ rawInput: new FormData() });
   });
 
-  const protectedApiProcedure = t.procedure.use(enforceApiKey);
-  const protectedApiFormDataProcedure = t.procedure
-    .use(formDataMiddleware)
-    .use(enforceApiKey);
-
   // root context -> enforceApiKey -> formDataMiddleware
-  protectedApiProcedure
+  t.procedure
+    .use(enforceApiKey)
     .use(formDataMiddleware)
     .input(
       z.object({
@@ -44,7 +40,9 @@ test('root context override on nested middlewares', () => {
     });
 
   // root context -> formDataMiddleware -> enforceApiKey
-  protectedApiFormDataProcedure
+  t.procedure
+    .use(formDataMiddleware)
+    .use(enforceApiKey)
     .input(
       z.object({
         somehash: z.string(),
