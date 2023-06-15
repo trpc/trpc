@@ -32,13 +32,18 @@ test('should correctly assign the cause when error instance is provided', () => 
 
 test('should be able to create synthetic cause from string', () => {
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause: 'rick' });
-  expect(trpcError.cause).toBe('rick');
+  expect(trpcError.cause).toBeInstanceOf(Error);
+  expect(trpcError.cause!.message).toBe('rick');
+  // @ts-expect-error -- until the target is updated to es2022+
+  expect(trpcError.cause!.cause).toBe(undefined);
 });
 
 test('should be able to create synthetic cause from object', () => {
   const cause = { foo: 'bar' };
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
-  expect(trpcError.cause).toBe(cause);
+  expect(trpcError.cause).toBeInstanceOf(Error);
+  // @ts-expect-error -- until the target is updated to es2022+
+  expect(trpcError.cause!.cause).toBe(cause);
 });
 
 test('should skip creating the cause if one is not provided', () => {
@@ -58,7 +63,8 @@ describe('getTRPCErrorFromUnknown', () => {
     const trpcError = getTRPCErrorFromUnknown(originalError);
     expect(trpcError).toBeInstanceOf(TRPCError);
     expect(trpcError.message).toEqual('rick');
-    expect(trpcError.cause).toEqual('rick');
+    // @ts-expect-error -- until the target is updated to es2022+
+    expect(trpcError.cause!.cause).toBe(undefined);
   });
 
   test('should create new instance of TRPCError with `INTERNAL_SERVER_ERROR` code and proper cause for errors', () => {
@@ -67,7 +73,6 @@ describe('getTRPCErrorFromUnknown', () => {
     expect(trpcError).toBeInstanceOf(TRPCError);
     expect(trpcError.message).toEqual('morty');
     expect(trpcError.cause).toBe(originalError);
-    expect((trpcError.cause as Error).message).toEqual('morty');
   });
 
   test('should preserve original stack in case new instance of TRPCError is created', () => {
