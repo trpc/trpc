@@ -35,7 +35,10 @@ test('root context override on nested middlewares', () => {
       }),
     )
     .query(async (opts) => {
-      expectTypeOf<string>(opts.ctx.apiKey);
+      expectTypeOf<{
+        req: Request | undefined;
+        apiKey: string;
+      }>(opts.ctx);
 
       return { status: 'ok' };
     });
@@ -48,7 +51,10 @@ test('root context override on nested middlewares', () => {
       }),
     )
     .query(async (opts) => {
-      expectTypeOf<string>(opts.ctx.apiKey);
+      expectTypeOf<{
+        req: Request | undefined;
+        apiKey: string;
+      }>(opts.ctx);
 
       return { status: 'ok' };
     });
