@@ -8,14 +8,13 @@ import {
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
-import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { Maybe } from '../types';
+import { buildResponse } from './buildResponse';
 import {
   BaseContentTypeHandler,
   getJsonContentTypeInputs,
 } from './contentType';
-import { getHTTPStatusCode } from './getHTTPStatusCode';
-import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
+import { HTTPResponse, StreamHTTPResponse } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -30,104 +29,29 @@ const fallbackContentTypeHandler = {
   getInputs: getJsonContentTypeInputs,
 };
 
-type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
-  TBaseType,
-  TKey
-> &
-  Partial<Pick<TBaseType, TKey>>;
-
-interface ResolveHTTPRequestOptions<
+type ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
-> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+> = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
   contentTypeHandler?: BaseContentTypeHandler<any>;
   preprocessedBody?: boolean;
-  /**
-   * Called as soon as the response head is known.
-   * When streaming, headers will have been generated
-   * **without** knowing the response body.
-   *
-   * Without this callback, streaming is disabled.
-   */
-  unstable_onHead: (
-    headResponse: Omit<HTTPResponse, 'body'>,
-    isStreaming: boolean,
-  ) => void;
-  /**
-   * Called for every procedure with `[index, result]`.
-   *
-   * Will be called a single time with `index = -1` if
-   * - response is an error
-   * - response is empty (HEAD request)
-   *
-   * Without this callback, streaming is disabled.
-   */
-  unstable_onChunk: (chunk: ResponseChunk) => void;
-}
+} & (
+    | {
+        unstable_streamSupport:
+          | ['sse', 'json']
+          | ['json', 'sse']
+          | ['json']
+          | ['sse']
+          | [];
+      }
+    | { unstable_streamSupport?: undefined }
+  );
 
-function initResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(initOpts: {
-  ctx: inferRouterContext<TRouter> | undefined;
-  paths: string[] | undefined;
-  type: ProcedureType | 'unknown';
-  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
-  untransformedJSON?:
-    | TRPCResponse<unknown, inferRouterError<TRouter>>
-    | TRPCResponse<unknown, inferRouterError<TRouter>>[]
-    | undefined;
-  errors?: TRPCError[];
-}): HTTPResponse {
-  const {
-    ctx,
-    paths,
-    type,
-    responseMeta,
-    untransformedJSON,
-    errors = [],
-  } = initOpts;
-
-  let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
-  const headers: HTTPHeaders = {
-    'Content-Type': 'application/json',
-  };
-
-  const eagerGeneration = !untransformedJSON;
-  const data = eagerGeneration
-    ? []
-    : Array.isArray(untransformedJSON)
-    ? untransformedJSON
-    : [untransformedJSON];
-
-  const meta =
-    responseMeta?.({
-      ctx,
-      paths,
-      type,
-      data,
-      errors,
-      eagerGeneration,
-    }) ?? {};
-
-  for (const [key, value] of Object.entries(meta.headers ?? {})) {
-    headers[key] = value;
-  }
-  if (meta.status) {
-    status = meta.status;
-  }
-
-  return {
-    status,
-    headers,
-  };
-}
-
-async function inputToProcedureCall<
+async function getRawProcedureResult<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(procedureOpts: {
@@ -208,15 +132,9 @@ function caughtErrorToData<
       ctx: errorOpts.ctx,
     }),
   };
-  const transformedJSON = transformTRPCResponse(
-    router._def._config,
-    untransformedJSON,
-  );
-  const body = JSON.stringify(transformedJSON);
   return {
     error,
     untransformedJSON,
-    body,
   };
 }
 
@@ -226,51 +144,60 @@ function caughtErrorToData<
  */
 
 /**
+ * If the `unstable_stream` option is set to `true`, the body (if any) of the HTTPResponse object will be a
+ * readable stream. Otherwise, it will be a string representation of the response body (JSON)
+ *
+ * In practice, this shouldn't matter - Response bodies (including JSON) are all, in fact, readable streams under
+ * the hood. This means that we can send ALL responses as streams, and (with the appropriate response headers) the
+ * client will still be able to read the response body by calling `await response.json()` or `await response.text()`.
+ *
+ * However, to preserve compatibility with any existing code that may be relying on the response body being a string,
+ * the type signature for the returned response body will remain a string UNLESS the `unstable_stream` option is set
+ * to `true`. It is recommended that you update your code to handle streams, as this may be the default behavior in
+ * a future major version.
+ */
+/**
  * Non-streaming signature for `resolveHTTPResponse`:
- * @param opts.unstable_onHead `undefined`
- * @param opts.unstable_onChunk `undefined`
- * @returns `Promise<HTTPResponse>`
+ * @param opts.unstable_streaming `undefined`
+ * @returns `Promise<HTTPResponse>` - the response body will be a stringified JSON object.
+ * @deprecated - this signature will be removed in a future major version, use the streaming signature instead,
+ * which returns a response supporting `response.text()` and `response.json()`.
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
-  opts: Omit<
+  opts: Exclude<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'unstable_onHead' | 'unstable_onChunk'
+    { unstable_streamSupport: string[] }
   >,
 ): Promise<HTTPResponse>;
 /**
  * Streaming signature for `resolveHTTPResponse`:
- * @param opts.unstable_onHead called as soon as the response head is known
- * @param opts.unstable_onChunk called for every procedure with `[index, result]`
- * @returns `Promise<void>` since the response is streamed
+ * @param opts.unstable_streaming - set to `true` to enable the experimental streaming behavior.
+ * @returns `Promise<StreamableHTTPResponse>` - the response body will be a readable stream, instead of JSON.
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
->(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>;
+>(
+  opts: Extract<
+    ResolveHTTPRequestOptions<TRouter, TRequest>,
+    { unstable_streamSupport: string[] }
+  >,
+): Promise<StreamHTTPResponse>;
 // implementation
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
-  opts: PartialBy<
-    ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'unstable_onHead' | 'unstable_onChunk'
-  >,
-): Promise<HTTPResponse | void> {
-  const { router, req, unstable_onHead, unstable_onChunk } = opts;
+  opts: ResolveHTTPRequestOptions<TRouter, TRequest>,
+): Promise<HTTPResponse | StreamHTTPResponse> {
+  const { router, req, unstable_streamSupport } = opts;
+  const streamSupport = new Set(unstable_streamSupport);
 
-  if (req.method === 'HEAD') {
-    // can be used for lambda warmup
-    const headResponse: HTTPResponse = {
-      status: 204,
-    };
-    unstable_onHead?.(headResponse, false);
-    unstable_onChunk?.([-1, '']);
-    return headResponse;
-  }
+  if (req.method === 'HEAD') return { status: 204 }; // can be used for lambda warmup
+
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const batchingEnabled = opts.batching?.enabled ?? true;
@@ -280,11 +207,19 @@ export async function resolveHTTPResponse<
   let paths: string[] | undefined;
 
   const isBatchCall = !!req.query.get('batch');
-  const isStreamCall =
-    isBatchCall &&
-    unstable_onHead &&
-    unstable_onChunk &&
-    req.headers['trpc-batch-mode'] === 'stream';
+
+  let streamMode: 'json' | 'sse' | 'none' = 'none';
+  switch (req.headers['trpc-batch-mode']) {
+    case 'stream': // backward compatibility
+    case 'stream/json':
+      streamMode = 'json';
+      break; // JSON streaming
+    case 'stream/sse':
+      streamMode = 'sse';
+      break;
+    default:
+      streamMode = 'none';
+  }
 
   try {
     if (opts.error) {
@@ -307,6 +242,13 @@ export async function resolveHTTPResponse<
       });
     }
 
+    if (streamMode !== 'none' && !streamSupport.has(streamMode)) {
+      console.warn('Client requested an unsupported stream mode', {
+        streamMode,
+        streamSupport: Array.from(streamSupport),
+      });
+    }
+
     const inputs = await contentTypeHandler.getInputs({
       isBatchCall,
       req,
@@ -317,97 +259,28 @@ export async function resolveHTTPResponse<
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
     const promises = paths.map((path, index) =>
-      inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
+      getRawProcedureResult({ opts, ctx, type, input: inputs[index], path }),
     );
 
-    if (!isStreamCall) {
-      /**
-       * Non-streaming response:
-       * - await all responses in parallel, blocking on the slowest one
-       * - create headers with known response body
-       * - return a complete HTTPResponse
-       */
-
-      const untransformedJSON = await Promise.all(promises);
-      const errors = untransformedJSON.flatMap((response) =>
-        'error' in response ? [response.error] : [],
-      );
-
-      const headResponse = initResponse({
-        ctx,
-        paths,
-        type,
-        responseMeta: opts.responseMeta,
-        untransformedJSON,
-        errors,
-      });
-      unstable_onHead?.(headResponse, false);
-
-      // return body stuff
-      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
-      const transformedJSON = transformTRPCResponse(
-        router._def._config,
-        result,
-      );
-      const body = JSON.stringify(transformedJSON);
-      unstable_onChunk?.([-1, body]);
-
-      return {
-        status: headResponse.status,
-        headers: headResponse.headers,
-        body,
-      };
-    }
-
-    /**
-     * Streaming response:
-     * - block on none, call `onChunk` as soon as each response is ready
-     * - create headers with minimal data (cannot know the response body in advance)
-     * - return void
-     */
-    const headResponse = initResponse({
+    const response = buildResponse({
       ctx,
+      isBatchCall,
       paths,
+      promises,
+      router,
+      streamMode,
       type,
       responseMeta: opts.responseMeta,
+      errors: [],
     });
-    unstable_onHead(headResponse, true);
 
-    const indexedPromises = new Map(
-      promises.map((promise, index) => [
-        index,
-        promise.then((r) => [index, r] as const),
-      ]),
-    );
-    for (let i = 0; i < paths.length; i++) {
-      const [index, untransformedJSON] = await Promise.race(
-        indexedPromises.values(),
-      );
-      indexedPromises.delete(index);
+    if (unstable_streamSupport !== undefined) return response;
 
-      try {
-        const transformedJSON = transformTRPCResponse(
-          router._def._config,
-          untransformedJSON,
-        );
-        const body = JSON.stringify(transformedJSON);
-
-        unstable_onChunk([index, body]);
-      } catch (cause) {
-        const path = paths[index];
-        const input = inputs[index];
-        const { body } = caughtErrorToData(cause, {
-          opts,
-          ctx,
-          type,
-          path,
-          input,
-        });
-
-        unstable_onChunk([index, body]);
-      }
-    }
-    return;
+    return {
+      status: response.status,
+      headers: response.headers,
+      body: await response.text(),
+    };
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
@@ -416,28 +289,29 @@ export async function resolveHTTPResponse<
     // - post body is too large
     // - input deserialization fails
     // - `errorFormatter` return value is malformed
-    const { error, untransformedJSON, body } = caughtErrorToData(cause, {
+    const { error, untransformedJSON } = caughtErrorToData(cause, {
       opts,
       ctx,
       type,
     });
 
-    const headResponse = initResponse({
+    const headResponse = buildResponse({
       ctx,
       paths,
       type,
       responseMeta: opts.responseMeta,
-      untransformedJSON,
+      promises: [Promise.resolve(untransformedJSON)],
+      router,
+      isBatchCall: false,
+      streamMode: 'none',
       errors: [error],
     });
-    unstable_onHead?.(headResponse, false);
 
-    unstable_onChunk?.([-1, body]);
-
+    if (unstable_streamSupport !== undefined) return headResponse;
     return {
       status: headResponse.status,
       headers: headResponse.headers,
-      body,
+      body: await headResponse.text(),
     };
   }
 }

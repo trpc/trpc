@@ -11,10 +11,20 @@ import { ResponseMeta } from '../types';
 
 export type HTTPHeaders = Dict<string | string[]>;
 
+/** @deprecated - use StreamHTTPResponse instead */
 export interface HTTPResponse {
   status: number;
+  //FIXME: How is this ever unset? Can this be a required property? It would be more accurate.
   headers?: HTTPHeaders;
   body?: string;
+}
+
+export interface StreamHTTPResponse {
+  status: number;
+  headers: HTTPHeaders;
+  body: ReadableStream<Uint8Array> | null;
+  text(): Promise<string>;
+  json(): Promise<unknown>;
 }
 
 export type ResponseChunk = [procedureIndex: number, responseBody: string];
