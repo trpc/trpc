@@ -19,7 +19,7 @@ export default function Index() {
           React Server Components
         </Link>
       </li>
-      {/* <li>
+      <li>
         <Link
           href="/client"
           style={{
@@ -28,7 +28,7 @@ export default function Index() {
         >
           Client Side Data Fetching
         </Link>
-      </li> */}
+      </li>
       <li>
         <Link
           href="/server-action"

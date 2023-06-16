@@ -1,4 +1,4 @@
-import { api } from 'trpc-api';
+import { api } from '~/trpc/server-http';
 
 export const ServerHttpGreeting = async () => {
   const greeting = await api.greeting.query({ text: 'from server' });

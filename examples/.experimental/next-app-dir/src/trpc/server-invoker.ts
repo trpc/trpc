@@ -23,10 +23,10 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           revalidate: 5,
           router: appRouter,
           createContext: async () => {
-            const newHeaders = new Map(headers());
-            newHeaders.delete('connection');
-            newHeaders.set('x-trpc-source', 'rsc-invoke');
-            return { headers: Object.fromEntries(newHeaders) };
+            // const newHeaders = new Map(headers());
+            // // newHeaders.delete('connection');
+            // newHeaders.set('x-trpc-source', 'rsc-invoke');
+            return { headers: undefined };
           },
         }),
       ],
