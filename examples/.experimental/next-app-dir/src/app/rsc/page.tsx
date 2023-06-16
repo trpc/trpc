@@ -12,7 +12,6 @@ export default async function Home() {
     <>
       <div>
         <Suspense fallback={<>Loading Server...</>}>
-          {/* @ts-expect-error RSC + TS not friends yet */}
           <ServerHttpGreeting />
         </Suspense>
       </div>
@@ -34,10 +33,14 @@ export default async function Home() {
 
       <div>
         <Suspense fallback={<>Loading Server...</>}>
-          {/* @ts-expect-error RSC + TS not friends yet */}
           <ServerInvokedGreeting />
         </Suspense>
       </div>
+      {/* <div>
+        <Suspense fallback={<>Loading stream...</>}>
+          <StreamedSC promise={promise} />
+        </Suspense>
+      </div> */}
     </>
   );
 }

@@ -73,10 +73,19 @@ export interface RequestInitEsque {
 }
 
 /**
+ * A subset of the standard ReadableStream properties needed by tRPC internally.
+ * @see ReadableStream from lib.dom.d.ts
+ */
+export type WebReadableStreamEsque = {
+  getReader: () => ReadableStreamDefaultReader<Uint8Array>;
+};
+
+/**
  * A subset of the standard Response properties needed by tRPC internally.
  * @see Response from lib.dom.d.ts
  */
 export interface ResponseEsque {
+  readonly body?: WebReadableStreamEsque | NodeJS.ReadableStream | null;
   /**
    * @remarks
    * The built-in Response::json() method returns Promise<any>, but

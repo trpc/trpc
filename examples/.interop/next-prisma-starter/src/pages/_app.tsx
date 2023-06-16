@@ -53,7 +53,7 @@ export default withTRPC<AppRouter>({
      */
     return {
       /**
-       * @link https://trpc.io/docs/links
+       * @link https://trpc.io/docs/client/links
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
