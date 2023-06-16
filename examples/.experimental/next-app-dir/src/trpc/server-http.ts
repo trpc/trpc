@@ -27,7 +27,7 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
             newHeaders.delete('connection');
 
             // `x-trpc-source` is not required, but can be useful for debugging
-            newHeaders.set('x-trpc-source', 'rsc');
+            newHeaders.set('x-trpc-source', 'rsc-http');
 
             // Forward headers from the browser to the API
             return Object.fromEntries(newHeaders);

@@ -1,6 +1,6 @@
 {
   "name": "@trpc/client",
-  "version": "10.30.0",
+  "version": "10.26.1-alpha-next-fetch-2023-06-16-09-50-34.47+557f2a249",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
@@ -76,11 +76,11 @@
     "!**/*.test.*"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.30.0"
+    "@trpc/server": "10.26.1-alpha-next-fetch-2023-06-16-09-50-34.47+557f2a249"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "10.30.0",
+    "@trpc/server": "10.26.1-alpha-next-fetch-2023-06-16-09-50-34.47+557f2a249",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.16.16",
     "eslint": "^8.40.0",
@@ -97,5 +97,6 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "gitHead": "557f2a24905d12c1ae666ebd249eab6db612c275"
 }

@@ -19,11 +19,14 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           enabled: (op) => true,
         }),
         experimental_nextCacheLink({
+          // requests are cached for 5 seconds
           revalidate: 5,
           router: appRouter,
           createContext: async () => {
-            const h = Object.fromEntries(headers().entries());
-            return { headers: h };
+            const newHeaders = new Map(headers());
+            newHeaders.delete('connection');
+            newHeaders.set('x-trpc-source', 'rsc-invoke');
+            return { headers: Object.fromEntries(newHeaders) };
           },
         }),
       ],

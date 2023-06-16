@@ -1,6 +1,6 @@
 import {
   httpBatchLink,
-  HttpBatchLinkOptions,
+  HTTPBatchLinkOptions,
   httpLink,
   HTTPLinkOptions,
   TRPCLink,
@@ -11,7 +11,7 @@ import { generateCacheTag } from '../shared';
 type NextFetchLinkOptions<TBatch extends boolean> = {
   batch?: TBatch;
   revalidate?: number | false;
-} & (TBatch extends true ? HttpBatchLinkOptions : HTTPLinkOptions);
+} & (TBatch extends true ? HTTPBatchLinkOptions : HTTPLinkOptions);
 
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<
