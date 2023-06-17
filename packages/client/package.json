@@ -86,6 +86,7 @@
     "eslint": "^8.40.0",
     "expect-type": "^0.16.0",
     "isomorphic-fetch": "^3.0.0",
+    "mock-socket": "^9.2.1",
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
     "tsx": "^3.12.7",
