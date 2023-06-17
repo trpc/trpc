@@ -19,6 +19,10 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   return trpcError;
 }
 
+function isScalar(value: unknown): value is string | number | boolean | bigint {
+  return ['string', 'number', 'boolean', 'bigint'].includes(typeof value);
+}
+
 export class TRPCError extends Error {
   public readonly cause?: Error;
   public readonly code;
@@ -28,22 +32,26 @@ export class TRPCError extends Error {
     code: TRPC_ERROR_CODE_KEY;
     cause?: unknown;
   }) {
+    const { cause } = opts;
     const message =
-      opts.message ?? getMessageFromUnknownError(opts.cause, opts.code);
+      opts.message ?? getMessageFromUnknownError(cause, opts.code);
 
-    let cause = opts.cause;
-
-    if (typeof opts.cause !== 'undefined' && typeof opts.cause !== 'object') {
-      cause = new Error(String(cause));
-    }
-
-    // We know that the `cause` can sometimes be a non-Error object here, we might address that for the next major
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore https://github.com/tc39/proposal-error-cause
-    super(message, { cause });
+    super(message);
 
     this.code = opts.code;
     this.name = this.constructor.name;
+
+    if (cause instanceof Error) {
+      this.cause = cause;
+    } else if (isScalar(cause)) {
+      this.cause = new Error(String(cause));
+    } else if (cause != null) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore -- https://github.com/tc39/proposal-error-cause: widely supported, but not defined in our compilation target yet
+      const causeAsError = new Error('A non-Error cause was provided', {
+        cause: cause,
+      });
+      this.cause = causeAsError;
+    }
   }
 }
