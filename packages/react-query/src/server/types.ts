@@ -1,4 +1,4 @@
-import { inferRouterProxyClient  } from '@trpc/client';
+import { inferRouterProxyClient } from '@trpc/client';
 import {
   AnyRouter,
   ClientDataTransformerOptions,
@@ -13,7 +13,7 @@ interface CreateSSGInternalHelpersOptionsBase<TRouter extends AnyRouter> {
 }
 
 interface CreateSSGExternalHelpersOptionsBase<TRouter extends AnyRouter> {
-  client: inferRouterProxyClient<TRouter> ;
+  client: inferRouterProxyClient<TRouter>;
   transformer?: ClientDataTransformerOptions;
 }
 

@@ -47,7 +47,7 @@ test('fetch', async () => {
 });
 
 test('fetchInfinite', async () => {
-  const {opts} = ctx;
+  const { opts } = ctx;
   const ssg = createServerSideExternalHelpers({
     client: opts.proxy,
   });
@@ -59,7 +59,7 @@ test('fetchInfinite', async () => {
 });
 
 test('prefetch and dehydrate', async () => {
-  const {opts} = ctx;
+  const { opts } = ctx;
   const ssg = createServerSideExternalHelpers({
     client: opts.proxy,
   });
@@ -70,7 +70,7 @@ test('prefetch and dehydrate', async () => {
 });
 
 test('prefetchInfinite and dehydrate', async () => {
-  const {opts} = ctx;
+  const { opts } = ctx;
   const ssg = createServerSideExternalHelpers({
     client: opts.proxy,
   });

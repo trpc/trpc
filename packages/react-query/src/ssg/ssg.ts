@@ -4,6 +4,7 @@ import {
   DehydrateOptions,
   InfiniteData,
 } from '@tanstack/react-query';
+import { getUntypedClient } from '@trpc/client';
 import {
   AnyRouter,
   callProcedure,
@@ -16,7 +17,6 @@ import {
   CreateSSGInternalHelpersOptions,
 } from '../server/types';
 import { getQueryClient } from '../shared';
-import { getUntypedClient } from '@trpc/client';
 
 /**
  * Create functions you can use for server-side rendering / static generation
