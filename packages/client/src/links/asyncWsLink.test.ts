@@ -22,7 +22,10 @@ vi.mock("mock-socket", () => {
     send: vi.fn((msgs: string) => {
       const msgsData = JSON.parse(msgs);
       msgsData.forEach((msgData: { id: number }) => {
-        setTimeout(() => relay({ data: `{"id": ${msgData.id}}` }), 20);
+        setTimeout(
+          () => relay({ data: `{"id": ${msgData.id}}` }),
+          Math.floor(Math.random() * 20),
+        );
       });
     }),
   };
@@ -56,7 +59,7 @@ test("asyncWsLink", async () => {
     url: asyncSocketUrl,
   });
 
-  const responses = []
+  const responses = [];
 
   function requestFactory() {
     return new Promise<void>((res) => {
@@ -64,8 +67,8 @@ test("asyncWsLink", async () => {
         complete: noop,
         error: noop,
         next: (data) => {
-            responses.push(data);
-            res()
+          responses.push(data);
+          res();
         },
       });
     });
