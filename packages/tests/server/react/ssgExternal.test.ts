@@ -26,6 +26,9 @@ const ctx = konn()
             }),
           )
           .query(() => '__infResult' as const),
+        throwsError: t.procedure.query(() => {
+          throw new Error('__error');
+        }),
       }),
     });
 
@@ -78,4 +81,17 @@ test('prefetchInfinite and dehydrate', async () => {
 
   const data = JSON.stringify(ssg.dehydrate());
   expect(data).toContain('__infResult');
+});
+
+test('prefetch faulty query and dehydrate', async () => {
+  const { opts } = ctx;
+  const ssg = createServerSideExternalHelpers({
+    client: opts.proxy,
+    transformer: SuperJSON,
+  });
+
+  await ssg.post.throwsError.prefetch();
+
+  const data = JSON.stringify(ssg.dehydrate());
+  expect(data).toContain('__error');
 });
