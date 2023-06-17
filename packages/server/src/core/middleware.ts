@@ -1,5 +1,4 @@
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
@@ -206,7 +205,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
 
@@ -246,7 +245,7 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
       throw new TRPCError({
         message: 'Output validation failed',
         code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
   };

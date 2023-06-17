@@ -1,5 +1,5 @@
 import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
-import { getMessageFromUnknownError } from './utils';
+import { isObject } from './utils';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {
@@ -19,8 +19,35 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   return trpcError;
 }
 
-function isScalar(value: unknown): value is string | number | boolean | bigint {
-  return ['string', 'number', 'boolean', 'bigint'].includes(typeof value);
+class UnknownCauseError extends Error {
+  [key: string]: unknown;
+}
+
+function getCauseFromUnknown(cause: unknown): Error | undefined {
+  if (cause instanceof Error) {
+    return cause;
+  }
+
+  const type = typeof cause;
+  if (type === 'undefined' || type === 'function' || cause === null) {
+    return undefined;
+  }
+
+  // Primitive types just get wrapped in an error
+  if (type !== 'object') {
+    return new Error(String(cause));
+  }
+
+  // If it's an object, we'll create a synthetic error
+  if (isObject(cause)) {
+    const err = new UnknownCauseError();
+    for (const key in cause) {
+      err[key] = cause[key];
+    }
+    return err;
+  }
+
+  return undefined;
 }
 
 export class TRPCError extends Error {
@@ -32,26 +59,14 @@ export class TRPCError extends Error {
     code: TRPC_ERROR_CODE_KEY;
     cause?: unknown;
   }) {
-    const { cause } = opts;
-    const message =
-      opts.message ?? getMessageFromUnknownError(cause, opts.code);
+    const cause = getCauseFromUnknown(opts.cause);
+    const message = opts.message ?? cause?.message ?? opts.code;
 
-    super(message);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore https://github.com/tc39/proposal-error-cause
+    super(message, { cause });
 
     this.code = opts.code;
     this.name = this.constructor.name;
-
-    if (cause instanceof Error) {
-      this.cause = cause;
-    } else if (isScalar(cause)) {
-      this.cause = new Error(String(cause));
-    } else if (cause != null) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore -- https://github.com/tc39/proposal-error-cause: widely supported, but not defined in our compilation target yet
-      const causeAsError = new Error('A non-Error cause was provided', {
-        cause: cause,
-      });
-      this.cause = causeAsError;
-    }
   }
 }
