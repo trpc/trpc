@@ -3,6 +3,7 @@ import { InfiniteData } from '@tanstack/react-query';
 import { createServerSideExternalHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
+import SuperJSON from 'superjson';
 import { z } from 'zod';
 
 const ctx = konn()
@@ -36,9 +37,9 @@ const ctx = konn()
   .done();
 
 test('fetch', async () => {
-  const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({
-    client: untypedClient,
+  const { opts } = ctx;
+  const ssg = createServerSideExternalHelpers({
+    client: opts.proxy,
   });
 
   const post = await ssg.post.byId.fetch({ id: '1' });
@@ -46,9 +47,9 @@ test('fetch', async () => {
 });
 
 test('fetchInfinite', async () => {
-  const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({
-    client: untypedClient,
+  const {opts} = ctx;
+  const ssg = createServerSideExternalHelpers({
+    client: opts.proxy,
   });
 
   const post = await ssg.post.list.fetchInfinite({});
@@ -58,9 +59,9 @@ test('fetchInfinite', async () => {
 });
 
 test('prefetch and dehydrate', async () => {
-  const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({
-    client: untypedClient,
+  const {opts} = ctx;
+  const ssg = createServerSideExternalHelpers({
+    client: opts.proxy,
   });
   await ssg.post.byId.prefetch({ id: '1' });
 
@@ -69,9 +70,9 @@ test('prefetch and dehydrate', async () => {
 });
 
 test('prefetchInfinite and dehydrate', async () => {
-  const { untypedClient, appRouter } = ctx;
-  const ssg = createServerSideExternalHelpers<typeof appRouter>({
-    client: untypedClient,
+  const {opts} = ctx;
+  const ssg = createServerSideExternalHelpers({
+    client: opts.proxy,
   });
   await ssg.post.list.prefetchInfinite({});
 

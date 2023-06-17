@@ -16,6 +16,7 @@ import {
   CreateSSGInternalHelpersOptions,
 } from '../server/types';
 import { getQueryClient } from '../shared';
+import { getUntypedClient } from '@trpc/client';
 
 /**
  * Create functions you can use for server-side rendering / static generation
@@ -59,7 +60,8 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         }
 
         const { client } = opts;
-        return client.query(...pathAndInput);
+        const untypedClient = getUntypedClient(client);
+        return untypedClient.query(...pathAndInput);
       },
     });
   };
@@ -86,7 +88,8 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         }
 
         const { client } = opts;
-        return client.query(...pathAndInput);
+        const untypedClient = getUntypedClient(client);
+        return untypedClient.query(...pathAndInput);
       },
     });
   };
@@ -114,7 +117,8 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         }
 
         const { client } = opts;
-        return client.query(...pathAndInput);
+        const untypedClient = getUntypedClient(client);
+        return untypedClient.query(...pathAndInput);
       },
     });
   };
@@ -142,7 +146,8 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
         }
 
         const { client } = opts;
-        return client.query(...pathAndInput);
+        const untypedClient = getUntypedClient(client);
+        return untypedClient.query(...pathAndInput);
       },
     });
   };
