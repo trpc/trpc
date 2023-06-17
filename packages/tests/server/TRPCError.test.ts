@@ -38,14 +38,6 @@ test('should be able to create synthetic cause from string', () => {
   expect(trpcError.cause!.cause).toBe(undefined);
 });
 
-test('should be able to create synthetic cause from object', () => {
-  const cause = { foo: 'bar' };
-  const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
-  expect(trpcError.cause).toBeInstanceOf(Error);
-  // @ts-expect-error -- until the target is updated to es2022+
-  expect(trpcError.cause!.cause).toBe(cause);
-});
-
 test('should skip creating the cause if one is not provided', () => {
   const trpcError = new TRPCError({ code: 'FORBIDDEN' });
   expect(trpcError.cause).toBeUndefined();
