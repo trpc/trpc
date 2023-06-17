@@ -4,10 +4,12 @@ import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
 import {
   AbortControllerEsque,
+  AbortControllerInstanceEsque,
   FetchEsque,
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
+import { TextDecoderEsque } from '../internals/streamingUtils';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
 /**
@@ -87,6 +89,7 @@ export type GetBody = (
 ) => RequestInitEsque['body'];
 
 export type ContentOptions = {
+  batchModeHeader?: 'stream';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -136,38 +139,46 @@ export const jsonHttpRequester: Requester = (opts) => {
 export type HTTPRequestOptions = HTTPBaseRequestOptions &
   ContentOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+    TextDecoder?: TextDecoderEsque;
   };
+
+export async function fetchHTTPResponse(
+  opts: HTTPRequestOptions,
+  ac?: AbortControllerInstanceEsque | null,
+) {
+  const url = opts.getUrl(opts);
+  const body = opts.getBody(opts);
+  const { type } = opts;
+  const headers = await opts.headers();
+  /* istanbul ignore if -- @preserve */
+  if (type === 'subscription') {
+    throw new Error('Subscriptions should use wsLink');
+  }
+
+  return opts.fetch(url, {
+    method: METHOD[type],
+    signal: ac?.signal,
+    body: body,
+    headers: {
+      ...(opts.contentTypeHeader
+        ? { 'content-type': opts.contentTypeHeader }
+        : {}),
+      ...(opts.batchModeHeader
+        ? { 'trpc-batch-mode': opts.batchModeHeader }
+        : {}),
+      ...headers,
+    },
+  });
+}
 
 export function httpRequest(
   opts: HTTPRequestOptions,
 ): PromiseAndCancel<HTTPResult> {
-  const { type } = opts;
   const ac = opts.AbortController ? new opts.AbortController() : null;
+  const meta = {} as HTTPResult['meta'];
 
   const promise = new Promise<HTTPResult>((resolve, reject) => {
-    const url = opts.getUrl(opts);
-    const body = opts.getBody(opts);
-
-    const meta = {} as HTTPResult['meta'];
-    Promise.resolve(opts.headers())
-      .then((headers) => {
-        /* istanbul ignore if -- @preserve */
-        if (type === 'subscription') {
-          throw new Error('Subscriptions should use wsLink');
-        }
-
-        return opts.fetch(url, {
-          method: METHOD[type],
-          signal: ac?.signal,
-          body: body,
-          headers: {
-            ...(opts.contentTypeHeader
-              ? { 'content-type': opts.contentTypeHeader }
-              : {}),
-            ...headers,
-          },
-        });
-      })
+    fetchHTTPResponse(opts, ac)
       .then((_res) => {
         meta.response = _res;
         return _res.json();

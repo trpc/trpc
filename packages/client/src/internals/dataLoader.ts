@@ -4,8 +4,8 @@ import { CancelFn, PromiseAndCancel } from '../links/types';
 type BatchItem<TKey, TValue> = {
   aborted: boolean;
   key: TKey;
-  resolve: (value: TValue) => void;
-  reject: (error: Error) => void;
+  resolve: ((value: TValue) => void) | null;
+  reject: ((error: Error) => void) | null;
   batch: Batch<TKey, TValue> | null;
 };
 type Batch<TKey, TValue> = {
@@ -14,7 +14,10 @@ type Batch<TKey, TValue> = {
 };
 type BatchLoader<TKey, TValue> = {
   validate: (keys: TKey[]) => boolean;
-  fetch: (keys: TKey[]) => {
+  fetch: (
+    keys: TKey[],
+    unitResolver: (index: number, value: NonNullable<TValue>) => void,
+  ) => {
     promise: Promise<TValue[]>;
     cancel: CancelFn;
   };
@@ -62,7 +65,7 @@ export function dataLoader<TKey, TValue>(
 
       if (item.aborted) {
         // Item was aborted before it was dispatched
-        item.reject(new Error('Aborted'));
+        item.reject?.(new Error('Aborted'));
         index++;
         continue;
       }
@@ -78,7 +81,7 @@ export function dataLoader<TKey, TValue>(
       }
 
       if (lastGroup.length === 0) {
-        item.reject(new Error('Input is too big for a single dispatch'));
+        item.reject?.(new Error('Input is too big for a single dispatch'));
         index++;
         continue;
       }
@@ -104,8 +107,16 @@ export function dataLoader<TKey, TValue>(
       for (const item of items) {
         item.batch = batch;
       }
+      const unitResolver = (index: number, value: NonNullable<TValue>) => {
+        const item = batch.items[index]!;
+        item.resolve?.(value);
+        item.batch = null;
+        item.reject = null;
+        item.resolve = null;
+      };
       const { promise, cancel } = batchLoader.fetch(
         batch.items.map((_item) => _item.key),
+        unitResolver,
       );
       batch.cancel = cancel;
 
@@ -113,14 +124,17 @@ export function dataLoader<TKey, TValue>(
         .then((result) => {
           for (let i = 0; i < result.length; i++) {
             const value = result[i]!;
+            unitResolver(i, value);
+          }
+          for (let i = 0; i < batch.items.length; i++) {
             const item = batch.items[i]!;
-            item.resolve(value);
+            item.reject?.(new Error('Missing result'));
             item.batch = null;
           }
         })
         .catch((cause) => {
           for (const item of batch.items) {
-            item.reject(cause);
+            item.reject?.(cause);
             item.batch = null;
           }
         });

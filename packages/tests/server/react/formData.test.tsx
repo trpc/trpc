@@ -121,7 +121,7 @@ const ctx = konn()
     });
 
     const queryClient = createQueryClient();
-    const proxy = createTRPCReact<TRouter, unknown, 'ExperimentalSuspense'>();
+    const proxy = createTRPCReact<TRouter, unknown>();
     const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
 
     const client = opts.client;
