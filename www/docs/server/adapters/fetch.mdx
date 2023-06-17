@@ -218,6 +218,11 @@ export const all: APIRoute = (opts) => {
     createContext,
   });
 };
+
+export const getStaticPaths = () =>
+  Object.keys(appRouter._def.procedures).map((procedure) => ({
+    params: { trpc: procedure },
+  }));
 ```
 
 ### Cloudflare Worker
