@@ -114,7 +114,8 @@ type CreateMiddlewareReturnInput<
  */
 type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
   _config: TConfig;
-  _ctx_out: TConfig['$types']['ctx'];
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  _ctx_out: {};
   _input_out: unknown;
   _input_in: unknown;
   _output_in: unknown;
@@ -129,7 +130,9 @@ export type MiddlewareFunction<
   TParamsAfter extends ProcedureParams,
 > = {
   (opts: {
-    ctx: Simplify<TParams['_ctx_out']>;
+    ctx: Simplify<
+      Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
+    >;
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
