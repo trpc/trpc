@@ -34,7 +34,9 @@ vi.mock("mock-socket", () => {
 });
 
 const TEST_URL = "ws://some.site/ws?token=magicToken";
-const noop = () => {};
+const noop = () => {
+  return;
+};
 
 async function mockApiUrlFetch() {
   return Promise.resolve(TEST_URL);
@@ -81,6 +83,9 @@ test("asyncWsLink", async () => {
   ]);
 
   expect(asyncSocketUrl).toBeCalledTimes(1);
+  // Todo: this should be replaced with jest style rules
+  // or setup to be ignored in *.test.* files
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   expect(WebSocket.prototype.send).toBeCalledTimes(1);
   expect(responses.length).toBe(3);
 });
