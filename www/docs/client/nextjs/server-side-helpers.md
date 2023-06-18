@@ -7,9 +7,9 @@ slug: /client/nextjs/server-side-helpers
 
 The server side helpers provides you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
 
-# There are 2 ways to use the server side helpers.
+## There are 2 ways to use the server side helpers.
 
-## 1. Internal router
+### 1. Internal router
 
 This method is used when you have direct access to your tRPC router. e.g. when developing a monolithic NextJS application.
 
@@ -27,7 +27,7 @@ const helpers = createServerSideInternalHelpers({
 });
 ```
 
-## 2. External router
+### 2. External router
 
 This method is used when you don't have direct access to your tRPC router. e.g. when developing a NextJS application and a stand alone API hosted separately.
 
@@ -50,7 +50,7 @@ const helpers = createServerSideExternalHelpers({
 });
 ```
 
-# Helpers usage
+## Helpers usage
 
 The server side helpers methods return an object much like the tRPC client, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
 
