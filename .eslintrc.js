@@ -4,8 +4,8 @@ const config = {
   parser: '@typescript-eslint/parser',
   plugins: ['no-only-tests', 'unicorn', 'turbo'],
   extends: [
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:@typescript-eslint/recommended-type-checked',
+    'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'prettier',
@@ -22,15 +22,30 @@ const config = {
       './www/tsconfig.json',
     ], // Allows for the use of rules which require parserServices to be generated
   },
+  // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
   rules: {
-    // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    // These rules aren't enabled in typescript-eslint's basic recommended config, but we like them
+    '@typescript-eslint/no-non-null-assertion': 'error',
+
+    // These rules enabled in typescript-eslint's configs don't apply here
+    '@typescript-eslint/consistent-indexed-object-style': 'off',
+    '@typescript-eslint/consistent-type-definitions': 'off',
+    '@typescript-eslint/no-empty-interface': 'off',
+    '@typescript-eslint/sort-type-constituents': 'off',
+
+    // Todo: do we want these?
+    '@typescript-eslint/array-type': 'off',
+    '@typescript-eslint/class-literal-property-style': 'off',
+    '@typescript-eslint/dot-notation': 'off',
+    '@typescript-eslint/no-confusing-void-expression': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/prefer-for-of': 'off',
+    '@typescript-eslint/prefer-function-type': 'off',
+    '@typescript-eslint/prefer-nullish-coalescing': 'off',
+
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
     'no-only-tests/no-only-tests': 'error',
-    '@typescript-eslint/no-empty-interface': 'off',
     'unicorn/filename-case': [
       'error',
       {

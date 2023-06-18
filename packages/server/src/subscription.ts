@@ -32,7 +32,9 @@ export function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return observable<TOutput>((emit) => {
-    _pull(emit).catch((err) => emit.error(getTRPCErrorFromUnknown(err)));
+    _pull(emit).catch((err) => {
+      emit.error(getTRPCErrorFromUnknown(err));
+    });
     return () => {
       clearTimeout(timer);
       stopped = true;

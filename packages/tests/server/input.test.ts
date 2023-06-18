@@ -9,7 +9,7 @@ import { UnsetMarker } from '@trpc/server/core/internals/utils';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 
-const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+const ignoreErrors = async (fn: () => unknown) => {
   try {
     await fn();
   } catch {
@@ -572,7 +572,7 @@ test('merges optional with required property', async () => {
       .query(() => 'hi'),
   });
 
-  type Input = inferProcedureInput<(typeof router)['proc']>;
+  type Input = inferProcedureInput<typeof router['proc']>;
   //    ^?
   expectTypeOf<Input>().toEqualTypeOf<{ id: string }>();
 

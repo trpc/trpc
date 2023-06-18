@@ -280,6 +280,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     client.on('message', async (message) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs

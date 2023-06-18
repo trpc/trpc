@@ -122,7 +122,7 @@ export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */
-  fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
+  fnOrPromise: (() => unknown) | Promise<unknown>,
   /**
    * Force error constructor to be of specific type
    * @default Error
@@ -145,7 +145,7 @@ export async function waitError<TError extends Error = Error>(
   throw new Error('Function did not throw');
 }
 
-export const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+export const ignoreErrors = async (fn: () => unknown) => {
   try {
     await fn();
   } catch {

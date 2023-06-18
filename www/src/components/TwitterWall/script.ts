@@ -78,7 +78,8 @@ function req(pathname: string): Promise<any> {
           return;
         }
         try {
-          resolve(JSON.parse(data?.toString() as string));
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+          resolve(JSON.parse(data?.toString()!));
         } catch (err) {
           reject(err);
         }

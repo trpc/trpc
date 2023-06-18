@@ -81,7 +81,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       });
       resolve(response);
     } else {
-      controller.enqueue(encoder.encode(formatter!(index, string)));
+      controller.enqueue(encoder.encode(formatter(index, string)));
     }
   };
 
@@ -100,7 +100,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   })
     .then(() => {
       if (isStream) {
-        controller.enqueue(encoder.encode(formatter!.end()));
+        controller.enqueue(encoder.encode(formatter.end()));
         controller.close();
       }
     })
