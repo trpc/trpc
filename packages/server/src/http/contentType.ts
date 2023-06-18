@@ -47,7 +47,7 @@ function getRawProcedureInputOrThrow(opts: {
       return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
     return req.body;
-  } catch (err) {
+  } catch (cause) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
       cause,
