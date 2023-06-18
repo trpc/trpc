@@ -1,4 +1,4 @@
-import { createServerSideHelpers } from '@trpc/react-query/server';
+import { createServerSideInternalHelpers } from '@trpc/react-query/server';
 import superjson from 'superjson';
 import { appRouter } from '~/server/routers/_app';
 import { trpc } from '~/utils/trpc';
@@ -8,7 +8,7 @@ import { trpc } from '~/utils/trpc';
  * @link https://trpc.io/docs/ssg
  */
 export const getStaticProps = async () => {
-  const ssg = createServerSideHelpers({
+  const ssg = createServerSideInternalHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson,

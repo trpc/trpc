@@ -171,7 +171,7 @@ export default IndexPage;
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,
 // ) => {
-//   const ssg = createServerSideHelpers({
+//   const ssg = createServerSideInternalHelpers({
 //     router: appRouter,
 //     ctx: await createContext(),
 //   });

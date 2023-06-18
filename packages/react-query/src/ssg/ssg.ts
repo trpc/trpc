@@ -20,7 +20,7 @@ import { getQueryClient } from '../shared';
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @deprecated use `createServerSideHelpers` instead
+ * @deprecated use `createServerSideInternalHelpers` instead
  */
 export function createSSGHelpers<TRouter extends AnyRouter>(
   opts:
