@@ -54,7 +54,7 @@ export interface ProcedureUseQuery<
 > {
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-    TData extends TQueryFnData = TQueryFnData,
+    TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
@@ -68,7 +68,7 @@ export interface ProcedureUseQuery<
 
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-    TData extends TQueryFnData = TQueryFnData,
+    TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
