@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server';
+import { inferProcedureOutput, initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import * as React from 'react';
 import * as z from 'zod';
@@ -49,7 +49,10 @@ test('select as transform', async () => {
       },
     );
 
-    type Data = (typeof result)['data'];
+    if (!result.data) return null;
+
+    type AppRouter = typeof ctx.appRouter;
+    type Data = inferProcedureOutput<AppRouter['greeting']>;
     expectTypeOf(result.data).not.toMatchTypeOf<Data>();
     expectTypeOf<{ foo: string }>(result.data);
 
