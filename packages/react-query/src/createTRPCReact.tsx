@@ -109,7 +109,7 @@ export type DecorateProcedure<
        */
       useSuspenseQuery: <
         TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-        TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+        TData = TQueryFnData,
       >(
         input: inferProcedureInput<TProcedure>,
         opts?: Omit<

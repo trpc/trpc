@@ -69,3 +69,36 @@ test('select as transform', async () => {
     expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
   });
 });
+
+test('select as transform in suspense', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    const [data] = proxy.greeting.useSuspenseQuery(
+      { name: 'foo' },
+      {
+        select(data) {
+          // remap text prop to foo
+          return { foo: data.text };
+        },
+      },
+    );
+
+    type AppRouter = typeof ctx.appRouter;
+    type Data = inferProcedureOutput<AppRouter['greeting']>;
+    expectTypeOf(data).not.toMatchTypeOf<Data>();
+    expectTypeOf<{ foo: string }>(data);
+
+    return <pre>{JSON.stringify(data)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
+  });
+});
