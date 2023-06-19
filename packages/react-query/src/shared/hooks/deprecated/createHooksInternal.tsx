@@ -94,7 +94,7 @@ function __createHooksInternal<
 
   const Context = (config?.context ??
     TRPCContext) as React.Context<ProviderContext>;
-  const ReactQueryContext = config!.reactQueryContext;
+  const ReactQueryContext = config?.reactQueryContext;
 
   const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCClient(opts);
