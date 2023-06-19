@@ -51,7 +51,7 @@ module.exports = {
     announcementBar: {
       id: 'drift',
       content:
-        "🎉 Announcing tRPC Drift Beta. A hosted cloud platform to analyze your router's API definition and keep track of any breaking changes",
+        '🎉 Announcing tRPC Drift Beta. A hosted cloud platform to analyze your router\'s API definition and keep track of any breaking changes. <a href="https://trpc-drift-dashboard-nextjs.vercel.app/dashboard">Join the beta today.</a>',
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
