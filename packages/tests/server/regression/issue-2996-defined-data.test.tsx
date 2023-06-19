@@ -95,7 +95,7 @@ test('using `placeholderData`', async () => {
 
   function MyComponent() {
     const { data: trpcData } = proxy.posts.useQuery(undefined, {
-      placeholderData: [] as Post[],
+      placeholderData: [],
     });
     expectTypeOf<typeof trpcData>().toEqualTypeOf<Post[] | undefined>();
 
