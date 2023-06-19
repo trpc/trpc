@@ -64,7 +64,11 @@ export interface ProcedureUseQuery<
       TData,
       TRPCClientErrorLike<TProcedure>
     >,
-  ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+  ): DefinedUseTRPCQueryResult<
+    // HACKYYYY
+    TData extends never[] ? inferTransformedProcedureOutput<TProcedure> : TData,
+    TRPCClientErrorLike<TProcedure>
+  >;
 
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
@@ -78,7 +82,11 @@ export interface ProcedureUseQuery<
       TData,
       TRPCClientErrorLike<TProcedure>
     >,
-  ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
+  ): UseTRPCQueryResult<
+    // HACKYYYY
+    TData extends never[] ? inferTransformedProcedureOutput<TProcedure> : TData,
+    TRPCClientErrorLike<TProcedure>
+  >;
 }
 
 /**
