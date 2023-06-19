@@ -26,7 +26,8 @@ export type InferQueryOptions<
     inferProcedureInput<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>
+    TRPCClientErrorLike<TProcedure>,
+    inferTransformedProcedureOutput<TProcedure>
   >,
   'select'
 >;

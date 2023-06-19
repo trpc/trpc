@@ -25,7 +25,8 @@ export type TrpcQueryOptionsForUseQueries<
   TOutput,
   TData,
   TError,
-> = Omit<UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>, 'context'>;
+  TQueryData,
+> = Omit<UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError, TQueryData>, 'context'>;
 
 /**
  * @internal

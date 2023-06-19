@@ -313,7 +313,8 @@ function __createHooksInternal<
       TQueryValues[TPath]['input'],
       TQueryFnData,
       TData,
-      TError
+      TError,
+      TQueryFnData
     >,
   ): UseTRPCQueryResult<TData, TError> {
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =

@@ -278,7 +278,7 @@ export function createRootHooks<
   function useQuery(
     // FIXME path should be a tuple in next major
     pathAndInput: [path: string, ...args: unknown[]],
-    opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
+    opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError, unknown>,
   ): UseTRPCQueryResult<unknown, TError> {
     const context = useContext();
     if (!context) {

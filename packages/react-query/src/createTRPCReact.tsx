@@ -45,6 +45,39 @@ import {
 } from './shared/hooks/types';
 import { CreateTRPCReactOptions } from './shared/types';
 
+/* SOME TESTS
+
+type TestProc = {
+  _type: "query"
+  _procedure: true
+  _def: {
+    _input_in: undefined;
+    _output_out: {
+      foo?: string;
+      bar?: number;
+    };
+  }
+  (): Promise<"yolo">
+}
+
+const useQuery = {} as ProcedureUseQuery<TestProc, 'c.d.e'>
+
+const { data } = useQuery(undefined, {
+  initialData: {bar: 1},
+  // placeholderData: {bar: 1},
+  select(data) {
+      // ^?
+      return {
+          selected: data.bar,
+      }
+  }
+})
+
+console.log(data)
+//          ^?
+
+ */
+
 /**
  * @internal
  */
@@ -55,6 +88,7 @@ export interface ProcedureUseQuery<
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
     TData = TQueryFnData,
+    TQueryData extends inferTransformedProcedureOutput<TProcedure> = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
@@ -62,17 +96,18 @@ export interface ProcedureUseQuery<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TProcedure>
+      TRPCClientErrorLike<TProcedure>,
+      TQueryData
     >,
   ): DefinedUseTRPCQueryResult<
-    // HACKYYYY
-    TData extends never[] ? inferTransformedProcedureOutput<TProcedure> : TData,
+    TData,
     TRPCClientErrorLike<TProcedure>
   >;
 
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
     TData = TQueryFnData,
+    TQueryData extends inferTransformedProcedureOutput<TProcedure> = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
@@ -80,11 +115,11 @@ export interface ProcedureUseQuery<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TProcedure>
+      TRPCClientErrorLike<TProcedure>,
+      TQueryData
     >,
   ): UseTRPCQueryResult<
-    // HACKYYYY
-    TData extends never[] ? inferTransformedProcedureOutput<TProcedure> : TData,
+    TData,
     TRPCClientErrorLike<TProcedure>
   >;
 }
@@ -126,7 +161,8 @@ export type DecorateProcedure<
             inferProcedureInput<TProcedure>,
             TQueryFnData,
             TData,
-            TRPCClientErrorLike<TProcedure>
+            TRPCClientErrorLike<TProcedure>,
+            TData
           >,
           'enabled' | 'suspense'
         >,

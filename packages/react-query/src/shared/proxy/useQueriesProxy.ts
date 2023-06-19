@@ -23,14 +23,16 @@ type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
     inferProcedureInput<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>,
     TData,
-    TRPCClientError<TProcedure>
+    TRPCClientError<TProcedure>,
+    inferTransformedProcedureOutput<TProcedure>
   >,
 ) => TrpcQueryOptionsForUseQueries<
   TPath,
   inferProcedureInput<TProcedure>,
   inferTransformedProcedureOutput<TProcedure>,
   TData,
-  TRPCClientError<TProcedure>
+  TRPCClientError<TProcedure>,
+  inferTransformedProcedureOutput<TProcedure>
 >;
 
 /**
