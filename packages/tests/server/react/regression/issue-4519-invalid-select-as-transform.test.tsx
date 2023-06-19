@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { inferProcedureOutput, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import * as React from 'react';
 import * as z from 'zod';
@@ -39,15 +39,17 @@ test('select as transform', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const result = proxy.greeting.useQuery(undefined, {
-      select(data) {
-        // remap text prop to foo
-        return { foo: data.text };
+    const result = proxy.greeting.useQuery(
+      { name: 'foo' },
+      {
+        select(data) {
+          // remap text prop to foo
+          return { foo: data.text };
+        },
       },
-    });
+    );
 
-    type AppRouter = typeof ctx.appRouter;
-    type Data = inferProcedureOutput<AppRouter['greeting']>;
+    type Data = (typeof result)['data'];
     expectTypeOf(result.data).not.toMatchTypeOf<Data>();
     expectTypeOf<{ foo: string }>(result.data);
 
@@ -61,6 +63,6 @@ test('select as transform', async () => {
   );
 
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`{"foo":"hello world"}`);
+    expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
   });
 });
