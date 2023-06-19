@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.26.1-alpha-next-fetch-2023-06-16-09-50-34.47+557f2a249",
+  "version": "10.31.0",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
