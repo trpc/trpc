@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/drift/:path*",
+      "destination": "https://https://trpc-drift-dashboard-nextjs.vercel.app/:path*"
+    }
+  ],
   "redirects": [
     {
       "source": "/docs/server/output-validation",
