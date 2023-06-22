@@ -48,7 +48,7 @@
     "@trpc/server": "^10.32.0",
     "clsx": "^1.1.1",
     "next": "^13.4.3",
-    "next-auth": "^4.22.1",
+    "next-auth": "0.0.0-manual.e65faa1c",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "superjson": "^1.7.4",
