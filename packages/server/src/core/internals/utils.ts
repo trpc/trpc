@@ -55,7 +55,9 @@ export type UnsetMarker = typeof unsetMarker;
 export interface ResolveOptions<
   TParams extends ProcedureParams<AnyProcedureParams>,
 > {
-  ctx: Simplify<TParams['_ctx_out']>;
+  ctx: Simplify<
+    Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
+  >;
   input: TParams['_input_out'] extends UnsetMarker
     ? undefined
     : TParams['_input_out'];

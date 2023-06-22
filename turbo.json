@@ -29,7 +29,13 @@
     },
     "build": {
       "dependsOn": ["^build", "codegen:entrypoints", "prebuild"],
-      "outputs": [".next/**", "dist/**", "build/**", "docs/typedoc/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "build/**",
+        "docs/typedoc/**"
+      ]
     },
     "@examples/minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]

@@ -245,7 +245,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
           : [middlewareBuilderOrFn];
 
       return createNewBuilder(_def, {
-        middlewares,
+        middlewares: middlewares as ProcedureBuilderMiddleware[],
       }) as AnyProcedureBuilder;
     },
     query(resolver) {

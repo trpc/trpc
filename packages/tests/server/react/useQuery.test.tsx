@@ -121,10 +121,7 @@ describe('useQuery()', () => {
       ctx.proxy.post.byId.useQuery(
         { id: '1' },
         {
-          initialData: {
-            id: 1,
-            text: '',
-          },
+          initialData: '__result',
         },
       ),
     ).returns;
