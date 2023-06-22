@@ -1,5 +1,5 @@
 {
-  "name": "@examples/trpc-next-prisma-starter",
+  "name": "@examples/trpc-next-prisma-websockets-starter",
   "version": "10.32.0",
   "private": true,
   "scripts": {
