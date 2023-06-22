@@ -1,4 +1,4 @@
-import { Suspense, use } from 'react';
+import { Suspense } from 'react';
 import { ClientGreeting } from './ClientGreeting';
 
 export default function ClientPage() {
