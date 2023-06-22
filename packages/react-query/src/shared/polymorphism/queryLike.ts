@@ -11,7 +11,7 @@ import {
 export type QueryLike<TProcedure extends AnyProcedure = AnyProcedure> = {
   useQuery: (
     variables: inferProcedureInput<TProcedure>,
-    opts?: InferQueryOptions<TProcedure, any>,
+    opts?: InferQueryOptions<TProcedure, any, any>,
   ) => InferQueryResult<TProcedure>;
 };
 
