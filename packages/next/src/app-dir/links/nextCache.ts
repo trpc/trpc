@@ -17,7 +17,7 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
-  return () =>
+  return (runtime) =>
     ({ op }) =>
       observable((observer) => {
         const { path, input, type, context } = op;
@@ -33,14 +33,18 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const promise = opts
           .createContext()
           .then(async (ctx) => {
-            const callProc = async () =>
-              callProcedure({
+            const callProc = async () => {
+              const procedureResult = await callProcedure({
                 procedures: opts.router._def.procedures,
                 path,
                 rawInput: input,
                 ctx: ctx,
                 type,
               });
+
+              // We need to serialize cause the cache only accepts JSON
+              return runtime.transformer.serialize(procedureResult);
+            };
 
             if (type === 'query') {
               return unstable_cache(callProc, path.split('.'), {
@@ -55,7 +59,8 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
 
         promise
           .then((data) => {
-            observer.next({ result: { data } });
+            const transformedResult = runtime.transformer.deserialize(data);
+            observer.next({ result: { data: transformedResult } });
             observer.complete();
           })
           .catch((cause) => observer.error(TRPCClientError.from(cause)));

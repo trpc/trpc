@@ -1,4 +1,4 @@
-import { api } from '~/trpc/server-http';
+import { api } from '~/trpc/server-invoker';
 
 async function action(fd: FormData) {
   'use server';
@@ -21,6 +21,7 @@ export default async function PostPage() {
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <span>Title: {latestPost.title}</span>
         <span>Content: {latestPost.content}</span>
+        <span>Created At: {latestPost.createdAt.toISOString()}</span>
       </div>
       <form
         style={{
