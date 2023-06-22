@@ -30,35 +30,32 @@ test.setTimeout(35e3);
 //   expect(nonce1).not.toBe(nonce2);
 // });
 
-//
-// FIXME: These are broken due to ´Fetch Failed` introduced in the httpStreamLink PR
+test('server-httpLink: refreshing the page should reuse the cached value', async ({
+  page,
+}) => {
+  await page.goto('/rsc');
+  await page.reload();
 
-// test('server-httpLink: refreshing the page should reuse the cached value', async ({
-//   page,
-// }) => {
-//   await page.goto('/rsc');
-//   await page.reload();
+  await page.waitForSelector('text=hello from server');
+  const nonce1 = await page.textContent('text=hello from server');
+  await page.reload();
+  const nonce2 = await page.textContent('text=hello from server');
+  expect(nonce1).toBe(nonce2);
+});
 
-//   await page.waitForSelector('text=hello from server');
-//   const nonce1 = await page.textContent('text=hello from server');
-//   await page.reload();
-//   const nonce2 = await page.textContent('text=hello from server');
-//   expect(nonce1).toBe(nonce2);
-// });
+test('server-httpLink: revalidating should load new content', async ({
+  page,
+}) => {
+  await page.goto('/rsc');
+  await page.reload();
 
-// test('server-httpLink: revalidating should load new content', async ({
-//   page,
-// }) => {
-//   await page.goto('/rsc');
-//   await page.reload();
-
-//   await page.waitForSelector('text=hello from server');
-//   const nonce1 = await page.textContent('text=hello from server');
-//   await page.click('text=Revalidate');
-//   await page.waitForLoadState('networkidle');
-//   const nonce2 = await page.textContent('text=hello from server');
-//   expect(nonce1).not.toBe(nonce2);
-// });
+  await page.waitForSelector('text=hello from server');
+  const nonce1 = await page.textContent('text=hello from server');
+  await page.click('text=Revalidate HTTP');
+  await page.waitForLoadState('networkidle');
+  const nonce2 = await page.textContent('text=hello from server');
+  expect(nonce1).not.toBe(nonce2);
+});
 
 test('server-cacheLink: refreshing the page should reuse the cached value', async ({
   page,
@@ -87,7 +84,7 @@ test('server-cacheLink: revalidating should load new content', async ({
   const nonce1 = await page.textContent(
     'text=hello i never hit an api endpoint',
   );
-  await page.click('text=Revalidate');
+  await page.click('text=Revalidate Cache');
   await page.waitForLoadState('networkidle');
   const nonce2 = await page.textContent(
     'text=hello i never hit an api endpoint',

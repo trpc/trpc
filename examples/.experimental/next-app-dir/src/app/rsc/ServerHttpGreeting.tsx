@@ -14,7 +14,7 @@ export const ServerHttpGreeting = async () => {
           await api.greeting.revalidate({ text: 'from server' });
         }}
       >
-        <button type="submit">Revalidate</button>
+        <button type="submit">Revalidate HTTP</button>
       </form>
     </div>
   );

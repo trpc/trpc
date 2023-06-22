@@ -22,7 +22,7 @@ export async function ServerInvokedGreeting() {
           });
         }}
       >
-        <button type="submit">Revalidate</button>
+        <button type="submit">Revalidate Cache</button>
       </form>
     </div>
   );
