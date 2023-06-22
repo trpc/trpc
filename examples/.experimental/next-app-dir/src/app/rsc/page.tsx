@@ -14,14 +14,7 @@ export default async function Home() {
     <>
       <AuthThing />
 
-      <div
-        style={{
-          width: '50%',
-          margin: '1rem 0',
-          height: 2,
-          background: 'hsla(210, 16%, 80%, 1)',
-        }}
-      />
+      <div style={separator} />
 
       <div style={{ height: 100 }}>
         <Suspense fallback={<>Loading Server...</>}>
@@ -29,14 +22,7 @@ export default async function Home() {
         </Suspense>
       </div>
 
-      <div
-        style={{
-          width: '50%',
-          margin: '1rem 0',
-          height: 2,
-          background: 'hsla(210, 16%, 80%, 1)',
-        }}
-      />
+      <div style={separator} />
 
       <div style={{ height: 100 }}>
         <Suspense fallback={<>Loading Server...</>}>
@@ -44,14 +30,14 @@ export default async function Home() {
         </Suspense>
       </div>
 
-      <div
-        style={{
-          width: '50%',
-          margin: '1rem 0',
-          height: 2,
-          background: 'hsla(210, 16%, 80%, 1)',
-        }}
-      />
+      <div style={separator} />
     </>
   );
 }
+
+const separator = {
+  width: '50%',
+  margin: '1rem 0',
+  height: 2,
+  background: 'hsla(210, 16%, 80%, 1)',
+};
