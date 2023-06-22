@@ -47,8 +47,20 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError, TQueryOptsData = TOutput>
-  extends UseBaseQueryOptions<TOutput, TError, TData, TQueryOptsData, [TPath, TInput]>,
+export interface UseTRPCQueryOptions<
+  TPath,
+  TInput,
+  TOutput,
+  TData,
+  TError,
+  TQueryOptsData = TOutput,
+> extends UseBaseQueryOptions<
+      TOutput,
+      TError,
+      TData,
+      TQueryOptsData,
+      [TPath, TInput]
+    >,
     TRPCUseQueryBaseOptions {}
 
 /** @internal **/
@@ -59,7 +71,14 @@ export interface DefinedUseTRPCQueryOptions<
   TData,
   TError,
   TQueryOptsData = TOutput,
-> extends UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError, TQueryOptsData> {
+> extends UseTRPCQueryOptions<
+    TPath,
+    TInput,
+    TOutput,
+    TData,
+    TError,
+    TQueryOptsData
+  > {
   initialData: TQueryOptsData | InitialDataFunction<TQueryOptsData>;
 }
 
