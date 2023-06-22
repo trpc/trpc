@@ -2,7 +2,8 @@
 
 This is a playground repo for an offical tRPC + Next.js App directory adapter.
 
-> Note: you can already use tRPC with app directory, by:
+> **Note**
+> You can already use tRPC with app directory, by:
 >
 > - using `@trpc/client` directly in components (both RSC and non-RSC)
 > - use `@trpc/next` for client components
@@ -28,6 +29,9 @@ Please join our [Discord](https://trpc.io/discord) if you want to discuss how we
 If you want to change this repo, you go to https://github.com/trpc/trpc/tree/main/examples/.experimental/next-app-dir
 
 ## Overview
+
+> **Warning**
+> Don't use this in production unless you are okay with large refactoring.
 
 Create a tRPC client that you can use **the same way**, no matter if you are in a server components
 

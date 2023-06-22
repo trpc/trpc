@@ -456,6 +456,11 @@
       "permanent": true
     },
     {
+      "source": "/docs/links/httpBatchStreamLink",
+      "destination": "/docs/client/links/httpBatchStreamLink",
+      "permanent": true
+    },
+    {
       "source": "/docs/links/httpLink",
       "destination": "/docs/client/links/httpLink",
       "permanent": true
@@ -463,6 +468,11 @@
     {
       "source": "/docs/links/loggerLink",
       "destination": "/docs/client/links/loggerLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links",
+      "destination": "/docs/client/links",
       "permanent": true
     },
     {
@@ -478,6 +488,11 @@
     {
       "source": "/docs/links/wsLink",
       "destination": "/docs/client/links/wsLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/:path",
+      "destination": "/docs/client/react/:path",
       "permanent": true
     }
   ]

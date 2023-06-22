@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.29.1",
+  "version": "10.31.0",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -159,13 +159,13 @@
     "next": "^13.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rollup": "^3.23.1",
+    "rollup": "^2.79.1",
     "superjson": "^1.7.4",
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
     "tsx": "^3.12.7",
     "typescript": "^5.1.3",
-    "vitest": "^0.28.5",
+    "vitest": "^0.32.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
     "zod": "^3.0.0"
