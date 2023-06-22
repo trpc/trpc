@@ -21,11 +21,9 @@ const batchRequester: RequesterFn<HTTPBatchLinkOptions> = (requesterOpts) => {
           return {};
         }
         if (typeof requesterOpts.opts.headers === 'function') {
-          const h = requesterOpts.opts.headers({
+          return requesterOpts.opts.headers({
             opList: batchOps as NonEmptyArray<Operation>,
           });
-
-          return h;
         }
         return requesterOpts.opts.headers;
       },
