@@ -29,7 +29,7 @@ const helpers = createServerSideHelpers({
 
 ### 2. External router
 
-This method is used when you don't have direct access to your tRPC router. e.g. when developing a NextJS application and a stand alone API hosted separately.
+This method is used when you don't have direct access to your tRPC router. e.g. when developing a NextJS application and a standalone API hosted separately.
 
 ```ts
 import { createServerSideHelpers } from '@trpc/react-query/server';
@@ -46,7 +46,6 @@ const proxyClient = createTRPCProxyClient<AppRouter>({
 
 const helpers = createServerSideHelpers({
   client: proxyClient,
-  transformer: superjson, // optional - adds superjson serialization
 });
 ```
 
