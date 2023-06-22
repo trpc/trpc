@@ -1,7 +1,7 @@
 export { createServerSideHelpers } from './ssgProxy';
 export type {
   /**
-   * @deprecated this exported type is will be removed in the next major version
+   * @deprecated this exported is planned to be removed in the next major version
    */
   CreateServerSideHelpersOptions as CreateSSGHelpersOptions,
 } from './types';
