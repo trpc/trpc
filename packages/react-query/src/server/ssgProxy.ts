@@ -95,20 +95,11 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
 
       const fullPath = pathCopy.join('.');
 
-      switch (utilName) {
-        case 'fetch': {
-          return helpers.fetchQuery(fullPath, ...(args as any));
-        }
-        case 'fetchInfinite': {
-          return helpers.fetchInfiniteQuery(fullPath, ...(args as any));
-        }
-        case 'prefetch': {
-          return helpers.prefetchQuery(fullPath, ...(args as any));
-        }
-        case 'prefetchInfinite': {
-          return helpers.prefetchInfiniteQuery(fullPath, ...(args as any));
-        }
-      }
+      const helperKey = `${utilName}Query` as const;
+      //     ^?
+
+      const fn: (...args: any) => any = helpers[helperKey];
+      return fn(fullPath, ...(args as any));
     });
   });
 }
