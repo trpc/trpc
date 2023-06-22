@@ -60,6 +60,17 @@ export default async function Index() {
             Server Action
           </Link>
         </li>
+
+        <li>
+          <Link
+            href="/post-example"
+            style={{
+              color: 'hsla(210, 16%, 80%, 1)',
+            }}
+          >
+            Full stack Post Example
+          </Link>
+        </li>
       </ul>
     </>
   );
