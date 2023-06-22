@@ -99,6 +99,8 @@ test('useDehydratedState() - external', async () => {
   const ssg = createServerSideHelpers({ client: proxy });
   const res = await ssg.hello.fetch();
   expect(res).toBe('world');
+  expectTypeOf(res).toMatchTypeOf<string>();
+
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {
