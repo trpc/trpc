@@ -1,1 +1,1 @@
-export * from './ssgProxy';
+export { createServerSideHelpers } from './ssgProxy';
