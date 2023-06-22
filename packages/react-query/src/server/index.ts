@@ -1,4 +1,10 @@
 export { createServerSideHelpers } from './ssgProxy';
-export type { CreateSSGHelpersOptions } from './types';
+export type {
+  /**
+   * @deprecated use `CreateServerSideHelpersOptions` instead
+   */
+  CreateServerSideHelpersOptions as CreateSSGHelpersOptions,
+  CreateServerSideHelpersOptions,
+} from './types';
 
 export type { DecoratedProcedureSSGRecord } from './ssgProxy';

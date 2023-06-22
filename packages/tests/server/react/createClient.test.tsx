@@ -16,12 +16,12 @@ const ctx = konn()
     });
 
     const queryClient = createQueryClient();
-    const proxy = createTRPCReact<typeof appRouter>();
+    const hooks = createTRPCReact<typeof appRouter>();
     const opts = routerToServerAndClientNew(appRouter);
 
     function App(props: { children: ReactNode }) {
       const [client] = useState(() =>
-        proxy.createClient({
+        hooks.createClient({
           links: [
             httpBatchLink({
               url: opts.httpUrl,
@@ -30,14 +30,14 @@ const ctx = konn()
         }),
       );
       return (
-        <proxy.Provider {...{ queryClient, client }}>
+        <hooks.Provider {...{ queryClient, client }}>
           <QueryClientProvider client={queryClient}>
             {props.children}
           </QueryClientProvider>
-        </proxy.Provider>
+        </hooks.Provider>
       );
     }
-    return { ...opts, proxy, App };
+    return { ...opts, hooks, App };
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -45,9 +45,9 @@ const ctx = konn()
   .done();
 
 test('createClient()', async () => {
-  const { App, proxy } = ctx;
+  const { App, hooks } = ctx;
   function MyComponent() {
-    const query1 = proxy.hello.useQuery();
+    const query1 = hooks.hello.useQuery();
 
     if (!query1.data) {
       return <>...</>;
@@ -67,8 +67,8 @@ test('createClient()', async () => {
   });
 });
 
-test('useDehydratedState()', async () => {
-  const { App, proxy, router } = ctx;
+test('useDehydratedState() - internal', async () => {
+  const { App, hooks, router } = ctx;
 
   const ssg = createServerSideHelpers({ router, ctx: {} });
   const res = await ssg.hello.fetch();
@@ -76,9 +76,35 @@ test('useDehydratedState()', async () => {
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = hooks.useContext();
 
-    const state = proxy.useDehydratedState(utils.client, dehydratedState);
+    const state = hooks.useDehydratedState(utils.client, dehydratedState);
+    return <h1>{JSON.stringify(state)}</h1>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('world');
+  });
+});
+
+test('useDehydratedState() - external', async () => {
+  const { App, hooks, proxy } = ctx;
+
+  const ssg = createServerSideHelpers({ client: proxy });
+  const res = await ssg.hello.fetch();
+  expect(res).toBe('world');
+  const dehydratedState = ssg.dehydrate();
+
+  function MyComponent() {
+    const utils = hooks.useContext();
+
+    const state = hooks.useDehydratedState(utils.client, dehydratedState);
     return <h1>{JSON.stringify(state)}</h1>;
   }
 

@@ -18,7 +18,7 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import { createSSGHelpers } from '../ssg/ssg';
-import { CreateSSGHelpersOptions } from './types';
+import { CreateServerSideHelpersOptions } from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -65,7 +65,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
  * Create functions you can use for server-side rendering / static generation
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
-  opts: CreateSSGHelpersOptions<TRouter>,
+  opts: CreateServerSideHelpersOptions<TRouter>,
 ) {
   const helpers = createSSGHelpers(opts);
 
