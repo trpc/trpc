@@ -24,7 +24,8 @@ export type PromiseAndCancel<TValue> = {
 /**
  * @internal
  */
-export interface OperationContext extends Record<string, unknown> {};
+export interface OperationContext extends Record<string, unknown> {}
+
 /**
  * @internal
  */
