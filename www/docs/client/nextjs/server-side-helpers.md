@@ -18,7 +18,8 @@ That also means that you don't have the request and response at hand like you us
 
 ```ts
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { createContext } from 'server/context';
+import { createContext } from '~/server/context';
+import superjson from 'superjson';
 
 const helpers = createServerSideHelpers({
   router: appRouter,
@@ -32,8 +33,9 @@ const helpers = createServerSideHelpers({
 This method is used when you don't have direct access to your tRPC router. e.g. when developing a NextJS application and a standalone API hosted separately.
 
 ```ts
+import { createTRPCProxyClient } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { createContext } from 'server/context';
+import superjson from 'superjson';
 
 const proxyClient = createTRPCProxyClient<AppRouter>({
   links: [
