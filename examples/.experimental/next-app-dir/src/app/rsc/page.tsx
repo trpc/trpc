@@ -6,14 +6,8 @@ import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
 async function AuthThing() {
   const me = await api.me.query();
-  const secret = me ? await api.secret.query() : 'Not logged in';
 
-  return (
-    <>
-      <p>{secret}</p>
-      <pre>{JSON.stringify(me, null, 4)}</pre>
-    </>
-  );
+  return <pre>Session: {JSON.stringify(me, null, 4)}</pre>;
 }
 
 export default async function Home() {
@@ -21,7 +15,16 @@ export default async function Home() {
     <>
       <AuthThing />
 
-      <div>
+      <div
+        style={{
+          width: '50%',
+          margin: '1rem 0',
+          height: 2,
+          background: 'hsla(210, 16%, 80%, 1)',
+        }}
+      />
+
+      <div style={{ height: 100 }}>
         <Suspense fallback={<>Loading Server...</>}>
           <ServerHttpGreeting />
         </Suspense>
@@ -36,11 +39,20 @@ export default async function Home() {
         }}
       />
 
-      <div>
+      <div style={{ height: 100 }}>
         <Suspense fallback={<>Loading Server...</>}>
           <ServerInvokedGreeting />
         </Suspense>
       </div>
+
+      <div
+        style={{
+          width: '50%',
+          margin: '1rem 0',
+          height: 2,
+          background: 'hsla(210, 16%, 80%, 1)',
+        }}
+      />
     </>
   );
 }

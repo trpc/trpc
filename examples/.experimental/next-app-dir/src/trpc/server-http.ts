@@ -4,7 +4,7 @@ import { loggerLink } from '@trpc/client';
 import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
 import { AppRouter } from '~/server/routers/_app';
-import { headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import superjson from 'superjson';
 import { getUrl } from './shared';
 
@@ -21,7 +21,7 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
           url: getUrl(),
           headers() {
             return {
-              cookie: headers().get('cookie') ?? '',
+              cookie: cookies().toString(),
               'x-trpc-source': 'rsc-http',
             };
           },

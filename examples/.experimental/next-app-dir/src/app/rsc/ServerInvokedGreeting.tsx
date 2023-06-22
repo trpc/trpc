@@ -8,10 +8,12 @@ export async function ServerInvokedGreeting() {
   const greeting = await api.greeting.query({
     text: 'i never hit an api endpoint',
   });
+  const secret = await api.secret.query();
 
   return (
     <div>
-      {greeting}
+      <p>{greeting}</p>
+      <p>{secret}</p>
       <form
         action={async () => {
           'use server';

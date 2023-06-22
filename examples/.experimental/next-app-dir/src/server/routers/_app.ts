@@ -37,7 +37,10 @@ export const appRouter = router({
       return `hello ${opts.input.text} - ${Math.random()}`;
     }),
 
-  secret: protectedProcedure.query(async () => {
+  secret: publicProcedure.query(async (opts) => {
+    if (!opts.ctx.session) {
+      return 'You are not authenticated';
+    }
     return "Cool, you're authenticated!";
   }),
 

@@ -43,7 +43,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               });
 
             if (type === 'query') {
-              return unstable_cache(callProc, undefined, {
+              return unstable_cache(callProc, path.split('.'), {
                 revalidate,
                 tags: [cacheTag],
               })();
