@@ -102,3 +102,53 @@ test('select as transform in suspense', async () => {
     expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
   });
 });
+
+test('select as transform with initial data', async () => {
+  const { proxy, App } = ctx;
+
+  function MyComponent() {
+    // @ts-expect-error - initialData must match the procedure output, not the select
+    proxy.greeting.useQuery(
+      { name: 'foo' },
+      {
+        select(data) {
+          // remap text prop to foo
+          return { foo: data.text };
+        },
+        initialData: {
+          foo: 'hello foo',
+        },
+      },
+    );
+
+    const { data } = proxy.greeting.useQuery(
+      { name: 'foo' },
+      {
+        select(data) {
+          // remap text prop to foo
+          return { foo: data.text };
+        },
+        initialData: {
+          text: 'hello foo',
+        },
+      },
+    );
+
+    type AppRouter = typeof ctx.appRouter;
+    type Data = inferProcedureOutput<AppRouter['greeting']>;
+    expectTypeOf(data).not.toMatchTypeOf<Data>();
+    expectTypeOf<{ foo: string }>(data);
+
+    return <pre>{JSON.stringify(data)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
+  });
+});
