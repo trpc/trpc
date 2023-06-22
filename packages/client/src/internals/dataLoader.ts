@@ -120,6 +120,8 @@ export function dataLoader<TKey, TValue>(
       );
       batch.cancel = cancel;
 
+      console.log('promise after batchLoader.fetch', promise);
+
       promise
         .then((result) => {
           for (let i = 0; i < result.length; i++) {
@@ -133,6 +135,7 @@ export function dataLoader<TKey, TValue>(
           }
         })
         .catch((cause) => {
+          console.error('error in batchLoader.fetch', cause);
           for (const item of batch.items) {
             item.reject?.(cause);
             item.batch = null;

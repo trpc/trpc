@@ -105,7 +105,9 @@ export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
               });
               observer.complete();
             })
-            .catch((err) => observer.error(TRPCClientError.from(err)));
+            .catch((err) => {
+              return observer.error(TRPCClientError.from(err));
+            });
 
           return () => cancel();
         });

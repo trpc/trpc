@@ -148,7 +148,6 @@ export function experimental_createServerActionHandler<
 
 // ts-prune-ignore-next
 export async function experimental_revalidateEndpoint(req: Request) {
-  console.log('Revalidating');
   const { cacheTag } = await req.json();
 
   if (typeof cacheTag !== 'string') {

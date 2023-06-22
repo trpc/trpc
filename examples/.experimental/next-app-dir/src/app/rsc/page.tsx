@@ -5,11 +5,11 @@ import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 export default async function Home() {
   return (
     <>
-      {/* <div>
+      <div>
         <Suspense fallback={<>Loading Server...</>}>
           <ServerHttpGreeting />
         </Suspense>
-      </div> */}
+      </div>
 
       <div
         style={{
@@ -20,11 +20,11 @@ export default async function Home() {
         }}
       />
 
-      <div>
+      {/* <div>
         <Suspense fallback={<>Loading Server...</>}>
           <ServerInvokedGreeting />
         </Suspense>
-      </div>
+      </div> */}
     </>
   );
 }
