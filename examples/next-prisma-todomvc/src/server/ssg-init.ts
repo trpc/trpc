@@ -21,7 +21,6 @@ export async function ssgInit<TParams extends { locale?: string }>(
 
   // const ssg = createServerSideHelpers({
   //   client,
-  //   transformer: SuperJSON,
   // })
 
   const locale = opts.params?.locale ?? opts?.locale ?? i18n.defaultLocale;
