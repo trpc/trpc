@@ -27,13 +27,11 @@ export const publicProcedure = t.procedure;
 
 export const createAction = experimental_createServerActionHandler(t, {
   createContext() {
-    const newHeaders = new Map(headers());
-
-    // If you're using Node 18 before 18.15.0, omit the "connection" header
-    newHeaders.delete('connection');
-
     return {
-      headers: Object.fromEntries(newHeaders),
+      headers: {
+        // Pass the cookie header to the API
+        cookies: headers().get('cookie') ?? '',
+      },
     };
   },
 });

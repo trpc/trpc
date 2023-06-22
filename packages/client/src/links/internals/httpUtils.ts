@@ -149,25 +149,26 @@ export async function fetchHTTPResponse(
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const headers = await opts.headers();
+  const resolvedHeaders = await opts.headers();
   /* istanbul ignore if -- @preserve */
   if (type === 'subscription') {
     throw new Error('Subscriptions should use wsLink');
   }
+  const headers = {
+    ...(opts.contentTypeHeader
+      ? { 'content-type': opts.contentTypeHeader }
+      : {}),
+    ...(opts.batchModeHeader
+      ? { 'trpc-batch-mode': opts.batchModeHeader }
+      : {}),
+    ...resolvedHeaders,
+  };
 
   return opts.fetch(url, {
     method: METHOD[type],
     signal: ac?.signal,
     body: body,
-    headers: {
-      ...(opts.contentTypeHeader
-        ? { 'content-type': opts.contentTypeHeader }
-        : {}),
-      ...(opts.batchModeHeader
-        ? { 'trpc-batch-mode': opts.batchModeHeader }
-        : {}),
-      ...headers,
-    },
+    headers,
   });
 }
 
