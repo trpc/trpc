@@ -99,7 +99,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       //     ^?
 
       const fn: (...args: any) => any = helpers[helperKey];
-      return fn(fullPath, ...(args as any));
+      return fn(fullPath, ...args);
     });
   });
 }
