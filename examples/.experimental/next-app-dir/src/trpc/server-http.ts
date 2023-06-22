@@ -25,6 +25,7 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
 
             // If you're using Node 18 before 18.15.0, omit the "connection" header
             newHeaders.delete('connection');
+            newHeaders.delete('transfer-encoding');
 
             // `x-trpc-source` is not required, but can be useful for debugging
             newHeaders.set('x-trpc-source', 'rsc-http');
