@@ -1,5 +1,6 @@
 import { experimental_createServerActionHandler } from '@trpc/next/app-dir/server';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
+import { auth } from '~/auth';
 import { headers } from 'next/headers';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
@@ -25,9 +26,24 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
+export const protectedProcedure = publicProcedure.use((opts) => {
+  const { session } = opts.ctx;
+
+  if (!session?.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  return opts.next({ ctx: { session } });
+});
+
 export const createAction = experimental_createServerActionHandler(t, {
-  createContext() {
+  async createContext() {
+    const session = await auth();
+
     return {
+      session,
       headers: {
         // Pass the cookie header to the API
         cookies: headers().get('cookie') ?? '',

@@ -3,6 +3,7 @@
 import { loggerLink } from '@trpc/client';
 import { experimental_nextCacheLink } from '@trpc/next/app-dir/links/nextCache';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
+import { auth } from '~/auth';
 import { appRouter } from '~/server/routers/_app';
 import { headers } from 'next/headers';
 import SuperJSON from 'superjson';
@@ -23,11 +24,12 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           revalidate: 5,
           router: appRouter,
           createContext: async () => {
-            const newHeaders = new Map(headers());
-            newHeaders.set('x-trpc-source', 'rsc-invoke');
-
             return {
-              headers: Object.fromEntries(newHeaders),
+              session: await auth(),
+              headers: {
+                cookie: headers().get('cookie') ?? '',
+                'x-trpc-source': 'rsc-invoke',
+              },
             };
           },
         }),

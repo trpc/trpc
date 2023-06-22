@@ -17,12 +17,12 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
           enabled: (op) => true,
         }),
         experimental_nextHttpLink({
-          revalidate: 2,
           batch: true,
           url: getUrl(),
           headers() {
             return {
               cookie: headers().get('cookie') ?? '',
+              'x-trpc-source': 'rsc-http',
             };
           },
         }),

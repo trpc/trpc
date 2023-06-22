@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { protectedProcedure, publicProcedure, router } from '../trpc';
 
 let latestPost = {
   id: 0,
@@ -36,6 +36,14 @@ export const appRouter = router({
       console.log('request from', opts.ctx.headers?.['x-trpc-source']);
       return `hello ${opts.input.text} - ${Math.random()}`;
     }),
+
+  secret: protectedProcedure.query(async () => {
+    return "Cool, you're authenticated!";
+  }),
+
+  me: publicProcedure.query((opts) => {
+    return opts.ctx.session;
+  }),
 
   createPost,
 
