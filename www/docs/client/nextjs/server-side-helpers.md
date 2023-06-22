@@ -17,10 +17,10 @@ Using the helpers makes tRPC call your procedures directly on the server, withou
 That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the SSG helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
 ```ts
-import { createServerSideInternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from 'server/context';
 
-const helpers = createServerSideInternalHelpers({
+const helpers = createServerSideHelpers({
   router: appRouter,
   ctx: await createContext(),
   transformer: superjson, // optional - adds superjson serialization
@@ -32,7 +32,7 @@ const helpers = createServerSideInternalHelpers({
 This method is used when you don't have direct access to your tRPC router. e.g. when developing a NextJS application and a stand alone API hosted separately.
 
 ```ts
-import { createServerSideExternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from 'server/context';
 
 const proxyClient = createTRPCProxyClient<AppRouter>({
@@ -44,7 +44,7 @@ const proxyClient = createTRPCProxyClient<AppRouter>({
   transformer: SuperJSON,
 });
 
-const helpers = createServerSideExternalHelpers({
+const helpers = createServerSideHelpers({
   client: proxyClient,
   transformer: superjson, // optional - adds superjson serialization
 });
@@ -76,7 +76,7 @@ For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/
 ## Next.js Example
 
 ```tsx title='pages/posts/[id].tsx'
-import { createServerSideInternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { prisma } from 'server/context';
 import { appRouter } from 'server/routers/_app';
@@ -86,7 +86,7 @@ import { trpc } from 'utils/trpc';
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,
 ) {
-  const helpers = createServerSideInternalHelpers({
+  const helpers = createServerSideHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson,

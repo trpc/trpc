@@ -4,7 +4,7 @@ import { createAppRouter, Post } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createServerSideInternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { inferProcedureInput } from '@trpc/server';
 import React, { Fragment, useState } from 'react';
 
@@ -378,7 +378,7 @@ describe('Infinite Query', () => {
 
   test('prefetchInfiniteQuery()', async () => {
     const { appRouter } = factory;
-    const ssg = createServerSideInternalHelpers({ router: appRouter, ctx: {} });
+    const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
     {
       await ssg.paginatedPosts.prefetchInfinite({ limit: 1 });
@@ -418,7 +418,7 @@ describe('Infinite Query', () => {
     ignoreErrors(async () => {
       // @ts-expect-error 'cursor' is required
       factory.trpc.postById.useInfiniteQuery;
-      const ssg = createServerSideInternalHelpers({
+      const ssg = createServerSideHelpers({
         router: factory.appRouter,
         ctx: {},
       });

@@ -2,7 +2,7 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createServerSideInternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createTRPCReact, httpBatchLink } from '@trpc/react-query/src';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
@@ -70,7 +70,7 @@ test('createClient()', async () => {
 test('useDehydratedState() - internal', async () => {
   const { App, hooks, router } = ctx;
 
-  const ssg = createServerSideInternalHelpers({ router, ctx: {} });
+  const ssg = createServerSideHelpers({ router, ctx: {} });
   const res = await ssg.hello.fetch();
   expect(res).toBe('world');
   const dehydratedState = ssg.dehydrate();

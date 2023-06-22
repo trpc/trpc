@@ -16,7 +16,7 @@ This can be done using [server-side helpers](/docs/client/nextjs/server-side-hel
 ## Fetch data in `getStaticProps`
 
 ```tsx title='pages/posts/[id].tsx'
-import { createServerSideInternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import {
   GetStaticPaths,
   GetStaticPropsContext,
@@ -30,7 +30,7 @@ import { trpc } from 'utils/trpc';
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
 ) {
-  const helpers = createServerSideInternalHelpers({
+  const helpers = createServerSideHelpers({
     router: appRouter,
     ctx: {},
     transformer: superjson, // optional - adds superjson serialization

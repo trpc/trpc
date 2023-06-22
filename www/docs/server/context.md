@@ -68,11 +68,11 @@ const caller = appRouter.createCaller(await createContext());
 
 ```ts
 // 3. servers-side helpers
-import { createServerSideInternalHelpers } from '@trpc/react-query/server';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-const helpers = createServerSideInternalHelpers({
+const helpers = createServerSideHelpers({
   router: appRouter,
   ctx: await createContext(),
 });
@@ -170,7 +170,7 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  *
  * Also useful for:
  * - testing, so you don't have to mock Next.js' `req`/`res`
- * - tRPC's `createServerSideInternalHelpers` where we don't have `req`/`res`
+ * - tRPC's `createServerSideHelpers` where we don't have `req`/`res`
  *
  * @see https://trpc.io/docs/context#inner-and-outer-context
  */
