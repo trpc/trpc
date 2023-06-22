@@ -175,11 +175,11 @@ importers:
         specifier: ^18.2.4
         version: 18.2.4
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: 0.0.0-manual.e65faa1c
-        version: 0.0.0-manual.e65faa1c(next@13.4.7)(react-dom@18.2.0)(react@18.2.0)
+        version: 0.0.0-manual.e65faa1c(next@13.4.4)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -236,8 +236,8 @@ importers:
         specifier: link:../../../packages/server
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -276,8 +276,8 @@ importers:
   examples/.interop/next-prisma-starter:
     dependencies:
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter(prisma@4.14.1)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -297,8 +297,8 @@ importers:
         specifier: ^1.1.1
         version: 1.2.1
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -315,9 +315,6 @@ importers:
       '@playwright/test':
         specifier: ^1.26.1
         version: 1.28.1
-      '@tanstack/react-query-devtools':
-        specifier: 4.18.0
-        version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -330,6 +327,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^5.59.2
         version: 5.59.2(eslint@8.40.0)(typescript@5.1.3)
+      autoprefixer:
+        specifier: ^10.4.7
+        version: 10.4.13(postcss@8.4.14)
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -351,15 +351,21 @@ importers:
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
+      postcss:
+        specifier: ^8.4.14
+        version: 8.4.14
       prettier:
         specifier: ^2.8.8
         version: 2.8.8
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
+      tailwindcss:
+        specifier: ^3.3.0
+        version: 3.3.0(postcss@8.4.14)
       tsx:
         specifier: ^3.12.7
         version: 3.12.7
@@ -391,8 +397,8 @@ importers:
         specifier: link:../../../packages/server
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -465,8 +471,8 @@ importers:
         specifier: link:../../../packages/server
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -877,8 +883,8 @@ importers:
         specifier: link:../../packages/server
         version: link:../../packages/server
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -926,8 +932,8 @@ importers:
         specifier: link:../../packages/server
         version: link:../../packages/server
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -972,8 +978,8 @@ importers:
         specifier: link:../../packages/server
         version: link:../../packages/server
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1024,8 +1030,8 @@ importers:
         specifier: ^1.1.1
         version: 1.2.1
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1133,11 +1139,11 @@ importers:
         specifier: ^22.4.13
         version: 22.4.13
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-i18next:
         specifier: ^13.2.2
-        version: 13.2.2(i18next@22.4.13)(next@13.4.7)(react-i18next@12.2.0)(react@18.2.0)
+        version: 13.2.2(i18next@22.4.13)(next@13.4.4)(react-i18next@12.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1191,8 +1197,8 @@ importers:
   examples/next-prisma-websockets-starter:
     dependencies:
       '@prisma/client':
-        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
-        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
+        specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
+        version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
@@ -1212,11 +1218,8 @@ importers:
         specifier: ^1.1.1
         version: 1.2.1
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
-      next-auth:
-        specifier: ^4.22.1
-        version: 4.22.1(next@13.4.7)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1226,12 +1229,6 @@ importers:
       superjson:
         specifier: ^1.7.4
         version: 1.11.0
-      tsx:
-        specifier: ^3.12.7
-        version: 3.12.7
-      ws:
-        specifier: ^8.0.0
-        version: 8.11.0
       zod:
         specifier: ^3.0.0
         version: 3.20.2
@@ -1239,18 +1236,12 @@ importers:
       '@playwright/test':
         specifier: ^1.26.1
         version: 1.28.1
-      '@tanstack/react-query-devtools':
-        specifier: 4.18.0
-        version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
       '@types/react':
         specifier: ^18.2.8
         version: 18.2.8
-      '@types/ws':
-        specifier: ^8.2.0
-        version: 8.5.4
       '@typescript-eslint/eslint-plugin':
         specifier: ^5.59.2
         version: 5.59.2(@typescript-eslint/parser@5.59.2)(eslint@8.40.0)(typescript@5.1.3)
@@ -1260,9 +1251,6 @@ importers:
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
-      cross-env:
-        specifier: ^7.0.3
-        version: 7.0.3
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -1291,17 +1279,26 @@ importers:
         specifier: ^2.8.8
         version: 2.8.8
       prisma:
-        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
+        specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
       tailwindcss:
         specifier: ^3.3.0
         version: 3.3.0(postcss@8.4.14)
+      tsx:
+        specifier: ^3.12.7
+        version: 3.12.7
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
+      vite:
+        specifier: ^4.1.2
+        version: 4.1.2(@types/node@18.16.16)
+      vitest:
+        specifier: ^0.32.0
+        version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
 
   examples/soa:
     devDependencies:
@@ -1483,8 +1480,8 @@ importers:
         specifier: ^4.17.1
         version: 4.18.2
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1528,8 +1525,8 @@ importers:
         specifier: ^4.17.1
         version: 4.18.2
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1606,8 +1603,8 @@ importers:
         specifier: ^1.3.1
         version: 1.8.8
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1738,8 +1735,8 @@ importers:
         specifier: ^1.3.1
         version: 1.8.8
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.0
@@ -1907,11 +1904,11 @@ importers:
         specifier: ^8.40.0
         version: 8.40.0
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.7)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.4)(react-dom@18.2.0)(react@18.2.0)
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -1961,8 +1958,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       next:
-        specifier: ^13.4.7
-        version: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.4
+        version: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: latest
         version: 18.2.0
@@ -2142,14 +2139,14 @@ packages:
       preact-render-to-string: 5.2.3(preact@10.11.3)
     dev: false
 
-  /@auth/nextjs@0.0.0-manual.b53ca00b(next@13.4.7)(react@18.2.0):
-    resolution: {integrity: sha512-g0XvlP+3MSXPX512K6Hu0mGOkb1QPCkXkaA0Zr9i+bmTEDU9TtYTTNmX2EyvLeTfmrEEU/CMS92aWTmiki1KVA==}
+  /@auth/nextjs@0.0.0-manual.179c08d4(next@13.4.4)(react@18.2.0):
+    resolution: {integrity: sha512-HVuDgb6xlYLV5mHTGc0Pycg8BlwtcvjvS+54QXEbOBpA5tulzKxAH8QlCoKj5R9XHW9hP9DiCnvXyVV9x2N+jA==}
     peerDependencies:
       next: ^13.4.6
       react: ^18.2.0
     dependencies:
       '@auth/core': 0.0.0-manual.8fcd46b0
-      next: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
     transitivePeerDependencies:
       - nodemailer
@@ -8041,8 +8038,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@next/env@13.4.7:
-    resolution: {integrity: sha512-ZlbiFulnwiFsW9UV1ku1OvX/oyIPLtMk9p/nnvDSwI0s7vSoZdRtxXNsaO+ZXrLv/pMbXVGq4lL8TbY9iuGmVw==}
+  /@next/env@13.4.4:
+    resolution: {integrity: sha512-q/y7VZj/9YpgzDe64Zi6rY1xPizx80JjlU2BTevlajtaE3w1LqweH1gGgxou2N7hdFosXHjGrI4OUvtFXXhGLg==}
 
   /@next/eslint-plugin-next@13.4.3:
     resolution: {integrity: sha512-5B0uOnh7wyUY9vNNdIA6NUvWozhrZaTMZOzdirYAefqD0ZBK5C/h3+KMYdCKrR7JrXGvVpWnHtv54b3dCzwICA==}
@@ -8050,72 +8047,72 @@ packages:
       glob: 7.1.7
     dev: true
 
-  /@next/swc-darwin-arm64@13.4.7:
-    resolution: {integrity: sha512-VZTxPv1b59KGiv/pZHTO5Gbsdeoxcj2rU2cqJu03btMhHpn3vwzEK0gUSVC/XW96aeGO67X+cMahhwHzef24/w==}
+  /@next/swc-darwin-arm64@13.4.4:
+    resolution: {integrity: sha512-xfjgXvp4KalNUKZMHmsFxr1Ug+aGmmO6NWP0uoh4G3WFqP/mJ1xxfww0gMOeMeSq/Jyr5k7DvoZ2Pv+XOITTtw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     optional: true
 
-  /@next/swc-darwin-x64@13.4.7:
-    resolution: {integrity: sha512-gO2bw+2Ymmga+QYujjvDz9955xvYGrWofmxTq7m70b9pDPvl7aDFABJOZ2a8SRCuSNB5mXU8eTOmVVwyp/nAew==}
+  /@next/swc-darwin-x64@13.4.4:
+    resolution: {integrity: sha512-ZY9Ti1hkIwJsxGus3nlubIkvYyB0gNOYxKrfsOrLEqD0I2iCX8D7w8v6QQZ2H+dDl6UT29oeEUdDUNGk4UEpfg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-gnu@13.4.7:
-    resolution: {integrity: sha512-6cqp3vf1eHxjIDhEOc7Mh/s8z1cwc/l5B6ZNkOofmZVyu1zsbEM5Hmx64s12Rd9AYgGoiCz4OJ4M/oRnkE16/Q==}
+  /@next/swc-linux-arm64-gnu@13.4.4:
+    resolution: {integrity: sha512-+KZnDeMShYkpkqAvGCEDeqYTRADJXc6SY1jWXz+Uo6qWQO/Jd9CoyhTJwRSxvQA16MoYzvILkGaDqirkRNctyA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-musl@13.4.7:
-    resolution: {integrity: sha512-T1kD2FWOEy5WPidOn1si0rYmWORNch4a/NR52Ghyp4q7KyxOCuiOfZzyhVC5tsLIBDH3+cNdB5DkD9afpNDaOw==}
+  /@next/swc-linux-arm64-musl@13.4.4:
+    resolution: {integrity: sha512-evC1twrny2XDT4uOftoubZvW3EG0zs0ZxMwEtu/dDGVRO5n5pT48S8qqEIBGBUZYu/Xx4zzpOkIxx1vpWdE+9A==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-gnu@13.4.7:
-    resolution: {integrity: sha512-zaEC+iEiAHNdhl6fuwl0H0shnTzQoAoJiDYBUze8QTntE/GNPfTYpYboxF5LRYIjBwETUatvE0T64W6SKDipvg==}
+  /@next/swc-linux-x64-gnu@13.4.4:
+    resolution: {integrity: sha512-PX706XcCHr2FfkyhP2lpf+pX/tUvq6/ke7JYnnr0ykNdEMo+sb7cC/o91gnURh4sPYSiZJhsF2gbIqg9rciOHQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-musl@13.4.7:
-    resolution: {integrity: sha512-X6r12F8d8SKAtYJqLZBBMIwEqcTRvUdVm+xIq+l6pJqlgT2tNsLLf2i5Cl88xSsIytBICGsCNNHd+siD2fbWBA==}
+  /@next/swc-linux-x64-musl@13.4.4:
+    resolution: {integrity: sha512-TKUUx3Ftd95JlHV6XagEnqpT204Y+IsEa3awaYIjayn0MOGjgKZMZibqarK3B1FsMSPaieJf2FEAcu9z0yT5aA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-arm64-msvc@13.4.7:
-    resolution: {integrity: sha512-NPnmnV+vEIxnu6SUvjnuaWRglZzw4ox5n/MQTxeUhb5iwVWFedolPFebMNwgrWu4AELwvTdGtWjqof53AiWHcw==}
+  /@next/swc-win32-arm64-msvc@13.4.4:
+    resolution: {integrity: sha512-FP8AadgSq4+HPtim7WBkCMGbhr5vh9FePXiWx9+YOdjwdQocwoCK5ZVC3OW8oh3TWth6iJ0AXJ/yQ1q1cwSZ3A==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-ia32-msvc@13.4.7:
-    resolution: {integrity: sha512-6Hxijm6/a8XqLQpOOf/XuwWRhcuc/g4rBB2oxjgCMuV9Xlr2bLs5+lXyh8w9YbAUMYR3iC9mgOlXbHa79elmXw==}
+  /@next/swc-win32-ia32-msvc@13.4.4:
+    resolution: {integrity: sha512-3WekVmtuA2MCdcAOrgrI+PuFiFURtSyyrN1I3UPtS0ckR2HtLqyqmS334Eulf15g1/bdwMteePdK363X/Y9JMg==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-x64-msvc@13.4.7:
-    resolution: {integrity: sha512-sW9Yt36Db1nXJL+mTr2Wo0y+VkPWeYhygvcHj1FF0srVtV+VoDjxleKtny21QHaG05zdeZnw2fCtf2+dEqgwqA==}
+  /@next/swc-win32-x64-msvc@13.4.4:
+    resolution: {integrity: sha512-AHRITu/CrlQ+qzoqQtEMfaTu7GHaQ6bziQln/pVWpOYC1wU+Mq6VQQFlsDtMCnDztPZtppAXdvvbNS7pcfRzlw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -8519,6 +8516,7 @@ packages:
 
   /@panva/hkdf@1.0.2:
     resolution: {integrity: sha512-MSAs9t3Go7GUkMhpKC44T58DJ5KGk2vBo+h1cqQeqlMfdGkxaVB78ZWpv9gYi/g2fa4sopag9gJsNvS8XGgWJA==}
+    dev: true
 
   /@panva/hkdf@1.1.1:
     resolution: {integrity: sha512-dhPeilub1NuIG0X5Kvhh9lH4iW3ZsHlnzwgwbOlgwQ2wG1IqFzsgHqmKPk3WzsdWAeaxKJxgM0+W433RmN45GA==}
@@ -11801,14 +11799,6 @@ packages:
 
   /cron-schedule@3.0.6:
     resolution: {integrity: sha512-izfGgKyzzIyLaeb1EtZ3KbglkS6AKp9cv7LxmiyoOu+fXfol1tQDC0Cof0enVZGNtudTHW+3lfuW9ZkLQss4Wg==}
-
-  /cross-env@7.0.3:
-    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
-    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
-    hasBin: true
-    dependencies:
-      cross-spawn: 7.0.3
-    dev: true
 
   /cross-fetch@3.1.5:
     resolution: {integrity: sha512-lvb1SBsI0Z7GDwmuid+mU3kWVBwTVUbe7S0H52yaaAdQOXq2YktTCZdlAcNKFzE6QtRz0snpw9bNiPeOIkkQvw==}
@@ -17304,7 +17294,7 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: false
 
-  /next-auth@0.0.0-manual.e65faa1c(next@13.4.7)(react-dom@18.2.0)(react@18.2.0):
+  /next-auth@0.0.0-manual.e65faa1c(next@13.4.4)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-I51GvhZhZEf/gzhiTKivYPAIyZ74sCF3YXAMMuZ/bjahybeehPEu7opcPEA+H0Uxrvmo2G8/BQ7mT+TiFdM9IQ==}
     peerDependencies:
       next: ^13.4.5
@@ -17315,13 +17305,13 @@ packages:
       nodemailer:
         optional: true
     dependencies:
-      '@auth/nextjs': 0.0.0-manual.b53ca00b(next@13.4.7)(react@18.2.0)
-      next: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      '@auth/nextjs': 0.0.0-manual.179c08d4(next@13.4.4)(react@18.2.0)
+      next: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /next-auth@4.22.1(next@13.4.7)(react-dom@18.2.0)(react@18.2.0):
+  /next-auth@4.22.1(next@13.4.4)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-NTR3f6W7/AWXKw8GSsgSyQcDW6jkslZLH8AiZa5PQ09w1kR8uHtR9rez/E9gAq/o17+p0JYHE8QjF3RoniiObA==}
     peerDependencies:
       next: ^12.2.5 || ^13
@@ -17336,7 +17326,7 @@ packages:
       '@panva/hkdf': 1.0.2
       cookie: 0.5.0
       jose: 4.14.4
-      next: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.4(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       oauth: 0.9.15
       openid-client: 5.4.2
       preact: 10.11.3
@@ -17344,8 +17334,9 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       uuid: 8.3.2
+    dev: true
 
-  /next-i18next@13.2.2(i18next@22.4.13)(next@13.4.7)(react-i18next@12.2.0)(react@18.2.0):
+  /next-i18next@13.2.2(i18next@22.4.13)(next@13.4.4)(react-i18next@12.2.0)(react@18.2.0):
     resolution: {integrity: sha512-t0WU6K+HJoq2nVQ0n6OiiEZja9GyMqtDSU74FmOafgk4ljns+iZ18bsNJiI8rOUXfFfkW96ea1N7D5kbMyT+PA==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -17360,7 +17351,7 @@ packages:
       hoist-non-react-statics: 3.3.2
       i18next: 22.4.13
       i18next-fs-backend: 2.1.1
-      next: 13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-i18next: 12.2.0(i18next@22.4.13)(react-dom@18.2.0)(react@18.2.0)
     dev: false
@@ -17369,8 +17360,8 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: true
 
-  /next@13.4.7(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-M8z3k9VmG51SRT6v5uDKdJXcAqLzP3C+vaKfLIAM0Mhx1um1G7MDnO63+m52qPdZfrTFzMZNzfsgvm3ghuVHIQ==}
+  /next@13.4.4(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-C5S0ysM0Ily9McL4Jb48nOQHT1BukOWI59uC3X/xCMlYIh9rJZCv7nzG92J6e1cOBqQbKovlpgvHWFmz4eKKEA==}
     engines: {node: '>=16.8.0'}
     hasBin: true
     peerDependencies:
@@ -17387,7 +17378,7 @@ packages:
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.4.7
+      '@next/env': 13.4.4
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
       caniuse-lite: 1.0.30001486
@@ -17395,25 +17386,24 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       styled-jsx: 5.1.1(@babel/core@7.20.2)(react@18.2.0)
-      watchpack: 2.4.0
       zod: 3.21.4
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.4.7
-      '@next/swc-darwin-x64': 13.4.7
-      '@next/swc-linux-arm64-gnu': 13.4.7
-      '@next/swc-linux-arm64-musl': 13.4.7
-      '@next/swc-linux-x64-gnu': 13.4.7
-      '@next/swc-linux-x64-musl': 13.4.7
-      '@next/swc-win32-arm64-msvc': 13.4.7
-      '@next/swc-win32-ia32-msvc': 13.4.7
-      '@next/swc-win32-x64-msvc': 13.4.7
+      '@next/swc-darwin-arm64': 13.4.4
+      '@next/swc-darwin-x64': 13.4.4
+      '@next/swc-linux-arm64-gnu': 13.4.4
+      '@next/swc-linux-arm64-musl': 13.4.4
+      '@next/swc-linux-x64-gnu': 13.4.4
+      '@next/swc-linux-x64-musl': 13.4.4
+      '@next/swc-win32-arm64-msvc': 13.4.4
+      '@next/swc-win32-ia32-msvc': 13.4.4
+      '@next/swc-win32-x64-msvc': 13.4.4
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
     dev: true
 
-  /next@13.4.7(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-M8z3k9VmG51SRT6v5uDKdJXcAqLzP3C+vaKfLIAM0Mhx1um1G7MDnO63+m52qPdZfrTFzMZNzfsgvm3ghuVHIQ==}
+  /next@13.4.4(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-C5S0ysM0Ily9McL4Jb48nOQHT1BukOWI59uC3X/xCMlYIh9rJZCv7nzG92J6e1cOBqQbKovlpgvHWFmz4eKKEA==}
     engines: {node: '>=16.8.0'}
     hasBin: true
     peerDependencies:
@@ -17430,7 +17420,7 @@ packages:
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.4.7
+      '@next/env': 13.4.4
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
       caniuse-lite: 1.0.30001486
@@ -17438,18 +17428,17 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       styled-jsx: 5.1.1(@babel/core@7.21.8)(react@18.2.0)
-      watchpack: 2.4.0
       zod: 3.21.4
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.4.7
-      '@next/swc-darwin-x64': 13.4.7
-      '@next/swc-linux-arm64-gnu': 13.4.7
-      '@next/swc-linux-arm64-musl': 13.4.7
-      '@next/swc-linux-x64-gnu': 13.4.7
-      '@next/swc-linux-x64-musl': 13.4.7
-      '@next/swc-win32-arm64-msvc': 13.4.7
-      '@next/swc-win32-ia32-msvc': 13.4.7
-      '@next/swc-win32-x64-msvc': 13.4.7
+      '@next/swc-darwin-arm64': 13.4.4
+      '@next/swc-darwin-x64': 13.4.4
+      '@next/swc-linux-arm64-gnu': 13.4.4
+      '@next/swc-linux-arm64-musl': 13.4.4
+      '@next/swc-linux-x64-gnu': 13.4.4
+      '@next/swc-linux-x64-musl': 13.4.4
+      '@next/swc-win32-arm64-msvc': 13.4.4
+      '@next/swc-win32-ia32-msvc': 13.4.4
+      '@next/swc-win32-x64-msvc': 13.4.4
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
@@ -17846,6 +17835,7 @@ packages:
 
   /oauth@0.9.15:
     resolution: {integrity: sha512-a5ERWK1kh38ExDEfoO6qUHJb32rd7aYmPHuyCu3Fta/cnICvYmgd2uhuKXvPD+PXB+gCEYYEaQdIRAjCOwAKNA==}
+    dev: true
 
   /object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -17854,6 +17844,7 @@ packages:
   /object-hash@2.2.0:
     resolution: {integrity: sha512-gScRMn0bS5fH+IuwyIFgnh9zBdo4DV+6GhygmWM9HyNJSgS0hScp1f5vjtm7oIIOiT9trXrShAkLFSc2IqKNgw==}
     engines: {node: '>= 6'}
+    dev: true
 
   /object-hash@3.0.0:
     resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
@@ -17924,6 +17915,7 @@ packages:
   /oidc-token-hash@5.0.3:
     resolution: {integrity: sha512-IF4PcGgzAr6XXSff26Sk/+P4KZFJVuHAJZj3wgO3vX2bMdNVp/QXTP3P7CEm9V1IdG8lDLY3HhiqpsE/nOwpPw==}
     engines: {node: ^10.13.0 || >=12.0.0}
+    dev: true
 
   /on-exit-leak-free@2.1.0:
     resolution: {integrity: sha512-VuCaZZAjReZ3vUwgOB8LxAosIurDiAW0s13rI1YwmaP++jvcxP77AWoQvenZebpCA2m8WC1/EosPYPMjnRAp/w==}
@@ -17993,6 +17985,7 @@ packages:
       lru-cache: 6.0.0
       object-hash: 2.2.0
       oidc-token-hash: 5.0.3
+    dev: true
 
   /optionator@0.8.3:
     resolution: {integrity: sha512-+IW9pACdk3XWmmTXG8m3upGUJst5XRGzxMRjXzAuJ1XnIFNvfhjjIuYkDvysnPQ7qzqVzLt78BCruntqRhWQbA==}
@@ -19323,6 +19316,7 @@ packages:
     dependencies:
       preact: 10.11.3
       pretty-format: 3.8.0
+    dev: true
 
   /preact@10.11.3:
     resolution: {integrity: sha512-eY93IVpod/zG3uMF22Unl8h9KkrcKIRs2EGar8hwLZZDU1lkjph303V9HZBwufh2s736U6VXuhD109LYqPoffg==}
@@ -23686,40 +23680,6 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: false
 
-  '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter(prisma@4.14.1)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter'
-    name: '@prisma/client'
-    version: 4.14.1
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
-    dev: false
-
-  '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)':
-    resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter}
-    id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter'
-    name: '@prisma/client'
-    version: 4.14.1
-    engines: {node: '>=14.17'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-    dependencies:
-      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
-    dev: false
-
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)':
     resolution: {tarball: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter}
     id: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter'
@@ -23753,26 +23713,6 @@ packages:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
       prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
     dev: false
-
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter}
-    name: prisma
-    version: 4.14.1
-    engines: {node: '>=14.17'}
-    hasBin: true
-    requiresBuild: true
-    dependencies:
-      '@prisma/engines': 4.14.1
-
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter':
-    resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter}
-    name: prisma
-    version: 4.14.1
-    engines: {node: '>=14.17'}
-    hasBin: true
-    requiresBuild: true
-    dependencies:
-      '@prisma/engines': 4.14.1
 
   '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter}

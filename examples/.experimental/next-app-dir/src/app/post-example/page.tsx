@@ -1,4 +1,4 @@
-import { api } from '~/trpc/server-invoker';
+import { api } from '~/trpc/server-http';
 
 async function action(fd: FormData) {
   'use server';
