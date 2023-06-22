@@ -16,7 +16,7 @@
     "@trpc/next": "^10.29.1",
     "@trpc/react-query": "^10.29.1",
     "@trpc/server": "^10.29.1",
-    "next": "^13.4.4",
+    "next": "^13.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.3",
