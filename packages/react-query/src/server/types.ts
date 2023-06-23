@@ -1,3 +1,4 @@
+import { inferRouterProxyClient } from '@trpc/client';
 import {
   AnyRouter,
   ClientDataTransformerOptions,
@@ -5,10 +6,18 @@ import {
 } from '@trpc/server';
 import { CreateTRPCReactQueryClientConfig } from '../shared';
 
-interface CreateSSGHelpersOptionsBase<TRouter extends AnyRouter> {
+interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
   transformer?: ClientDataTransformerOptions;
 }
-export type CreateSSGHelpersOptions<TRouter extends AnyRouter> =
-  CreateSSGHelpersOptionsBase<TRouter> & CreateTRPCReactQueryClientConfig;
+
+interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
+  client: inferRouterProxyClient<TRouter>;
+}
+
+export type CreateServerSideHelpersOptions<TRouter extends AnyRouter> = (
+  | CreateSSGHelpersInternal<TRouter>
+  | CreateSSGHelpersExternal<TRouter>
+) &
+  CreateTRPCReactQueryClientConfig;
