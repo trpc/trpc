@@ -7,7 +7,7 @@ import type {
 } from 'aws-lambda';
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPRequest, resolveHTTPResponse } from '../../http';
+import { HTTPRequest, resolveHTTPResponse, ResponseMeta } from '../../http';
 import { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,
@@ -48,16 +48,29 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   };
 }
 
+export interface AwsLambdaHTTPResponse extends HTTPResponse {
+  multiValueHeaders?: APIGatewayProxyResult['multiValueHeaders'];
+  cookies?: APIGatewayProxyEventV2['cookies'];
+}
+
+export interface LambdaResponseMeta extends ResponseMeta {
+  multiValueHeaders?: APIGatewayProxyEvent['multiValueHeaders'];
+  cookies?: APIGatewayProxyEventV2['cookies'];
+}
+
 function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
->(event: TEvent, response: HTTPResponse): TResult {
+  >(event: TEvent, response: AwsLambdaHTTPResponse): TResult {
   if (isPayloadV1(event)) {
     const resp: APIGatewayProxyResult = {
       statusCode: response.status,
       body: response.body ?? '',
       headers: transformHeaders(response.headers ?? {}),
     };
+    if (response.multiValueHeaders) {
+      resp.multiValueHeaders = response.multiValueHeaders
+    }
     return resp as TResult;
   } else if (isPayloadV2(event)) {
     const resp: APIGatewayProxyStructuredResultV2 = {
@@ -65,6 +78,9 @@ function tRPCOutputToAPIGatewayOutput<
       body: response.body ?? undefined,
       headers: transformHeaders(response.headers ?? {}),
     };
+    if (response.cookies) {
+      resp.cookies = response.cookies
+    }
     return resp as TResult;
   } else {
     throw new TRPCError({
@@ -98,7 +114,7 @@ export function awsLambdaRequestHandler<
       return await opts.createContext?.({ event, context });
     };
 
-    const response = await resolveHTTPResponse({
+    const response = await resolveHTTPResponse<TRouter, HTTPRequest, AwsLambdaHTTPResponse>({
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts?.responseMeta,

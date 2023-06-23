@@ -16,7 +16,7 @@ import {
 } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
-import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
+import { HTTPBaseHandlerOptions, HTTPRequest, ResponseMeta } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -72,11 +72,12 @@ interface ResolveHTTPRequestOptions<
 function initResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
+  TResponseMeta extends ResponseMeta = ResponseMeta
 >(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
   type: ProcedureType | 'unknown';
-  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
+  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest, TResponseMeta>['responseMeta'];
   untransformedJSON?:
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
@@ -104,7 +105,7 @@ function initResponse<
     ? untransformedJSON
     : [untransformedJSON];
 
-  const meta =
+  const { status: metaStatus, headers: metaHeaders, ...otherMetadata } =
     responseMeta?.({
       ctx,
       paths,
@@ -114,16 +115,17 @@ function initResponse<
       eagerGeneration,
     }) ?? {};
 
-  for (const [key, value] of Object.entries(meta.headers ?? {})) {
+  for (const [key, value] of Object.entries(metaHeaders ?? {})) {
     headers[key] = value;
   }
-  if (meta.status) {
-    status = meta.status;
+  if (metaStatus) {
+    status = metaStatus;
   }
 
   return {
     status,
     headers,
+    ...otherMetadata
   };
 }
 
@@ -234,12 +236,13 @@ function caughtErrorToData<
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
+  TResponse extends HTTPResponse
 >(
   opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
     'unstable_onHead' | 'unstable_onChunk'
   >,
-): Promise<HTTPResponse>;
+): Promise<TResponse>;
 /**
  * Streaming signature for `resolveHTTPResponse`:
  * @param opts.unstable_onHead called as soon as the response head is known
@@ -351,11 +354,13 @@ export async function resolveHTTPResponse<
       );
       const body = JSON.stringify(transformedJSON);
       unstable_onChunk?.([-1, body]);
+      const { status, headers, ...otherMetadata } = headResponse;
 
       return {
-        status: headResponse.status,
-        headers: headResponse.headers,
+        status,
+        headers,
         body,
+        ...otherMetadata
       };
     }
 
@@ -434,10 +439,12 @@ export async function resolveHTTPResponse<
 
     unstable_onChunk?.([-1, body]);
 
+    const { status, headers, ...otherMetadata } = headResponse;
     return {
-      status: headResponse.status,
-      headers: headResponse.headers,
+      status,
+      headers,
       body,
+      ...otherMetadata
     };
   }
 }

@@ -1,26 +1,55 @@
+import { ResponseMetaFn } from '@trpc/server/http/internals/types';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
-import {
-  mockAPIGatewayContext,
-  mockAPIGatewayProxyEventBase64Encoded,
-  mockAPIGatewayProxyEventV1,
-  mockAPIGatewayProxyEventV2,
-} from './lambda.utils';
+import { mockAPIGatewayContext, mockAPIGatewayProxyEventBase64Encoded, mockAPIGatewayProxyEventV1, mockAPIGatewayProxyEventV2 } from './lambda.utils';
+
 
 const createContext = async ({
   event,
-}: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) => {
+}: trpcLambda.CreateAWSLambdaContextOptions<trpcLambda.APIGatewayEvent>) => {
   return {
     user: event.headers['X-USER'],
+    multiValueHeaders: undefined as
+      | APIGatewayProxyEvent['multiValueHeaders']
+      | undefined,
+    cookies: undefined as APIGatewayProxyEventV2['cookies'] | undefined,
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Partial<inferAsyncReturnType<typeof createContext>>;
 const t = initTRPC.context<Context>().create();
 
 const router = t.router({
+  multiValueHeaders: t.procedure
+    .input(
+      z
+        .object({
+          who: z.string().nullish(),
+        })
+        .nullish(),
+    )
+    .query(({ input, ctx }) => {
+      ctx.multiValueHeaders = {
+        'Set-Cookie': ['foo', 'bar'],
+      };
+
+      return { text: `hello ${input?.who ?? ctx.user ?? 'world'}` };
+    }),
+  cookiesV2: t.procedure
+    .input(
+      z
+        .object({
+          who: z.string().nullish(),
+        })
+        .nullish(),
+    )
+    .query(({ input, ctx }) => {
+      ctx.cookies = ['foo', 'bar'];
+
+      return { text: `hello ${input?.who ?? ctx.user ?? 'world'}` };
+    }),
   hello: t.procedure
     .input(
       z
@@ -66,9 +95,46 @@ const contextlessApp = tC.router({
     }),
 });
 
+const responseV1MetaHandler: ResponseMetaFn<
+  typeof router,
+  trpcLambda.LambdaResponseMeta
+> = ({ ctx }) => {
+  const response: trpcLambda.LambdaResponseMeta = {
+    headers: {},
+  };
+
+  if (ctx?.multiValueHeaders) {
+    response.multiValueHeaders = ctx.multiValueHeaders;
+  }
+
+  return response;
+};
+
+const responseV2MetaHandler: ResponseMetaFn<
+  typeof router,
+  trpcLambda.LambdaResponseMeta
+> = ({ ctx }) => {
+  const response: trpcLambda.LambdaResponseMeta = {
+    headers: {},
+  };
+
+  if (ctx?.cookies) {
+    response.cookies = ctx.cookies;
+  }
+
+  return response;
+};
+
 const handler = trpcLambda.awsLambdaRequestHandler({
   router,
   createContext,
+  responseMeta: responseV1MetaHandler,
+});
+
+const handler2 = trpcLambda.awsLambdaRequestHandler({
+  router,
+  createContext,
+  responseMeta: responseV2MetaHandler,
 });
 
 test('basic test', async () => {
@@ -88,6 +154,44 @@ test('basic test', async () => {
     Object {
       "headers": Object {
         "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+      },
+    }
+  `);
+});
+
+test('mutliValueHeaders test', async () => {
+  const { body, ...result } = await handler(
+    mockAPIGatewayProxyEventV1({
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: 'multiValueHeaders',
+      queryStringParameters: {},
+      resource: '/multiValueHeaders',
+    }),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body || '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "multiValueHeaders": Object {
+        "Set-Cookie": Array [
+          "foo",
+          "bar",
+        ],
       },
       "statusCode": 200,
     }
@@ -217,17 +321,6 @@ test('bad type', async () => {
 });
 
 test('test v2 format', async () => {
-  const createContext = async ({
-    event,
-  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
-    return {
-      user: event.headers['X-USER'],
-    };
-  };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
-    router,
-    createContext,
-  });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
       body: JSON.stringify({}),
@@ -259,18 +352,43 @@ test('test v2 format', async () => {
   `);
 });
 
+test('test v2 cookies', async () => {
+  const { body, ...result } = await handler2(
+    mockAPIGatewayProxyEventV2({
+      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: 'cookiesV2',
+      queryStringParameters: {},
+      routeKey: '$default',
+    }),
+    mockAPIGatewayContext(),
+  );
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "cookies": Array [
+        "foo",
+        "bar",
+      ],
+      "headers": Object {
+        "Content-Type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  const parsedBody = JSON.parse(body || '');
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+      },
+    }
+  `);
+});
+
 test('test v2 format with multiple / in query key', async () => {
-  const createContext = async ({
-    event,
-  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
-    return {
-      user: event.headers['X-USER'],
-    };
-  };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
-    router,
-    createContext,
-  });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
       body: JSON.stringify({}),
@@ -303,17 +421,6 @@ test('test v2 format with multiple / in query key', async () => {
 });
 
 test('test v2 format with non default routeKey', async () => {
-  const createContext = async ({
-    event,
-  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
-    return {
-      user: event.headers['X-USER'],
-    };
-  };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
-    router,
-    createContext,
-  });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
       body: JSON.stringify({}),
@@ -346,17 +453,6 @@ test('test v2 format with non default routeKey', async () => {
   `);
 });
 test('test v2 format with non default routeKey and nested router', async () => {
-  const createContext = async ({
-    event,
-  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
-    return {
-      user: event.headers['X-USER'],
-    };
-  };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
-    router,
-    createContext,
-  });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
       body: JSON.stringify({}),

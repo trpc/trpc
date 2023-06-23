@@ -9,6 +9,7 @@ import type { AnyRouter, inferRouterContext } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
 import type { HTTPHeaders, ResponseMetaFn } from '../../http/internals/types';
 import { OnErrorFunction } from '../../internals/types';
+import { LambdaResponseMeta } from '.';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =
@@ -39,7 +40,7 @@ export type AWSLambdaOptions<
         enabled: boolean;
       };
       onError?: OnErrorFunction<TRouter, TEvent>;
-      responseMeta?: ResponseMetaFn<TRouter>;
+    responseMeta?: ResponseMetaFn<TRouter, LambdaResponseMeta>;
     } & (
       | {
           /**
