@@ -12,8 +12,11 @@ export interface HTTPRequest {
 /**
  * Base interface for anything using HTTP
  */
-export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest, TResponseMeta extends ResponseMeta = ResponseMeta>
-  extends BaseHandlerOptions<TRouter, TRequest> {
+export interface HTTPBaseHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest,
+  TResponseMeta extends ResponseMeta = ResponseMeta,
+> extends BaseHandlerOptions<TRouter, TRequest> {
   /**
    * Add handler to be called before response is sent to the user
    * Useful for setting cache headers

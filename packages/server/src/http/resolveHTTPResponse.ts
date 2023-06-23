@@ -72,12 +72,16 @@ interface ResolveHTTPRequestOptions<
 function initResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
-  TResponseMeta extends ResponseMeta = ResponseMeta
+  TResponseMeta extends ResponseMeta = ResponseMeta,
 >(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
   type: ProcedureType | 'unknown';
-  responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest, TResponseMeta>['responseMeta'];
+  responseMeta?: HTTPBaseHandlerOptions<
+    TRouter,
+    TRequest,
+    TResponseMeta
+  >['responseMeta'];
   untransformedJSON?:
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
@@ -105,15 +109,18 @@ function initResponse<
     ? untransformedJSON
     : [untransformedJSON];
 
-  const { status: metaStatus, headers: metaHeaders, ...otherMetadata } =
-    responseMeta?.({
-      ctx,
-      paths,
-      type,
-      data,
-      errors,
-      eagerGeneration,
-    }) ?? {};
+  const {
+    status: metaStatus,
+    headers: metaHeaders,
+    ...otherMetadata
+  } = responseMeta?.({
+    ctx,
+    paths,
+    type,
+    data,
+    errors,
+    eagerGeneration,
+  }) ?? {};
 
   for (const [key, value] of Object.entries(metaHeaders ?? {})) {
     headers[key] = value;
@@ -125,7 +132,7 @@ function initResponse<
   return {
     status,
     headers,
-    ...otherMetadata
+    ...otherMetadata,
   };
 }
 
@@ -236,7 +243,7 @@ function caughtErrorToData<
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
-  TResponse extends HTTPResponse
+  TResponse extends HTTPResponse,
 >(
   opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
@@ -360,7 +367,7 @@ export async function resolveHTTPResponse<
         status,
         headers,
         body,
-        ...otherMetadata
+        ...otherMetadata,
       };
     }
 
@@ -444,7 +451,7 @@ export async function resolveHTTPResponse<
       status,
       headers,
       body,
-      ...otherMetadata
+      ...otherMetadata,
     };
   }
 }

@@ -3,8 +3,12 @@ import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
-import { mockAPIGatewayContext, mockAPIGatewayProxyEventBase64Encoded, mockAPIGatewayProxyEventV1, mockAPIGatewayProxyEventV2 } from './lambda.utils';
-
+import {
+  mockAPIGatewayContext,
+  mockAPIGatewayProxyEventBase64Encoded,
+  mockAPIGatewayProxyEventV1,
+  mockAPIGatewayProxyEventV2,
+} from './lambda.utils';
 
 const createContext = async ({
   event,

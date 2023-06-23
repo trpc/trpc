@@ -22,7 +22,10 @@ export type ResponseChunk = [procedureIndex: number, responseBody: string];
 /**
  * @internal
  */
-export type ResponseMetaFn<TRouter extends AnyRouter, TResponseMeta extends ResponseMeta = ResponseMeta> = (opts: {
+export type ResponseMetaFn<
+  TRouter extends AnyRouter,
+  TResponseMeta extends ResponseMeta = ResponseMeta,
+> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
   ctx?: inferRouterContext<TRouter>;
   /**

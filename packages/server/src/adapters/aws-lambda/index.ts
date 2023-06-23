@@ -61,7 +61,7 @@ export interface LambdaResponseMeta extends ResponseMeta {
 function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
-  >(event: TEvent, response: AwsLambdaHTTPResponse): TResult {
+>(event: TEvent, response: AwsLambdaHTTPResponse): TResult {
   if (isPayloadV1(event)) {
     const resp: APIGatewayProxyResult = {
       statusCode: response.status,
@@ -69,7 +69,7 @@ function tRPCOutputToAPIGatewayOutput<
       headers: transformHeaders(response.headers ?? {}),
     };
     if (response.multiValueHeaders) {
-      resp.multiValueHeaders = response.multiValueHeaders
+      resp.multiValueHeaders = response.multiValueHeaders;
     }
     return resp as TResult;
   } else if (isPayloadV2(event)) {
@@ -79,7 +79,7 @@ function tRPCOutputToAPIGatewayOutput<
       headers: transformHeaders(response.headers ?? {}),
     };
     if (response.cookies) {
-      resp.cookies = response.cookies
+      resp.cookies = response.cookies;
     }
     return resp as TResult;
   } else {
@@ -114,7 +114,11 @@ export function awsLambdaRequestHandler<
       return await opts.createContext?.({ event, context });
     };
 
-    const response = await resolveHTTPResponse<TRouter, HTTPRequest, AwsLambdaHTTPResponse>({
+    const response = await resolveHTTPResponse<
+      TRouter,
+      HTTPRequest,
+      AwsLambdaHTTPResponse
+    >({
       router: opts.router,
       batching: opts.batching,
       responseMeta: opts?.responseMeta,
