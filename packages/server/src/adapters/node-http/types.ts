@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http';
+import { HTTPBaseHandlerOptions, TRPCRequestInfo } from '../../http';
 import { MaybePromise } from '../../types';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
@@ -94,6 +94,7 @@ export type NodeHTTPRequestHandlerOptions<
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
+  info: TRPCRequestInfo;
 };
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,

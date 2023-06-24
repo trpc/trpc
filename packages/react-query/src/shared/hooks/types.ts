@@ -5,21 +5,22 @@ import {
   InitialDataFunction,
   QueryObserverSuccessResult,
   QueryOptions,
+  UseBaseQueryOptions,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
   UseMutationResult,
-  UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
-  TRPCClient,
   TRPCRequestOptions,
+  TRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { ReactNode } from 'react';
 import { TRPCContextProps } from '../../internals/context';
+import { TRPCQueryKey } from '../../internals/getQueryKey';
 import { TRPCHookResult } from '../../internals/useHookResult';
 
 export type OutputWithCursor<TData, TCursor = any> = {
@@ -47,8 +48,20 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
-  extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
+export interface UseTRPCQueryOptions<
+  TPath,
+  TInput,
+  TOutput,
+  TData,
+  TError,
+  TQueryOptsData = TOutput,
+> extends UseBaseQueryOptions<
+      TOutput,
+      TError,
+      TData,
+      TQueryOptsData,
+      [TPath, TInput]
+    >,
     TRPCUseQueryBaseOptions {}
 
 /** @internal **/
@@ -58,13 +71,23 @@ export interface DefinedUseTRPCQueryOptions<
   TOutput,
   TData,
   TError,
-> extends UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError> {
-  initialData: TOutput | InitialDataFunction<TOutput>;
+  TQueryOptsData = TOutput,
+> extends UseTRPCQueryOptions<
+    TPath,
+    TInput,
+    TOutput,
+    TData,
+    TError,
+    TQueryOptsData
+  > {
+  initialData: TQueryOptsData | InitialDataFunction<TQueryOptsData>;
 }
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>
-  extends QueryOptions<TData, TError, TData, [TPath, TInput]>,
-    TRPCUseQueryBaseOptions {}
+  extends Omit<QueryOptions<TData, TError, TData, [TPath, TInput]>, 'queryKey'>,
+    TRPCUseQueryBaseOptions {
+  queryKey: TRPCQueryKey;
+}
 
 export type ExtractCursorType<TInput> = TInput extends { cursor: any }
   ? TInput['cursor']
@@ -106,13 +129,13 @@ export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
 ) => JSX.Element;
 
 export type UseDehydratedState<TRouter extends AnyRouter> = (
-  client: TRPCClient<TRouter>,
+  client: TRPCUntypedClient<TRouter>,
   trpcState: DehydratedState | undefined,
 ) => DehydratedState | undefined;
 
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
-) => TRPCClient<TRouter>;
+) => TRPCUntypedClient<TRouter>;
 
 /**
  * @internal

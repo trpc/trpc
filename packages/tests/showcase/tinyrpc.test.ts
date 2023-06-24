@@ -3,6 +3,7 @@
  */
 import '../server/___packages';
 import '@trpc/server';
+import { AddressInfo } from 'net';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import fetch from 'node-fetch';
@@ -56,17 +57,18 @@ const appRouter = router({
 type AppRouter = typeof appRouter;
 
 function createServer() {
-  const app = createHTTPServer({
+  const server = createHTTPServer({
     router: appRouter,
   });
 
-  const { port } = app.listen(0);
+  server.listen(0);
+  const port = (server.address() as AddressInfo).port;
 
   return {
-    port: port!,
+    port: port,
     async close() {
       await new Promise((resolve) => {
-        app.server.close(resolve);
+        server.close(resolve);
       });
     },
   };

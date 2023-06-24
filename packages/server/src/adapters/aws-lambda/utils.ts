@@ -7,6 +7,7 @@ import type {
 } from 'aws-lambda';
 import type { AnyRouter, inferRouterContext } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
+import { TRPCRequestInfo } from '../../http';
 import type { HTTPHeaders, ResponseMetaFn } from '../../http/internals/types';
 import { OnErrorFunction } from '../../internals/types';
 
@@ -18,6 +19,7 @@ export type APIGatewayResult =
 export type CreateAWSLambdaContextOptions<TEvent extends APIGatewayEvent> = {
   event: TEvent;
   context: APIGWContext;
+  info: TRPCRequestInfo;
 };
 export type AWSLambdaCreateContextFn<
   TRouter extends AnyRouter,
@@ -25,6 +27,7 @@ export type AWSLambdaCreateContextFn<
 > = ({
   event,
   context,
+  info,
 }: CreateAWSLambdaContextOptions<TEvent>) =>
   | inferRouterContext<TRouter>
   | Promise<inferRouterContext<TRouter>>;

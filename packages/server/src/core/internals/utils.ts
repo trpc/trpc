@@ -1,5 +1,5 @@
 import { Simplify } from '../../types';
-import { ProcedureParams } from '../procedure';
+import { AnyProcedureParams, ProcedureParams } from '../procedure';
 
 /**
  * @internal
@@ -52,7 +52,9 @@ export type UnsetMarker = typeof unsetMarker;
 /**
  * @internal
  */
-export interface ResolveOptions<TParams extends ProcedureParams> {
+export interface ResolveOptions<
+  TParams extends ProcedureParams<AnyProcedureParams>,
+> {
   ctx: Simplify<
     Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
   >;

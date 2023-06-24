@@ -16,7 +16,6 @@ import {
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
 import { useMemo } from 'react';
-import { QueryKey, QueryType } from './internals/getArrayQueryKey';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
   createReactProxyDecoration,
@@ -24,9 +23,9 @@ import {
   CreateReactUtilsProxy,
 } from './shared';
 import {
-  createHooksInternal,
   CreateReactQueryHooks,
-} from './shared/hooks/createRootHooks';
+  createRootHooks,
+} from './shared/hooks/createHooksInternal';
 import {
   CreateClient,
   DefinedUseTRPCQueryOptions,
@@ -54,7 +53,7 @@ export interface ProcedureUseQuery<
 > {
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-    TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
@@ -62,13 +61,14 @@ export interface ProcedureUseQuery<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TProcedure>
+      TRPCClientErrorLike<TProcedure>,
+      inferTransformedProcedureOutput<TProcedure>
     >,
   ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
 
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-    TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
@@ -76,7 +76,8 @@ export interface ProcedureUseQuery<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TProcedure>
+      TRPCClientErrorLike<TProcedure>,
+      inferTransformedProcedureOutput<TProcedure>
     >,
   ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
 }
@@ -91,16 +92,6 @@ export type DecorateProcedure<
 > = TProcedure extends AnyQueryProcedure
   ? {
       /**
-       * Method to extract the query key for a procedure
-       * @param type - defaults to `any`
-       * @see https://trpc.io/docs/client/react/getQueryKey
-       * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
-       */
-      getQueryKey: (
-        input: inferProcedureInput<TProcedure>,
-        type?: QueryType,
-      ) => QueryKey;
-      /**
        * @see https://trpc.io/docs/client/react/useQuery
        */
       useQuery: ProcedureUseQuery<TProcedure, TPath>;
@@ -109,7 +100,7 @@ export type DecorateProcedure<
        */
       useSuspenseQuery: <
         TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-        TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+        TData = TQueryFnData,
       >(
         input: inferProcedureInput<TProcedure>,
         opts?: Omit<
@@ -209,12 +200,7 @@ export type DecoratedProcedureRecord<
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? {
-        /**
-         * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
-         */
-        getQueryKey: () => QueryKey;
-      } & DecoratedProcedureRecord<
+    ? DecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record'],
         TFlags,
         `${TPath}${TKey & string}.`
@@ -283,7 +269,7 @@ export function createTRPCReact<
 >(
   opts?: CreateTRPCReactOptions<TRouter>,
 ): CreateTRPCReact<TRouter, TSSRContext, TFlags> {
-  const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
+  const hooks = createRootHooks<TRouter, TSSRContext>(opts);
   const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
 
   return proxy as any;
