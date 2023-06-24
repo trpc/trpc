@@ -1,24 +1,22 @@
-import { vi } from "vitest";
-import { Operation } from "..";
-import { createWSClient } from "./wsLink";
-import { WebSocket } from "mock-socket";
+import { WebSocket } from 'mock-socket';
+import { vi } from 'vitest';
+import { Operation } from '..';
+import { createWSClient } from './wsLink';
 
-vi.mock("mock-socket", () => {
+vi.mock('mock-socket', () => {
   const WebSocket = vi.fn();
 
   let relay: (msg: object) => void;
 
   WebSocket.prototype = {
-    addEventListener: vi.fn(
-      (event: string, cb: (data?: object) => void) => {
-        if (event === "open") {
-          setTimeout(cb, 20);
-        }
-        if (event === "message") {
-          relay = cb;
-        }
-      },
-    ),
+    addEventListener: vi.fn((event: string, cb: (data?: object) => void) => {
+      if (event === 'open') {
+        setTimeout(cb, 20);
+      }
+      if (event === 'message') {
+        relay = cb;
+      }
+    }),
     send: vi.fn((msgs: string) => {
       const msgsData = JSON.parse(msgs);
       msgsData.forEach((msgData: { id: number }) => {
@@ -33,7 +31,7 @@ vi.mock("mock-socket", () => {
   return { WebSocket };
 });
 
-const TEST_URL = "ws://some.site/ws?token=magicToken";
+const TEST_URL = 'ws://some.site/ws?token=magicToken';
 const noop = () => {
   return;
 };
@@ -43,17 +41,17 @@ async function mockApiUrlFetch() {
 }
 
 let id = 0;
-function getMockRequest(type: Operation["type"] = "query") {
+function getMockRequest(type: Operation['type'] = 'query') {
   return {
     type,
     input: null,
-    path: ".",
+    path: '.',
     id: id++,
     context: {},
   };
 }
 
-test("asyncWsLink", async () => {
+test('asyncWsLink', async () => {
   const asyncSocketUrl = vi.fn(async () => mockApiUrlFetch());
 
   const asyncLink = createWSClient({
@@ -76,11 +74,7 @@ test("asyncWsLink", async () => {
     });
   }
 
-  await Promise.all([
-    requestFactory(),
-    requestFactory(),
-    requestFactory(),
-  ]);
+  await Promise.all([requestFactory(), requestFactory(), requestFactory()]);
 
   expect(asyncSocketUrl).toBeCalledTimes(1);
   // Todo: this should be replaced with jest style rules
