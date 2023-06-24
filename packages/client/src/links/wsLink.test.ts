@@ -1,6 +1,6 @@
 import { vi } from "vitest";
-import { Operation } from "../";
-import { createWSClient } from "./asyncWsLink";
+import { Operation } from "..";
+import { createWSClient } from "./wsLink";
 import { WebSocket } from "mock-socket";
 
 vi.mock("mock-socket", () => {
