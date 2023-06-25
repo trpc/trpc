@@ -20,7 +20,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
 }
 
 export class TRPCError extends Error {
-  public readonly cause?: Error;
+  public override readonly cause?: Error;
   public readonly code;
 
   constructor(opts: {
