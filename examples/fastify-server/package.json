@@ -21,7 +21,7 @@
     "@trpc/client": "^10.29.1",
     "@trpc/server": "^10.29.1",
     "fastify": "^4.13.0",
-    "superjson": "^1.7.4",
+    "superjson": "^1.12.4",
     "tslib": "^2.5.0",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
