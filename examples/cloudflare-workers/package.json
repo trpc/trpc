@@ -1,6 +1,6 @@
 {
   "name": "@examples/cloudflare-workers",
-  "version": "10.29.1",
+  "version": "10.32.0",
   "private": true,
   "type": "module",
   "scripts": {

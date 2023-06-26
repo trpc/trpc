@@ -5,14 +5,21 @@ sidebar_label: Server-Side Helpers
 slug: /client/nextjs/server-side-helpers
 ---
 
-`createServerSideHelpers` provides you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
+The server side helpers provides you with a set of helper functions that you can use to prefetch queries on the server. This is useful for SSG, but also for SSR if you opt not to use `ssr: true`.
+
+## There are 2 ways to use the server side helpers.
+
+### 1. Internal router
+
+This method is used when you have direct access to your tRPC router. e.g. when developing a monolithic NextJS application.
 
 Using the helpers makes tRPC call your procedures directly on the server, without an HTTP request, similar to [server-side calls](/docs/server/server-side-calls).
 That also means that you don't have the request and response at hand like you usually do. Make sure you're instantiating the SSG helpers with a context without `req` & `res`, which are typically filled via the context creation. We recommend the concept of ["inner" and "outer" context](/docs/server/context) in that scenario.
 
 ```ts
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { createContext } from 'server/context';
+import { createContext } from '~/server/context';
+import superjson from 'superjson';
 
 const helpers = createServerSideHelpers({
   router: appRouter,
@@ -21,7 +28,32 @@ const helpers = createServerSideHelpers({
 });
 ```
 
-`createServerSideHelpers` returns an object much like the tRPC client, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
+### 2. External router
+
+This method is used when you don't have direct access to your tRPC router. e.g. when developing a NextJS application and a standalone API hosted separately.
+
+```ts
+import { createTRPCProxyClient } from '@trpc/client';
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import superjson from 'superjson';
+
+const proxyClient = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/api/trpc',
+    }),
+  ],
+  transformer: SuperJSON,
+});
+
+const helpers = createServerSideHelpers({
+  client: proxyClient,
+});
+```
+
+## Helpers usage
+
+The server side helpers methods return an object much like the tRPC client, with all of your routers as keys. However, rather than `useQuery` and `useMutation`, you get `prefetch`, `fetch`, `prefetchInfinite`, and `fetchInfinite` functions.
 
 The primary difference between `prefetch` and `fetch` is that `fetch` acts much like a normal function call, returning the result of the query, whereas `prefetch` does not return the result and never throws - if you need that behavior, use `fetch` instead. Instead, `prefetch` will add the query to the cache, which you then dehydrate and send to the client.
 
