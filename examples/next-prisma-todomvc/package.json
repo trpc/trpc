@@ -35,7 +35,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^12.2.0",
-    "superjson": "^1.7.4",
+    "superjson": "^1.12.4",
     "todomvc-app-css": "^2.3.0",
     "todomvc-common": "^1.0.5",
     "zod": "^3.0.0"
