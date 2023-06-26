@@ -192,7 +192,7 @@ const appRouter = router({
 
 ### 3. Using input parser to validate procedure inputs
 
-To implement the `userById` procedure, we need to accept input from the client. tRPC lets you define [input parsers](/docs/server/procedures#input-validation) to validate and parse the input. You can define your own input parser or use a validation library of your choice, like [zod](https://zod.dev), [yup](https://yup.dev), or [superstruct](https://superstruct.dev).
+To implement the `userById` procedure, we need to accept input from the client. tRPC lets you define [input parsers](/docs/server/procedures#input-validation) to validate and parse the input. You can define your own input parser or use a validation library of your choice, like [zod](https://zod.dev), [yup](https://github.com/jquense/yup), or [superstruct](https://docs.superstructjs.org/).
 
 You define your input parser on `publicProcedure.input()`, which can then be accessed on the resolver function as shown below:
 
