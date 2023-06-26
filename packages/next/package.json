@@ -69,7 +69,7 @@
     "@trpc/client": "10.32.0",
     "@trpc/react-query": "10.32.0",
     "@trpc/server": "10.32.0",
-    "next": "*",
+    "next": "13.4.7",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
@@ -87,7 +87,7 @@
     "@types/react-dom": "^18.2.4",
     "eslint": "^8.40.0",
     "express": "^4.17.1",
-    "next": "^13.4.3",
+    "next": "^13.4.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",
