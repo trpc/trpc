@@ -129,7 +129,7 @@ export function experimental_createServerActionHandler<
     },
   ): TRPCActionHandler<Simplify<inferActionDef<TProcedure>>> {
     const procedure: TProcedure = (() => {
-      if (typeof proc === 'function' && typeof proc._type === 'string') {
+      if (typeof proc === 'function' && typeof proc._def !== 'function') {
         // proc is a Procedure, proceed
         return proc;
       }
