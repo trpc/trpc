@@ -132,6 +132,7 @@ function constructPartsAndArgs(
 
     return { parts, args };
   }
+
   const [light, dark] = palettes.css[type];
   const css = `
   background-color: #${direction === 'up' ? light : dark}; 
