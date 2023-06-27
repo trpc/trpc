@@ -1,11 +1,11 @@
 /// <reference types="next" />
 import {
   clientCallTypeToProcedureType,
-  CreateTRPCProxyClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import {
   AnyProcedure,
+  AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
   CombinedDataTransformer,
@@ -21,7 +21,7 @@ import {
   getErrorShape,
   transformTRPCResponse,
 } from '@trpc/server/shared';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import {
@@ -30,7 +30,10 @@ import {
   inferActionDef,
   isFormData,
 } from './shared';
-import { DecorateProcedureServer } from './types';
+import {
+  DecorateProcedureServer,
+  NextAppDirDecoratedProcedureRecord,
+} from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -60,7 +63,7 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as CreateTRPCProxyClient<TRouter>;
+  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
 }
 
 /**
@@ -111,6 +114,9 @@ export function experimental_createServerActionHandler<
 
   return function createServerAction<TProcedure extends AnyProcedure>(
     proc: TProcedure | DecorateProcedureServer<TProcedure>,
+    actionOptions?: {
+      revalidates?: (string | DecorateProcedureServer<AnyQueryProcedure>)[];
+    },
   ): TRPCActionHandler<Simplify<inferActionDef<TProcedure>>> {
     const procedure: TProcedure = (() => {
       if (typeof proc === 'function' && typeof proc._type === 'string') {
@@ -170,7 +176,16 @@ export function experimental_createServerActionHandler<
 
         // FIXME: This should be configurable to do fine-grained revalidation
         // Need https://github.com/trpc/trpc/pull/4375 for that
-        revalidatePath('/alt-server-action');
+        for (const keyOrProc of actionOptions?.revalidates ?? []) {
+          if (typeof keyOrProc === 'string') {
+            revalidateTag(keyOrProc);
+          }
+
+          const path = (keyOrProc as any)._def().path;
+          // TODO: What about input? They are part of the cacheKey
+          const cacheKey = path;
+          revalidateTag(cacheKey);
+        }
 
         const transformedJSON = transformTRPCResponse(config, {
           result: {
