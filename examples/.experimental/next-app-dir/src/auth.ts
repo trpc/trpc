@@ -1,37 +1,36 @@
-import NextAuth from 'next-auth';
-import type { DefaultSession } from 'next-auth';
+import { type DefaultSession, type NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import GitHub from 'next-auth/providers/github';
 
 declare module 'next-auth' {
   interface Session {
-    user: {
+    user: DefaultSession['user'] & {
       id: string;
-    } & DefaultSession['user'];
+    };
   }
 }
 
-export const {
-  handlers: { GET, POST },
-  auth,
-  CSRF_experimental,
-} = NextAuth({
+export const options = {
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
+      clientId: process.env.GITHUB_ID as string,
+      clientSecret: process.env.GITHUB_SECRET as string,
     }),
   ],
   callbacks: {
-    jwt: async ({ token, profile }) => {
-      if (profile?.id) {
-        token.id = profile.id;
-        token.image = profile.picture;
+    session: async ({ session, token }) => {
+      if (token?.sub) {
+        session.user.id = token.sub;
       }
-      return token;
+      return session;
     },
     // @TODO
     // authorized({ request, auth }) {
     //   return !!auth?.user
     // }
   },
-});
+} satisfies NextAuthOptions;
+
+export function auth() {
+  return getServerSession(options);
+}
