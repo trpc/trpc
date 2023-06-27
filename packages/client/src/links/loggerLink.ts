@@ -73,7 +73,7 @@ function isFormData(value: unknown): value is FormData {
 }
 
 // maybe this should be moved to it's own package
-const defaultCssLogger =
+const cssLogger =
   <TRouter extends AnyRouter>(
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
@@ -200,7 +200,7 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
 ): TRPCLink<TRouter> {
   const { enabled = () => true } = opts;
 
-  const { logger = defaultCssLogger(opts.console) } = opts;
+  const { logger = cssLogger(opts.console) } = opts;
 
   return () => {
     return ({ op, next }) => {
