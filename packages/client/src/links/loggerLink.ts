@@ -94,14 +94,12 @@ const palettes = {
   },
 } as const;
 
-function constructParts(opts: {
-  colorMode: 'ansi' | 'css';
-  direction: 'up' | 'down';
-  type: 'query' | 'mutation' | 'subscription';
-  path: string;
-  id: number;
-}) {
-  const { direction, type, path, id } = opts;
+function constructPartsAndArgs(
+  opts: {
+    colorMode: 'ansi' | 'css';
+  } & LoggerLinkFnOptions<any>,
+) {
+  const { direction, type, path, id, input } = opts;
 
   let parts: string[] = [];
   const args: any[] = [];
@@ -120,8 +118,20 @@ function constructParts(opts: {
       path,
       reset,
     ];
-  }
 
+    if (direction === 'up') {
+      args.push({ input: opts.input });
+    } else {
+      args.push({
+        input: opts.input,
+        // strip context from result cause it's too noisy in terminal wihtout collapse mode
+        result: 'result' in opts.result ? opts.result.result : opts.result,
+        elapsedMs: opts.elapsedMs,
+      });
+    }
+
+    return { parts, args };
+  }
   const [light, dark] = palettes.css[type];
   const css = `
   background-color: #${direction === 'up' ? light : dark}; 
@@ -139,6 +149,17 @@ function constructParts(opts: {
   );
   args.push(css, `${css}; font-weight: bold;`, `${css}; font-weight: normal;`);
 
+  if (direction === 'up') {
+    args.push({ input, context: opts.context });
+  } else {
+    args.push({
+      input,
+      result: opts.result,
+      elapsedMs: opts.elapsedMs,
+      context: opts.context,
+    });
+  }
+
   return { parts, args };
 }
 
@@ -153,26 +174,16 @@ const defaultLogger =
   }): LoggerLinkFn<TRouter> =>
   (props) => {
     const rawInput = props.input;
-
     const input = isFormData(rawInput)
       ? Object.fromEntries(rawInput)
       : rawInput;
 
-    const { parts, args } = constructParts({
-      colorMode,
+    const { parts, args } = constructPartsAndArgs({
       ...props,
+      colorMode,
+      input,
     });
 
-    if (props.direction === 'up') {
-      args.push({ input, context: props.context });
-    } else {
-      args.push({
-        input,
-        result: props.result,
-        elapsedMs: props.elapsedMs,
-        context: props.context,
-      });
-    }
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
