@@ -184,8 +184,6 @@ export function experimental_createServerActionHandler<
           type: procedure._type,
         });
 
-        // FIXME: This should be configurable to do fine-grained revalidation
-        // Need https://github.com/trpc/trpc/pull/4375 for that
         for (const keyOrProc of actionOptions?.revalidates ?? []) {
           if (typeof keyOrProc === 'string') {
             revalidateTag(keyOrProc);
@@ -193,6 +191,7 @@ export function experimental_createServerActionHandler<
 
           const path = (keyOrProc as any)._def().path;
           // TODO: What about input? They are part of the cacheKey
+          // @see https://github.com/trpc/trpc/pull/4375 for that
           const cacheKey = path;
           revalidateTag(cacheKey);
         }
