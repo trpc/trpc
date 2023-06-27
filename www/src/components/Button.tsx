@@ -32,14 +32,14 @@ export const Button = ({
   if ('href' in props) {
     const rel = clsx({ ['noopener']: props.target === '_blank' });
     return (
-      <Link {...props} className={className} rel={props.rel || rel}>
+      <Link {...props} className={className} rel={props.rel ?? rel}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button {...props} className={className} type={props.type || 'button'}>
+    <button {...props} className={className} type={props.type ?? 'button'}>
       {children}
     </button>
   );

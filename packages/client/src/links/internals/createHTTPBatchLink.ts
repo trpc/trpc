@@ -39,7 +39,7 @@ export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
     opts: TOptions,
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
-    const maxURLLength = opts.maxURLLength || Infinity;
+    const maxURLLength = opts.maxURLLength ?? Infinity;
 
     // initialized config
     return (runtime) => {
@@ -105,9 +105,13 @@ export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
               });
               observer.complete();
             })
-            .catch((err) => { observer.error(TRPCClientError.from(err)); });
+            .catch((err) => {
+              observer.error(TRPCClientError.from(err));
+            });
 
-          return () => { cancel(); };
+          return () => {
+            cancel();
+          };
         });
       };
     };

@@ -90,7 +90,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
   }
   function tryReconnect() {
-    if (connectTimer || state === 'closed') {
+    if (connectTimer !== null || state === 'closed') {
       return;
     }
     const timeout = retryDelayFn(connectAttempt++);

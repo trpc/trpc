@@ -34,7 +34,6 @@ const config = {
 
     // Todo: do we want these?
     '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/prefer-nullish-coalescing': 'off',
 
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',

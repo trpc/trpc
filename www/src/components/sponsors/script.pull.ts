@@ -29,7 +29,7 @@ function flattenSponsor(node: Node) {
     : `https://github.com/${node.sponsorEntity.login}`;
   return {
     __typename: node.sponsorEntity.__typename,
-    name: node.sponsorEntity.name || node.sponsorEntity.login,
+    name: node.sponsorEntity.name ?? node.sponsorEntity.login,
     imgSrc: node.sponsorEntity.avatarUrl,
     monthlyPriceInDollars: node.tier.monthlyPriceInDollars,
     link,

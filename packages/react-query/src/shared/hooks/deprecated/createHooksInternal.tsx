@@ -114,7 +114,7 @@ function __createHooksInternal<
           abortOnUnmount,
           queryClient,
           client,
-          ssrContext: ssrContext || null,
+          ssrContext: ssrContext ?? null,
           ssrState,
           fetchQuery: useCallback(
             (pathAndInput, opts) => {
