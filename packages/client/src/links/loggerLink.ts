@@ -128,8 +128,11 @@ const cssLogger =
 
 const ansiPalette = {
   regular: {
+    // Cyan background, black and white text respectively
     query: ['\x1b[30;46m', '\x1b[97;46m'],
+    // Magenta background, black and white text respectively
     mutation: ['\x1b[30;45m', '\x1b[97;45m'],
+    // Green background, black and white text respectively
     subscription: ['\x1b[30;42m', '\x1b[97;42m'],
   },
   bold: {
