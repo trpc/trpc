@@ -4,10 +4,10 @@ import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
 
-export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
+export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = FetchHandlerOptions<TRouter> & {
   req: Request;
   endpoint: string;
-} & FetchHandlerOptions<TRouter>;
+};
 
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,

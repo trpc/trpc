@@ -23,7 +23,7 @@ export type ProcedureParserSuperstructEsque<TType> = {
 
 export type ProcedureParserCustomValidatorEsque<TType> = (
   input: unknown,
-) => TType | Promise<TType>;
+) => Promise<TType> | TType;
 
 export type ProcedureParserYupEsque<TType> = {
   validateSync: (input: unknown) => TType;
@@ -33,10 +33,7 @@ export type ProcedureParserWithInputOutput<TInput, TOutput> =
   ProcedureParserZodEsque<TInput, TOutput>;
 
 export type ProcedureParser<TType> =
-  | ProcedureParserYupEsque<TType>
-  | ProcedureParserSuperstructEsque<TType>
-  | ProcedureParserCustomValidatorEsque<TType>
-  | ProcedureParserMyZodEsque<TType>;
+  ProcedureParserCustomValidatorEsque<TType> | ProcedureParserMyZodEsque<TType> | ProcedureParserSuperstructEsque<TType> | ProcedureParserYupEsque<TType>;
 
 export type ProcedureResolver<TContext, TInput, TOutput> = (opts: {
   ctx: TContext;
@@ -45,7 +42,7 @@ export type ProcedureResolver<TContext, TInput, TOutput> = (opts: {
 }) => Promise<TOutput> | TOutput;
 
 interface ProcedureOptions<TContext, TMeta, TInput, TOutput, TParsedOutput> {
-  middlewares: Array<MiddlewareFunction<any, any, any>>;
+  middlewares: MiddlewareFunction<any, any, any>[];
   resolver: ProcedureResolver<TContext, TInput, TOutput>;
   inputParser: ProcedureParser<TInput>;
   outputParser: ProcedureParser<TParsedOutput>;
@@ -63,7 +60,7 @@ export interface ProcedureCallOptions<TContext> {
   type: ProcedureType;
 }
 
-type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
+type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
 function getParseFn<TType>(
   procedureParser: ProcedureParser<TType>,
@@ -112,7 +109,7 @@ export class Procedure<
   TParsedOutput,
   TFinalOutput = unknown extends TParsedOutput ? TOutput : TParsedOutput,
 > {
-  private middlewares: Readonly<Array<MiddlewareFunction<any, any, any>>>;
+  private middlewares: Readonly<MiddlewareFunction<any, any, any>[]>;
   private resolver: ProcedureResolver<TContext, TParsedInput, TOutput>;
   private readonly inputParser: ProcedureParser<TParsedInput>;
   private parseInputFn: ParseFn<TParsedInput>;
@@ -254,8 +251,7 @@ export class Procedure<
   public inheritMiddlewares(
     middlewares: MiddlewareFunction<TInputContext, TContext, TMeta>[],
   ): this {
-    const Constructor: {
-      new (
+    const Constructor: new (
         opts: ProcedureOptions<
           TContext,
           TMeta,
@@ -263,7 +259,7 @@ export class Procedure<
           TOutput,
           TFinalOutput
         >,
-      ): Procedure<
+      ) => Procedure<
         TInputContext,
         TContext,
         TMeta,
@@ -271,8 +267,7 @@ export class Procedure<
         TParsedInput,
         TOutput,
         TParsedOutput
-      >;
-    } = (this as any).constructor;
+      > = (this as any).constructor;
 
     const instance = new Constructor({
       middlewares: [...middlewares, ...this.middlewares],
@@ -314,8 +309,7 @@ export type CreateProcedureWithoutInput<
   TParsedOutput,
 > = {
   output?:
-    | ProcedureParserWithInputOutput<TOutput, TParsedOutput>
-    | ProcedureParser<TOutput>;
+    ProcedureParser<TOutput> | ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
   meta?: TMeta;
   resolve: ProcedureResolver<TContext, undefined, InferLast<TOutput>>;
 };
@@ -328,16 +322,14 @@ export type CreateProcedureOptions<
   TOutput = undefined,
   TParsedOutput = undefined,
 > =
-  | CreateProcedureWithInputOutputParser<
+  CreateProcedureWithInput<TContext, TMeta, TInput, TOutput> | CreateProcedureWithInputOutputParser<
       TContext,
       TMeta,
       TInput,
       TParsedInput,
       TOutput,
       TParsedOutput
-    >
-  | CreateProcedureWithInput<TContext, TMeta, TInput, TOutput>
-  | CreateProcedureWithoutInput<TContext, TMeta, TOutput, TParsedOutput>;
+    > | CreateProcedureWithoutInput<TContext, TMeta, TOutput, TParsedOutput>;
 
 export function createProcedure<
   TContext,

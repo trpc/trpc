@@ -13,7 +13,7 @@ test('context union type is inferred correctly', async () => {
       state: string;
     };
   };
-  type ContextUnion = UnsetContext | SetContext;
+  type ContextUnion = SetContext | UnsetContext;
 
   const t = initTRPC.context<ContextUnion>().create();
 

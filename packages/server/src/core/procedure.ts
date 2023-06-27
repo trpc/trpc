@@ -78,7 +78,7 @@ export interface Procedure<
   TParams extends ProcedureParams,
 > {
   _type: TType;
-  _def: TParams & ProcedureBuilderDef<TParams>;
+  _def: ProcedureBuilderDef<TParams> & TParams;
   /**
    * @deprecated use `._def.meta` instead
    */

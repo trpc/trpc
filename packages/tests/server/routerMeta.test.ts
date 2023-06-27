@@ -27,16 +27,16 @@ test('route meta types', async () => {
   expect(router._def.procedures.query).not.toEqual({});
   expect(router._def.procedures.query).toMatchInlineSnapshot(`[Function]`);
 
-  const queryMeta = router['_def']['procedures']['query']['_def']['meta'];
+  const queryMeta = router._def.procedures.query._def.meta;
   expectTypeOf(queryMeta).toMatchTypeOf<TMeta | undefined>();
   expect(queryMeta).toEqual(testMeta);
 
-  const mutationMeta = router['_def']['procedures']['mutation']['_def']['meta'];
+  const mutationMeta = router._def.procedures.mutation._def.meta;
   expectTypeOf(mutationMeta).toMatchTypeOf<TMeta | undefined>();
   expect(mutationMeta).toEqual(testMeta);
 
   const subscriptionMeta =
-    router['_def']['procedures']['subscription']['_def']['meta'];
+    router._def.procedures.subscription._def.meta;
   expectTypeOf(subscriptionMeta).toMatchTypeOf<TMeta | undefined>();
   expect(subscriptionMeta).toEqual(testMeta);
 });

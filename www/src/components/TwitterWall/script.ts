@@ -105,7 +105,7 @@ async function getCollection() {
   return flattenedTweets;
 }
 
-async function getTweets(opts: Array<{ id: string; date: string }>) {
+async function getTweets(opts: { id: string; date: string }[]) {
   const ids = opts
     .map((it) => ({ ...it, date: Date.parse(it.date) }))
     .sort((a, b) => b.date - a.date)

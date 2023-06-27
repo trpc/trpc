@@ -19,9 +19,9 @@ type UnwrapZodEffect<TType extends z.ZodType> = TType extends z.ZodEffects<
 type GetInput<TType extends z.ZodType> = UnwrapZodEffect<TType>['_input'];
 
 function useZodFormData<TSchema extends z.ZodType>(
-  props: {
+  props: Omit<UseFormProps<GetInput<TSchema>>, 'resolver'> & {
     schema: TSchema;
-  } & Omit<UseFormProps<GetInput<TSchema>>, 'resolver'>,
+  },
 ) {
   const formRef = useRef<HTMLFormElement>(null);
   const _resolver = zodResolver(props.schema, undefined, {
@@ -108,7 +108,7 @@ export default function Page() {
               <input
                 type="checkbox"
                 checked={noJs}
-                onChange={(e) => setNoJs(e.target.checked)}
+                onChange={(e) => { setNoJs(e.target.checked); }}
               />
             </div>
             <div>

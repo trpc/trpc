@@ -5,7 +5,7 @@ import { MaybePromise } from '../../types';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
-  [key: string]: undefined | string | string[] | ParsedQs | ParsedQs[];
+  [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
 }
 
 export type NodeHTTPRequest = IncomingMessage & {
@@ -45,18 +45,16 @@ export type NodeHTTPCreateContextOption<
 /**
  * @internal
  */
-interface ConnectMiddleware<
+type ConnectMiddleware<
   TRequest extends NodeHTTPRequest = NodeHTTPRequest,
   TResponse extends NodeHTTPResponse = NodeHTTPResponse,
-> {
-  (req: TRequest, res: TResponse, next: (err?: any) => any): void;
-}
+> = (req: TRequest, res: TResponse, next: (err?: any) => any) => void;
 
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = HTTPBaseHandlerOptions<TRouter, TRequest> & {
+> = HTTPBaseHandlerOptions<TRouter, TRequest> & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse> & {
   /**
    * By default, http `OPTIONS` requests are not handled, and CORS headers are not returned.
    *
@@ -79,17 +77,17 @@ export type NodeHTTPHandlerOptions<
     TRequest,
     TResponse
   >[];
-} & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
+};
 
 export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = {
+> = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
   path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;

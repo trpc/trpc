@@ -908,8 +908,8 @@ test('wsClient stops reconnecting after .close()', async () => {
     retryDelayMs: retryDelayMsMock,
   });
 
-  await waitFor(() => expect(retryDelayMsMock).toHaveBeenCalledTimes(1));
-  await waitFor(() => expect(retryDelayMsMock).toHaveBeenCalledTimes(2));
+  await waitFor(() => { expect(retryDelayMsMock).toHaveBeenCalledTimes(1); });
+  await waitFor(() => { expect(retryDelayMsMock).toHaveBeenCalledTimes(2); });
   wsClient.close();
   await waitMs(100);
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);

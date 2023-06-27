@@ -31,7 +31,7 @@ export interface OperationContext extends Record<string, unknown> {}
  */
 export type Operation<TInput = unknown> = {
   id: number;
-  type: 'query' | 'mutation' | 'subscription';
+  type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
   context: OperationContext;
@@ -40,7 +40,7 @@ export type Operation<TInput = unknown> = {
 /**
  * @internal
  */
-export type HTTPHeaders = Record<string, string | string[] | undefined>;
+export type HTTPHeaders = Record<string, string[] | string | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
@@ -62,8 +62,7 @@ export interface TRPCClientRuntime {
  */
 export interface OperationResultEnvelope<TOutput> {
   result:
-    | TRPCSuccessResponse<TOutput>['result']
-    | TRPCResultMessage<TOutput>['result'];
+    TRPCResultMessage<TOutput>['result'] | TRPCSuccessResponse<TOutput>['result'];
   context?: OperationContext;
 }
 

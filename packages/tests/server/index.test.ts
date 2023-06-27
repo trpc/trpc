@@ -218,7 +218,7 @@ describe('integration tests', () => {
 
       const { close, proxy } = routerToServerAndClientNew(router);
       const res = await proxy.postById.query(1);
-      expectTypeOf(res).toMatchTypeOf<null | { id: number; title: string }>();
+      expectTypeOf(res).toMatchTypeOf<{ id: number; title: string } | null>();
       expect(res).toEqual({
         id: 1,
         title: 'helloo',

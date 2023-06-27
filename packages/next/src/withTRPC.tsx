@@ -36,8 +36,7 @@ import ssrPrepass from 'react-ssr-prepass';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
-    | DehydratedState['queries'][0]
-    | DehydratedState['mutations'][0],
+    DehydratedState['mutations'][0] | DehydratedState['queries'][0],
 >(result: TState): TState {
   const error = result.state.error as Maybe<TRPCClientError<any>>;
   if (error instanceof Error && error.name === 'TRPCClientError') {
@@ -57,9 +56,9 @@ function transformQueryOrMutationCacheErrors<
   return result;
 }
 export type WithTRPCConfig<TRouter extends AnyRouter> =
-  CreateTRPCClientOptions<TRouter> & {
+  CreateTRPCClientOptions<TRouter> & CreateTRPCReactQueryClientConfig & {
     abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig;
+  };
 
 interface WithTRPCOptions<TRouter extends AnyRouter>
   extends CreateTRPCReactOptions<TRouter> {

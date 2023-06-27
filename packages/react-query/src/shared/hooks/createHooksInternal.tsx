@@ -392,7 +392,7 @@ export function createRootHooks<
     const optsRef = useRef<typeof opts>(opts);
     optsRef.current = opts;
 
-    return useEffect(() => {
+    useEffect(() => {
       if (!enabled) {
         return;
       }

@@ -28,12 +28,11 @@ export type MergeRouters<
       {
         _config: TRouterDef['_config'];
         router: true;
-        procedures: TRouterDef['procedures'] & Head['_def']['procedures'];
-        record: TRouterDef['record'] & Head['_def']['record'];
-        queries: TRouterDef['queries'] & Head['_def']['queries'];
-        mutations: TRouterDef['mutations'] & Head['_def']['mutations'];
-        subscriptions: TRouterDef['subscriptions'] &
-          Head['_def']['subscriptions'];
+        procedures: Head['_def']['procedures'] & TRouterDef['procedures'];
+        record: Head['_def']['record'] & TRouterDef['record'];
+        queries: Head['_def']['queries'] & TRouterDef['queries'];
+        mutations: Head['_def']['mutations'] & TRouterDef['mutations'];
+        subscriptions: Head['_def']['subscriptions'] & TRouterDef['subscriptions'];
       }
     >
   : Router<TRouterDef> & TRouterDef['record'];

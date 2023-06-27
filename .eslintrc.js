@@ -31,16 +31,9 @@ const config = {
     '@typescript-eslint/consistent-indexed-object-style': 'off',
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
-    '@typescript-eslint/sort-type-constituents': 'off',
 
     // Todo: do we want these?
-    '@typescript-eslint/array-type': 'off',
-    '@typescript-eslint/class-literal-property-style': 'off',
-    '@typescript-eslint/dot-notation': 'off',
-    '@typescript-eslint/no-confusing-void-expression': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/prefer-for-of': 'off',
-    '@typescript-eslint/prefer-function-type': 'off',
     '@typescript-eslint/prefer-nullish-coalescing': 'off',
 
     'react/react-in-jsx-scope': 'off',

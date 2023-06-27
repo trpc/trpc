@@ -34,7 +34,7 @@ const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions> = (
           return requesterOpts.opts.headers;
         },
       },
-      (index, res) => unitResolver(index, res),
+      (index, res) => { unitResolver(index, res); },
     );
 
     return {

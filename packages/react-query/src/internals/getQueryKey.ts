@@ -15,7 +15,7 @@ import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 export function getQueryKeyInternal(
   path: string,
   input: unknown,
-): [string] | [string, unknown] {
+): [string, unknown] | [string] {
   if (path.length) return input === undefined ? [path] : [path, input];
   return [] as unknown as [string];
 }
@@ -43,9 +43,7 @@ type GetQueryParams<
 
 type GetParams<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
-    | AnyMutationProcedure
-    | AnyRouter,
+    AnyMutationProcedure | AnyQueryProcedure | AnyRouter,
   TPath extends string,
   TFlags,
 > = TProcedureOrRouter extends AnyQueryProcedure
@@ -65,9 +63,7 @@ type GetParams<
 
 type GetQueryKeyParams<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
-    | AnyMutationProcedure
-    | AnyRouter,
+    AnyMutationProcedure | AnyQueryProcedure | AnyRouter,
   TPath extends string,
   TFlags,
 > = GetParams<TProcedureOrRouter, TPath, TFlags>;
@@ -81,9 +77,7 @@ type GetQueryKeyParams<
  */
 export function getQueryKey<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
-    | AnyMutationProcedure
-    | AnyRouter,
+    AnyMutationProcedure | AnyQueryProcedure | AnyRouter,
   TPath extends string,
   TFlags,
 >(..._params: GetQueryKeyParams<TProcedureOrRouter, TPath, TFlags>) {

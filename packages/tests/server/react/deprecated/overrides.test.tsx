@@ -74,7 +74,7 @@ describe('mutation override', () => {
 
       return (
         <>
-          <button onClick={() => mutation.mutate(nonce)} data-testid="add">
+          <button onClick={() => { mutation.mutate(nonce); }} data-testid="add">
             add
           </button>
           <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>
@@ -108,7 +108,7 @@ describe('mutation override', () => {
 
       return (
         <>
-          <button onClick={() => mutation.mutate(nonce)} data-testid="add">
+          <button onClick={() => { mutation.mutate(nonce); }} data-testid="add">
             add
           </button>
           <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>

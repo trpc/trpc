@@ -18,7 +18,7 @@ const posts = [
 
 function createContext(_opts: CreateHTTPContextOptions) {
   return {
-    postLoader: new DataLoader(async (ids: ReadonlyArray<number>) => {
+    postLoader: new DataLoader(async (ids: readonly number[]) => {
       return ids.map((id) => posts.find((post) => post.id === id));
     }),
   };

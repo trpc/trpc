@@ -26,7 +26,7 @@ export function UseActionExample() {
           <input
             type={'text'}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => { setText(e.target.value); }}
             className="bg-slate-300 text-slate-900"
           />
         </label>
@@ -35,9 +35,9 @@ export function UseActionExample() {
       <p>
         <button
           onClick={() =>
-            mutation.mutate({
+            { mutation.mutate({
               text,
-            })
+            }); }
           }
         >
           Run server action

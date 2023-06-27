@@ -101,10 +101,10 @@ export function parseMessage(
 export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
-> & {
+> & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws> & {
   wss: ws.Server;
   process?: NodeJS.Process;
-} & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
+};
 
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
@@ -130,7 +130,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     function stopSubscription(
       subscription: Unsubscribable,
-      { id, jsonrpc }: { id: JSONRPC2.RequestId } & JSONRPC2.BaseEnvelope,
+      { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId },
     ) {
       subscription.unsubscribe();
 

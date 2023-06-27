@@ -24,7 +24,7 @@ class SliceStream extends Transform {
         this.push(chunk.slice(start, chunk.length));
       }
 
-      return done();
+      done(); return;
     }
 
     if (this.emitUp && !this.emitDown) {
@@ -37,10 +37,10 @@ class SliceStream extends Transform {
         this.push(chunk);
       }
 
-      return done();
+      done(); return;
     }
 
-    return done();
+    done();
   }
 }
 

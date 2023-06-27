@@ -126,8 +126,7 @@ export function dataLoader<TKey, TValue>(
             const value = result[i]!;
             unitResolver(i, value);
           }
-          for (let i = 0; i < batch.items.length; i++) {
-            const item = batch.items[i]!;
+          for (const item of batch.items) {
             item.reject?.(new Error('Missing result'));
             item.batch = null;
           }

@@ -16,12 +16,11 @@ type ConsoleEsque = {
 };
 
 type EnableFnOptions<TRouter extends AnyRouter> =
-  | (Operation & {
-      direction: 'up';
-    })
-  | {
+  {
       direction: 'down';
       result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+    } | Operation & {
+      direction: 'up';
     };
 type EnabledFn<TRouter extends AnyRouter> = (
   opts: EnableFnOptions<TRouter>,
@@ -29,19 +28,18 @@ type EnabledFn<TRouter extends AnyRouter> = (
 
 type LoggerLinkFnOptions<TRouter extends AnyRouter> = Operation &
   (
-    | {
-        /**
-         * Request was just initialized
-         */
-        direction: 'up';
-      }
-    | {
+    {
         /**
          * Request result
          */
         direction: 'down';
         result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
         elapsedMs: number;
+      } | {
+        /**
+         * Request was just initialized
+         */
+        direction: 'up';
       }
   );
 

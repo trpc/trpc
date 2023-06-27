@@ -300,7 +300,7 @@ function __createHooksInternal<
   }
 
   function useQuery<
-    TPath extends keyof TQueryValues & string,
+    TPath extends string & keyof TQueryValues,
     TQueryFnData = TQueryValues[TPath]['output'],
     TData = TQueryValues[TPath]['output'],
   >(
@@ -356,7 +356,7 @@ function __createHooksInternal<
   }
 
   function useMutation<
-    TPath extends keyof TMutationValues & string,
+    TPath extends string & keyof TMutationValues,
     TContext = unknown,
   >(
     path: TPath | [TPath],
@@ -417,7 +417,7 @@ function __createHooksInternal<
    * ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠
    */
   function useSubscription<
-    TPath extends keyof TSubscriptions & string,
+    TPath extends string & keyof TSubscriptions,
     TOutput extends inferSubscriptionOutput<TRouter, TPath>,
   >(
     pathAndInput: [
@@ -433,7 +433,7 @@ function __createHooksInternal<
     const queryKey = hashQueryKey(pathAndInput);
     const { client } = useContext();
 
-    return useEffect(() => {
+    useEffect(() => {
       if (!enabled) {
         return;
       }

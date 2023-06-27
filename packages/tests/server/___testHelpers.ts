@@ -94,7 +94,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       await Promise.all([
         new Promise((resolve) => httpServer.server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => ws.close());
+          wss.clients.forEach((ws) => { ws.close(); });
           wss.close(resolve);
         }),
       ]);
@@ -122,7 +122,7 @@ export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */
-  fnOrPromise: (() => unknown) | Promise<unknown>,
+  fnOrPromise: Promise<unknown> | (() => unknown),
   /**
    * Force error constructor to be of specific type
    * @default Error

@@ -66,7 +66,7 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
               });
               observer.complete();
             })
-            .catch((cause) => observer.error(TRPCClientError.from(cause)));
+            .catch((cause) => { observer.error(TRPCClientError.from(cause)); });
 
           return () => {
             cancel();

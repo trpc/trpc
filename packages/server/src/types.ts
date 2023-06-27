@@ -3,10 +3,9 @@
  */
 export type identity<TType> = TType;
 
-export type InferOptional<TType, TKeys extends keyof TType> = Partial<
+export type InferOptional<TType, TKeys extends keyof TType> = Omit<TType, TKeys> & Partial<
   Pick<TType, TKeys>
-> &
-  Omit<TType, TKeys>;
+>;
 
 export type UndefinedKeys<TType> = {
   [K in keyof TType]: undefined extends TType[K] ? K : never;
@@ -17,7 +16,7 @@ export type UndefinedKeys<TType> = {
  */
 export type FlatOverwrite<TType, TWith> = InferOptional<
   {
-    [TKey in keyof TWith | keyof TType]: TKey extends keyof TWith
+    [TKey in keyof TType | keyof TWith]: TKey extends keyof TWith
       ? TWith[TKey]
       : TKey extends keyof TType
       ? TType[TKey]
@@ -38,12 +37,12 @@ export type IntersectionError<TKey extends string> =
 export type ProtectedIntersection<TType, TWith> = keyof TType &
   keyof TWith extends never
   ? TType & TWith
-  : IntersectionError<keyof TType & keyof TWith & string>;
+  : IntersectionError<string & keyof TType & keyof TWith>;
 
 /**
  * @public
  */
-export type Maybe<TType> = TType | undefined | null;
+export type Maybe<TType> = TType | null | undefined;
 
 /**
  * @internal
@@ -67,7 +66,7 @@ export type Dict<TType> = Record<string, TType | undefined>;
 /**
  * @public
  */
-export type MaybePromise<TType> = TType | Promise<TType>;
+export type MaybePromise<TType> = Promise<TType> | TType;
 
 /**
  * @internal

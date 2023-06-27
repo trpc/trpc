@@ -4,11 +4,11 @@ import React from 'react';
 
 type AnchorProps = LinkProps & { href: string };
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
-  ({ type: 'submit' } | { onClick: React.MouseEvent<HTMLButtonElement> });
+  ({ onClick: React.MouseEvent<HTMLButtonElement> } | { type: 'submit' });
 
-type Props = (AnchorProps | ButtonProps) & {
+type Props = {
   variant: 'primary' | 'secondary' | 'tertiary';
-};
+} & (AnchorProps | ButtonProps);
 
 export const Button = ({
   variant,
