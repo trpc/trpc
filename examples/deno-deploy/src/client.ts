@@ -1,11 +1,8 @@
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-  loggerLink,
-} from 'https://esm.sh/@trpc/client';
+import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { delay } from 'std/async/delay.ts';
 import type { AppRouter } from './router.ts';
 
-const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms = 100) => delay(ms);
 
 async function main() {
   const url = 'http://127.0.0.1:8000/trpc';
