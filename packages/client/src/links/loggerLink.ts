@@ -135,10 +135,10 @@ function constructPartsAndArgs(
 
   const [light, dark] = palettes.css[type];
   const css = `
-  background-color: #${direction === 'up' ? light : dark}; 
-  color: ${direction === 'up' ? 'black' : 'white'};
-  padding: 2px;
-`;
+    background-color: #${direction === 'up' ? light : dark}; 
+    color: ${direction === 'up' ? 'black' : 'white'};
+    padding: 2px;
+  `;
 
   parts.push(
     '%c',
