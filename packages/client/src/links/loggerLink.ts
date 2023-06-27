@@ -101,7 +101,7 @@ function constructPartsAndArgs(
 ) {
   const { direction, type, path, id, input } = opts;
 
-  let parts: string[] = [];
+  const parts: string[] = [];
   const args: any[] = [];
 
   if (opts.colorMode === 'ansi') {
@@ -109,7 +109,7 @@ function constructPartsAndArgs(
     const [lightBold, darkBold] = palettes.ansi.bold[type];
     const reset = '\x1b[0m';
 
-    parts = [
+    parts.push(
       direction === 'up' ? lightRegular : darkRegular,
       direction === 'up' ? '>>' : '<<',
       type,
@@ -117,7 +117,7 @@ function constructPartsAndArgs(
       `#${id}`,
       path,
       reset,
-    ];
+    );
 
     if (direction === 'up') {
       args.push({ input: opts.input });
