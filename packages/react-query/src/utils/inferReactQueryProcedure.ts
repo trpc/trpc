@@ -20,13 +20,15 @@ import {
 export type InferQueryOptions<
   TProcedure extends AnyProcedure,
   TPath extends string,
+  TData = inferTransformedProcedureOutput<TProcedure>,
 > = Omit<
   UseTRPCQueryOptions<
     TPath,
     inferProcedureInput<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>,
     inferTransformedProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>
+    TRPCClientErrorLike<TProcedure>,
+    TData
   >,
   'select'
 >;
