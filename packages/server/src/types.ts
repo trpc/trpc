@@ -3,9 +3,11 @@
  */
 export type identity<TType> = TType;
 
-export type InferOptional<TType, TKeys extends keyof TType> = Omit<TType, TKeys> & Partial<
-  Pick<TType, TKeys>
->;
+export type InferOptional<TType, TKeys extends keyof TType> = Omit<
+  TType,
+  TKeys
+> &
+  Partial<Pick<TType, TKeys>>;
 
 export type UndefinedKeys<TType> = {
   [K in keyof TType]: undefined extends TType[K] ? K : never;

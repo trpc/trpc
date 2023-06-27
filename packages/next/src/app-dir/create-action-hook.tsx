@@ -58,7 +58,10 @@ interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
 
 // ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
-  UseTRPCActionErrorResult<TDef> | UseTRPCActionIdleResult<TDef> | UseTRPCActionLoadingResult<TDef> | UseTRPCActionSuccessResult<TDef>;
+  | UseTRPCActionErrorResult<TDef>
+  | UseTRPCActionIdleResult<TDef>
+  | UseTRPCActionLoadingResult<TDef>
+  | UseTRPCActionSuccessResult<TDef>;
 
 type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
@@ -92,7 +95,9 @@ export function experimental_serverActionLink<
             });
             observer.complete();
           })
-          .catch((cause) => { observer.error(TRPCClientError.from(cause)); });
+          .catch((cause) => {
+            observer.error(TRPCClientError.from(cause));
+          });
       });
 }
 

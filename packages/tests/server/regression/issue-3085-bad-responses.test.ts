@@ -12,7 +12,9 @@ type Handler = (opts: {
 }) => void;
 
 function createServer(handler: Handler) {
-  const server = http.createServer((req, res) => { handler({ req, res }); });
+  const server = http.createServer((req, res) => {
+    handler({ req, res });
+  });
   server.listen(0);
 
   const port = (server.address() as any).port as number;

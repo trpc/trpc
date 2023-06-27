@@ -44,7 +44,14 @@ export type DeepBrand<T> = IsNever<T> extends true
   : IsUnknown<T> extends true
   ? { type: 'unknown' }
   : T extends
-      bigint | boolean | number | string | symbol | null | undefined | void
+      | bigint
+      | boolean
+      | number
+      | string
+      | symbol
+      | null
+      | undefined
+      | void
   ? {
       type: 'primitive';
       value: T;

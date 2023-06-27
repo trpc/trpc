@@ -108,7 +108,9 @@ export default function Page() {
               <input
                 type="checkbox"
                 checked={noJs}
-                onChange={(e) => { setNoJs(e.target.checked); }}
+                onChange={(e) => {
+                  setNoJs(e.target.checked);
+                }}
               />
             </div>
             <div>

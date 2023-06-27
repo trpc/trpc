@@ -26,7 +26,9 @@ test('dedupeLink', async () => {
           });
           subscribe.complete();
         }, 1);
-        return () => { clearTimeout(timer); };
+        return () => {
+          clearTimeout(timer);
+        };
       });
     },
   ];
@@ -86,7 +88,9 @@ test('dedupe - cancel one does not cancel the other', async () => {
           });
           subscribe.complete();
         }, 1);
-        return () => { clearTimeout(timer); };
+        return () => {
+          clearTimeout(timer);
+        };
       });
     },
   ];

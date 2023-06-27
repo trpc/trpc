@@ -137,7 +137,8 @@ export type CreateClient<TRouter extends AnyRouter> = (
 /**
  * @internal
  */
-export type UseTRPCQueryResult<TData, TError> = TRPCHookResult & UseQueryResult<TData, TError>;
+export type UseTRPCQueryResult<TData, TError> = TRPCHookResult &
+  UseQueryResult<TData, TError>;
 
 /**
  * @internal
@@ -157,10 +158,8 @@ export type UseTRPCQuerySuccessResult<TData, TError> =
 /**
  * @internal
  */
-export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult & UseInfiniteQueryResult<
-  TData,
-  TError
->;
+export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
+  UseInfiniteQueryResult<TData, TError>;
 
 /**
  * @internal

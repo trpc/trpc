@@ -35,8 +35,7 @@ test('route meta types', async () => {
   expectTypeOf(mutationMeta).toMatchTypeOf<TMeta | undefined>();
   expect(mutationMeta).toEqual(testMeta);
 
-  const subscriptionMeta =
-    router._def.procedures.subscription._def.meta;
+  const subscriptionMeta = router._def.procedures.subscription._def.meta;
   expectTypeOf(subscriptionMeta).toMatchTypeOf<TMeta | undefined>();
   expect(subscriptionMeta).toEqual(testMeta);
 });

@@ -77,7 +77,8 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPBaseRequestOptions = GetInputOptions & ResolvedHTTPLinkOptions & {
+export type HTTPBaseRequestOptions = GetInputOptions &
+  ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
   };
@@ -135,7 +136,8 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export type HTTPRequestOptions = ContentOptions & HTTPBaseRequestOptions & {
+export type HTTPRequestOptions = ContentOptions &
+  HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
     TextDecoder?: TextDecoderEsque;
   };

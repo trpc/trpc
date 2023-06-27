@@ -101,10 +101,11 @@ export function parseMessage(
 export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
-> & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws> & {
-  wss: ws.Server;
-  process?: NodeJS.Process;
-};
+> &
+  NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws> & {
+    wss: ws.Server;
+    process?: NodeJS.Process;
+  };
 
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,

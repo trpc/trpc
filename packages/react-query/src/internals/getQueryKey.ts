@@ -43,7 +43,9 @@ type GetQueryParams<
 
 type GetParams<
   TProcedureOrRouter extends
-    AnyMutationProcedure | AnyQueryProcedure | AnyRouter,
+    | AnyMutationProcedure
+    | AnyQueryProcedure
+    | AnyRouter,
   TPath extends string,
   TFlags,
 > = TProcedureOrRouter extends AnyQueryProcedure
@@ -63,7 +65,9 @@ type GetParams<
 
 type GetQueryKeyParams<
   TProcedureOrRouter extends
-    AnyMutationProcedure | AnyQueryProcedure | AnyRouter,
+    | AnyMutationProcedure
+    | AnyQueryProcedure
+    | AnyRouter,
   TPath extends string,
   TFlags,
 > = GetParams<TProcedureOrRouter, TPath, TFlags>;
@@ -77,7 +81,9 @@ type GetQueryKeyParams<
  */
 export function getQueryKey<
   TProcedureOrRouter extends
-    AnyMutationProcedure | AnyQueryProcedure | AnyRouter,
+    | AnyMutationProcedure
+    | AnyQueryProcedure
+    | AnyRouter,
   TPath extends string,
   TFlags,
 >(..._params: GetQueryKeyParams<TProcedureOrRouter, TPath, TFlags>) {

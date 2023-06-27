@@ -80,7 +80,14 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
 
 /** @internal */
 export type UntypedClientProperties =
-  '$request' | 'links' | 'mutation' | 'query' | 'requestAsPromise' | 'requestId' | 'runtime' | 'subscription';
+  | '$request'
+  | 'links'
+  | 'mutation'
+  | 'query'
+  | 'requestAsPromise'
+  | 'requestId'
+  | 'runtime'
+  | 'subscription';
 
 export class TRPCUntypedClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
@@ -197,7 +204,10 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   public subscription(
     path: string,
     input: unknown,
-    opts: Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>> & TRPCRequestOptions,
+    opts: Partial<
+      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
+    > &
+      TRPCRequestOptions,
   ): Unsubscribable {
     const observable$ = this.$request({
       type: 'subscription',

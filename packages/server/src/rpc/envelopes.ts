@@ -106,14 +106,17 @@ export type TRPCClientOutgoingMessage =
 
 export interface TRPCResultMessage<TData>
   extends JSONRPC2.ResultResponse<
-    { type: 'started' } | { type: 'stopped' } | TRPCResult<TData> & { type: 'data' }
+    | { type: 'started' }
+    | { type: 'stopped' }
+    | (TRPCResult<TData> & { type: 'data' })
   > {}
 
 export type TRPCResponseMessage<
   TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = { id: JSONRPC2.RequestId } & (
-  TRPCErrorResponse<TError> | TRPCResultMessage<TData>
+  | TRPCErrorResponse<TError>
+  | TRPCResultMessage<TData>
 );
 
 /**

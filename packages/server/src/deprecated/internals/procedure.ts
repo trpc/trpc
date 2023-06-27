@@ -33,7 +33,10 @@ export type ProcedureParserWithInputOutput<TInput, TOutput> =
   ProcedureParserZodEsque<TInput, TOutput>;
 
 export type ProcedureParser<TType> =
-  ProcedureParserCustomValidatorEsque<TType> | ProcedureParserMyZodEsque<TType> | ProcedureParserSuperstructEsque<TType> | ProcedureParserYupEsque<TType>;
+  | ProcedureParserCustomValidatorEsque<TType>
+  | ProcedureParserMyZodEsque<TType>
+  | ProcedureParserSuperstructEsque<TType>
+  | ProcedureParserYupEsque<TType>;
 
 export type ProcedureResolver<TContext, TInput, TOutput> = (opts: {
   ctx: TContext;
@@ -252,22 +255,22 @@ export class Procedure<
     middlewares: MiddlewareFunction<TInputContext, TContext, TMeta>[],
   ): this {
     const Constructor: new (
-        opts: ProcedureOptions<
-          TContext,
-          TMeta,
-          TParsedInput,
-          TOutput,
-          TFinalOutput
-        >,
-      ) => Procedure<
-        TInputContext,
+      opts: ProcedureOptions<
         TContext,
         TMeta,
-        TInput,
         TParsedInput,
         TOutput,
-        TParsedOutput
-      > = (this as any).constructor;
+        TFinalOutput
+      >,
+    ) => Procedure<
+      TInputContext,
+      TContext,
+      TMeta,
+      TInput,
+      TParsedInput,
+      TOutput,
+      TParsedOutput
+    > = (this as any).constructor;
 
     const instance = new Constructor({
       middlewares: [...middlewares, ...this.middlewares],
@@ -309,7 +312,8 @@ export type CreateProcedureWithoutInput<
   TParsedOutput,
 > = {
   output?:
-    ProcedureParser<TOutput> | ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
+    | ProcedureParser<TOutput>
+    | ProcedureParserWithInputOutput<TOutput, TParsedOutput>;
   meta?: TMeta;
   resolve: ProcedureResolver<TContext, undefined, InferLast<TOutput>>;
 };
@@ -322,14 +326,16 @@ export type CreateProcedureOptions<
   TOutput = undefined,
   TParsedOutput = undefined,
 > =
-  CreateProcedureWithInput<TContext, TMeta, TInput, TOutput> | CreateProcedureWithInputOutputParser<
+  | CreateProcedureWithInput<TContext, TMeta, TInput, TOutput>
+  | CreateProcedureWithInputOutputParser<
       TContext,
       TMeta,
       TInput,
       TParsedInput,
       TOutput,
       TParsedOutput
-    > | CreateProcedureWithoutInput<TContext, TMeta, TOutput, TParsedOutput>;
+    >
+  | CreateProcedureWithoutInput<TContext, TMeta, TOutput, TParsedOutput>;
 
 export function createProcedure<
   TContext,

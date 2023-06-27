@@ -18,7 +18,9 @@ const CodeBlock = ({ children, ...props }) => {
       );
     }
     setShowCopied(true);
-    setTimeout(() => { setShowCopied(false); }, 2000);
+    setTimeout(() => {
+      setShowCopied(false);
+    }, 2000);
   };
 
   return (

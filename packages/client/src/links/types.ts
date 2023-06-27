@@ -62,7 +62,8 @@ export interface TRPCClientRuntime {
  */
 export interface OperationResultEnvelope<TOutput> {
   result:
-    TRPCResultMessage<TOutput>['result'] | TRPCSuccessResponse<TOutput>['result'];
+    | TRPCResultMessage<TOutput>['result']
+    | TRPCSuccessResponse<TOutput>['result'];
   context?: OperationContext;
 }
 

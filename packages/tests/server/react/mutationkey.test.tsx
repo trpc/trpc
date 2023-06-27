@@ -45,7 +45,12 @@ describe('mutation keys', () => {
 
       return (
         <div>
-          <button onClick={() => { postCreate.mutate(); }} data-testid="mutate" />
+          <button
+            onClick={() => {
+              postCreate.mutate();
+            }}
+            data-testid="mutate"
+          />
           <pre data-testid="status">{isMutating}</pre>
         </div>
       );

@@ -14,7 +14,8 @@ import { TRPCClientError } from '../TRPCClientError';
 /** @internal */
 function transformResultInner<TRouter extends AnyRouter, TOutput>(
   response:
-    TRPCResponse<TOutput, inferRouterError<TRouter>> | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>,
+    | TRPCResponse<TOutput, inferRouterError<TRouter>>
+    | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>,
   runtime: TRPCClientRuntime,
 ) {
   if ('error' in response) {
@@ -46,7 +47,8 @@ function transformResultInner<TRouter extends AnyRouter, TOutput>(
  */
 export function transformResult<TRouter extends AnyRouter, TOutput>(
   response:
-    TRPCResponse<TOutput, inferRouterError<TRouter>> | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>,
+    | TRPCResponse<TOutput, inferRouterError<TRouter>>
+    | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>,
   runtime: TRPCClientRuntime,
 ): ReturnType<typeof transformResultInner> {
   let result: ReturnType<typeof transformResultInner>;

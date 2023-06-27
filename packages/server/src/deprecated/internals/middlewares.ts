@@ -40,7 +40,8 @@ interface MiddlewareErrorResult<TContext>
  * @deprecated
  */
 export type MiddlewareResult<TContext> =
-  MiddlewareErrorResult<TContext> | MiddlewareOKResult<TContext>;
+  | MiddlewareErrorResult<TContext>
+  | MiddlewareOKResult<TContext>;
 
 /**
  * @deprecated

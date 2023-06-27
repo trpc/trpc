@@ -24,7 +24,11 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserWithoutInput<TInput> =
-  ParserCustomValidatorEsque<TInput> | ParserMyZodEsque<TInput> | ParserScaleEsque<TInput> | ParserSuperstructEsque<TInput> | ParserYupEsque<TInput>;
+  | ParserCustomValidatorEsque<TInput>
+  | ParserMyZodEsque<TInput>
+  | ParserScaleEsque<TInput>
+  | ParserSuperstructEsque<TInput>
+  | ParserYupEsque<TInput>;
 
 export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
   TInput,

@@ -380,7 +380,8 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TQueries,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TQueries,
     TMutations,
     TSubscriptions,
     TErrorShape,
@@ -394,7 +395,8 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TQueries,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TQueries,
     TMutations,
     TSubscriptions,
     TErrorShape,
@@ -413,7 +415,8 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TQueries,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TQueries,
     TMutations,
     TSubscriptions,
     TErrorShape,
@@ -456,7 +459,8 @@ export class Router<
     TContext,
     TMeta,
     TQueries,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TMutations,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TMutations,
     TSubscriptions,
     TErrorShape,
     TTransformer
@@ -470,7 +474,8 @@ export class Router<
     TContext,
     TMeta,
     TQueries,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TMutations,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TMutations,
     TSubscriptions,
     TErrorShape,
     TTransformer
@@ -489,7 +494,8 @@ export class Router<
     TContext,
     TMeta,
     TQueries,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TMutations,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TMutations,
     TSubscriptions,
     TErrorShape,
     TTransformer
@@ -537,7 +543,8 @@ export class Router<
     TMeta,
     TQueries,
     TMutations,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TSubscriptions,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -561,7 +568,8 @@ export class Router<
     TMeta,
     TQueries,
     TMutations,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TSubscriptions,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -584,7 +592,8 @@ export class Router<
     TMeta,
     TQueries,
     TMutations,
-    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> & TSubscriptions,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -643,7 +652,8 @@ export class Router<
     TMeta,
     Prefixer<TChildRouter['_def']['queries'], `${TPath}`> & TQueries,
     Prefixer<TChildRouter['_def']['mutations'], `${TPath}`> & TMutations,
-    Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`> & TSubscriptions,
+    Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;

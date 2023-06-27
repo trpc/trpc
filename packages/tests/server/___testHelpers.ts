@@ -94,7 +94,9 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       await Promise.all([
         new Promise((resolve) => httpServer.server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => { ws.close(); });
+          wss.clients.forEach((ws) => {
+            ws.close();
+          });
           wss.close(resolve);
         }),
       ]);

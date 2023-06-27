@@ -92,14 +92,15 @@ type TRPCContextResetQueries<TRouter extends AnyRouter> =
   /**
    * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientresetqueries
    */
-  ((filters?: ResetQueryFilters, options?: ResetOptions) => Promise<void>) & (<
-    TPath extends string & keyof TRouter['_def']['queries'],
-    TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
-  >(
-    pathAndInput?: TPath | [TPath, TInput?],
-    filters?: ResetQueryFilters,
-    options?: ResetOptions,
-  ) => Promise<void>);
+  ((filters?: ResetQueryFilters, options?: ResetOptions) => Promise<void>) &
+    (<
+      TPath extends string & keyof TRouter['_def']['queries'],
+      TInput extends inferProcedureInput<TRouter['_def']['queries'][TPath]>,
+    >(
+      pathAndInput?: TPath | [TPath, TInput?],
+      filters?: ResetQueryFilters,
+      options?: ResetOptions,
+    ) => Promise<void>);
 
 /**
  * @deprecated

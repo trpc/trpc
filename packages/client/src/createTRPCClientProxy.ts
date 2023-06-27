@@ -41,11 +41,12 @@ type SubscriptionResolver<TProcedure extends AnyProcedure> = (
   ...args: [
     input: ProcedureArgs<TProcedure['_def']>[0],
     opts: Partial<
-        TRPCSubscriptionObserver<
-          inferTransformedSubscriptionOutput<TProcedure>,
-          TRPCClientError<TProcedure>
-        >
-      > & ProcedureArgs<TProcedure['_def']>[1],
+      TRPCSubscriptionObserver<
+        inferTransformedSubscriptionOutput<TProcedure>,
+        TRPCClientError<TProcedure>
+      >
+    > &
+      ProcedureArgs<TProcedure['_def']>[1],
   ]
 ) => Unsubscribable;
 
