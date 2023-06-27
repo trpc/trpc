@@ -159,7 +159,7 @@ export function experimental_createServerActionHandler<
     return async function actionHandler(
       rawInput: inferProcedureInput<TProcedure> | FormData,
     ) {
-      const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
+      const ctx: unknown = undefined;
       try {
         const ctx = await createContext();
         if (normalizeFormData && isFormData(rawInput)) {
