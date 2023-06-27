@@ -54,6 +54,7 @@ const palette = {
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
 };
+
 export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   logger?: LoggerLinkFn<TRouter>;
   enabled?: EnabledFn<TRouter>;
@@ -61,6 +62,10 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
+  /**
+   * @default 'css'
+   */
+  colorMode?: keyof typeof palette;
 }
 
 function isFormData(value: unknown): value is FormData {
@@ -72,7 +77,7 @@ function isFormData(value: unknown): value is FormData {
 }
 
 // maybe this should be moved to it's own package
-const defaultLogger =
+const defaultCssLogger =
   <TRouter extends AnyRouter>(
     c: ConsoleEsque = console,
   ): LoggerLinkFn<TRouter> =>
@@ -124,12 +129,82 @@ const defaultLogger =
 
     c[fn].apply(null, [parts.join(' ')].concat(args));
   };
+
+const ansiPalette = {
+  regular: {
+    query: ['\x1b[30;46m', '\x1b[97;46m'],
+    mutation: ['\x1b[30;45m', '\x1b[97;45m'],
+    subscription: ['\x1b[30;42m', '\x1b[97;42m'],
+  },
+  bold: {
+    query: ['\x1b[1;30;46m', '\x1b[1;97;46m'],
+    mutation: ['\x1b[1;30;45m', '\x1b[1;97;45m'],
+    subscription: ['\x1b[1;30;42m', '\x1b[1;97;42m'],
+  },
+};
+
+/**
+ * Useful for Server Components or general SSR heavy setups where you want to log the requests
+ * in the terminal instead of the browser console.
+ *
+ * - Uses ANSI colors to differentiate between request types, instead of CSS
+ * - Doesn't log the `context` object to prevent the log from being too verbose since it's not collapsible
+ */
+export const ansiLogger =
+  <TRouter extends AnyRouter>(
+    c: ConsoleEsque = console,
+  ): LoggerLinkFn<TRouter> =>
+  (props) => {
+    const { direction, type, path, id } = props;
+
+    const rawInput = props.input;
+    const input =
+      typeof FormData !== 'undefined' && rawInput instanceof FormData
+        ? Object.fromEntries(rawInput)
+        : rawInput;
+
+    const [lightRegular, darkRegular] = ansiPalette.regular[type];
+    const [lightBold, darkBold] = ansiPalette.bold[type];
+    const reset = '\x1b[0m';
+
+    const parts = [
+      direction === 'up' ? lightRegular : darkRegular,
+      direction === 'up' ? '>>' : '<<',
+      type,
+
+      direction === 'up' ? lightBold : darkBold,
+      `#${id}`,
+      path,
+      reset,
+    ];
+
+    const args: any[] = [];
+    if (props.direction === 'up') {
+      args.push({ input });
+    } else {
+      args.push({
+        input,
+        // Don't log the context, it's too big when it's not a collapsible object as in the browser
+        result: 'result' in props.result ? props.result.result : props.result,
+        elapsedMs: props.elapsedMs,
+      });
+    }
+    const fn: 'error' | 'log' =
+      props.direction === 'down' &&
+      props.result &&
+      (props.result instanceof Error || 'error' in props.result.result)
+        ? 'error'
+        : 'log';
+
+    c[fn].apply(null, [parts.join(' ')].concat(args));
+  };
+
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink<TRouter> {
   const { enabled = () => true } = opts;
 
-  const { logger = defaultLogger(opts.console) } = opts;
+  const { logger = defaultCssLogger(opts.console) } = opts;
 
   return () => {
     return ({ op, next }) => {
