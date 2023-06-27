@@ -21,7 +21,8 @@ export async function nodeHTTPRequestHandler<
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
   const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
-  handleViaMiddleware(opts.req, opts.res, async (err) => {
+  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+  return handleViaMiddleware(opts.req, opts.res, async (err) => {
     if (err) throw err;
 
     const createContext = async (): Promise<inferRouterContext<TRouter>> => {
