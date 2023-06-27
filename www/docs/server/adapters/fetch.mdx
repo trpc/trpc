@@ -222,31 +222,9 @@ export const all: APIRoute = (opts) => {
 
 ### Cloudflare Worker
 
-#### Install dependencies
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```sh
-npm install -g wrangler
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```sh
-yarn global add wrangler
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpm add -g wrangler
-```
-
-  </TabItem>
-</Tabs>
+:::note
+You need the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) to run Cloudflare Workers.
+:::
 
 #### Create Cloudflare Worker
 
@@ -276,24 +254,9 @@ Run `wrangler dev server.ts` and your endpoints will be available via HTTP!
 
 ### Deno Oak
 
-#### Install dependencies
-
-<Tabs>
-  <TabItem value="macOS / Linux" label="macOS / Linux" default>
-
-```sh
-curl -fsSL https://deno.land/x/install/install.sh | sh
-```
-
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-
-```sh
-irm https://deno.land/install.ps1 | iex
-```
-
-  </TabItem>
-</Tabs>
+:::note
+This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::
 
 #### Update the imports in `router.ts`
 
@@ -349,24 +312,13 @@ await app.listen({ port: 3000 });
 
 ### Deno Deploy
 
-#### Install dependencies
+:::note
+This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::
 
-<Tabs>
-  <TabItem value="macOS / Linux" label="macOS / Linux" default>
-
-```sh
-curl -fsSL https://deno.land/x/install/install.sh | sh
-```
-
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-
-```sh
-irm https://deno.land/install.ps1 | iex
-```
-
-  </TabItem>
-</Tabs>
+:::tip
+See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/main/examples/deno-deploy) for a working example.
+:::
 
 #### Update the imports in `router.ts`
 
@@ -457,6 +409,14 @@ export { handler as GET, handler as POST };
 ```
 
 ### Vercel Edge Runtime
+
+:::note
+See the official [Vercel Edge Runtime documentation](https://edge-runtime.vercel.app/getting-started) for more information.
+:::
+
+:::tip
+See our example [Vercel Edge Runtime app](https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime) for a working example.
+:::
 
 #### Install dependencies
 
