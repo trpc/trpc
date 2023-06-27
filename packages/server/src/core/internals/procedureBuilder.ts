@@ -1,13 +1,13 @@
-import { TRPCError, getTRPCErrorFromUnknown } from '../../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '../../error/TRPCError';
 import { MaybePromise, Simplify } from '../../types';
 import {
+  createInputMiddleware,
+  createOutputMiddleware,
   MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
-  createInputMiddleware,
-  createOutputMiddleware,
 } from '../middleware';
-import { Parser, inferParser } from '../parser';
+import { inferParser, Parser } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -22,11 +22,11 @@ import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
   DefaultValue as FallbackValue,
+  middlewareMarker,
   Overwrite,
   OverwriteKnown,
   ResolveOptions,
   UnsetMarker,
-  middlewareMarker,
 } from './utils';
 
 type CreateProcedureReturnInput<
@@ -256,7 +256,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
           : [middlewareBuilderOrFn];
 
       return createNewBuilder(_def, {
-        middlewares,
+        middlewares: middlewares as ProcedureBuilderMiddleware[],
       }) as AnyProcedureBuilder;
     },
     query(resolver) {

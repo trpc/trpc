@@ -17,9 +17,9 @@ slug: /subscriptions
 ### Adding a subscription procedure
 
 ```tsx title='server/router.ts'
+import { EventEmitter } from 'events';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { EventEmitter } from 'events';
 import { z } from 'zod';
 
 // create a global event emitter (could be replaced by redis, etc)
@@ -96,7 +96,7 @@ process.on('SIGTERM', () => {
 ### Setting `TRPCClient` to use WebSockets
 
 :::tip
-You can use [Links](../client/links/index.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
+You can use [Links](../client/links/overview.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 :::
 
 ```tsx title='client.ts'

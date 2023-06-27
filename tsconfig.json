@@ -8,21 +8,21 @@
     "rollup.config.ts",
     ".eslintrc.js"
   ],
+  "exclude": [],
   "compilerOptions": {
     "allowJs": false,
     "baseUrl": ".",
-    "typeRoots": ["./node_modules/@types", "./types"],
     "paths": {
-      "@trpc/server": ["packages/server/src"],
-      "@trpc/server/*": ["packages/server/src/*"],
+      "$test/*": ["test/*"],
       "@trpc/client": ["packages/client/src"],
       "@trpc/client/*": ["packages/client/src/*"],
-      "@trpc/react-query": ["packages/react-query/src"],
-      "@trpc/react-query/*": ["packages/react-query/src/*"],
       "@trpc/next": ["packages/next/src"],
       "@trpc/next/*": ["packages/next/src/*"],
-      "$test/*": ["test/*"]
+      "@trpc/react-query": ["packages/react-query/src"],
+      "@trpc/react-query/*": ["packages/react-query/src/*"],
+      "@trpc/server": ["packages/server/src"],
+      "@trpc/server/*": ["packages/server/src/*"]
     },
-    "types": ["node"]
+    "types": ["node", "vitest/globals"]
   }
 }

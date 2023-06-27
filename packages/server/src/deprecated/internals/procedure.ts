@@ -1,11 +1,11 @@
-import { TRPCError, getTRPCErrorFromUnknown } from '../../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '../../error/TRPCError';
 import { getCauseFromUnknown } from '../../error/utils';
 import { InferLast } from '../../types';
 import { ProcedureType } from '../router';
 import {
   MiddlewareFunction,
-  MiddlewareResult,
   middlewareMarker,
+  MiddlewareResult,
 } from './middlewares';
 
 export type ProcedureParserZodEsque<TInput, TOutput> = {

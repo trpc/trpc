@@ -1,6 +1,6 @@
 {
   "name": "@examples/standalone-server",
-  "version": "10.26.0",
+  "version": "10.32.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,9 +15,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "^10.26.0",
-    "@trpc/react-query": "^10.26.0",
-    "@trpc/server": "^10.25.1",
+    "@trpc/client": "^10.29.1",
+    "@trpc/react-query": "^10.29.1",
+    "@trpc/server": "^10.29.1",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
   },
@@ -25,14 +25,14 @@
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"
   },
   "devDependencies": {
-    "@types/node": "^18.7.20",
+    "@types/node": "^18.16.16",
     "@types/ws": "^8.2.0",
     "esbuild": "^0.17.10",
     "eslint": "^8.40.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^3.12.7",
-    "typescript": "^4.8.3",
+    "typescript": "^5.1.3",
     "wait-port": "^1.0.1"
   },
   "publishConfig": {

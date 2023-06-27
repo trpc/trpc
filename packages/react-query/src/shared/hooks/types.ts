@@ -5,11 +5,11 @@ import {
   InitialDataFunction,
   QueryObserverSuccessResult,
   QueryOptions,
+  UseBaseQueryOptions,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
   UseMutationOptions,
   UseMutationResult,
-  UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
 import {
@@ -47,8 +47,20 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
-export interface UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>
-  extends UseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
+export interface UseTRPCQueryOptions<
+  TPath,
+  TInput,
+  TOutput,
+  TData,
+  TError,
+  TQueryOptsData = TOutput,
+> extends UseBaseQueryOptions<
+      TOutput,
+      TError,
+      TData,
+      TQueryOptsData,
+      [TPath, TInput]
+    >,
     TRPCUseQueryBaseOptions {}
 
 /** @internal **/
@@ -58,8 +70,16 @@ export interface DefinedUseTRPCQueryOptions<
   TOutput,
   TData,
   TError,
-> extends UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError> {
-  initialData: TOutput | InitialDataFunction<TOutput>;
+  TQueryOptsData = TOutput,
+> extends UseTRPCQueryOptions<
+    TPath,
+    TInput,
+    TOutput,
+    TData,
+    TError,
+    TQueryOptsData
+  > {
+  initialData: TQueryOptsData | InitialDataFunction<TQueryOptsData>;
 }
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>

@@ -39,6 +39,7 @@ const config = {
           'TRPC',
           'RPC',
           'HTTP',
+          'JSON',
           '\\.config\\.js',
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',
@@ -66,6 +67,7 @@ const config = {
         },
       },
     ],
+    'max-params': ['error', 3],
   },
   overrides: [
     // {

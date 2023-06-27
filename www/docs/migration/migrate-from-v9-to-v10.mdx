@@ -173,7 +173,7 @@ type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
-See [Inferring types](/docs/client/infer-types) for more.
+See [Inferring types](/docs/client/vanilla/infer-types) for more.
 
 </details>
 
@@ -410,7 +410,7 @@ See [HTTP-specific options moved from `TRPCClient` to links](#http-specific-opti
 
 ### Custom Links
 
-In v10, the Links architecture has been completely revamped. Therefore, custom links made for v9 will not work for v10 or while on interop. If you want more information about how to create a custom link for v10, checkout [the Links documentation](links#creating-a-custom-link).
+In v10, the Links architecture has been completely revamped. Therefore, custom links made for v9 will not work for v10 or while on interop. If you want more information about how to create a custom link for v10, checkout [the Links documentation](/docs/client/links#creating-a-custom-link).
 
 ## Client Package Changes
 
@@ -473,7 +473,7 @@ you may need to take note!
 :::
 
 To allow us to make room for some more advanced features like [invalidation across
-whole routers](/docs/reactjs/usecontext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
+whole routers](/docs/client/react/usecontext#invalidating-across-whole-routers), we needed to change how we use tanstack query keys under the
 hood.
 
 We have changed the query keys we use from using a `.` joined string for the
@@ -521,7 +521,7 @@ ac.abort();
 
 #### HTTP-specific options moved from `TRPCClient` to links
 
-Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to [`httpLink`](links/httpLink) and [`httpBatchLink`](links/httpBatchLink).
+Previously, HTTP options (like headers) were placed straight onto your `createTRPCClient()`. However, since tRPC is technically not tied to HTTP itself, we've moved these from the `TRPCClient` to [`httpLink`](client/links/httpLink) and [`httpBatchLink`](client/links/httpBatchLink).
 
 ```ts
 // Before:
@@ -576,7 +576,7 @@ The `createContext` function can no longer return either `null` or `undefined`. 
 
 ### `queryClient` is no longer exposed through tRPC context
 
-tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](/docs/reactjs/usecontext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
+tRPC is no longer exposing the `queryClient` instance through `trpc.useContext()`. If you need to use some methods from `queryClient`, check if `trpc.useContext()` wraps them [here](/docs/client/react/usecontext#helpers). If tRPC doesn't wrap the respective method yet, you can import the `queryClient` from `@tanstack/react-query` and use it that way:
 
 ```tsx
 import { useQueryClient } from '@tanstack/react-query';

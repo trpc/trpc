@@ -4,9 +4,11 @@ import {
   TRPCUntypedClient,
 } from '@trpc/client';
 import {
+  AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
   Filter,
+  inferHandlerInput,
   ProtectedIntersection,
   ThenArg,
 } from '@trpc/server';
@@ -59,3 +61,33 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
 export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
   config: () => CreateTRPCClientOptions<TRouter>;
 }
+
+/**
+ * @internal
+ */
+export function isFormData(value: unknown): value is FormData {
+  if (typeof FormData === 'undefined') {
+    // FormData is not supported
+    return false;
+  }
+  return value instanceof FormData;
+}
+
+/**
+ * @internal
+ */
+export interface ActionHandlerDef {
+  input?: any;
+  output?: any;
+  errorShape: any;
+}
+
+// ts-prune-ignore-next
+/**
+ * @internal
+ */
+export type inferActionDef<TProc extends AnyProcedure> = {
+  input: inferHandlerInput<TProc>[0];
+  output: TProc['_def']['_output_out'];
+  errorShape: TProc['_def']['_config']['$types']['errorShape'];
+};

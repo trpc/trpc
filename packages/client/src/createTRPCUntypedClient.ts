@@ -6,9 +6,8 @@ import {
 
 export function createTRPCUntypedClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-) {
-  const client = new TRPCUntypedClient(opts);
-  return client;
+): TRPCUntypedClient<TRouter> {
+  return new TRPCUntypedClient(opts);
 }
 
 export type {

@@ -44,7 +44,7 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 ## Option 1: Authorize using resolver
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import type { Context } from '../context';
 
 export const t = initTRPC.context<Context>().create();
@@ -69,7 +69,7 @@ const appRouter = t.router({
 ## Option 2: Authorize using middleware
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 

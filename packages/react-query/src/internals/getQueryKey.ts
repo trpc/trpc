@@ -5,8 +5,8 @@ import {
   DeepPartial,
   inferProcedureInput,
 } from '@trpc/server';
-import { QueryType, getArrayQueryKey } from '../internals/getArrayQueryKey';
-import { DecorateProcedure, DecoratedProcedureRecord } from '../shared';
+import { getArrayQueryKey, QueryType } from '../internals/getArrayQueryKey';
+import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 /**
  * We treat `undefined` as an input the same as omitting an `input`
