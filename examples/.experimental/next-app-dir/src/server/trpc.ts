@@ -26,7 +26,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 export const createAction = experimental_createServerActionHandler({
-  t,
+  rootConfig: t,
   createContext() {
     const newHeaders = new Map(headers());
 
