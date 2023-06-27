@@ -49,7 +49,7 @@ type LoggerLinkFn<TRouter extends AnyRouter> = (
   opts: LoggerLinkFnOptions<TRouter>,
 ) => void;
 
-const palette = {
+const cssPalette = {
   query: ['72e3ff', '3fb0d8'],
   mutation: ['c5a3fc', '904dfc'],
   subscription: ['ff49e1', 'd83fbe'],
@@ -62,10 +62,6 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
-  /**
-   * @default 'css'
-   */
-  colorMode?: keyof typeof palette;
 }
 
 function isFormData(value: unknown): value is FormData {
@@ -83,7 +79,7 @@ const defaultCssLogger =
   ): LoggerLinkFn<TRouter> =>
   (props) => {
     const { direction, type, path, context, id } = props;
-    const [light, dark] = palette[type];
+    const [light, dark] = cssPalette[type];
 
     const rawInput = props.input;
 
