@@ -19,7 +19,8 @@ describe('without transformer', () => {
     .create({});
   const { procedure } = instance;
 
-  const createAction = experimental_createServerActionHandler(instance, {
+  const createAction = experimental_createServerActionHandler({
+    rootConfig: instance,
     createContext() {
       return {
         foo: 'bar',
@@ -164,7 +165,8 @@ describe('with transformer', () => {
     });
   const { procedure } = instance;
 
-  const createAction = experimental_createServerActionHandler(instance, {
+  const createAction = experimental_createServerActionHandler({
+    rootConfig: instance,
     createContext() {
       return {
         foo: 'bar',
@@ -348,7 +350,8 @@ describe('type tests', () => {
     .create({});
   const { procedure } = instance;
 
-  const createAction = experimental_createServerActionHandler(instance, {
+  const createAction = experimental_createServerActionHandler({
+    rootConfig: instance,
     createContext() {
       return {
         foo: 'bar',

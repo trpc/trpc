@@ -11,6 +11,7 @@ import {
   CombinedDataTransformer,
   getTRPCErrorFromUnknown,
   inferProcedureInput,
+  inferRouterContext,
   MaybePromise,
   Simplify,
   TRPCError,
@@ -75,33 +76,40 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 type AnyTInstance = { _config: AnyRootConfig };
 
+type BaseCreateActionHandlerOptions = {
+  /**
+   * Transform form data to a `Record` before passing it to the procedure
+   * @default true
+   */
+  normalizeFormData?: boolean;
+};
+
 type CreateActionHandlerOptions<
   TInstance extends AnyTInstance,
   TRouter extends AnyRouter,
-> =
-  | {
-      t: TInstance;
-      router?: never;
-    }
-  | {
-      t?: never;
-      router: TRouter;
-    };
+> = BaseCreateActionHandlerOptions &
+  (
+    | {
+        rootConfig: TInstance;
+        router?: never;
+        createContext: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }
+    | {
+        rootConfig?: never;
+        router: TRouter;
+        createContext: () => MaybePromise<inferRouterContext<TRouter>>;
+      }
+  );
 
 export function experimental_createServerActionHandler<
   TInstance extends AnyTInstance,
   TRouter extends AnyRouter,
->(
-  opts: CreateActionHandlerOptions<TInstance, TRouter> & {
-    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
-    /**
-     * Transform form data to a `Record` before passing it to the procedure
-     * @default true
-     */
-    normalizeFormData?: boolean;
-  },
-) {
-  const config = opts.t ? opts.t._config : opts.router?._def._config;
+>(opts: CreateActionHandlerOptions<TInstance, TRouter>) {
+  const config = opts.rootConfig
+    ? opts.rootConfig._config
+    : opts.router?._def._config;
   if (!config) {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
