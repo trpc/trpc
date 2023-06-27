@@ -11,7 +11,6 @@ export default async function Page() {
 
       <br />
       <h1>Create post</h1>
-      <p>(Refresh the page after to see updated post)</p>
       <form action={createPostAction}>
         <input type="text" name="title" placeholder="title" />
         <input type="text" name="content" placeholder="content" />
