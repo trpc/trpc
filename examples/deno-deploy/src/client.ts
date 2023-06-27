@@ -32,4 +32,7 @@ async function main() {
   console.log('👌 should be a clean exit if everything is working right');
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  Deno.exit(1);
+});
