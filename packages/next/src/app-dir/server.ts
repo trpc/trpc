@@ -121,7 +121,9 @@ export function experimental_createServerActionHandler<
   const transformer = config.transformer as CombinedDataTransformer;
 
   return function createServerAction<TProcedure extends AnyProcedure>(
-    proc: TProcedure | DecorateProcedureServer<TProcedure>,
+    proc: AnyRouter extends TRouter
+      ? TProcedure
+      : TProcedure | DecorateProcedureServer<TProcedure>,
     actionOptions?: {
       revalidates?: (string | DecorateProcedureServer<AnyQueryProcedure>)[];
     },
