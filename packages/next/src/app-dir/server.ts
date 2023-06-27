@@ -21,6 +21,7 @@ import {
   getErrorShape,
   transformTRPCResponse,
 } from '@trpc/server/shared';
+import { revalidatePath } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import {
@@ -106,10 +107,8 @@ export function experimental_createServerActionHandler<
   }
 
   const { normalizeFormData = true, createContext } = opts;
-
   const transformer = config.transformer as CombinedDataTransformer;
 
-  // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProcedure extends AnyProcedure>(
     proc: TProcedure | DecorateProcedureServer<TProcedure>,
   ): TRPCActionHandler<Simplify<inferActionDef<TProcedure>>> {
@@ -168,6 +167,10 @@ export function experimental_createServerActionHandler<
           rawInput,
           type: procedure._type,
         });
+
+        // FIXME: This should be configurable to do fine-grained revalidation
+        // Need https://github.com/trpc/trpc/pull/4375 for that
+        revalidatePath('/alt-server-action');
 
         const transformedJSON = transformTRPCResponse(config, {
           result: {
