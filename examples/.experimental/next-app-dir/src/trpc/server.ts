@@ -1,13 +1,16 @@
 'use server';
 
 import { httpBatchLink, loggerLink } from '@trpc/client';
-import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
-import { AppRouter } from '~/server/routers/_app';
-import { headers } from 'next/headers';
+import {
+  experimental_createServerActionHandler,
+  experimental_createTRPCNextAppDirServer,
+} from '@trpc/next/app-dir/server';
+import { appRouter } from '~/server/routers/_app';
+import { cookies } from 'next/headers';
 import superjson from 'superjson';
 import { getUrl } from './shared';
 
-export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
+export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
       transformer: superjson,
@@ -20,16 +23,10 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
         httpBatchLink({
           url: getUrl(),
           headers() {
-            const newHeaders = new Map(headers());
-
-            // If you're using Node 18 before 18.15.0, omit the "connection" header
-            newHeaders.delete('connection');
-
-            // `x-trpc-source` is not required, but can be useful for debugging
-            newHeaders.set('x-trpc-source', 'rsc');
-
-            // Forward headers from the browser to the API
-            return Object.fromEntries(newHeaders);
+            return {
+              cookie: cookies().toString(),
+              'x-trpc-source': 'rsc',
+            };
           },
         }),
       ],
@@ -37,4 +34,14 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
   },
 });
 
-// export const createAction =
+export const createAction = experimental_createServerActionHandler({
+  router: appRouter,
+  createContext() {
+    return {
+      headers: {
+        cookie: cookies().toString(),
+        'x-trpc-source': 'server-action',
+      },
+    };
+  },
+});
