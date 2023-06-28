@@ -46,13 +46,15 @@ export function experimental_createTRPCNextAppDirServer<
     const client = getClient();
 
     const pathCopy = [...callOpts.path];
-    const action = pathCopy.pop() as string;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const action = pathCopy.pop()!;
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
     const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === 'revalidate') {
-      return revalidateTag(cacheTag);
+      revalidateTag(cacheTag);
+      return;
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);

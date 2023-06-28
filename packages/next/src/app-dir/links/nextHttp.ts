@@ -8,10 +8,12 @@ import {
 import { AnyRouter } from '@trpc/server';
 import { generateCacheTag } from '../shared';
 
-type NextFetchLinkOptions<TBatch extends boolean> = {
+type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
+  ? HTTPBatchLinkOptions
+  : HTTPLinkOptions) & {
   batch?: TBatch;
   revalidate?: number | false;
-} & (TBatch extends true ? HTTPBatchLinkOptions : HTTPLinkOptions);
+};
 
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<

@@ -55,7 +55,9 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
 
             return callProc();
           })
-          .catch((cause) => observer.error(TRPCClientError.from(cause)));
+          .catch((cause) => {
+            observer.error(TRPCClientError.from(cause));
+          });
 
         promise
           .then((data) => {
@@ -63,6 +65,8 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             observer.next({ result: { data: transformedResult } });
             observer.complete();
           })
-          .catch((cause) => observer.error(TRPCClientError.from(cause)));
+          .catch((cause) => {
+            observer.error(TRPCClientError.from(cause));
+          });
       });
 }
