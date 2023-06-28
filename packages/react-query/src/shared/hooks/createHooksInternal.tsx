@@ -49,7 +49,7 @@ export function createRootHooks<
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
-    (config?.overrides ?? config?.unstable_overrides)?.useMutation?.onSuccess ??
+    config?.overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
 
   type TError = TRPCClientErrorLike<TRouter>;

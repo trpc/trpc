@@ -27,7 +27,7 @@ function subscriptionPullFactory<TOutput>(opts: {
    * The interval of how often the function should run
    */
   intervalMs: number;
-  pull(emit: Observer<TOutput, unknown>): void | Promise<void>;
+  pull(emit: Observer<TOutput, unknown>): Promise<void> | void;
 }): Observable<TOutput, unknown> {
   let timer: any;
   let stopped = false;
@@ -49,7 +49,7 @@ function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return observable<TOutput>((emit) => {
-    _pull(emit).catch((err) => emit.error(err as Error));
+    _pull(emit).catch((err) => { emit.error(err as Error); });
     return () => {
       clearTimeout(timer);
       stopped = true;
