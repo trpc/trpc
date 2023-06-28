@@ -5,7 +5,7 @@ import { Dict } from '@trpc/server/src';
 
 describe('pass headers', () => {
   type Context = {
-    headers: Dict<string | string[]>;
+    headers: Dict<string[] | string>;
   };
   const { close, httpUrl } = legacyRouterToServerAndClient(
     trpc.router<Context>().query('hello', {

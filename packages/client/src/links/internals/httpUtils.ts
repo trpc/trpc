@@ -67,7 +67,7 @@ export interface HTTPResult {
 
 type GetInputOptions = {
   runtime: TRPCClientRuntime;
-} & ({ inputs: unknown[] } | { input: unknown });
+} & ({ input: unknown } | { inputs: unknown[] });
 
 function getInput(opts: GetInputOptions) {
   return 'input' in opts
@@ -77,8 +77,8 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPBaseRequestOptions = ResolvedHTTPLinkOptions &
-  GetInputOptions & {
+export type HTTPBaseRequestOptions = GetInputOptions &
+  ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
   };
@@ -136,8 +136,8 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export type HTTPRequestOptions = HTTPBaseRequestOptions &
-  ContentOptions & {
+export type HTTPRequestOptions = ContentOptions &
+  HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
     TextDecoder?: TextDecoderEsque;
   };

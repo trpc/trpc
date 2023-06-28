@@ -213,7 +213,7 @@ test('validator fn', async () => {
   const trpc = initTRPC.create();
   const router = trpc.router({
     q: trpc.procedure
-      .input((value: unknown) => value as string | number)
+      .input((value: unknown) => value as number | string)
       .output((value: unknown) => {
         if (typeof (value as any).input === 'string') {
           return value as { input: string };
@@ -246,7 +246,7 @@ test('async validator fn', async () => {
   const trpc = initTRPC.create();
   const router = trpc.router({
     q: trpc.procedure
-      .input((value: unknown) => value as string | number)
+      .input((value: unknown) => value as number | string)
       .output(async (value: any): Promise<{ input: string }> => {
         if (value && typeof value.input === 'string') {
           return { input: value.input };

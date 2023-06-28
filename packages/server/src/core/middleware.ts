@@ -46,8 +46,8 @@ interface MiddlewareErrorResult<_TParams extends ProcedureParams>
  * @internal
  */
 export type MiddlewareResult<TParams extends ProcedureParams> =
-  | MiddlewareOKResult<TParams>
-  | MiddlewareErrorResult<TParams>;
+  | MiddlewareErrorResult<TParams>
+  | MiddlewareOKResult<TParams>;
 
 /**
  * @internal

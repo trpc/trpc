@@ -53,7 +53,7 @@ describe('infer query input & output', () => {
   test('no input', () => {
     const input: inferProcedureInput<TQueries['noInput']> = null as any;
     const output: inferProcedureOutput<TQueries['noInput']> = null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: undefined }>();
   });
   test('with input', () => {
@@ -65,7 +65,7 @@ describe('infer query input & output', () => {
   test('with output', () => {
     const input: inferProcedureInput<TQueries['withOutput']> = null as any;
     const output: inferProcedureOutput<TQueries['withOutput']> = null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
   });
   test('with output empty object', () => {
@@ -73,7 +73,7 @@ describe('infer query input & output', () => {
       null as any;
     const output: inferProcedureOutput<TQueries['withOutputEmptyObject']> =
       null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
   });
   test('with input and output', () => {
@@ -135,7 +135,7 @@ describe('infer mutation input & output', () => {
   test('no input', () => {
     const input: inferProcedureInput<TMutations['noInput']> = null as any;
     const output: inferProcedureOutput<TMutations['noInput']> = null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: undefined }>();
   });
   test('with input', () => {
@@ -147,7 +147,7 @@ describe('infer mutation input & output', () => {
   test('with output', () => {
     const input: inferProcedureInput<TMutations['withOutput']> = null as any;
     const output: inferProcedureOutput<TMutations['withOutput']> = null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
   });
   test('with output empty object', () => {
@@ -155,7 +155,7 @@ describe('infer mutation input & output', () => {
       null as any;
     const output: inferProcedureOutput<TMutations['withOutputEmptyObject']> =
       null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<{ input: string }>();
   });
   test('with input and output', () => {
@@ -208,7 +208,7 @@ describe('infer subscription input & output', () => {
   test('no input', () => {
     const input: inferProcedureInput<TSubscriptions['noInput']> = null as any;
     const output: inferProcedureOutput<TSubscriptions['noInput']> = null as any;
-    expectTypeOf(input).toMatchTypeOf<undefined | null | void>();
+    expectTypeOf(input).toMatchTypeOf<null | undefined | void>();
     expectTypeOf(output).toMatchTypeOf<Observable<unknown, unknown>>();
   });
   test('with input', () => {

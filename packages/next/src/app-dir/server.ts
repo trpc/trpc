@@ -47,7 +47,6 @@ export function experimental_createTRPCNextAppDirServer<
 
     const pathCopy = [...callOpts.path];
     const action = pathCopy.pop() as string;
-
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
     const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
@@ -64,7 +63,7 @@ export function experimental_createTRPCNextAppDirServer<
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
-  input: TDef['input'] | FormData,
+  input: FormData | TDef['input'],
 ) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
 export function experimental_createServerActionHandler<
@@ -92,9 +91,9 @@ export function experimental_createServerActionHandler<
     proc: TProc,
   ): TRPCActionHandler<Simplify<inferActionDef<TProc>>> {
     return async function actionHandler(
-      rawInput: inferProcedureInput<TProc> | FormData,
+      rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
+      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
         const ctx = await createContext();
         if (normalizeFormData && isFormData(rawInput)) {

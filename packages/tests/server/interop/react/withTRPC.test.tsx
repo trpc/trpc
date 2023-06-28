@@ -61,7 +61,7 @@ describe('withTRPC()', () => {
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
-      return <>{JSON.stringify(query.data || query.error)}</>;
+      return <>{JSON.stringify(query.data ?? query.error)}</>;
     };
 
     const Wrapped = withTRPC({
@@ -160,7 +160,7 @@ describe('withTRPC()', () => {
             },
           },
         );
-        return <>{JSON.stringify(query.data || query.error)}</>;
+        return <>{JSON.stringify(query.data ?? query.error)}</>;
       };
 
       const Wrapped = withTRPC({

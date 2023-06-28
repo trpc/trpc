@@ -79,7 +79,7 @@ export interface DefinedUseTRPCQueryOptions<
     TError,
     TQueryOptsData
   > {
-  initialData: TQueryOptsData | InitialDataFunction<TQueryOptsData>;
+  initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
 
 export interface TRPCQueryOptions<TPath, TInput, TData, TError>
@@ -137,8 +137,8 @@ export type CreateClient<TRouter extends AnyRouter> = (
 /**
  * @internal
  */
-export type UseTRPCQueryResult<TData, TError> = UseQueryResult<TData, TError> &
-  TRPCHookResult;
+export type UseTRPCQueryResult<TData, TError> = TRPCHookResult &
+  UseQueryResult<TData, TError>;
 
 /**
  * @internal
@@ -158,11 +158,8 @@ export type UseTRPCQuerySuccessResult<TData, TError> =
 /**
  * @internal
  */
-export type UseTRPCInfiniteQueryResult<TData, TError> = UseInfiniteQueryResult<
-  TData,
-  TError
-> &
-  TRPCHookResult;
+export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
+  UseInfiniteQueryResult<TData, TError>;
 
 /**
  * @internal
@@ -174,4 +171,4 @@ export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
  * @internal
  */
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
-  UseMutationResult<TData, TError, TVariables, TContext> & TRPCHookResult;
+  TRPCHookResult & UseMutationResult<TData, TError, TVariables, TContext>;

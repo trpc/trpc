@@ -89,8 +89,7 @@ export function createLegacyAppRouter() {
         const limit = input.limit ?? 50;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
-        for (let index = 0; index < db.posts.length; index++) {
-          const element = db.posts[index]!;
+        for (const element of db.posts) {
           if (cursor != null && element.createdAt < cursor) {
             continue;
           }
