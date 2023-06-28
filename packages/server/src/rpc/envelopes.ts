@@ -76,13 +76,13 @@ export interface TRPCErrorResponse<
 export type TRPCResponse<
   TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
-> = TRPCSuccessResponse<TData> | TRPCErrorResponse<TError>;
+> = TRPCErrorResponse<TError> | TRPCSuccessResponse<TData>;
 
 /////////////////////////// WebSocket envelopes ///////////////////////
 
-export type TRPCRequestMessage = {
+export type TRPCRequestMessage = TRPCRequest & {
   id: JSONRPC2.RequestId;
-} & TRPCRequest;
+};
 
 /**
  * The client asked the server to unsubscribe
@@ -102,21 +102,21 @@ export type TRPCClientOutgoingRequest = TRPCSubscriptionStopNotification;
  */
 export type TRPCClientOutgoingMessage =
   | TRPCRequestMessage
-  | ({ id: JSONRPC2.RequestId } & JSONRPC2.BaseRequest<'subscription.stop'>);
+  | (JSONRPC2.BaseRequest<'subscription.stop'> & { id: JSONRPC2.RequestId });
 
 export interface TRPCResultMessage<TData>
   extends JSONRPC2.ResultResponse<
-    | (TRPCResult<TData> & { type: 'data' })
     | { type: 'started' }
     | { type: 'stopped' }
+    | (TRPCResult<TData> & { type: 'data' })
   > {}
 
 export type TRPCResponseMessage<
   TData = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = { id: JSONRPC2.RequestId } & (
-  | TRPCResultMessage<TData>
   | TRPCErrorResponse<TError>
+  | TRPCResultMessage<TData>
 );
 
 /**
@@ -138,4 +138,4 @@ export type TRPCClientIncomingRequest = TRPCReconnectNotification;
 export type TRPCClientIncomingMessage<
   TResult = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
-> = TRPCResponseMessage<TResult, TError> | TRPCClientIncomingRequest;
+> = TRPCClientIncomingRequest | TRPCResponseMessage<TResult, TError>;

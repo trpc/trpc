@@ -68,6 +68,7 @@ export function experimental_createTRPCNextAppDirClient<
   return createRecursiveProxy(({ path, args }) => {
     // const pathCopy = [key, ...path];
     const pathCopy = [...path];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 
     if (procedureType === 'query') {

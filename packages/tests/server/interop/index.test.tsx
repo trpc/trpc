@@ -240,7 +240,7 @@ describe('integration tests', () => {
         }),
       );
       const res = await client.query('postById', 1);
-      expectTypeOf(res).toMatchTypeOf<null | { id: number; title: string }>();
+      expectTypeOf(res).toMatchTypeOf<{ id: number; title: string } | null>();
       expect(res).toEqual({
         id: 1,
         title: 'helloo',

@@ -13,7 +13,9 @@ export function RawExample() {
         <input
           type="text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
         />
       </label>
       <br />

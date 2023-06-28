@@ -20,7 +20,7 @@ import { createRecursiveProxy } from '@trpc/server/shared';
 export type UseProcedureRecord<TRouter extends AnyRouter> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
+    AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
     : Resolver<TRouter['_def']['record'][TKey]>;
