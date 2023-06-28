@@ -16,7 +16,6 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
           enabled: (op) =>
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
-          colorMode: 'ansi',
         }),
         httpBatchLink({
           url: getUrl(),

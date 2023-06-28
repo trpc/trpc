@@ -58,7 +58,7 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   console?: ConsoleEsque;
   /**
    * Color mode
-   * @default 'css'
+   * @default typeof window === 'undefined' ? 'ansi' : 'css'
    */
   colorMode?: 'ansi' | 'css';
 }
@@ -200,9 +200,9 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
 ): TRPCLink<TRouter> {
   const { enabled = () => true } = opts;
 
-  const {
-    logger = defaultLogger({ c: opts.console, colorMode: opts.colorMode }),
-  } = opts;
+  const colorMode =
+    opts.colorMode ?? (typeof window === 'undefined' ? 'ansi' : 'css');
+  const { logger = defaultLogger({ c: opts.console, colorMode }) } = opts;
 
   return () => {
     return ({ op, next }) => {
