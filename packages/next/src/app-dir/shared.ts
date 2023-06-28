@@ -65,6 +65,12 @@ export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
 /**
  * @internal
  */
+export function generateCacheTag(procedurePath: string, input: any) {
+  return input
+    ? `${procedurePath}?input=${JSON.stringify(input)}`
+    : procedurePath;
+}
+
 export function isFormData(value: unknown): value is FormData {
   if (typeof FormData === 'undefined') {
     // FormData is not supported

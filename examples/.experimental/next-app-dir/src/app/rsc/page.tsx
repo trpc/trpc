@@ -1,38 +1,43 @@
+import { api } from '~/trpc/server-http';
 import { Suspense } from 'react';
-import { api } from 'trpc-api';
-import { ClientGreeting } from './ClientGreeting';
-import { ServerGreeting } from './ServerGreeting';
+import { ServerHttpGreeting } from './ServerHttpGreeting';
+import { ServerInvokedGreeting } from './ServerInvokedGreeting';
+
+async function AuthThing() {
+  const me = await api.me.query();
+
+  return <pre>Session: {JSON.stringify(me, null, 4)}</pre>;
+}
 
 export default async function Home() {
-  const promise = new Promise<string>(async (resolve) => {
-    await new Promise((r) => setTimeout(r, 1000)); // wait for demo purposes
-    resolve(api.greeting.query({ text: 'streamed server data' }));
-  });
-
   return (
     <>
-      <div>
-        <Suspense fallback={<>Loading client...</>}>
-          <ClientGreeting />
+      <AuthThing />
+
+      <div style={separator} />
+
+      <div style={{ height: 100 }}>
+        <Suspense fallback={<>Loading Server...</>}>
+          <ServerHttpGreeting />
         </Suspense>
       </div>
 
-      <div>
+      <div style={separator} />
+
+      <div style={{ height: 100 }}>
         <Suspense fallback={<>Loading Server...</>}>
-          <ServerGreeting />
+          <ServerInvokedGreeting />
         </Suspense>
       </div>
-      <div>
-        <Suspense fallback={<>Loading stream...</>}>
-          <StreamedSC promise={promise} />
-        </Suspense>
-      </div>
+
+      <div style={separator} />
     </>
   );
 }
 
-async function StreamedSC(props: { promise: Promise<string> }) {
-  const data = await props.promise;
-
-  return <div>{data}</div>;
-}
+const separator = {
+  width: '50%',
+  margin: '1rem 0',
+  height: 2,
+  background: 'hsla(210, 16%, 80%, 1)',
+};

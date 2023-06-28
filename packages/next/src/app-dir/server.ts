@@ -1,7 +1,6 @@
 /// <reference types="next" />
 import {
   clientCallTypeToProcedureType,
-  CreateTRPCProxyClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import {
@@ -21,14 +20,17 @@ import {
   getErrorShape,
   transformTRPCResponse,
 } from '@trpc/server/shared';
+import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
+  generateCacheTag,
   inferActionDef,
   isFormData,
 } from './shared';
+import { NextAppDirDecoratedProcedureRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -44,14 +46,19 @@ export function experimental_createTRPCNextAppDirServer<
     const client = getClient();
 
     const pathCopy = [...callOpts.path];
-    const procedureType = clientCallTypeToProcedureType(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      pathCopy.pop()!,
-    );
-    const fullPath = pathCopy.join('.');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const action = pathCopy.pop()!;
+    const procedurePath = pathCopy.join('.');
+    const procedureType = clientCallTypeToProcedureType(action);
+    const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
-    return (client[procedureType] as any)(fullPath, ...callOpts.args);
-  }) as CreateTRPCProxyClient<TRouter>;
+    if (action === 'revalidate') {
+      revalidateTag(cacheTag);
+      return;
+    }
+
+    return (client[procedureType] as any)(procedurePath, ...callOpts.args);
+  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
 }
 
 /**
@@ -138,4 +145,24 @@ export function experimental_createServerActionHandler<
       }
     } as TRPCActionHandler<inferActionDef<TProc>>;
   };
+}
+
+// ts-prune-ignore-next
+export async function experimental_revalidateEndpoint(req: Request) {
+  const { cacheTag } = await req.json();
+
+  if (typeof cacheTag !== 'string') {
+    return new Response(
+      JSON.stringify({
+        revalidated: false,
+        error: 'cacheTag must be a string',
+      }),
+      { status: 400 },
+    );
+  }
+
+  revalidateTag(cacheTag);
+  return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
+    status: 200,
+  });
 }

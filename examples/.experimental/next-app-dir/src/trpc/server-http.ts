@@ -1,17 +1,14 @@
-'use client';
+'use server';
 
 import { loggerLink } from '@trpc/client';
-import {
-  experimental_createActionHook,
-  experimental_createTRPCNextAppDirClient,
-  experimental_serverActionLink,
-} from '@trpc/next/app-dir/client';
 import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
+import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
 import { AppRouter } from '~/server/routers/_app';
+import { cookies } from 'next/headers';
 import superjson from 'superjson';
 import { getUrl } from './shared';
 
-export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
+export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
   config() {
     return {
       transformer: superjson,
@@ -24,7 +21,8 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
           url: getUrl(),
           headers() {
             return {
-              'x-trpc-source': 'client',
+              cookie: cookies().toString(),
+              'x-trpc-source': 'rsc-http',
             };
           },
         }),
@@ -33,7 +31,4 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
   },
 });
 
-export const useAction = experimental_createActionHook({
-  links: [loggerLink(), experimental_serverActionLink()],
-  transformer: superjson,
-});
+// export const createAction =
