@@ -18,15 +18,6 @@ export {
   type inferActionResultProps,
 } from './create-action-hook';
 
-// function normalizePromiseArray<TValue>(
-//   promise: Promise<TValue> | Promise<TValue>[],
-// ) {
-//   if (Array.isArray(promise)) {
-//     return Promise.all(promise);
-//   }
-//   return promise;
-// }
-
 type QueryResult = {
   data?: unknown;
   error?: unknown;
@@ -41,29 +32,6 @@ export function experimental_createTRPCNextAppDirClient<
   // const useProxy = createUseProxy<TRouter>(client);
 
   const cache = new Map<string, QueryResult>();
-  // return createFlatProxy<CreateTRPCNextAppRouter<TRouter>>((key) => {
-  // if (key === 'use') {
-  //   return (
-  //     cb: (
-  //       t: UseProcedureRecord<TRouter>,
-  //     ) => Promise<unknown> | Promise<unknown>[],
-  //   ) => {
-  //     const promise = normalizePromiseArray(cb(useProxy));
-  //     throw promise;
-  //     // const [data, setData] = useState<unknown | unknown[]>();
-
-  //     // useEffect(() => {
-  //     //   const promise = normalizePromiseArray(cb(useProxy));
-
-  //     //   void promise.then(setData).catch((err) => {
-  //     //     throw err;
-  //     //   });
-  //     //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  //     // }, []);
-
-  //     // return data;
-  //   };
-  // }
 
   return createRecursiveProxy(({ path, args }) => {
     // const pathCopy = [key, ...path];

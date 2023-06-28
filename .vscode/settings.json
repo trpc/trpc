@@ -4,8 +4,14 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
+  "eslint.workingDirectories": [
+    { "pattern": "./examples/**" },
+    { "pattern": "./packages/*" },
+    { "pattern": "./www/*" }
+  ],
   "files.exclude": {
-    "packages/client/{links}": true,
+    "packages/client/{links,shared}": true,
+    "packages/next/{app-dir}": true,
     "packages/react-query/{shared,ssg}": true,
     "packages/server/{adapters,http,observable,rpc,shared,subscription}": true
   },

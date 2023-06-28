@@ -14,7 +14,7 @@
     "@trpc/next": "^10.32.0",
     "@trpc/react-query": "^10.32.0",
     "@trpc/server": "^10.32.0",
-    "next": "^13.4.3",
+    "next": "^13.4.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zod": "^3.0.0"
