@@ -39,7 +39,9 @@ interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client: inferRouterProxyClient<TRouter>;
 }
 
-type CreateServerSideHelpersOptions<TRouter extends AnyRouter> = CreateTRPCReactQueryClientConfig & (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
+type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
+  CreateTRPCReactQueryClientConfig &
+    (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**

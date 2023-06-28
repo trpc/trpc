@@ -49,7 +49,9 @@ function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return observable<TOutput>((emit) => {
-    _pull(emit).catch((err) => { emit.error(err as Error); });
+    _pull(emit).catch((err) => {
+      emit.error(err as Error);
+    });
     return () => {
       clearTimeout(timer);
       stopped = true;
