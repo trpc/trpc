@@ -67,7 +67,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let dispatchTimer: NodeJS.Timer | number | null = null;
   let connectTimer: NodeJS.Timer | number | null = null;
   let activeConnection = createWS();
-  let state: 'open' | 'connecting' | 'closed' = 'connecting';
+  let state: 'closed' | 'connecting' | 'open' = 'connecting';
   /**
    * tries to send the list of messages
    */
@@ -90,7 +90,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
   }
   function tryReconnect() {
-    if (connectTimer || state === 'closed') {
+    if (connectTimer !== null || state === 'closed') {
       return;
     }
     const timeout = retryDelayFn(connectAttempt++);

@@ -49,8 +49,8 @@ export interface TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
+    opts: Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>> &
+      TRPCRequestOptions,
   ): Unsubscribable;
 }
 /**
