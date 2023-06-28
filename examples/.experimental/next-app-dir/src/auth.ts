@@ -13,8 +13,10 @@ declare module 'next-auth' {
 export const options = {
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_ID as string,
-      clientSecret: process.env.GITHUB_SECRET as string,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      clientId: process.env.GITHUB_ID!,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      clientSecret: process.env.GITHUB_SECRET!,
     }),
   ],
   callbacks: {
