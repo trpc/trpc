@@ -29,7 +29,7 @@ function flattenSponsor(node: Node) {
     : `https://github.com/${node.sponsorEntity.login}`;
   return {
     __typename: node.sponsorEntity.__typename,
-    name: node.sponsorEntity.name || node.sponsorEntity.login,
+    name: node.sponsorEntity.name ?? node.sponsorEntity.login,
     imgSrc: node.sponsorEntity.avatarUrl,
     monthlyPriceInDollars: node.tier.monthlyPriceInDollars,
     link,
@@ -253,10 +253,9 @@ async function main() {
 
     const groupDiff = (max - min) / nGroups;
 
-    const groups: Array<typeof sortedSponsors> = [];
-    for (let index = 0; index < sponsors.length; index++) {
+    const groups: (typeof sortedSponsors)[] = [];
+    for (const sponsor of sponsors) {
       let pos = 0;
-      const sponsor = sponsors[index];
       while (sponsor.value > min + groupDiff * pos) {
         pos++;
       }

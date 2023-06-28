@@ -39,11 +39,9 @@ interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client: inferRouterProxyClient<TRouter>;
 }
 
-type CreateServerSideHelpersOptions<TRouter extends AnyRouter> = (
-  | CreateSSGHelpersInternal<TRouter>
-  | CreateSSGHelpersExternal<TRouter>
-) &
-  CreateTRPCReactQueryClientConfig;
+type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
+  CreateTRPCReactQueryClientConfig &
+    (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -77,7 +75,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
 type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
+    AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries

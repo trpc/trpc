@@ -35,8 +35,6 @@ import * as mock_trpcReact from '../../react-query/src';
 vi.mock('@trpc/react-query', () => mock_trpcReact);
 import * as mock_trpcReact__server from '../../react-query/src/server';
 vi.mock('@trpc/react-query/server', () => mock_trpcReact__server);
-import * as mock_trpcReact__ssg from '../../react-query/src/ssg';
-vi.mock('@trpc/react-query/ssg', () => mock_trpcReact__ssg);
 import * as mock_trpcReact__shared from '../../react-query/src/shared';
 vi.mock('@trpc/react-query/shared', () => mock_trpcReact__shared);
 
@@ -47,6 +45,5 @@ export {
   mock_trpcServer as trpcServer,
   mock_trpcClient as trpcClient,
   mock_trpcReact as trpcReact,
-  mock_trpcReact__ssg as trpcReact__ssg,
   mock_trpcReact__server as trpcReact__server 
 };

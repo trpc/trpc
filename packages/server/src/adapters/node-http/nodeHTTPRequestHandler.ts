@@ -24,6 +24,7 @@ export async function nodeHTTPRequestHandler<
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
   const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
+  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
     if (err) throw err;
 

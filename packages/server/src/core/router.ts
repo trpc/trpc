@@ -65,7 +65,7 @@ export interface Router<TDef extends AnyRouterDef> {
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TDef['_config']['$types']['ctx'];
+    ctx: TDef['_config']['$types']['ctx'] | undefined;
   }): TDef['_config']['$types']['errorShape'];
 }
 

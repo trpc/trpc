@@ -7,7 +7,7 @@ import {
 } from '@trpc/server';
 import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
-export type QueryType = 'query' | 'infinite' | 'any';
+export type QueryType = 'any' | 'infinite' | 'query';
 
 export type TRPCQueryKey = [
   string[],
@@ -67,8 +67,8 @@ type GetQueryParams<
 
 type GetParams<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
     | AnyMutationProcedure
+    | AnyQueryProcedure
     | AnyRouter,
   TPath extends string,
   TFlags,
@@ -89,8 +89,8 @@ type GetParams<
 
 type GetQueryKeyParams<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
     | AnyMutationProcedure
+    | AnyQueryProcedure
     | AnyRouter,
   TPath extends string,
   TFlags,
@@ -105,8 +105,8 @@ type GetQueryKeyParams<
  */
 export function getQueryKey<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
     | AnyMutationProcedure
+    | AnyQueryProcedure
     | AnyRouter,
   TPath extends string,
   TFlags,
