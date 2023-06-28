@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -1874,8 +1870,8 @@ importers:
         specifier: ^14.0.0
         version: 14.0.0
       '@tsconfig/docusaurus':
-        specifier: ^1.0.7
-        version: 1.0.7
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -9193,8 +9189,8 @@ packages:
       path-browserify: 1.0.1
     dev: false
 
-  /@tsconfig/docusaurus@1.0.7:
-    resolution: {integrity: sha512-ffTXxGIP/IRMCjuzHd6M4/HdIrw1bMfC7Bv8hMkTadnePkpe0lG0oDSdbRpSDZb2rQMAgpbWiR10BvxvNYwYrg==}
+  /@tsconfig/docusaurus@2.0.0:
+    resolution: {integrity: sha512-X5wptT7pXA/46/IRFTW76oR5GNjoy9qjNM/1JGhFV4QAsmLh3YUpJJA+Vpx7Ds6eEBxSxz1QrgoNEBy6rLVs8w==}
     dev: true
 
   /@tsconfig/esm@1.0.3:
@@ -23725,3 +23721,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
