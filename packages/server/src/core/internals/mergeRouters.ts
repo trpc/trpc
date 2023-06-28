@@ -28,8 +28,8 @@ export type MergeRouters<
       {
         _config: TRouterDef['_config'];
         router: true;
-        procedures: TRouterDef['procedures'] & Head['_def']['procedures'];
-        record: TRouterDef['record'] & Head['_def']['record'];
+        procedures: Head['_def']['procedures'] & TRouterDef['procedures'];
+        record: Head['_def']['record'] & TRouterDef['record'];
       }
     >
   : Router<TRouterDef> & TRouterDef['record'];

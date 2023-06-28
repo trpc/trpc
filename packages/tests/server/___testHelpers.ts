@@ -96,7 +96,9 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       await Promise.all([
         new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => ws.close());
+          wss.clients.forEach((ws) => {
+            ws.close();
+          });
           wss.close(resolve);
         }),
       ]);
@@ -124,7 +126,7 @@ export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */
-  fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
+  fnOrPromise: Promise<unknown> | (() => unknown),
   /**
    * Force error constructor to be of specific type
    * @default Error
@@ -147,7 +149,7 @@ export async function waitError<TError extends Error = Error>(
   throw new Error('Function did not throw');
 }
 
-export const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+export const ignoreErrors = async (fn: () => unknown) => {
   try {
     await fn();
   } catch {

@@ -5,7 +5,6 @@ import {
   useQuery as __useQuery,
   DehydratedState,
   hashQueryKey,
-  QueryClient,
   useQueryClient,
 } from '@tanstack/react-query';
 import { createTRPCUntypedClient, TRPCClientErrorLike } from '@trpc/client';
@@ -59,9 +58,7 @@ export function createRootHooks<
 
   const Context = (config?.context ??
     TRPCContext) as React.Context<ProviderContext>;
-  const ReactQueryContext = config?.reactQueryContext as React.Context<
-    QueryClient | undefined
-  >;
+  const ReactQueryContext = config?.reactQueryContext;
 
   const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCUntypedClient(opts);
@@ -81,7 +78,7 @@ export function createRootHooks<
           abortOnUnmount,
           queryClient,
           client,
-          ssrContext: ssrContext || null,
+          ssrContext: ssrContext ?? null,
           ssrState,
           fetchQuery: useCallback(
             (queryKey, opts) => {
@@ -351,7 +348,7 @@ export function createRootHooks<
     const optsRef = useRef<typeof opts>(opts);
     optsRef.current = opts;
 
-    return useEffect(() => {
+    useEffect(() => {
       if (!enabled) {
         return;
       }

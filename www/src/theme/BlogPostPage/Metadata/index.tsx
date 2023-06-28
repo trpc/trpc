@@ -14,9 +14,11 @@ export default function BlogPostPageMetadata(): JSX.Element {
   const ogImg = `${env.OG_URL}/api/blog?${blogParams.toSearchString({
     title: metadata.title,
     description: metadata.description,
-    authorName: author.name as string,
-    authorTitle: author.title as string,
-    authorImg: author.imageURL as string,
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    authorName: author.name!,
+    authorTitle: author.title!,
+    authorImg: author.imageURL!,
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
     date,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     readingTimeInMinutes: metadata.readingTime!,

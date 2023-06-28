@@ -138,10 +138,10 @@ async function inputToProcedureCall<
 >(procedureOpts: {
   opts: Pick<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'router' | 'onError' | 'req'
+    'onError' | 'req' | 'router'
   >;
   ctx: inferRouterContext<TRouter> | undefined;
-  type: 'query' | 'mutation';
+  type: 'mutation' | 'query';
   input: unknown;
   path: string;
 }): Promise<TRPCResponse<unknown, inferRouterError<TRouter>>> {
@@ -185,7 +185,7 @@ function caughtErrorToData<
   errorOpts: {
     opts: Pick<
       ResolveHTTPRequestOptions<TRouter, TRequest>,
-      'router' | 'onError' | 'req'
+      'onError' | 'req' | 'router'
     >;
     ctx: inferRouterContext<TRouter> | undefined;
     type: ProcedureType | 'unknown';
@@ -242,7 +242,7 @@ export async function resolveHTTPResponse<
 >(
   opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'unstable_onHead' | 'unstable_onChunk'
+    'unstable_onChunk' | 'unstable_onHead'
   >,
 ): Promise<HTTPResponse>;
 /**
@@ -262,7 +262,7 @@ export async function resolveHTTPResponse<
 >(
   opts: PartialBy<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'unstable_onHead' | 'unstable_onChunk'
+    'unstable_onChunk' | 'unstable_onHead'
   >,
 ): Promise<HTTPResponse | void> {
   const { router, req, unstable_onHead, unstable_onChunk } = opts;
@@ -392,7 +392,7 @@ export async function resolveHTTPResponse<
         promise.then((r) => [index, r] as const),
       ]),
     );
-    for (let i = 0; i < paths.length; i++) {
+    for (const _ of paths) {
       const [index, untransformedJSON] = await Promise.race(
         indexedPromises.values(),
       );

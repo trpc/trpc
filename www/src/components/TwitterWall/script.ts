@@ -78,7 +78,8 @@ function req(pathname: string): Promise<any> {
           return;
         }
         try {
-          resolve(JSON.parse(data?.toString() as string));
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+          resolve(JSON.parse(data?.toString()!));
         } catch (err) {
           reject(err);
         }
@@ -104,7 +105,7 @@ async function getCollection() {
   return flattenedTweets;
 }
 
-async function getTweets(opts: Array<{ id: string; date: string }>) {
+async function getTweets(opts: { id: string; date: string }[]) {
   const ids = opts
     .map((it) => ({ ...it, date: Date.parse(it.date) }))
     .sort((a, b) => b.date - a.date)

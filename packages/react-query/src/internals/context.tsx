@@ -32,7 +32,7 @@ export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
     TRPCRequestOptions {}
 
 /** @internal */
-export type SSRState = false | 'prepass' | 'mounting' | 'mounted';
+export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
 
 export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
   /**
@@ -179,14 +179,14 @@ export interface TRPCContextState<
    */
   setQueryData: (
     queryKey: TRPCQueryKey,
-    updater: Updater<unknown | undefined, unknown | undefined>,
+    updater: Updater<unknown, unknown>,
     options?: SetDataOptions,
   ) => void;
 
   /**
    * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientgetquerydata
    */
-  getQueryData: (queryKey: TRPCQueryKey) => unknown | undefined;
+  getQueryData: (queryKey: TRPCQueryKey) => unknown;
   /**
    * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientsetquerydata
    */

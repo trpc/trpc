@@ -16,7 +16,7 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
-  ctx: undefined | TContext;
+  ctx: TContext | undefined;
   shape: DefaultErrorShape;
 }) => TShape;
 

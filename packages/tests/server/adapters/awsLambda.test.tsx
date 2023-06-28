@@ -292,7 +292,7 @@ test('test v2 format', async () => {
       "statusCode": 200,
     }
   `);
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
       "result": Object {
@@ -337,7 +337,7 @@ test('test v2 format with multiple / in query key', async () => {
       "statusCode": 200,
     }
   `);
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
       "result": Object {
@@ -383,7 +383,7 @@ test('test v2 format with non default routeKey', async () => {
       "statusCode": 200,
     }
   `);
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
       "result": Object {
@@ -428,7 +428,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
       "statusCode": 200,
     }
   `);
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
       "result": Object {
@@ -464,7 +464,7 @@ test('router with no context', async () => {
       "statusCode": 200,
     }
   `);
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
       "result": Object {

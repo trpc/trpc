@@ -114,10 +114,8 @@ export type CreateWSSContextFn<TRouter extends AnyRouter> = (
 export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
-> & {
-  wss: ws.Server;
-  process?: NodeJS.Process;
-} & (object extends inferRouterContext<TRouter>
+> &
+  (object extends inferRouterContext<TRouter>
     ? {
         /**
          * @link https://trpc.io/docs/context
@@ -129,7 +127,10 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
          * @link https://trpc.io/docs/context
          **/
         createContext: CreateWSSContextFn<TRouter>;
-      });
+      }) & {
+    wss: ws.Server;
+    process?: NodeJS.Process;
+  };
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -150,7 +151,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     function stopSubscription(
       subscription: Unsubscribable,
-      { id, jsonrpc }: { id: JSONRPC2.RequestId } & JSONRPC2.BaseEnvelope,
+      { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId },
     ) {
       subscription.unsubscribe();
 
@@ -300,6 +301,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     client.on('message', async (message) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
