@@ -45,7 +45,8 @@ export function experimental_createTRPCNextAppDirServer<
 
     const pathCopy = [...callOpts.path];
     const procedureType = clientCallTypeToProcedureType(
-      pathCopy.pop() as string,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      pathCopy.pop()!,
     );
     const fullPath = pathCopy.join('.');
 
@@ -57,7 +58,7 @@ export function experimental_createTRPCNextAppDirServer<
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
-  input: TDef['input'] | FormData,
+  input: FormData | TDef['input'],
 ) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
 export function experimental_createServerActionHandler<
@@ -85,9 +86,9 @@ export function experimental_createServerActionHandler<
     proc: TProc,
   ): TRPCActionHandler<Simplify<inferActionDef<TProc>>> {
     return async function actionHandler(
-      rawInput: inferProcedureInput<TProc> | FormData,
+      rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: undefined | TInstance['_config']['$types']['ctx'] = undefined;
+      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
         const ctx = await createContext();
         if (normalizeFormData && isFormData(rawInput)) {

@@ -46,7 +46,9 @@ const interval = setInterval(() => {
     ee.emit('isTypingUpdate');
   }
 }, 3e3);
-process.on('SIGTERM', () => clearInterval(interval));
+process.on('SIGTERM', () => {
+  clearInterval(interval);
+});
 
 export const postRouter = router({
   add: authedProcedure
@@ -105,7 +107,7 @@ export const postRouter = router({
         skip: 0,
       });
       const items = page.reverse();
-      let prevCursor: null | typeof cursor = null;
+      let prevCursor: typeof cursor | null = null;
       if (items.length > take) {
         const prev = items.shift();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -119,7 +121,9 @@ export const postRouter = router({
 
   onAdd: publicProcedure.subscription(() => {
     return observable<Post>((emit) => {
-      const onAdd = (data: Post) => emit.next(data);
+      const onAdd = (data: Post) => {
+        emit.next(data);
+      };
       ee.on('add', onAdd);
       return () => {
         ee.off('add', onAdd);

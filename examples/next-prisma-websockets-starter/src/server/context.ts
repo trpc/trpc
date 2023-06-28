@@ -11,8 +11,8 @@ import ws from 'ws';
  */
 export const createContext = async (
   opts:
-    | trpcNext.CreateNextContextOptions
-    | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>,
+    | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>
+    | trpcNext.CreateNextContextOptions,
 ) => {
   const session = await getSession(opts);
 

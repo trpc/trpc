@@ -30,7 +30,7 @@ describe('Infinite Query', () => {
         },
       );
 
-      expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<undefined | Post[]>();
+      expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
 
       return q.status === 'loading' ? (
         <p>Loading...</p>
@@ -131,7 +131,7 @@ describe('Infinite Query', () => {
         },
       );
 
-      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<undefined | Post[]>();
+      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
       return q.status === 'loading' ? (
         <p>Loading...</p>
@@ -260,7 +260,7 @@ describe('Infinite Query', () => {
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
-      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<undefined | Post[]>();
+      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
       return q.status === 'loading' ? (
         <p>Loading...</p>
@@ -407,7 +407,7 @@ describe('Infinite Query', () => {
     assertType<Extends<Input, { cursor?: string }>>(false);
     assertType<Extends<Input, { cursor?: string } | void>>(true);
     assertType<Extends<Input, { cursor?: string } | undefined>>(true);
-    assertType<Extends<Input, { cursor?: string } | void | undefined>>(true);
+    assertType<Extends<Input, { cursor?: string } | undefined | void>>(true);
 
     // Assert 'useInfiniteQuery' is exposed in 'trpc.paginatedPosts'.
 

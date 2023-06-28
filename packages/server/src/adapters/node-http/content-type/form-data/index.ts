@@ -25,7 +25,7 @@ async function parseMultipartFormData(
   request: NodeHTTPRequest,
   uploadHandler: UploadHandler,
 ): Promise<FormData> {
-  const contentType = request.headers['content-type'] || '';
+  const contentType = request.headers['content-type'] ?? '';
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
   if (!boundary || type !== 'multipart/form-data') {
@@ -58,7 +58,7 @@ async function parseMultipartFormData(
 function isMultipartFormDataRequest(req: NodeHTTPRequest) {
   const contentTypeHeader = req.headers['content-type'];
   return (
-    contentTypeHeader?.startsWith('multipart/form-data') ||
+    contentTypeHeader?.startsWith('multipart/form-data') ??
     contentTypeHeader === 'application/x-www-form-urlencoded'
   );
 }
