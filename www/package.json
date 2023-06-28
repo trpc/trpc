@@ -64,7 +64,7 @@
     "@effect/schema": "^0.21.0",
     "@octokit/graphql": "^6.0.0",
     "@octokit/graphql-schema": "^14.0.0",
-    "@tsconfig/docusaurus": "^1.0.7",
+    "@tsconfig/docusaurus": "^2.0.0",
     "@types/node": "^18.16.16",
     "@types/oauth": "^0.9.1",
     "arktype": "1.0.14-alpha",
