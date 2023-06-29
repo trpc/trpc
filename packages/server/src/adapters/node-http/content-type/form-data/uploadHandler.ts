@@ -12,7 +12,7 @@ export type UploadHandlerPart = {
 
 export type UploadHandler = (
   part: UploadHandlerPart,
-) => Promise<NodeOnDiskFile | File | string | null | undefined>;
+) => Promise<File | NodeOnDiskFile | string | null | undefined>;
 
 export function composeUploadHandlers(
   ...handlers: UploadHandler[]
@@ -53,7 +53,7 @@ export type MemoryUploadHandlerOptions = {
    * @param mimetype
    * @param encoding
    */
-  filter?(args: MemoryUploadHandlerFilterArgs): boolean | Promise<boolean>;
+  filter?(args: MemoryUploadHandlerFilterArgs): Promise<boolean> | boolean;
 };
 
 /**

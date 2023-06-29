@@ -26,4 +26,4 @@ export type FetchCreateContextOption<TRouter extends AnyRouter> =
       };
 
 export type FetchHandlerOptions<TRouter extends AnyRouter> =
-  HTTPBaseHandlerOptions<TRouter, Request> & FetchCreateContextOption<TRouter>;
+  FetchCreateContextOption<TRouter> & HTTPBaseHandlerOptions<TRouter, Request>;

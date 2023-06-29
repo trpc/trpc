@@ -67,7 +67,7 @@ export interface HTTPResult {
 
 type GetInputOptions = {
   runtime: TRPCClientRuntime;
-} & ({ inputs: unknown[] } | { input: unknown });
+} & ({ input: unknown } | { inputs: unknown[] });
 
 function getInput(opts: GetInputOptions) {
   return 'input' in opts
@@ -77,8 +77,8 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPBaseRequestOptions = ResolvedHTTPLinkOptions &
-  GetInputOptions & {
+export type HTTPBaseRequestOptions = GetInputOptions &
+  ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
   };
@@ -136,8 +136,8 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export type HTTPRequestOptions = HTTPBaseRequestOptions &
-  ContentOptions & {
+export type HTTPRequestOptions = ContentOptions &
+  HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
     TextDecoder?: TextDecoderEsque;
   };
@@ -149,25 +149,26 @@ export async function fetchHTTPResponse(
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const headers = await opts.headers();
+  const resolvedHeaders = await opts.headers();
   /* istanbul ignore if -- @preserve */
   if (type === 'subscription') {
     throw new Error('Subscriptions should use wsLink');
   }
+  const headers = {
+    ...(opts.contentTypeHeader
+      ? { 'content-type': opts.contentTypeHeader }
+      : {}),
+    ...(opts.batchModeHeader
+      ? { 'trpc-batch-mode': opts.batchModeHeader }
+      : {}),
+    ...resolvedHeaders,
+  };
 
   return opts.fetch(url, {
     method: METHOD[type],
     signal: ac?.signal,
     body: body,
-    headers: {
-      ...(opts.contentTypeHeader
-        ? { 'content-type': opts.contentTypeHeader }
-        : {}),
-      ...(opts.batchModeHeader
-        ? { 'trpc-batch-mode': opts.batchModeHeader }
-        : {}),
-      ...headers,
-    },
+    headers,
   });
 }
 

@@ -54,7 +54,7 @@ export interface ProcedureUseQuery<
 > {
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-    TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
@@ -62,13 +62,14 @@ export interface ProcedureUseQuery<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TProcedure>
+      TRPCClientErrorLike<TProcedure>,
+      inferTransformedProcedureOutput<TProcedure>
     >,
   ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
 
   <
     TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-    TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
@@ -76,7 +77,8 @@ export interface ProcedureUseQuery<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TProcedure>
+      TRPCClientErrorLike<TProcedure>,
+      inferTransformedProcedureOutput<TProcedure>
     >,
   ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
 }
@@ -89,44 +91,7 @@ export type DecorateProcedure<
   _TFlags,
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
-  ? {
-      /**
-       * Method to extract the query key for a procedure
-       * @param type - defaults to `any`
-       * @see https://trpc.io/docs/client/react/getQueryKey
-       * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
-       */
-      getQueryKey: (
-        input: inferProcedureInput<TProcedure>,
-        type?: QueryType,
-      ) => QueryKey;
-      /**
-       * @see https://trpc.io/docs/client/react/useQuery
-       */
-      useQuery: ProcedureUseQuery<TProcedure, TPath>;
-      /**
-       * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
-       */
-      useSuspenseQuery: <
-        TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-        TData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-      >(
-        input: inferProcedureInput<TProcedure>,
-        opts?: Omit<
-          UseTRPCQueryOptions<
-            TPath,
-            inferProcedureInput<TProcedure>,
-            TQueryFnData,
-            TData,
-            TRPCClientErrorLike<TProcedure>
-          >,
-          'enabled' | 'suspense'
-        >,
-      ) => [
-        TData,
-        UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
-      ];
-    } & (inferProcedureInput<TProcedure> extends { cursor?: any } | void
+  ? (inferProcedureInput<TProcedure> extends { cursor?: any } | void
       ? {
           /**
            * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
@@ -165,7 +130,44 @@ export type DecorateProcedure<
             >,
           ];
         }
-      : object)
+      : object) & {
+      /**
+       * Method to extract the query key for a procedure
+       * @param type - defaults to `any`
+       * @see https://trpc.io/docs/client/react/getQueryKey
+       * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
+       */
+      getQueryKey: (
+        input: inferProcedureInput<TProcedure>,
+        type?: QueryType,
+      ) => QueryKey;
+      /**
+       * @see https://trpc.io/docs/client/react/useQuery
+       */
+      useQuery: ProcedureUseQuery<TProcedure, TPath>;
+      /**
+       * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
+       */
+      useSuspenseQuery: <
+        TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+        TData = TQueryFnData,
+      >(
+        input: inferProcedureInput<TProcedure>,
+        opts?: Omit<
+          UseTRPCQueryOptions<
+            TPath,
+            inferProcedureInput<TProcedure>,
+            TQueryFnData,
+            TData,
+            TRPCClientErrorLike<TProcedure>
+          >,
+          'enabled' | 'suspense'
+        >,
+      ) => [
+        TData,
+        UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
+      ];
+    }
   : TProcedure extends AnyMutationProcedure
   ? {
       /**
@@ -209,16 +211,16 @@ export type DecoratedProcedureRecord<
   TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? {
+    ? DecoratedProcedureRecord<
+        TProcedures[TKey]['_def']['record'],
+        TFlags,
+        `${TPath}${TKey & string}.`
+      > & {
         /**
          * @deprecated - import `getQueryKey` from `@trpc/react-query` instead
          */
         getQueryKey: () => QueryKey;
-      } & DecoratedProcedureRecord<
-        TProcedures[TKey]['_def']['record'],
-        TFlags,
-        `${TPath}${TKey & string}.`
-      >
+      }
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey], TFlags, `${TPath}${TKey & string}`>
     : never;

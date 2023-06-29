@@ -36,8 +36,8 @@ import ssrPrepass from 'react-ssr-prepass';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
-    | DehydratedState['queries'][0]
-    | DehydratedState['mutations'][0],
+    | DehydratedState['mutations'][0]
+    | DehydratedState['queries'][0],
 >(result: TState): TState {
   const error = result.state.error as Maybe<TRPCClientError<any>>;
   if (error instanceof Error && error.name === 'TRPCClientError') {
@@ -57,9 +57,10 @@ function transformQueryOrMutationCacheErrors<
   return result;
 }
 export type WithTRPCConfig<TRouter extends AnyRouter> =
-  CreateTRPCClientOptions<TRouter> & {
-    abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig;
+  CreateTRPCClientOptions<TRouter> &
+    CreateTRPCReactQueryClientConfig & {
+      abortOnUnmount?: boolean;
+    };
 
 interface WithTRPCOptions<TRouter extends AnyRouter>
   extends CreateTRPCReactOptions<TRouter> {
@@ -142,7 +143,7 @@ export function withTRPC<
       );
     };
 
-    if (AppOrPage.getInitialProps || opts.ssr) {
+    if (AppOrPage.getInitialProps ?? opts.ssr) {
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
         const AppTree = appOrPageCtx.AppTree;
 
@@ -248,9 +249,9 @@ export function withTRPC<
                   ? [err as TRPCClientError<TRouter>]
                   : [],
               ),
-          }) || {};
+          }) ?? {};
 
-        for (const [key, value] of Object.entries(meta.headers || {})) {
+        for (const [key, value] of Object.entries(meta.headers ?? {})) {
           if (typeof value === 'string') {
             ctx.res?.setHeader(key, value);
           }
@@ -262,7 +263,7 @@ export function withTRPC<
       };
     }
 
-    const displayName = AppOrPage.displayName || AppOrPage.name || 'Component';
+    const displayName = AppOrPage.displayName ?? AppOrPage.name ?? 'Component';
     WithTRPC.displayName = `withTRPC(${displayName})`;
 
     return WithTRPC as any;

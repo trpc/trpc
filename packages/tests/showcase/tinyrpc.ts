@@ -76,13 +76,13 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
 ) =>
   createRecursiveProxy(async (opts) => {
     const path = [...opts.path]; // e.g. ["post", "byId", "query"]
-    const method = path.pop()! as 'query' | 'mutate';
+    const method = path.pop()! as 'mutate' | 'query';
     const dotPath = path.join('.'); // "post.byId" - this is the path procedures have on the backend
     let uri = `${baseUrl}/${dotPath}`;
 
     const [input] = opts.args;
     const stringifiedInput = input !== undefined && JSON.stringify(input);
-    let body: undefined | string = undefined;
+    let body: string | undefined = undefined;
     if (stringifiedInput !== false) {
       if (method === 'query') {
         uri += `?input=${encodeURIComponent(stringifiedInput)}`;

@@ -7,7 +7,7 @@ import {
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
 
-type ErrorInferrable = AnyRouter | AnyProcedure | TRPCErrorShape<number>;
+type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
 
 type inferErrorShape<TInferrable extends ErrorInferrable> =
   TInferrable extends AnyRouter

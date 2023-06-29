@@ -1,6 +1,4 @@
-export interface AbortControllerEsque {
-  new (): AbortControllerInstanceEsque;
-}
+export type AbortControllerEsque = new () => AbortControllerInstanceEsque;
 
 /**
  * Allows you to abort one or more requests.
@@ -35,7 +33,7 @@ export type FetchEsque = (
  * their own fetch types, such as undici and node-fetch.
  */
 export type NativeFetchEsque = (
-  url: string | URL,
+  url: URL | string,
   init?: NodeFetchRequestInitEsque,
 ) => Promise<ResponseEsque>;
 
@@ -54,7 +52,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's body.
    */
-  body?: string | ReadableStream | FormData | null;
+  body?: FormData | ReadableStream | string | null;
 
   /**
    * Sets the request's associated headers.
@@ -85,7 +83,7 @@ export type WebReadableStreamEsque = {
  * @see Response from lib.dom.d.ts
  */
 export interface ResponseEsque {
-  readonly body?: WebReadableStreamEsque | NodeJS.ReadableStream | null;
+  readonly body?: NodeJS.ReadableStream | WebReadableStreamEsque | null;
   /**
    * @remarks
    * The built-in Response::json() method returns Promise<any>, but
