@@ -12,7 +12,7 @@ async function AuthThing() {
 export default async function Home() {
   return (
     <>
-      <AuthThing />
+      {/* <AuthThing /> */}
 
       <div style={separator} />
 

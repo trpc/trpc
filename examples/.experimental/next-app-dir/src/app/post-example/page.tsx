@@ -1,3 +1,5 @@
+import { Button } from '~/components/button';
+import { Input } from '~/components/input';
 import { api } from '~/trpc/server-http';
 
 async function action(fd: FormData) {
@@ -23,19 +25,10 @@ export default async function PostPage() {
         <span>Content: {latestPost.content}</span>
         <span>Created At: {latestPost.createdAt.toISOString()}</span>
       </div>
-      <form
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          maxWidth: 300,
-          marginTop: 16,
-        }}
-        action={action}
-      >
-        <input name="title" placeholder="title" />
-        <input name="content" placeholder="content" />
-        <button type="submit">Create Post!</button>
+      <form className="max-w-sm space-y-2" action={action}>
+        <Input name="title" placeholder="title" />
+        <Input name="content" placeholder="content" />
+        <Button type="submit">Create Post!</Button>
       </form>
     </div>
   );

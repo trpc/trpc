@@ -1,8 +1,11 @@
 'use client';
 
+import { Button } from '~/components/button';
+import { Input } from '~/components/input';
+import { JsonPreTag } from '~/components/json-pretag';
 import { useState } from 'react';
 import { useAction } from 'trpc-api';
-import { testAction } from './_actions';
+import { testAction } from '../_actions';
 
 export function UseActionExample() {
   const [text, setText] = useState('');
@@ -18,24 +21,21 @@ export function UseActionExample() {
   });
 
   return (
-    <>
-      <p>
-        <label>
-          Text
-          <br />
-          <input
-            type={'text'}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-            }}
-            className="bg-slate-300 text-slate-900"
-          />
-        </label>
-      </p>
+    <div className="space-y-2">
+      <label>
+        Text
+        <br />
+        <Input
+          type={'text'}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+        />
+      </label>
 
-      <p>
-        <button
+      <div className="space-x-4">
+        <Button
           onClick={() => {
             mutation.mutate({
               text,
@@ -43,10 +43,8 @@ export function UseActionExample() {
           }}
         >
           Run server action
-        </button>
-      </p>
-      <p>
-        <button
+        </Button>
+        <Button
           onClick={async () => {
             const res = await testAction({
               text: '',
@@ -65,15 +63,9 @@ export function UseActionExample() {
           }}
         >
           Run server action raw debugging
-        </button>
-      </p>
-      <pre
-        style={{
-          overflowX: 'scroll',
-        }}
-      >
-        {JSON.stringify(mutation, null, 4)}
-      </pre>
-    </>
+        </Button>
+      </div>
+      <JsonPreTag object={mutation} />
+    </div>
   );
 }

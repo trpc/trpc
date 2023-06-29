@@ -1,16 +1,18 @@
 'use client';
 
+import { Button } from '~/components/button';
+import { Input } from '~/components/input';
 import { useState } from 'react';
-import { testAction } from './_actions';
+import { testAction } from '../_actions';
 
 export function RawExample() {
   const [text, setText] = useState('');
 
   return (
-    <>
+    <div className="space-y-2">
       <label>
         Text to send: <br />
-        <input
+        <Input
           type="text"
           value={text}
           onChange={(e) => {
@@ -18,8 +20,7 @@ export function RawExample() {
           }}
         />
       </label>
-      <br />
-      <button
+      <Button
         onClick={async () => {
           const res = await testAction({
             text,
@@ -38,7 +39,7 @@ export function RawExample() {
         }}
       >
         Run server action raw debugging
-      </button>
-    </>
+      </Button>
+    </div>
   );
 }
