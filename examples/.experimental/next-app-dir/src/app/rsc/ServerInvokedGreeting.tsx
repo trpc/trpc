@@ -2,6 +2,8 @@
  * This component invokes the procedure directly on the server,
  * without going through the HTTP endpoint.
  */
+import { Button } from '~/components/button';
+import { JsonPreTag } from '~/components/json-pretag';
 import { api } from '~/trpc/server-invoker';
 
 export async function ServerInvokedGreeting() {
@@ -11,9 +13,8 @@ export async function ServerInvokedGreeting() {
   const secret = await api.secret.query();
 
   return (
-    <div>
-      <p>{greeting}</p>
-      <p>{secret}</p>
+    <div className="space-y-2">
+      <JsonPreTag object={{ greeting, secret }} />
       <form
         action={async () => {
           'use server';
@@ -22,7 +23,7 @@ export async function ServerInvokedGreeting() {
           });
         }}
       >
-        <button type="submit">Revalidate Cache</button>
+        <Button type="submit">Revalidate Cache</Button>
       </form>
     </div>
   );

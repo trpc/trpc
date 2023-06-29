@@ -1,3 +1,5 @@
+import { Button } from '~/components/button';
+import { JsonPreTag } from '~/components/json-pretag';
 import { api } from '~/trpc/server-http';
 
 export const ServerHttpGreeting = async () => {
@@ -5,16 +7,15 @@ export const ServerHttpGreeting = async () => {
   const secret = await api.secret.query();
 
   return (
-    <div>
-      <p>{greeting}</p>
-      <p>{secret}</p>
+    <div className="space-y-2">
+      <JsonPreTag object={{ greeting, secret }} />
       <form
         action={async () => {
           'use server';
           await api.greeting.revalidate({ text: 'from server' });
         }}
       >
-        <button type="submit">Revalidate HTTP</button>
+        <Button type="submit">Revalidate HTTP</Button>
       </form>
     </div>
   );
