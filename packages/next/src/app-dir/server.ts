@@ -18,6 +18,7 @@ import {
 } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
+  createFlatProxy,
   createRecursiveProxy,
   getErrorShape,
   transformTRPCResponse,
@@ -28,6 +29,7 @@ import { formDataToObject } from './formDataToObject';
 import {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
+  fuzzyRevalidation,
   generateCacheTag,
   inferActionDef,
   isFormData,
@@ -46,32 +48,56 @@ export function experimental_createTRPCNextAppDirServer<
     return createTRPCUntypedClient(config);
   });
 
-  return createRecursiveProxy((callOpts) => {
+  const seenTags = new Set<string>();
+
+  return createFlatProxy<NextAppDirDecoratedProcedureRecord<TRouter>>((key) => {
     // lazily initialize client
     const client = getClient();
 
-    const pathCopy = [...callOpts.path];
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const action = pathCopy.pop()!;
-    const procedurePath = pathCopy.join('.');
-    const procedureType = clientCallTypeToProcedureType(action);
-    const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
-
-    if (action === '_def') {
-      // internal attribute used to get the procedure path
-      // used in server actions to find the procedure from the client proxy
-      return {
-        path: procedurePath,
+    if (key === 'revalidate') {
+      // revalidate them all
+      return () => {
+        for (const cacheTag of seenTags) {
+          revalidateTag(cacheTag);
+        }
       };
     }
 
-    if (action === 'revalidate') {
-      revalidateTag(cacheTag);
-      return;
-    }
+    return createRecursiveProxy((callOpts) => {
+      const pathCopy = [key, ...callOpts.path];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const action = pathCopy.pop()!;
+      const procedurePath = pathCopy.join('.');
+      const procedureType = clientCallTypeToProcedureType(action);
+      const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
-    return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
+      if (action === '_def') {
+        // internal attribute used to get the procedure path
+        // used in server actions to find the procedure from the client proxy
+        return {
+          path: procedurePath,
+        };
+      }
+
+      if (action === 'revalidate') {
+        fuzzyRevalidation(cacheTag, seenTags);
+        return;
+      }
+
+      if (action === 'query') {
+        // append the cacheKey to our internal set of known cache keys
+        // this allows us to fuzzy match cache keys when revalidating
+        // e.g.
+        // 1. user calls `trpc.post.list.query()` => 'post.list' is added to the set
+        // 2. user calls `trpc.post.listXYZ.query()` => 'post.listXYZ' is added to the set
+        // 3. user calls `trpc.post.revalidate()` => fuzzy matching on 'post' revalidates 'post.list' and 'post.listXYZ'.
+        seenTags.add(cacheTag);
+        console.log('seenTags', seenTags);
+      }
+
+      return (client[procedureType] as any)(procedurePath, ...callOpts.args);
+    });
+  });
 }
 
 /**

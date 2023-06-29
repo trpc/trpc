@@ -5,7 +5,6 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
-  ProcedureRouterRecord,
 } from '@trpc/server';
 
 export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
@@ -28,12 +27,17 @@ export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
       }
     : never;
 
-export type NextAppDirDecoratedProcedureRecord<
-  TProcedures extends ProcedureRouterRecord,
-> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? NextAppDirDecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedureServer<TProcedures[TKey]>
-    : never;
+type DecorateRouter = {
+  /** Fuzzily revalidate all paths starting with this */
+  revalidate(): Promise<void>;
 };
+
+export type NextAppDirDecoratedProcedureRecord<TRouter extends AnyRouter> =
+  DecorateRouter & {
+    [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends AnyRouter
+      ? DecorateRouter &
+          NextAppDirDecoratedProcedureRecord<TRouter['_def']['record'][TKey]>
+      : TRouter['_def']['record'][TKey] extends AnyProcedure
+      ? DecorateProcedureServer<TRouter['_def']['record'][TKey]>
+      : never;
+  };

@@ -1,5 +1,6 @@
+import { Button } from '~/components/button';
 import { JsonPreTag } from '~/components/json-pretag';
-import { api } from '~/trpc/server-http';
+import { api } from '~/trpc/server-invoker';
 import { Suspense } from 'react';
 import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
@@ -86,6 +87,16 @@ export default async function Home() {
           <ServerInvokedGreeting />
         </Suspense>
       </div>
+      <form
+        action={async () => {
+          'use server';
+          await api.greeting.revalidate({
+            text: 'i never hit an api endpoint',
+          });
+        }}
+      >
+        <Button type="submit">Revalidate all</Button>
+      </form>
     </div>
   );
 }

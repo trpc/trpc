@@ -79,10 +79,7 @@ export default async function Home() {
   );
 }
 
-export async function ComponentCode(props: {
-  path: string;
-  expandText?: string;
-}) {
+async function ComponentCode(props: { path: string; expandText?: string }) {
   const fileContent = await readFile(
     new URL(props.path, import.meta.url),
     'utf-8',

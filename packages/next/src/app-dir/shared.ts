@@ -13,6 +13,7 @@ import {
   ThenArg,
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
+import { revalidateTag } from 'next/cache';
 
 /**
  * @internal
@@ -69,6 +70,39 @@ export function generateCacheTag(procedurePath: string, input: any) {
   return input
     ? `${procedurePath}?input=${JSON.stringify(input)}`
     : procedurePath;
+}
+
+/**
+ * @internal
+ */
+export function decomposeCacheTag(cacheTag: string) {
+  const [procedurePath, input] = cacheTag.split('?input=') as [
+    string,
+    ...string[],
+  ];
+  return {
+    procedurePath,
+    input: input ? JSON.parse(input) : undefined,
+  };
+}
+
+/**
+ * @internal
+ */
+export function fuzzyRevalidation(cacheKey: string, seenTags: Set<string>) {
+  const { input, procedurePath } = decomposeCacheTag(cacheKey);
+
+  if (input) {
+    // if there is input, no need to fuzzy match, just revalidate the exact key
+    revalidateTag(cacheKey);
+    return;
+  }
+
+  for (const key of seenTags) {
+    if (key.startsWith(procedurePath)) {
+      revalidateTag(key);
+    }
+  }
 }
 
 export function isFormData(value: unknown): value is FormData {

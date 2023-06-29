@@ -26,6 +26,9 @@ export const createPost = publicProcedure
   });
 
 export const appRouter = router({
+  foo: router({
+    bar: publicProcedure.query(() => 'baz'),
+  }),
   greeting: publicProcedure
     .input(
       z.object({
