@@ -5,6 +5,7 @@ import { CollapsiblePreview } from '~/components/collapsible-preview';
 import { Input } from '~/components/input';
 import { JsonPreTag } from '~/components/json-pretag';
 import { api } from '~/trpc/server-http';
+import { Suspense } from 'react';
 import { createPostAction } from './_actions';
 
 export default async function Page() {
@@ -26,10 +27,12 @@ export default async function Page() {
 
       <div className="space-y-2">
         <h2 className="text-lg font-bold">Code</h2>
-        <h3 className="font-semibold">_actions.ts</h3>
-        <ComponentCode path="./_actions.ts" />
-        <h3 className="font-semibold">page.tsx</h3>
-        <ComponentCode path="./page.tsx" />
+        <Suspense fallback={'Reading page source...'}>
+          <h3 className="font-semibold">_actions.ts</h3>
+          <ComponentCode path="./_actions.ts" />
+          <h3 className="font-semibold">page.tsx</h3>
+          <ComponentCode path="./page.tsx" />
+        </Suspense>
       </div>
     </div>
   );
