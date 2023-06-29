@@ -62,7 +62,7 @@ export default async function RootLayout({
               <div className="flex flex-1 items-center justify-end space-x-4">
                 <nav className="flex items-center space-x-2">
                   <Button asChild size="icon" variant="ghost">
-                    <Link href="https://github.com/trpc/trpc">
+                    <Link href="https://github.com/trpc/trpc/tree/main/examples/.experimental/next-app-dir">
                       <GitHubLogoIcon className="h-5 w-5" />
                       <span className="sr-only">GitHub</span>
                     </Link>
