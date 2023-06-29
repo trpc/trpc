@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { publicProcedure, router } from '../trpc';
+import { protectedProcedure, publicProcedure, router } from '../trpc';
 
-let post = {
-  id: 1,
-  title: 'hello',
-  content: 'world',
-  created: new Date(),
+let latestPost = {
+  id: 0,
+  title: 'latest post',
+  content: 'hello world',
+  createdAt: new Date(),
 };
 
 export const createPost = publicProcedure
@@ -16,11 +16,13 @@ export const createPost = publicProcedure
     }),
   )
   .mutation(async (opts) => {
-    post = {
-      id: post.id + 1,
-      created: new Date(),
+    latestPost = {
+      id: latestPost.id + 1,
+      createdAt: new Date(),
       ...opts.input,
     };
+
+    return latestPost;
   });
 
 export const appRouter = router({
@@ -32,12 +34,24 @@ export const appRouter = router({
     )
     .query(async (opts) => {
       console.log('request from', opts.ctx.headers?.['x-trpc-source']);
-      return `hello ${opts.input.text}`;
+      return `hello ${opts.input.text} - ${Math.random()}`;
     }),
 
+  secret: publicProcedure.query(async (opts) => {
+    if (!opts.ctx.session) {
+      return 'You are not authenticated';
+    }
+    return "Cool, you're authenticated!";
+  }),
+
+  me: publicProcedure.query((opts) => {
+    return opts.ctx.session;
+  }),
+
   createPost,
-  getPost: publicProcedure.query(async (opts) => {
-    return post;
+
+  getLatestPost: publicProcedure.query(async () => {
+    return latestPost;
   }),
 });
 

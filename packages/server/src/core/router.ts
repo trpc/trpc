@@ -83,7 +83,7 @@ export type AnyRouterDef<
  */
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
-  TPath extends keyof TProcedures & string,
+  TPath extends string & keyof TProcedures,
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
@@ -109,7 +109,7 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
  */
 type RouterCaller<TDef extends AnyRouterDef> = (
   ctx: TDef['_config']['$types']['ctx'],
-) => {
+) => DecoratedProcedureRecord<TDef['record']> & {
   /**
    * @deprecated
    */
@@ -122,7 +122,7 @@ type RouterCaller<TDef extends AnyRouterDef> = (
    * @deprecated
    */
   subscription: inferHandlerFn<TDef['subscriptions']>;
-} & DecoratedProcedureRecord<TDef['record']>;
+};
 
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
@@ -137,7 +137,7 @@ export interface Router<TDef extends AnyRouterDef> {
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TDef['_config']['$types']['ctx'];
+    ctx: TDef['_config']['$types']['ctx'] | undefined;
   }): TDef['_config']['$types']['errorShape'];
 }
 

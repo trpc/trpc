@@ -20,7 +20,7 @@ import { createRecursiveProxy } from '@trpc/server/shared';
 export type UseProcedureRecord<TRouter extends AnyRouter> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
+    AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
     : Resolver<TRouter['_def']['record'][TKey]>;
@@ -65,6 +65,12 @@ export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
 /**
  * @internal
  */
+export function generateCacheTag(procedurePath: string, input: any) {
+  return input
+    ? `${procedurePath}?input=${JSON.stringify(input)}`
+    : procedurePath;
+}
+
 export function isFormData(value: unknown): value is FormData {
   if (typeof FormData === 'undefined') {
     // FormData is not supported

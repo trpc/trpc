@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.32.0",
+  "version": "10.33.0",
   "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
@@ -44,6 +44,16 @@
       "import": "./dist/app-dir/client.mjs",
       "require": "./dist/app-dir/client.js",
       "default": "./dist/app-dir/client.js"
+    },
+    "./app-dir/links/nextCache": {
+      "import": "./dist/app-dir/links/nextCache.mjs",
+      "require": "./dist/app-dir/links/nextCache.js",
+      "default": "./dist/app-dir/links/nextCache.js"
+    },
+    "./app-dir/links/nextHttp": {
+      "import": "./dist/app-dir/links/nextHttp.mjs",
+      "require": "./dist/app-dir/links/nextHttp.js",
+      "default": "./dist/app-dir/links/nextHttp.js"
     }
   },
   "files": [
@@ -56,10 +66,10 @@
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.32.0",
-    "@trpc/react-query": "10.32.0",
-    "@trpc/server": "10.32.0",
-    "next": "*",
+    "@trpc/client": "10.33.0",
+    "@trpc/react-query": "10.33.0",
+    "@trpc/server": "10.33.0",
+    "next": "13.4.7",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
@@ -68,16 +78,16 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.32.0",
-    "@trpc/react-query": "10.32.0",
-    "@trpc/server": "10.32.0",
+    "@trpc/client": "10.33.0",
+    "@trpc/react-query": "10.33.0",
+    "@trpc/server": "10.33.0",
     "@types/express": "^4.17.17",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.8",
     "@types/react-dom": "^18.2.4",
     "eslint": "^8.40.0",
     "express": "^4.17.1",
-    "next": "^13.4.3",
+    "next": "^13.4.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",

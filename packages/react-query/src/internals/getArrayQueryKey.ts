@@ -1,6 +1,6 @@
 import { GetQueryProcedureInput } from './getQueryKey';
 
-export type QueryType = 'query' | 'infinite' | 'any';
+export type QueryType = 'any' | 'infinite' | 'query';
 
 export type QueryKey = [
   string[],
@@ -20,7 +20,7 @@ export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
  * https://github.com/trpc/trpc/issues/2611
  **/
 export function getArrayQueryKey(
-  queryKey: string | [string] | [string, ...unknown[]] | unknown[],
+  queryKey: unknown[] | string | [string, ...unknown[]] | [string],
   type: QueryType,
 ): QueryKey {
   const queryKeyArrayed = Array.isArray(queryKey) ? queryKey : [queryKey];

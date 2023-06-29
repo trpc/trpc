@@ -1,8 +1,8 @@
-const isArray = (value: unknown): value is unknown[] | Readonly<unknown[]> =>
+const isArray = (value: unknown): value is Readonly<unknown[]> | unknown[] =>
   Array.isArray(value);
 
 export function searchParams(
-  obj: Record<string, string | string[] | Readonly<string[]>>,
+  obj: Record<string, Readonly<string[]> | string[] | string>,
 ): string {
   return Object.entries(obj)
     .map(([key, value]) => {

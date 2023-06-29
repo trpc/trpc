@@ -15,7 +15,7 @@ export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
         revalidate: (
           input?: unknown,
         ) => Promise<
-          { revalidated: true } | { revalidated: false; error: string }
+          { revalidated: false; error: string } | { revalidated: true }
         >;
       }
     : TProcedure extends AnyMutationProcedure

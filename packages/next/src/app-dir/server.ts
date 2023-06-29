@@ -28,6 +28,7 @@ import { formDataToObject } from './formDataToObject';
 import {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
+  generateCacheTag,
   inferActionDef,
   isFormData,
 } from './shared';
@@ -50,10 +51,11 @@ export function experimental_createTRPCNextAppDirServer<
     const client = getClient();
 
     const pathCopy = [...callOpts.path];
-    const action = pathCopy.pop() as string;
-
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const action = pathCopy.pop()!;
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
+    const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === '_def') {
       // internal attribute used to get the procedure path
@@ -61,6 +63,11 @@ export function experimental_createTRPCNextAppDirServer<
       return {
         path: procedurePath,
       };
+    }
+
+    if (action === 'revalidate') {
+      revalidateTag(cacheTag);
+      return;
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
@@ -71,7 +78,7 @@ export function experimental_createTRPCNextAppDirServer<
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
-  input: TDef['input'] | FormData,
+  input: FormData | TDef['input'],
 ) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
 type AnyTInstance = { _config: AnyRootConfig };
@@ -123,9 +130,9 @@ export function experimental_createServerActionHandler<
   return function createServerAction<TProcedure extends AnyProcedure>(
     proc: AnyRouter extends TRouter
       ? TProcedure
-      : TProcedure | DecorateProcedureServer<TProcedure>,
+      : DecorateProcedureServer<TProcedure> | TProcedure,
     actionOptions?: {
-      revalidates?: (string | DecorateProcedureServer<AnyQueryProcedure>)[];
+      revalidates?: (DecorateProcedureServer<AnyQueryProcedure> | string)[];
     },
   ): TRPCActionHandler<Simplify<inferActionDef<TProcedure>>> {
     const procedure: TProcedure = (() => {
@@ -157,7 +164,7 @@ export function experimental_createServerActionHandler<
     })();
 
     return async function actionHandler(
-      rawInput: inferProcedureInput<TProcedure> | FormData,
+      rawInput: FormData | inferProcedureInput<TProcedure>,
     ) {
       const ctx: unknown = undefined;
       try {
@@ -221,4 +228,24 @@ export function experimental_createServerActionHandler<
       }
     } as TRPCActionHandler<inferActionDef<TProcedure>>;
   };
+}
+
+// ts-prune-ignore-next
+export async function experimental_revalidateEndpoint(req: Request) {
+  const { cacheTag } = await req.json();
+
+  if (typeof cacheTag !== 'string') {
+    return new Response(
+      JSON.stringify({
+        revalidated: false,
+        error: 'cacheTag must be a string',
+      }),
+      { status: 400 },
+    );
+  }
+
+  revalidateTag(cacheTag);
+  return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
+    status: 200,
+  });
 }

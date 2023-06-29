@@ -335,7 +335,7 @@ describe('with transformer', () => {
 });
 
 describe('type tests', () => {
-  const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+  const ignoreErrors = async (fn: () => unknown) => {
     try {
       await fn();
     } catch {

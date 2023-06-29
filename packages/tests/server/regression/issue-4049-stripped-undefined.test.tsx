@@ -51,6 +51,7 @@ describe('undefined on server response is inferred on the client', () => {
     // key might be stripped entirely   👇, or value should be defined
     expectTypeOf(obj).toEqualTypeOf<{ id?: number } | undefined>();
 
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const und = await ctx.proxy.und.query();
     expectTypeOf(und).toEqualTypeOf<undefined>();
   });
@@ -65,6 +66,7 @@ describe('undefined on server response is inferred on the client', () => {
     // key should not be stripped       👇, since we're not calling JSON.stringify/parse on createCaller, value can be undefined though
     expectTypeOf(obj).toEqualTypeOf<{ id: number | undefined } | undefined>();
 
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
     const und = await caller.und();
     expectTypeOf(und).toEqualTypeOf<undefined>();
   });

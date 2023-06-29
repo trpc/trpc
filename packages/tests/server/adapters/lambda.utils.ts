@@ -32,7 +32,7 @@ export const mockAPIGatewayProxyEventV1 = ({
     queryStringParameters,
     multiValueQueryStringParameters: null,
     resource,
-    pathParameters: pathParameters || null,
+    pathParameters: pathParameters ?? null,
     stageVariables: {},
     requestContext: {
       accountId: 'mock',

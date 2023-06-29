@@ -42,7 +42,7 @@ export type inferProcedureOutput<TProcedure> =
  */
 export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
-  TPath extends keyof TRouter['_def']['subscriptions'] & string,
+  TPath extends string & keyof TRouter['_def']['subscriptions'],
 > = inferObservableValue<
   inferProcedureOutput<TRouter['_def']['subscriptions'][TPath]>
 >;
