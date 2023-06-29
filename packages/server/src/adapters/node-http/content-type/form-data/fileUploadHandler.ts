@@ -73,7 +73,7 @@ export type FileUploadHandlerOptions = {
   /**
    * The directory to write the upload.
    */
-  directory?: string | FileUploadHandlerPathResolver;
+  directory?: FileUploadHandlerPathResolver | string;
   /**
    * The name of the file in the directory. Can be a relative path, the directory
    * structure will be created if it does not exist.
@@ -90,7 +90,7 @@ export type FileUploadHandlerOptions = {
    * @param contentType
    * @param name
    */
-  filter?(args: FileUploadHandlerFilterArgs): boolean | Promise<boolean>;
+  filter?(args: FileUploadHandlerFilterArgs): Promise<boolean> | boolean;
 };
 
 const defaultFilePathResolver: FileUploadHandlerPathResolver = ({
@@ -212,10 +212,10 @@ export class NodeOnDiskFile {
     if (typeof start === 'number' && start < 0) start = this.size + start;
     if (typeof end === 'number' && end < 0) end = this.size + end;
 
-    const startOffset = this.slicer?.start || 0;
+    const startOffset = this.slicer?.start ?? 0;
 
-    start = startOffset + (start || 0);
-    end = startOffset + (end || this.size);
+    start = startOffset + (start ?? 0);
+    end = startOffset + (end ?? this.size);
     return new NodeOnDiskFile(
       this.filepath,
       typeof type === 'string' ? type : this.type,
@@ -235,14 +235,18 @@ export class NodeOnDiskFile {
     return new Promise((resolve, reject) => {
       const buf: any[] = [];
       stream.on('data', (chunk) => buf.push(chunk));
-      stream.on('end', () => resolve(Buffer.concat(buf)));
-      stream.on('error', (err) => reject(err));
+      stream.on('end', () => {
+        resolve(Buffer.concat(buf));
+      });
+      stream.on('error', (err) => {
+        reject(err);
+      });
     });
   }
 
   stream(): ReadableStream<any>;
   stream(): NodeJS.ReadableStream;
-  stream(): ReadableStream<any> | NodeJS.ReadableStream {
+  stream(): NodeJS.ReadableStream | ReadableStream<any> {
     let stream: Readable = createReadStream(this.filepath);
     if (this.slicer) {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));
@@ -255,9 +259,7 @@ export class NodeOnDiskFile {
     return readableStreamToString(this.stream());
   }
 
-  public get [Symbol.toStringTag]() {
-    return 'File';
-  }
+  public readonly [Symbol.toStringTag] = 'File';
 
   remove(): Promise<void> {
     return unlink(this.filepath);

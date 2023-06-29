@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 function set(
   obj: Record<string, any>,
-  path: string | string[],
+  path: string[] | string,
   value: unknown,
 ): void {
   if (typeof path === 'string') {

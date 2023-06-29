@@ -297,7 +297,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohavedisplayvalue](https://github.com/testing-library/jest-dom#tohavedisplayvalue)
      */
-    toHaveDisplayValue(value: string | RegExp | Array<string | RegExp>): R;
+    toHaveDisplayValue(value: (RegExp | string)[] | RegExp | string): R;
     /**
      * @description
      * Assert whether an element has focus or not.
@@ -358,7 +358,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohavestyle](https://github.com/testing-library/jest-dom#tohavestyle)
      */
-    toHaveStyle(css: string | Record<string, unknown>): R;
+    toHaveStyle(css: Record<string, unknown> | string): R;
     /**
      * @description
      * Check whether the given element has a text content or not.
@@ -382,7 +382,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohavetextcontent](https://github.com/testing-library/jest-dom#tohavetextcontent)
      */
-    toHaveTextContent(text: string | RegExp, options?: { normalizeWhitespace: boolean }): R;
+    toHaveTextContent(text: RegExp | string, options?: { normalizeWhitespace: boolean }): R;
     /**
      * @description
      * Check whether the given form element has the specified value.
@@ -402,7 +402,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohavevalue](https://github.com/testing-library/jest-dom#tohavevalue)
      */
-    toHaveValue(value?: string | string[] | number | null): R;
+    toHaveValue(value?: string[] | number | string | null): R;
     /**
      * @description
      * Assert whether the given element is checked.
@@ -475,7 +475,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohavedescription](https://github.com/testing-library/jest-dom#tohavedescription)
      */
-    toHaveDescription(text?: string | RegExp | E): R;
+    toHaveDescription(text?: E | RegExp | string): R;
     /**
      * @description
      * This allows to assert that an element has the expected [accessible description](https://w3c.github.io/accname/).
@@ -501,7 +501,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohaveaccessibledescription](https://github.com/testing-library/jest-dom#tohaveaccessibledescription)
      */
-    toHaveAccessibleDescription(text?: string | RegExp | E): R;
+    toHaveAccessibleDescription(text?: E | RegExp | string): R;
     /**
      * @description
      * This allows to assert that an element has the expected [accessible name](https://w3c.github.io/accname/).
@@ -532,7 +532,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohaveaccessiblename](https://github.com/testing-library/jest-dom#tohaveaccessiblename)
      */
-    toHaveAccessibleName(text?: string | RegExp | E): R;
+    toHaveAccessibleName(text?: E | RegExp | string): R;
     /**
      * @description
      * This allows you to check whether the given element is partially checked.
@@ -611,7 +611,7 @@ export interface TestingLibraryMatchers<E, R> extends Record<string, any> {
      * @see
      * [testing-library/jest-dom#tohaveerrormessage](https://github.com/testing-library/jest-dom#tohaveerrormessage)
      */
-    toHaveErrorMessage(text?: string | RegExp | E): R;
+    toHaveErrorMessage(text?: E | RegExp | string): R;
 }
 
 declare const matchers: TestingLibraryMatchers<any, void>;

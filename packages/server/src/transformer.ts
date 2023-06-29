@@ -53,7 +53,7 @@ export type CombinedDataTransformerClient = {
 /**
  * @public
  */
-export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
+export type DataTransformerOptions = CombinedDataTransformer | DataTransformer;
 
 /**
  * @public
@@ -62,8 +62,8 @@ export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
  * - https://github.com/trpc/trpc/issues/4130
  */
 export type ClientDataTransformerOptions =
-  | DataTransformer
-  | CombinedDataTransformerClient;
+  | CombinedDataTransformerClient
+  | DataTransformer;
 
 /**
  * @internal

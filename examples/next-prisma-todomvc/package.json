@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-todomvc",
-  "version": "10.31.0",
+  "version": "10.33.0",
   "private": true,
   "scripts": {
     "generate": "prisma generate",
@@ -24,18 +24,18 @@
   "dependencies": {
     "@prisma/client": "^4.14.1",
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.31.0",
-    "@trpc/next": "^10.31.0",
-    "@trpc/react-query": "^10.31.0",
-    "@trpc/server": "^10.31.0",
+    "@trpc/client": "^10.33.0",
+    "@trpc/next": "^10.33.0",
+    "@trpc/react-query": "^10.33.0",
+    "@trpc/server": "^10.33.0",
     "clsx": "^1.1.1",
     "i18next": "^22.4.13",
-    "next": "^13.4.3",
+    "next": "^13.4.7",
     "next-i18next": "^13.2.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^12.2.0",
-    "superjson": "^1.7.4",
+    "superjson": "^1.12.4",
     "todomvc-app-css": "^2.3.0",
     "todomvc-common": "^1.0.5",
     "zod": "^3.0.0"

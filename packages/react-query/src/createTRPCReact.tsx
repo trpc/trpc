@@ -90,34 +90,7 @@ export type DecorateProcedure<
   _TFlags,
   TPath extends string,
 > = TProcedure extends AnyQueryProcedure
-  ? {
-      /**
-       * @see https://trpc.io/docs/client/react/useQuery
-       */
-      useQuery: ProcedureUseQuery<TProcedure, TPath>;
-      /**
-       * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
-       */
-      useSuspenseQuery: <
-        TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
-        TData = TQueryFnData,
-      >(
-        input: inferProcedureInput<TProcedure>,
-        opts?: Omit<
-          UseTRPCQueryOptions<
-            TPath,
-            inferProcedureInput<TProcedure>,
-            TQueryFnData,
-            TData,
-            TRPCClientErrorLike<TProcedure>
-          >,
-          'enabled' | 'suspense'
-        >,
-      ) => [
-        TData,
-        UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
-      ];
-    } & (inferProcedureInput<TProcedure> extends { cursor?: any } | void
+  ? (inferProcedureInput<TProcedure> extends { cursor?: any } | void
       ? {
           /**
            * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
@@ -156,7 +129,34 @@ export type DecorateProcedure<
             >,
           ];
         }
-      : object)
+      : object) & {
+      /**
+       * @see https://trpc.io/docs/client/react/useQuery
+       */
+      useQuery: ProcedureUseQuery<TProcedure, TPath>;
+      /**
+       * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
+       */
+      useSuspenseQuery: <
+        TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+        TData = TQueryFnData,
+      >(
+        input: inferProcedureInput<TProcedure>,
+        opts?: Omit<
+          UseTRPCQueryOptions<
+            TPath,
+            inferProcedureInput<TProcedure>,
+            TQueryFnData,
+            TData,
+            TRPCClientErrorLike<TProcedure>
+          >,
+          'enabled' | 'suspense'
+        >,
+      ) => [
+        TData,
+        UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
+      ];
+    }
   : TProcedure extends AnyMutationProcedure
   ? {
       /**

@@ -21,7 +21,7 @@ import { ActionHandlerDef, isFormData } from './shared';
 
 type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: ProcedureOptions]
-  : [input: TDef['input'] | FormData, opts?: ProcedureOptions];
+  : [input: FormData | TDef['input'], opts?: ProcedureOptions];
 
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutate: (...args: MutationArgs<TDef>) => void;
@@ -58,10 +58,10 @@ interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
 
 // ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
-  | UseTRPCActionSuccessResult<TDef>
   | UseTRPCActionErrorResult<TDef>
   | UseTRPCActionIdleResult<TDef>
-  | UseTRPCActionLoadingResult<TDef>;
+  | UseTRPCActionLoadingResult<TDef>
+  | UseTRPCActionSuccessResult<TDef>;
 
 type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
@@ -95,7 +95,9 @@ export function experimental_serverActionLink<
             });
             observer.complete();
           })
-          .catch((cause) => observer.error(TRPCClientError.from(cause)));
+          .catch((cause) => {
+            observer.error(TRPCClientError.from(cause));
+          });
       });
 }
 
@@ -110,7 +112,7 @@ export type inferActionResultProps<TProc extends AnyProcedure> = {
 };
 
 interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
-  onSuccess?: (result: TDef['output']) => void | MaybePromise<void>;
+  onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
   onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
 }
 

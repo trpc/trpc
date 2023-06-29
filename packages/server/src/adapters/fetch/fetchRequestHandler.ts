@@ -8,10 +8,11 @@ import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
 
-export type FetchHandlerRequestOptions<TRouter extends AnyRouter> = {
-  req: Request;
-  endpoint: string;
-} & FetchHandlerOptions<TRouter>;
+export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
+  FetchHandlerOptions<TRouter> & {
+    req: Request;
+    endpoint: string;
+  };
 
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
@@ -87,7 +88,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       });
       resolve(response);
     } else {
-      controller.enqueue(encoder.encode(formatter!(index, string)));
+      controller.enqueue(encoder.encode(formatter(index, string)));
     }
   };
 
@@ -106,7 +107,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   })
     .then(() => {
       if (isStream) {
-        controller.enqueue(encoder.encode(formatter!.end()));
+        controller.enqueue(encoder.encode(formatter.end()));
         controller.close();
       }
     })

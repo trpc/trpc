@@ -208,16 +208,17 @@ type DecorateRouter = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-        DecorateRouter
-    : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
-} & DecorateRouter; // Add functions that should be available at utils root
+export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
+  DecorateRouter & {
+    [TKey in keyof Filter<
+      TRouter['_def']['record'],
+      AnyQueryProcedure | AnyRouter
+    >]: TRouter['_def']['record'][TKey] extends AnyRouter
+      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
+          DecorateRouter
+      : // utils only apply to queries
+        DecorateProcedure<TRouter['_def']['record'][TKey]>;
+  }; // Add functions that should be available at utils root
 
 type AnyDecoratedProcedure = DecorateProcedure<any>;
 
@@ -296,9 +297,12 @@ export function createReactQueryUtilsProxy<
         reset: () => context.resetQueries(queryKey, ...args),
         refetch: () => context.refetchQueries(queryKey, ...args),
         cancel: () => context.cancelQuery(queryKey, ...args),
-        setData: () => context.setQueryData(queryKey, args[0], args[1]),
-        setInfiniteData: () =>
-          context.setInfiniteQueryData(queryKey, args[0], args[1]),
+        setData: () => {
+          context.setQueryData(queryKey, args[0], args[1]);
+        },
+        setInfiniteData: () => {
+          context.setInfiniteQueryData(queryKey, args[0], args[1]);
+        },
         getData: () => context.getQueryData(queryKey),
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       };

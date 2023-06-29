@@ -42,7 +42,7 @@ export type UseQueriesProcedureRecord<
 > = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
+    AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseQueriesProcedureRecord<
         TRouter['_def']['record'][TKey],
