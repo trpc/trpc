@@ -95,9 +95,9 @@ const palettes = {
 } as const;
 
 function constructPartsAndArgs(
-  opts: {
+  opts: LoggerLinkFnOptions<any> & {
     colorMode: 'ansi' | 'css';
-  } & LoggerLinkFnOptions<any>,
+  },
 ) {
   const { direction, type, path, id, input } = opts;
 
