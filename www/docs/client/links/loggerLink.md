@@ -50,6 +50,11 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
+  /**
+   * Color mode used in the default logger.
+   * @default typeof window === 'undefined' ? 'ansi' : 'css'
+   */
+  colorMode?: 'ansi' | 'css';
 };
 ```
 
