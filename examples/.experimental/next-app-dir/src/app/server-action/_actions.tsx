@@ -1,5 +1,6 @@
 'use server';
 
+import { createPost } from '~/server/routers/_app';
 import { createAction, publicProcedure } from '~/server/trpc';
 import { z } from 'zod';
 
@@ -29,6 +30,4 @@ export const testAction = createAction(
  * Or, you can create actions from existing procedures
  * by importing them and wrapping them in `createAction`
  */
-import { createPost } from '~/server/routers/_app';
-
 export const createPostAction = createAction(createPost);
