@@ -1792,8 +1792,8 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       scale-codec:
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.2
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
@@ -1967,8 +1967,8 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       scale-codec:
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.2
       superstruct:
         specifier: ^1.0.0
         version: 1.0.3
@@ -20942,8 +20942,8 @@ packages:
     dependencies:
       xmlchars: 2.2.0
 
-  /scale-codec@0.11.0:
-    resolution: {integrity: sha512-b1y96lVmWHp3X/azi4HCawM6wcRP0yBuwk6aaUeuMBCBQzP3I9Z8zs5TejGvB8sH+vXM9HAUW9IsjeFms751gg==}
+  /scale-codec@0.12.2:
+    resolution: {integrity: sha512-HCZIusTOu8JNTYQZjwyZqG958LjiFZA56Osr4AGXw8h9/QabKiSufdflAdHUoNrdx0iHjSpwGqj+qAEtpmma5w==}
 
   /scheduler@0.23.0:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
