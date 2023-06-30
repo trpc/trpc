@@ -57,9 +57,7 @@ export function experimental_createTRPCNextAppDirServer<
     if (key === 'revalidate') {
       // revalidate them all
       return () => {
-        for (const cacheTag of seenTags) {
-          revalidateTag(cacheTag);
-        }
+        fuzzyRevalidation('', seenTags);
       };
     }
 

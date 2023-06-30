@@ -27,7 +27,12 @@ export const createPost = publicProcedure
 
 export const appRouter = router({
   foo: router({
-    bar: publicProcedure.query(() => 'baz'),
+    bar: publicProcedure.query(
+      () => `bar - ${new Date().toISOString().split('T')[1]}`,
+    ),
+    baz: publicProcedure.query(
+      () => `baz - ${new Date().toISOString().split('T')[1]}`,
+    ),
   }),
   greeting: publicProcedure
     .input(

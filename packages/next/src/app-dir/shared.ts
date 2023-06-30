@@ -92,14 +92,27 @@ export function decomposeCacheTag(cacheTag: string) {
 export function fuzzyRevalidation(cacheKey: string, seenTags: Set<string>) {
   const { input, procedurePath } = decomposeCacheTag(cacheKey);
 
+  console.log('fuzzyRevalidation', cacheKey, seenTags);
+
+  if (!procedurePath) {
+    // no procedure path, revalidate all
+    for (const key of seenTags) {
+      console.log('revalidating', key);
+      revalidateTag(key);
+    }
+    return;
+  }
+
   if (input) {
     // if there is input, no need to fuzzy match, just revalidate the exact key
+    console.log('revalidating', cacheKey);
     revalidateTag(cacheKey);
     return;
   }
 
   for (const key of seenTags) {
     if (key.startsWith(procedurePath)) {
+      console.log('revalidating', key);
       revalidateTag(key);
     }
   }

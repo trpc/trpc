@@ -1,6 +1,6 @@
 import { Button } from '~/components/button';
 import { JsonPreTag } from '~/components/json-pretag';
-import { api } from '~/trpc/server-invoker';
+import { api } from '~/trpc/server-http';
 import { Suspense } from 'react';
 import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
@@ -87,16 +87,37 @@ export default async function Home() {
           <ServerInvokedGreeting />
         </Suspense>
       </div>
+
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Nested queries</h3>
+        <p>
+          You can also nest queries, and they will be fetched in parallel. This
+          is useful if you have a page that needs to fetch multiple resources.
+          The revalidation is fuzzy matched so you can revalidate an entire
+          router by calling `api.foo` or just a single query by calling
+          `api.foo.revalidate()` - which will revalidate bot the `bar` and `baz`
+          query on the foo-router.
+        </p>
+        <Suspense fallback={<JsonPreTag object={{ loading: true }} />}>
+          <FooRouter />
+        </Suspense>
+      </div>
+
       <form
         action={async () => {
           'use server';
-          await api.greeting.revalidate({
-            text: 'i never hit an api endpoint',
-          });
+          await api.revalidate();
         }}
       >
         <Button type="submit">Revalidate all</Button>
       </form>
     </div>
   );
+}
+
+async function FooRouter() {
+  const baz = await api.foo.baz.query();
+  const bar = await api.foo.bar.query();
+
+  return <JsonPreTag object={{ 'foo.bar': bar, 'foo.baz': baz }} />;
 }
