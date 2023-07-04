@@ -29,7 +29,7 @@ export interface HTTPLinkBaseOptions {
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
-  fetch: FetchEsque;
+  fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
 }
 
@@ -38,7 +38,7 @@ export function resolveHTTPLinkOptions(
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url,
-    fetch: getFetch(opts.fetch),
+    fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
   };
 }
@@ -164,7 +164,7 @@ export async function fetchHTTPResponse(
     ...resolvedHeaders,
   };
 
-  return opts.fetch(url, {
+  return getFetch(opts.fetch)(url, {
     method: METHOD[type],
     signal: ac?.signal,
     body: body,
