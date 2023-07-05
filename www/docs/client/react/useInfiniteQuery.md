@@ -28,7 +28,7 @@ export const appRouter = t.router({
       limit: z.number().min(1).max(100).nullish(),
       cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
     }))
-    .query((opts) => {
+    .query(async (opts) => {
       const { input } = opts;
       const limit = input.limit ?? 50;
       const { cursor } = input;
