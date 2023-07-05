@@ -58,8 +58,10 @@ const client = createTRPCProxyClient<AppRouter>({
 
 ```ts title='client.ts'
 const postResult = proxy.posts.query(null, {
-  context: {
-    skipBatch: true,
+  trpc: {
+    context: {
+      skipBatch: true,
+    },
   },
 });
 ```
