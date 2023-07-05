@@ -16,18 +16,19 @@ slug: /client/react/useInfiniteQuery
 ## Example Procedure
 
 ```tsx title='server/routers/_app.ts'
-import { initTRPC } from '@trpc/server'
+import { initTRPC } from '@trpc/server';
 import { Context } from './[trpc]';
 
-export const t = initTRPC.create()
+export const t = initTRPC.create();
 
 export const appRouter = t.router({
-  infinitePosts: t
-    .procedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).nullish(),
-      cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
-    }))
+  infinitePosts: t.procedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
+      }),
+    )
     .query(async (opts) => {
       const { input } = opts;
       const limit = input.limit ?? 50;
@@ -43,10 +44,10 @@ export const appRouter = t.router({
         orderBy: {
           myCursor: 'asc',
         },
-      })
+      });
       let nextCursor: typeof cursor | undefined = undefined;
       if (items.length > limit) {
-        const nextItem = items.pop()
+        const nextItem = items.pop();
         nextCursor = nextItem!.myCursor;
       }
 
@@ -55,7 +56,7 @@ export const appRouter = t.router({
         nextCursor,
       };
     }),
-})
+});
 ```
 
 ## Example React Component
