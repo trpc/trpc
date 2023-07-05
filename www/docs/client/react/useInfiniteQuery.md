@@ -54,7 +54,7 @@ export const appRouter = t.router({
         items,
         nextCursor,
       };
-    })
+    }),
 })
 ```
 
