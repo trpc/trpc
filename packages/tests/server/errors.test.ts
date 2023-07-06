@@ -386,7 +386,7 @@ test('retain stack trace', async () => {
   await close();
 });
 
-describe.only('links have meta data about http failures', async () => {
+describe('links have meta data about http failures', async () => {
   type Handler = (opts: {
     req: http.IncomingMessage;
     res: http.ServerResponse;
