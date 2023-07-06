@@ -91,8 +91,8 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
       if (opts.meta) {
         // Decorate with meta error data
         cause.meta = {
-          ...opts.meta,
           ...cause.meta,
+          ...opts.meta,
         };
       }
       return cause;
