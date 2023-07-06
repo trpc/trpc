@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -1757,8 +1753,8 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       scale-codec:
-        specifier: ^0.12.0
-        version: 0.12.2
+        specifier: ^0.13.0
+        version: 0.13.0
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
@@ -1932,8 +1928,8 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       scale-codec:
-        specifier: ^0.12.0
-        version: 0.12.2
+        specifier: ^0.13.0
+        version: 0.13.0
       superstruct:
         specifier: ^1.0.0
         version: 1.0.3
@@ -20588,8 +20584,8 @@ packages:
     dependencies:
       xmlchars: 2.2.0
 
-  /scale-codec@0.12.2:
-    resolution: {integrity: sha512-HCZIusTOu8JNTYQZjwyZqG958LjiFZA56Osr4AGXw8h9/QabKiSufdflAdHUoNrdx0iHjSpwGqj+qAEtpmma5w==}
+  /scale-codec@0.13.0:
+    resolution: {integrity: sha512-HxLaGxglkZP7SwjCLZPMsWGKN8Q/h5bjIH9YLFRcsG3Fmh+qsCOZYRLhntvTyP6B/Q7xHPBc2YKODOSfH0rH8g==}
 
   /scheduler@0.23.0:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
@@ -23797,3 +23793,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
