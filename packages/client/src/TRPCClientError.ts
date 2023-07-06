@@ -86,6 +86,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
         ...opts.meta,
         ...cause.meta,
       };
+      return cause;
     }
 
     return new TRPCClientError<TRouterOrProcedure>(cause.message, {
