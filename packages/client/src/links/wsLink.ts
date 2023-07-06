@@ -338,7 +338,13 @@ export function wsLink<TRouter extends AnyRouter>(
               const transformed = transformResult(message, runtime);
 
               if (!transformed.ok) {
-                observer.error(TRPCClientError.from(transformed.error));
+                observer.error(
+                  TRPCClientError.from(transformed.error, {
+                    meta: {
+                      message,
+                    },
+                  }),
+                );
                 return;
               }
               observer.next({
