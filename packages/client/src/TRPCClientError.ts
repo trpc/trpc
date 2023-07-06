@@ -24,8 +24,15 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
   TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
-function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
-  return cause instanceof Error && cause.name === 'TRPCClientError';
+function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
+  return (
+    cause instanceof TRPCClientError ||
+    /**
+     * @deprecated
+     * Delete in next major
+     */
+    cause.name === 'TRPCClientError'
+  );
 }
 
 export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
@@ -80,12 +87,14 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
         },
       );
     }
-    if (isTRPCClientError(cause) && opts.meta) {
-      // Decorate with meta error data
-      cause.meta = {
-        ...opts.meta,
-        ...cause.meta,
-      };
+    if (isTRPCClientError(cause)) {
+      if (opts.meta) {
+        // Decorate with meta error data
+        cause.meta = {
+          ...opts.meta,
+          ...cause.meta,
+        };
+      }
       return cause;
     }
 
