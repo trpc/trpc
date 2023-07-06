@@ -31,7 +31,12 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   public readonly cause;
   public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
   public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
-  public readonly meta;
+
+  /**
+   * Additional meta data about the error
+   * In the case of HTTP-errors, we'll have `response` and potentially `responseJSON` here
+   */
+  public meta;
 
   constructor(
     message: string,
@@ -71,8 +76,12 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
         },
       );
     }
-    if (cause.name === 'TRPCClientError') {
-      return cause as TRPCClientError<any>;
+    if (cause instanceof TRPCClientError && opts.meta) {
+      // Decorate with meta error data
+      cause.meta = {
+        ...opts.meta,
+        ...cause.meta,
+      };
     }
 
     return new TRPCClientError<TRouterOrProcedure>(cause.message, {
