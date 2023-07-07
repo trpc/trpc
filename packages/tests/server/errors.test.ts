@@ -6,6 +6,7 @@ import {
   httpBatchLink,
   httpLink,
   TRPCClientError,
+  TRPCLink,
 } from '@trpc/client/src';
 import { observable } from '@trpc/server/observable';
 import * as trpc from '@trpc/server/src';
@@ -511,5 +512,64 @@ describe('links have meta data about http failures', async () => {
         },
       }
     `);
+  });
+
+  test('rethrow custom error', async () => {
+    type AppRouter = any;
+    class MyCustomError extends TRPCClientError<AppRouter> {
+      constructor(message: string) {
+        super(message);
+
+        Object.setPrototypeOf(this, new.target.prototype);
+      }
+    }
+
+    function isObject(value: unknown): value is Record<string, unknown> {
+      // check that value is object
+      return !!value && !Array.isArray(value) && typeof value === 'object';
+    }
+
+    const customErrorLink: TRPCLink<AppRouter> = (_runtime) => (opts) =>
+      observable((observer) => {
+        const unsubscribe = opts.next(opts.op).subscribe({
+          error(err) {
+            if (
+              err.meta &&
+              isObject(err.meta.responseJSON) &&
+              '__error' in err.meta.responseJSON // <----- you need to modify this
+            ) {
+              // custom error handling
+              observer.error(
+                new MyCustomError(
+                  `custom error: ${JSON.stringify(
+                    err.meta.responseJSON.__error,
+                  )}`,
+                ),
+              );
+            }
+            observer.error(err);
+          },
+        });
+        return unsubscribe;
+      });
+
+    const client: any = createTRPCProxyClient<any>({
+      links: [
+        customErrorLink,
+        httpLink({
+          url: ctx.server.url,
+          fetch: fetch as any,
+        }),
+      ],
+    });
+
+    const error = await waitError(client.test.query());
+
+    expect(error).toMatchInlineSnapshot(
+      '[TRPCClientError: custom error: {"foo":"bar"}]',
+    );
+
+    expect(error).toBeInstanceOf(TRPCClientError);
+    expect(error).toBeInstanceOf(MyCustomError);
   });
 });
