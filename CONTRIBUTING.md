@@ -34,7 +34,7 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 
 ```bash
 # in project root directory
-pnpm test-watch
+pnpm test
 
 # example if you want to test a specific test file:
 pnpm test-watch react
