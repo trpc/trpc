@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -1655,8 +1651,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@effect/schema':
-        specifier: ^0.23.0
-        version: 0.23.0
+        specifier: ^0.24.0
+        version: 0.24.0
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1757,8 +1753,8 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       scale-codec:
-        specifier: ^0.12.0
-        version: 0.12.2
+        specifier: ^0.13.0
+        version: 0.13.0
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
@@ -1878,8 +1874,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@effect/schema':
-        specifier: ^0.23.0
-        version: 0.23.0
+        specifier: ^0.24.0
+        version: 0.24.0
       '@octokit/graphql':
         specifier: ^6.0.0
         version: 6.0.0
@@ -1932,8 +1928,8 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       scale-codec:
-        specifier: ^0.12.0
-        version: 0.12.2
+        specifier: ^0.13.0
+        version: 0.13.0
       superstruct:
         specifier: ^1.0.0
         version: 1.0.3
@@ -6287,20 +6283,20 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.12.10:
-    resolution: {integrity: sha512-zIz/DgumH2LgGdr1Wc9ChET5JSG0k/G5kDc8rn4a6yIJ0v2d5rfnbRWIJO2fWmdFvc+128JyaBvYguIyz9JaAQ==}
+  /@effect/data@0.13.2:
+    resolution: {integrity: sha512-wZ7OllwpuSLZ2l1MrWA2Fzcw9YX1b1GVhn/fDYZcYejXFMHMG6TkT2PKnvAbXzym2Dx+todsykNFk3q9C0Fpug==}
 
-  /@effect/io@0.29.1:
-    resolution: {integrity: sha512-HOegsIPtRPqxM9wI3hkKStTp1bIc2LvLbwvEEPxD/bjIqCZz3dI8Eb1YTFSasAr1fPhnIqyO9o1TAIEE7raPUw==}
+  /@effect/io@0.31.1:
+    resolution: {integrity: sha512-fTxrwa7zr9bdGpr1f57UtSFWw9xgjCGIiG5kNuG+PGInJwANXqkTBa9izdcr3OP7mq5IzOtvPIFPIDE8r/ew5w==}
     dependencies:
-      '@effect/data': 0.12.10
+      '@effect/data': 0.13.2
 
-  /@effect/schema@0.23.0:
-    resolution: {integrity: sha512-34mTncodXJq0WzBjUT5rEl1sOO3KOjzqkSRf39xEc01Bwk9BLrgS61Os8aMko6mvB41XAHQCFFBzyh5wKOtmAA==}
+  /@effect/schema@0.24.0:
+    resolution: {integrity: sha512-hN0ZUIsXixyfXiymYnAKkbyMytuP8NFoc4b/GY7ZlRe3dGjUxqUurhQj+GfaHXHQuIBkFP1QrXV67lUowFKG5A==}
     dependencies:
-      '@effect/data': 0.12.10
-      '@effect/io': 0.29.1
-      fast-check: 3.10.0
+      '@effect/data': 0.13.2
+      '@effect/io': 0.31.1
+      fast-check: 3.11.0
 
   /@emotion/is-prop-valid@0.8.8:
     resolution: {integrity: sha512-u5WtneEAr5IDG2Wv65yhunPSMLIpuKsbuOktRojfrEiEvRyC85LgPMZI63cr7NUqT8ZIGdSVg8ZKGxIug4lXcA==}
@@ -13860,8 +13856,8 @@ packages:
       iconv-lite: 0.4.24
       tmp: 0.0.33
 
-  /fast-check@3.10.0:
-    resolution: {integrity: sha512-I2FldZwnCbcY6iL+H0rp9m4D+O3PotuFu9FasWjMCzUedYHMP89/37JbSt6/n7Yq/IZmJDW0B2h30sPYdzrfzw==}
+  /fast-check@3.11.0:
+    resolution: {integrity: sha512-H2tctb7AGfFQfz+DEr3UWhJ3s47LXsGp5g3jeJr5tHjnf4xUvpArIqiwcDmL2EXiv+auLHIpF5MqaIpIKvpxiA==}
     engines: {node: '>=8.0.0'}
     dependencies:
       pure-rand: 6.0.2
@@ -20588,8 +20584,8 @@ packages:
     dependencies:
       xmlchars: 2.2.0
 
-  /scale-codec@0.12.2:
-    resolution: {integrity: sha512-HCZIusTOu8JNTYQZjwyZqG958LjiFZA56Osr4AGXw8h9/QabKiSufdflAdHUoNrdx0iHjSpwGqj+qAEtpmma5w==}
+  /scale-codec@0.13.0:
+    resolution: {integrity: sha512-HxLaGxglkZP7SwjCLZPMsWGKN8Q/h5bjIH9YLFRcsG3Fmh+qsCOZYRLhntvTyP6B/Q7xHPBc2YKODOSfH0rH8g==}
 
   /scheduler@0.23.0:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
@@ -23797,3 +23793,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false

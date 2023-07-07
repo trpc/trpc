@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@effect/schema": "^0.23.0",
+    "@effect/schema": "^0.24.0",
     "@fastify/busboy": "^1.2.1",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
@@ -51,7 +51,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "runtypes": "^6.6.0",
-    "scale-codec": "^0.12.0",
+    "scale-codec": "^0.13.0",
     "superjson": "^1.12.4",
     "superstruct": "^1.0.0",
     "tsx": "^3.12.7",
