@@ -103,3 +103,5 @@ As an operation moves along your link chain, it maintains a context that each li
 Obtain the current context object and modify it by accessing `op.context`.
 
 You can set the context object's initial value for a particular operation by providing the context parameter to the `query` or `useQuery` hook (or `mutation`, `subscription`, etc.).
+
+For an example use case, see [Disable batching for certain requests](/docs/client/links/splitLink#disable-batching-for-certain-requests).
