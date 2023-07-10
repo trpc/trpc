@@ -27,14 +27,14 @@ import { z } from 'zod';
 
 export function createForm<TDef extends ActionHandlerDef>(opts: {
   action: TRPCActionHandler<TDef>;
-  schema: { _input: TDef['input'] } & z.ZodSchema<any>;
+  schema: z.ZodSchema<any> & { _input: TDef['input'] };
   hookProps?: Omit<UseFormProps<TDef['input']>, 'resolver'>;
 }) {
   type FormValues = TDef['input'];
   function Form(
     props: Omit<
       JSX.IntrinsicElements['form'],
-      'ref' | 'action' | 'onSubmit' | 'encType' | 'method'
+      'action' | 'encType' | 'method' | 'onSubmit' | 'ref'
     > & {
       render: (renderProps: {
         form: UseFormReturn<FormValues>;

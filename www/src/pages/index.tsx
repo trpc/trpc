@@ -171,7 +171,9 @@ function TryItOut() {
               {!deviceSupported && (
                 <ErrorOverlay
                   url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
-                  dismiss={() => setIsSupported(true)}
+                  dismiss={() => {
+                    setIsSupported(true);
+                  }}
                 />
               )}
               <Iframe

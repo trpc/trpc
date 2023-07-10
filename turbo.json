@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "globalDependencies": [
+    ".eslintrc.js",
     "tsconfig.json",
     "scripts/entrypoints.ts",
     "scripts/getRollupConfig.ts"

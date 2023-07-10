@@ -26,7 +26,7 @@ export async function parseJSONStream<TReturn>(opts: {
   /**
    * As given by `(await fetch(url)).body`
    */
-  readableStream: WebReadableStreamEsque | NodeJS.ReadableStream;
+  readableStream: NodeJS.ReadableStream | WebReadableStreamEsque;
   /**
    * Called for each line of the stream
    */
@@ -69,7 +69,7 @@ export async function parseJSONStream<TReturn>(opts: {
  * @param onLine will be called for every line ('\n' delimited) in the stream
  */
 async function readLines(
-  readableStream: WebReadableStreamEsque | NodeJS.ReadableStream,
+  readableStream: NodeJS.ReadableStream | WebReadableStreamEsque,
   onLine: (line: string) => void,
   textDecoder: TextDecoderEsque,
 ) {

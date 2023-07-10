@@ -22,11 +22,11 @@ type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
-> = {
+> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
   path: string;
-} & FastifyHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
@@ -91,7 +91,7 @@ export async function fastifyRequestHandler<
       // full response, no streaming
       resolve(opts.res.send(string));
     } else {
-      stream.push(formatter!(index, string));
+      stream.push(formatter(index, string));
     }
   };
 
@@ -110,7 +110,7 @@ export async function fastifyRequestHandler<
   })
     .then(() => {
       if (isStream) {
-        stream.push(formatter!.end());
+        stream.push(formatter.end());
         stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
       }
     })
