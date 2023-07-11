@@ -38,7 +38,7 @@ First, run
 pnpm test
 ```
 
-in the project root directory. This will make sure all the build artifacts and codegen has run. After that, you can run the tests in watch mode, or watch specific tests using
+in the project root directory. This will make sure all the build artifacts and codegen has run. After that, you can run the tests in watch mode using
 
 ```
 pnpm test-watch
