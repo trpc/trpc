@@ -1,5 +1,4 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { serve } from 'std/http/server.ts';
 import { appRouter } from './router.ts';
 
 function handler(request: Request) {
@@ -17,4 +16,4 @@ function handler(request: Request) {
   });
 }
 
-serve(handler);
+Deno.serve(handler);

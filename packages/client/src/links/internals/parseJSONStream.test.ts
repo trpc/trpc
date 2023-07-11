@@ -17,7 +17,7 @@ describe('parseJsonStream', () => {
     });
     const orderReceived: any[] = [];
     const itemsArray: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+
     const fullData = await parseJSONStream({
       readableStream: stream,
       onSingle: (index, data) => {
