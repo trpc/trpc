@@ -215,14 +215,12 @@ describe('with superjson', () => {
       expect(await ctx.proxy.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
       expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
       expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
       expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
     });
   });
@@ -254,14 +252,12 @@ describe('with superjson', () => {
       expect(await ctx.proxy.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
       expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
       expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
       expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
     });
   });
