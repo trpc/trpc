@@ -3,10 +3,6 @@ lockfileVersion: '6.0'
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
-  '@trpc/client': link:./packages/client
-  '@trpc/next': link:./packages/next
-  '@trpc/react-query': link:./packages/react-query
-  '@trpc/server': link:./packages/server
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
   '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
   '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
@@ -154,16 +150,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: link:../../../packages/next
+        specifier: ^10.33.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: link:../../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -224,16 +220,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: link:../../../packages/next
+        specifier: ^10.33.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: link:../../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.7
@@ -279,16 +275,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: link:../../../packages/next
+        specifier: ^10.33.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: link:../../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.7
@@ -325,10 +321,10 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
     devDependencies:
       '@tsconfig/esm':
@@ -353,16 +349,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: link:../../../packages/next
+        specifier: ^10.33.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: link:../../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.7
@@ -405,10 +401,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -439,13 +435,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -488,13 +484,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -540,10 +536,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -592,10 +588,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       tsx:
         specifier: ^3.12.7
@@ -671,13 +667,13 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: link:../../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -708,7 +704,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -736,7 +732,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: link:../../../packages/client
+        specifier: ^10.33.0
         version: link:../../../packages/client
       undici:
         specifier: ^5.14.0
@@ -749,7 +745,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: link:../../../packages/server
+        specifier: ^10.33.0
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -765,16 +761,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: link:../../packages/next
+        specifier: ^10.33.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.7
@@ -814,16 +810,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: link:../../packages/next
+        specifier: ^10.33.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.7
@@ -860,16 +856,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: link:../../packages/next
+        specifier: ^10.33.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.7
@@ -909,16 +905,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: link:../../packages/next
+        specifier: ^10.33.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       clsx:
         specifier: ^1.1.1
@@ -1015,16 +1011,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: link:../../packages/next
+        specifier: ^10.33.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       clsx:
         specifier: ^1.1.1
@@ -1097,16 +1093,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: link:../../packages/next
+        specifier: ^10.33.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       clsx:
         specifier: ^1.1.1
@@ -1206,10 +1202,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -1233,13 +1229,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: link:../../packages/react-query
+        specifier: ^10.33.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1279,10 +1275,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: link:../../packages/client
+        specifier: ^10.33.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: link:../../packages/server
+        specifier: ^10.33.0
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -1313,7 +1309,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@trpc/server':
-        specifier: link:../server
+        specifier: 10.33.0
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
@@ -1356,13 +1352,13 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../client
+        specifier: 10.33.0
         version: link:../client
       '@trpc/react-query':
-        specifier: link:../react-query
+        specifier: 10.33.0
         version: link:../react-query
       '@trpc/server':
-        specifier: link:../server
+        specifier: 10.33.0
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1407,10 +1403,10 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: link:../client
+        specifier: 10.33.0
         version: link:../client
       '@trpc/server':
-        specifier: link:../server
+        specifier: 10.33.0
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1578,16 +1574,16 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@trpc/client':
-        specifier: link:../client
+        specifier: 10.33.0
         version: link:../client
       '@trpc/next':
-        specifier: link:../next
+        specifier: 10.33.0
         version: link:../next
       '@trpc/react-query':
-        specifier: link:../react-query
+        specifier: 10.33.0
         version: link:../react-query
       '@trpc/server':
-        specifier: link:../server
+        specifier: 10.33.0
         version: link:../server
       '@types/node':
         specifier: ^18.16.16
@@ -1719,16 +1715,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: link:../packages/client
+        specifier: ^10.33.0
         version: link:../packages/client
       '@trpc/next':
-        specifier: link:../packages/next
+        specifier: ^10.33.0
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: link:../packages/react-query
+        specifier: ^10.33.0
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: link:../packages/server
+        specifier: ^10.33.0
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.0.0
@@ -23666,7 +23662,3 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

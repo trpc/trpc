@@ -66,6 +66,9 @@ jobs:
 
       - run: node -v
 
+      - name: Disable engine-strict
+        run: echo "engine-strict = false" >> .npmrc
+
       # Run test-dev & test-start separately so ports don't clash
       - name: Run build
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} build

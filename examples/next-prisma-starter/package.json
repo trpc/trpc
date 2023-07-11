@@ -2,6 +2,10 @@
   "name": "@examples/trpc-next-prisma-starter",
   "version": "10.33.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@8.5.1",
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
@@ -25,7 +29,6 @@
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
     "postinstall": "pnpm generate"
   },
-  "packageManager": "pnpm@8.5.0",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
