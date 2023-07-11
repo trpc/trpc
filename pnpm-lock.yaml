@@ -1651,8 +1651,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@effect/schema':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: ^0.26.0
+        version: 0.26.0
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1874,8 +1874,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@effect/schema':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: ^0.26.0
+        version: 0.26.0
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -6283,19 +6283,19 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.13.2:
-    resolution: {integrity: sha512-wZ7OllwpuSLZ2l1MrWA2Fzcw9YX1b1GVhn/fDYZcYejXFMHMG6TkT2PKnvAbXzym2Dx+todsykNFk3q9C0Fpug==}
+  /@effect/data@0.14.1:
+    resolution: {integrity: sha512-MV6nI65oYcm8eZHnC0GnwXdY2tvybeb2lKCVFg+j/R5KptCKaunc0hXtPaXUSZiRgKJNxRRoHGtNzR+dZ/yiiA==}
 
-  /@effect/io@0.31.1:
-    resolution: {integrity: sha512-fTxrwa7zr9bdGpr1f57UtSFWw9xgjCGIiG5kNuG+PGInJwANXqkTBa9izdcr3OP7mq5IzOtvPIFPIDE8r/ew5w==}
+  /@effect/io@0.32.1:
+    resolution: {integrity: sha512-0KkqeJKU4Y2YBAi9RmCJkqABp6ZpxXXkZA1WnhbiVdIPaV+Izp4Ek2wJsnL+CnOzg/gJJ6DTPLLQVXuSz+Pu8Q==}
     dependencies:
-      '@effect/data': 0.13.2
+      '@effect/data': 0.14.1
 
-  /@effect/schema@0.25.0:
-    resolution: {integrity: sha512-nJ674r65cqlv6+5jgjUT28oeNnfG/xkk/XduVb0ZF6Cd5rX7GqZp8cKObNwVLTNLJjMqS4N2rHhS8JtgLv88aw==}
+  /@effect/schema@0.26.0:
+    resolution: {integrity: sha512-dZNTj9xbvF8orsrSl+VnI6XIFIxXIJS+PNNalq25O06c2/a5oqZKdnlDRORvoeUjdO7X4rPoXJWI5dcNBO5UdQ==}
     dependencies:
-      '@effect/data': 0.13.2
-      '@effect/io': 0.31.1
+      '@effect/data': 0.14.1
+      '@effect/io': 0.32.1
       fast-check: 3.11.0
 
   /@emotion/is-prop-valid@0.8.8:
