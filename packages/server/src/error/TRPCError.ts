@@ -1,5 +1,5 @@
 import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
-import { getMessageFromUnknownError } from './utils';
+import { isObject } from './utils';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {
@@ -19,6 +19,37 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   return trpcError;
 }
 
+class UnknownCauseError extends Error {
+  [key: string]: unknown;
+}
+
+function getCauseFromUnknown(cause: unknown): Error | undefined {
+  if (cause instanceof Error) {
+    return cause;
+  }
+
+  const type = typeof cause;
+  if (type === 'undefined' || type === 'function' || cause === null) {
+    return undefined;
+  }
+
+  // Primitive types just get wrapped in an error
+  if (type !== 'object') {
+    return new Error(String(cause));
+  }
+
+  // If it's an object, we'll create a synthetic error
+  if (isObject(cause)) {
+    const err = new UnknownCauseError();
+    for (const key in cause) {
+      err[key] = cause[key];
+    }
+    return err;
+  }
+
+  return undefined;
+}
+
 export class TRPCError extends Error {
   public readonly cause?: Error;
   public readonly code;
@@ -28,12 +59,12 @@ export class TRPCError extends Error {
     code: TRPC_ERROR_CODE_KEY;
     cause?: unknown;
   }) {
-    const message =
-      opts.message ?? getMessageFromUnknownError(opts.cause, opts.code);
+    const cause = getCauseFromUnknown(opts.cause);
+    const message = opts.message ?? cause?.message ?? opts.code;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
-    super(message, { cause: opts.cause });
+    super(message, { cause });
 
     this.code = opts.code;
     this.name = this.constructor.name;

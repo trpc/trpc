@@ -87,8 +87,10 @@ export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
           const loader = loaders[op.type];
           const { promise, cancel } = loader.load(op);
 
+          let _res = undefined as HTTPResult | undefined;
           promise
             .then((res) => {
+              _res = res;
               const transformed = transformResult(res.json, runtime);
 
               if (!transformed.ok) {
@@ -106,7 +108,11 @@ export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
               observer.complete();
             })
             .catch((err) => {
-              observer.error(TRPCClientError.from(err));
+              observer.error(
+                TRPCClientError.from(err, {
+                  meta: _res?.meta,
+                }),
+              );
             });
 
           return () => {

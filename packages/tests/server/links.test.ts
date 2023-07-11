@@ -72,6 +72,11 @@ test('chainer', async () => {
     Object {
       "context": Object {
         "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
       },
       "result": Object {
         "data": "world",
@@ -174,6 +179,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello world",
@@ -183,6 +200,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello alexdotjs",
@@ -558,6 +587,35 @@ describe('loggerLink', () => {
     );
     expect(logger.error.mock.calls[0]![0]!).toMatchInlineSnapshot(
       `"%c << query #1 %cn/a%c %O"`,
+    );
+  });
+
+  test('ansi color mode', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, colorMode: 'ansi' })(mockRuntime),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {},
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+      `"\x1b[30;46m >> query \x1b[1;30;46m #1 n/a \x1b[0m"`,
+    );
+    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+      `"\x1b[97;46m << query \x1b[1;97;46m #1 n/a \x1b[0m"`,
     );
   });
 

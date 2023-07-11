@@ -84,7 +84,6 @@ export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-  // eslint-disable-next-line @typescript-eslint/sort-type-constituents
 > = {
   req: TRequest;
   res: TResponse;
