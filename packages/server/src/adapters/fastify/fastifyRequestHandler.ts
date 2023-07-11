@@ -1,10 +1,13 @@
+import { Readable } from 'node:stream';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AnyRouter } from '../../core';
 import {
+  getBatchStreamFormatter,
   HTTPBaseHandlerOptions,
   HTTPRequest,
   ResolveHTTPRequestOptionsContextFn,
 } from '../../http';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
 
@@ -19,11 +22,11 @@ type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
-> = {
+> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
   path: string;
-} & FastifyHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
@@ -50,7 +53,49 @@ export async function fastifyRequestHandler<
     body: opts.req.body ?? 'null',
   };
 
-  const result = await resolveHTTPResponse({
+  let resolve: (value: FastifyReply) => void;
+  const promise = new Promise<FastifyReply>((r) => (resolve = r));
+
+  let isStream = false;
+  let stream: Readable;
+  let formatter: ReturnType<typeof getBatchStreamFormatter>;
+  const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
+    if (!opts.res.statusCode || opts.res.statusCode === 200) {
+      opts.res.statusCode = head.status;
+    }
+    for (const [key, value] of Object.entries(head.headers ?? {})) {
+      /* istanbul ignore if -- @preserve */
+      if (typeof value === 'undefined') {
+        continue;
+      }
+      void opts.res.header(key, value);
+    }
+    if (isStreaming) {
+      void opts.res.header('Transfer-Encoding', 'chunked');
+      void opts.res.header(
+        'Vary',
+        opts.res.hasHeader('Vary')
+          ? 'trpc-batch-mode, ' + opts.res.getHeader('Vary')
+          : 'trpc-batch-mode',
+      );
+      stream = new Readable();
+      stream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154
+      resolve(opts.res.send(stream));
+      isStream = true;
+      formatter = getBatchStreamFormatter();
+    }
+  };
+
+  const unstable_onChunk = ([index, string]: ResponseChunk) => {
+    if (index === -1) {
+      // full response, no streaming
+      resolve(opts.res.send(string));
+    } else {
+      stream.push(formatter(index, string));
+    }
+  };
+
+  resolveHTTPResponse({
     req,
     createContext,
     path: opts.path,
@@ -60,20 +105,20 @@ export async function fastifyRequestHandler<
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
-  });
+    unstable_onHead,
+    unstable_onChunk,
+  })
+    .then(() => {
+      if (isStream) {
+        stream.push(formatter.end());
+        stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
+      }
+    })
+    .catch(() => {
+      if (isStream) {
+        stream.push(null);
+      }
+    });
 
-  const { res } = opts;
-
-  if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
-    res.statusCode = result.status;
-  }
-  for (const [key, value] of Object.entries(result.headers ?? {})) {
-    /* istanbul ignore if -- @preserve */
-    if (typeof value === 'undefined') {
-      continue;
-    }
-
-    void res.header(key, value);
-  }
-  await res.send(result.body);
+  return promise;
 }

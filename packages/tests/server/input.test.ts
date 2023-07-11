@@ -1,16 +1,15 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError, createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, TRPCClientError } from '@trpc/client';
 import {
   inferProcedureInput,
   inferProcedureParams,
   initTRPC,
 } from '@trpc/server';
 import { UnsetMarker } from '@trpc/server/core/internals/utils';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
-const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+const ignoreErrors = async (fn: () => unknown) => {
   try {
     await fn();
   } catch {

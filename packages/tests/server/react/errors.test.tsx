@@ -2,10 +2,9 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client/src';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 describe('custom error formatter', () => {
   const ctx = konn()
@@ -53,9 +52,7 @@ describe('custom error formatter', () => {
       });
 
       if (query1.error) {
-        expectTypeOf(query1.error['data']?.foo).toMatchTypeOf<
-          'bar' | undefined
-        >();
+        expectTypeOf(query1.error.data?.foo).toMatchTypeOf<'bar' | undefined>();
         expectTypeOf(query1.error).toMatchTypeOf<
           TRPCClientErrorLike<typeof appRouter>
         >();

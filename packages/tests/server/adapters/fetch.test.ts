@@ -1,19 +1,27 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 import '../___packages';
+import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
-import { TRPCLink, createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import {
+  createTRPCProxyClient,
+  httpBatchLink,
+  TRPCLink,
+  unstable_httpBatchStreamLink,
+} from '@trpc/client';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
 } from '@trpc/server/adapters/fetch';
-import { tap } from '@trpc/server/observable';
+import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';
 
 // miniflare does an instanceof check
 globalThis.Response = MiniflareResponse as any;
+// miniflare must use the web stream "polyfill"
+globalThis.ReadableStream = MiniflareReadableStream as any;
 
 const port = 8788;
 const url = `http://localhost:${port}`;
@@ -67,6 +75,18 @@ function createAppRouter() {
         return ctx.info;
       }),
     }),
+    deferred: publicProcedure
+      .input(
+        z.object({
+          wait: z.number(),
+        }),
+      )
+      .query(async (opts) => {
+        await new Promise<void>((resolve) =>
+          setTimeout(resolve, opts.input.wait * 10),
+        );
+        return opts.input.wait;
+      }),
   });
 
   return appRouter;
@@ -80,6 +100,7 @@ async function startServer() {
   const mf = new Miniflare({
     script: '//',
     port,
+    compatibilityFlags: ['streams_enable_constructors'],
   });
   const globalScope = await mf.getGlobalScope();
   globalScope.addEventListener('fetch', (event: FetchEvent) => {
@@ -138,6 +159,46 @@ test('simple query', async () => {
       "text": "hello world",
     }
   `);
+});
+
+test('streaming', async () => {
+  const orderedResults: number[] = [];
+  const linkSpy: TRPCLink<AppRouter> = () => {
+    // here we just got initialized in the app - this happens once per app
+    // useful for storing cache for instance
+    return ({ next, op }) => {
+      // this is when passing the result to the next link
+      // each link needs to return an observable which propagates results
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            orderedResults.push((value.result as any).data);
+            observer.next(value);
+          },
+          error: observer.error,
+        });
+        return unsubscribe;
+      });
+    };
+  };
+
+  const client = createTRPCProxyClient<AppRouter>({
+    links: [
+      linkSpy,
+      unstable_httpBatchStreamLink({
+        url,
+        fetch: fetch as any,
+      }),
+    ],
+  });
+
+  const results = await Promise.all([
+    client.deferred.query({ wait: 3 }),
+    client.deferred.query({ wait: 1 }),
+    client.deferred.query({ wait: 2 }),
+  ]);
+  expect(results).toEqual([3, 1, 2]);
+  expect(orderedResults).toEqual([1, 2, 3]);
 });
 
 test('query with headers', async () => {

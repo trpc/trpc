@@ -10,14 +10,14 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
+import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
   DeepPartial,
   Filter,
-  ProtectedIntersection,
   inferProcedureInput,
+  ProtectedIntersection,
 } from '@trpc/server';
 import {
   createFlatProxy,
@@ -25,19 +25,19 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import {
+  contextProps,
   DecoratedProxyTRPCContextProps,
+  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
-  contextProps,
 } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
-import { QueryType, getQueryKeyInternal } from '../../internals/getQueryKey';
-import { QueryKeyKnown } from '../../internals/getQueryKey';
+import {
+  getQueryKeyInternal,
+  QueryKeyKnown,
+  QueryType,
+} from '../../internals/getQueryKey';
 
-type DecorateProcedure<
-  TRouter extends AnyRouter,
-  TProcedure extends AnyQueryProcedure,
-> = {
+type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
@@ -45,7 +45,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
@@ -57,7 +57,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
@@ -69,7 +69,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<void>;
@@ -81,7 +81,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<void>;
@@ -93,7 +93,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TRouter>,
+      TRPCClientError<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
@@ -107,11 +107,11 @@ type DecorateProcedure<
       predicate?: (
         query: Query<
           inferProcedureInput<TProcedure>,
-          TRPCClientError<TRouter>,
+          TRPCClientError<TProcedure>,
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
-            inferProcedureInput<TProcedure> extends { cursor?: any }
+            inferProcedureInput<TProcedure> extends { cursor?: any } | void
               ? 'infinite'
               : 'query'
           >
@@ -196,7 +196,7 @@ type DecorateRouter = {
   /**
    * Invalidate the full router
    * @link https://trpc.io/docs/v10/useContext#query-invalidation
-   * @link https://react-query.tanstack.com/guides/query-invalidation
+   * @link https://tanstack.com/query/v4/docs/react/guides/query-invalidation
    */
   invalidate(
     input?: undefined,
@@ -208,18 +208,19 @@ type DecorateRouter = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-        DecorateRouter
-    : // utils only apply to queries
-      DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
-} & DecorateRouter; // Add functions that should be available at utils root
+export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
+  DecorateRouter & {
+    [TKey in keyof Filter<
+      TRouter['_def']['record'],
+      AnyQueryProcedure | AnyRouter
+    >]: TRouter['_def']['record'][TKey] extends AnyRouter
+      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
+          DecorateRouter
+      : // utils only apply to queries
+        DecorateProcedure<TRouter['_def']['record'][TKey]>;
+  }; // Add functions that should be available at utils root
 
-type AnyDecoratedProcedure = DecorateProcedure<any, any>;
+type AnyDecoratedProcedure = DecorateProcedure<any>;
 
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,
@@ -296,9 +297,12 @@ export function createReactQueryUtilsProxy<
         reset: () => context.resetQueries(queryKey, ...args),
         refetch: () => context.refetchQueries(queryKey, ...args),
         cancel: () => context.cancelQuery(queryKey, ...args),
-        setData: () => context.setQueryData(queryKey, args[0], args[1]),
-        setInfiniteData: () =>
-          context.setInfiniteQueryData(queryKey, args[0], args[1]),
+        setData: () => {
+          context.setQueryData(queryKey, args[0], args[1]);
+        },
+        setInfiniteData: () => {
+          context.setInfiniteQueryData(queryKey, args[0], args[1]);
+        },
         getData: () => context.getQueryData(queryKey),
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       };

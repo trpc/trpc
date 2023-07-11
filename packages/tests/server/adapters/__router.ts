@@ -1,4 +1,4 @@
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { TRPCRequestInfo } from '@trpc/server/http';
 import { z } from 'zod';
 

@@ -1,0 +1,59 @@
+/**
+ * Copyright 2021 Remix Software Inc.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/**
+ * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/upload/memoryUploadHandler.ts
+ */
+import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
+
+export type MemoryUploadHandlerFilterArgs = {
+  filename?: string;
+  contentType: string;
+  name: string;
+};
+
+export type MemoryUploadHandlerOptions = {
+  /**
+   * The maximum upload size allowed. If the size is exceeded an error will be thrown.
+   * Defaults to 3000000B (3MB).
+   */
+  maxPartSize?: number;
+  /**
+   *
+   * @param filename
+   * @param mimetype
+   * @param encoding
+   */
+  filter?(args: MemoryUploadHandlerFilterArgs): Promise<boolean> | boolean;
+};
+
+export function createMemoryUploadHandler({
+  filter,
+  maxPartSize = 3000000,
+}: MemoryUploadHandlerOptions = {}): UploadHandler {
+  return async ({ filename, contentType, name, data }) => {
+    if (filter && !(await filter({ filename, contentType, name }))) {
+      return undefined;
+    }
+
+    let size = 0;
+    const chunks = [];
+    for await (const chunk of data) {
+      size += chunk.byteLength;
+      if (size > maxPartSize) {
+        throw new MaxPartSizeExceededError(name, maxPartSize);
+      }
+      chunks.push(chunk);
+    }
+
+    if (typeof filename === 'string') {
+      return new File(chunks, filename, { type: contentType });
+    }
+
+    return await new Blob(chunks, { type: contentType }).text();
+  };
+}

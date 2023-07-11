@@ -1,5 +1,5 @@
-import { initTRPC } from 'npm:@trpc/server';
-import { z } from 'npm:zod';
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 let id = 0;
 

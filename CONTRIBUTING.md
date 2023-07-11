@@ -64,13 +64,13 @@ This package contains the core and server-side functionality. If something is sh
 
 #### Building a Router
 
-This is where tRPC has the most interaction with users, so it should be treated with a great deal of importance. We care about offering a simple, intuitive API in which the HTTP layer disappears for the user. Here the user's entry point is [`initTRPC`](packages/server/src/core/initTRPC.ts) where root configuration such as a [data transformer](https://trpc.io/docs/data-transformers) is set and factory functions for router, procedure, middleware, etc. creation are returned.
+This is where tRPC has the most interaction with users, so it should be treated with a great deal of importance. We care about offering a simple, intuitive API in which the HTTP layer disappears for the user. Here the user's entrypoint is [`initTRPC`](packages/server/src/core/initTRPC.ts) where root configuration such as a [data transformer](https://trpc.io/docs/data-transformers) is set and factory functions for router, procedure, middleware, etc. creation are returned.
 
 The most complex types are also in this area because we must keep track of the context, meta, middleware, and each procedure and its inputs and outputs. If you are ever struggling to understand a type, feel free to ask for help on [Discord](https://trpc.io/discord).
 
 #### Handling a Request and Forming a Response
 
-The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
+The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, streaming, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
 
 #### Adapting Requests and Responses
 

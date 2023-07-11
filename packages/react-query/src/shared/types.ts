@@ -11,6 +11,9 @@ export interface UseMutationOverride {
      */
     originalFn: () => MaybePromise<unknown>;
     queryClient: QueryClient;
+    /**
+     * Meta data passed in from the `useMutation()` hook
+     */
     meta: Record<string, unknown>;
   }) => MaybePromise<unknown>;
 }
@@ -22,7 +25,7 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   /**
    * Override behaviors of the built-in hooks
    */
-  unstable_overrides?: {
+  overrides?: {
     useMutation?: Partial<UseMutationOverride>;
   };
 

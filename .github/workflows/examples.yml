@@ -44,6 +44,8 @@ jobs:
             .test/big-router-declaration,
             soa,
             vercel-edge-runtime,
+            .experimental/next-formdata,
+            .experimental/next-app-dir,
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
@@ -52,7 +54,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.4
+      - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v3
         with:
@@ -93,11 +95,10 @@ jobs:
 
       - run: node -v
 
-      # Run test-dev & test-start separately so ports don't clash
-      - name: Run build & test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - name: Run test-start
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
@@ -120,7 +121,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.4
+      - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v3
         with:

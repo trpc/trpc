@@ -1,8 +1,15 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "globalDependencies": [
+    ".eslintrc.js",
+    "tsconfig.json",
+    "scripts/entrypoints.ts",
+    "scripts/getRollupConfig.ts"
+  ],
   "pipeline": {
     "codegen:entrypoints": {
       "outputs": [
+        "app-dir/**",
         "links/**",
         "shared/**",
         "server/**",
@@ -11,7 +18,8 @@
         "http/**",
         "observable/**",
         "rpc/**",
-        "subscription/**"
+        "subscription/**",
+        "package.json"
       ]
     },
     "codegen:bigBoi": {
@@ -22,7 +30,13 @@
     },
     "build": {
       "dependsOn": ["^build", "codegen:entrypoints", "prebuild"],
-      "outputs": [".next/**", "dist/**", "build/**", "docs/typedoc/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "build/**",
+        "docs/typedoc/**"
+      ]
     },
     "@examples/minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]

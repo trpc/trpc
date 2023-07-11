@@ -2,10 +2,10 @@
 id: httpLink
 title: HTTP Link
 sidebar_label: HTTP Link
-slug: /links/httpLink
+slug: /client/links/httpLink
 ---
 
-`httpLink` is a [**terminating link**](./index.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
+`httpLink` is a [**terminating link**](./overview.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
 `httpLink` supports both POST and GET requests.
 
@@ -45,7 +45,9 @@ export interface HTTPLinkOptions {
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
    */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  headers?:
+    | HTTPHeaders
+    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 ```
 

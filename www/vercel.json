@@ -1,13 +1,23 @@
 {
   "redirects": [
     {
+      "source": "/docs/server/output-validation",
+      "destination": "/docs/server/validators",
+      "permanent": true
+    },
+    {
+      "source": "/docs/server/infer-types",
+      "destination": "/docs/client/infer-types",
+      "permanent": true
+    },
+    {
       "source": "/docs/aborting-procedures",
       "destination": "/docs/client/aborting-procedure-calls",
       "permanent": true
     },
     {
-      "source": "/server/api-handler",
-      "destination": "/server/adapters/intro",
+      "source": "/docs/server/api-handler",
+      "destination": "/server/adapters",
       "permanent": true
     },
     {
@@ -32,32 +42,32 @@
     },
     {
       "source": "/docs/nextjs",
-      "destination": "/docs/nextjs/setup",
+      "destination": "/docs/client/nextjs/setup",
       "permanent": true
     },
     {
       "source": "/docs/ssg-helpers",
-      "destination": "/docs/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/server-side-helpers",
       "permanent": true
     },
     {
       "source": "/docs/ssg",
-      "destination": "/docs/nextjs/ssg",
+      "destination": "/docs/client/nextjs/ssg",
       "permanent": true
     },
     {
       "source": "/docs/ssr",
-      "destination": "/docs/nextjs/ssr",
+      "destination": "/docs/client/nextjs/ssr",
       "permanent": true
     },
     {
       "source": "/docs/starter-projects",
-      "destination": "/docs/nextjs/starter-projects",
+      "destination": "/docs/client/nextjs/starter-projects",
       "permanent": true
     },
     {
       "source": "/docs/next",
-      "destination": "/docs/nextjs/introduction",
+      "destination": "/docs/client/nextjs",
       "permanent": true
     },
     {
@@ -72,42 +82,42 @@
     },
     {
       "source": "/docs/invalidateQuery",
-      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "destination": "/docs/reactjs/useContext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/invalidateQueries",
-      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "destination": "/docs/reactjs/useContext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/query-invalidation",
-      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "destination": "/docs/reactjs/useContext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/useQuery",
-      "destination": "/docs/reactjs/usequery",
+      "destination": "/docs/reactjs/useQuery",
       "permanent": true
     },
     {
       "source": "/docs/useQueries",
-      "destination": "/docs/reactjs/usequeries",
+      "destination": "/docs/reactjs/useQueries",
       "permanent": true
     },
     {
       "source": "/docs/useMutation",
-      "destination": "/docs/reactjs/usemutation",
+      "destination": "/docs/reactjs/useMutation",
       "permanent": true
     },
     {
       "source": "/docs/useInfiniteQuery",
-      "destination": "/docs/reactjs/useinfinitequery",
+      "destination": "/docs/reactjs/useInfiniteQuery",
       "permanent": true
     },
     {
       "source": "/docs/useContext",
-      "destination": "/docs/reactjs/usecontext",
+      "destination": "/docs/reactjs/useContext",
       "permanent": true
     },
     {
@@ -117,7 +127,7 @@
     },
     {
       "source": "/docs/getQueryKey",
-      "destination": "/docs/reactjs/getquerykey",
+      "destination": "/docs/reactjs/getQueryKey",
       "permanent": true
     },
     {
@@ -166,11 +176,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/api-handler",
-      "destination": "/docs/server/api-handler",
-      "permanent": true
-    },
-    {
       "source": "/docs/authorization",
       "destination": "/docs/server/authorization",
       "permanent": true
@@ -202,7 +207,7 @@
     },
     {
       "source": "/docs/infer-types",
-      "destination": "/docs/server/infer-types",
+      "destination": "/docs/client/infer-types",
       "permanent": true
     },
     {
@@ -257,7 +262,7 @@
     },
     {
       "source": "/docs/v10/invalidateQueries",
-      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "destination": "/docs/reactjs/useContext#query-invalidation",
       "permanent": true
     },
     {
@@ -267,22 +272,22 @@
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "destination": "/docs/reactjs/useContext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/reactjs/usecontext#query-invalidation",
+      "destination": "/docs/reactjs/useContext#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/react-mutations",
-      "destination": "/docs/reactjs/usemutation",
+      "destination": "/docs/reactjs/useMutation",
       "permanent": true
     },
     {
       "source": "/docs/react-queries",
-      "destination": "/docs/reactjs/usequery",
+      "destination": "/docs/reactjs/useQuery",
       "permanent": true
     },
     {
@@ -317,7 +322,177 @@
     },
     {
       "source": "/docs/nextjs/ssg-helpers",
-      "destination": "/docs/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/server-side-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/awesome-trpc",
+      "destination": "/docs/community/awesome-trpc",
+      "permanent": true
+    },
+    {
+      "source": "/docs/contributing",
+      "destination": "/docs/community/contributing",
+      "permanent": true
+    },
+    {
+      "source": "/docs/love",
+      "destination": "/docs/community/love",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sponsors",
+      "destination": "/docs/community/sponsors",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/setup",
+      "destination": "/docs/client/vanilla/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/introduction",
+      "destination": "/docs/client/vanilla",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/infer-types",
+      "destination": "/docs/client/vanilla/infer-types",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/aborting-procedure-calls",
+      "destination": "/docs/client/react/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/getQueryKey",
+      "destination": "/docs/client/react/getQueryKey",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/infer-types",
+      "destination": "/docs/client/react/infer-types",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/introduction",
+      "destination": "/docs/client/react",
+      "permanent": true
+    },
+    {
+      "source": "/docs/client/reactjs/setup",
+      "destination": "/docs/client/react/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/suspense",
+      "destination": "/docs/client/react/suspense",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useContext",
+      "destination": "/docs/client/react/useContext",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useInfiniteQuery",
+      "destination": "/docs/client/react/useInfiniteQuery",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useMutation",
+      "destination": "/docs/client/react/useMutation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useQueries",
+      "destination": "/docs/client/react/useQueries",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/useQuery",
+      "destination": "/docs/client/react/useQuery",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/aborting-procedure-calls",
+      "destination": "/docs/client/nextjs/aborting-procedure-calls",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/introduction",
+      "destination": "/docs/client/nextjs",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/server-side-helpers",
+      "destination": "/docs/client/nextjs/server-side-helpers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/setup",
+      "destination": "/docs/client/nextjs/setup",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/ssg",
+      "destination": "/docs/client/nextjs/ssg",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/ssr",
+      "destination": "/docs/client/nextjs/ssr",
+      "permanent": true
+    },
+    {
+      "source": "/docs/nextjs/starter-projects",
+      "destination": "/docs/client/nextjs/starter-projects",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/httpBatchLink",
+      "destination": "/docs/client/links/httpBatchLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/httpBatchStreamLink",
+      "destination": "/docs/client/links/httpBatchStreamLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/httpLink",
+      "destination": "/docs/client/links/httpLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/loggerLink",
+      "destination": "/docs/client/links/loggerLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links",
+      "destination": "/docs/client/links",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/overview",
+      "destination": "/docs/client/links",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/splitLink",
+      "destination": "/docs/client/links/splitLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/links/wsLink",
+      "destination": "/docs/client/links/wsLink",
+      "permanent": true
+    },
+    {
+      "source": "/docs/reactjs/:path",
+      "destination": "/docs/client/react/:path",
       "permanent": true
     }
   ]

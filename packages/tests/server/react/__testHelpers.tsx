@@ -2,19 +2,19 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  TRPCWebSocketClient,
   createWSClient,
   httpBatchLink,
   splitLink,
+  TRPCWebSocketClient,
   wsLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { OutputWithCursor } from '@trpc/react-query/shared';
-import { TRPCError, initTRPC } from '@trpc/server';
-import { Observable, Observer, observable } from '@trpc/server/observable';
+import { initTRPC, TRPCError } from '@trpc/server';
+import { Observable, observable, Observer } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 export type Post = {
   id: string;
@@ -27,7 +27,7 @@ function subscriptionPullFactory<TOutput>(opts: {
    * The interval of how often the function should run
    */
   intervalMs: number;
-  pull(emit: Observer<TOutput, unknown>): void | Promise<void>;
+  pull(emit: Observer<TOutput, unknown>): Promise<void> | void;
 }): Observable<TOutput, unknown> {
   let timer: any;
   let stopped = false;
@@ -49,7 +49,9 @@ function subscriptionPullFactory<TOutput>(opts: {
   }
 
   return observable<TOutput>((emit) => {
-    _pull(emit).catch((err) => emit.error(err as Error));
+    _pull(emit).catch((err) => {
+      emit.error(err as Error);
+    });
     return () => {
       clearTimeout(timer);
       stopped = true;
@@ -102,18 +104,19 @@ export function createAppRouter() {
     }),
     paginatedPosts: t.procedure
       .input(
-        z.object({
-          limit: z.number().min(1).max(100).nullish(),
-          cursor: z.number().nullish(),
-        }),
+        z
+          .object({
+            limit: z.number().min(1).max(100).default(50),
+            cursor: z.number().nullish().default(null),
+          })
+          .default({}),
       )
       .query(({ input }) => {
         const items: typeof db.posts = [];
-        const limit = input.limit ?? 50;
+        const limit = input.limit;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
-        for (let index = 0; index < db.posts.length; index++) {
-          const element = db.posts[index]!;
+        for (const element of db.posts) {
           if (cursor != null && element.createdAt < cursor) {
             continue;
           }

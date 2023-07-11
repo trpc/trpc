@@ -1,13 +1,12 @@
 import { getServerAndReactClient } from '../react/__reactHelpers';
 import {
+  dehydrate,
   DehydratedState,
   InfiniteData,
-  dehydrate,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';

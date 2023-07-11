@@ -1,28 +1,32 @@
-import './___packages';
+import { IncomingMessage } from 'http';
+import { AddressInfo } from 'net';
 import {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
   createTRPCClientProxy,
   createTRPCUntypedClient,
   createWSClient,
   httpBatchLink,
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
 } from '@trpc/client/src';
 import { WithTRPCConfig } from '@trpc/next/src';
+import { OnErrorFunction } from '@trpc/server/internals/types';
 import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
 } from '@trpc/server/src/adapters/standalone';
 import {
-  WSSHandlerOptions,
   applyWSSHandler,
+  WSSHandlerOptions,
 } from '@trpc/server/src/adapters/ws';
-import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
 import ws from 'ws';
+import './___packages';
 
+// This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
+
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
@@ -39,9 +43,13 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   },
 ) {
   // http
+  type OnError = OnErrorFunction<TRouter, IncomingMessage>;
+
+  const onError = vitest.fn<Parameters<OnError>, void>();
   const httpServer = createHTTPServer({
     router: router,
     createContext: ({ req, res }) => ({ req, res }),
+    onError: onError as OnError,
     ...(opts?.server ?? {
       batching: {
         enabled: true,
@@ -88,7 +96,9 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       await Promise.all([
         new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => ws.close());
+          wss.clients.forEach((ws) => {
+            ws.close();
+          });
           wss.close(resolve);
         }),
       ]);
@@ -102,6 +112,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     applyWSSHandlerOpts,
     wssHandler,
     wss,
+    onError,
   };
 }
 
@@ -115,7 +126,7 @@ export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */
-  fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
+  fnOrPromise: Promise<unknown> | (() => unknown),
   /**
    * Force error constructor to be of specific type
    * @default Error
@@ -138,7 +149,7 @@ export async function waitError<TError extends Error = Error>(
   throw new Error('Function did not throw');
 }
 
-export const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+export const ignoreErrors = async (fn: () => unknown) => {
   try {
     await fn();
   } catch {

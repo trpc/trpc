@@ -18,6 +18,7 @@ const sections: Def = {
   diamond: [
     //
     'tolahq',
+    'github',
   ],
   gold: [
     //
@@ -26,8 +27,6 @@ const sections: Def = {
   silver: [
     //
     'JasonDocton',
-    'pingdotgg',
-    'prisma',
     'flightcontrolhq',
   ],
   bronze: [
@@ -100,7 +99,7 @@ const bucketConfig: Record<
     imgSize: 120,
   },
   other: {
-    title: '😻 Individuals',
+    title: '😻 Smaller Backers',
     numCols: 6,
     imgSize: 100,
   },
@@ -110,6 +109,10 @@ const markdown: string[] = [];
 
 for (const [k, config] of Object.entries(bucketConfig)) {
   const key = k as keyof Buckets;
+
+  if (buckets[key].length === 0) {
+    continue;
+  }
   markdown.push(`### ${config.title}`);
 
   const cols = buckets[key].map(

@@ -1,9 +1,8 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src", "test"],
+  "include": ["src"],
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "target": "ES2020",
-    "types": ["node", "vitest/globals"]
+    "target": "ES2020"
   }
 }

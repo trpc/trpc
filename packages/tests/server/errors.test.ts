@@ -7,7 +7,7 @@ import { TRPCError } from '@trpc/server/src/error/TRPCError';
 import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';
 import { OnErrorFunction } from '@trpc/server/src/internals/types';
 import fetch from 'node-fetch';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 test('basic', async () => {
   class MyError extends Error {

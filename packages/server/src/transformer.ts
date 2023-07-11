@@ -53,14 +53,17 @@ export type CombinedDataTransformerClient = {
 /**
  * @public
  */
-export type DataTransformerOptions = DataTransformer | CombinedDataTransformer;
+export type DataTransformerOptions = CombinedDataTransformer | DataTransformer;
 
 /**
  * @public
+ * @deprecated
+ * Deprecated in favor of `CombinedDataTransformerOptions` as this causes issues when doing SSR
+ * - https://github.com/trpc/trpc/issues/4130
  */
 export type ClientDataTransformerOptions =
-  | DataTransformer
-  | CombinedDataTransformerClient;
+  | CombinedDataTransformerClient
+  | DataTransformer;
 
 /**
  * @internal

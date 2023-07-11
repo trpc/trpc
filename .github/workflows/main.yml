@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        node: ['18.x']
+        node: ['18.x', '20.x']
         os: [ubuntu-latest]
 
     steps:
@@ -27,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2.2.4
+      - uses: pnpm/action-setup@v2
 
       - name: Use Node ${{ matrix.node }}
         uses: actions/setup-node@v3
@@ -50,6 +50,14 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm --filter "@trpc/*" --filter root install
 
+      - name: Download previous bundle analysis
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: bundle-analysis
+          branch: main
+          path: ./downloads/previous-bundle-analysis
+          if_no_artifact_found: ignore
+
       - name: Build
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -60,3 +68,10 @@ jobs:
         with:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages
+
+      - name: Upload new bundle analysis
+        uses: actions/upload-artifact@v3
+        if: github.ref == 'ref/head/main'
+        with:
+          name: bundle-analysis
+          path: packages/**/dist/bundle-analysis.json

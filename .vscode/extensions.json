@@ -4,6 +4,7 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "bungcip.better-toml",
-    "Orta.vscode-twoslash-queries"
+    "orta.vscode-twoslash-queries",
+    "yoavbls.pretty-ts-errors"
   ]
 }

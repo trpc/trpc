@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    height: 100vh;
+    background-color: rgb(31 41 55);
+    color: #fff;
+    padding: 0 32px;
+  }
+}

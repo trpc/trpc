@@ -55,15 +55,15 @@ import { z } from 'zod';
 export const t = initTRPC.create();
 
 export const appRouter = t.router({
-  getUser: t.procedure.input(z.string()).query((req) => {
-    return { id: req.input, name: 'Bilbo' };
+  getUser: t.procedure.input(z.string()).query((opts) => {
+    return { id: opts.input, name: 'Bilbo' };
   }),
   createUser: t.procedure
     .input(z.object({ name: z.string().min(5) }))
-    .mutation(async (req) => {
+    .mutation(async (opts) => {
       // use your ORM of choice
       return await UserModel.create({
-        data: req.input,
+        data: opts.input,
       });
     }),
 });
@@ -139,9 +139,9 @@ The `middleware` option will accept any function which resembles a connect/node.
 `createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
 ```ts title='server.ts'
+import { createServer } from 'http';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import { createServer } from 'http';
 
 const handler = createHTTPHandler({
   router: appRouter,

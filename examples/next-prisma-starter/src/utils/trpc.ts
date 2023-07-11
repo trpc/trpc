@@ -56,7 +56,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
        */
       transformer,
       /**
-       * @link https://trpc.io/docs/links
+       * @link https://trpc.io/docs/client/links
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
@@ -88,7 +88,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
         }),
       ],
       /**
-       * @link https://react-query.tanstack.com/reference/QueryClient
+       * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };

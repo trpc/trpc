@@ -44,7 +44,7 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 ## Option 1: Authorize using resolver
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import type { Context } from '../context';
 
 export const t = initTRPC.context<Context>().create();
@@ -53,10 +53,10 @@ const appRouter = t.router({
   // open for anyone
   hello: t.procedure
     .input(z.string().nullish())
-    .query(({ input, ctx }) => `hello ${input ?? ctx.user?.name ?? 'world'}`),
+    .query((opts) => `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`),
   // checked in resolver
-  secret: t.procedure.query(({ ctx }) => {
-    if (!ctx.user) {
+  secret: t.procedure.query((opts) => {
+    if (!opts.ctx.user) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
     return {
@@ -69,15 +69,16 @@ const appRouter = t.router({
 ## Option 2: Authorize using middleware
 
 ```ts title='server/routers/_app.ts'
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware(({ next, ctx }) => {
+const isAuthed = t.middleware((opts) => {
+  const { ctx } = opts;
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  return next({
+  return opts.next({
     ctx: {
       user: ctx.user,
     },
@@ -91,10 +92,10 @@ t.router({
   // this is accessible for everyone
   hello: t.procedure
     .input(z.string().nullish())
-    .query(({ input, ctx }) => `hello ${input ?? ctx.user?.name ?? 'world'}`),
+    .query((opts) => `hello ${opts.input ?? opts.ctx.user?.name ?? 'world'}`),
   admin: t.router({
     // this is accessible only to admins
-    secret: protectedProcedure.query(({ ctx }) => {
+    secret: protectedProcedure.query((opts) => {
       return {
         secret: 'sauce',
       };

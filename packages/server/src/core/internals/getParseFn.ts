@@ -1,6 +1,6 @@
 import { Parser } from '../parser';
 
-export type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
+export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;

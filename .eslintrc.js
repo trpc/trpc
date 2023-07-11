@@ -4,8 +4,8 @@ const config = {
   parser: '@typescript-eslint/parser',
   plugins: ['no-only-tests', 'unicorn', 'turbo'],
   extends: [
-    'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:@typescript-eslint/recommended-type-checked',
+    'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'prettier',
@@ -15,22 +15,29 @@ const config = {
     sourceType: 'module', // Allows for the use of import
     tsconfigRootDir: __dirname,
     project: [
-      './examples/.test/*/tsconfig.json',
+      './examples/.*/*/tsconfig.json',
       './examples/*/tsconfig.json',
       './packages/*/tsconfig.json',
       './tsconfig.json',
       './www/tsconfig.json',
     ], // Allows for the use of rules which require parserServices to be generated
   },
+  // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
   rules: {
-    // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    // These rules aren't enabled in typescript-eslint's basic recommended config, but we like them
+    '@typescript-eslint/no-non-null-assertion': 'error',
+
+    // These rules enabled in typescript-eslint's configs don't apply here
+    '@typescript-eslint/consistent-indexed-object-style': 'off',
+    '@typescript-eslint/consistent-type-definitions': 'off',
+    '@typescript-eslint/no-empty-interface': 'off',
+
+    // Todo: do we want these?
+    '@typescript-eslint/no-explicit-any': 'off',
+
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
     'no-only-tests/no-only-tests': 'error',
-    '@typescript-eslint/no-empty-interface': 'off',
     'unicorn/filename-case': [
       'error',
       {
@@ -39,6 +46,7 @@ const config = {
           'TRPC',
           'RPC',
           'HTTP',
+          'JSON',
           '\\.config\\.js',
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',
@@ -66,6 +74,7 @@ const config = {
         },
       },
     ],
+    'max-params': ['error', 3],
   },
   overrides: [
     // {
@@ -99,6 +108,7 @@ const config = {
       rules: {
         '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-unused-vars': 'off',
+        'unicorn/filename-case': 'off',
       },
     },
     {

@@ -2,10 +2,10 @@
 id: httpBatchLink
 title: HTTP Batch Link
 sidebar_label: HTTP Batch Link
-slug: /links/httpBatchLink
+slug: /client/links/httpBatchLink
 ---
 
-`httpBatchLink` is a [**terminating link**](./index.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
+`httpBatchLink` is a [**terminating link**](./overview.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
 
 ## Usage
 
@@ -39,7 +39,7 @@ const somePosts = await Promise.all([
 The `httpBatchLink` function takes an options object that has the `HTTPBatchLinkOptions` shape.
 
 ```ts
-export interface HttpBatchLinkOptions extends HTTPLinkOptions {
+export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   maxURLLength?: number;
 }
 
@@ -57,7 +57,9 @@ export interface HTTPLinkOptions {
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
    */
-  headers?: HTTPHeaders | (() => HTTPHeaders | Promise<HTTPHeaders>);
+  headers?:
+    | HTTPHeaders
+    | ((opts: { opList: Operation[] }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
 ```
 
@@ -144,4 +146,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 ## Reference
 
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchLink.ts)
+You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchLink/index.ts)

@@ -10,7 +10,7 @@
 - `faux-gateway` stitches together `server-a` & `server-b` **but is never actually run** in Node
 - `client`:
   - is initialized with the types from `faux-gateway`
-  - contains a custom ending [Link](https://trpc.io/docs/links) which allows you to call each server without caring where the call actually ends up
+  - contains a custom ending [Link](https://trpc.io/docs/client/links) which allows you to call each server without caring where the call actually ends up
 
 ---
 

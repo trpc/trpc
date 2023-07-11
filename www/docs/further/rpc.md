@@ -13,6 +13,20 @@ slug: /rpc
 | `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
 | <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
 
+## Accessing nested procedures
+
+Nested procedures are separated by dots, so for a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
+
+```ts
+export const appRouter = router({
+  post: router({
+    byId: publicProcedure.input(String).query(async (opts) => {
+      // [...]
+    }),
+  }),
+});
+```
+
 ## Batching
 
 When batching, we combine all parallel procedure calls of the same HTTP method in one request using a data loader.
@@ -28,14 +42,14 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 
 ```tsx title='server/router.ts'
 export const appRouter = t.router({
-  postById: t.procedure.input(String).query(async ({ input, ctx }) => {
-    const post = await ctx.post.findUnique({
-      where: { id: input },
+  postById: t.procedure.input(String).query(async (opts) => {
+    const post = await opts.ctx.post.findUnique({
+      where: { id: opts.input },
     });
     return post;
   }),
-  relatedPosts: t.procedure.input(String).query(async ({ input, ctx }) => {
-    const posts = await ctx.findRelatedPostsById(input);
+  relatedPosts: t.procedure.input(String).query(async (opts) => {
+    const posts = await opts.ctx.findRelatedPostsById(opts.input);
     return posts;
   }),
 });

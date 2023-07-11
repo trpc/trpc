@@ -29,7 +29,7 @@ describe('mutation override', () => {
       });
       const opts = routerToServerAndClientNew(appRouter);
       const trpc = createTRPCReact<typeof appRouter>({
-        unstable_overrides: {
+        overrides: {
           useMutation: {
             async onSuccess(opts) {
               if (!opts.meta.skipInvalidate) {
@@ -74,7 +74,12 @@ describe('mutation override', () => {
 
       return (
         <>
-          <button onClick={() => mutation.mutate(nonce)} data-testid="add">
+          <button
+            onClick={() => {
+              mutation.mutate(nonce);
+            }}
+            data-testid="add"
+          >
             add
           </button>
           <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>
@@ -103,12 +108,17 @@ describe('mutation override', () => {
       const mutation = trpc.add.useMutation({
         meta: {
           skipInvalidate: true,
-        } as any,
+        },
       });
 
       return (
         <>
-          <button onClick={() => mutation.mutate(nonce)} data-testid="add">
+          <button
+            onClick={() => {
+              mutation.mutate(nonce);
+            }}
+            data-testid="add"
+          >
             add
           </button>
           <pre>{JSON.stringify(listQuery.data ?? null, null, 4)}</pre>

@@ -9,12 +9,12 @@ const { z } = require('zod');
 /*eslint sort-keys: "error"*/
 const envSchema = z.object({
   GITHUB_TOKEN: z.string().min(1),
-  TWITTER_BEARER_TOKEN: z.string().min(1),
+  // TWITTER_BEARER_TOKEN: z.string().min(1),
 });
 
 const env = envSchema.safeParse({
   GITHUB_TOKEN: process.env.GITHUB_TOKEN,
-  TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN,
+  // TWITTER_BEARER_TOKEN: process.env.TWITTER_BEARER_TOKEN,
 });
 
 if (!env.success) {

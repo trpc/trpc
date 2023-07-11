@@ -1,8 +1,12 @@
-import { AnyRouter, DataTransformer } from '@trpc/server';
+import {
+  AnyRouter,
+  CombinedDataTransformer,
+  DataTransformer,
+} from '@trpc/server';
 import { Observable, Observer } from '@trpc/server/observable';
 import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
-import { TRPCClientError } from '../TRPCClientError';
 import { ResponseEsque } from '../internals/types';
+import { TRPCClientError } from '../TRPCClientError';
 
 /**
  * @internal
@@ -20,13 +24,14 @@ export type PromiseAndCancel<TValue> = {
 /**
  * @internal
  */
-export type OperationContext = Record<string, unknown>;
+export interface OperationContext extends Record<string, unknown> {}
+
 /**
  * @internal
  */
 export type Operation<TInput = unknown> = {
   id: number;
-  type: 'query' | 'mutation' | 'subscription';
+  type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
   context: OperationContext;
@@ -35,7 +40,7 @@ export type Operation<TInput = unknown> = {
 /**
  * @internal
  */
-export type HTTPHeaders = Record<string, string | string[] | undefined>;
+export type HTTPHeaders = Record<string, string[] | string | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
@@ -48,6 +53,8 @@ export type TRPCFetch = (
 
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
+  // FIXME: we should be able to remove this - added as `withTRPC()` needs it, but we can have it as an extra option on SSR instead
+  combinedTransformer: CombinedDataTransformer;
 }
 
 /**
@@ -55,8 +62,8 @@ export interface TRPCClientRuntime {
  */
 export interface OperationResultEnvelope<TOutput> {
   result:
-    | TRPCSuccessResponse<TOutput>['result']
-    | TRPCResultMessage<TOutput>['result'];
+    | TRPCResultMessage<TOutput>['result']
+    | TRPCSuccessResponse<TOutput>['result'];
   context?: OperationContext;
 }
 

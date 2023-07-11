@@ -3,7 +3,6 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { DefaultErrorShape } from '@trpc/server/src/error/formatter';
-import { expectTypeOf } from 'expect-type';
 import React, { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -24,7 +23,7 @@ test('react types test', async () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    if (mutation.error && mutation.error && mutation.error.shape) {
+    if (mutation.error?.shape) {
       expectTypeOf(mutation.error.shape).toMatchTypeOf<
         DefaultErrorShape & {
           $test: string;

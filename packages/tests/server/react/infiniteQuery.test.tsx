@@ -1,10 +1,11 @@
+import { ignoreErrors } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
-import { Post, createAppRouter } from './__testHelpers';
+import { createAppRouter, Post } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { expectTypeOf } from 'expect-type';
+import { inferProcedureInput } from '@trpc/server';
 import React, { Fragment, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -29,7 +30,7 @@ describe('Infinite Query', () => {
         },
       );
 
-      expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<undefined | Post[]>();
+      expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
 
       return q.status === 'loading' ? (
         <p>Loading...</p>
@@ -130,7 +131,7 @@ describe('Infinite Query', () => {
         },
       );
 
-      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<undefined | Post[]>();
+      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
       return q.status === 'loading' ? (
         <p>Loading...</p>
@@ -259,7 +260,7 @@ describe('Infinite Query', () => {
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
-      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<undefined | Post[]>();
+      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
       return q.status === 'loading' ? (
         <p>Loading...</p>
@@ -391,5 +392,42 @@ describe('Infinite Query', () => {
       expect(data).toContain('first post');
       expect(data).toContain('second post');
     }
+  });
+
+  test('useInfiniteQuery() is exposed on procedure with optional inputs', () => {
+    const { trpc, appRouter } = factory;
+
+    type AppRouter = typeof appRouter;
+    type Input = inferProcedureInput<AppRouter['paginatedPosts']>;
+
+    type Extends<T, U> = T extends U ? true : false;
+
+    // Optional procedure inputs are unioned with void | undefined.
+
+    assertType<Extends<Input, { cursor?: string }>>(false);
+    assertType<Extends<Input, { cursor?: string } | void>>(true);
+    assertType<Extends<Input, { cursor?: string } | undefined>>(true);
+    assertType<Extends<Input, { cursor?: string } | undefined | void>>(true);
+
+    // Assert 'useInfiniteQuery' is exposed in 'trpc.paginatedPosts'.
+
+    expectTypeOf(trpc.paginatedPosts.useInfiniteQuery).toBeFunction();
+  });
+
+  test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
+    ignoreErrors(async () => {
+      // @ts-expect-error 'cursor' is required
+      factory.trpc.postById.useInfiniteQuery;
+      const ssg = createServerSideHelpers({
+        router: factory.appRouter,
+        ctx: {},
+      });
+
+      // good
+      await ssg.paginatedPosts.fetchInfinite({ limit: 1 });
+
+      // @ts-expect-error 'cursor' is required
+      await ssg.postById.fetchInfinite({ limit: 1 });
+    });
   });
 });

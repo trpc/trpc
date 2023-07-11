@@ -1,11 +1,11 @@
+import http from 'http';
 import { waitError } from '../___testHelpers';
 import {
-  TRPCClientError,
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
+  TRPCClientError,
 } from '@trpc/client';
-import http from 'http';
 import fetch from 'node-fetch';
 
 type Handler = (opts: {
@@ -14,7 +14,9 @@ type Handler = (opts: {
 }) => void;
 
 function createServer(handler: Handler) {
-  const server = http.createServer((req, res) => handler({ req, res }));
+  const server = http.createServer((req, res) => {
+    handler({ req, res });
+  });
   server.listen(0);
 
   const address = server.address();

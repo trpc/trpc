@@ -3,8 +3,7 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
-import { expectTypeOf } from 'expect-type';
+import { TRPCQueryKey } from '@trpc/react-query/src/internals/getQueryKey';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -341,7 +340,7 @@ test('predicate type should be narrowed', () => {
           [
             string[],
             {
-              input?: { limit?: number | null };
+              input?: { limit?: number | undefined } | void;
               type: 'infinite';
             }?,
           ]

@@ -3,22 +3,22 @@
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
 import {
+  dehydrate,
   DehydratedState,
   Hydrate,
   QueryClient,
   QueryClientProvider,
-  dehydrate,
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
-  TRPCUntypedClient,
   createTRPCUntypedClient,
+  TRPCUntypedClient,
 } from '@trpc/client';
 import { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import {
+  createRootHooks,
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
-  createRootHooks,
   getQueryClient,
 } from '@trpc/react-query/shared';
 import type { AnyRouter, Dict, Maybe } from '@trpc/server';
@@ -35,8 +35,8 @@ import ssrPrepass from 'react-ssr-prepass';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
-    | DehydratedState['queries'][0]
-    | DehydratedState['mutations'][0],
+    | DehydratedState['mutations'][0]
+    | DehydratedState['queries'][0],
 >(result: TState): TState {
   const error = result.state.error as Maybe<TRPCClientError<any>>;
   if (error instanceof Error && error.name === 'TRPCClientError') {
@@ -56,9 +56,10 @@ function transformQueryOrMutationCacheErrors<
   return result;
 }
 export type WithTRPCConfig<TRouter extends AnyRouter> =
-  CreateTRPCClientOptions<TRouter> & {
-    abortOnUnmount?: boolean;
-  } & CreateTRPCReactQueryClientConfig;
+  CreateTRPCClientOptions<TRouter> &
+    CreateTRPCReactQueryClientConfig & {
+      abortOnUnmount?: boolean;
+    };
 
 interface WithTRPCOptions<TRouter extends AnyRouter>
   extends CreateTRPCReactOptions<TRouter> {
@@ -92,9 +93,7 @@ export function withTRPC<
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createRootHooks<TRouter, TSSRContext>({
-      unstable_overrides: opts.unstable_overrides,
-    });
+    const trpc = createRootHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
@@ -121,13 +120,10 @@ export function withTRPC<
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
 
       // allow normal components to be wrapped, not just app/pages
-      let hydratedState: DehydratedState | undefined;
-      if (props.pageProps) {
-        hydratedState = trpc.useDehydratedState(
-          trpcClient,
-          props.pageProps.trpcState,
-        );
-      }
+      const hydratedState = trpc.useDehydratedState(
+        trpcClient,
+        props.pageProps?.trpcState,
+      );
 
       return (
         <trpc.Provider
@@ -146,7 +142,7 @@ export function withTRPC<
       );
     };
 
-    if (AppOrPage.getInitialProps || opts.ssr) {
+    if (AppOrPage.getInitialProps ?? opts.ssr) {
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
         const AppTree = appOrPageCtx.AppTree;
 
@@ -232,9 +228,10 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState = trpcClient.runtime.transformer.serialize(
-          dehydratedCacheWithErrors,
-        );
+        pageProps.trpcState =
+          trpcClient.runtime.combinedTransformer.output.serialize(
+            dehydratedCacheWithErrors,
+          );
 
         const appTreeProps = getAppTreeProps(pageProps);
 
@@ -251,9 +248,9 @@ export function withTRPC<
                   ? [err as TRPCClientError<TRouter>]
                   : [],
               ),
-          }) || {};
+          }) ?? {};
 
-        for (const [key, value] of Object.entries(meta.headers || {})) {
+        for (const [key, value] of Object.entries(meta.headers ?? {})) {
           if (typeof value === 'string') {
             ctx.res?.setHeader(key, value);
           }
@@ -265,7 +262,7 @@ export function withTRPC<
       };
     }
 
-    const displayName = AppOrPage.displayName || AppOrPage.name || 'Component';
+    const displayName = AppOrPage.displayName ?? AppOrPage.name ?? 'Component';
     WithTRPC.displayName = `withTRPC(${displayName})`;
 
     return WithTRPC as any;

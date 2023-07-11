@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Operation, httpBatchLink, splitLink, wsLink } from '@trpc/client/src';
+import { httpBatchLink, Operation, splitLink, wsLink } from '@trpc/client/src';
 import { createTRPCReact } from '@trpc/react-query/src';
 import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
 import { AnyRouter } from '@trpc/server/src';
@@ -37,7 +37,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   });
 
   const queryClient = createQueryClient();
-  const proxy = createTRPCReact<TRouter, unknown, 'ExperimentalSuspense'>();
+  const proxy = createTRPCReact<TRouter, unknown, ''>();
   const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
 
   const client = opts.client;

@@ -4,7 +4,6 @@ import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React, { Suspense, useEffect } from 'react';
 import { z } from 'zod';
@@ -122,10 +121,7 @@ describe('useQuery()', () => {
       ctx.proxy.post.byId.useQuery(
         { id: '1' },
         {
-          initialData: {
-            id: 1,
-            text: '',
-          },
+          initialData: '__result',
         },
       ),
     ).returns;

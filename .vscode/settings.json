@@ -4,10 +4,19 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
+  "eslint.workingDirectories": [
+    { "pattern": "./examples/**" },
+    { "pattern": "./packages/*" },
+    { "pattern": "./www/*" }
+  ],
   "files.exclude": {
-    "packages/client/{links}": true,
+    "packages/client/{links,shared}": true,
+    "packages/next/{app-dir}": true,
     "packages/react-query/{shared,ssg}": true,
     "packages/server/{adapters,http,observable,rpc,shared,subscription}": true
+  },
+  "search.exclude": {
+    "/www/versioned_*": true
   },
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#2596be",
@@ -18,8 +27,9 @@
   "editor.stickyScroll.enabled": true,
   "tailwindCSS.classAttributes": ["class", "className", "ngClass", "tw"],
   "tailwindCSS.experimental.classRegex": [
-    ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+    ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]", "cn\\(([^)]*)\\)"]
   ],
+  "tailwindCSS.experimental.configFile": "./www/tailwind.config.ts",
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
 }

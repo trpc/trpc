@@ -1,16 +1,16 @@
+import { AddressInfo } from 'net';
+import { networkInterfaces } from 'os';
 import {
-  TRPCClientError,
   createTRPCProxyClient,
   httpBatchLink,
+  TRPCClientError,
 } from '@trpc/client/src';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
 } from '@trpc/server/src/adapters/standalone';
-import { AddressInfo } from 'net';
 import fetch from 'node-fetch';
-import { NetworkInterfaceInfo, networkInterfaces } from 'os';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -36,7 +36,7 @@ function findPossibleLocalAddress() {
   const bestMatch = Object.values(networkInterfaces())
     .flat()
     .find((netInterface) => {
-      const info = netInterface as NetworkInterfaceInfo;
+      const info = netInterface!;
       return info.family === 'IPv4' && !info.internal;
     });
   return bestMatch?.address;
@@ -67,13 +67,15 @@ async function startServer(
   // NOTE: Using custom hostname requires awaiting for `listening` event.
   // Prior to this event, it's not possible to retrieve resolved `port` and `address` values.
   return new Promise((resolve, reject) => {
-    server.addListener('error', (err) => reject(err));
-    server.addListener('listening', () =>
+    server.addListener('error', (err) => {
+      reject(err);
+    });
+    server.addListener('listening', () => {
       resolve({
         ...(server.address() as AddressInfo),
-      }),
-    );
-    server.listen(0, opts.host || '127.0.0.1');
+      });
+    });
+    server.listen(0, opts.host ?? '127.0.0.1');
   });
 }
 

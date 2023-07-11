@@ -2,7 +2,6 @@ import { getServerAndReactClient } from '../react/__reactHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { expectTypeOf } from 'expect-type';
 import { konn } from 'konn';
 import React from 'react';
 
