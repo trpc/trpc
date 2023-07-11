@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../core';
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
 import { CombinedDataTransformer } from '../transformer';
 import { MaybePromise } from '../types';
 import { HTTPRequest } from './types';
@@ -48,10 +47,10 @@ function getRawProcedureInputOrThrow(opts: {
       return req.body.length === 0 ? undefined : JSON.parse(req.body);
     }
     return req.body;
-  } catch (err) {
+  } catch (cause) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
-      cause: getCauseFromUnknown(err),
+      cause,
     });
   }
 }

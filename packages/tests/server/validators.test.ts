@@ -254,7 +254,7 @@ test('effect schema - [not officially supported]', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(S.parse(S.struct({ text: S.string })))
+      .input(S.parseSync(S.struct({ text: S.string })))
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
         return {
