@@ -78,7 +78,7 @@
     "tsx": "^3.12.7",
     "turbo": "^1.10.2",
     "typescript": "^5.1.3",
-    "vitest": "^0.32.0"
+    "vitest": "^0.33.0"
   },
   "pnpm": {
     "overrides": {
