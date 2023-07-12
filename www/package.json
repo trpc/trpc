@@ -69,7 +69,7 @@
     "@types/oauth": "^0.9.1",
     "arktype": "1.0.14-alpha",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "^1.0.0-next.12",
+    "docusaurus-plugin-typedoc": "^1.0.0-next.13",
     "dotenv": "^16.0.1",
     "eslint": "^8.40.0",
     "next": "^13.4.8",
@@ -84,8 +84,8 @@
     "tailwindcss": "^3.3.0",
     "tailwindcss-elevation": "^2.0.0",
     "tsx": "^3.12.7",
-    "typedoc": "^0.24.7",
-    "typedoc-plugin-markdown": "^4.0.0-next.13",
+    "typedoc": "^0.24.8",
+    "typedoc-plugin-markdown": "^4.0.0-next.17",
     "typescript": "^5.1.3",
     "yup": "^1.0.0"
   }
