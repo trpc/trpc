@@ -58,7 +58,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   })();
 
   const prefetchQuery = async <
-    TPath extends keyof TQueries & string,
+    TPath extends string & keyof TQueries,
     TProcedure extends TQueries[TPath],
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
@@ -71,7 +71,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   };
 
   const prefetchInfiniteQuery = async <
-    TPath extends keyof TQueries & string,
+    TPath extends string & keyof TQueries,
     TProcedure extends TQueries[TPath],
   >(
     ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
@@ -84,7 +84,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   };
 
   const fetchQuery = async <
-    TPath extends keyof TQueries & string,
+    TPath extends string & keyof TQueries,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
   >(
@@ -98,7 +98,7 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   };
 
   const fetchInfiniteQuery = async <
-    TPath extends keyof TQueries & string,
+    TPath extends string & keyof TQueries,
     TProcedure extends TQueries[TPath],
     TOutput extends inferProcedureOutput<TProcedure>,
   >(

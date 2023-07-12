@@ -5,8 +5,9 @@ describe('parseJsonStream', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-        const enqueue = (chunk: string) =>
+        const enqueue = (chunk: string) => {
           controller.enqueue(encoder.encode(chunk));
+        };
         enqueue(`{"0":${JSON.stringify({ a: 1 })}\n`);
         enqueue(`,"2":${JSON.stringify({ c: 3 })}\n`);
         enqueue(`,"1":${JSON.stringify({ b: 2 })}\n`);

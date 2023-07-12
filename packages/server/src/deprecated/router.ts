@@ -43,14 +43,14 @@ type Prefix<
  * @internal
  */
 type Prefixer<TObj extends Record<string, any>, TPrefix extends string> = {
-  [P in keyof TObj as Prefix<TPrefix, string & P>]: TObj[P];
+  [P in keyof TObj as Prefix<TPrefix, P & string>]: TObj[P];
 };
 
 /**
  * @public
  * @deprecated
  */
-export type ProcedureType = 'query' | 'mutation' | 'subscription';
+export type ProcedureType = 'mutation' | 'query' | 'subscription';
 
 /**
  * @internal
@@ -138,11 +138,11 @@ export type inferHandlerInput<
       ? [(null | undefined)?] // -> there is no input
       : [(TInput | null | undefined)?] // -> there is optional input
     : [TInput] // -> input is required
-  : [(undefined | null)?]; // -> there is no input
+  : [(null | undefined)?]; // -> there is no input
 
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
-  TPath extends keyof TProcedures & string,
+  TPath extends string & keyof TProcedures,
 >(
   path: TPath,
   ...args: inferHandlerInput<TProcedure>
@@ -198,7 +198,7 @@ export type inferRouterError<TRouter extends AnyRouter> = ReturnType<
 >;
 const PROCEDURE_DEFINITION_MAP: Record<
   ProcedureType,
-  'queries' | 'mutations' | 'subscriptions'
+  'mutations' | 'queries' | 'subscriptions'
 > = {
   query: 'queries',
   mutation: 'mutations',
@@ -216,7 +216,7 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape<number>> = ({
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
-  ctx: undefined | TContext;
+  ctx: TContext | undefined;
   shape: DefaultErrorShape;
 }) => TShape;
 
@@ -380,8 +380,8 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    TQueries &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TQueries,
     TMutations,
     TSubscriptions,
     TErrorShape,
@@ -395,8 +395,8 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    TQueries &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TQueries,
     TMutations,
     TSubscriptions,
     TErrorShape,
@@ -415,8 +415,8 @@ export class Router<
     TInputContext,
     TContext,
     TMeta,
-    TQueries &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TQueries,
     TMutations,
     TSubscriptions,
     TErrorShape,
@@ -459,8 +459,8 @@ export class Router<
     TContext,
     TMeta,
     TQueries,
-    TMutations &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TMutations,
     TSubscriptions,
     TErrorShape,
     TTransformer
@@ -474,8 +474,8 @@ export class Router<
     TContext,
     TMeta,
     TQueries,
-    TMutations &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TMutations,
     TSubscriptions,
     TErrorShape,
     TTransformer
@@ -494,8 +494,8 @@ export class Router<
     TContext,
     TMeta,
     TQueries,
-    TMutations &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TMutations,
     TSubscriptions,
     TErrorShape,
     TTransformer
@@ -543,8 +543,8 @@ export class Router<
     TMeta,
     TQueries,
     TMutations,
-    TSubscriptions &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -568,8 +568,8 @@ export class Router<
     TMeta,
     TQueries,
     TMutations,
-    TSubscriptions &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -592,8 +592,8 @@ export class Router<
     TMeta,
     TQueries,
     TMutations,
-    TSubscriptions &
-      Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>>,
+    Record<TPath, inferProcedureFromOptions<TInputContext, typeof procedure>> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -628,9 +628,9 @@ export class Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
     TMeta,
-    TQueries & TChildRouter['_def']['queries'],
-    TMutations & TChildRouter['_def']['mutations'],
-    TSubscriptions & TChildRouter['_def']['subscriptions'],
+    TChildRouter['_def']['queries'] & TQueries,
+    TChildRouter['_def']['mutations'] & TMutations,
+    TChildRouter['_def']['subscriptions'] & TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -650,10 +650,10 @@ export class Router<
     TInputContext,
     inferRouterContext<TChildRouter>,
     TMeta,
-    TQueries & Prefixer<TChildRouter['_def']['queries'], `${TPath}`>,
-    TMutations & Prefixer<TChildRouter['_def']['mutations'], `${TPath}`>,
-    TSubscriptions &
-      Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`>,
+    Prefixer<TChildRouter['_def']['queries'], `${TPath}`> & TQueries,
+    Prefixer<TChildRouter['_def']['mutations'], `${TPath}`> & TMutations,
+    Prefixer<TChildRouter['_def']['subscriptions'], `${TPath}`> &
+      TSubscriptions,
     TErrorShape,
     TTransformer
   >;
@@ -672,14 +672,14 @@ export class Router<
     }
 
     const duplicateQueries = Object.keys(childRouter._def.queries).filter(
-      (key) => !!this._def['queries'][prefix + key],
+      (key) => !!this._def.queries[prefix + key],
     );
     const duplicateMutations = Object.keys(childRouter._def.mutations).filter(
-      (key) => !!this._def['mutations'][prefix + key],
+      (key) => !!this._def.mutations[prefix + key],
     );
     const duplicateSubscriptions = Object.keys(
       childRouter._def.subscriptions,
-    ).filter((key) => !!this._def['subscriptions'][prefix + key]);
+    ).filter((key) => !!this._def.subscriptions[prefix + key]);
 
     const duplicates = [
       ...duplicateQueries,
@@ -838,7 +838,7 @@ export class Router<
     type: ProcedureType | 'unknown';
     path: string | undefined;
     input: unknown;
-    ctx: undefined | TContext;
+    ctx: TContext | undefined;
   }): TErrorShape {
     const { path, error } = opts;
     const { code } = opts.error;

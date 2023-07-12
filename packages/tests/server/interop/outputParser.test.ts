@@ -182,7 +182,7 @@ test('myzod', async () => {
 
 test('validator fn', async () => {
   const router = trpc.router().query('q', {
-    input: (value: unknown) => value as string | number,
+    input: (value: unknown) => value as number | string,
     output: (value: unknown) => {
       if (typeof (value as any).input === 'string') {
         return value as { input: string };
@@ -212,7 +212,7 @@ test('validator fn', async () => {
 
 test('async validator fn', async () => {
   const router = trpc.router().query('q', {
-    input: (value: unknown) => value as string | number,
+    input: (value: unknown) => value as number | string,
     output: async (value: any): Promise<{ input: string }> => {
       if (value && typeof value.input === 'string') {
         return { input: value.input };

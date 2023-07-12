@@ -14,7 +14,9 @@ type Handler = (opts: {
 }) => void;
 
 function createServer(handler: Handler) {
-  const server = http.createServer((req, res) => handler({ req, res }));
+  const server = http.createServer((req, res) => {
+    handler({ req, res });
+  });
   server.listen(0);
 
   const address = server.address();
@@ -61,10 +63,10 @@ describe('server responds with 413 Payload Too Large', () => {
     const error = await waitError(client.test.query(), TRPCClientError);
 
     expect(error).toMatchInlineSnapshot(
-      `[TRPCClientError: Badly formatted response from server]`,
+      '[TRPCClientError: Unable to transform response from server]',
     );
     expect(error.message).toMatchInlineSnapshot(
-      `"Badly formatted response from server"`,
+      '"Unable to transform response from server"',
     );
 
     await server.close();
@@ -97,10 +99,10 @@ describe('server responds with 413 Payload Too Large', () => {
 
     const error = await waitError(client.test.query(), TRPCClientError);
     expect(error).toMatchInlineSnapshot(
-      `[TRPCClientError: Badly formatted response from server]`,
+      '[TRPCClientError: Unable to transform response from server]',
     );
     expect(error.message).toMatchInlineSnapshot(
-      `"Badly formatted response from server"`,
+      '"Unable to transform response from server"',
     );
 
     await server.close();

@@ -222,31 +222,9 @@ export const all: APIRoute = (opts) => {
 
 ### Cloudflare Worker
 
-#### Install dependencies
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-
-```sh
-npm install -g wrangler
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```sh
-yarn global add wrangler
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpm add -g wrangler
-```
-
-  </TabItem>
-</Tabs>
+:::note
+You need the [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) to run Cloudflare Workers.
+:::
 
 #### Create Cloudflare Worker
 
@@ -274,26 +252,73 @@ Run `wrangler dev server.ts` and your endpoints will be available via HTTP!
 | `getUser`    | `GET http://localhost:8787/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:8787/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
+### Deno Oak
+
+:::note
+This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::
+
+#### Update the imports in `router.ts`
+
+```ts title='router.ts'
+import { initTRPC } from 'npm:@trpc/server';
+import { z } from 'npm:zod';
+import { Context } from './context.ts';
+```
+
+#### Update the imports in `context.ts`
+
+```ts title='context.ts'
+import { inferAsyncReturnType } from 'npm:@trpc/server';
+import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
+```
+
+#### Use `fetchRequestHandler` with Oak in `app.ts`
+
+```ts title='app.ts'
+import { Application, Router } from 'https://deno.land/x/oak/mod.ts';
+import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
+import { createContext } from './context.ts';
+import { appRouter } from './router.ts';
+
+const app = new Application();
+const router = new Router();
+
+router.all('/trpc/(.*)', async (ctx) => {
+  const res = await fetchRequestHandler({
+    endpoint: '/trpc',
+    req: new Request(ctx.request.url, {
+      headers: ctx.request.headers,
+      body:
+        ctx.request.method !== 'GET' && ctx.request.method !== 'HEAD'
+          ? ctx.request.body({ type: 'stream' }).value
+          : void 0,
+      method: ctx.request.method,
+    }),
+    router: appRouter,
+    createContext,
+  });
+
+  ctx.response.status = res.status;
+  ctx.response.headers = res.headers;
+  ctx.response.body = res.body;
+});
+
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+await app.listen({ port: 3000 });
+```
+
 ### Deno Deploy
 
-#### Install dependencies
+:::note
+This assumes you have Deno installed and setup. Refer to their [getting started guide](https://deno.com/manual/getting_started/installation) for more information.
+:::
 
-<Tabs>
-  <TabItem value="macOS / Linux" label="macOS / Linux" default>
-
-```sh
-curl -fsSL https://deno.land/x/install/install.sh | sh
-```
-
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-
-```sh
-irm https://deno.land/install.ps1 | iex
-```
-
-  </TabItem>
-</Tabs>
+:::tip
+See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/main/examples/deno-deploy) for a working example.
+:::
 
 #### Update the imports in `router.ts`
 
@@ -313,7 +338,6 @@ import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 #### Create Deno Deploy Function
 
 ```ts title='server.ts'
-import { serve } from 'https://deno.land/std@0.140.0/http/server.ts';
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
 import { appRouter } from './router.ts';
@@ -327,7 +351,7 @@ function handler(request) {
   });
 }
 
-serve(handler);
+Deno.serve(handler);
 ```
 
 Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will be available via HTTP!
@@ -384,6 +408,14 @@ export { handler as GET, handler as POST };
 ```
 
 ### Vercel Edge Runtime
+
+:::note
+See the official [Vercel Edge Runtime documentation](https://edge-runtime.vercel.app/getting-started) for more information.
+:::
+
+:::tip
+See our example [Vercel Edge Runtime app](https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime) for a working example.
+:::
 
 #### Install dependencies
 

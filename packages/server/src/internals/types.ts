@@ -23,5 +23,5 @@ export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
   path: string | undefined;
   req: TRequest;
   input: unknown;
-  ctx: undefined | inferRouterContext<TRouter>;
+  ctx: inferRouterContext<TRouter> | undefined;
 }) => void;

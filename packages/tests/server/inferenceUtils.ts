@@ -44,11 +44,11 @@ export type DeepBrand<T> = IsNever<T> extends true
   : IsUnknown<T> extends true
   ? { type: 'unknown' }
   : T extends
-      | string
-      | number
-      | boolean
-      | symbol
       | bigint
+      | boolean
+      | number
+      | string
+      | symbol
       | null
       | undefined
       | void
@@ -131,9 +131,9 @@ export type ConstructorParams<Actual> = Actual extends new (
 type MismatchArgs<B extends boolean, C extends boolean> = Eq<B, C> extends true
   ? []
   : [never];
-type Mismatch<T> = (BrandSpecial<T> | T) & {
+type Mismatch<T> = {
   [secret]: 'Type should be satisfied';
-};
+} & (BrandSpecial<T> | T);
 
 export interface ExpectTypeOf<Actual, B extends boolean> {
   toBeAny: (...MISMATCH: MismatchArgs<IsAny<Actual>, B>) => true;

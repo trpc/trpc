@@ -9,6 +9,7 @@ import {
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
+import { TRPCClientError } from '../../TRPCClientError';
 import { TextDecoderEsque } from '../internals/streamingUtils';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
@@ -29,7 +30,7 @@ export interface HTTPLinkBaseOptions {
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
-  fetch: FetchEsque;
+  fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
 }
 
@@ -38,7 +39,7 @@ export function resolveHTTPLinkOptions(
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url,
-    fetch: getFetch(opts.fetch),
+    fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
   };
 }
@@ -62,12 +63,13 @@ export interface HTTPResult {
   json: TRPCResponse;
   meta: {
     response: ResponseEsque;
+    responseJSON?: unknown;
   };
 }
 
 type GetInputOptions = {
   runtime: TRPCClientRuntime;
-} & ({ inputs: unknown[] } | { input: unknown });
+} & ({ input: unknown } | { inputs: unknown[] });
 
 function getInput(opts: GetInputOptions) {
   return 'input' in opts
@@ -77,8 +79,8 @@ function getInput(opts: GetInputOptions) {
       );
 }
 
-export type HTTPBaseRequestOptions = ResolvedHTTPLinkOptions &
-  GetInputOptions & {
+export type HTTPBaseRequestOptions = GetInputOptions &
+  ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
   };
@@ -136,8 +138,8 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export type HTTPRequestOptions = HTTPBaseRequestOptions &
-  ContentOptions & {
+export type HTTPRequestOptions = ContentOptions &
+  HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
     TextDecoder?: TextDecoderEsque;
   };
@@ -149,25 +151,26 @@ export async function fetchHTTPResponse(
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const headers = await opts.headers();
+  const resolvedHeaders = await opts.headers();
   /* istanbul ignore if -- @preserve */
   if (type === 'subscription') {
     throw new Error('Subscriptions should use wsLink');
   }
+  const headers = {
+    ...(opts.contentTypeHeader
+      ? { 'content-type': opts.contentTypeHeader }
+      : {}),
+    ...(opts.batchModeHeader
+      ? { 'trpc-batch-mode': opts.batchModeHeader }
+      : {}),
+    ...resolvedHeaders,
+  };
 
-  return opts.fetch(url, {
+  return getFetch(opts.fetch)(url, {
     method: METHOD[type],
     signal: ac?.signal,
     body: body,
-    headers: {
-      ...(opts.contentTypeHeader
-        ? { 'content-type': opts.contentTypeHeader }
-        : {}),
-      ...(opts.batchModeHeader
-        ? { 'trpc-batch-mode': opts.batchModeHeader }
-        : {}),
-      ...headers,
-    },
+    headers,
   });
 }
 
@@ -184,12 +187,15 @@ export function httpRequest(
         return _res.json();
       })
       .then((json) => {
+        meta.responseJSON = json;
         resolve({
           json: json as TRPCResponse,
           meta,
         });
       })
-      .catch(reject);
+      .catch((err) => {
+        reject(TRPCClientError.from(err, { meta }));
+      });
   });
   const cancel = () => {
     ac?.abort();
