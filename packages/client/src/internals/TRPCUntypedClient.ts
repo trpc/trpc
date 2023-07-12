@@ -74,9 +74,9 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 
 /** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions<TRouter> & {
-      links: TRPCLink<TRouter>[];
-    };
+  CreateTRPCClientBaseOptions<TRouter> & {
+    links: TRPCLink<TRouter>[];
+  };
 
 /** @internal */
 export type UntypedClientProperties =

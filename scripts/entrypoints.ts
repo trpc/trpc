@@ -107,10 +107,13 @@ export function generateEntrypoints(inputs: string[]) {
   pkgJson.funding = ['https://trpc.io/sponsor'];
 
   // write package.json
-  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
-    parser: 'json-stringify',
-    printWidth: 80,
-    endOfLine: 'auto',
-  });
-  fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
+  void prettier
+    .format(JSON.stringify(pkgJson), {
+      parser: 'json-stringify',
+      printWidth: 80,
+      endOfLine: 'auto',
+    })
+    .then((formattedPkgJson) => {
+      fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
+    });
 }

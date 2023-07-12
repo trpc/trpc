@@ -28,8 +28,8 @@ importers:
         specifier: ^2.26.1
         version: 2.26.1
       '@ianvs/prettier-plugin-sort-imports':
-        specifier: ^4.0.0
-        version: 4.0.0(prettier@2.8.8)
+        specifier: ^4.0.2
+        version: 4.0.2(prettier@3.0.0)
       '@manypkg/cli':
         specifier: ^0.21.0
         version: 0.21.0
@@ -100,11 +100,11 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.0.0
+        version: 3.0.0
       prettier-plugin-tailwindcss:
         specifier: ^0.4.0
-        version: 0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8)
+        version: 0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.2)(prettier@3.0.0)
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
@@ -340,8 +340,8 @@ importers:
         specifier: ^8.8.0
         version: 8.8.0(eslint@8.40.0)
       eslint-plugin-prettier:
-        specifier: ^4.2.1
-        version: 4.2.1(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@2.8.8)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@3.0.0)
       eslint-plugin-react:
         specifier: ^7.32.2
         version: 7.32.2(eslint@8.40.0)
@@ -352,8 +352,8 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.0.0
+        version: 3.0.0
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter
         version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
@@ -1067,8 +1067,8 @@ importers:
         specifier: ^8.8.0
         version: 8.8.0(eslint@8.40.0)
       eslint-plugin-prettier:
-        specifier: ^4.2.1
-        version: 4.2.1(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@2.8.8)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@3.0.0)
       eslint-plugin-react:
         specifier: ^7.32.2
         version: 7.32.2(eslint@8.40.0)
@@ -1082,8 +1082,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.14
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.0.0
+        version: 3.0.0
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
@@ -1273,8 +1273,8 @@ importers:
         specifier: ^8.8.0
         version: 8.8.0(eslint@8.40.0)
       eslint-plugin-prettier:
-        specifier: ^4.2.1
-        version: 4.2.1(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@2.8.8)
+        specifier: ^5.0.0
+        version: 5.0.0(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@3.0.0)
       eslint-plugin-react:
         specifier: ^7.32.2
         version: 7.32.2(eslint@8.40.0)
@@ -1288,8 +1288,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.14
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.0.0
+        version: 3.0.0
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
         version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
@@ -1922,8 +1922,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.14
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.0.0
+        version: 3.0.0
       runtypes:
         specifier: ^6.6.0
         version: 6.6.0
@@ -1947,7 +1947,7 @@ importers:
         version: 0.24.7(typescript@5.1.3)
       typedoc-plugin-markdown:
         specifier: ^4.0.0-next.13
-        version: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7)
+        version: 4.0.0-next.13(prettier@3.0.0)(typedoc@0.24.7)
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -7253,8 +7253,8 @@ packages:
     engines: {node: '>=6.9.0'}
     dev: false
 
-  /@ianvs/prettier-plugin-sort-imports@4.0.0(prettier@2.8.8):
-    resolution: {integrity: sha512-56wYZhq/Ezt5o4Lzc+CEUV+sqTPEV2WcTFJSSLBOhe15yfIkrUheGeRvC3lg30VQ8K0J1kvWjXIY5lxeOlW2Tg==}
+  /@ianvs/prettier-plugin-sort-imports@4.0.2(prettier@3.0.0):
+    resolution: {integrity: sha512-VnsTzyb9aSWpc3v6HvZKD6eolZRvofIYjhda+6IbW1GYwr2byWqK0KhLPbYNkit9MAgShad5bhZ1hgBn867A1A==}
     peerDependencies:
       '@vue/compiler-sfc': '>=3.0.0'
       prettier: 2.x
@@ -7267,7 +7267,7 @@ packages:
       '@babel/parser': 7.21.8
       '@babel/traverse': 7.21.5
       '@babel/types': 7.21.5
-      prettier: 2.8.8
+      prettier: 3.0.0
       semver: 7.5.0
     transitivePeerDependencies:
       - supports-color
@@ -12782,7 +12782,7 @@ packages:
       typedoc-plugin-markdown: '>=4.0.0-next.13'
     dependencies:
       typedoc-plugin-frontmatter: 0.0.2
-      typedoc-plugin-markdown: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7)
+      typedoc-plugin-markdown: 4.0.0-next.13(prettier@3.0.0)(typedoc@0.24.7)
     dev: true
 
   /docusaurus-preset-shiki-twoslash@1.1.41:
@@ -13515,7 +13515,7 @@ packages:
       globby: 13.1.3
       is-core-module: 2.12.0
       is-glob: 4.0.3
-      synckit: 0.8.4
+      synckit: 0.8.5
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -13608,21 +13608,25 @@ packages:
     engines: {node: '>=5.0.0'}
     dev: false
 
-  /eslint-plugin-prettier@4.2.1(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@2.8.8):
-    resolution: {integrity: sha512-f/0rXLXUt0oFYs8ra4w49wYZBG5GKZpAYsJSm6rnYL5uVDjd+zowwMwVZHnAjf4edNrKpCDYfXDgmRE/Ak7QyQ==}
-    engines: {node: '>=12.0.0'}
+  /eslint-plugin-prettier@5.0.0(eslint-config-prettier@8.8.0)(eslint@8.40.0)(prettier@3.0.0):
+    resolution: {integrity: sha512-AgaZCVuYDXHUGxj/ZGu1u8H8CYgDY3iG6w5kUFw4AzMVXzB7VvbKgYR4nATIN+OvUrghMbiDLeimVjVY5ilq3w==}
+    engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
-      eslint: '>=7.28.0'
+      '@types/eslint': '>=8.0.0'
+      eslint: '>=8.0.0'
       eslint-config-prettier: '*'
-      prettier: '>=2.0.0'
+      prettier: '>=3.0.0'
     peerDependenciesMeta:
+      '@types/eslint':
+        optional: true
       eslint-config-prettier:
         optional: true
     dependencies:
       eslint: 8.40.0
       eslint-config-prettier: 8.8.0(eslint@8.40.0)
-      prettier: 2.8.8
+      prettier: 3.0.0
       prettier-linter-helpers: 1.0.0
+      synckit: 0.8.5
     dev: true
 
   /eslint-plugin-react-hooks@4.6.0(eslint@8.40.0):
@@ -19512,7 +19516,7 @@ packages:
       fast-diff: 1.2.0
     dev: true
 
-  /prettier-plugin-tailwindcss@0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8):
+  /prettier-plugin-tailwindcss@0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.2)(prettier@3.0.0):
     resolution: {integrity: sha512-Rna0sDPETA0KNhMHlN8wxKNgfSa8mTl2hPPAGxnbv6tUcHT6J4RQmQ8TLXyhB7Dm5Von4iHloBxTyClYM6wT0A==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
@@ -19564,13 +19568,19 @@ packages:
       prettier-plugin-twig-melody:
         optional: true
     dependencies:
-      '@ianvs/prettier-plugin-sort-imports': 4.0.0(prettier@2.8.8)
-      prettier: 2.8.8
+      '@ianvs/prettier-plugin-sort-imports': 4.0.2(prettier@3.0.0)
+      prettier: 3.0.0
     dev: false
 
   /prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
+    hasBin: true
+    dev: false
+
+  /prettier@3.0.0:
+    resolution: {integrity: sha512-zBf5eHpwHOGPC47h0zrPyNn+eAEIdEzfywMoYn2XPi0P44Zp0tSq64rq0xAREh4auw2cJZHo9QUob+NqCQky4g==}
+    engines: {node: '>=14'}
     hasBin: true
 
   /pretty-bytes@5.6.0:
@@ -21852,8 +21862,8 @@ packages:
   /symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
-  /synckit@0.8.4:
-    resolution: {integrity: sha512-Dn2ZkzMdSX827QbowGbU/4yjWuvNaCoScLLoMo/yKbu+P4GBR6cRGKZH27k6a9bRzdqcyd1DE96pQtQ6uNkmyw==}
+  /synckit@0.8.5:
+    resolution: {integrity: sha512-L1dapNV6vu2s/4Sputv8xGsCdAVlb5nRDMFU/E27D44l5U6cw1g0dGd45uLc+OXjNMmF4ntiMdCimzcjFKQI8Q==}
     engines: {node: ^14.18.0 || >=16.0.0}
     dependencies:
       '@pkgr/utils': 2.3.1
@@ -22506,13 +22516,13 @@ packages:
       yaml: 2.3.1
     dev: true
 
-  /typedoc-plugin-markdown@4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7):
+  /typedoc-plugin-markdown@4.0.0-next.13(prettier@3.0.0)(typedoc@0.24.7):
     resolution: {integrity: sha512-ZOcLsJoGN4QI5x1iS2M5lj6bA3MABf6hA183W1KebbxcBA+SFr+XIu73Uovv3SiwqPa+viBftLzkZlLyA6J9bg==}
     peerDependencies:
       prettier: '>=1.8.0'
       typedoc: '>=0.24.0'
     dependencies:
-      prettier: 2.8.8
+      prettier: 3.0.0
       typedoc: 0.24.7(typescript@5.1.3)
     dev: true
 

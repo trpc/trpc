@@ -53,7 +53,8 @@ export interface ProcedureUseQuery<
   TPath extends string,
 > {
   <
-    TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TQueryFnData extends
+      inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
     TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
@@ -68,7 +69,8 @@ export interface ProcedureUseQuery<
   ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
 
   <
-    TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+    TQueryFnData extends
+      inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
     TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
@@ -149,7 +151,8 @@ export type DecorateProcedure<
        * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
        */
       useSuspenseQuery: <
-        TQueryFnData extends inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
+        TQueryFnData extends
+          inferTransformedProcedureOutput<TProcedure> = inferTransformedProcedureOutput<TProcedure>,
         TData = TQueryFnData,
       >(
         input: inferProcedureInput<TProcedure>,
