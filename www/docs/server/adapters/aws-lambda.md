@@ -126,18 +126,19 @@ import { z } from 'zod';
 export const t = initTRPC.create();
 
 const appRouter = t.router({
-  login: t.procedure.input({ username: z.string(), password: z.string() }).query(({ input, ctx }) => {
+  login: t.procedure
+    .input({ username: z.string(), password: z.string() })
+    .query(({ input, ctx }) => {
+      // If using the v1 response format
+      ctx.multiValueHeaders = {
+        'Set-Cookie': ['cookie-1', 'cookie-2'],
+      };
 
-    // If using the v1 response format
-    ctx.multiValueHeaders = {
-      'Set-Cookie': ['cookie-1', 'cookie-2'],
-    };
+      // If using the v2 response format
+      ctx.cookies = ['cookie-1', 'cookie-2'];
 
-    // If using the v2 response format
-    ctx.cookies = ['cookie-1', 'cookie-2'];
-
-    return { id: opts.input, name: "🍪-monster" };
-  }),
+      return { id: opts.input, name: '🍪-monster' };
+    }),
 });
 
 // export type definition of API
@@ -151,10 +152,9 @@ Create or update your responseMeta function to attach the cookies/headers you sp
 ```ts
 import { LambdaResponseMeta } from '@trpc/server/adapters/aws-lambda';
 
-const responseMeta: ResponseMetaFn<
-  typeof router,
-  LambdaResponseMeta
-> = ({ ctx }) => {
+const responseMeta: ResponseMetaFn<typeof router, LambdaResponseMeta> = ({
+  ctx,
+}) => {
   const response: LambdaResponseMeta = {
     headers: {},
   };
