@@ -87,7 +87,9 @@ Build & deploy your code, now use your API Gateway URL to call your function.
 | --------- | ------------------------------------------------------------------------------------------------------------ |
 | `getUser` | `GET https://<execution-api-link>/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 
-#### A word about payload format version
+## Notes
+
+### 1. A word about payload format version
 
 API Gateway has two different event data formats when it invokes a Lambda. For REST APIs they should be version "1.0"(`APIGatewayProxyEvent`), but you can choose which for HTTP APIs by stating either version "1.0" or "2.0".
 
@@ -108,3 +110,75 @@ function createContext({
 ```
 
 [Read more here about payload format version](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+
+### 2. Setting MultiValueHeaders / cookies
+
+Version specific outputs, such as `multiValueHeaders` for `APIGatewayProxyEvent` and `cookies` for `APIGatewayProxyEventV2` can be returned with the following setup:
+
+##### 1. Set the cookies/headers in your routes
+
+Use the context available in each route to set the values of the cookies/headers you want to return.
+
+```ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+export const t = initTRPC.create();
+
+const appRouter = t.router({
+  login: t.procedure.input({ username: z.string(), password: z.string() }).query(({ input, ctx }) => {
+
+    // If using the v1 response format
+    ctx.multiValueHeaders = {
+      'Set-Cookie': ['cookie-1', 'cookie-2'],
+    };
+
+    // If using the v2 response format
+    ctx.cookies = ['cookie-1', 'cookie-2'];
+
+    return { id: opts.input, name: "🍪-monster" };
+  }),
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+##### 2. Create a responseMeta handler
+
+Create or update your responseMeta function to attach the cookies/headers you specified in your routes to the response sent back to the client.
+
+```ts
+import { LambdaResponseMeta } from '@trpc/server/adapters/aws-lambda';
+
+const responseMeta: ResponseMetaFn<
+  typeof router,
+  LambdaResponseMeta
+> = ({ ctx }) => {
+  const response: LambdaResponseMeta = {
+    headers: {},
+  };
+
+  // If using the v1 response format
+  if (ctx?.multiValueHeaders) {
+    response.multiValueHeaders = ctx.multiValueHeaders;
+  }
+
+  // If using the v2 response format
+  if (ctx?.cookies) {
+    response.cookies = ctx.cookies;
+  }
+
+  return response;
+};
+```
+
+##### 3. Specify the responseMeta in the adapter handler
+
+```ts
+export const handler = awsLambdaRequestHandler({
+  router: appRouter,
+  createContext,
+  responseMeta,
+});
+```
