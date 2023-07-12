@@ -153,7 +153,7 @@ test('basic test', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
@@ -185,7 +185,7 @@ test('mutliValueHeaders test', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
@@ -224,7 +224,7 @@ test('test v1 with leading prefix', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
@@ -257,7 +257,7 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
@@ -289,7 +289,7 @@ test('bad type', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
@@ -380,7 +380,7 @@ test('test v2 cookies', async () => {
       "statusCode": 200,
     }
   `);
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
       "result": Object {
@@ -539,7 +539,7 @@ test('test base64 encoded apigateway proxy integration', async () => {
     ),
     mockAPIGatewayContext(),
   );
-  const parsedBody = JSON.parse(body || '');
+  const parsedBody = JSON.parse(body ?? '');
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
