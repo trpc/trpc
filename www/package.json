@@ -69,7 +69,7 @@
     "@types/oauth": "^0.9.1",
     "arktype": "1.0.14-alpha",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "^1.0.0-next.13",
+    "docusaurus-plugin-typedoc": "^1.0.0-next.12",
     "dotenv": "^16.0.1",
     "eslint": "^8.40.0",
     "next": "^13.4.8",
