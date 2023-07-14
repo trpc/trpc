@@ -115,7 +115,28 @@ function createContext({
 
 Version specific outputs, such as `multiValueHeaders` for `APIGatewayProxyEvent` and `cookies` for `APIGatewayProxyEventV2` can be returned with the following setup:
 
-##### 1. Set the cookies/headers in your routes
+##### 1. Modify the createContext method
+
+Modify the createContext to accept either multiValueHeaders or cookies.
+
+```ts
+export const createContext = () => ({
+    event, context
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) => {
+    return {
+        // v1 response format
+        multiValueHeaders: <APIGatewayProxyEvent['multiValueHeaders']>{
+          // Example multi-value header
+          "Set-Cookie": []
+        },
+        // v2 response format
+        cookies: <APIGatewayProxyEventV2['cookies']>[]
+        // ... other context values
+    }
+}
+```
+
+##### 2. Set the cookies/headers in your routes
 
 Use the context available in each route to set the values of the cookies/headers you want to return.
 
@@ -129,13 +150,17 @@ const appRouter = t.router({
   login: t.procedure
     .input({ username: z.string(), password: z.string() })
     .query(({ input, ctx }) => {
-      // If using the v1 response format
-      ctx.multiValueHeaders = {
-        'Set-Cookie': ['cookie-1', 'cookie-2'],
-      };
+      // (if using the v1 response format)
+      ctx.multiValueHeaders['Set-Cookie']?.push(
+        'cookie-1', 
+        'cookie-2',
+      );
 
-      // If using the v2 response format
-      ctx.cookies = ['cookie-1', 'cookie-2'];
+      // (if using the v2 response format)
+      ctx.cookies.push(
+        'cookie-1',
+        'cookie-2',
+      );
 
       return { id: opts.input, name: '🍪-monster' };
     }),
@@ -145,7 +170,9 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-##### 2. Create a responseMeta handler
+Note that the values are pushed to the ctx values. This is because if requests are batched the headers/cookies can all be returned together correctly.
+
+##### 3. Create a responseMeta handler
 
 Create or update your responseMeta function to attach the cookies/headers you specified in your routes to the response sent back to the client.
 
@@ -173,7 +200,7 @@ const responseMeta: ResponseMetaFn<typeof router, LambdaResponseMeta> = ({
 };
 ```
 
-##### 3. Specify the responseMeta in the adapter handler
+##### 4. Specify the responseMeta in the adapter handler
 
 ```ts
 export const handler = awsLambdaRequestHandler({
