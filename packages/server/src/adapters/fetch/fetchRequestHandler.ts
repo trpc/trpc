@@ -113,3 +113,12 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 
   return promise;
 }
+
+export async function routeFetchRequestHandler<TRouter extends AnyRouter>(
+  opts: FetchHandlerRequestOptions<TRouter>,
+) {
+  return {
+    GET: async (req: Request) => await fetchRequestHandler({ ...opts, req }),
+    POST: async (req: Request) => await fetchRequestHandler({ ...opts, req }),
+  };
+}
