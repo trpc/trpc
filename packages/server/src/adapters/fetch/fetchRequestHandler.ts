@@ -114,8 +114,8 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   return promise;
 }
 
-export async function routeFetchRequestHandler<TRouter extends AnyRouter>(
-  opts: FetchHandlerRequestOptions<TRouter>,
+export function routeFetchRequestHandler<TRouter extends AnyRouter>(
+  opts: Omit<FetchHandlerRequestOptions<TRouter>, 'req'>,
 ) {
   return {
     GET: async (req: Request) => await fetchRequestHandler({ ...opts, req }),
