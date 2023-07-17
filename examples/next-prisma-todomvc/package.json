@@ -28,7 +28,7 @@
     "@trpc/next": "^10.34.0",
     "@trpc/react-query": "^10.34.0",
     "@trpc/server": "^10.34.0",
-    "clsx": "^1.1.1",
+    "clsx": "^2.0.0",
     "i18next": "^22.4.13",
     "next": "^13.4.8",
     "next-i18next": "^13.2.2",
