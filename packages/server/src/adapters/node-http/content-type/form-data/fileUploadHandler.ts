@@ -15,7 +15,7 @@ import { createReadStream, createWriteStream, statSync } from 'node:fs';
 import { mkdir, rm, stat as statAsync, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
-import { Readable, finished } from 'node:stream';
+import { finished, Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import { streamSlice } from './streamSlice';
 import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
@@ -73,7 +73,7 @@ export type FileUploadHandlerOptions = {
   /**
    * The directory to write the upload.
    */
-  directory?: string | FileUploadHandlerPathResolver;
+  directory?: FileUploadHandlerPathResolver | string;
   /**
    * The name of the file in the directory. Can be a relative path, the directory
    * structure will be created if it does not exist.
@@ -90,7 +90,7 @@ export type FileUploadHandlerOptions = {
    * @param contentType
    * @param name
    */
-  filter?(args: FileUploadHandlerFilterArgs): boolean | Promise<boolean>;
+  filter?(args: FileUploadHandlerFilterArgs): Promise<boolean> | boolean;
 };
 
 const defaultFilePathResolver: FileUploadHandlerPathResolver = ({
@@ -184,7 +184,7 @@ export function createFileUploadHandler({
   };
 }
 
-export class NodeOnDiskFile implements File {
+export class NodeOnDiskFile {
   name: string;
   lastModified = 0;
   webkitRelativePath = '';
@@ -208,14 +208,14 @@ export class NodeOnDiskFile implements File {
     return stats.size;
   }
 
-  slice(start?: number, end?: number, type?: string): Blob {
+  slice(start?: number, end?: number, type?: string): NodeOnDiskFile {
     if (typeof start === 'number' && start < 0) start = this.size + start;
     if (typeof end === 'number' && end < 0) end = this.size + end;
 
-    const startOffset = this.slicer?.start || 0;
+    const startOffset = this.slicer?.start ?? 0;
 
-    start = startOffset + (start || 0);
-    end = startOffset + (end || this.size);
+    start = startOffset + (start ?? 0);
+    end = startOffset + (end ?? this.size);
     return new NodeOnDiskFile(
       this.filepath,
       typeof type === 'string' ? type : this.type,
@@ -235,29 +235,31 @@ export class NodeOnDiskFile implements File {
     return new Promise((resolve, reject) => {
       const buf: any[] = [];
       stream.on('data', (chunk) => buf.push(chunk));
-      stream.on('end', () => resolve(Buffer.concat(buf)));
-      stream.on('error', (err) => reject(err));
+      stream.on('end', () => {
+        resolve(Buffer.concat(buf));
+      });
+      stream.on('error', (err) => {
+        reject(err);
+      });
     });
   }
 
   stream(): ReadableStream<any>;
   stream(): NodeJS.ReadableStream;
-  stream(): ReadableStream<any> | NodeJS.ReadableStream {
+  stream(): NodeJS.ReadableStream | ReadableStream<any> {
     let stream: Readable = createReadStream(this.filepath);
     if (this.slicer) {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));
     }
 
-    return Readable.toWeb(stream);
+    return Readable.toWeb(stream) as ReadableStream<Uint8Array>;
   }
 
   async text(): Promise<string> {
     return readableStreamToString(this.stream());
   }
 
-  public get [Symbol.toStringTag]() {
-    return 'File';
-  }
+  public readonly [Symbol.toStringTag] = 'File';
 
   remove(): Promise<void> {
     return unlink(this.filepath);

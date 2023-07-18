@@ -1,14 +1,23 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
+import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client/src';
+import {
+  createTRPCProxyClient,
+  httpBatchLink,
+  httpLink,
+  TRPCClientError,
+  TRPCLink,
+} from '@trpc/client/src';
+import { observable } from '@trpc/server/observable';
 import * as trpc from '@trpc/server/src';
 import { initTRPC } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
 import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';
 import { OnErrorFunction } from '@trpc/server/src/internals/types';
+import { konn } from 'konn';
 import fetch from 'node-fetch';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 test('basic', async () => {
   class MyError extends Error {
@@ -376,4 +385,191 @@ test('retain stack trace', async () => {
   expect(stackParts[1]).toContain(__filename);
 
   await close();
+});
+
+describe('links have meta data about http failures', async () => {
+  type Handler = (opts: {
+    req: http.IncomingMessage;
+    res: http.ServerResponse;
+  }) => void;
+
+  function createServer(handler: Handler) {
+    const server = http.createServer((req, res) => {
+      handler({ req, res });
+    });
+    server.listen(0);
+
+    const port = (server.address() as any).port as number;
+
+    return {
+      url: `http://localhost:${port}`,
+      async close() {
+        await new Promise((resolve) => {
+          server.close(resolve);
+        });
+      },
+    };
+  }
+  const ctx = konn()
+    .beforeEach(() => {
+      return {
+        server: createServer(({ res }) => {
+          res.setHeader('content-type', 'application/json');
+          res.write(
+            JSON.stringify({
+              __error: {
+                foo: 'bar',
+              },
+            }),
+          );
+          res.end();
+        }),
+      };
+    })
+    .afterEach((opts) => {
+      opts.server?.close();
+    })
+    .done();
+  test('httpLink', async () => {
+    let meta = undefined as Record<string, unknown> | undefined;
+
+    const client: any = createTRPCProxyClient<any>({
+      links: [
+        () => {
+          return ({ next, op }) => {
+            return observable((observer) => {
+              const unsubscribe = next(op).subscribe({
+                error(err) {
+                  observer.error(err);
+                  meta = err.meta;
+                },
+              });
+              return unsubscribe;
+            });
+          };
+        },
+        httpLink({
+          url: ctx.server.url,
+          fetch: fetch as any,
+        }),
+      ],
+    });
+
+    const error = await waitError(client.test.query(), TRPCClientError);
+    expect(error).toMatchInlineSnapshot(
+      `[TRPCClientError: Unable to transform response from server]`,
+    );
+
+    expect(meta).not.toBeUndefined();
+    expect(meta?.responseJSON).not.toBeFalsy();
+    expect(meta?.responseJSON).not.toBeFalsy();
+    expect(meta?.responseJSON).toMatchInlineSnapshot(`
+      Object {
+        "__error": Object {
+          "foo": "bar",
+        },
+      }
+    `);
+  });
+
+  test('httpBatchLink', async () => {
+    let meta = undefined as Record<string, unknown> | undefined;
+
+    const client: any = createTRPCProxyClient<any>({
+      links: [
+        () => {
+          return ({ next, op }) => {
+            return observable((observer) => {
+              const unsubscribe = next(op).subscribe({
+                error(err) {
+                  observer.error(err);
+                  meta = err.meta;
+                },
+              });
+              return unsubscribe;
+            });
+          };
+        },
+        httpBatchLink({
+          url: ctx.server.url,
+          fetch: fetch as any,
+        }),
+      ],
+    });
+
+    const error = await waitError(client.test.query(), TRPCClientError);
+    expect(error).toMatchInlineSnapshot(
+      `[TRPCClientError: Unable to transform response from server]`,
+    );
+
+    expect(meta).not.toBeUndefined();
+    expect(meta?.responseJSON).not.toBeFalsy();
+    expect(meta?.responseJSON).not.toBeFalsy();
+    expect(meta?.responseJSON).toMatchInlineSnapshot(`
+      Object {
+        "__error": Object {
+          "foo": "bar",
+        },
+      }
+    `);
+  });
+
+  test('rethrow custom error', async () => {
+    type AppRouter = any;
+    class MyCustomError extends TRPCClientError<AppRouter> {
+      constructor(message: string) {
+        super(message);
+
+        Object.setPrototypeOf(this, new.target.prototype);
+      }
+    }
+
+    function isObject(value: unknown): value is Record<string, unknown> {
+      // check that value is object
+      return !!value && !Array.isArray(value) && typeof value === 'object';
+    }
+
+    const customErrorLink: TRPCLink<AppRouter> = (_runtime) => (opts) =>
+      observable((observer) => {
+        const unsubscribe = opts.next(opts.op).subscribe({
+          error(err) {
+            if (
+              err.meta &&
+              isObject(err.meta.responseJSON) &&
+              '__error' in err.meta.responseJSON // <----- you need to modify this
+            ) {
+              // custom error handling
+              observer.error(
+                new MyCustomError(
+                  `custom error: ${JSON.stringify(
+                    err.meta.responseJSON.__error,
+                  )}`,
+                ),
+              );
+            }
+            observer.error(err);
+          },
+        });
+        return unsubscribe;
+      });
+
+    const client: any = createTRPCProxyClient<any>({
+      links: [
+        customErrorLink,
+        httpLink({
+          url: ctx.server.url,
+          fetch: fetch as any,
+        }),
+      ],
+    });
+
+    const error = await waitError(client.test.query());
+
+    expect(error).toMatchInlineSnapshot(
+      '[TRPCClientError: custom error: {"foo":"bar"}]',
+    );
+
+    expect(error).toBeInstanceOf(TRPCClientError);
+    expect(error).toBeInstanceOf(MyCustomError);
+  });
 });

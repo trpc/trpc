@@ -139,9 +139,9 @@ The `middleware` option will accept any function which resembles a connect/node.
 If `createHTTPServer` isn't enough you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP Server. For instance:
 
 ```ts title='server.ts'
+import { createServer } from 'http';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import { createServer } from 'http';
 
 const handler = createHTTPHandler({
   router: appRouter,

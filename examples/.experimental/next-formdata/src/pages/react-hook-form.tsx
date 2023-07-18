@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRef, useState } from 'react';
-import { FormProvider, UseFormProps, useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { trpc } from '~/utils/trpc';
+import { useRef, useState } from 'react';
+import { FormProvider, useForm, UseFormProps } from 'react-hook-form';
+import { z } from 'zod';
 
 /**
  * zod-form-data wraps zod in an effect where the original type is a `FormData`
@@ -19,9 +19,9 @@ type UnwrapZodEffect<TType extends z.ZodType> = TType extends z.ZodEffects<
 type GetInput<TType extends z.ZodType> = UnwrapZodEffect<TType>['_input'];
 
 function useZodFormData<TSchema extends z.ZodType>(
-  props: {
+  props: Omit<UseFormProps<GetInput<TSchema>>, 'resolver'> & {
     schema: TSchema;
-  } & Omit<UseFormProps<GetInput<TSchema>>, 'resolver'>,
+  },
 ) {
   const formRef = useRef<HTMLFormElement>(null);
   const _resolver = zodResolver(props.schema, undefined, {
@@ -108,7 +108,9 @@ export default function Page() {
               <input
                 type="checkbox"
                 checked={noJs}
-                onChange={(e) => setNoJs(e.target.checked)}
+                onChange={(e) => {
+                  setNoJs(e.target.checked);
+                }}
               />
             </div>
             <div>

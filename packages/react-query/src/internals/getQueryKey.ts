@@ -5,8 +5,8 @@ import {
   DeepPartial,
   inferProcedureInput,
 } from '@trpc/server';
-import { QueryType, getArrayQueryKey } from '../internals/getArrayQueryKey';
-import { DecorateProcedure, DecoratedProcedureRecord } from '../shared';
+import { getArrayQueryKey, QueryType } from '../internals/getArrayQueryKey';
+import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 /**
  * We treat `undefined` as an input the same as omitting an `input`
@@ -15,7 +15,7 @@ import { DecorateProcedure, DecoratedProcedureRecord } from '../shared';
 export function getQueryKeyInternal(
   path: string,
   input: unknown,
-): [string] | [string, unknown] {
+): [string, unknown] | [string] {
   if (path.length) return input === undefined ? [path] : [path, input];
   return [] as unknown as [string];
 }
@@ -43,8 +43,8 @@ type GetQueryParams<
 
 type GetParams<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
     | AnyMutationProcedure
+    | AnyQueryProcedure
     | AnyRouter,
   TPath extends string,
   TFlags,
@@ -65,8 +65,8 @@ type GetParams<
 
 type GetQueryKeyParams<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
     | AnyMutationProcedure
+    | AnyQueryProcedure
     | AnyRouter,
   TPath extends string,
   TFlags,
@@ -81,8 +81,8 @@ type GetQueryKeyParams<
  */
 export function getQueryKey<
   TProcedureOrRouter extends
-    | AnyQueryProcedure
     | AnyMutationProcedure
+    | AnyQueryProcedure
     | AnyRouter,
   TPath extends string,
   TFlags,

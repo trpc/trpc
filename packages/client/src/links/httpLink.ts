@@ -1,11 +1,12 @@
 import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { TRPCClientError } from '../TRPCClientError';
 import { transformResult } from '../shared/transformResult';
+import { TRPCClientError } from '../TRPCClientError';
 import {
   HTTPLinkBaseOptions,
-  Requester,
+  HTTPResult,
   jsonHttpRequester,
+  Requester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import { HTTPHeaders, Operation, TRPCLink } from './types';
@@ -48,14 +49,16 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
               return opts.headers;
             },
           });
+          let meta: HTTPResult['meta'] | undefined = undefined;
           promise
             .then((res) => {
+              meta = res.meta;
               const transformed = transformResult(res.json, runtime);
 
               if (!transformed.ok) {
                 observer.error(
                   TRPCClientError.from(transformed.error, {
-                    meta: res.meta,
+                    meta,
                   }),
                 );
                 return;
@@ -66,7 +69,9 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
               });
               observer.complete();
             })
-            .catch((cause) => observer.error(TRPCClientError.from(cause)));
+            .catch((cause) => {
+              observer.error(TRPCClientError.from(cause, { meta }));
+            });
 
           return () => {
             cancel();

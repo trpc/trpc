@@ -1,11 +1,13 @@
+import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import {
-  HTTPHeaders,
   createTRPCProxyClient,
   createWSClient,
-  httpLink,
+  HTTPHeaders,
   splitLink,
+  TRPCLink,
+  unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client/src';
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
@@ -14,7 +16,6 @@ import {
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
-import { EventEmitter } from 'events';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
@@ -93,6 +94,18 @@ function createAppRouter() {
       onNewMessageSubscription();
       return sub;
     }),
+    deferred: publicProcedure
+      .input(
+        z.object({
+          wait: z.number(),
+        }),
+      )
+      .query(async (opts) => {
+        await new Promise<void>((resolve) =>
+          setTimeout(resolve, opts.input.wait * 10),
+        );
+        return opts.input.wait;
+      }),
   });
 
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
@@ -146,6 +159,26 @@ function createServer(opts: ServerOptions) {
   return { instance, start, stop };
 }
 
+const orderedResults: number[] = [];
+const linkSpy: TRPCLink<AppRouter> = () => {
+  // here we just got initialized in the app - this happens once per app
+  // useful for storing cache for instance
+  return ({ next, op }) => {
+    // this is when passing the result to the next link
+    // each link needs to return an observable which propagates results
+    return observable((observer) => {
+      const unsubscribe = next(op).subscribe({
+        next(value) {
+          orderedResults.push((value.result as any).data);
+          observer.next(value);
+        },
+        error: observer.error,
+      });
+      return unsubscribe;
+    });
+  };
+};
+
 interface ClientOptions {
   headers?: HTTPHeaders;
 }
@@ -155,12 +188,13 @@ function createClient(opts: ClientOptions = {}) {
   const wsClient = createWSClient({ url: `ws://${host}` });
   const client = createTRPCProxyClient<AppRouter>({
     links: [
+      linkSpy,
       splitLink({
         condition(op) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: httpLink({
+        false: unstable_httpBatchStreamLink({
           url: `http://${host}`,
           headers: opts.headers,
           AbortController,
@@ -193,6 +227,7 @@ let app: inferAsyncReturnType<typeof createApp>;
 
 describe('anonymous user', () => {
   beforeEach(async () => {
+    orderedResults.length = 0;
     app = createApp();
     await app.start();
   });
@@ -316,6 +351,16 @@ describe('anonymous user', () => {
       expect(app.ee.listenerCount('server:msg')).toBe(0);
       expect(app.ee.listenerCount('server:error')).toBe(0);
     });
+  });
+
+  test('streaming', async () => {
+    const results = await Promise.all([
+      app.client.deferred.query({ wait: 3 }),
+      app.client.deferred.query({ wait: 1 }),
+      app.client.deferred.query({ wait: 2 }),
+    ]);
+    expect(results).toEqual([3, 1, 2]);
+    expect(orderedResults).toEqual([1, 2, 3]);
   });
 });
 

@@ -6,9 +6,13 @@ const nextConfig = {
   experimental: {
     appDir: true,
     serverActions: true,
+    serverComponentsExternalPackages: ['@trpc/server'],
   },
   webpack: (config) => {
-    config.experiments.topLevelAwait = true;
+    // This is only intended to pass CI and should be skiped in your app
+    if (config.name === 'server')
+      config.optimization.concatenateModules = false;
+
     return config;
   },
 };

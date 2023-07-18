@@ -14,6 +14,7 @@ export type PackageJson = {
   pnpm: {
     overrides: Record<string, string>;
   };
+  funding: string[];
 };
 
 // create directories on the way if they don't exist
@@ -99,6 +100,11 @@ export function generateEntrypoints(inputs: string[]) {
     if (pkgJson.files.includes(topLevel)) return;
     pkgJson.files.push(topLevel);
   });
+
+  // Exclude test files in builds
+  pkgJson.files.push('!**/*.test.*');
+  // Add `funding` in all packages
+  pkgJson.funding = ['https://trpc.io/sponsor'];
 
   // write package.json
   const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {

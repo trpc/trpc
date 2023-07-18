@@ -5,9 +5,9 @@ import React from 'react';
 import superjson from 'superjson';
 import { z } from 'zod';
 import {
-  UseTRPCActionResult,
   experimental_createActionHook,
   experimental_serverActionLink,
+  UseTRPCActionResult,
 } from './create-action-hook';
 import { experimental_createServerActionHandler } from './server';
 
@@ -333,7 +333,7 @@ describe('with transformer', () => {
 });
 
 describe('type tests', () => {
-  const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+  const ignoreErrors = async (fn: () => unknown) => {
     try {
       await fn();
     } catch {

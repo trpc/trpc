@@ -16,9 +16,9 @@ import { Iframe } from '../components/Iframe';
 import { Preview } from '../components/Preview';
 import { QuickIntro } from '../components/QuickIntro';
 import { SectionTitle } from '../components/SectionTitle';
-import { TwitterWall } from '../components/TwitterWall';
 import { SponsorBubbles } from '../components/sponsors/SponsorBubbles';
 import { TopSponsors } from '../components/sponsors/TopSponsors';
+import { TwitterWall } from '../components/TwitterWall';
 import { cn } from '../utils/cn';
 import { searchParams } from '../utils/searchParams';
 
@@ -61,6 +61,41 @@ const useQueryParam = (key: string) => {
   return new URLSearchParams(location.search).get(key);
 };
 
+function ErrorOverlay(props: { url: string; dismiss: () => void }) {
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 overflow-hidden bg-zinc-900">
+      <div className="flex flex-col items-center justify-center gap-4">
+        <div className="text-5xl font-bold text-zinc-200 dark:text-zinc-100">
+          ⚠️
+        </div>
+        <div className="text-xl font-bold text-zinc-200 dark:text-zinc-100">
+          Heads up!
+        </div>
+        <div className="w-full max-w-xl text-lg font-medium text-zinc-400 dark:text-zinc-200">
+          WebContainers require modern Web APIs that likely aren&apos;t
+          supported by your browser. Either open this page in a Chrome, or
+          download this sandbox from StackBlitz and run it locally.
+        </div>
+        <div className="w-full max-w-xl text-lg font-medium text-zinc-400 dark:text-zinc-200">
+          You can dismiss this warning to see the code, although you&apos;ll
+          likely see unexpected errors.
+        </div>
+        <div className="flex gap-4">
+          <Button variant="primary" href={props.url}>
+            Open in StackBlitz
+          </Button>
+          <button
+            onClick={props.dismiss}
+            className="rounded border border-transparent p-2 text-red-400 transition hover:border-red-400"
+          >
+            Show me the code
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TryItOut() {
   const param = useQueryParam('try');
 
@@ -69,6 +104,16 @@ function TryItOut() {
   const selected: Sandbox =
     sandboxes.find((it) => it.id === param) ?? sandboxes[0];
   const selectedId = selected.id;
+
+  const [deviceSupported, setIsSupported] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+
+    const ua = window.navigator.userAgent;
+    const supportsWebContainers = ua.includes('Chrome');
+    // || ua.includes('Firefox'); // Firefox should support WebContainers, but doesn't look like they work in embeds
+    // || ua.includes('Safari'); // TODO: check version & verify we have necessary headers allowed
+    return supportsWebContainers;
+  });
 
   return (
     <>
@@ -123,6 +168,14 @@ function TryItOut() {
                   Loading sandbox...
                 </span>
               </div>
+              {!deviceSupported && (
+                <ErrorOverlay
+                  url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
+                  dismiss={() => {
+                    setIsSupported(true);
+                  }}
+                />
+              )}
               <Iframe
                 src={
                   `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}?` +

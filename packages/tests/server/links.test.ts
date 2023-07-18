@@ -1,12 +1,13 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import {
-  OperationLink,
-  TRPCClientError,
-  TRPCClientRuntime,
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
   loggerLink,
+  OperationLink,
+  TRPCClientError,
+  TRPCClientRuntime,
+  unstable_httpBatchStreamLink,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/retryLink';
@@ -71,6 +72,11 @@ test('chainer', async () => {
     Object {
       "context": Object {
         "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
       },
       "result": Object {
         "data": "world",
@@ -173,6 +179,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello world",
@@ -182,9 +200,115 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello alexdotjs",
+            "type": "data",
+          },
+        },
+      ]
+    `);
+
+    expect(metaCall).toHaveBeenCalledTimes(1);
+
+    await close();
+  });
+
+  test('query streaming', async () => {
+    const metaCall = vi.fn();
+
+    const t = initTRPC.create();
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
+    const { httpPort, close } = routerToServerAndClientNew(router, {
+      server: {
+        createContext() {
+          metaCall();
+          return {};
+        },
+        batching: {
+          enabled: true,
+        },
+      },
+    });
+    const links = [
+      unstable_httpBatchStreamLink({
+        url: `http://localhost:${httpPort}`,
+      })(mockRuntime),
+    ];
+    const chain1 = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'deferred',
+        input: { wait: 2 },
+        context: {},
+      },
+    });
+
+    const chain2 = createChain({
+      links,
+      op: {
+        id: 2,
+        type: 'query',
+        path: 'deferred',
+        input: { wait: 1 },
+        context: {},
+      },
+    });
+
+    const results = await Promise.all([
+      observableToPromise(chain1).promise,
+      observableToPromise(chain2).promise,
+    ]);
+    for (const res of results) {
+      expect(res?.context?.response).toBeTruthy();
+      res.context!.response = '[redacted]';
+    }
+    expect(results).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "result": Object {
+            "data": 2,
+            "type": "data",
+          },
+        },
+        Object {
+          "context": Object {
+            "response": "[redacted]",
+          },
+          "result": Object {
+            "data": 1,
             "type": "data",
           },
         },
@@ -463,6 +587,35 @@ describe('loggerLink', () => {
     );
     expect(logger.error.mock.calls[0]![0]!).toMatchInlineSnapshot(
       `"%c << query #1 %cn/a%c %O"`,
+    );
+  });
+
+  test('ansi color mode', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, colorMode: 'ansi' })(mockRuntime),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {},
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+      `"\x1b[30;46m >> query \x1b[1;30;46m #1 n/a \x1b[0m"`,
+    );
+    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+      `"\x1b[97;46m << query \x1b[1;97;46m #1 n/a \x1b[0m"`,
     );
   });
 

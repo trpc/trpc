@@ -40,16 +40,15 @@ test('route meta types', async () => {
     }
   `);
 
-  const queryMeta = router['_def']['queries']['query']['meta'];
+  const queryMeta = router._def.queries.query.meta;
   expectTypeOf(queryMeta).toMatchTypeOf<TMeta | undefined>();
   expect(queryMeta).toEqual(testMeta);
 
-  const mutationMeta = router['_def']['mutations']['mutation']['meta'];
+  const mutationMeta = router._def.mutations.mutation.meta;
   expectTypeOf(mutationMeta).toMatchTypeOf<TMeta | undefined>();
   expect(mutationMeta).toEqual(testMeta);
 
-  const subscriptionMeta =
-    router['_def']['subscriptions']['subscription']['meta'];
+  const subscriptionMeta = router._def.subscriptions.subscription.meta;
   expectTypeOf(subscriptionMeta).toMatchTypeOf<TMeta | undefined>();
   expect(subscriptionMeta).toEqual(testMeta);
 });

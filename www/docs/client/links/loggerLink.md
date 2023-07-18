@@ -2,7 +2,7 @@
 id: loggerLink
 title: Logger Link
 sidebar_label: Logger Link
-slug: /links/loggerLink
+slug: /client/links/loggerLink
 ---
 
 `loggerLink` is a link that lets you implement a logger for your tRPC client. It allows you to see more clearly what operations are queries, mutations, or subscriptions, their requests, and responses. The link, by default, prints a prettified log to the browser's console. However, you can customize the logging behavior and the way it prints to the console with your own implementations.
@@ -50,6 +50,11 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
+  /**
+   * Color mode used in the default logger.
+   * @default typeof window === 'undefined' ? 'ansi' : 'css'
+   */
+  colorMode?: 'ansi' | 'css';
 };
 ```
 

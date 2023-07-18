@@ -1,9 +1,9 @@
+import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { TRPCClientError, wsLink } from '@trpc/client/src';
 import { inferProcedureParams, initTRPC } from '@trpc/server/src';
-import { Unsubscribable, observable } from '@trpc/server/src/observable';
-import { EventEmitter } from 'events';
+import { observable, Unsubscribable } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
 const t = initTRPC
@@ -168,7 +168,9 @@ test('subscriptions', async () => {
     onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
       subscriptionMock(input);
       return observable<number>((emit) => {
-        const onData = (data: number) => emit.next(data + input);
+        const onData = (data: number) => {
+          emit.next(data + input);
+        };
         ee.on('data', onData);
         return () => {
           ee.off('data', onData);
@@ -193,16 +195,28 @@ test('subscriptions', async () => {
   });
 
   expectTypeOf(subscription).toMatchTypeOf<Unsubscribable>();
-  await waitFor(() => expect(onStartedMock).toBeCalledTimes(1));
-  await waitFor(() => expect(subscriptionMock).toBeCalledTimes(1));
-  await waitFor(() => expect(subscriptionMock).toHaveBeenNthCalledWith(1, 10));
+  await waitFor(() => {
+    expect(onStartedMock).toBeCalledTimes(1);
+  });
+  await waitFor(() => {
+    expect(subscriptionMock).toBeCalledTimes(1);
+  });
+  await waitFor(() => {
+    expect(subscriptionMock).toHaveBeenNthCalledWith(1, 10);
+  });
 
   ee.emit('data', 20);
-  await waitFor(() => expect(onDataMock).toBeCalledTimes(1));
-  await waitFor(() => expect(onDataMock).toHaveBeenNthCalledWith(1, 30));
+  await waitFor(() => {
+    expect(onDataMock).toBeCalledTimes(1);
+  });
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenNthCalledWith(1, 30);
+  });
 
   subscription.unsubscribe();
-  await waitFor(() => expect(onCompleteMock).toBeCalledTimes(1));
+  await waitFor(() => {
+    expect(onCompleteMock).toBeCalledTimes(1);
+  });
 
   await close();
 });

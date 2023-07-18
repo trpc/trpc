@@ -6,7 +6,6 @@ import type {
 } from '@trpc/server';
 import { Unsubscribable } from '@trpc/server/observable';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import { TRPCClientError } from './TRPCClientError';
 import {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
@@ -14,6 +13,7 @@ import {
   TRPCUntypedClient,
 } from './internals/TRPCUntypedClient';
 import { TRPCClientRuntime } from './links';
+import { TRPCClientError } from './TRPCClientError';
 
 /**
  * @deprecated
@@ -49,8 +49,8 @@ export interface TRPCClient<TRouter extends AnyRouter> {
   >(
     path: TPath,
     input: TInput,
-    opts: TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>>,
+    opts: Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>> &
+      TRPCRequestOptions,
   ): Unsubscribable;
 }
 /**

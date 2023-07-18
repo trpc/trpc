@@ -1,4 +1,4 @@
-import { TRPCError, getTRPCErrorFromUnknown } from '@trpc/server/src';
+import { getTRPCErrorFromUnknown, TRPCError } from '@trpc/server/src';
 
 test('should extend original Error class', () => {
   const trpcError = new TRPCError({ code: 'FORBIDDEN' });
@@ -32,13 +32,18 @@ test('should correctly assign the cause when error instance is provided', () => 
 
 test('should be able to create synthetic cause from string', () => {
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause: 'rick' });
-  expect(trpcError.cause).toBe('rick');
+  expect(trpcError.cause).toBeInstanceOf(Error);
+  expect(trpcError.cause!.message).toBe('rick');
+  // @ts-expect-error -- until the target is updated to es2022+
+  expect(trpcError.cause!.cause).toBe(undefined);
 });
 
 test('should be able to create synthetic cause from object', () => {
   const cause = { foo: 'bar' };
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
-  expect(trpcError.cause).toBe(cause);
+  expect(trpcError.cause).toBeInstanceOf(Error);
+  // @ts-expect-error -- until the target is updated to es2022+
+  expect(trpcError.cause.foo).toBe('bar');
 });
 
 test('should skip creating the cause if one is not provided', () => {
@@ -58,7 +63,8 @@ describe('getTRPCErrorFromUnknown', () => {
     const trpcError = getTRPCErrorFromUnknown(originalError);
     expect(trpcError).toBeInstanceOf(TRPCError);
     expect(trpcError.message).toEqual('rick');
-    expect(trpcError.cause).toEqual('rick');
+    // @ts-expect-error -- until the target is updated to es2022+
+    expect(trpcError.cause!.cause).toBe(undefined);
   });
 
   test('should create new instance of TRPCError with `INTERNAL_SERVER_ERROR` code and proper cause for errors', () => {

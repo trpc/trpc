@@ -1,5 +1,4 @@
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
@@ -46,8 +45,8 @@ interface MiddlewareErrorResult<_TParams extends ProcedureParams>
  * @internal
  */
 export type MiddlewareResult<TParams extends ProcedureParams> =
-  | MiddlewareOKResult<TParams>
-  | MiddlewareErrorResult<TParams>;
+  | MiddlewareErrorResult<TParams>
+  | MiddlewareOKResult<TParams>;
 
 /**
  * @internal
@@ -114,7 +113,8 @@ type CreateMiddlewareReturnInput<
  */
 type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
   _config: TConfig;
-  _ctx_out: TConfig['$types']['ctx'];
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  _ctx_out: {};
   _input_out: unknown;
   _input_in: unknown;
   _output_in: unknown;
@@ -129,7 +129,9 @@ export type MiddlewareFunction<
   TParamsAfter extends ProcedureParams,
 > = {
   (opts: {
-    ctx: Simplify<TParams['_ctx_out']>;
+    ctx: Simplify<
+      Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
+    >;
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
@@ -206,7 +208,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
 
@@ -246,7 +248,7 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
       throw new TRPCError({
         message: 'Output validation failed',
         code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
   };

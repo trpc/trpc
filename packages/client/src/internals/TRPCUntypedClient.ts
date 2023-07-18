@@ -6,12 +6,11 @@ import {
   DefaultDataTransformer,
 } from '@trpc/server';
 import {
-  Unsubscribable,
   inferObservableValue,
   observableToPromise,
   share,
+  Unsubscribable,
 } from '@trpc/server/observable';
-import { TRPCClientError } from '../TRPCClientError';
 import { createChain } from '../links/internals/createChain';
 import {
   OperationContext,
@@ -19,6 +18,7 @@ import {
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
+import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
@@ -55,7 +55,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
           | CombinedDataTransformer;
       };
 
-type TRPCType = 'subscription' | 'query' | 'mutation';
+type TRPCType = 'mutation' | 'query' | 'subscription';
 export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
@@ -80,13 +80,13 @@ export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
 
 /** @internal */
 export type UntypedClientProperties =
-  | 'links'
-  | 'runtime'
-  | 'requestId'
   | '$request'
-  | 'requestAsPromise'
-  | 'query'
+  | 'links'
   | 'mutation'
+  | 'query'
+  | 'requestAsPromise'
+  | 'requestId'
+  | 'runtime'
   | 'subscription';
 
 export class TRPCUntypedClient<TRouter extends AnyRouter> {
@@ -204,8 +204,10 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   public subscription(
     path: string,
     input: unknown,
-    opts: TRPCRequestOptions &
-      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>>,
+    opts: Partial<
+      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
+    > &
+      TRPCRequestOptions,
   ): Unsubscribable {
     const observable$ = this.$request({
       type: 'subscription',

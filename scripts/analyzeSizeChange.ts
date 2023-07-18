@@ -1,6 +1,9 @@
-import { readFileSync, readdirSync, writeFile } from 'node:fs';
+import { readdirSync, readFileSync, writeFile } from 'node:fs';
 import path from 'node:path';
 import analyze from 'rollup-plugin-analyzer';
+
+const ABSOLUTE_BYTE_CHANGE_THRESHOLD = 100;
+const PERCENT_CHANGE_THRESHOLD = 1;
 
 export default function analyzeSizeChange(packageDir: string) {
   let analyzePluginIterations = 0;
@@ -13,8 +16,7 @@ export default function analyzeSizeChange(packageDir: string) {
       }
       analyzePluginIterations++;
       if (process.env.CI) {
-        const { currentPath, prevPath, relativePath } =
-          resolveJsonPaths(packageDir);
+        const { currentPath, prevPath } = resolveJsonPaths(packageDir);
 
         writeFile(
           currentPath,
@@ -26,10 +28,8 @@ export default function analyzeSizeChange(packageDir: string) {
         try {
           const prevStr = readFileSync(prevPath, 'utf8');
           const prevAnalysis = JSON.parse(prevStr);
-          const change = difference(
-            prevAnalysis.bundleSize,
-            analysis.bundleSize,
-          );
+          console.log('--- Size Change Report ---');
+          console.log('(will be empty if no significant changes are found)');
           logDifference(
             'Total Bundle',
             prevAnalysis.bundleSize,
@@ -49,6 +49,7 @@ export default function analyzeSizeChange(packageDir: string) {
               logNewModule(module.id, module.size);
             }
           }
+          console.log('--- End Size Change Report ---');
         } catch {
           console.log('No previous bundle analysis found');
         }
@@ -69,7 +70,7 @@ type GitHubLogOptions = {
 };
 
 function logNewModule(name: string, size: number) {
-  if (size < 100) {
+  if (size < ABSOLUTE_BYTE_CHANGE_THRESHOLD) {
     return;
   }
   const type = 'notice';
@@ -82,7 +83,10 @@ function logNewModule(name: string, size: number) {
 
 function logDifference(name: string, before: number, after: number) {
   const change = difference(before, after);
-  if (change.absolute < 100 && change.percent < 1) {
+  if (
+    change.absolute < ABSOLUTE_BYTE_CHANGE_THRESHOLD &&
+    change.percent < PERCENT_CHANGE_THRESHOLD
+  ) {
     return;
   }
   const type = 'error';
@@ -116,6 +120,7 @@ function difference(before: number, after: number) {
 }
 
 function resolveJsonPaths(packageDir: string) {
+  // TODO: should find a better way to match current w/ downloaded artifacts
   const runnerRoot = '../..';
   const analysisFilePath = 'dist/bundle-analysis.json';
   const previousAnalysisDir = 'downloads/previous-bundle-analysis';
@@ -131,7 +136,7 @@ function resolveJsonPaths(packageDir: string) {
     analysisFilePath,
   );
 
-  return { currentPath, prevPath, relativePath };
+  return { currentPath, prevPath };
 }
 
 const ansiRegex = new RegExp(

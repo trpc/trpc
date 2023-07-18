@@ -340,7 +340,7 @@ test('predicate type should be narrowed', () => {
           [
             string[],
             {
-              input?: { limit?: number | null };
+              input?: { limit?: number | undefined } | void;
               type: 'infinite';
             }?,
           ]

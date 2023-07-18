@@ -1,5 +1,5 @@
 import '../___packages';
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 test('context union type is inferred correctly', async () => {
   type UnsetContext = { user: null; session: null };
@@ -13,7 +13,7 @@ test('context union type is inferred correctly', async () => {
       state: string;
     };
   };
-  type ContextUnion = UnsetContext | SetContext;
+  type ContextUnion = SetContext | UnsetContext;
 
   const t = initTRPC.context<ContextUnion>().create();
 

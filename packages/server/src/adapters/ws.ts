@@ -2,14 +2,13 @@ import { IncomingMessage } from 'http';
 import ws from 'ws';
 import {
   AnyRouter,
-  ProcedureType,
   callProcedure,
   inferRouterContext,
+  ProcedureType,
 } from '../core';
-import { TRPCError, getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
+import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { BaseHandlerOptions } from '../internals/types';
-import { Unsubscribable, isObservable } from '../observable';
+import { isObservable, Unsubscribable } from '../observable';
 import {
   JSONRPC2,
   TRPCClientOutgoingMessage,
@@ -101,10 +100,11 @@ export function parseMessage(
 export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
-> & {
-  wss: ws.Server;
-  process?: NodeJS.Process;
-} & NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws>;
+> &
+  NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws> & {
+    wss: ws.Server;
+    process?: NodeJS.Process;
+  };
 
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
@@ -130,7 +130,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     function stopSubscription(
       subscription: Unsubscribable,
-      { id, jsonrpc }: { id: JSONRPC2.RequestId } & JSONRPC2.BaseEnvelope,
+      { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId },
     ) {
       subscription.unsubscribe();
 
@@ -280,6 +280,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
     client.on('message', async (message) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
@@ -289,7 +290,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          cause: getCauseFromUnknown(cause),
+          cause,
         });
 
         respond({

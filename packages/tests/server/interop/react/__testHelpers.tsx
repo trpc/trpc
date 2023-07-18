@@ -6,10 +6,10 @@ import {
 } from '../../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  TRPCWebSocketClient,
   createWSClient,
   httpBatchLink,
   splitLink,
+  TRPCWebSocketClient,
   wsLink,
 } from '@trpc/client/src';
 import { OutputWithCursor } from '@trpc/react-query/shared';
@@ -20,7 +20,7 @@ import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
-import { ZodError, z } from 'zod';
+import { z, ZodError } from 'zod';
 
 type Context = {};
 export type Post = {
@@ -89,8 +89,7 @@ export function createLegacyAppRouter() {
         const limit = input.limit ?? 50;
         const { cursor } = input;
         let nextCursor: typeof cursor = null;
-        for (let index = 0; index < db.posts.length; index++) {
-          const element = db.posts[index]!;
+        for (const element of db.posts) {
           if (cursor != null && element.createdAt < cursor) {
             continue;
           }

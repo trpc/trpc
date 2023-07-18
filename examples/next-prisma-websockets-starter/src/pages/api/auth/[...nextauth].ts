@@ -20,12 +20,12 @@ if (useMockProvider) {
       name: 'Mocked GitHub',
       async authorize(credentials) {
         if (credentials) {
-          const user = {
-            id: credentials.name,
-            name: credentials.name,
-            email: credentials.name,
+          const name = credentials.name;
+          return {
+            id: name,
+            name: name,
+            email: name,
           };
-          return user;
         }
         return null;
       },

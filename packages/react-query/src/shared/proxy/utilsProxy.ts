@@ -10,14 +10,14 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import { TRPCClientError, createTRPCClientProxy } from '@trpc/client';
+import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
 import {
   AnyQueryProcedure,
   AnyRouter,
   DeepPartial,
   Filter,
-  ProtectedIntersection,
   inferProcedureInput,
+  ProtectedIntersection,
 } from '@trpc/server';
 import {
   createFlatProxy,
@@ -25,12 +25,12 @@ import {
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import {
+  contextProps,
   DecoratedProxyTRPCContextProps,
+  TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
-  contextProps,
 } from '../../internals/context';
-import { TRPCContextState } from '../../internals/context';
 import { QueryKeyKnown } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
@@ -108,7 +108,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
-            inferProcedureInput<TProcedure> extends { cursor?: any }
+            inferProcedureInput<TProcedure> extends { cursor?: any } | void
               ? 'infinite'
               : 'query'
           >
@@ -205,16 +205,17 @@ type DecorateRouter = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-        DecorateRouter
-    : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
-} & DecorateRouter; // Add functions that should be available at utils root
+export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
+  DecorateRouter & {
+    [TKey in keyof Filter<
+      TRouter['_def']['record'],
+      AnyQueryProcedure | AnyRouter
+    >]: TRouter['_def']['record'][TKey] extends AnyRouter
+      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
+          DecorateRouter
+      : // utils only apply to queries
+        DecorateProcedure<TRouter['_def']['record'][TKey]>;
+  }; // Add functions that should be available at utils root
 
 type AnyDecoratedProcedure = DecorateProcedure<any>;
 
@@ -289,9 +290,12 @@ export function createReactQueryUtilsProxy<
         reset: () => context.resetQueries(queryKey, ...rest),
         refetch: () => context.refetchQueries(queryKey, ...rest),
         cancel: () => context.cancelQuery(queryKey, ...rest),
-        setData: () => context.setQueryData(queryKey, updater, ...rest),
-        setInfiniteData: () =>
-          context.setInfiniteQueryData(queryKey, updater, ...rest),
+        setData: () => {
+          context.setQueryData(queryKey, updater, ...rest);
+        },
+        setInfiniteData: () => {
+          context.setInfiniteQueryData(queryKey, updater, ...rest);
+        },
         getData: () => context.getQueryData(queryKey),
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       };

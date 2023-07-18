@@ -47,7 +47,7 @@ export const appRouter = t.router({
 
 ```ts twoslash
 // @target: esnext
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 export const t = initTRPC.create();
@@ -350,8 +350,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(S.parse(S.struct({ name: S.string })))
-    .output(S.parse(S.struct({ greeting: S.string })))
+    .input(S.parseSync(S.struct({ name: S.string })))
+    .output(S.parseSync(S.struct({ greeting: S.string })))
     .query(({ input }) => {
       //      ^?
       return {

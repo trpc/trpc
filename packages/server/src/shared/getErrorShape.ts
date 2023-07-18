@@ -13,7 +13,7 @@ export function getErrorShape<TConfig extends AnyRootConfig>(opts: {
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
-  ctx: undefined | TConfig['$types']['ctx'];
+  ctx: TConfig['$types']['ctx'] | undefined;
 }): TConfig['$types']['errorShape'] {
   const { path, error, config } = opts;
   const { code } = opts.error;

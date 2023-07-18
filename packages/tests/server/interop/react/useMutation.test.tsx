@@ -24,16 +24,16 @@ describe('useMutation()', () => {
 
       useEffect(() => {
         (async () => {
-          await new Promise((resolve) =>
+          await new Promise((resolve) => {
             mutation.mutate(undefined, {
               onSettled: resolve,
-            }),
-          );
-          await new Promise((resolve) =>
+            });
+          });
+          await new Promise((resolve) => {
             mutation.mutate(undefined, {
               onSettled: resolve,
-            }),
-          );
+            });
+          });
 
           // @ts-expect-error
           await mutation.mutateAsync(null);
@@ -244,6 +244,7 @@ describe('useMutation()', () => {
         onError: (_error, _variables, context) => {
           expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
         },
+        // eslint-disable-next-line max-params
         onSettled: (_data, _error, _variables, context) => {
           expectTypeOf(context).toMatchTypeOf<'foo' | undefined>();
         },

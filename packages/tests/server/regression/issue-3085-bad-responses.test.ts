@@ -1,8 +1,8 @@
 import '../___packages';
-import { waitError } from '../___testHelpers';
-import { TRPCClientError, createTRPCProxyClient, httpLink } from '@trpc/client';
-import { observable } from '@trpc/server/observable';
 import http from 'http';
+import { waitError } from '../___testHelpers';
+import { createTRPCProxyClient, httpLink, TRPCClientError } from '@trpc/client';
+import { observable } from '@trpc/server/observable';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
 
@@ -12,7 +12,9 @@ type Handler = (opts: {
 }) => void;
 
 function createServer(handler: Handler) {
-  const server = http.createServer((req, res) => handler({ req, res }));
+  const server = http.createServer((req, res) => {
+    handler({ req, res });
+  });
   server.listen(0);
 
   const port = (server.address() as any).port as number;

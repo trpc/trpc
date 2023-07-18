@@ -32,12 +32,22 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 
 > Note: you will want to have `pnpm dev` running in parallel in another terminal
 
+First, run
+
 ```bash
-# in project root directory
+pnpm test
+```
+
+in the project root directory. This will make sure all the build artifacts and codegen has run. After that, you can run the tests in watch mode using
+
+```
 pnpm test-watch
 
 # example if you want to test a specific test file:
 pnpm test-watch react
+
+# run only a regression test while fixing a bug
+pnpm test-watch 3085
 ```
 
 Testing is currently coalesced in [./packages/tests](./packages/tests); we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
@@ -70,7 +80,7 @@ The most complex types are also in this area because we must keep track of the c
 
 #### Handling a Request and Forming a Response
 
-The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
+The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, streaming, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
 
 #### Adapting Requests and Responses
 

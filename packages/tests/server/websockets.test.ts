@@ -1,15 +1,14 @@
+import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import { TRPCClientError } from '@trpc/client/src';
-import { createWSClient, wsLink } from '@trpc/client/src';
-import { AnyRouter, TRPCError, initTRPC } from '@trpc/server/src';
+import { createWSClient, TRPCClientError, wsLink } from '@trpc/client/src';
+import { AnyRouter, initTRPC, TRPCError } from '@trpc/server/src';
 import { applyWSSHandler } from '@trpc/server/src/adapters/ws';
-import { Observer, observable } from '@trpc/server/src/observable';
+import { observable, Observer } from '@trpc/server/src/observable';
 import {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/src/rpc';
-import { EventEmitter } from 'events';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
@@ -305,15 +304,50 @@ test('server subscription ended', async () => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
-  // destroy server subscription
+  // destroy server subscription (called by server)
   subRef.current.complete();
   await waitFor(() => {
-    expect(onErrorMock).toHaveBeenCalledTimes(1);
+    expect(onCompleteMock).toHaveBeenCalledTimes(1);
   });
-  expect(onCompleteMock).toHaveBeenCalledTimes(0);
-  expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
-    `[TRPCClientError: Operation ended prematurely]`,
+  await close();
+});
+
+test('can close wsClient when subscribed', async () => {
+  const {
+    proxy,
+    close,
+    onCloseMock: wsClientOnCloseMock,
+    wsClient,
+    wss,
+  } = factory();
+  const serversideWsOnCloseMock = vi.fn();
+  wss.addListener('connection', (ws) =>
+    ws.on('close', serversideWsOnCloseMock),
   );
+
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const onErrorMock = vi.fn();
+  const onCompleteMock = vi.fn();
+  proxy.onMessage.subscribe(undefined, {
+    onStarted: onStartedMock,
+    onData: onDataMock,
+    onError: onErrorMock,
+    onComplete: onCompleteMock,
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  wsClient.close();
+
+  await waitFor(() => {
+    expect(onCompleteMock).toHaveBeenCalledTimes(1);
+    expect(wsClientOnCloseMock).toHaveBeenCalledTimes(1);
+    expect(serversideWsOnCloseMock).toHaveBeenCalledTimes(1);
+  });
+
   await close();
 });
 
@@ -874,8 +908,12 @@ test('wsClient stops reconnecting after .close()', async () => {
     retryDelayMs: retryDelayMsMock,
   });
 
-  await waitFor(() => expect(retryDelayMsMock).toHaveBeenCalledTimes(1));
-  await waitFor(() => expect(retryDelayMsMock).toHaveBeenCalledTimes(2));
+  await waitFor(() => {
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+  });
+  await waitFor(() => {
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+  });
   wsClient.close();
   await waitMs(100);
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
