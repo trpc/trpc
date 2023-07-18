@@ -774,6 +774,32 @@ importers:
         specifier: ^1.0.1
         version: 1.0.4
 
+  examples/minimal-custom-server/client:
+    dependencies:
+      '@trpc/client':
+        specifier: link:../../../packages/client
+        version: link:../../../packages/client
+      undici:
+        specifier: ^5.14.0
+        version: 5.16.0
+    devDependencies:
+      '@types/node':
+        specifier: ^18.7.20
+        version: 18.7.20
+
+  examples/minimal-custom-server/server:
+    dependencies:
+      '@trpc/server':
+        specifier: link:../../../packages/server
+        version: link:../../../packages/server
+      zod:
+        specifier: ^3.0.0
+        version: 3.20.2
+    devDependencies:
+      '@types/node':
+        specifier: ^18.7.20
+        version: 18.7.20
+
   examples/minimal-react:
     devDependencies:
       '@playwright/test':
