@@ -29,16 +29,11 @@ export async function nodeHTTPRequestHandler<
     };
 
     // a framework could pre-parse query in a way that could crash URLSearchParams
-    const paramsFromQuery = () =>
-      new URLSearchParams(opts.req.url?.split('?')[1]);
-    let query: URLSearchParams;
-    try {
-      query = opts.req.query
+    // invalidTrpcQuery can be added to a request object to let trpc know
+    const query: URLSearchParams =
+      opts.req.query && !opts.req.invalidTrpcQuery
         ? new URLSearchParams(opts.req.query as any)
-        : paramsFromQuery();
-    } catch (err) {
-      query = paramsFromQuery();
-    }
+        : new URLSearchParams(opts.req.url?.split('?')[1]);
 
     const jsonContentTypeHandler =
       defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<

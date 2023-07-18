@@ -7,7 +7,13 @@ import { NodeHTTPContentTypeHandler } from './internals/contentType';
 export type NodeHTTPRequest = IncomingMessage & {
   body?: unknown;
   query?: unknown;
+  /**
+   * Specifies whether the `query` property is pre-parsed in a format that cannot be passed to URLSearchParams.
+   * trpc will utilize `req.url` instead to generate the search parameters in the required format.
+   */
+  invalidTrpcQuery?: boolean;
 };
+
 export type NodeHTTPResponse = ServerResponse & {
   /**
    * Force the partially-compressed response to be flushed to the client.

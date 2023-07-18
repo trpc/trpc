@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { IncomingMessage, ServerResponse, createServer } from 'http';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 
 // The query type here is just to show it might
 // not extend express's req.query type
+// invalidTrpcQuery is used to let trpc know that passing the query to URLSearchParams would cause it to throw
 type AugmentedRequest = IncomingMessage & {
   query?: any[] | Record<string, any>;
+  invalidTrpcQuery?: boolean;
   pathname: string;
 };
 
@@ -14,6 +16,7 @@ const augmentRequest = (req: IncomingMessage): AugmentedRequest => {
   const { searchParams, pathname } = url;
   return Object.assign(req, {
     query: searchParams,
+    invalidTrpcQuery: true,
     pathname,
   });
 };
