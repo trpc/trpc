@@ -9,5 +9,5 @@ export * from './wsLink';
 export * from './httpFormDataLink';
 
 // These are not public (yet) as we get this functionality from tanstack query
-// export * from './retryLink';
-// export * from './dedupeLink';
+// export * from './internals/retryLink';
+// export * from './internals/dedupeLink';
