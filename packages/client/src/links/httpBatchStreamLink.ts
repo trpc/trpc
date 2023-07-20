@@ -1,5 +1,5 @@
 import { NonEmptyArray } from '../internals/types';
-import { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
+import { HTTPBatchLinkOptions } from './httpBatchLink';
 import {
   createHTTPBatchLink,
   RequesterFn,
