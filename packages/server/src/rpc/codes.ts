@@ -15,14 +15,15 @@ export const TRPC_ERROR_CODES_BY_KEY = {
    */
   PARSE_ERROR: -32700,
   /**
-   * The JSON sent is not a valid Request object.
-   */
-  BAD_REQUEST: -32600, // 400
-  /**
    * Internal JSON-RPC error.
    */
   INTERNAL_SERVER_ERROR: -32603,
-  // Implementation specific errors
+  NOT_IMPLEMENTED: -32601,
+  // 4XX-errors Implementation specific errors
+  /**
+   * The JSON sent is not a valid Request object.
+   */
+  BAD_REQUEST: -32600, // 400
   UNAUTHORIZED: -32001, // 401
   FORBIDDEN: -32003, // 403
   NOT_FOUND: -32004, // 404
