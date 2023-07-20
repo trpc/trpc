@@ -8,7 +8,7 @@ import { invert } from '../internals/invert';
  * `-32000` to `-32099` are reserved for implementation-defined server-errors.
  * For tRPC we're copying the last digits of HTTP 4XX errors.
  */
-export const TRPC_ERROR_CODES_BY_KEY = {
+const JSONRPC2_TO_HTTP_CODE = {
   /**
    * Invalid JSON was received by the server.
    * An error occurred on the server while parsing the JSON text.
@@ -37,8 +37,8 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
-export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
+export const TRPC_ERROR_CODES_BY_NUMBER = invert(JSONRPC2_TO_HTTP_CODE);
 type ValueOf<TObj> = TObj[keyof TObj];
 
-export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
-export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;
+export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof JSONRPC2_TO_HTTP_CODE>;
+export type TRPC_ERROR_CODE_KEY = keyof typeof JSONRPC2_TO_HTTP_CODE;
