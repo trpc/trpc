@@ -4,9 +4,9 @@ import { TRPCError } from '../error/TRPCError';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import { inferObservableValue, Observable } from '../observable';
 import {
+  JSONRPC2_TO_HTTP_CODE,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
-  TRPC_ERROR_CODES_BY_KEY,
   TRPCErrorShape,
 } from '../rpc';
 import {
@@ -844,7 +844,7 @@ export class Router<
     const { code } = opts.error;
     const shape: DefaultErrorShape = {
       message: error.message,
-      code: TRPC_ERROR_CODES_BY_KEY[code],
+      code: JSONRPC2_TO_HTTP_CODE[code],
       data: {
         code,
         httpStatus: getHTTPStatusCodeFromError(error),

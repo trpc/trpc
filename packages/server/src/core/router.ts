@@ -1,7 +1,7 @@
 import { DefaultErrorShape, defaultFormatter } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
-import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import { JSONRPC2_TO_HTTP_CODE } from '../rpc';
 import { createRecursiveProxy } from '../shared/createProxy';
 import { defaultTransformer } from '../transformer';
 import { AnyRootConfig } from './internals/config';
@@ -284,7 +284,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         const { code } = opts.error;
         const shape: DefaultErrorShape = {
           message: error.message,
-          code: TRPC_ERROR_CODES_BY_KEY[code],
+          code: JSONRPC2_TO_HTTP_CODE[code],
           data: {
             code,
             httpStatus: getHTTPStatusCodeFromError(error),

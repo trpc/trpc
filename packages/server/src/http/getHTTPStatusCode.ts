@@ -1,14 +1,14 @@
 import { TRPCError } from '../error/TRPCError';
 import { invert } from '../internals/invert';
-import { TRPC_ERROR_CODES_BY_KEY, TRPCResponse } from '../rpc';
+import { JSONRPC2_TO_HTTP_CODE, TRPCResponse } from '../rpc';
 
-export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
+export const TRPC_ERROR_CODES_BY_NUMBER = invert(JSONRPC2_TO_HTTP_CODE);
 type ValueOf<TType> = TType[keyof TType];
 
-export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
+export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof JSONRPC2_TO_HTTP_CODE>;
 
 const TRPC_ERROR_TO_HTTP_CODE: Record<
-  keyof typeof TRPC_ERROR_CODES_BY_KEY,
+  keyof typeof JSONRPC2_TO_HTTP_CODE,
   number
 > = {
   PARSE_ERROR: 400,
@@ -29,7 +29,7 @@ const TRPC_ERROR_TO_HTTP_CODE: Record<
 };
 
 export function getHTTPStatusFromTRPCCode(
-  code: keyof typeof TRPC_ERROR_CODES_BY_KEY,
+  code: keyof typeof JSONRPC2_TO_HTTP_CODE,
 ): number {
   return TRPC_ERROR_TO_HTTP_CODE[code] ?? 500;
 }
