@@ -192,16 +192,19 @@ In order to have a specification that works regardless of the transport layer we
 ```ts
 PARSE_ERROR: 400,
 BAD_REQUEST: 400,
-NOT_FOUND: 404,
-INTERNAL_SERVER_ERROR: 500,
 UNAUTHORIZED: 401,
+NOT_FOUND: 404,
 FORBIDDEN: 403,
+METHOD_NOT_SUPPORTED: 405,
 TIMEOUT: 408,
 CONFLICT: 409,
-CLIENT_CLOSED_REQUEST: 499,
 PRECONDITION_FAILED: 412,
 PAYLOAD_TOO_LARGE: 413,
-METHOD_NOT_SUPPORTED: 405,
+UNPROCESSABLE_CONTENT: 422,
+TOO_MANY_REQUESTS: 429,
+CLIENT_CLOSED_REQUEST: 499,
+INTERNAL_SERVER_ERROR: 500,
+NOT_IMPLEMENTED: 501,
 ```
 
 ## Error Codes <-> JSON-RPC 2.0 Error Codes
@@ -225,10 +228,11 @@ export const TRPC_ERROR_CODES_BY_KEY = {
    * The JSON sent is not a valid Request object.
    */
   BAD_REQUEST: -32600, // 400
-  /**
-   * Internal JSON-RPC error.
-   */
+
+  // Internal JSON-RPC error
   INTERNAL_SERVER_ERROR: -32603,
+  NOT_IMPLEMENTED: -32603,
+
   // Implementation specific errors
   UNAUTHORIZED: -32001, // 401
   FORBIDDEN: -32003, // 403
@@ -238,6 +242,8 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CONFLICT: -32009, // 409
   PRECONDITION_FAILED: -32012, // 412
   PAYLOAD_TOO_LARGE: -32013, // 413
+  UNPROCESSABLE_CONTENT: -32022, // 422
+  TOO_MANY_REQUESTS: -32029, // 429
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 ```
@@ -249,4 +255,4 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 You can read more details by drilling into the TypeScript definitions in
 
 - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
-- [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
+- [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts)
