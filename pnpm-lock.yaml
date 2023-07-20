@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -78,8 +82,8 @@ importers:
         specifier: ^1.9.3
         version: 1.9.3(eslint@8.40.0)
       eslint-plugin-unicorn:
-        specifier: 47.0.0
-        version: 47.0.0(eslint@8.40.0)
+        specifier: 48.0.0
+        version: 48.0.0(eslint@8.40.0)
       express:
         specifier: ^4.17.1
         version: 4.18.2
@@ -99,8 +103,8 @@ importers:
         specifier: ^2.8.8
         version: 2.8.8
       prettier-plugin-tailwindcss:
-        specifier: ^0.3.0
-        version: 0.3.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8)
+        specifier: ^0.4.0
+        version: 0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8)
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
@@ -150,16 +154,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -220,16 +224,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -275,16 +279,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -321,10 +325,10 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
     devDependencies:
       '@tsconfig/esm':
@@ -349,16 +353,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -401,10 +405,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -435,13 +439,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -484,13 +488,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -536,10 +540,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -588,10 +592,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       tsx:
         specifier: ^3.12.7
@@ -667,13 +671,13 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -704,7 +708,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -732,7 +736,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/client
       undici:
         specifier: ^5.14.0
@@ -745,7 +749,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -761,16 +765,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -810,16 +814,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -856,16 +860,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -905,20 +909,20 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       clsx:
-        specifier: ^1.1.1
-        version: 1.2.1
+        specifier: ^2.0.0
+        version: 2.0.0
       next:
         specifier: ^13.4.8
         version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
@@ -1011,20 +1015,20 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       clsx:
-        specifier: ^1.1.1
-        version: 1.2.1
+        specifier: ^2.0.0
+        version: 2.0.0
       i18next:
         specifier: ^22.4.13
         version: 22.4.13
@@ -1093,20 +1097,20 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       clsx:
-        specifier: ^1.1.1
-        version: 1.2.1
+        specifier: ^2.0.0
+        version: 2.0.0
       next:
         specifier: ^13.4.8
         version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
@@ -1202,10 +1206,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -1229,13 +1233,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1275,10 +1279,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -1309,7 +1313,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@trpc/server':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
@@ -1352,13 +1356,13 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../client
       '@trpc/react-query':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1403,10 +1407,10 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../client
       '@trpc/server':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1547,8 +1551,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@effect/schema':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: ^0.30.0
+        version: 0.30.0
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1574,16 +1578,16 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@trpc/client':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../client
       '@trpc/next':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../next
       '@trpc/react-query':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.34.0
+        specifier: 10.35.0
         version: link:../server
       '@types/node':
         specifier: ^18.16.16
@@ -1715,16 +1719,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../packages/client
       '@trpc/next':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: ^10.34.0
+        specifier: ^10.35.0
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.0.0
@@ -1733,8 +1737,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0(react@18.2.0)
       clsx:
-        specifier: ^1.1.1
-        version: 1.2.1
+        specifier: ^2.0.0
+        version: 2.0.0
       cssnano:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.14)
@@ -1770,8 +1774,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@effect/schema':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: ^0.30.0
+        version: 0.30.0
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -3089,7 +3093,7 @@ packages:
       '@babel/helper-module-imports': 7.21.4
       '@babel/helper-simple-access': 7.21.5
       '@babel/helper-split-export-declaration': 7.18.6
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
       '@babel/template': 7.20.7
       '@babel/traverse': 7.21.5
       '@babel/types': 7.21.5
@@ -3105,7 +3109,7 @@ packages:
       '@babel/helper-module-imports': 7.21.4
       '@babel/helper-simple-access': 7.21.5
       '@babel/helper-split-export-declaration': 7.18.6
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
       '@babel/template': 7.20.7
       '@babel/traverse': 7.21.5
       '@babel/types': 7.21.5
@@ -3194,6 +3198,10 @@ packages:
     resolution: {integrity: sha512-awrNfaMtnHUr653GgGEs++LlAvW6w+DcPrOliSMXWCKo597CwL5Acf/wWdNkf/tfEQE3mjkeD1YOVZOUV/od1w==}
     engines: {node: '>=6.9.0'}
 
+  /@babel/helper-validator-identifier@7.22.5:
+    resolution: {integrity: sha512-aJXu+6lErq8ltp+JhkJUfk1MTGyuA4v7f3pA+BJ5HLfNC6nAQ0Cpi9uOquUj8Hehg0aUiHzWQbOVJGao6ztBAQ==}
+    engines: {node: '>=6.9.0'}
+
   /@babel/helper-validator-option@7.18.6:
     resolution: {integrity: sha512-XO7gESt5ouv/LRJdrVjkShckw6STTaB7l9BrpBaAHDeF5YZT+01PCwmR0SJHnkW6i8OwW/EVWRShfi4j2x+KQw==}
     engines: {node: '>=6.9.0'}
@@ -3238,7 +3246,7 @@ packages:
     resolution: {integrity: sha512-u7stbOuYjaPezCuLj29hNW1v64M2Md2qupEKP1fHc7WdOA3DgLh37suiSrZYY7haUB7iBeQZ9P1uiRF359do3g==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
       chalk: 2.4.2
       js-tokens: 4.0.0
 
@@ -4376,7 +4384,7 @@ packages:
       '@babel/helper-hoist-variables': 7.18.6
       '@babel/helper-module-transforms': 7.21.5
       '@babel/helper-plugin-utils': 7.20.2
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4391,7 +4399,7 @@ packages:
       '@babel/helper-hoist-variables': 7.18.6
       '@babel/helper-module-transforms': 7.21.5
       '@babel/helper-plugin-utils': 7.20.2
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -5149,7 +5157,7 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/helper-string-parser': 7.21.5
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
       to-fast-properties: 2.0.0
 
   /@babel/types@7.21.5:
@@ -6179,19 +6187,19 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.13.2:
-    resolution: {integrity: sha512-wZ7OllwpuSLZ2l1MrWA2Fzcw9YX1b1GVhn/fDYZcYejXFMHMG6TkT2PKnvAbXzym2Dx+todsykNFk3q9C0Fpug==}
+  /@effect/data@0.16.0:
+    resolution: {integrity: sha512-ckZ/WvvI4zZGo+vRVTRBfBi4KvY9ZjLlnDWlrfhKnAJvgDu6SI8A5FJ8c/eJphmtLWNdoQx8j9pFhWLSIQe5RQ==}
 
-  /@effect/io@0.31.1:
-    resolution: {integrity: sha512-fTxrwa7zr9bdGpr1f57UtSFWw9xgjCGIiG5kNuG+PGInJwANXqkTBa9izdcr3OP7mq5IzOtvPIFPIDE8r/ew5w==}
+  /@effect/io@0.35.0:
+    resolution: {integrity: sha512-6OgaG8+V8Acqy/JI75TNcYJXoLZMTXpRESw5CngVKxuxD6qQJiPia1cxhkfS2v5CmSLt4ZgP4u6gQtWKIYo7Lg==}
     dependencies:
-      '@effect/data': 0.13.2
+      '@effect/data': 0.16.0
 
-  /@effect/schema@0.25.0:
-    resolution: {integrity: sha512-nJ674r65cqlv6+5jgjUT28oeNnfG/xkk/XduVb0ZF6Cd5rX7GqZp8cKObNwVLTNLJjMqS4N2rHhS8JtgLv88aw==}
+  /@effect/schema@0.30.0:
+    resolution: {integrity: sha512-Pj0MUD6kfYwUPUYejig2hAcQUR4aH+9e3My+puc3VkfLLlY1XkyMUIZZGV/B36iZYdMsNF4sEvpzXcZwZOaI6A==}
     dependencies:
-      '@effect/data': 0.13.2
-      '@effect/io': 0.31.1
+      '@effect/data': 0.16.0
+      '@effect/io': 0.35.0
       fast-check: 3.11.0
 
   /@emotion/is-prop-valid@0.8.8:
@@ -7292,7 +7300,7 @@ packages:
       p-reduce: 2.1.0
       pacote: 15.2.0
       pify: 5.0.0
-      semver: 7.5.0
+      semver: 7.5.4
       slash: 3.0.0
       validate-npm-package-license: 3.0.4
       validate-npm-package-name: 5.0.0
@@ -8149,14 +8157,14 @@ packages:
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
     dependencies:
       '@gar/promisify': 1.1.3
-      semver: 7.5.0
+      semver: 7.5.4
     dev: false
 
   /@npmcli/fs@3.1.0:
     resolution: {integrity: sha512-7kZUAaLscfgbwBQRbvdMYaZOWyMEcPTH/tJjnyAWJ/dvvs9Ef+CERx/qJb9GExJpl1qipaDGn7KqHnFGGixd0w==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
-      semver: 7.5.0
+      semver: 7.5.4
     dev: false
 
   /@npmcli/git@4.1.0:
@@ -8169,7 +8177,7 @@ packages:
       proc-log: 3.0.0
       promise-inflight: 1.0.1
       promise-retry: 2.0.1
-      semver: 7.5.0
+      semver: 7.5.4
       which: 3.0.1
     transitivePeerDependencies:
       - bluebird
@@ -8647,7 +8655,7 @@ packages:
       node-dir: 0.1.17
       node-fetch: 2.6.9
       open: 7.4.2
-      semver: 7.5.0
+      semver: 7.5.4
       simple-git: 3.15.0(supports-color@8.1.1)
       type: 2.7.2
       uuid: 8.3.2
@@ -9761,7 +9769,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       globby: 11.1.0
       is-glob: 4.0.3
-      semver: 7.5.0
+      semver: 7.5.4
       tsutils: 3.21.0(typescript@5.1.3)
       typescript: 5.1.3
     transitivePeerDependencies:
@@ -9802,7 +9810,7 @@ packages:
       '@typescript-eslint/typescript-estree': 6.0.0(typescript@5.1.3)
       eslint: 8.40.0
       eslint-scope: 5.1.1
-      semver: 7.5.0
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -10980,7 +10988,7 @@ packages:
   /builtins@5.0.1:
     resolution: {integrity: sha512-qwVpFEHNfhYJIzNRBvd2C1kyo6jz3ZSMPyyuR47OPdiKWlbYnZNyDWuyR175qDnAJLiCo5fBBqPb3RiXgWlkOQ==}
     dependencies:
-      semver: 7.5.0
+      semver: 7.5.4
 
   /busboy@1.6.0:
     resolution: {integrity: sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==}
@@ -11435,6 +11443,11 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /clsx@2.0.0:
+    resolution: {integrity: sha512-rQ1+kcj+ttHG0MKVGBUXwayCCF1oh39BF5COIpRzuCEv8Mwjv0XucrI2ExNTOn9IlLifGClWQcU9BrZORvtw6Q==}
+    engines: {node: '>=6'}
+    dev: false
+
   /cmd-shim@6.0.1:
     resolution: {integrity: sha512-S9iI9y0nKR4hwEQsVWpyxld/6kRfGepGfzff83FcaiEBpmvlbA2nnGe7Cylgrx2f/p1P5S5wpRm9oL8z1PbS3Q==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
@@ -11608,7 +11621,7 @@ packages:
       js-string-escape: 1.0.1
       lodash: 4.17.21
       md5-hex: 3.0.1
-      semver: 7.5.0
+      semver: 7.5.4
       well-known-symbols: 2.0.0
 
   /concurrently@8.0.0:
@@ -11965,7 +11978,7 @@ packages:
       postcss-modules-scope: 3.0.0(postcss@8.4.21)
       postcss-modules-values: 4.0.0(postcss@8.4.21)
       postcss-value-parser: 4.2.0
-      semver: 7.5.0
+      semver: 7.5.4
       webpack: 5.75.0(@swc/core@1.3.3)
     dev: false
 
@@ -13369,7 +13382,7 @@ packages:
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.26.0)(eslint@8.40.0)
-      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
+      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)
       eslint-plugin-jsx-a11y: 6.6.1(eslint@8.40.0)
       eslint-plugin-react: 7.32.2(eslint@8.40.0)
       eslint-plugin-react-hooks: 4.6.0(eslint@8.40.0)
@@ -13406,7 +13419,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       enhanced-resolve: 5.12.0
       eslint: 8.40.0
-      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
+      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)
       get-tsconfig: 4.5.0
       globby: 13.1.3
       is-core-module: 2.12.0
@@ -13416,7 +13429,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-module-utils@2.7.4(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0):
+  /eslint-module-utils@2.7.4(@typescript-eslint/parser@6.0.0)(eslint-import-resolver-node@0.3.6)(eslint@8.40.0):
     resolution: {integrity: sha512-j4GT+rqzCoRKHwURX7pddtIPGySnX9Si/cgMI5ztrcqOPtk5dDEeZ34CQVPphnqkJytlc97Vuk05Um2mJ3gEQA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -13437,16 +13450,15 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/parser': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
       debug: 3.2.7
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.26.0)(eslint@8.40.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /eslint-plugin-import@2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0):
+  /eslint-plugin-import@2.26.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0):
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -13456,14 +13468,14 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/parser': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
       array-includes: 3.1.6
       array.prototype.flat: 1.3.1
       debug: 2.6.9
       doctrine: 2.1.0
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.4(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
+      eslint-module-utils: 2.7.4(@typescript-eslint/parser@6.0.0)(eslint-import-resolver-node@0.3.6)(eslint@8.40.0)
       has: 1.0.3
       is-core-module: 2.12.0
       is-glob: 4.0.3
@@ -13560,13 +13572,13 @@ packages:
       eslint: 8.40.0
     dev: false
 
-  /eslint-plugin-unicorn@47.0.0(eslint@8.40.0):
-    resolution: {integrity: sha512-ivB3bKk7fDIeWOUmmMm9o3Ax9zbMz1Bsza/R2qm46ufw4T6VBFBaJIR1uN3pCKSmSXm8/9Nri8V+iUut1NhQGA==}
+  /eslint-plugin-unicorn@48.0.0(eslint@8.40.0):
+    resolution: {integrity: sha512-8fk/v3p1ro34JSVDBEmtOq6EEQRpMR0iTir79q69KnXFZ6DJyPkT3RAi+ZoTqhQMdDSpGh8BGR68ne1sP5cnAA==}
     engines: {node: '>=16'}
     peerDependencies:
-      eslint: '>=8.38.0'
+      eslint: '>=8.44.0'
     dependencies:
-      '@babel/helper-validator-identifier': 7.19.1
+      '@babel/helper-validator-identifier': 7.22.5
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.40.0)
       ci-info: 3.8.0
       clean-regexp: 1.0.0
@@ -13580,8 +13592,7 @@ packages:
       read-pkg-up: 7.0.1
       regexp-tree: 0.1.27
       regjsparser: 0.10.0
-      safe-regex: 2.1.1
-      semver: 7.5.0
+      semver: 7.5.4
       strip-indent: 3.0.0
     dev: false
 
@@ -14328,7 +14339,7 @@ packages:
       memfs: 3.4.12
       minimatch: 3.1.2
       schema-utils: 2.7.0
-      semver: 7.5.0
+      semver: 7.5.4
       tapable: 1.1.3
       typescript: 5.1.3
       webpack: 5.75.0(@swc/core@1.3.3)
@@ -15450,7 +15461,7 @@ packages:
       promzard: 1.0.0
       read: 2.1.0
       read-package-json: 6.0.4
-      semver: 7.5.0
+      semver: 7.5.4
       validate-npm-package-license: 3.0.4
       validate-npm-package-name: 5.0.0
     dev: false
@@ -16456,7 +16467,7 @@ packages:
       npm-package-arg: 10.1.0
       npm-registry-fetch: 14.0.5
       proc-log: 3.0.0
-      semver: 7.5.0
+      semver: 7.5.4
       sigstore: 1.6.0
       ssri: 10.0.4
     transitivePeerDependencies:
@@ -17600,7 +17611,7 @@ packages:
       nopt: 6.0.0
       npmlog: 6.0.2
       rimraf: 3.0.2
-      semver: 7.5.0
+      semver: 7.5.4
       tar: 6.1.14
       which: 2.0.2
     transitivePeerDependencies:
@@ -17642,7 +17653,7 @@ packages:
     dependencies:
       hosted-git-info: 4.1.0
       is-core-module: 2.12.0
-      semver: 7.5.0
+      semver: 7.5.4
       validate-npm-package-license: 3.0.4
     dev: false
 
@@ -17652,7 +17663,7 @@ packages:
     dependencies:
       hosted-git-info: 6.1.1
       is-core-module: 2.12.0
-      semver: 7.5.0
+      semver: 7.5.4
       validate-npm-package-license: 3.0.4
     dev: false
 
@@ -17690,7 +17701,7 @@ packages:
     resolution: {integrity: sha512-dH3GmQL4vsPtld59cOn8uY0iOqRmqKvV+DLGwNXV/Q7MDgD2QfOADWd/mFXcIE5LVhYYGjA3baz6W9JneqnuCw==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
-      semver: 7.5.0
+      semver: 7.5.4
     dev: false
 
   /npm-normalize-package-bin@1.0.1:
@@ -17708,7 +17719,7 @@ packages:
     dependencies:
       hosted-git-info: 6.1.1
       proc-log: 3.0.0
-      semver: 7.5.0
+      semver: 7.5.4
       validate-npm-package-name: 5.0.0
     dev: false
 
@@ -17717,7 +17728,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       hosted-git-info: 3.0.8
-      semver: 7.5.0
+      semver: 7.5.4
       validate-npm-package-name: 3.0.0
     dev: false
 
@@ -17746,7 +17757,7 @@ packages:
       npm-install-checks: 6.1.1
       npm-normalize-package-bin: 3.0.1
       npm-package-arg: 10.1.0
-      semver: 7.5.0
+      semver: 7.5.4
     dev: false
 
   /npm-registry-fetch@14.0.5:
@@ -17772,7 +17783,7 @@ packages:
       fs2: 0.3.9
       memoizee: 0.4.15
       node-fetch: 2.6.9
-      semver: 7.5.0
+      semver: 7.5.4
       type: 2.7.2
       validate-npm-package-name: 3.0.0
     transitivePeerDependencies:
@@ -17825,7 +17836,7 @@ packages:
     dependencies:
       execa: 6.1.0
       parse-package-name: 1.0.0
-      semver: 7.5.0
+      semver: 7.5.4
       validate-npm-package-name: 4.0.0
 
   /nth-check@2.1.1:
@@ -18823,7 +18834,7 @@ packages:
       cosmiconfig: 7.1.0
       klona: 2.0.5
       postcss: 8.4.21
-      semver: 7.5.0
+      semver: 7.5.4
       webpack: 5.75.0(@swc/core@1.3.3)
     dev: false
 
@@ -19408,8 +19419,8 @@ packages:
       fast-diff: 1.2.0
     dev: true
 
-  /prettier-plugin-tailwindcss@0.3.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8):
-    resolution: {integrity: sha512-009/Xqdy7UmkcTBpwlq7jsViDqXAYSOMLDrHAdTMlVZOrKfM2o9Ci7EMWTMZ7SkKBFTG04UM9F9iM2+4i6boDA==}
+  /prettier-plugin-tailwindcss@0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8):
+    resolution: {integrity: sha512-Rna0sDPETA0KNhMHlN8wxKNgfSa8mTl2hPPAGxnbv6tUcHT6J4RQmQ8TLXyhB7Dm5Von4iHloBxTyClYM6wT0A==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': '*'
@@ -19417,7 +19428,7 @@ packages:
       '@shopify/prettier-plugin-liquid': '*'
       '@shufo/prettier-plugin-blade': '*'
       '@trivago/prettier-plugin-sort-imports': '*'
-      prettier: '>=2.2.0'
+      prettier: ^2.2 || ^3.0
       prettier-plugin-astro: '*'
       prettier-plugin-css-order: '*'
       prettier-plugin-import-sort: '*'
@@ -20602,12 +20613,6 @@ packages:
     dependencies:
       ret: 0.2.2
 
-  /safe-regex@2.1.1:
-    resolution: {integrity: sha512-rx+x8AMzKb5Q5lQ95Zoi6ZbJqwCLkqi3XuJXp5P3rT8OEc6sZCJG5AE5dU3lsgRr/F4Bs31jSlVN+j5KrsGu9A==}
-    dependencies:
-      regexp-tree: 0.1.27
-    dev: false
-
   /safe-stable-stringify@2.4.2:
     resolution: {integrity: sha512-gMxvPJYhP0O9n2pvcfYfIuYgbledAOJFcqRThtPRmjscaipiwcwPPKLytpVzMkG2HAN87Qmo2d4PtGiri1dSLA==}
     engines: {node: '>=10'}
@@ -20757,6 +20762,13 @@ packages:
 
   /semver@7.5.0:
     resolution: {integrity: sha512-+XC0AD/R7Q2mPSRuy2Id0+CGTZ98+8f+KvwirxOKIEyid+XSx6HbC63p+O4IndTHuX5Z+JxQ0TghCkO5Cg/2HA==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dependencies:
+      lru-cache: 6.0.0
+
+  /semver@7.5.4:
+    resolution: {integrity: sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
@@ -21670,7 +21682,7 @@ packages:
       mime: 2.6.0
       qs: 6.11.0
       readable-stream: 3.6.2
-      semver: 7.5.0
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -22673,7 +22685,7 @@ packages:
       is-yarn-global: 0.3.0
       latest-version: 5.1.0
       pupa: 2.1.1
-      semver: 7.5.0
+      semver: 7.5.4
       semver-diff: 3.1.1
       xdg-basedir: 4.0.0
     dev: false
