@@ -22,6 +22,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
    * Internal JSON-RPC error.
    */
   INTERNAL_SERVER_ERROR: -32603,
+  NOT_IMPLEMENTED: -32603,
   // Implementation specific errors
   UNAUTHORIZED: -32001, // 401
   FORBIDDEN: -32003, // 403
