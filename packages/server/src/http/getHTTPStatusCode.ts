@@ -57,7 +57,5 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
 }
 
 export function getHTTPStatusCodeFromError(error: TRPCError) {
-  const { code } = error;
-
-  return getStatusCodeFromKey(code);
+  return getStatusCodeFromKey(error.code);
 }
