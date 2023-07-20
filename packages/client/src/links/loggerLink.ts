@@ -195,6 +195,9 @@ const defaultLogger =
     c[fn].apply(null, [parts.join(' ')].concat(args));
   };
 
+/**
+ * @see https://trpc.io/docs/client/links/loggerLink
+ */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink<TRouter> {

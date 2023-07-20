@@ -2,8 +2,11 @@
 // We're not actually exporting this link
 import { AnyRouter } from '@trpc/server';
 import { Observable, observable, share } from '@trpc/server/observable';
-import { TRPCLink } from './types';
+import { TRPCLink } from '../types';
 
+/**
+ * @internal used for testing
+ */
 export function dedupeLink<
   TRouter extends AnyRouter = AnyRouter,
 >(): TRPCLink<TRouter> {
