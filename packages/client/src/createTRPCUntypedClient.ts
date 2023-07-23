@@ -14,4 +14,7 @@ export type {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
 } from './internals/TRPCUntypedClient';
-export { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+export {
+  /** @internal */
+  TRPCUntypedClient,
+} from './internals/TRPCUntypedClient';
