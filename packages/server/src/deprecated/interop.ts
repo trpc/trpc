@@ -225,7 +225,7 @@ export function migrateRouter<TOldRouter extends AnyOldRouter>(
   const newRouter = createRouterFactory<any>({
     transformer,
     errorFormatter,
-    isDev: process.env.NODE_ENV !== 'production',
+    isDev: process.env['NODE_ENV'] !== 'production',
   })(procedures);
 
   return newRouter as any;
