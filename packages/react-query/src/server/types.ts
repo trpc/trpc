@@ -20,6 +20,7 @@ interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client:
     | inferRouterProxyClient<TRouter>
     | TRPCUntypedClient<TRouter>
+    // FIXME: @deprecated
     | TRPCClient<TRouter>;
 }
 
