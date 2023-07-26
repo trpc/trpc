@@ -95,3 +95,14 @@ test('prefetch faulty query and dehydrate', async () => {
   const data = JSON.stringify(ssg.dehydrate());
   expect(data).toContain('__error');
 });
+
+test('prefetch and dehydrate', async () => {
+  const { opts } = ctx;
+  const ssg = createServerSideHelpers({
+    client: ctx.proxy.createClient(opts.trpcClientOptions),
+  });
+  await ssg.post.byId.prefetch({ id: '1' });
+
+  const data = JSON.stringify(ssg.dehydrate());
+  expect(data).toContain('__result');
+});

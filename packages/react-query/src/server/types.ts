@@ -1,4 +1,8 @@
-import { inferRouterProxyClient } from '@trpc/client';
+import {
+  inferRouterProxyClient,
+  TRPCClient,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import {
   AnyRouter,
   ClientDataTransformerOptions,
@@ -13,7 +17,11 @@ interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
 }
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
-  client: inferRouterProxyClient<TRouter>;
+  client:
+    | inferRouterProxyClient<TRouter>
+    | TRPCUntypedClient<TRouter>
+    // FIXME: @deprecated
+    | TRPCClient<TRouter>;
 }
 
 export type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
