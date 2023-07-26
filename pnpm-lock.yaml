@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -86,8 +82,8 @@ importers:
         specifier: ^1.9.3
         version: 1.9.3(eslint@8.40.0)
       eslint-plugin-unicorn:
-        specifier: 48.0.0
-        version: 48.0.0(eslint@8.40.0)
+        specifier: 48.0.1
+        version: 48.0.1(eslint@8.40.0)
       express:
         specifier: ^4.17.1
         version: 4.18.2
@@ -13677,8 +13673,8 @@ packages:
       eslint: 8.40.0
     dev: false
 
-  /eslint-plugin-unicorn@48.0.0(eslint@8.40.0):
-    resolution: {integrity: sha512-8fk/v3p1ro34JSVDBEmtOq6EEQRpMR0iTir79q69KnXFZ6DJyPkT3RAi+ZoTqhQMdDSpGh8BGR68ne1sP5cnAA==}
+  /eslint-plugin-unicorn@48.0.1(eslint@8.40.0):
+    resolution: {integrity: sha512-FW+4r20myG/DqFcCSzoumaddKBicIPeFnTrifon2mWIzlfyvzwyqZjqVP7m4Cqr/ZYisS2aiLghkUWaPg6vtCw==}
     engines: {node: '>=16'}
     peerDependencies:
       eslint: '>=8.44.0'
@@ -23967,3 +23963,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
