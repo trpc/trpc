@@ -12,6 +12,10 @@ const IndexPage: NextPageWithLayout = () => {
       limit: 5,
     },
     {
+      defaultPageParam: 0,
+      getNextPageParam(lastPage) {
+        return lastPage.nextCursor;
+      },
       getPreviousPageParam(lastPage) {
         return lastPage.nextCursor;
       },
@@ -61,7 +65,7 @@ const IndexPage: NextPageWithLayout = () => {
         <div className="flex flex-col"></div>
         <h2 className="text-3xl font-semibold">
           Latest Posts
-          {postsQuery.status === 'loading' && '(loading)'}
+          {postsQuery.status === 'pending' && '(loading)'}
         </h2>
 
         <button

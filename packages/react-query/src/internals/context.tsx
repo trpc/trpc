@@ -104,7 +104,7 @@ export interface TRPCContextState<
    */
   fetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchInfiniteQueryOptions<
+    opts: TRPCFetchInfiniteQueryOptions<
       unknown,
       TRPCClientError<TRouter>,
       unknown
@@ -123,7 +123,7 @@ export interface TRPCContextState<
    */
   prefetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchInfiniteQueryOptions<
+    opts: TRPCFetchInfiniteQueryOptions<
       unknown,
       TRPCClientError<TRouter>,
       unknown

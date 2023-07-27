@@ -94,7 +94,7 @@ export function createRootHooks<
               return queryClient.fetchInfiniteQuery({
                 ...opts,
                 queryKey,
-                defaultPageParam: opts?.defaultPageParam,
+                defaultPageParam: opts.defaultPageParam,
                 queryFn: ({ pageParam }) => {
                   return client.query(
                     ...getClientArgs(queryKey, opts, pageParam),
@@ -119,7 +119,7 @@ export function createRootHooks<
               return queryClient.prefetchInfiniteQuery({
                 ...opts,
                 queryKey,
-                defaultPageParam: opts?.defaultPageParam,
+                defaultPageParam: opts.defaultPageParam,
                 queryFn: ({ pageParam }) => {
                   return client.query(
                     ...getClientArgs(queryKey, opts, pageParam),
@@ -472,7 +472,7 @@ export function createRootHooks<
         ...query,
         queryKey: query.queryKey,
       })),
-    }) as any;
+    });
   };
 
   const useDehydratedState: UseDehydratedState<TRouter> = (
