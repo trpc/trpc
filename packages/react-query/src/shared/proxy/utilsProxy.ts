@@ -15,7 +15,6 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   DeepPartial,
-  Filter,
   inferProcedureInput,
   ProtectedIntersection,
 } from '@trpc/server';
@@ -210,10 +209,11 @@ type DecorateRouter = {
  */
 export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
   DecorateRouter & {
-    [TKey in keyof Filter<
-      TRouter['_def']['record'],
-      AnyQueryProcedure | AnyRouter
-    >]: TRouter['_def']['record'][TKey] extends AnyRouter
+    [TKey in keyof TRouter['_def']['record'] as TRouter[TKey] extends
+      | AnyQueryProcedure
+      | AnyRouter
+      ? TKey
+      : never]: TRouter['_def']['record'][TKey] extends AnyRouter
       ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
           DecorateRouter
       : // utils only apply to queries

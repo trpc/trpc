@@ -11,11 +11,11 @@ import { inferParser, Parser } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
-  AnyProcedureParams,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   Procedure,
   ProcedureParams,
+  RootParams,
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { AnyRootConfig } from './config';
@@ -31,8 +31,8 @@ import {
 } from './utils';
 
 type CreateProcedureReturnInput<
-  TPrev extends ProcedureParams<AnyProcedureParams>,
-  TNext extends ProcedureParams<AnyProcedureParams>,
+  TPrev extends RootParams,
+  TNext extends ProcedureParams,
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
@@ -48,7 +48,7 @@ type CreateProcedureReturnInput<
  */
 export interface BuildProcedure<
   TType extends ProcedureType,
-  TParams extends ProcedureParams<AnyProcedureParams>,
+  TParams extends ProcedureParams,
   TOutput,
 > extends Procedure<
     TType,
@@ -69,9 +69,7 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-export type ProcedureBuilderDef<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> = {
+export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
   inputs: Parser[];
   output?: Parser;
   meta?: TParams['_meta'];
@@ -84,9 +82,7 @@ export type ProcedureBuilderDef<
 
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
-export interface ProcedureBuilder<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> {
+export interface ProcedureBuilder<TParams extends RootParams> {
   /**
    * Add an input parser to the procedure.
    */
@@ -139,7 +135,7 @@ export interface ProcedureBuilder<
   /**
    * Add a middleware to the procedure.
    */
-  use<$Params extends ProcedureParams<AnyProcedureParams>>(
+  use<$Params extends ProcedureParams>(
     fn:
       | MiddlewareBuilder<TParams, $Params>
       | MiddlewareFunction<TParams, $Params>,

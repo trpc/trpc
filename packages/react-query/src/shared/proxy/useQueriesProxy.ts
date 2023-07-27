@@ -4,7 +4,6 @@ import {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
-  Filter,
   inferProcedureInput,
 } from '@trpc/server';
 import {
@@ -40,10 +39,11 @@ export type UseQueriesProcedureRecord<
   TRouter extends AnyRouter,
   TPath extends string = '',
 > = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
+  [TKey in keyof TRouter['_def']['record'] as TRouter[TKey] extends
+    | AnyQueryProcedure
+    | AnyRouter
+    ? TKey
+    : never]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseQueriesProcedureRecord<
         TRouter['_def']['record'][TKey],
         `${TPath}${TKey & string}.`

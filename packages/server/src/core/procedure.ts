@@ -22,25 +22,32 @@ export interface ProcedureOptions {
 /**
  * @internal
  */
-export type AnyProcedureParams = {
-  _config: AnyRootConfig;
+export interface BuiltProcedureParams {
+  _input_in: unknown;
+  _output_out: unknown;
+}
+
+/**
+ * @internal
+ */
+export interface ProcedureParams extends BuiltProcedureParams {
   _meta: unknown;
   _ctx_out: unknown;
-  _input_in: unknown;
   _input_out: unknown;
   _output_in: unknown;
-  _output_out: unknown;
-};
+}
 
 /**
  * @internal
  */
-export type ProcedureParams<TParams extends AnyProcedureParams> = TParams;
+export interface RootParams extends ProcedureParams {
+  _config: AnyRootConfig;
+}
 
 /**
  * @internal
  */
-export type ProcedureArgs<TParams extends ProcedureParams<AnyProcedureParams>> =
+export type ProcedureArgs<TParams extends ProcedureParams> =
   TParams['_input_in'] extends UnsetMarker
     ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
@@ -53,7 +60,7 @@ export type ProcedureArgs<TParams extends ProcedureParams<AnyProcedureParams>> =
  */
 export interface Procedure<
   TType extends ProcedureType,
-  TParams extends ProcedureParams<AnyProcedureParams>,
+  TParams extends ProcedureParams,
 > {
   _type: TType;
   _def: ProcedureBuilderDef<TParams> & TParams;

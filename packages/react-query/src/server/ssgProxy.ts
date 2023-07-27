@@ -16,7 +16,6 @@ import {
   AnyRouter,
   callProcedure,
   ClientDataTransformerOptions,
-  Filter,
   inferHandlerInput,
   inferRouterContext,
   ProtectedIntersection,
@@ -77,10 +76,11 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
  * @internal
  */
 type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
+  [TKey in keyof TRouter['_def']['record'] as TRouter[TKey] extends
+    | AnyQueryProcedure
+    | AnyRouter
+    ? TKey
+    : never]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
       DecorateProcedure<TRouter['_def']['record'][TKey]>;
