@@ -5,7 +5,11 @@ import {
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
-import { getUntypedClient, inferRouterProxyClient } from '@trpc/client';
+import {
+  getUntypedClient,
+  inferRouterProxyClient,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import {
   AnyProcedure,
   AnyQueryProcedure,
@@ -36,7 +40,7 @@ interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
 }
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
-  client: inferRouterProxyClient<TRouter>;
+  client: inferRouterProxyClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
@@ -116,7 +120,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     }
 
     const { client } = opts;
-    const untypedClient = getUntypedClient(client);
+    const untypedClient =
+      client instanceof TRPCUntypedClient
+        ? client
+        : getUntypedClient(client as any);
 
     return {
       query: (queryOpts) =>
