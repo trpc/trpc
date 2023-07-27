@@ -66,7 +66,7 @@
     "!**/*.test.*"
   ],
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0-beta.2",
     "@trpc/client": "10.35.0",
     "@trpc/react-query": "10.35.0",
     "@trpc/server": "10.35.0",
@@ -78,7 +78,7 @@
     "react-ssr-prepass": "^1.5.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0-beta.2",
     "@trpc/client": "10.35.0",
     "@trpc/react-query": "10.35.0",
     "@trpc/server": "10.35.0",
