@@ -288,10 +288,10 @@ export function createReactQueryUtilsProxy<
 
       const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
         fetch: () => context.fetchQuery(queryKey, ...args),
-        fetchInfinite: () => context.fetchInfiniteQuery(queryKey, ...args),
+        fetchInfinite: () => context.fetchInfiniteQuery(queryKey, args[0]),
         prefetch: () => context.prefetchQuery(queryKey, ...args),
         prefetchInfinite: () =>
-          context.prefetchInfiniteQuery(queryKey, ...args),
+          context.prefetchInfiniteQuery(queryKey, args[0]),
         ensureData: () => context.ensureQueryData(queryKey, ...args),
         invalidate: () => context.invalidateQueries(queryKey, ...args),
         reset: () => context.resetQueries(queryKey, ...args),
