@@ -216,7 +216,10 @@ export function callProcedure(
 ) {
   const { type, path } = opts;
 
-  if (!(path in opts.procedures) || !opts.procedures[path]?._def[type]) {
+  if (
+    !(path in opts.procedures) ||
+    !(opts.procedures[path] as AnyProcedure)._def[type]
+  ) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `No "${type}"-procedure on path "${path}"`,

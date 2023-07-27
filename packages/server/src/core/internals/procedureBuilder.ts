@@ -171,6 +171,9 @@ export interface ProcedureBuilder<TParams extends RootParams> {
    */
   _def: ProcedureBuilderDef<TParams>;
 }
+export type inferProcedureBuilderParams<
+  TProcedureBuilder extends ProcedureBuilder<any>,
+> = TProcedureBuilder extends ProcedureBuilder<infer TParams> ? TParams : never;
 
 type AnyProcedureBuilder = ProcedureBuilder<any>;
 

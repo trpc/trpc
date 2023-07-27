@@ -184,42 +184,28 @@ describe('no custom formatter', () => {
   });
 });
 
-test('types', async () => {
-  const t = initTRPC.create();
-  const appRouter = t.router({
-    post: t.router({
-      byId: t.procedure
-        .input(
-          z.object({
-            // Minimum post id 1
-            id: z.number().min(1),
-          }),
-        )
-        .query(() => {
-          return '__result' as const;
-        }),
-    }),
-  });
+// test('types', async () => {
+//   const t = initTRPC.create();
+//   const appRouter = t.router({
+//     post: t.router({
+//       byId: t.procedure
+//         .input(
+//           z.object({
+//             // Minimum post id 1
+//             id: z.number().min(1),
+//           }),
+//         )
+//         .query(() => {
+//           return '__result' as const;
+//         }),
+//     }),
+//   });
 
-  type TRouterError = TRPCClientErrorLike<typeof appRouter>;
-  type TProcedureError = TRPCClientErrorLike<
-    (typeof appRouter)['post']['byId']
-  >;
+//   type TRouterError = TRPCClientErrorLike<typeof appRouter>;
 
-  type TRouterError__data = TRouterError['data'];
-  //      ^?
-  type TProcedureError__data = TProcedureError['data'];
-  //     ^?
+//   type TRouterError__data = TRouterError['data'];
+//   //      ^?
 
-  expectTypeOf<TRouterError__data>().toMatchTypeOf<TProcedureError__data>();
-
-  type TRouterError__shape = TRouterError['shape'];
-  //      ^?
-  type TProcedureError__shape = TProcedureError['shape'];
-  //     ^?
-
-  expectTypeOf<TRouterError__shape>().toMatchTypeOf<TProcedureError__shape>();
-
-  expectTypeOf<TRouterError>().toEqualTypeOf<TProcedureError>();
-  expectTypeOf<TRouterError>().toMatchTypeOf<TProcedureError>();
-});
+//   type TRouterError__shape = TRouterError['shape'];
+//   //      ^?
+// });

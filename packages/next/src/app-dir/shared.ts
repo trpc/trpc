@@ -23,7 +23,7 @@ export type UseProcedureRecord<TRouter extends AnyRouter> = {
     ? TKey
     : never]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
-    : Resolver<TRouter['_def']['record'][TKey]>;
+    : Resolver<TRouter, TRouter['_def']['record'][TKey]>;
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(
@@ -92,8 +92,11 @@ export interface ActionHandlerDef {
 /**
  * @internal
  */
-export type inferActionDef<TProc extends AnyProcedure> = {
+export type inferActionDef<
+  TRouter extends AnyRouter,
+  TProc extends AnyProcedure,
+> = {
   input: inferHandlerInput<TProc>[0];
   output: TProc['_def']['_output_out'];
-  errorShape: TProc['_def']['_config']['$types']['errorShape'];
+  errorShape: TRouter['_def']['_config']['$types']['errorShape'];
 };

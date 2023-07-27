@@ -481,7 +481,7 @@ function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
     <p>
       Last Export: `{exportStatus.data?.name}` (
       {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
-      {renderAdditionalFields?.(exportStatus.data as any)}
+      {renderAdditionalFields?.(exportStatus.data)}
     </p>
   );
 }

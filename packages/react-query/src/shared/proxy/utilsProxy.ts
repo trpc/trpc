@@ -36,7 +36,10 @@ import {
   QueryType,
 } from '../../internals/getQueryKey';
 
-type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
+type DecorateProcedure<
+  TRouter extends AnyRouter,
+  TProcedure extends AnyQueryProcedure,
+> = {
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
@@ -44,10 +47,10 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      TRPCClientError<TRouter>,
+      inferTransformedProcedureOutput<TRouter, TProcedure>
     >,
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRouter, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
@@ -56,10 +59,12 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      TRPCClientError<TRouter>,
+      inferTransformedProcedureOutput<TRouter, TProcedure>
     >,
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+  ): Promise<
+    InfiniteData<inferTransformedProcedureOutput<TRouter, TProcedure>>
+  >;
 
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchquery
@@ -68,8 +73,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      TRPCClientError<TRouter>,
+      inferTransformedProcedureOutput<TRouter, TProcedure>
     >,
   ): Promise<void>;
 
@@ -80,8 +85,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      TRPCClientError<TRouter>,
+      inferTransformedProcedureOutput<TRouter, TProcedure>
     >,
   ): Promise<void>;
 
@@ -92,10 +97,10 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      TRPCClientError<TRouter>,
+      inferTransformedProcedureOutput<TRouter, TProcedure>
     >,
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRouter, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientinvalidatequeries
@@ -106,7 +111,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
       predicate?: (
         query: Query<
           inferProcedureInput<TProcedure>,
-          TRPCClientError<TProcedure>,
+          TRPCClientError<TRouter>,
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
@@ -154,8 +159,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
      */
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      inferTransformedProcedureOutput<TProcedure> | undefined,
-      inferTransformedProcedureOutput<TProcedure> | undefined
+      inferTransformedProcedureOutput<TRouter, TProcedure> | undefined,
+      inferTransformedProcedureOutput<TRouter, TProcedure> | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -166,8 +171,10 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined,
-      InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined
+      | InfiniteData<inferTransformedProcedureOutput<TRouter, TProcedure>>
+      | undefined,
+      | InfiniteData<inferTransformedProcedureOutput<TRouter, TProcedure>>
+      | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -177,14 +184,16 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
-  ): inferTransformedProcedureOutput<TProcedure> | undefined;
+  ): inferTransformedProcedureOutput<TRouter, TProcedure> | undefined;
 
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
-  ): InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined;
+  ):
+    | InfiniteData<inferTransformedProcedureOutput<TRouter, TProcedure>>
+    | undefined;
 };
 
 /**
@@ -217,10 +226,10 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
       ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
           DecorateRouter
       : // utils only apply to queries
-        DecorateProcedure<TRouter['_def']['record'][TKey]>;
+        DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
   }; // Add functions that should be available at utils root
 
-type AnyDecoratedProcedure = DecorateProcedure<any>;
+type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 export type CreateReactUtilsProxy<
   TRouter extends AnyRouter,

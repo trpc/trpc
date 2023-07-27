@@ -1,5 +1,4 @@
 import {
-  AnyProcedure,
   AnyRouter,
   DefaultErrorShape,
   inferRouterError,
@@ -7,22 +6,18 @@ import {
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
 
-type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
+type ErrorInferrable = AnyRouter | TRPCErrorShape<number>;
 
 type inferErrorShape<TInferrable extends ErrorInferrable> =
-  TInferrable extends AnyRouter
-    ? inferRouterError<TInferrable>
-    : TInferrable extends AnyProcedure
-    ? TInferrable['_def']['_config']['$types']['errorShape']
-    : TInferrable;
+  TInferrable extends AnyRouter ? inferRouterError<TInferrable> : TInferrable;
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
   readonly shape: Maybe<TShape>;
   readonly data: Maybe<TShape['data']>;
 }
-export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
-  TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
+export type TRPCClientErrorLike<TRouter extends ErrorInferrable> =
+  TRPCClientErrorBase<inferErrorShape<TRouter>>;
 
 function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
   return (
@@ -35,13 +30,13 @@ function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
   );
 }
 
-export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
+export class TRPCClientError<TRouter extends ErrorInferrable>
   extends Error
-  implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
+  implements TRPCClientErrorBase<inferErrorShape<TRouter>>
 {
   public readonly cause;
-  public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
-  public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
+  public readonly shape: Maybe<inferErrorShape<TRouter>>;
+  public readonly data: Maybe<inferErrorShape<TRouter>['data']>;
 
   /**
    * Additional meta data about the error
@@ -52,7 +47,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   constructor(
     message: string,
     opts?: {
-      result?: Maybe<inferErrorShape<TRouterOrProcedure>>;
+      result?: Maybe<inferErrorShape<TRouter>>;
       cause?: Error;
       meta?: Record<string, unknown>;
     },

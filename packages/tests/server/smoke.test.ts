@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { TRPCClientError, wsLink } from '@trpc/client/src';
-import { inferProcedureParams, initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src';
 import { observable, Unsubscribable } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
@@ -60,14 +60,13 @@ test('very happy path', async () => {
   });
 
   {
-    type TContext = typeof greeting._def._config.$types.ctx;
+    type TContext = typeof router._def._config.$types.ctx;
     expectTypeOf<TContext>().toMatchTypeOf<{
       foo?: 'bar';
     }>();
   }
   {
-    type TParams = inferProcedureParams<(typeof router)['greeting']>;
-    type TConfig = TParams['_config'];
+    type TConfig = (typeof router)['_def']['_config'];
     type TContext = TConfig['$types']['ctx'];
     type TError = TConfig['$types']['errorShape'];
     expectTypeOf<NonNullable<TContext['foo']>>().toMatchTypeOf<'bar'>();

@@ -46,20 +46,25 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
   CreateTRPCReactQueryClientConfig &
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = {
+type DecorateProcedure<
+  TRouter extends AnyRouter,
+  TProcedure extends AnyProcedure,
+> = {
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   fetch(
     ...args: inferHandlerInput<TProcedure>
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRouter, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   fetchInfinite(
     ...args: inferHandlerInput<TProcedure>
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+  ): Promise<
+    InfiniteData<inferTransformedProcedureOutput<TRouter, TProcedure>>
+  >;
 
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
@@ -83,10 +88,10 @@ type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
     : never]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
+      DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>;
 };
 
-type AnyDecoratedProcedure = DecorateProcedure<any>;
+type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation

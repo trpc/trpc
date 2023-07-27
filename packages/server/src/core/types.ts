@@ -36,9 +36,6 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
 
-export type inferProcedureClientError<TProcedure extends AnyProcedure> =
-  inferProcedureParams<TProcedure>['_config']['errorShape'];
-
 type GetInferenceHelpers<
   TType extends 'input' | 'output',
   TRouter extends AnyRouter,
@@ -49,7 +46,7 @@ type GetInferenceHelpers<
       : TRouterOrProcedure extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<TRouterOrProcedure>
+        : inferTransformedProcedureOutput<TRouter, TRouterOrProcedure>
       : never
     : never;
 };

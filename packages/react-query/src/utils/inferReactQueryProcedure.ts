@@ -18,16 +18,17 @@ import {
  * @internal
  */
 export type InferQueryOptions<
+  TRouter extends AnyRouter,
   TProcedure extends AnyProcedure,
   TPath extends string,
-  TData = inferTransformedProcedureOutput<TProcedure>,
+  TData = inferTransformedProcedureOutput<TRouter, TProcedure>,
 > = Omit<
   UseTRPCQueryOptions<
     TPath,
     inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>,
+    inferTransformedProcedureOutput<TRouter, TProcedure>,
+    inferTransformedProcedureOutput<TRouter, TProcedure>,
+    TRPCClientErrorLike<TRouter>,
     TData
   >,
   'select'
@@ -36,31 +37,36 @@ export type InferQueryOptions<
 /**
  * @internal
  */
-export type InferMutationOptions<TProcedure extends AnyProcedure> =
-  UseTRPCMutationOptions<
-    inferProcedureInput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>
-  >;
+export type InferMutationOptions<
+  TRouter extends AnyRouter,
+  TProcedure extends AnyProcedure,
+> = UseTRPCMutationOptions<
+  inferProcedureInput<TProcedure>,
+  TRPCClientErrorLike<TRouter>,
+  inferTransformedProcedureOutput<TRouter, TProcedure>
+>;
 
 /**
  * @internal
  */
-export type InferQueryResult<TProcedure extends AnyProcedure> =
-  UseTRPCQueryResult<
-    inferTransformedProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>
-  >;
+export type InferQueryResult<
+  TRouter extends AnyRouter,
+  TProcedure extends AnyProcedure,
+> = UseTRPCQueryResult<
+  inferTransformedProcedureOutput<TRouter, TProcedure>,
+  TRPCClientErrorLike<TRouter>
+>;
 
 /**
  * @internal
  */
 export type InferMutationResult<
+  TRouter extends AnyRouter,
   TProcedure extends AnyProcedure,
   TContext = unknown,
 > = UseTRPCMutationResult<
-  inferTransformedProcedureOutput<TProcedure>,
-  TRPCClientErrorLike<TProcedure>,
+  inferTransformedProcedureOutput<TRouter, TProcedure>,
+  TRPCClientErrorLike<TRouter>,
   inferProcedureInput<TProcedure>,
   TContext
 >;
@@ -76,9 +82,13 @@ export type inferReactQueryProcedureOptions<
           `${TPath}${TKey & string}.`
         >
       : TRouterOrProcedure extends AnyMutationProcedure
-      ? InferMutationOptions<TRouterOrProcedure>
+      ? InferMutationOptions<TRouter, TRouterOrProcedure>
       : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<TRouterOrProcedure, `${TPath}${TKey & string}`>
+      ? InferQueryOptions<
+          TRouter,
+          TRouterOrProcedure,
+          `${TPath}${TKey & string}`
+        >
       : never
     : never;
 };

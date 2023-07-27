@@ -5,6 +5,7 @@ import {
   inferProcedureParams,
   initTRPC,
 } from '@trpc/server';
+import { inferProcedureBuilderParams } from '@trpc/server/core/internals/procedureBuilder';
 import { UnsetMarker } from '@trpc/server/core/internals/utils';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
@@ -302,11 +303,16 @@ test('no input', async () => {
     return input;
   });
 
+  type ProcTypeBeforeResolver = inferProcedureBuilderParams<typeof t.procedure>;
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<UnsetMarker>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<UnsetMarker>();
-  expectTypeOf<ProcType['_output_in']>().toBeUndefined();
+  expectTypeOf<
+    ProcTypeBeforeResolver['_input_out']
+  >().toEqualTypeOf<UnsetMarker>();
+  expectTypeOf<
+    ProcTypeBeforeResolver['_output_in']
+  >().toEqualTypeOf<UnsetMarker>();
   expectTypeOf<ProcType['_output_out']>().toBeUndefined();
 
   const router = t.router({
@@ -323,17 +329,19 @@ test('no input', async () => {
 test('zod default() string', async () => {
   const t = initTRPC.create();
 
-  const proc = t.procedure
-    .input(z.string().default('bar'))
-    .query(({ input }) => {
-      expectTypeOf(input).toBeString();
-      return input;
-    });
+  const procWithInput = t.procedure.input(z.string().default('bar'));
+  const proc = procWithInput.query(({ input }) => {
+    expectTypeOf(input).toBeString();
+    return input;
+  });
 
+  type ProcTypeBeforeResolver = inferProcedureBuilderParams<
+    typeof procWithInput
+  >;
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<string>();
+  expectTypeOf<ProcTypeBeforeResolver['_input_out']>().toEqualTypeOf<string>();
 
   const router = t.router({
     proc,
@@ -350,21 +358,25 @@ test('zod default() string', async () => {
 test('zod default() required object', async () => {
   const t = initTRPC.create();
 
-  const proc = t.procedure
-    .input(
-      z.object({
-        foo: z.string().optional().default('foo'),
-      }),
-    )
-    .query(({ input }) => {
-      expectTypeOf(input).toBeObject();
-      return input;
-    });
+  const procWithInput = t.procedure.input(
+    z.object({
+      foo: z.string().optional().default('foo'),
+    }),
+  );
+  const proc = procWithInput.query(({ input }) => {
+    expectTypeOf(input).toBeObject();
+    return input;
+  });
 
+  type ProcTypeBeforeResolver = inferProcedureBuilderParams<
+    typeof procWithInput
+  >;
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<{ foo?: string }>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{ foo: string }>();
+  expectTypeOf<ProcTypeBeforeResolver['_input_out']>().toEqualTypeOf<{
+    foo: string;
+  }>();
 
   const router = t.router({
     proc,
@@ -383,27 +395,29 @@ test('zod default() required object', async () => {
 test('zod default() mixed default object', async () => {
   const t = initTRPC.create();
 
-  const proc = t.procedure
-    .input(
-      z
-        .object({
-          foo: z.string(),
-          bar: z.string().optional().default('barFoo'),
-        })
-        .optional()
-        .default({ foo: 'fooBar' }),
-    )
-    .query(({ input }) => {
-      expectTypeOf(input).toBeObject();
-      return input;
-    });
+  const procWithInput = t.procedure.input(
+    z
+      .object({
+        foo: z.string(),
+        bar: z.string().optional().default('barFoo'),
+      })
+      .optional()
+      .default({ foo: 'fooBar' }),
+  );
+  const proc = procWithInput.query(({ input }) => {
+    expectTypeOf(input).toBeObject();
+    return input;
+  });
 
+  type ProcTypeBeforeResolver = inferProcedureBuilderParams<
+    typeof procWithInput
+  >;
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
     { foo: string; bar?: string } | undefined
   >();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{
+  expectTypeOf<ProcTypeBeforeResolver['_input_out']>().toEqualTypeOf<{
     foo: string;
     bar: string;
   }>();
@@ -436,27 +450,29 @@ test('zod default() mixed default object', async () => {
 test('zod default() defaults within object', async () => {
   const t = initTRPC.create();
 
-  const proc = t.procedure
-    .input(
-      z
-        .object({
-          foo: z.string().optional().default('defaultFoo'),
-          bar: z.string().optional().default('defaultBar'),
-        })
-        .optional()
-        .default({}),
-    )
-    .query(({ input }) => {
-      expectTypeOf(input).toBeObject();
-      return input;
-    });
+  const procWithInput = t.procedure.input(
+    z
+      .object({
+        foo: z.string().optional().default('defaultFoo'),
+        bar: z.string().optional().default('defaultBar'),
+      })
+      .optional()
+      .default({}),
+  );
+  const proc = procWithInput.query(({ input }) => {
+    expectTypeOf(input).toBeObject();
+    return input;
+  });
 
+  type ProcTypeBeforeResolver = inferProcedureBuilderParams<
+    typeof procWithInput
+  >;
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
     { foo?: string; bar?: string } | undefined
   >();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{
+  expectTypeOf<ProcTypeBeforeResolver['_input_out']>().toEqualTypeOf<{
     foo: string;
     bar: string;
   }>();

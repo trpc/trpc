@@ -63,7 +63,10 @@ export interface Procedure<
   TParams extends ProcedureParams,
 > {
   _type: TType;
-  _def: ProcedureBuilderDef<TParams> & TParams;
+  _def: ProcedureBuilderDef<TParams> & {
+    _input_in: TParams['_input_in'];
+    _output_out: TParams['_output_out'];
+  };
   _procedure: true;
   /**
    * @internal

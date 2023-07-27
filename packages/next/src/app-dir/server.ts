@@ -89,9 +89,10 @@ export function experimental_createServerActionHandler<
   const transformer = config.transformer as CombinedDataTransformer;
 
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
-  return function createServerAction<TProc extends AnyProcedure>(
-    proc: TProc,
-  ): TRPCActionHandler<Simplify<inferActionDef<TProc>>> {
+  return function createServerAction<
+    TRouter extends AnyRouter,
+    TProc extends AnyProcedure,
+  >(proc: TProc): TRPCActionHandler<Simplify<inferActionDef<TRouter, TProc>>> {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
@@ -143,7 +144,7 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<inferActionDef<TProc>>;
+    } as TRPCActionHandler<inferActionDef<TRouter, TProc>>;
   };
 }
 
