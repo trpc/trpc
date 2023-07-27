@@ -227,7 +227,7 @@ test('useInfiniteQuery() initialCursor', async () => {
     );
     expect(query1.trpc.path).toBe('post.list');
 
-    if (query1.isLoading || query1.isFetching || !query1.data) {
+    if (query1.isPending || query1.isFetching || !query1.data) {
       return <>...</>;
     }
 

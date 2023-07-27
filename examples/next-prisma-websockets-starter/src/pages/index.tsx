@@ -59,7 +59,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
           await postMessage();
         }}
       >
-        <fieldset disabled={addPost.isLoading} className="min-w-0">
+        <fieldset disabled={addPost.isPending} className="min-w-0">
           <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
             <textarea
               value={message}

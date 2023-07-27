@@ -135,14 +135,14 @@ const IndexPage: NextPageWithLayout = () => {
               name="title"
               type="text"
               placeholder="Title"
-              disabled={addPost.isLoading}
+              disabled={addPost.isPending}
             />
             <textarea
               className="resize-none focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
               id="text"
               name="text"
               placeholder="Text"
-              disabled={addPost.isLoading}
+              disabled={addPost.isPending}
               rows={6}
             />
 
@@ -150,7 +150,7 @@ const IndexPage: NextPageWithLayout = () => {
               <input
                 className="cursor-pointer bg-gray-900 p-2 rounded-md px-16"
                 type="submit"
-                disabled={addPost.isLoading}
+                disabled={addPost.isPending}
               />
               {addPost.error && (
                 <p style={{ color: 'red' }}>{addPost.error.message}</p>
