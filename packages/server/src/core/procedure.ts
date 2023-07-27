@@ -47,7 +47,7 @@ export interface RootParams extends ProcedureParams {
 /**
  * @internal
  */
-export type ProcedureArgs<TParams extends ProcedureParams> =
+export type ProcedureArgs<TParams extends BuiltProcedureParams> =
   TParams['_input_in'] extends UnsetMarker
     ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
