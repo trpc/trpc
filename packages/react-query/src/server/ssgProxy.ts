@@ -175,10 +175,18 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
         fetch: () => queryClient.fetchQuery({ queryKey, queryFn }),
         fetchInfinite: () =>
-          queryClient.fetchInfiniteQuery({ queryKey, queryFn }),
+          queryClient.fetchInfiniteQuery({
+            queryKey,
+            queryFn,
+            defaultPageParam: 0,
+          }),
         prefetch: () => queryClient.prefetchQuery({ queryKey, queryFn }),
         prefetchInfinite: () =>
-          queryClient.prefetchInfiniteQuery({ queryKey, queryFn }),
+          queryClient.prefetchInfiniteQuery({
+            queryKey,
+            queryFn,
+            defaultPageParam: 0,
+          }),
       };
 
       return helperMap[utilName]();

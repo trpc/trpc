@@ -80,5 +80,4 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
   queriesCallback: (
     t: UseQueriesProcedureRecord<TRouter>,
   ) => readonly [...QueriesOptions<TQueryOptions>],
-  context?: UseQueryOptions['context'],
 ) => QueriesResults<TQueryOptions>;

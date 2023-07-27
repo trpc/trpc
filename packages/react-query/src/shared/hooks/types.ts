@@ -55,12 +55,15 @@ export interface UseTRPCQueryOptions<
   TData,
   TError,
   TQueryOptsData = TOutput,
-> extends UseBaseQueryOptions<
-      TOutput,
-      TError,
-      TData,
-      TQueryOptsData,
-      [TPath, TInput]
+> extends Omit<
+      UseBaseQueryOptions<
+        TOutput,
+        TError,
+        TData,
+        TQueryOptsData,
+        [TPath, TInput]
+      >,
+      'queryKey'
     >,
     TRPCUseQueryBaseOptions {}
 
@@ -72,13 +75,9 @@ export interface DefinedUseTRPCQueryOptions<
   TData,
   TError,
   TQueryOptsData = TOutput,
-> extends UseTRPCQueryOptions<
-    TPath,
-    TInput,
-    TOutput,
-    TData,
-    TError,
-    TQueryOptsData
+> extends Omit<
+    UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError, TQueryOptsData>,
+    'queryKey'
   > {
   initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
@@ -94,16 +93,17 @@ export type ExtractCursorType<TInput> = TInput extends { cursor: any }
   : unknown;
 
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
-  extends UseInfiniteQueryOptions<
-      TOutput,
-      TError,
-      TOutput,
-      TOutput,
-      [TPath, Omit<TInput, 'cursor'>]
+  extends Omit<
+      UseInfiniteQueryOptions<
+        TOutput,
+        TError,
+        TOutput,
+        TOutput,
+        [TPath, Omit<TInput, 'cursor'>]
+      >,
+      'queryKey'
     >,
-    TRPCUseQueryBaseOptions {
-  initialCursor?: ExtractCursorType<TInput>;
-}
+    TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCMutationOptions<
   TInput,

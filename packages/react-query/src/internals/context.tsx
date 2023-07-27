@@ -6,10 +6,10 @@ import {
   InvalidateOptions,
   InvalidateQueryFilters,
   QueryClient,
+  QueryFilters,
   RefetchOptions,
   RefetchQueryFilters,
   ResetOptions,
-  ResetQueryFilters,
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
@@ -27,9 +27,8 @@ export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
   extends FetchQueryOptions<TInput, TError, TOutput>,
     TRPCRequestOptions {}
 
-export interface TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput>
-  extends FetchInfiniteQueryOptions<TInput, TError, TOutput>,
-    TRPCRequestOptions {}
+export type TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput> =
+  FetchInfiniteQueryOptions<TInput, TError, TOutput> & TRPCRequestOptions;
 
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
@@ -153,7 +152,7 @@ export interface TRPCContextState<
    */
   resetQueries: (
     queryKey: TRPCQueryKey,
-    filters?: ResetQueryFilters,
+    filters?: QueryFilters,
     options?: ResetOptions,
   ) => Promise<void>;
 

@@ -4,7 +4,7 @@ import {
   useQueries as __useQueries,
   useQuery as __useQuery,
   DehydratedState,
-  hashQueryKey,
+  hashKey,
   useQueryClient,
 } from '@tanstack/react-query';
 import { createTRPCUntypedClient, TRPCClientErrorLike } from '@trpc/client';
@@ -58,7 +58,6 @@ export function createRootHooks<
 
   const Context = (config?.context ??
     TRPCContext) as React.Context<ProviderContext>;
-  const ReactQueryContext = config?.reactQueryContext;
 
   const createClient: CreateClient<TRouter> = (opts) => {
     return createTRPCUntypedClient(opts);
@@ -95,6 +94,7 @@ export function createRootHooks<
               return queryClient.fetchInfiniteQuery({
                 ...opts,
                 queryKey,
+                defaultPageParam: opts?.defaultPageParam,
                 queryFn: ({ pageParam }) => {
                   return client.query(
                     ...getClientArgs(queryKey, opts, pageParam),
@@ -119,6 +119,7 @@ export function createRootHooks<
               return queryClient.prefetchInfiniteQuery({
                 ...opts,
                 queryKey,
+                defaultPageParam: opts?.defaultPageParam,
                 queryFn: ({ pageParam }) => {
                   return client.query(
                     ...getClientArgs(queryKey, opts, pageParam),
@@ -231,7 +232,7 @@ export function createRootHooks<
     const { queryClient, ssrState } = useContext();
     return ssrState &&
       ssrState !== 'mounted' &&
-      queryClient.getQueryCache().find(queryKey)?.state.status === 'error'
+      queryClient.getQueryCache().find({ queryKey })?.state.status === 'error'
       ? {
           retryOnMount: false,
           ...opts,
@@ -261,7 +262,7 @@ export function createRootHooks<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       (opts?.enabled ?? defaultOpts?.enabled) !== false &&
-      !queryClient.getQueryCache().find(queryKey)
+      !queryClient.getQueryCache().find({ queryKey })
     ) {
       void prefetchQuery(queryKey, opts as any);
     }
@@ -289,7 +290,6 @@ export function createRootHooks<
 
         return client.query(...getClientArgs(queryKey, actualOpts));
       },
-      context: ReactQueryContext,
     }) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
@@ -304,7 +304,7 @@ export function createRootHooks<
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client } = useContext();
-    const queryClient = useQueryClient({ context: ReactQueryContext });
+    const queryClient = useQueryClient();
 
     const mutationKey = [path];
     const defaultOpts = queryClient.getMutationDefaults(mutationKey);
@@ -315,7 +315,6 @@ export function createRootHooks<
       mutationFn: (input) => {
         return client.mutation(...getClientArgs([path, { input }], opts));
       },
-      context: ReactQueryContext,
       onSuccess(...args) {
         const originalFn = () =>
           opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
@@ -342,7 +341,7 @@ export function createRootHooks<
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
     const enabled = opts?.enabled ?? true;
-    const queryKey = hashQueryKey(getQueryKeyInternal(path, input, 'any'));
+    const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 
     const optsRef = useRef<typeof opts>(opts);
@@ -385,7 +384,7 @@ export function createRootHooks<
   function useInfiniteQuery(
     path: string[],
     input: unknown,
-    opts?: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
+    opts: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
   ): UseTRPCInfiniteQueryResult<unknown, TError> {
     const {
       client,
@@ -403,7 +402,7 @@ export function createRootHooks<
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       (opts?.enabled ?? defaultOpts?.enabled) !== false &&
-      !queryClient.getQueryCache().find(queryKey)
+      !queryClient.getQueryCache().find({ queryKey })
     ) {
       void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts } as any);
     }
@@ -419,6 +418,8 @@ export function createRootHooks<
     const hook = __useInfiniteQuery({
       ...ssrOpts,
       queryKey: queryKey as any,
+      defaultPageParam: opts.defaultPageParam,
+      getPreviousPageParam: opts.getPreviousPageParam,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
           ...ssrOpts,
@@ -434,11 +435,10 @@ export function createRootHooks<
           ...getClientArgs(
             queryKey,
             actualOpts,
-            queryFunctionContext.pageParam ?? opts?.initialCursor,
+            queryFunctionContext.pageParam ?? opts.defaultPageParam,
           ),
         );
       },
-      context: ReactQueryContext,
     }) as UseTRPCInfiniteQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
@@ -448,7 +448,7 @@ export function createRootHooks<
     return hook;
   }
 
-  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback, context) => {
+  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
     const proxy = createUseQueriesProxy(client);
@@ -460,7 +460,7 @@ export function createRootHooks<
         const queryOption = query as TRPCQueryOptions<any, any, any, any>;
         if (
           queryOption.trpc?.ssr !== false &&
-          !queryClient.getQueryCache().find(queryOption.queryKey)
+          !queryClient.getQueryCache().find({ queryKey: queryOption.queryKey })
         ) {
           void prefetchQuery(query.queryKey, queryOption as any);
         }
@@ -472,7 +472,6 @@ export function createRootHooks<
         ...query,
         queryKey: query.queryKey,
       })),
-      context,
     }) as any;
   };
 

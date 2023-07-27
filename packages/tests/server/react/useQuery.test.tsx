@@ -2,7 +2,6 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React, { Suspense, useEffect } from 'react';
@@ -166,6 +165,7 @@ test('useInfiniteQuery()', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
+        defaultPageParam: 0,
       },
     );
     expect(query1.trpc.path).toBe('post.list');
@@ -222,7 +222,7 @@ test('useInfiniteQuery() initialCursor', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
-        initialCursor: 2,
+        defaultPageParam: 2,
       },
     );
     expect(query1.trpc.path).toBe('post.list');
@@ -279,6 +279,7 @@ test('useSuspenseInfiniteQuery()', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
+        defaultPageParam: 0,
       },
     );
     expect(query1.trpc.path).toBe('post.list');
@@ -325,35 +326,4 @@ test('useSuspenseInfiniteQuery()', async () => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });
-});
-
-test('useQuery options inference', () => {
-  const { appRouter, proxy, App } = ctx;
-
-  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
-  type Options = ReactQueryProcedure['post']['byIdWithSerializable'];
-
-  function MyComponent() {
-    const options: Options = {};
-    proxy.post.byIdWithSerializable.useQuery(
-      { id: '1' },
-      {
-        ...options,
-        onSuccess: (data) => {
-          expectTypeOf(data).toMatchTypeOf<{
-            id: number;
-            date: string;
-          }>();
-        },
-      },
-    );
-
-    return <></>;
-  }
-
-  render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
 });
