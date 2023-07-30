@@ -133,6 +133,7 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
+
                 pages: opts?.pages ?? 1,
                 getNextPageParam: (...args) =>
                   opts?.getNextPageParam?.(...args) ?? undefined,
@@ -460,8 +461,6 @@ export function createRootHooks<
         defaultPageParam: opts.initialCursor,
         getNextPageParam: (...args) =>
           opts.getNextPageParam(...args) ?? undefined,
-        getPreviousPageParam: (...args) =>
-          opts.getPreviousPageParam?.(...args) ?? undefined,
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
