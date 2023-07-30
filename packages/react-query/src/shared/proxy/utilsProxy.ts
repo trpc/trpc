@@ -44,9 +44,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>,
+      TRPCClientError<TProcedure>
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
@@ -56,9 +55,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>,
+      TRPCClientError<TProcedure>
     >,
   ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
 
@@ -68,9 +66,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   prefetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>,
+      TRPCClientError<TProcedure>
     >,
   ): Promise<void>;
 
@@ -80,9 +77,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>,
+      TRPCClientError<TProcedure>
     >,
   ): Promise<void>;
 
@@ -92,9 +88,8 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   ensureData(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>
+      inferTransformedProcedureOutput<TProcedure>,
+      TRPCClientError<TProcedure>
     >,
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 

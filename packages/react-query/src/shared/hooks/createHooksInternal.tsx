@@ -99,6 +99,9 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
+                pages: opts?.pages ?? 1,
+                getNextPageParam: opts?.getNextPageParam ?? (() => undefined),
+                defaultPageParam: opts?.defaultPageParam,
               });
             },
             [client, queryClient],
@@ -123,6 +126,9 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
+                pages: opts?.pages ?? 1,
+                getNextPageParam: opts?.getNextPageParam ?? (() => undefined),
+                defaultPageParam: opts?.defaultPageParam,
               });
             },
             [client, queryClient],

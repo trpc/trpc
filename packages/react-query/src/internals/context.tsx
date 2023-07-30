@@ -23,12 +23,13 @@ import type { AnyRouter } from '@trpc/server';
 import { createContext } from 'react';
 import { TRPCQueryKey } from './getQueryKey';
 
-export interface TRPCFetchQueryOptions<TInput, TError, TOutput>
-  extends FetchQueryOptions<TInput, TError, TOutput>,
+export interface TRPCFetchQueryOptions<TOutput, TError>
+  extends Omit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
     TRPCRequestOptions {}
 
-export type TRPCFetchInfiniteQueryOptions<TInput, TError, TOutput> =
-  FetchInfiniteQueryOptions<TInput, TError, TOutput> & TRPCRequestOptions;
+export interface TRPCFetchInfiniteQueryOptions<TOutput, TError>
+  extends Omit<FetchInfiniteQueryOptions<TOutput, TError>, 'queryKey'>,
+    TRPCRequestOptions {}
 
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
@@ -97,25 +98,21 @@ export interface TRPCContextState<
    */
   fetchQuery: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>>,
   ) => Promise<unknown>;
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
-    opts: TRPCFetchInfiniteQueryOptions<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown
-    >,
+    opts?: TRPCFetchInfiniteQueryOptions<unknown, TRPCClientError<TRouter>>,
   ) => Promise<InfiniteData<unknown>>;
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
   prefetchQuery: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>>,
   ) => Promise<void>;
 
   /**
@@ -123,11 +120,7 @@ export interface TRPCContextState<
    */
   prefetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
-    opts: TRPCFetchInfiniteQueryOptions<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown
-    >,
+    opts?: TRPCFetchInfiniteQueryOptions<unknown, TRPCClientError<TRouter>>,
   ) => Promise<void>;
 
   /**
@@ -135,7 +128,7 @@ export interface TRPCContextState<
    */
   ensureQueryData: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>, unknown>,
+    opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>>,
   ) => Promise<unknown>;
 
   /**

@@ -27,7 +27,7 @@ describe('Infinite Query', () => {
         },
         {
           defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
+          getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         },
       );
 
@@ -129,7 +129,7 @@ describe('Infinite Query', () => {
         },
         {
           defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
+          getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         },
       );
 
@@ -167,7 +167,15 @@ describe('Infinite Query', () => {
             <button
               data-testid="prefetch"
               onClick={() =>
-                trpcContext.paginatedPosts.prefetchInfinite({ limit: 1 })
+                trpcContext.paginatedPosts.prefetchInfinite(
+                  { limit: 1 },
+                  {
+                    pages: 3,
+                    defaultPageParam: 0,
+                    getNextPageParam: (lastPage) =>
+                      lastPage.nextCursor ?? undefined,
+                  },
+                )
               }
             >
               Prefetch
@@ -260,7 +268,7 @@ describe('Infinite Query', () => {
         },
         {
           defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
+          getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         },
       );
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
@@ -297,7 +305,15 @@ describe('Infinite Query', () => {
             <button
               data-testid="fetch"
               onClick={() =>
-                trpcContext.paginatedPosts.fetchInfinite({ limit: 1 })
+                trpcContext.paginatedPosts.fetchInfinite(
+                  { limit: 1 },
+                  {
+                    pages: 3,
+                    defaultPageParam: 0,
+                    getNextPageParam: (lastPage) =>
+                      lastPage.nextCursor ?? undefined,
+                  },
+                )
               }
             >
               Fetch
