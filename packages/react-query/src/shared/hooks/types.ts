@@ -1,6 +1,7 @@
 import {
   DefinedUseQueryResult,
   DehydratedState,
+  InfiniteData,
   InfiniteQueryObserverSuccessResult,
   InitialDataFunction,
   QueryObserverSuccessResult,
@@ -162,13 +163,14 @@ export type UseTRPCQuerySuccessResult<TData, TError> =
  * @internal
  */
 export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
-  UseInfiniteQueryResult<TData, TError>;
+  UseInfiniteQueryResult<InfiniteData<TData>, TError>;
 
 /**
  * @internal
  */
 export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
-  InfiniteQueryObserverSuccessResult<TData, TError> & TRPCHookResult;
+  InfiniteQueryObserverSuccessResult<InfiniteData<TData>, TError> &
+    TRPCHookResult;
 
 /**
  * @internal

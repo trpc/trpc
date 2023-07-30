@@ -312,7 +312,8 @@ test('invalidate procedure for both query and infinite', async () => {
       { cursor: undefined },
       {
         defaultPageParam: 0,
-        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        // We don't care about the cursor here
+        getNextPageParam: () => 1,
       },
       // { onSuccess: invalidateInfiniteSpy },
     );
@@ -513,7 +514,8 @@ test('setInfiniteData', async () => {
       {
         enabled: false,
         defaultPageParam: 0,
-        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        // We don't care about the cursor here
+        getNextPageParam: () => 1,
       },
     );
 
@@ -687,7 +689,8 @@ describe('cancel', () => {
         { cursor: '0' },
         {
           defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
+          // We don't care about the cursor here
+          getNextPageParam: () => 1,
         },
       );
       const utils = proxy.useContext();
