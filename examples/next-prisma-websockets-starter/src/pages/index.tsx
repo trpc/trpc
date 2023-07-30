@@ -107,6 +107,8 @@ export default function IndexPage() {
   const postsQuery = trpc.post.infinite.useInfiniteQuery(
     {},
     {
+      defaultPageParam: 0,
+      getNextPageParam: (d) => d.prevCursor,
       getPreviousPageParam: (d) => d.prevCursor,
     },
   );
