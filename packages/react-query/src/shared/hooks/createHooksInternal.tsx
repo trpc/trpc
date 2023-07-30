@@ -3,6 +3,8 @@ import {
   useMutation as __useMutation,
   useQueries as __useQueries,
   useQuery as __useQuery,
+  useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
+  useSuspenseQuery as __useSuspenseQuery,
   DehydratedState,
   hashKey,
   useQueryClient,
@@ -39,6 +41,10 @@ import {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
+  UseTRPCSuspenseInfiniteQueryOptions,
+  UseTRPCSuspenseInfiniteQueryResult,
+  UseTRPCSuspenseQueryOptions,
+  UseTRPCSuspenseQueryResult,
 } from './types';
 
 /**
@@ -306,6 +312,27 @@ export function createRootHooks<
     return hook;
   }
 
+  function useSuspenseQuery(
+    path: string[],
+    input: unknown,
+    opts?: UseTRPCSuspenseQueryOptions<
+      unknown,
+      unknown,
+      unknown,
+      unknown,
+      TError
+    >,
+  ): UseTRPCSuspenseQueryResult<unknown, TError> {
+    const hookResult = useQuery(path, input, {
+      ...opts,
+      suspense: true,
+      enabled: true,
+      throwOnError: true,
+    });
+
+    return [hookResult.data, hookResult as any];
+  }
+
   function useMutation(
     path: string[],
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
@@ -459,6 +486,27 @@ export function createRootHooks<
     return hook;
   }
 
+  function useSuspenseInfiniteQuery(
+    path: string[],
+    input: unknown,
+    opts: UseTRPCSuspenseInfiniteQueryOptions<
+      unknown,
+      unknown,
+      unknown,
+      TError
+    >,
+  ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError> {
+    const hookResult = useInfiniteQuery(path, input, {
+      ...opts,
+      suspense: true,
+      enabled: true,
+      throwOnError: true,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return [hookResult.data!, hookResult as any];
+  }
+
   const useQueries: TRPCUseQueries<TRouter> = (queriesCallback) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
@@ -508,11 +556,13 @@ export function createRootHooks<
     createClient,
     useContext,
     useQuery,
+    useSuspenseQuery,
     useQueries,
     useMutation,
     useSubscription,
     useDehydratedState,
     useInfiniteQuery,
+    useSuspenseInfiniteQuery,
   };
 }
 /* istanbul ignore next */

@@ -12,6 +12,10 @@ import {
   UseMutationOptions,
   UseMutationResult,
   UseQueryResult,
+  UseSuspenseInfiniteQueryOptions,
+  UseSuspenseInfiniteQueryResult,
+  UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
@@ -68,6 +72,18 @@ export interface UseTRPCQueryOptions<
     >,
     TRPCUseQueryBaseOptions {}
 
+export interface UseTRPCSuspenseQueryOptions<
+  TPath,
+  TInput,
+  TOutput,
+  TData,
+  TError,
+> extends Omit<
+      UseSuspenseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
+      'queryKey'
+    >,
+    TRPCUseQueryBaseOptions {}
+
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TPath,
@@ -96,6 +112,23 @@ export type ExtractCursorType<TInput> = TInput extends { cursor: any }
 export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   extends Omit<
       UseInfiniteQueryOptions<
+        TOutput,
+        TError,
+        TOutput,
+        TOutput,
+        [TPath, Omit<TInput, 'cursor'>]
+      >,
+      'queryKey'
+    >,
+    TRPCUseQueryBaseOptions {}
+
+export interface UseTRPCSuspenseInfiniteQueryOptions<
+  TPath,
+  TInput,
+  TOutput,
+  TError,
+> extends Omit<
+      UseSuspenseInfiniteQueryOptions<
         TOutput,
         TError,
         TOutput,
@@ -162,6 +195,14 @@ export type UseTRPCQuerySuccessResult<TData, TError> =
 /**
  * @internal
  */
+export type UseTRPCSuspenseQueryResult<TData, TError> = [
+  TData,
+  UseSuspenseQueryResult<TData, TError> & TRPCHookResult,
+];
+
+/**
+ * @internal
+ */
 export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
   UseInfiniteQueryResult<InfiniteData<TData>, TError>;
 
@@ -171,6 +212,14 @@ export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
 export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
   InfiniteQueryObserverSuccessResult<InfiniteData<TData>, TError> &
     TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type UseTRPCSuspenseInfiniteQueryResult<TData, TError> = [
+  InfiniteData<TData>,
+  UseSuspenseInfiniteQueryResult<InfiniteData<TData>, TError> & TRPCHookResult,
+];
 
 /**
  * @internal

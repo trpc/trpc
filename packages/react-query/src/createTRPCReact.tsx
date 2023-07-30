@@ -1,4 +1,3 @@
-import { InfiniteData } from '@tanstack/react-query';
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyMutationProcedure,
@@ -34,13 +33,15 @@ import {
   UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
-  UseTRPCInfiniteQuerySuccessResult,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
-  UseTRPCQuerySuccessResult,
   UseTRPCSubscriptionOptions,
+  UseTRPCSuspenseInfiniteQueryOptions,
+  UseTRPCSuspenseInfiniteQueryResult,
+  UseTRPCSuspenseQueryOptions,
+  UseTRPCSuspenseQueryResult,
 } from './shared/hooks/types';
 import { CreateTRPCReactOptions } from './shared/types';
 
@@ -112,22 +113,16 @@ export type DecorateProcedure<
            */
           useSuspenseInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            opts: Omit<
-              UseTRPCInfiniteQueryOptions<
-                TPath,
-                inferProcedureInput<TProcedure>,
-                inferTransformedProcedureOutput<TProcedure>,
-                TRPCClientErrorLike<TProcedure>
-              >,
-              'enabled' | 'suspense'
-            >,
-          ) => [
-            InfiniteData<inferTransformedProcedureOutput<TProcedure>>,
-            UseTRPCInfiniteQuerySuccessResult<
+            opts: UseTRPCSuspenseInfiniteQueryOptions<
+              TPath,
+              inferProcedureInput<TProcedure>,
               inferTransformedProcedureOutput<TProcedure>,
               TRPCClientErrorLike<TProcedure>
             >,
-          ];
+          ) => UseTRPCSuspenseInfiniteQueryResult<
+            inferTransformedProcedureOutput<TProcedure>,
+            TRPCClientErrorLike<TProcedure>
+          >;
         }
       : object) & {
       /**
@@ -142,20 +137,14 @@ export type DecorateProcedure<
         TData = TQueryFnData,
       >(
         input: inferProcedureInput<TProcedure>,
-        opts?: Omit<
-          UseTRPCQueryOptions<
-            TPath,
-            inferProcedureInput<TProcedure>,
-            TQueryFnData,
-            TData,
-            TRPCClientErrorLike<TProcedure>
-          >,
-          'enabled' | 'suspense'
+        opts?: UseTRPCSuspenseQueryOptions<
+          TPath,
+          inferProcedureInput<TProcedure>,
+          TQueryFnData,
+          TData,
+          TRPCClientErrorLike<TProcedure>
         >,
-      ) => [
-        TData,
-        UseTRPCQuerySuccessResult<TData, TRPCClientErrorLike<TProcedure>>,
-      ];
+      ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TProcedure>>;
     }
   : TProcedure extends AnyMutationProcedure
   ? {

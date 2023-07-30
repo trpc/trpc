@@ -76,12 +76,6 @@ describe('placeholderData', async () => {
           barbaz: null,
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
-        placeholderData: {
-          // @ts-expect-error can't return data that doesn't match the output type
-          barbaz: null,
-        },
-      });
     });
 
     ignoreErrors(() => {
@@ -108,24 +102,10 @@ describe('placeholderData', async () => {
           };
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
-        placeholderData() {
-          return {
-            posts: [],
-            foo: 'bar',
-          };
-        },
-      });
     });
 
     ignoreErrors(() => {
       proxy.post.list.useQuery(undefined, {
-        placeholderData: {
-          posts: [],
-          foo: 'bar',
-        },
-      });
-      proxy.post.list.useSuspenseQuery(undefined, {
         placeholderData: {
           posts: [],
           foo: 'bar',
