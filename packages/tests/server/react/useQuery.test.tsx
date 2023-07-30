@@ -165,7 +165,6 @@ test('useInfiniteQuery()', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
-        defaultPageParam: 0,
       },
     );
     expect(query1.trpc.path).toBe('post.list');
@@ -222,7 +221,7 @@ test('useInfiniteQuery() initialCursor', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
-        defaultPageParam: 2,
+        initialCursor: 2,
       },
     );
     expect(query1.trpc.path).toBe('post.list');
@@ -279,7 +278,6 @@ test('useSuspenseInfiniteQuery()', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
-        defaultPageParam: 0,
       },
     );
     expect(query1.trpc.path).toBe('post.list');

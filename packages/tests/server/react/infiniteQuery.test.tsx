@@ -26,8 +26,7 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
-          defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
 
@@ -128,8 +127,7 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
-          defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
 
@@ -171,9 +169,7 @@ describe('Infinite Query', () => {
                   { limit: 1 },
                   {
                     pages: 3,
-                    defaultPageParam: 0,
-                    getNextPageParam: (lastPage) =>
-                      lastPage.nextCursor ?? undefined,
+                    getNextPageParam: (lastPage) => lastPage.nextCursor,
                   },
                 )
               }
@@ -267,8 +263,7 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
-          defaultPageParam: 0,
-          getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
@@ -309,9 +304,7 @@ describe('Infinite Query', () => {
                   { limit: 1 },
                   {
                     pages: 3,
-                    defaultPageParam: 0,
-                    getNextPageParam: (lastPage) =>
-                      lastPage.nextCursor ?? undefined,
+                    getNextPageParam: (lastPage) => lastPage.nextCursor,
                   },
                 )
               }

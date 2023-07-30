@@ -123,7 +123,6 @@ describe('withTRPC()', () => {
           limit: 10,
         },
         {
-          defaultPageParam: 0,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
@@ -217,7 +216,6 @@ describe('withTRPC()', () => {
             limit: 10,
           },
           {
-            defaultPageParam: 0,
             getNextPageParam: (lastPage) => lastPage.nextCursor,
             trpc: {
               ssr: false,
@@ -392,7 +390,6 @@ describe('withTRPC()', () => {
           const query1 = trpc.paginatedPosts.useInfiniteQuery(
             { limit: 1 },
             {
-              defaultPageParam: 0,
               getNextPageParam: (lastPage) => lastPage.nextCursor,
             },
           );
@@ -400,7 +397,6 @@ describe('withTRPC()', () => {
           const query2 = trpc.paginatedPosts.useInfiniteQuery(
             { limit: 2 },
             {
-              defaultPageParam: 0,
               getNextPageParam: (lastPage) => lastPage.nextCursor,
               enabled: query1.status === 'success',
             },
@@ -447,7 +443,6 @@ describe('withTRPC()', () => {
           const query1 = trpc.paginatedPosts.useInfiniteQuery(
             { limit: 1 },
             {
-              defaultPageParam: 0,
               getNextPageParam: (lastPage) => lastPage.nextCursor,
             },
           );
@@ -455,7 +450,6 @@ describe('withTRPC()', () => {
           const query2 = trpc.paginatedPosts.useInfiniteQuery(
             { limit: query1.data ? query1.data.pageParams.length + 1 : 0 },
             {
-              defaultPageParam: 0,
               getNextPageParam: (lastPage) => lastPage.nextCursor,
               enabled: query1.status === 'success',
             },

@@ -311,9 +311,8 @@ test('invalidate procedure for both query and infinite', async () => {
     const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
       { cursor: undefined },
       {
-        defaultPageParam: 0,
         // We don't care about the cursor here
-        getNextPageParam: () => 1,
+        getNextPageParam: () => undefined,
       },
       // { onSuccess: invalidateInfiniteSpy },
     );
@@ -513,9 +512,9 @@ test('setInfiniteData', async () => {
       {},
       {
         enabled: false,
-        defaultPageParam: 0,
+        initialCursor: undefined,
         // We don't care about the cursor here
-        getNextPageParam: () => 1,
+        getNextPageParam: () => undefined,
       },
     );
 
@@ -688,9 +687,8 @@ describe('cancel', () => {
       const allListInfinite = proxy.post.list.useInfiniteQuery(
         { cursor: '0' },
         {
-          defaultPageParam: 0,
           // We don't care about the cursor here
-          getNextPageParam: () => 1,
+          getNextPageParam: () => undefined,
         },
       );
       const utils = proxy.useContext();

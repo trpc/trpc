@@ -52,7 +52,6 @@ test('with input', async () => {
             pages: [undefined],
           };
         },
-        defaultPageParam: 0,
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
@@ -69,7 +68,6 @@ test('with input', async () => {
             pages: [undefined],
           };
         },
-        defaultPageParam: 0,
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
@@ -85,7 +83,6 @@ test('good placeholderData', () => {
     proxy.post.list.useInfiniteQuery(
       { foo: 'bar' },
       {
-        defaultPageParam: 0,
         placeholderData() {
           return {
             pageParams: [undefined],

@@ -54,7 +54,6 @@ test('with input', async () => {
         foo: 'bar',
       },
       {
-        defaultPageParam: 0,
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
@@ -135,7 +134,6 @@ test('w/o input', async () => {
     const query1 = proxy.post.list.useInfiniteQuery(
       {},
       {
-        defaultPageParam: 0,
         getNextPageParam(lastPage) {
           return lastPage.next;
         },

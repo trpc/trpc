@@ -105,7 +105,7 @@ export interface TRPCQueryOptions<TPath, TInput, TData, TError>
   queryKey: TRPCQueryKey;
 }
 
-export type ExtractCursorType<TInput> = TInput extends { cursor: any }
+export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
@@ -116,11 +116,14 @@ export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
         TError,
         TOutput,
         TOutput,
-        [TPath, Omit<TInput, 'cursor'>]
+        [TPath, Omit<TInput, 'cursor'>],
+        ExtractCursorType<TInput>
       >,
-      'queryKey'
+      'queryKey' | 'defaultPageParam'
     >,
-    TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions {
+  initialCursor?: ExtractCursorType<TInput>;
+}
 
 export interface UseTRPCSuspenseInfiniteQueryOptions<
   TPath,
@@ -133,11 +136,14 @@ export interface UseTRPCSuspenseInfiniteQueryOptions<
         TError,
         TOutput,
         TOutput,
-        [TPath, Omit<TInput, 'cursor'>]
+        [TPath, Omit<TInput, 'cursor'>],
+        ExtractCursorType<TInput>
       >,
-      'queryKey'
+      'queryKey' | 'defaultPageParam'
     >,
-    TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions {
+  initialCursor?: ExtractCursorType<TInput>;
+}
 
 export interface UseTRPCMutationOptions<
   TInput,

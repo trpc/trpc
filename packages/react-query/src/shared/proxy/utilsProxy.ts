@@ -55,6 +55,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>,
       TRPCClientError<TProcedure>
     >,
@@ -77,6 +78,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TProcedure>,
       TRPCClientError<TProcedure>
     >,

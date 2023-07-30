@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { createTRPCReact } from '@trpc/react-query/src';
 import { initTRPC } from '@trpc/server/src';
@@ -37,33 +37,26 @@ test('multiple trpcProviders', async () => {
   const A = (() => {
     return {
       trpc: createTRPCReact<(typeof ctx)['A']['router']>({
-        // No custom context defined -- will use default
+        // default context
       }),
       queryClient: createQueryClient(),
-      reactQueryContext: undefined,
     };
   })();
 
   const B = (() => {
-    const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
       trpc: createTRPCReact<(typeof ctx)['B']['router']>({
         context: createContext(null),
-        reactQueryContext,
       }),
-      reactQueryContext,
       queryClient: createQueryClient(),
     };
   })();
 
   const C = (() => {
-    const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
       trpc: createTRPCReact<(typeof ctx)['C']['router']>({
         context: createContext(null),
-        reactQueryContext,
       }),
-      reactQueryContext,
       queryClient: createQueryClient(),
     };
   })();

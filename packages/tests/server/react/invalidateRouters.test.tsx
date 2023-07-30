@@ -215,7 +215,6 @@ const useSetupAllTestHooks = (proxy: (typeof ctx)['proxy']) => {
           limit: 1,
         },
         {
-          defaultPageParam: 0,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       ),

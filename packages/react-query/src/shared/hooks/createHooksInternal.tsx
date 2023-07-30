@@ -106,8 +106,9 @@ export function createRootHooks<
                   );
                 },
                 pages: opts?.pages ?? 1,
-                getNextPageParam: opts?.getNextPageParam ?? (() => undefined),
-                defaultPageParam: opts?.defaultPageParam,
+                getNextPageParam: (...args) =>
+                  opts?.getNextPageParam?.(...args) ?? undefined,
+                defaultPageParam: opts?.initialCursor ?? undefined,
               });
             },
             [client, queryClient],
@@ -132,9 +133,11 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
+
                 pages: opts?.pages ?? 1,
-                getNextPageParam: opts?.getNextPageParam ?? (() => undefined),
-                defaultPageParam: opts?.defaultPageParam,
+                getNextPageParam: (...args) =>
+                  opts?.getNextPageParam?.(...args) ?? undefined,
+                defaultPageParam: opts?.initialCursor ?? undefined,
               });
             },
             [client, queryClient],
@@ -455,6 +458,9 @@ export function createRootHooks<
     const hook = __useInfiniteQuery(
       {
         ...ssrOpts,
+        defaultPageParam: opts.initialCursor,
+        getNextPageParam: (...args) =>
+          opts.getNextPageParam?.(...args) ?? undefined,
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
@@ -471,7 +477,7 @@ export function createRootHooks<
             ...getClientArgs(
               queryKey,
               actualOpts,
-              queryFunctionContext.pageParam ?? opts.defaultPageParam,
+              queryFunctionContext.pageParam ?? opts.initialCursor,
             ),
           );
         },

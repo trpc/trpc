@@ -21,15 +21,21 @@ import {
 } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { createContext } from 'react';
+import { ExtractCursorType } from '../shared';
 import { TRPCQueryKey } from './getQueryKey';
 
 export interface TRPCFetchQueryOptions<TOutput, TError>
   extends Omit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
     TRPCRequestOptions {}
 
-export interface TRPCFetchInfiniteQueryOptions<TOutput, TError>
-  extends Omit<FetchInfiniteQueryOptions<TOutput, TError>, 'queryKey'>,
-    TRPCRequestOptions {}
+export interface TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError>
+  extends Omit<
+      FetchInfiniteQueryOptions<TOutput, TError>,
+      'queryKey' | 'defaultPageParam'
+    >,
+    TRPCRequestOptions {
+  initialCursor?: ExtractCursorType<TInput>;
+}
 
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
@@ -105,7 +111,11 @@ export interface TRPCContextState<
    */
   fetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchInfiniteQueryOptions<unknown, TRPCClientError<TRouter>>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      unknown,
+      unknown,
+      TRPCClientError<TRouter>
+    >,
   ) => Promise<InfiniteData<unknown>>;
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
@@ -120,7 +130,11 @@ export interface TRPCContextState<
    */
   prefetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
-    opts?: TRPCFetchInfiniteQueryOptions<unknown, TRPCClientError<TRouter>>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      unknown,
+      unknown,
+      TRPCClientError<TRouter>
+    >,
   ) => Promise<void>;
 
   /**

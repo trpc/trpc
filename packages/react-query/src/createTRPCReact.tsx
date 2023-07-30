@@ -98,7 +98,7 @@ export type DecorateProcedure<
            */
           useInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            opts: UseTRPCInfiniteQueryOptions<
+            opts?: UseTRPCInfiniteQueryOptions<
               TPath,
               inferProcedureInput<TProcedure>,
               inferTransformedProcedureOutput<TProcedure>,
@@ -113,7 +113,7 @@ export type DecorateProcedure<
            */
           useSuspenseInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            opts: UseTRPCSuspenseInfiniteQueryOptions<
+            opts?: UseTRPCSuspenseInfiniteQueryOptions<
               TPath,
               inferProcedureInput<TProcedure>,
               inferTransformedProcedureOutput<TProcedure>,

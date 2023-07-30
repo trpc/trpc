@@ -12,7 +12,6 @@ const IndexPage: NextPageWithLayout = () => {
       limit: 5,
     },
     {
-      defaultPageParam: 0,
       getNextPageParam(lastPage) {
         return lastPage.nextCursor;
       },
