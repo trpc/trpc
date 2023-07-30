@@ -52,12 +52,9 @@ test('with input', async () => {
             pages: [undefined],
           };
         },
+        defaultPageParam: 0,
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );
@@ -72,12 +69,9 @@ test('with input', async () => {
             pages: [undefined],
           };
         },
+        defaultPageParam: 0,
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );
@@ -91,6 +85,7 @@ test('good placeholderData', () => {
     proxy.post.list.useInfiniteQuery(
       { foo: 'bar' },
       {
+        defaultPageParam: 0,
         placeholderData() {
           return {
             pageParams: [undefined],
@@ -103,10 +98,6 @@ test('good placeholderData', () => {
         },
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );

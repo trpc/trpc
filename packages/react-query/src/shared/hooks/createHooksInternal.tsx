@@ -419,6 +419,7 @@ export function createRootHooks<
       ...ssrOpts,
       queryKey: queryKey as any,
       defaultPageParam: opts.defaultPageParam,
+      getNextPageParam: opts.getNextPageParam,
       getPreviousPageParam: opts.getPreviousPageParam,
       queryFn: (queryFunctionContext) => {
         const actualOpts = {
@@ -462,7 +463,7 @@ export function createRootHooks<
           queryOption.trpc?.ssr !== false &&
           !queryClient.getQueryCache().find({ queryKey: queryOption.queryKey })
         ) {
-          void prefetchQuery(query.queryKey, queryOption as any);
+          void prefetchQuery(queryOption.queryKey, queryOption as any);
         }
       }
     }
@@ -470,7 +471,7 @@ export function createRootHooks<
     return __useQueries({
       queries: queries.map((query) => ({
         ...query,
-        queryKey: query.queryKey,
+        queryKey: (query as TRPCQueryOptions<any, any, any, any>).queryKey,
       })),
     });
   };

@@ -84,23 +84,14 @@ test('multiple trpcProviders', async () => {
   function App() {
     return (
       <A.trpc.Provider queryClient={A.queryClient} client={ctx.A.client}>
-        <QueryClientProvider
-          client={A.queryClient}
-          context={A.reactQueryContext}
-        >
+        <QueryClientProvider client={A.queryClient}>
           <B.trpc.Provider queryClient={B.queryClient} client={ctx.B.client}>
-            <QueryClientProvider
-              client={B.queryClient}
-              context={B.reactQueryContext}
-            >
+            <QueryClientProvider client={B.queryClient}>
               <C.trpc.Provider
                 queryClient={C.queryClient}
                 client={ctx.C.client}
               >
-                <QueryClientProvider
-                  client={C.queryClient}
-                  context={C.reactQueryContext}
-                >
+                <QueryClientProvider client={C.queryClient}>
                   <MyComponent />
                 </QueryClientProvider>
               </C.trpc.Provider>

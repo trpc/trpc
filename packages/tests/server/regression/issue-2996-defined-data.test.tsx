@@ -36,7 +36,10 @@ test('destructuring data', async () => {
     expectTypeOf<typeof trpcData>().toEqualTypeOf<Post[]>();
 
     // verify tanstack returns the same
-    const { data: rqData = [] } = useQuery(['key'], fetchPosts);
+    const { data: rqData = [] } = useQuery({
+      queryKey: ['key'],
+      queryFn: fetchPosts,
+    });
     expectTypeOf<typeof rqData>().toEqualTypeOf<Post[]>();
 
     if (!trpcData) throw new Error('should not happen');
@@ -67,7 +70,9 @@ test('using `initialData`', async () => {
     expectTypeOf<typeof trpcData>().toEqualTypeOf<Post[]>();
 
     // verify tanstack returns the same
-    const { data: rqData } = useQuery(['key'], fetchPosts, {
+    const { data: rqData } = useQuery({
+      queryKey: ['key'],
+      queryFn: fetchPosts,
       initialData: [],
     });
     expectTypeOf<typeof rqData>().toEqualTypeOf<Post[]>();
@@ -100,7 +105,9 @@ test('using `placeholderData`', async () => {
     expectTypeOf<typeof trpcData>().toEqualTypeOf<Post[] | undefined>();
 
     // verify tanstack returns the same
-    const { data: rqData } = useQuery(['key'], fetchPosts, {
+    const { data: rqData } = useQuery({
+      queryKey: ['key'],
+      queryFn: fetchPosts,
       placeholderData: [],
     });
     expectTypeOf<typeof rqData>().toEqualTypeOf<Post[] | undefined>();

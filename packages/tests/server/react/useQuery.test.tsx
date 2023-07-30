@@ -295,6 +295,13 @@ test('useSuspenseInfiniteQuery()', async () => {
       }>
     >();
 
+    expectTypeOf<typeof data>().toMatchTypeOf<
+      InfiniteData<{
+        items: typeof fixtureData;
+        next?: number | undefined;
+      }>
+    >();
+
     return (
       <>
         <button

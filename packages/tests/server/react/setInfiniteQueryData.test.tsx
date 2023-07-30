@@ -22,6 +22,7 @@ describe('setInfiniteQueryData()', () => {
         {},
         {
           enabled: false,
+          defaultPageParam: 0,
           getNextPageParam: (next) => next.nextCursor,
         },
       );

@@ -210,9 +210,15 @@ const useSetupAllTestHooks = (proxy: (typeof ctx)['proxy']) => {
     }), // Really not a fan of allowing `.` in property names...
     posts: {
       getAll: proxy.posts.getAll.useQuery(),
-      getAllInfinite: proxy.posts.getAllInfinite.useInfiniteQuery({
-        limit: 1,
-      }),
+      getAllInfinite: proxy.posts.getAllInfinite.useInfiniteQuery(
+        {
+          limit: 1,
+        },
+        {
+          defaultPageParam: 0,
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
+        },
+      ),
       byId: {
         '1': proxy.posts.byId.useQuery({ id: '1' }),
         '2': proxy.posts.byId.useQuery({ id: '2' }),

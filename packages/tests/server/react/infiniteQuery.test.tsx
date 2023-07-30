@@ -26,13 +26,14 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
+          defaultPageParam: 0,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
 
       expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -127,13 +128,14 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
+          defaultPageParam: 0,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
 
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -257,12 +259,13 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
+          defaultPageParam: 1,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>

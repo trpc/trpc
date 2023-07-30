@@ -14,7 +14,7 @@ export type UseQueryOptionsForUseQueries<
   TError = unknown,
   TData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
-> = Omit<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'context'>;
+> = Omit<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'queryKey'>;
 
 /**
  * @internal
@@ -25,7 +25,10 @@ export type TrpcQueryOptionsForUseQueries<
   TOutput,
   TData,
   TError,
-> = Omit<UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>, 'context'>;
+> = Omit<
+  UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>,
+  'queryKey'
+>;
 
 /**
  * @internal
