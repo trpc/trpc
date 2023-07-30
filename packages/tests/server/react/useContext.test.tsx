@@ -512,7 +512,6 @@ test('setInfiniteData', async () => {
       {},
       {
         enabled: false,
-        initialCursor: undefined,
         // We don't care about the cursor here
         getNextPageParam: () => undefined,
       },
