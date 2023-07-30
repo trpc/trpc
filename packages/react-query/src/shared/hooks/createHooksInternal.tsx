@@ -274,23 +274,26 @@ export function createRootHooks<
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
-    const hook = __useQuery({
-      ...ssrOpts,
-      queryKey: queryKey as any,
-      queryFn: (queryFunctionContext) => {
-        const actualOpts = {
-          ...ssrOpts,
-          trpc: {
-            ...ssrOpts?.trpc,
-            ...(shouldAbortOnUnmount
-              ? { signal: queryFunctionContext.signal }
-              : {}),
-          },
-        };
+    const hook = __useQuery(
+      {
+        ...ssrOpts,
+        queryKey: queryKey as any,
+        queryFn: (queryFunctionContext) => {
+          const actualOpts = {
+            ...ssrOpts,
+            trpc: {
+              ...ssrOpts?.trpc,
+              ...(shouldAbortOnUnmount
+                ? { signal: queryFunctionContext.signal }
+                : {}),
+            },
+          };
 
-        return client.query(...getClientArgs(queryKey, actualOpts));
+          return client.query(...getClientArgs(queryKey, actualOpts));
+        },
       },
-    }) as UseTRPCQueryResult<unknown, TError>;
+      queryClient,
+    ) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
       path: path.join('.'),
@@ -309,23 +312,26 @@ export function createRootHooks<
     const mutationKey = [path];
     const defaultOpts = queryClient.getMutationDefaults(mutationKey);
 
-    const hook = __useMutation({
-      ...opts,
-      mutationKey: mutationKey,
-      mutationFn: (input) => {
-        return client.mutation(...getClientArgs([path, { input }], opts));
-      },
-      onSuccess(...args) {
-        const originalFn = () =>
-          opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
+    const hook = __useMutation(
+      {
+        ...opts,
+        mutationKey: mutationKey,
+        mutationFn: (input) => {
+          return client.mutation(...getClientArgs([path, { input }], opts));
+        },
+        onSuccess(...args) {
+          const originalFn = () =>
+            opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
-        return mutationSuccessOverride({
-          originalFn,
-          queryClient,
-          meta: opts?.meta ?? defaultOpts?.meta ?? {},
-        });
+          return mutationSuccessOverride({
+            originalFn,
+            queryClient,
+            meta: opts?.meta ?? defaultOpts?.meta ?? {},
+          });
+        },
       },
-    }) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
+      queryClient,
+    ) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
       path: path.join('.'),
@@ -415,32 +421,35 @@ export function createRootHooks<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
-    const hook = __useInfiniteQuery({
-      ...ssrOpts,
-      queryKey: queryKey as any,
-      defaultPageParam: opts.defaultPageParam,
-      getNextPageParam: opts.getNextPageParam,
-      getPreviousPageParam: opts.getPreviousPageParam,
-      queryFn: (queryFunctionContext) => {
-        const actualOpts = {
-          ...ssrOpts,
-          trpc: {
-            ...ssrOpts?.trpc,
-            ...(shouldAbortOnUnmount
-              ? { signal: queryFunctionContext.signal }
-              : {}),
-          },
-        };
+    const hook = __useInfiniteQuery(
+      {
+        ...ssrOpts,
+        queryKey: queryKey as any,
+        defaultPageParam: opts.defaultPageParam,
+        getNextPageParam: opts.getNextPageParam,
+        getPreviousPageParam: opts.getPreviousPageParam,
+        queryFn: (queryFunctionContext) => {
+          const actualOpts = {
+            ...ssrOpts,
+            trpc: {
+              ...ssrOpts?.trpc,
+              ...(shouldAbortOnUnmount
+                ? { signal: queryFunctionContext.signal }
+                : {}),
+            },
+          };
 
-        return client.query(
-          ...getClientArgs(
-            queryKey,
-            actualOpts,
-            queryFunctionContext.pageParam ?? opts.defaultPageParam,
-          ),
-        );
+          return client.query(
+            ...getClientArgs(
+              queryKey,
+              actualOpts,
+              queryFunctionContext.pageParam ?? opts.defaultPageParam,
+            ),
+          );
+        },
       },
-    }) as UseTRPCInfiniteQueryResult<unknown, TError>;
+      queryClient,
+    ) as UseTRPCInfiniteQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
       // REVIEW: What do we want to return here?
@@ -468,12 +477,15 @@ export function createRootHooks<
       }
     }
 
-    return __useQueries({
-      queries: queries.map((query) => ({
-        ...query,
-        queryKey: (query as TRPCQueryOptions<any, any, any, any>).queryKey,
-      })),
-    });
+    return __useQueries(
+      {
+        queries: queries.map((query) => ({
+          ...query,
+          queryKey: (query as TRPCQueryOptions<any, any, any, any>).queryKey,
+        })),
+      },
+      queryClient,
+    );
   };
 
   const useDehydratedState: UseDehydratedState<TRouter> = (
