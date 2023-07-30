@@ -259,7 +259,7 @@ describe('Infinite Query', () => {
           limit: 1,
         },
         {
-          defaultPageParam: 1,
+          defaultPageParam: 0,
           getNextPageParam: (lastPage) => lastPage.nextCursor,
         },
       );
