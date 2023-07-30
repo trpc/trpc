@@ -133,7 +133,6 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
-
                 pages: opts?.pages ?? 1,
                 getNextPageParam: (...args) =>
                   opts?.getNextPageParam?.(...args) ?? undefined,
