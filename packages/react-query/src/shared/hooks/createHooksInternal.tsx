@@ -94,7 +94,6 @@ export function createRootHooks<
               return queryClient.fetchInfiniteQuery({
                 ...opts,
                 queryKey,
-                defaultPageParam: opts.defaultPageParam,
                 queryFn: ({ pageParam }) => {
                   return client.query(
                     ...getClientArgs(queryKey, opts, pageParam),
@@ -119,7 +118,6 @@ export function createRootHooks<
               return queryClient.prefetchInfiniteQuery({
                 ...opts,
                 queryKey,
-                defaultPageParam: opts.defaultPageParam,
                 queryFn: ({ pageParam }) => {
                   return client.query(
                     ...getClientArgs(queryKey, opts, pageParam),
@@ -425,9 +423,6 @@ export function createRootHooks<
       {
         ...ssrOpts,
         queryKey: queryKey as any,
-        defaultPageParam: opts.defaultPageParam,
-        getNextPageParam: opts.getNextPageParam,
-        getPreviousPageParam: opts.getPreviousPageParam,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
             ...ssrOpts,

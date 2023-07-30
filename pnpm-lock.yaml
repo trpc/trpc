@@ -1,8 +1,6 @@
 lockfileVersion: '6.0'
 
 overrides:
-  '@tanstack/react-query': 5.0.0-beta.2
-  '@tanstack/react-query-devtools': 5.0.0-beta.2
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
   '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
   '@examples/trpc-next-prisma-todomvc>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
@@ -147,8 +145,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -217,8 +215,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -272,8 +270,8 @@ importers:
   examples/.test/big-router-declaration:
     dependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -346,8 +344,8 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -664,8 +662,8 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -758,8 +756,8 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../packages/client
@@ -807,8 +805,8 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../packages/client
@@ -853,8 +851,8 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../packages/client
@@ -902,8 +900,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../packages/client
@@ -1008,8 +1006,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../packages/client
@@ -1060,8 +1058,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(@tanstack/react-query@5.0.0-beta.2)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(@tanstack/react-query@5.0.0-beta.7)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1090,8 +1088,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../packages/client
@@ -1136,8 +1134,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(@tanstack/react-query@5.0.0-beta.2)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(@tanstack/react-query@5.0.0-beta.7)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1349,8 +1347,8 @@ importers:
         version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.35.0
         version: link:../client
@@ -1400,8 +1398,8 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.35.0
         version: link:../client
@@ -1448,8 +1446,8 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
         version: 8.10.115
@@ -1559,8 +1557,8 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@tanstack/react-query':
-        specifier: 5.0.0-beta.2
-        version: 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.7
+        version: 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
@@ -2851,7 +2849,7 @@ packages:
       '@babel/traverse': 7.21.5
       '@babel/types': 7.21.5
       convert-source-map: 1.9.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.0
@@ -5143,7 +5141,7 @@ packages:
       '@babel/helper-split-export-declaration': 7.18.6
       '@babel/parser': 7.21.8
       '@babel/types': 7.21.5
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -6815,7 +6813,7 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
       ajv: 6.12.6
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       espree: 9.5.2
       globals: 13.20.0
       ignore: 5.2.4
@@ -7136,7 +7134,7 @@ packages:
     engines: {node: '>=10.10.0'}
     dependencies:
       '@humanwhocodes/object-schema': 1.2.1
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -9130,28 +9128,28 @@ packages:
       defer-to-connect: 2.0.1
     dev: true
 
-  /@tanstack/query-core@5.0.0-beta.0:
-    resolution: {integrity: sha512-VGq/H3PuRoj0shOcg1S5Flv3YD2qNz2ttk8w5xe5AHQE1I8NO9EHSBUxezIpk4dD6M7bQDtwHBMqqU2EwMwyUw==}
+  /@tanstack/query-core@5.0.0-beta.6:
+    resolution: {integrity: sha512-PVVvvIaXAyGE93bxS2ygVSbYsvvNxkO7ADmfxO70lPQFovYGd/ZYg3NnZuAlcYg8ipDy1gTH4yDhp7uXJLtg5g==}
 
   /@tanstack/query-devtools@5.0.0-beta.1:
     resolution: {integrity: sha512-n+UFgL4C/OWNpmVR8v/cj4WIMw5xapGLsZS0qHXgGrpXqNTp2IPWzeU848KHpL7BqBQZeuKDj20BuID+1FsmgA==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.0.0-beta.2(@tanstack/react-query@5.0.0-beta.2)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-K/fO3XOPaVzIhgJL3PKU7trKC3NrRL1OVlGucjEkibFsR0G44IKRg9hLmo6Qu21pcYvgcl0/hshtKy2clfHRwQ==}
+  /@tanstack/react-query-devtools@5.0.0-beta.7(@tanstack/react-query@5.0.0-beta.7)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-9ELUGpVWPi/ICjXNduSbExGY5lpcmxhsaqpPWuvfug9jc+bd4P7bwNfrCRTJYDL0mPuD0+bdzFY6bfXYecSuOg==}
     peerDependencies:
-      '@tanstack/react-query': 5.0.0-beta.2
+      '@tanstack/react-query': 5.0.0-beta.7
       react: ^18.0.0
       react-dom: ^18.0.0
     dependencies:
       '@tanstack/query-devtools': 5.0.0-beta.1
-      '@tanstack/react-query': 5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/react-query': 5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: true
 
-  /@tanstack/react-query@5.0.0-beta.2(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-JdK1HRw20tuwg3GfT3QZTkuS7s2KDa9FeozuJ7jZULlwPczZagouqYmM6+PL0ad6jfCnw8NzmLFtZdlBx6cTmA==}
+  /@tanstack/react-query@5.0.0-beta.7(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-wCpGMDreaaEnu7gdYp5Qu7qcl0ap+oDwaJEauavf53gmUkYXY1NW5xxWrbGDKfLLuhp/k5fi7eGSj0fK/kzV6Q==}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
@@ -9162,7 +9160,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 5.0.0-beta.0
+      '@tanstack/query-core': 5.0.0-beta.6
       client-only: 0.0.1
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -10190,14 +10188,6 @@ packages:
     engines: {node: '>=6.0'}
     dev: true
 
-  /agent-base@6.0.2:
-    resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
-    engines: {node: '>= 6.0.0'}
-    dependencies:
-      debug: 4.3.4
-    transitivePeerDependencies:
-      - supports-color
-
   /agent-base@6.0.2(supports-color@8.1.1):
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
@@ -10575,7 +10565,7 @@ packages:
     resolution: {integrity: sha512-TAlMYvOuwGyLK3PfBb5WKBXZmXz2fVCgv23d6zZFdle/q3gPjmxBaeuC0pY0Dzs5PWMSgfqqEZkrye19GlDTgw==}
     dependencies:
       archy: 1.0.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       fastq: 1.13.0
     transitivePeerDependencies:
       - supports-color
@@ -12356,17 +12346,6 @@ packages:
     dependencies:
       ms: 2.1.2
 
-  /debug@4.3.4:
-    resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
-    engines: {node: '>=6.0'}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-    dependencies:
-      ms: 2.1.2
-
   /debug@4.3.4(supports-color@8.1.1):
     resolution: {integrity: sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==}
     engines: {node: '>=6.0'}
@@ -13640,7 +13619,7 @@ packages:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.3
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       doctrine: 3.0.0
       escape-string-regexp: 4.0.0
       eslint-scope: 7.2.0
@@ -15257,8 +15236,8 @@ packages:
     engines: {node: '>= 6'}
     dependencies:
       '@tootallnate/once': 2.0.0
-      agent-base: 6.0.2
-      debug: 4.3.4
+      agent-base: 6.0.2(supports-color@8.1.1)
+      debug: 4.3.4(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -15304,15 +15283,6 @@ packages:
       quick-lru: 5.1.1
       resolve-alpn: 1.2.1
     dev: true
-
-  /https-proxy-agent@5.0.1:
-    resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
-    engines: {node: '>= 6'}
-    dependencies:
-      agent-base: 6.0.2
-      debug: 4.3.4
-    transitivePeerDependencies:
-      - supports-color
 
   /https-proxy-agent@5.0.1(supports-color@8.1.1):
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
@@ -15966,7 +15936,7 @@ packages:
     resolution: {integrity: sha512-n3s8EwkdFIJCG3BPKBYvskgXGoy88ARzvegkitk60NxRdwltLOTaH7CUiMRXvwYorl0Q712iEjcWB+fK/MrWVw==}
     engines: {node: '>=10'}
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       istanbul-lib-coverage: 3.2.0
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -16126,7 +16096,7 @@ packages:
       form-data: 4.0.0
       html-encoding-sniffer: 3.0.0
       http-proxy-agent: 5.0.0
-      https-proxy-agent: 5.0.1
+      https-proxy-agent: 5.0.1(supports-color@8.1.1)
       is-potential-custom-element-name: 1.0.1
       nwsapi: 2.2.2
       parse5: 7.1.2
@@ -22903,7 +22873,7 @@ packages:
     hasBin: true
     dependencies:
       cac: 6.7.14
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       mlly: 1.3.0
       pathe: 1.1.0
       picocolors: 1.0.0
@@ -23011,7 +22981,7 @@ packages:
       cac: 6.7.14
       chai: 4.3.7
       concordance: 5.0.4
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@8.1.1)
       jsdom: 21.1.0
       local-pkg: 0.4.3
       magic-string: 0.30.0
