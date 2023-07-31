@@ -45,7 +45,10 @@ const ctx = konn()
               cursor: z.number().optional(),
             }),
           )
-          .query((opts) => posts.slice(opts.input.cursor ?? 0)),
+          .query((opts) => ({
+            items: posts.slice(opts.input.cursor ?? 0),
+            time: Date.now(), // make sure each request returns a different value
+          })),
         create: t.procedure
           .input(
             z.object({
@@ -237,9 +240,11 @@ test('invalidate', async () => {
   const stableProxySpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery(undefined, {
-      trpc: { __internal_afterQueryFn: stableProxySpy },
-    });
+    const allPosts = proxy.post.all.useQuery();
+
+    useEffect(() => {
+      if (allPosts.data) stableProxySpy();
+    }, [allPosts.data]);
 
     const createPostMutation = proxy.post.create.useMutation();
 
@@ -301,24 +306,21 @@ test('invalidate procedure for both query and infinite', async () => {
   const invalidateInfiniteSpy = vi.fn();
 
   function MyComponent() {
-    const allPostsList = proxy.post.list.useQuery(
-      { cursor: undefined },
-      {
-        trpc: {
-          __internal_afterQueryFn: invalidateQuerySpy,
-        },
-      },
-    );
+    const allPostsList = proxy.post.list.useQuery({ cursor: undefined });
     const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
       { cursor: undefined },
       {
         // We don't care about the cursor here
         getNextPageParam: () => undefined,
-        trpc: {
-          __internal_afterQueryFn: invalidateInfiniteSpy,
-        },
       },
     );
+
+    useEffect(() => {
+      if (allPostsList.data) invalidateQuerySpy();
+    }, [allPostsList.data]);
+    useEffect(() => {
+      if (allPostsListInfinite.data) invalidateInfiniteSpy();
+    }, [allPostsListInfinite.data]);
 
     const utils = proxy.useContext();
 
@@ -337,7 +339,7 @@ test('invalidate procedure for both query and infinite', async () => {
         </div>
         <div>
           {allPostsListInfinite.data?.pages.map((page) => {
-            return page.map((post) => {
+            return page.items.map((post) => {
               return <div key={post.id}>{post.text}</div>;
             });
           })}
@@ -430,9 +432,11 @@ test('refetch', async () => {
 
   function MyComponent() {
     const utils = proxy.useContext();
-    const allPosts = proxy.post.all.useQuery(undefined, {
-      trpc: { __internal_afterQueryFn: querySuccessSpy },
-    });
+    const allPosts = proxy.post.all.useQuery();
+
+    useEffect(() => {
+      if (allPosts.data) querySuccessSpy();
+    }, [allPosts.data]);
 
     useEffect(() => {
       if (allPosts.data) {
@@ -514,7 +518,7 @@ test('setInfiniteData', async () => {
       {
         enabled: false,
         getNextPageParam: (lastPage, _allPages, lastPageParam) =>
-          lastPage.length === 0 ? undefined : (lastPageParam ?? 0) + 1,
+          lastPage.items?.length === 0 ? undefined : (lastPageParam ?? 0) + 1,
       },
     );
 
@@ -526,7 +530,7 @@ test('setInfiniteData', async () => {
           {},
           {
             pageParams: [0],
-            pages: [[{ id: 0, text: 'setInfiniteData1' }]],
+            pages: [{ items: [{ id: 0, text: 'setInfiniteData1' }], time: 0 }],
           },
         );
       }
@@ -541,12 +545,16 @@ test('setInfiniteData', async () => {
             pageParams: [...data.pageParams, 1],
             pages: [
               ...data.pages,
-              [
-                {
-                  id: 1,
-                  text: 'setInfiniteData2',
-                },
-              ],
+
+              {
+                items: [
+                  {
+                    id: 1,
+                    text: 'setInfiniteData2',
+                  },
+                ],
+                time: 1,
+              },
             ],
           };
         });
@@ -569,29 +577,35 @@ test('setInfiniteData', async () => {
     expect(utils.container).toHaveTextContent('setInfiniteData1');
     expect(utils.container).toHaveTextContent('setInfiniteData2');
     expect(utils.container).toMatchInlineSnapshot(`
-    <div>
-      {
-        "pageParams": [
-            0,
-            1
-        ],
-        "pages": [
-            [
-                {
-                    "id": 0,
-                    "text": "setInfiniteData1"
-                }
-            ],
-            [
-                {
-                    "id": 1,
-                    "text": "setInfiniteData2"
-                }
-            ]
-        ]
-    }
-    </div>
-  `);
+      <div>
+        {
+          "pageParams": [
+              0,
+              1
+          ],
+          "pages": [
+              {
+                  "items": [
+                      {
+                          "id": 0,
+                          "text": "setInfiniteData1"
+                      }
+                  ],
+                  "time": 0
+              },
+              {
+                  "items": [
+                      {
+                          "id": 1,
+                          "text": "setInfiniteData2"
+                      }
+                  ],
+                  "time": 1
+              }
+          ]
+      }
+      </div>
+    `);
   });
 });
 

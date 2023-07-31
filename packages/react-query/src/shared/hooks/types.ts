@@ -44,11 +44,6 @@ export interface TRPCReactRequestOptions
    * Opt out or into aborting request on unmount
    */
   abortOnUnmount?: boolean;
-  /**
-   * Used for testing. Runs after the queryFn has been executed, **Do not** assume data is in the cache yet.
-   * @internal
-   */
-  __internal_afterQueryFn?: () => void;
 }
 
 export interface TRPCUseQueryBaseOptions {

@@ -284,7 +284,7 @@ export function createRootHooks<
       {
         ...ssrOpts,
         queryKey: queryKey as any,
-        queryFn: async (queryFunctionContext) => {
+        queryFn: (queryFunctionContext) => {
           const actualOpts = {
             ...ssrOpts,
             trpc: {
@@ -295,11 +295,7 @@ export function createRootHooks<
             },
           };
 
-          const res = await client.query(
-            ...getClientArgs(queryKey, actualOpts),
-          );
-          opts?.trpc?.__internal_afterQueryFn?.();
-          return res;
+          return client.query(...getClientArgs(queryKey, actualOpts));
         },
       },
       queryClient,
@@ -457,7 +453,7 @@ export function createRootHooks<
         ...ssrOpts,
         defaultPageParam: opts.initialCursor ?? undefined,
         queryKey: queryKey as any,
-        queryFn: async (queryFunctionContext) => {
+        queryFn: (queryFunctionContext) => {
           const actualOpts = {
             ...ssrOpts,
             trpc: {
@@ -468,15 +464,13 @@ export function createRootHooks<
             },
           };
 
-          const res = await client.query(
+          return client.query(
             ...getClientArgs(
               queryKey,
               actualOpts,
               queryFunctionContext.pageParam ?? opts.initialCursor,
             ),
           );
-          opts?.trpc?.__internal_afterQueryFn?.();
-          return res;
         },
       },
       queryClient,
