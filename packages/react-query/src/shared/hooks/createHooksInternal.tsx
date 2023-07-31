@@ -246,7 +246,6 @@ export function createRootHooks<
       : opts;
   }
 
-  // eslint-disable-next-line max-params
   function useQuery(
     path: string[],
     input: unknown,
