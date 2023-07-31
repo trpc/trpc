@@ -107,13 +107,11 @@ export default function IndexPage() {
   const postsQuery = trpc.post.infinite.useInfiniteQuery(
     {},
     {
-      getNextPageParam: (d) => d.prevCursor,
-      getPreviousPageParam: (d) => d.prevCursor,
+      getNextPageParam: (d) => d.nextCursor,
     },
   );
   const utils = trpc.useContext();
-  const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
-    postsQuery;
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -250,13 +248,13 @@ export default function IndexPage() {
             <div className="space-y-4 overflow-y-auto">
               <button
                 data-testid="loadMore"
-                onClick={() => fetchPreviousPage()}
-                disabled={!hasPreviousPage || isFetchingPreviousPage}
+                onClick={() => fetchNextPage()}
+                disabled={!hasNextPage || isFetchingNextPage}
                 className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
               >
-                {isFetchingPreviousPage
+                {isFetchingNextPage
                   ? 'Loading more...'
-                  : hasPreviousPage
+                  : hasNextPage
                   ? 'Load More'
                   : 'Nothing more to load'}
               </button>

@@ -15,9 +15,6 @@ const IndexPage: NextPageWithLayout = () => {
       getNextPageParam(lastPage) {
         return lastPage.nextCursor;
       },
-      getPreviousPageParam(lastPage) {
-        return lastPage.nextCursor;
-      },
     },
   );
 
@@ -69,14 +66,12 @@ const IndexPage: NextPageWithLayout = () => {
 
         <button
           className="bg-gray-900 p-2 rounded-md font-semibold disabled:bg-gray-700 disabled:text-gray-400"
-          onClick={() => postsQuery.fetchPreviousPage()}
-          disabled={
-            !postsQuery.hasPreviousPage || postsQuery.isFetchingPreviousPage
-          }
+          onClick={() => postsQuery.fetchNextPage()}
+          disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
         >
-          {postsQuery.isFetchingPreviousPage
+          {postsQuery.isFetchingNextPage
             ? 'Loading more...'
-            : postsQuery.hasPreviousPage
+            : postsQuery.hasNextPage
             ? 'Load More'
             : 'Nothing more to load'}
         </button>
