@@ -218,8 +218,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             queryKey,
             queryFn,
             pages: args1?.pages ?? 1,
-            getNextPageParam: (...args) =>
-              args1?.getNextPageParam?.(...args) ?? undefined,
+            getNextPageParam: (...args) => args1?.getNextPageParam?.(...args),
             defaultPageParam: args1?.initialCursor ?? undefined,
           });
         },
@@ -236,8 +235,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             queryKey,
             queryFn,
             pages: args1?.pages ?? 1,
-            getNextPageParam: (...args) =>
-              args1?.getNextPageParam?.(...args) ?? undefined,
+            getNextPageParam: (...args) => args1?.getNextPageParam?.(...args),
             defaultPageParam: args1?.initialCursor ?? undefined,
           });
         },

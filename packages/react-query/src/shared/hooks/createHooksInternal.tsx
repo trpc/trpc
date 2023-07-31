@@ -107,7 +107,7 @@ export function createRootHooks<
                 },
                 pages: opts?.pages ?? 1,
                 getNextPageParam: (...args) =>
-                  opts?.getNextPageParam?.(...args) ?? undefined,
+                  opts?.getNextPageParam?.(...args),
                 defaultPageParam: opts?.initialCursor ?? undefined,
               });
             },
@@ -135,7 +135,7 @@ export function createRootHooks<
                 },
                 pages: opts?.pages ?? 1,
                 getNextPageParam: (...args) =>
-                  opts?.getNextPageParam?.(...args) ?? undefined,
+                  opts?.getNextPageParam?.(...args),
                 defaultPageParam: opts?.initialCursor ?? undefined,
               });
             },
@@ -458,8 +458,7 @@ export function createRootHooks<
       {
         ...ssrOpts,
         defaultPageParam: opts.initialCursor ?? undefined,
-        getNextPageParam: (...args) =>
-          opts.getNextPageParam(...args) ?? undefined,
+        getNextPageParam: (...args) => opts.getNextPageParam(...args),
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
