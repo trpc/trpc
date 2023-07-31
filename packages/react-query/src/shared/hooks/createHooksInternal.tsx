@@ -105,9 +105,6 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
-                pages: opts?.pages ?? 1,
-                getNextPageParam: (...args) =>
-                  opts?.getNextPageParam?.(...args),
                 defaultPageParam: opts?.initialCursor ?? undefined,
               });
             },
@@ -133,9 +130,6 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
-                pages: opts?.pages ?? 1,
-                getNextPageParam: (...args) =>
-                  opts?.getNextPageParam?.(...args),
                 defaultPageParam: opts?.initialCursor ?? undefined,
               });
             },
