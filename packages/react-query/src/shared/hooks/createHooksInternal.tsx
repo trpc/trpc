@@ -457,7 +457,7 @@ export function createRootHooks<
     const hook = __useInfiniteQuery(
       {
         ...ssrOpts,
-        defaultPageParam: opts.initialCursor,
+        defaultPageParam: opts.initialCursor ?? undefined,
         getNextPageParam: (...args) =>
           opts.getNextPageParam(...args) ?? undefined,
         queryKey: queryKey as any,

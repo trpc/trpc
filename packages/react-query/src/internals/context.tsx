@@ -19,23 +19,31 @@ import {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter, DistributiveOmit } from '@trpc/server';
 import { createContext } from 'react';
 import { ExtractCursorType } from '../shared';
 import { TRPCQueryKey } from './getQueryKey';
 
-export interface TRPCFetchQueryOptions<TOutput, TError>
-  extends Omit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
-    TRPCRequestOptions {}
+export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
+  FetchQueryOptions<TOutput, TError>,
+  'queryKey'
+> &
+  TRPCRequestOptions;
 
-export interface TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError>
-  extends Omit<
-      FetchInfiniteQueryOptions<TOutput, TError>,
-      'queryKey' | 'defaultPageParam'
+export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
+  DistributiveOmit<
+    FetchInfiniteQueryOptions<
+      TOutput,
+      TError,
+      TOutput,
+      TRPCQueryKey,
+      ExtractCursorType<TInput>
     >,
-    TRPCRequestOptions {
-  initialCursor?: ExtractCursorType<TInput>;
-}
+    'queryKey' | 'defaultPageParam'
+  > &
+    TRPCRequestOptions & {
+      initialCursor?: ExtractCursorType<TInput>;
+    };
 
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;

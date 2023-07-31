@@ -1,5 +1,5 @@
 import { QueryKey, UseQueryOptions } from '@tanstack/react-query';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter, DistributiveOmit } from '@trpc/server';
 import {
   UseQueriesProcedureRecord,
   UseTRPCQueryOptions,
@@ -14,7 +14,10 @@ export type UseQueryOptionsForUseQueries<
   TError = unknown,
   TData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
-> = Omit<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'queryKey'>;
+> = DistributiveOmit<
+  UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
+  'queryKey'
+>;
 
 /**
  * @internal
@@ -25,7 +28,7 @@ export type TrpcQueryOptionsForUseQueries<
   TOutput,
   TData,
   TError,
-> = Omit<
+> = DistributiveOmit<
   UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>,
   'queryKey'
 >;
