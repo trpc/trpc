@@ -452,7 +452,6 @@ export function createRootHooks<
       {
         ...ssrOpts,
         defaultPageParam: opts.initialCursor ?? undefined,
-        getNextPageParam: (...args) => opts.getNextPageParam(...args),
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
