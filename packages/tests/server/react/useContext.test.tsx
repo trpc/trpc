@@ -237,12 +237,9 @@ test('invalidate', async () => {
   const stableProxySpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
-
-    useEffect(() => {
-      if (allPosts.data === undefined) return;
-      stableProxySpy();
-    }, [allPosts.data]);
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      trpc: { __internal_afterQueryFn: stableProxySpy },
+    });
 
     const createPostMutation = proxy.post.create.useMutation();
 
@@ -304,23 +301,24 @@ test('invalidate procedure for both query and infinite', async () => {
   const invalidateInfiniteSpy = vi.fn();
 
   function MyComponent() {
-    const allPostsList = proxy.post.list.useQuery({ cursor: undefined });
+    const allPostsList = proxy.post.list.useQuery(
+      { cursor: undefined },
+      {
+        trpc: {
+          __internal_afterQueryFn: invalidateQuerySpy,
+        },
+      },
+    );
     const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
       { cursor: undefined },
       {
         // We don't care about the cursor here
         getNextPageParam: () => undefined,
+        trpc: {
+          __internal_afterQueryFn: invalidateInfiniteSpy,
+        },
       },
     );
-
-    useEffect(() => {
-      if (allPostsList.data === undefined) return;
-      invalidateQuerySpy();
-    }, [allPostsList.data]);
-    useEffect(() => {
-      if (allPostsListInfinite.data === undefined) return;
-      invalidateInfiniteSpy();
-    }, [allPostsListInfinite.data]);
 
     const utils = proxy.useContext();
 
@@ -432,11 +430,9 @@ test('refetch', async () => {
 
   function MyComponent() {
     const utils = proxy.useContext();
-    const allPosts = proxy.post.all.useQuery();
-
-    useEffect(() => {
-      querySuccessSpy();
-    }, [allPosts.data]);
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      trpc: { __internal_afterQueryFn: querySuccessSpy },
+    });
 
     useEffect(() => {
       if (allPosts.data) {

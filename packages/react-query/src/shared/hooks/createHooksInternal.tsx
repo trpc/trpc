@@ -246,6 +246,7 @@ export function createRootHooks<
       : opts;
   }
 
+  // eslint-disable-next-line max-params
   function useQuery(
     path: string[],
     input: unknown,
@@ -284,7 +285,7 @@ export function createRootHooks<
       {
         ...ssrOpts,
         queryKey: queryKey as any,
-        queryFn: (queryFunctionContext) => {
+        queryFn: async (queryFunctionContext) => {
           const actualOpts = {
             ...ssrOpts,
             trpc: {
@@ -295,7 +296,11 @@ export function createRootHooks<
             },
           };
 
-          return client.query(...getClientArgs(queryKey, actualOpts));
+          const res = await client.query(
+            ...getClientArgs(queryKey, actualOpts),
+          );
+          opts?.trpc?.__internal_afterQueryFn?.();
+          return res;
         },
       },
       queryClient,
@@ -453,7 +458,7 @@ export function createRootHooks<
         ...ssrOpts,
         defaultPageParam: opts.initialCursor ?? undefined,
         queryKey: queryKey as any,
-        queryFn: (queryFunctionContext) => {
+        queryFn: async (queryFunctionContext) => {
           const actualOpts = {
             ...ssrOpts,
             trpc: {
@@ -464,13 +469,15 @@ export function createRootHooks<
             },
           };
 
-          return client.query(
+          const res = await client.query(
             ...getClientArgs(
               queryKey,
               actualOpts,
               queryFunctionContext.pageParam ?? opts.initialCursor,
             ),
           );
+          opts?.trpc?.__internal_afterQueryFn?.();
+          return res;
         },
       },
       queryClient,
