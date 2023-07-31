@@ -3,6 +3,13 @@ export type ParserZodEsque<TInput, TParsedInput> = {
   _output: TParsedInput;
 };
 
+export type ParserValibotEsque<TInput, TParsedInput> = {
+  types?: {
+    input: TInput;
+    output: TParsedInput;
+  };
+};
+
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -30,10 +37,9 @@ export type ParserWithoutInput<TInput> =
   | ParserSuperstructEsque<TInput>
   | ParserYupEsque<TInput>;
 
-export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
-  TInput,
-  TParsedInput
->;
+export type ParserWithInputOutput<TInput, TParsedInput> =
+  | ParserZodEsque<TInput, TParsedInput>
+  | ParserValibotEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
