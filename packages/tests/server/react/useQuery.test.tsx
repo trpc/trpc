@@ -180,7 +180,7 @@ test('useInfiniteQuery()', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | undefined
+        number | null
       >
     >(query1.data);
 
@@ -200,11 +200,11 @@ test('useInfiniteQuery()', async () => {
             const fetched = await trpcContext.post.list.fetchInfinite({}, {});
             expectTypeOf<{
               pages: { items: typeof fixtureData; next?: number | undefined }[];
-              pageParams: (number | undefined)[];
+              pageParams: (number | null)[];
             }>(fetched);
             expect(
-              fetched.pageParams.every((p) => typeof p === 'number'),
-            ).toBeTruthy();
+              fetched.pageParams.some((p) => typeof p === 'undefined'),
+            ).toBeFalsy();
           }}
         >
           Fetch
@@ -219,8 +219,11 @@ test('useInfiniteQuery()', async () => {
       <MyComponent />
     </App>,
   );
+
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
+    expect(utils.container).toHaveTextContent(`null`);
+    expect(utils.container).not.toHaveTextContent(`undefined`);
   });
   await userEvent.click(utils.getByTestId('fetchMore'));
 
@@ -254,7 +257,7 @@ test('useInfiniteQuery() initialCursor', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | undefined
+        number | null
       >
     >(query1.data);
 
@@ -311,7 +314,7 @@ test('useSuspenseInfiniteQuery()', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | undefined
+        number | null
       >
     >(query1.data);
 
@@ -321,7 +324,7 @@ test('useSuspenseInfiniteQuery()', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | undefined
+        number | null
       >
     >(data);
 

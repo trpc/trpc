@@ -56,7 +56,7 @@ test('fetchInfinite', async () => {
   });
 
   const post = await ssg.post.list.fetchInfinite({});
-  expectTypeOf<InfiniteData<'__infResult', string | undefined>>(post);
+  expectTypeOf<InfiniteData<'__infResult', string | null>>(post);
 
   expect(post.pages).toStrictEqual(['__infResult']);
 });

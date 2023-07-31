@@ -63,7 +63,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   ): Promise<
     InfiniteData<
       inferTransformedProcedureOutput<TProcedure>,
-      ExtractCursorType<inferProcedureInput<TProcedure>>
+      NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
 
@@ -172,12 +172,12 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     updater: Updater<
       | InfiniteData<
           inferTransformedProcedureOutput<TProcedure>,
-          ExtractCursorType<inferProcedureInput<TProcedure>>
+          NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
         >
       | undefined,
       | InfiniteData<
           inferTransformedProcedureOutput<TProcedure>,
-          ExtractCursorType<inferProcedureInput<TProcedure>>
+          NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
         >
       | undefined
     >,
@@ -199,7 +199,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   ):
     | InfiniteData<
         inferTransformedProcedureOutput<TProcedure>,
-        ExtractCursorType<inferProcedureInput<TProcedure>>
+        NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
       >
     | undefined;
 };

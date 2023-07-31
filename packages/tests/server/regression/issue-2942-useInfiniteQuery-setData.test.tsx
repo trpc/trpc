@@ -71,7 +71,7 @@ test('with input', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | undefined
+        number | null
       >
     >(query1.data);
 
@@ -154,7 +154,7 @@ test('w/o input', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | undefined
+        number | null
       >
     >();
 

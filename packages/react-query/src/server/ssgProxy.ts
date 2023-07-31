@@ -77,7 +77,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
   ): Promise<
     InfiniteData<
       inferTransformedProcedureOutput<TProcedure>,
-      ExtractCursorType<inferProcedureInput<TProcedure>>
+      NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
 
@@ -217,7 +217,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             ...args1,
             queryKey,
             queryFn,
-            defaultPageParam: args1?.initialCursor ?? undefined,
+            defaultPageParam: args1?.initialCursor ?? null,
           });
         },
         prefetch: () => {
@@ -232,7 +232,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             ...args1,
             queryKey,
             queryFn,
-            defaultPageParam: args1?.initialCursor ?? undefined,
+            defaultPageParam: args1?.initialCursor ?? null,
           });
         },
       };
