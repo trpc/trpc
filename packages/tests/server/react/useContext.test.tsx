@@ -314,15 +314,12 @@ test('invalidate procedure for both query and infinite', async () => {
     );
 
     useEffect(() => {
-      if (allPostsList.data === undefined && !allPostsList.isInitialLoading)
-        return;
+      if (allPostsList.data === undefined) return;
+      invalidateQuerySpy();
     }, [allPostsList.data]);
     useEffect(() => {
-      if (
-        allPostsListInfinite.data === undefined &&
-        !allPostsListInfinite.isInitialLoading
-      )
-        return;
+      if (allPostsListInfinite.data === undefined) return;
+      invalidateInfiniteSpy();
     }, [allPostsListInfinite.data]);
 
     const utils = proxy.useContext();
