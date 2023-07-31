@@ -427,16 +427,12 @@ test('reset', async () => {
 });
 
 test('refetch', async () => {
-  const { proxy, App } = ctx;
-  const querySuccessSpy = vi.fn();
+  const { proxy, App, spyLink } = ctx;
+  spyLink.mockClear();
 
   function MyComponent() {
     const utils = proxy.useContext();
     const allPosts = proxy.post.all.useQuery();
-
-    useEffect(() => {
-      if (allPosts.data) querySuccessSpy();
-    }, [allPosts.data]);
 
     useEffect(() => {
       if (allPosts.data) {
@@ -453,7 +449,7 @@ test('refetch', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(querySuccessSpy).toHaveBeenCalledTimes(2);
+    expect(spyLink).toHaveBeenCalledTimes(2);
   });
 });
 
