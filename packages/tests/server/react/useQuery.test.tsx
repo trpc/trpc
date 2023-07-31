@@ -159,6 +159,7 @@ test('useSuspenseQuery()', async () => {
 test('useInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
+    const trpcContext = proxy.useContext();
     const query1 = proxy.post.list.useInfiniteQuery(
       {},
       {
@@ -173,13 +174,15 @@ test('useInfiniteQuery()', async () => {
       return <>...</>;
     }
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | undefined
+      >
+    >(query1.data);
 
     return (
       <>
@@ -190,6 +193,21 @@ test('useInfiniteQuery()', async () => {
           }}
         >
           Fetch more
+        </button>
+        <button
+          data-testid="prefetch"
+          onClick={async () => {
+            const fetched = await trpcContext.post.list.fetchInfinite({}, {});
+            expectTypeOf<{
+              pages: { items: typeof fixtureData; next?: number | undefined }[];
+              pageParams: (number | undefined)[];
+            }>(fetched);
+            expect(
+              fetched.pageParams.every((p) => typeof p === 'number'),
+            ).toBeTruthy();
+          }}
+        >
+          Fetch
         </button>
         <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
       </>
@@ -230,13 +248,15 @@ test('useInfiniteQuery() initialCursor', async () => {
       return <>...</>;
     }
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | undefined
+      >
+    >(query1.data);
 
     return (
       <>
@@ -285,20 +305,25 @@ test('useSuspenseInfiniteQuery()', async () => {
     expect(query1.data).not.toBeFalsy();
     expect(data).not.toBeFalsy();
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | undefined
+      >
+    >(query1.data);
 
-    expectTypeOf<typeof data>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | undefined
+      >
+    >(data);
 
     return (
       <>

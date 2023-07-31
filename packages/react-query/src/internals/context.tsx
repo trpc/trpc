@@ -124,7 +124,7 @@ export interface TRPCContextState<
       unknown,
       TRPCClientError<TRouter>
     >,
-  ) => Promise<InfiniteData<unknown>>;
+  ) => Promise<InfiniteData<unknown, unknown>>;
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */

@@ -36,6 +36,7 @@ import {
   QueryKeyKnown,
   QueryType,
 } from '../../internals/getQueryKey';
+import { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   /**
@@ -59,7 +60,12 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
       inferTransformedProcedureOutput<TProcedure>,
       TRPCClientError<TProcedure>
     >,
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+  ): Promise<
+    InfiniteData<
+      inferTransformedProcedureOutput<TProcedure>,
+      ExtractCursorType<inferProcedureInput<TProcedure>>
+    >
+  >;
 
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchquery
@@ -164,8 +170,16 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined,
-      InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined
+      | InfiniteData<
+          inferTransformedProcedureOutput<TProcedure>,
+          ExtractCursorType<inferProcedureInput<TProcedure>>
+        >
+      | undefined,
+      | InfiniteData<
+          inferTransformedProcedureOutput<TProcedure>,
+          ExtractCursorType<inferProcedureInput<TProcedure>>
+        >
+      | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -182,7 +196,12 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
-  ): InfiniteData<inferTransformedProcedureOutput<TProcedure>> | undefined;
+  ):
+    | InfiniteData<
+        inferTransformedProcedureOutput<TProcedure>,
+        ExtractCursorType<inferProcedureInput<TProcedure>>
+      >
+    | undefined;
 };
 
 /**

@@ -45,7 +45,7 @@ const ctx = konn()
               cursor: z.string().optional(),
             }),
           )
-          .query(() => posts),
+          .query((opts) => posts.slice(parseInt(opts.input.cursor ?? '0'))),
         create: t.procedure
           .input(
             z.object({
@@ -512,8 +512,8 @@ test('setInfiniteData', async () => {
       {},
       {
         enabled: false,
-        // We don't care about the cursor here
-        getNextPageParam: () => undefined,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+          lastPage.length === 0 ? undefined : String(Number(lastPageParam) + 1),
       },
     );
 
@@ -524,7 +524,7 @@ test('setInfiniteData', async () => {
         utils.post.list.setInfiniteData(
           {},
           {
-            pageParams: [{}],
+            pageParams: ['0'],
             pages: [[{ id: 0, text: 'setInfiniteData1' }]],
           },
         );
@@ -537,12 +537,7 @@ test('setInfiniteData', async () => {
             pages: [],
           };
           return {
-            pageParams: [
-              ...data.pageParams,
-              {
-                cursor: 1,
-              },
-            ],
+            pageParams: [...data.pageParams, '1'],
             pages: [
               ...data.pages,
               [
@@ -576,10 +571,8 @@ test('setInfiniteData', async () => {
     <div>
       {
         "pageParams": [
-            {},
-            {
-                "cursor": 1
-            }
+            "0",
+            "1"
         ],
         "pages": [
             [

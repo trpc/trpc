@@ -212,22 +212,32 @@ export type UseTRPCSuspenseQueryResult<TData, TError> = [
 /**
  * @internal
  */
-export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
-  UseInfiniteQueryResult<InfiniteData<TData>, TError>;
+export type UseTRPCInfiniteQueryResult<TData, TError, TInput> = TRPCHookResult &
+  UseInfiniteQueryResult<
+    InfiniteData<TData, ExtractCursorType<TInput>>,
+    TError
+  >;
 
 /**
  * @internal
  */
-export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
-  InfiniteQueryObserverSuccessResult<InfiniteData<TData>, TError> &
+export type UseTRPCInfiniteQuerySuccessResult<TData, TError, TInput> =
+  InfiniteQueryObserverSuccessResult<
+    InfiniteData<TData, ExtractCursorType<TInput>>,
+    TError
+  > &
     TRPCHookResult;
 
 /**
  * @internal
  */
-export type UseTRPCSuspenseInfiniteQueryResult<TData, TError> = [
-  InfiniteData<TData>,
-  UseSuspenseInfiniteQueryResult<InfiniteData<TData>, TError> & TRPCHookResult,
+export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
+  InfiniteData<TData, ExtractCursorType<TInput>>,
+  UseSuspenseInfiniteQueryResult<
+    InfiniteData<TData, ExtractCursorType<TInput>>,
+    TError
+  > &
+    TRPCHookResult,
 ];
 
 /**

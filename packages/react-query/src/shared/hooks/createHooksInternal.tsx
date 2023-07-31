@@ -424,7 +424,7 @@ export function createRootHooks<
     path: string[],
     input: unknown,
     opts: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
-  ): UseTRPCInfiniteQueryResult<unknown, TError> {
+  ): UseTRPCInfiniteQueryResult<unknown, TError, unknown> {
     const {
       client,
       ssrState,
@@ -482,7 +482,7 @@ export function createRootHooks<
         },
       },
       queryClient,
-    ) as UseTRPCInfiniteQueryResult<unknown, TError>;
+    ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;
 
     hook.trpc = useHookResult({
       // REVIEW: What do we want to return here?
@@ -500,7 +500,7 @@ export function createRootHooks<
       unknown,
       TError
     >,
-  ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError> {
+  ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
     const hookResult = useInfiniteQuery(path, input, {
       ...opts,
       suspense: true,

@@ -106,7 +106,8 @@ export type DecorateProcedure<
             >,
           ) => UseTRPCInfiniteQueryResult<
             inferTransformedProcedureOutput<TProcedure>,
-            TRPCClientErrorLike<TProcedure>
+            TRPCClientErrorLike<TProcedure>,
+            inferProcedureInput<TProcedure>
           >;
           /**
            * @see https://trpc.io/docs/client/react/suspense
@@ -121,7 +122,8 @@ export type DecorateProcedure<
             >,
           ) => UseTRPCSuspenseInfiniteQueryResult<
             inferTransformedProcedureOutput<TProcedure>,
-            TRPCClientErrorLike<TProcedure>
+            TRPCClientErrorLike<TProcedure>,
+            inferProcedureInput<TProcedure>
           >;
         }
       : object) & {

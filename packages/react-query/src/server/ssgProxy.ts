@@ -31,6 +31,7 @@ import {
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import {
   CreateTRPCReactQueryClientConfig,
+  ExtractCursorType,
   getQueryClient,
   getQueryType,
   TRPCFetchInfiniteQueryOptions,
@@ -73,7 +74,12 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
       inferTransformedProcedureOutput<TProcedure>,
       TRPCClientError<TProcedure>
     >,
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+  ): Promise<
+    InfiniteData<
+      inferTransformedProcedureOutput<TProcedure>,
+      ExtractCursorType<inferProcedureInput<TProcedure>>
+    >
+  >;
 
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
