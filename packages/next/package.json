@@ -45,6 +45,11 @@
       "require": "./dist/app-dir/client.js",
       "default": "./dist/app-dir/client.js"
     },
+    "./app-dir/react": {
+      "import": "./dist/app-dir/react.mjs",
+      "require": "./dist/app-dir/react.js",
+      "default": "./dist/app-dir/react.js"
+    },
     "./app-dir/links/nextCache": {
       "import": "./dist/app-dir/links/nextCache.mjs",
       "require": "./dist/app-dir/links/nextCache.js",
@@ -65,7 +70,7 @@
     "!**/*.test.*"
   ],
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^4.32.0",
     "@trpc/client": "10.36.0",
     "@trpc/react-query": "10.36.0",
     "@trpc/server": "10.36.0",

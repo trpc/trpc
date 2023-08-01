@@ -4,13 +4,14 @@ import {
   httpLink,
   HTTPLinkOptions,
   TRPCLink,
+  unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
 import { generateCacheTag } from '../shared';
 
 type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
-  ? HTTPBatchLinkOptions
-  : HTTPLinkOptions) & {
+  ? HTTPBatchLinkOptions & { unstable_stream?: boolean }
+  : HTTPLinkOptions & { unstable_stream?: never }) & {
   batch?: TBatch;
   revalidate?: number | false;
 };
@@ -32,7 +33,12 @@ export function experimental_nextHttpLink<
           : undefined;
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const linkFactory = opts.batch ? httpBatchLink : httpLink;
+      const linkFactory = opts.batch
+        ? opts.unstable_stream
+          ? unstable_httpBatchStreamLink
+          : httpBatchLink
+        : httpLink;
+
       const link = linkFactory({
         headers: opts.headers as any,
         url: opts.url,

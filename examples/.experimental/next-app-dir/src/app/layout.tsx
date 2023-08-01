@@ -5,7 +5,9 @@ import './globals.css';
 import { auth } from '~/auth';
 import { cn } from '~/components/cn';
 import { Inter as FontSans } from 'next/font/google';
+import { headers } from 'next/headers';
 import { SideNav } from '../components/sidebar';
+import { TRPCReactProvider } from './providers';
 
 const fontSans = FontSans({
   subsets: ['latin'],
@@ -85,7 +87,9 @@ export default async function RootLayout({
             </div>
           </header>
           <div className="container flex">
-            <SideNav>{children}</SideNav>
+            <TRPCReactProvider headers={headers()}>
+              <SideNav>{children}</SideNav>
+            </TRPCReactProvider>
           </div>
         </div>
       </body>

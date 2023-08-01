@@ -23,14 +23,8 @@ const sideNav = [
     href: '/alt-server-action',
   },
   {
-    name: 'Client Components',
-    href: '/client',
-    disabled: true,
-  },
-  {
     name: 'React Query',
     href: '/react-query',
-    disabled: true,
   },
   {
     name: 'Full stack Invalidation',
@@ -48,7 +42,7 @@ export function SideNav(props: { children: React.ReactNode }) {
           {sideNav.map((item) => (
             <Button
               asChild
-              disabled={item.disabled}
+              // disabled={item.disabled}
               variant="ghost"
               className="justify-start gap-2"
               key={item.href}
@@ -57,7 +51,7 @@ export function SideNav(props: { children: React.ReactNode }) {
                 href={item.href}
                 className={cn(
                   page === item.href && 'bg-muted text-foreground/80',
-                  item.disabled && 'pointer-events-none opacity-50',
+                  // item.disabled && 'pointer-events-none opacity-50',
                 )}
               >
                 {item.name}

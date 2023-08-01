@@ -17,6 +17,7 @@ import {
   DeepPartial,
   Filter,
   inferProcedureInput,
+  MaybePromise,
   ProtectedIntersection,
 } from '@trpc/server';
 import {
@@ -31,7 +32,7 @@ import {
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
 } from '../../internals/context';
-import { QueryKeyKnown } from '../../internals/getArrayQueryKey';
+import { QueryKey, QueryKeyKnown } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
 type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
@@ -233,7 +234,19 @@ export type CreateReactUtilsProxy<
 export function createReactQueryUtilsProxy<
   TRouter extends AnyRouter,
   TSSRContext,
->(context: TRPCContextState<AnyRouter, unknown>) {
+>(
+  context: TRPCContextState<AnyRouter, unknown>,
+  overrides?: Partial<
+    Record<
+      keyof AnyDecoratedProcedure,
+      (opts: {
+        queryKey: QueryKey;
+        path: string[];
+        input: unknown;
+      }) => MaybePromise<void>
+    >
+  >,
+) {
   type CreateReactUtilsProxyReturnType = CreateReactUtilsProxy<
     TRouter,
     TSSRContext
@@ -248,7 +261,7 @@ export function createReactQueryUtilsProxy<
       return context[contextName];
     }
 
-    return createRecursiveProxy(({ path, args }) => {
+    return createRecursiveProxy(async ({ path, args }) => {
       const pathCopy = [key, ...path];
       const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
 
@@ -300,6 +313,11 @@ export function createReactQueryUtilsProxy<
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       };
 
+      await overrides?.[utilName]?.({
+        queryKey: queryKey as unknown as QueryKey,
+        path: pathCopy,
+        input: args[0],
+      });
       return contextMap[utilName]();
     });
   });

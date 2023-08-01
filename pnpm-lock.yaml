@@ -1,8 +1,6 @@
 lockfileVersion: '6.0'
 
 overrides:
-  '@tanstack/react-query': 4.18.0
-  '@tanstack/react-query-devtools': 4.18.0
   '@trpc/client': link:./packages/client
   '@trpc/next': link:./packages/next
   '@trpc/react-query': link:./packages/react-query
@@ -169,8 +167,11 @@ importers:
         specifier: ^0.5.9
         version: 0.5.9(tailwindcss@3.3.0)
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/react-query-next-experimental':
+        specifier: 5.0.0-alpha.80
+        version: 5.0.0-alpha.80(@tanstack/react-query@4.18.0)(next@13.4.12)(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
         version: link:../../../packages/client
@@ -235,6 +236,9 @@ importers:
       '@playwright/test':
         specifier: ^1.26.1
         version: 1.28.1
+      '@tanstack/react-query-devtools':
+        specifier: ^4.18.0
+        version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.21)
@@ -260,7 +264,7 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
@@ -318,7 +322,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=exampleslegacy-next-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
@@ -355,7 +359,7 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
@@ -415,7 +419,7 @@ importers:
   examples/.test/big-router-declaration:
     dependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
@@ -489,7 +493,7 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
@@ -807,7 +811,7 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../../packages/client
@@ -901,7 +905,7 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../packages/client
@@ -950,7 +954,7 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../packages/client
@@ -996,7 +1000,7 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../packages/client
@@ -1045,7 +1049,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../packages/client
@@ -1151,7 +1155,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../packages/client
@@ -1203,7 +1207,7 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
@@ -1233,7 +1237,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../../packages/client
@@ -1279,7 +1283,7 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(@tanstack/react-query@4.18.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
@@ -1492,7 +1496,7 @@ importers:
         version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../client
@@ -1543,7 +1547,7 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: link:../client
@@ -1591,7 +1595,7 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
@@ -1702,7 +1706,7 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@tanstack/react-query':
-        specifier: 4.18.0
+        specifier: ^4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
@@ -9566,6 +9570,20 @@ packages:
       superjson: 1.12.4
       use-sync-external-store: 1.2.0(react@18.2.0)
     dev: true
+
+  /@tanstack/react-query-next-experimental@5.0.0-alpha.80(@tanstack/react-query@4.18.0)(next@13.4.12)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-J+rHrE+5BVEAoZVlvp5wryBdusKDBRrzysfpgOa4t6vcVRWHgzNlmWJFHelgipdHJrA3/4D6wSir8xmkp8ijtA==}
+    peerDependencies:
+      '@tanstack/react-query': 5.0.0-alpha.71
+      next: ^13.0.0
+      react: ^18.0.0
+      react-dom: ^18.0.0
+    dependencies:
+      '@tanstack/react-query': 4.18.0(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.12(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
 
   /@tanstack/react-query@4.18.0(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-s1kdbGMdVcfUIllzsHUqVUdktBT5uuIRgnvrqFNLjl9TSOXEoBSDrhjsGjao0INQZv8cMpQlgOh3YH9YtN6cKw==}
