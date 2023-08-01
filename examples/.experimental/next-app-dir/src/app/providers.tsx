@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ReactQueryStreamedHydration } from '@tanstack/react-query-next-experimental';
-import { loggerLink } from '@trpc/client';
+import { loggerLink, unstable_httpBatchStreamLink } from '@trpc/client';
 import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
 import { api } from '~/trpc/client';
 import { getUrl } from '~/trpc/shared';
@@ -34,6 +34,14 @@ export function TRPCReactProvider(props: {
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
+        // unstable_httpBatchStreamLink({
+        //   url: getUrl(),
+        //   headers() {
+        //     const headers = new Map(props.headers);
+        //     headers.set('x-trpc-source', 'nextjs-react');
+        //     return Object.fromEntries(headers);
+        //   },
+        // }),
         experimental_nextHttpLink({
           batch: true,
           unstable_stream: true,
@@ -51,16 +59,7 @@ export function TRPCReactProvider(props: {
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <ReactQueryStreamedHydration
-          transformer={superjson}
-          options={{
-            dehydrate: {
-              shouldDehydrateQuery() {
-                return true;
-              },
-            },
-          }}
-        >
+        <ReactQueryStreamedHydration transformer={superjson}>
           {props.children}
         </ReactQueryStreamedHydration>
         <ReactQueryDevtools initialIsOpen={false} />

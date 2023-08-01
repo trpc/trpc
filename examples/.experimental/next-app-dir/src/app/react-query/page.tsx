@@ -1,24 +1,6 @@
-'use client';
-
-import { Button } from '~/components/button';
 import { JsonPreTag } from '~/components/json-pretag';
-import { api } from '~/trpc/client';
 import { Suspense } from 'react';
-
-function AuthThing() {
-  const [me] = api.me.useSuspenseQuery();
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold">Session</h3>
-      <p>
-        This session comes from a tRPC query. No context provider is necessary
-        to authenticate your users on the server.
-      </p>
-      <JsonPreTag object={me} />
-    </div>
-  );
-}
+import { AuthThing, ClientGreeting } from './ClientGreeting';
 
 export default function Home() {
   return (
@@ -55,26 +37,9 @@ export default function Home() {
             <JsonPreTag object={{ loading: true, requester: 'http react' }} />
           }
         >
-          <ServerHttpGreeting />
+          <ClientGreeting />
         </Suspense>
       </div>
-    </div>
-  );
-}
-
-function ServerHttpGreeting() {
-  const [greeting1] = api.greeting.useSuspenseQuery({ text: 'from server1' });
-  const [greeting2] = api.greeting.useSuspenseQuery({ text: 'from server2' });
-  const [secret] = api.secret.useSuspenseQuery();
-
-  const trpcContext = api.useContext();
-
-  return (
-    <div className="space-y-2">
-      <JsonPreTag object={{ greeting1, greeting2, secret }} />
-      <Button onClick={() => trpcContext.greeting.invalidate()}>
-        Revalidate HTTP
-      </Button>
     </div>
   );
 }
