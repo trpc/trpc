@@ -25,11 +25,14 @@ test('server-httpLink: revalidating should load new content', async ({
   await page.reload();
 
   await page.waitForSelector('text=hello from server');
-  const nonce1 = await page.textContent('text=hello from server1');
-  await page.click('text=Revalidate HTTP 1');
+  const nonce1_1 = await page.textContent('text=hello from server1');
+  const nonce1_2 = await page.textContent('text=hello from server2');
+  await page.click('text=Revalidate HTTP');
   await page.waitForLoadState('networkidle');
-  const nonce2 = await page.textContent('text=hello from server1');
-  expect(nonce1).not.toBe(nonce2);
+  const nonce2_1 = await page.textContent('text=hello from server1');
+  const nonce2_2 = await page.textContent('text=hello from server2');
+  expect(nonce1_1).not.toBe(nonce2_1);
+  expect(nonce1_2).not.toBe(nonce2_2);
 });
 
 test('server-httpLink: requests are properly separated in the cache', async ({
