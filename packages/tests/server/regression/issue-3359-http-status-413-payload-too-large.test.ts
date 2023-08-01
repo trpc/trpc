@@ -63,10 +63,10 @@ describe('server responds with 413 Payload Too Large', () => {
     const error = await waitError(client.test.query(), TRPCClientError);
 
     expect(error).toMatchInlineSnapshot(
-      `[TRPCClientError: Badly formatted response from server]`,
+      '[TRPCClientError: Unable to transform response from server]',
     );
     expect(error.message).toMatchInlineSnapshot(
-      `"Badly formatted response from server"`,
+      '"Unable to transform response from server"',
     );
 
     await server.close();
@@ -99,10 +99,10 @@ describe('server responds with 413 Payload Too Large', () => {
 
     const error = await waitError(client.test.query(), TRPCClientError);
     expect(error).toMatchInlineSnapshot(
-      `[TRPCClientError: Badly formatted response from server]`,
+      '[TRPCClientError: Unable to transform response from server]',
     );
     expect(error.message).toMatchInlineSnapshot(
-      `"Badly formatted response from server"`,
+      '"Unable to transform response from server"',
     );
 
     await server.close();

@@ -1,5 +1,4 @@
 import { getTRPCErrorFromUnknown, TRPCError } from '../../error/TRPCError';
-import { getCauseFromUnknown } from '../../error/utils';
 import { InferLast } from '../../types';
 import { ProcedureType } from '../router';
 import {
@@ -154,7 +153,7 @@ export class Procedure<
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
   }
@@ -165,7 +164,7 @@ export class Procedure<
     } catch (cause) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
+        cause,
         message: 'Output validation failed',
       });
     }

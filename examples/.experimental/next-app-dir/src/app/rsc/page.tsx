@@ -98,6 +98,11 @@ export default async function Home() {
           `api.foo.revalidate()` - which will revalidate bot the `bar` and `baz`
           query on the foo-router.
         </p>
+        <p className="text-sm italic">
+          This page is using 2 different clients, one for HTTP and one for
+          immediate cache invocations. The invalidation invalidates the HTTP
+          client. Invalidation of multiple clients is not supported yet.
+        </p>
         <Suspense fallback={<JsonPreTag object={{ loading: true }} />}>
           <FooRouter />
         </Suspense>

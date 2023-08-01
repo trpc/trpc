@@ -2,8 +2,11 @@
 // We're not actually exporting this link
 import { AnyRouter } from '@trpc/server';
 import { observable, Unsubscribable } from '@trpc/server/observable';
-import { TRPCLink } from './types';
+import { TRPCLink } from '../types';
 
+/**
+ * @internal used for testing
+ */
 export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   attempts: number;
 }): TRPCLink<TRouter> {

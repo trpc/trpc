@@ -338,7 +338,6 @@ import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 #### Create Deno Deploy Function
 
 ```ts title='server.ts'
-import { serve } from 'https://deno.land/std@0.140.0/http/server.ts';
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
 import { appRouter } from './router.ts';
@@ -352,7 +351,7 @@ function handler(request) {
   });
 }
 
-serve(handler);
+Deno.serve(handler);
 ```
 
 Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will be available via HTTP!

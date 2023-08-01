@@ -4,7 +4,7 @@ import {
   DehydrateOptions,
   InfiniteData,
 } from '@tanstack/react-query';
-import { getUntypedClient } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import {
   AnyRouter,
   callProcedure,
@@ -48,7 +48,10 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
     }
 
     const { client } = opts;
-    const untypedClient = getUntypedClient(client);
+    const untypedClient =
+      client instanceof TRPCUntypedClient
+        ? client
+        : getUntypedClient(client as any);
 
     return {
       query: (queryOpts) =>

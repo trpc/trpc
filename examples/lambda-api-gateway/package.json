@@ -1,7 +1,7 @@
 {
   "name": "@examples/lambda-api-gateway",
   "private": true,
-  "version": "10.33.0",
+  "version": "10.36.0",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
@@ -13,8 +13,8 @@
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "^10.33.0",
-    "@trpc/server": "^10.33.0",
+    "@trpc/client": "^10.36.0",
+    "@trpc/server": "^10.36.0",
     "tsx": "^3.12.7",
     "zod": "^3.0.0"
   },
