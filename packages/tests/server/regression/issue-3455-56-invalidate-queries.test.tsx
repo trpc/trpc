@@ -37,71 +37,77 @@ const ctx = konn()
   })
   .done();
 
-// TODO: Rewrite without `onSuccess` handler
-// test('invalidate with filter', async () => {
-//   const { proxy, App } = ctx;
-//   const greetingSpy = vi.fn();
-//   const postSpy = vi.fn();
+test('invalidate with filter', async () => {
+  const { proxy, App } = ctx;
+  const greetingSpy = vi.fn();
+  const postSpy = vi.fn();
 
-//   function MyComponent() {
-//     const allPosts = proxy.post.all.useQuery(undefined, {
-//       onSuccess: () => postSpy(),
-//     });
-//     const greeting = proxy.greeting.useQuery(undefined, {
-//       onSuccess: () => greetingSpy(),
-//     });
+  function MyComponent() {
+    const allPosts = proxy.post.all.useQuery(undefined, {
+      structuralSharing: false,
+    });
+    const greeting = proxy.greeting.useQuery(undefined, {
+      structuralSharing: false,
+    });
 
-//     const utils = proxy.useContext();
+    React.useEffect(() => {
+      if (allPosts.data) postSpy();
+    }, [allPosts.data]);
+    React.useEffect(() => {
+      if (greeting.data) greetingSpy();
+    }, [greeting.data]);
 
-//     return (
-//       <>
-//         <button
-//           data-testid="invalidate"
-//           onClick={() => {
-//             utils.invalidate(undefined, {
-//               predicate: (query) => {
-//                 return (query.queryKey[0] as string[])[0] === 'post';
-//               },
-//             });
-//           }}
-//         />
-//         {allPosts.isFetching ? 'posts:fetching' : 'posts:done'}
-//         {allPosts.data?.map((post) => {
-//           return <div key={post.id}>{post.text}</div>;
-//         })}
-//         {greeting.isFetching ? 'greeting:fetching' : 'greeting:done'}
-//         {greeting.data}
-//       </>
-//     );
-//   }
+    const utils = proxy.useContext();
 
-//   const utils = render(
-//     <App>
-//       <MyComponent />
-//     </App>,
-//   );
+    return (
+      <>
+        <button
+          data-testid="invalidate"
+          onClick={() => {
+            utils.invalidate(undefined, {
+              predicate: (query) => {
+                return (query.queryKey[0] as string[])[0] === 'post';
+              },
+            });
+          }}
+        />
+        {allPosts.isFetching ? 'posts:fetching' : 'posts:done'}
+        {allPosts.data?.map((post) => {
+          return <div key={post.id}>{post.text}</div>;
+        })}
+        {greeting.isFetching ? 'greeting:fetching' : 'greeting:done'}
+        {greeting.data}
+      </>
+    );
+  }
 
-//   await waitFor(() => {
-//     expect(utils.container).toHaveTextContent('posts:done');
-//     expect(utils.container).toHaveTextContent('greeting:done');
-//   });
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
 
-//   const invalidateButton = await utils.findByTestId('invalidate');
-//   await userEvent.click(invalidateButton);
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('posts:done');
+    expect(utils.container).toHaveTextContent('greeting:done');
+  });
 
-//   // post should match the filter and be invalidated
-//   // greeting should not and thus still be done
-//   expect(utils.container).toHaveTextContent('posts:fetching');
-//   expect(utils.container).toHaveTextContent('greeting:done');
+  const invalidateButton = await utils.findByTestId('invalidate');
+  await userEvent.click(invalidateButton);
 
-//   await waitFor(() => {
-//     expect(utils.container).toHaveTextContent('posts:done');
-//     expect(utils.container).toHaveTextContent('greeting:done');
-//   });
+  // post should match the filter and be invalidated
+  // greeting should not and thus still be done
+  expect(utils.container).toHaveTextContent('posts:fetching');
+  expect(utils.container).toHaveTextContent('greeting:done');
 
-//   expect(postSpy).toHaveBeenCalledTimes(2);
-//   expect(greetingSpy).toHaveBeenCalledTimes(1);
-// });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('posts:done');
+    expect(utils.container).toHaveTextContent('greeting:done');
+  });
+
+  expect(postSpy).toHaveBeenCalledTimes(2);
+  expect(greetingSpy).toHaveBeenCalledTimes(1);
+});
 
 test('tanstack query queries are invalidated', async () => {
   const { proxy, App } = ctx;
