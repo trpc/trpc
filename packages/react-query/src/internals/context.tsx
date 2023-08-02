@@ -90,7 +90,7 @@ export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
 /** @internal */
 type TRPCContextResetQueries<TRouter extends AnyRouter> =
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientresetqueries
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientresetqueries
    */
   ((filters?: ResetQueryFilters, options?: ResetOptions) => Promise<void>) &
     (<
@@ -111,7 +111,7 @@ export interface TRPCContextState<
   TSSRContext = undefined,
 > extends Required<TRPCContextProps<TRouter, TSSRContext>> {
   /**
-   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */
   fetchQuery: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -124,7 +124,7 @@ export interface TRPCContextState<
   ) => Promise<TOutput>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfiniteQuery: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -141,7 +141,7 @@ export interface TRPCContextState<
   ) => Promise<InfiniteData<TOutput>>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   prefetchQuery: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -154,7 +154,7 @@ export interface TRPCContextState<
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfiniteQuery: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -171,7 +171,7 @@ export interface TRPCContextState<
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientensurequerydata
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientensurequerydata
    */
   ensureQueryData: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -184,7 +184,7 @@ export interface TRPCContextState<
   ) => Promise<TOutput>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/query-invalidation
+   * @link https://tanstack.com/query/v5/docs/react/guides/query-invalidation
    */
   invalidateQueries: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -196,12 +196,12 @@ export interface TRPCContextState<
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientresetqueries
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientresetqueries
    */
   resetQueries: TRPCContextResetQueries<TRouter>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientrefetchqueries
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientrefetchqueries
    */
   refetchQueries<
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -213,7 +213,7 @@ export interface TRPCContextState<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientrefetchqueries
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientrefetchqueries
    */
   refetchQueries(
     filters?: RefetchQueryFilters,
@@ -221,7 +221,7 @@ export interface TRPCContextState<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/query-cancellation
+   * @link https://tanstack.com/query/v5/docs/react/guides/query-cancellation
    */
   cancelQuery: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -232,7 +232,7 @@ export interface TRPCContextState<
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientsetquerydata
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientsetquerydata
    */
   setQueryData: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -247,7 +247,7 @@ export interface TRPCContextState<
   ) => void;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientgetquerydata
    */
   getQueryData: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -260,7 +260,7 @@ export interface TRPCContextState<
   ) => TOutput | undefined;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientsetquerydata
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteQueryData: <
     TPath extends string & keyof TRouter['_def']['queries'],
@@ -278,7 +278,7 @@ export interface TRPCContextState<
   ) => void;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientgetquerydata
+   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteQueryData: <
     TPath extends string & keyof TRouter['_def']['queries'],
