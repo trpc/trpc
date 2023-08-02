@@ -36,11 +36,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./ssg": {
-      "import": "./dist/ssg/index.mjs",
-      "require": "./dist/ssg/index.js",
-      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
@@ -50,7 +45,6 @@
     "package.json",
     "server",
     "shared",
-    "ssg",
     "!**/*.test.*"
   ],
   "eslintConfig": {

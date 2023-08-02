@@ -16,7 +16,12 @@ import {
 } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
-import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
+import {
+  HTTPBaseHandlerOptions,
+  HTTPRequest,
+  ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
+} from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -40,7 +45,7 @@ interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
@@ -315,7 +320,15 @@ export async function resolveHTTPResponse<
     });
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await opts.createContext();
+    const info: TRPCRequestInfo = {
+      isBatchCall,
+      calls: paths.map((path, idx) => ({
+        path,
+        type,
+        input: inputs[idx] ?? undefined,
+      })),
+    };
+    ctx = await opts.createContext({ info });
     const promises = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
     );

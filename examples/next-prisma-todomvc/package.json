@@ -2,6 +2,9 @@
   "name": "@examples/trpc-next-prisma-todomvc",
   "version": "10.36.0",
   "private": true,
+  "engines": {
+    "node": ">=18.15.0"
+  },
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",

@@ -322,7 +322,7 @@ export default function IndexPage() {
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,
 // ) => {
-//   const ssg = createSSGHelpers({
+//   const ssg = createServerSideHelpers({
 //     router: appRouter,
 //     ctx: await createContext(),
 //   });

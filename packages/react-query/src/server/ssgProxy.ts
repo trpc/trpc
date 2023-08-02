@@ -1,15 +1,24 @@
 import {
+  dehydrate,
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
 import {
+  getUntypedClient,
+  inferRouterProxyClient,
+  TRPCUntypedClient,
+} from '@trpc/client';
+import {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
+  callProcedure,
+  ClientDataTransformerOptions,
   Filter,
   inferHandlerInput,
+  inferRouterContext,
   ProtectedIntersection,
 } from '@trpc/server';
 import {
@@ -17,8 +26,26 @@ import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
-import { createSSGHelpers } from '../ssg/ssg';
-import { CreateServerSideHelpersOptions } from './types';
+import { getQueryKeyInternal } from '../internals/getQueryKey';
+import {
+  CreateTRPCReactQueryClientConfig,
+  getQueryClient,
+  getQueryType,
+} from '../shared';
+
+interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
+  router: TRouter;
+  ctx: inferRouterContext<TRouter>;
+  transformer?: ClientDataTransformerOptions;
+}
+
+interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
+  client: inferRouterProxyClient<TRouter> | TRPCUntypedClient<TRouter>;
+}
+
+type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
+  CreateTRPCReactQueryClientConfig &
+    (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
@@ -49,7 +76,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
 /**
  * @internal
  */
-export type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
+type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
     AnyQueryProcedure | AnyRouter
@@ -68,9 +95,57 @@ type AnyDecoratedProcedure = DecorateProcedure<any>;
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,
 ) {
-  const helpers = createSSGHelpers(opts);
+  const queryClient = getQueryClient(opts);
 
-  type CreateServerSideHelpers = ProtectedIntersection<
+  const resolvedOpts: {
+    serialize: (obj: unknown) => any;
+    query: (queryOpts: { path: string; input: unknown }) => Promise<unknown>;
+  } = (() => {
+    if ('router' in opts) {
+      const { transformer, ctx, router } = opts;
+      return {
+        serialize: transformer
+          ? ('input' in transformer ? transformer.input : transformer).serialize
+          : (obj) => obj,
+        query: (queryOpts) => {
+          return callProcedure({
+            procedures: router._def.procedures,
+            path: queryOpts.path,
+            rawInput: queryOpts.input,
+            ctx,
+            type: 'query',
+          });
+        },
+      };
+    }
+
+    const { client } = opts;
+    const untypedClient =
+      client instanceof TRPCUntypedClient
+        ? client
+        : getUntypedClient(client as any);
+
+    return {
+      query: (queryOpts) =>
+        untypedClient.query(queryOpts.path, queryOpts.input),
+      serialize: (obj) => untypedClient.runtime.transformer.serialize(obj),
+    };
+  })();
+
+  function _dehydrate(
+    opts: DehydrateOptions = {
+      shouldDehydrateQuery() {
+        // makes sure to serialize errors
+        return true;
+      },
+    },
+  ): DehydratedState {
+    const before = dehydrate(queryClient, opts);
+    const after = resolvedOpts.serialize(before);
+    return after;
+  }
+
+  type CreateSSGHelpers = ProtectedIntersection<
     {
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
@@ -78,28 +153,35 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     DecoratedProcedureSSGRecord<TRouter>
   >;
 
-  return createFlatProxy<CreateServerSideHelpers>((key) => {
-    if (key === 'queryClient') {
-      return helpers.queryClient;
-    }
+  return createFlatProxy<CreateSSGHelpers>((key) => {
+    if (key === 'queryClient') return queryClient;
+    if (key === 'dehydrate') return _dehydrate;
 
-    if (key === 'dehydrate') {
-      return helpers.dehydrate;
-    }
     return createRecursiveProxy((opts) => {
       const args = opts.args;
+      const input = args[0];
+      const arrayPath = [key, ...opts.path];
+      const utilName = arrayPath.pop() as keyof AnyDecoratedProcedure;
 
-      const pathCopy = [key, ...opts.path];
+      const queryFn = () =>
+        resolvedOpts.query({ path: arrayPath.join('.'), input });
 
-      const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
+      const queryKey = getQueryKeyInternal(
+        arrayPath,
+        input,
+        getQueryType(utilName),
+      );
 
-      const fullPath = pathCopy.join('.');
+      const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+        fetch: () => queryClient.fetchQuery({ queryKey, queryFn }),
+        fetchInfinite: () =>
+          queryClient.fetchInfiniteQuery({ queryKey, queryFn }),
+        prefetch: () => queryClient.prefetchQuery({ queryKey, queryFn }),
+        prefetchInfinite: () =>
+          queryClient.prefetchInfiniteQuery({ queryKey, queryFn }),
+      };
 
-      const helperKey = `${utilName}Query` as const;
-      //     ^?
-
-      const fn: (...args: any) => any = helpers[helperKey];
-      return fn(fullPath, ...args);
+      return helperMap[utilName]();
     });
   });
 }
