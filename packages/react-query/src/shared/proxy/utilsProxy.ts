@@ -36,6 +36,7 @@ import {
   getQueryKeyInternal,
   QueryKeyKnown,
   QueryType,
+  TRPCQueryKey,
 } from '../../internals/getQueryKey';
 
 type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
@@ -268,7 +269,7 @@ export function createReactQueryUtilsProxy<
     Record<
       keyof AnyDecoratedProcedure,
       (opts: {
-        queryKey: QueryKey;
+        queryKey: TRPCQueryKey;
         path: string[];
         input: unknown;
       }) => MaybePromise<void>
@@ -289,7 +290,7 @@ export function createReactQueryUtilsProxy<
       return context[contextName];
     }
 
-    return createRecursiveProxy((opts) => {
+    return createRecursiveProxy(async (opts) => {
       const path = [key, ...opts.path];
       const utilName = path.pop() as keyof AnyDecoratedProcedure;
       const args = [...opts.args] as Parameters<
@@ -321,7 +322,7 @@ export function createReactQueryUtilsProxy<
       };
 
       await overrides?.[utilName]?.({
-        queryKey: queryKey as unknown as QueryKey,
+        queryKey: queryKey as unknown as TRPCQueryKey,
         path,
         input,
       });
