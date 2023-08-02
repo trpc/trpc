@@ -54,7 +54,7 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -65,7 +65,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
   ): Promise<inferTransformedProcedureOutput<TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -82,7 +82,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
   >;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -93,7 +93,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
