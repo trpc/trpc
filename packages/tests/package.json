@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tests",
-  "version": "10.35.0",
+  "version": "10.36.0",
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@effect/schema": "^0.30.0",
+    "@effect/schema": "^0.32.0",
     "@fastify/busboy": "^1.2.1",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
@@ -25,10 +25,10 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
-    "@trpc/client": "10.35.0",
-    "@trpc/next": "10.35.0",
-    "@trpc/react-query": "10.35.0",
-    "@trpc/server": "10.35.0",
+    "@trpc/client": "10.36.0",
+    "@trpc/next": "10.36.0",
+    "@trpc/react-query": "10.36.0",
+    "@trpc/server": "10.36.0",
     "@types/node": "^18.16.16",
     "@types/testing-library__jest-dom": "^5.14.5",
     "@vitest/coverage-istanbul": "^0.32.0",
