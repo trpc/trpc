@@ -6,7 +6,7 @@ slug: /client/react/useQuery
 ---
 
 :::note
-The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://tanstack.com/query/v5/docs/react/guides/queries).
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://tanstack.com/query/v4/docs/react/guides/queries).
 :::
 
 ```tsx
