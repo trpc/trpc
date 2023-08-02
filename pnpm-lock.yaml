@@ -54,11 +54,11 @@ importers:
         specifier: ^2.7.2
         version: 2.7.2
       '@typescript-eslint/eslint-plugin':
-        specifier: 6.0.0
-        version: 6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)(typescript@5.1.3)
+        specifier: ^6.2.1
+        version: 6.2.1(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)(typescript@5.1.3)
       '@typescript-eslint/parser':
-        specifier: 6.0.0
-        version: 6.0.0(eslint@8.40.0)(typescript@5.1.3)
+        specifier: ^6.2.1
+        version: 6.2.1(eslint@8.40.0)(typescript@5.1.3)
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -150,16 +150,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -220,16 +220,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -275,16 +275,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -321,10 +321,10 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
     devDependencies:
       '@tsconfig/esm':
@@ -349,16 +349,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -401,10 +401,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -435,13 +435,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -484,13 +484,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -536,10 +536,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -588,10 +588,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       tsx:
         specifier: ^3.12.7
@@ -667,13 +667,13 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -704,7 +704,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -732,7 +732,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/client
       undici:
         specifier: ^5.14.0
@@ -745,7 +745,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -761,16 +761,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -810,16 +810,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -856,16 +856,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -905,16 +905,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -945,11 +945,11 @@ importers:
         specifier: ^18.2.8
         version: 18.2.8
       '@typescript-eslint/eslint-plugin':
-        specifier: 6.0.0
-        version: 6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)(typescript@5.1.3)
+        specifier: ^6.2.1
+        version: 6.2.1(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)(typescript@5.1.3)
       '@typescript-eslint/parser':
-        specifier: 6.0.0
-        version: 6.0.0(eslint@8.40.0)(typescript@5.1.3)
+        specifier: ^6.2.1
+        version: 6.2.1(eslint@8.40.0)(typescript@5.1.3)
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
@@ -1011,16 +1011,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1093,16 +1093,16 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1148,11 +1148,11 @@ importers:
         specifier: ^8.2.0
         version: 8.5.4
       '@typescript-eslint/eslint-plugin':
-        specifier: 6.0.0
-        version: 6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)(typescript@5.1.3)
+        specifier: ^6.2.1
+        version: 6.2.1(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)(typescript@5.1.3)
       '@typescript-eslint/parser':
-        specifier: 6.0.0
-        version: 6.0.0(eslint@8.40.0)(typescript@5.1.3)
+        specifier: ^6.2.1
+        version: 6.2.1(eslint@8.40.0)(typescript@5.1.3)
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
@@ -1202,10 +1202,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -1229,13 +1229,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1275,10 +1275,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -1309,7 +1309,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@trpc/server':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
@@ -1352,13 +1352,13 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../client
       '@trpc/react-query':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1403,10 +1403,10 @@ importers:
         specifier: 4.18.0
         version: 4.18.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../client
       '@trpc/server':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1547,8 +1547,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@effect/schema':
-        specifier: ^0.30.0
-        version: 0.30.0
+        specifier: ^0.32.0
+        version: 0.32.0
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1574,16 +1574,16 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@trpc/client':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../client
       '@trpc/next':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../next
       '@trpc/react-query':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.35.0
+        specifier: 10.36.0
         version: link:../server
       '@types/node':
         specifier: ^18.16.16
@@ -1715,16 +1715,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^10.36.0
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.0.0
@@ -1770,8 +1770,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@effect/schema':
-        specifier: ^0.30.0
-        version: 0.30.0
+        specifier: ^0.32.0
+        version: 0.32.0
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -6183,20 +6183,20 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.16.0:
-    resolution: {integrity: sha512-ckZ/WvvI4zZGo+vRVTRBfBi4KvY9ZjLlnDWlrfhKnAJvgDu6SI8A5FJ8c/eJphmtLWNdoQx8j9pFhWLSIQe5RQ==}
+  /@effect/data@0.17.1:
+    resolution: {integrity: sha512-QCYkLE5Y5Dm5Yax5R3GmW4ZIgTx7W+kSZ7yq5eqQ/mFWa8i4yxbLuu8cudqzdeZtRtTGZKlhDxfFfgVtMywXJg==}
 
-  /@effect/io@0.35.0:
-    resolution: {integrity: sha512-6OgaG8+V8Acqy/JI75TNcYJXoLZMTXpRESw5CngVKxuxD6qQJiPia1cxhkfS2v5CmSLt4ZgP4u6gQtWKIYo7Lg==}
+  /@effect/io@0.37.0:
+    resolution: {integrity: sha512-Y45STkhyBmv/oep/+6kGEces9Btp/cfWkSX5Qqi4ar5MRK13DJrexWF8+jAuixGhXWwWQHHasE9z6w6lFgQWJQ==}
     dependencies:
-      '@effect/data': 0.16.0
+      '@effect/data': 0.17.1
 
-  /@effect/schema@0.30.0:
-    resolution: {integrity: sha512-Pj0MUD6kfYwUPUYejig2hAcQUR4aH+9e3My+puc3VkfLLlY1XkyMUIZZGV/B36iZYdMsNF4sEvpzXcZwZOaI6A==}
+  /@effect/schema@0.32.0:
+    resolution: {integrity: sha512-4HJK/cFkVPdIjYICy0eRsL7JuuLJ6mE3aJC5rX9OuUIei/qfctFEEX2NaARjtGX7hACBrRcuJCNwiq+54TTjFw==}
     dependencies:
-      '@effect/data': 0.16.0
-      '@effect/io': 0.35.0
-      fast-check: 3.11.0
+      '@effect/data': 0.17.1
+      '@effect/io': 0.37.0
+      fast-check: 3.12.0
 
   /@emotion/is-prop-valid@0.8.8:
     resolution: {integrity: sha512-u5WtneEAr5IDG2Wv65yhunPSMLIpuKsbuOktRojfrEiEvRyC85LgPMZI63cr7NUqT8ZIGdSVg8ZKGxIug4lXcA==}
@@ -9638,8 +9638,8 @@ packages:
       '@types/yargs-parser': 21.0.0
     dev: false
 
-  /@typescript-eslint/eslint-plugin@6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)(typescript@5.1.3):
-    resolution: {integrity: sha512-xuv6ghKGoiq856Bww/yVYnXGsKa588kY3M0XK7uUW/3fJNNULKRfZfSBkMTSpqGG/8ZCXCadfh8G/z/B4aqS/A==}
+  /@typescript-eslint/eslint-plugin@6.2.1(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)(typescript@5.1.3):
+    resolution: {integrity: sha512-iZVM/ALid9kO0+I81pnp1xmYiFyqibAHzrqX4q5YvvVEyJqY+e6rfTXSCsc2jUxGNqJqTfFSSij/NFkZBiBzLw==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
       '@typescript-eslint/parser': ^6.0.0 || ^6.0.0-alpha
@@ -9650,19 +9650,18 @@ packages:
         optional: true
     dependencies:
       '@eslint-community/regexpp': 4.5.1
-      '@typescript-eslint/parser': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
-      '@typescript-eslint/scope-manager': 6.0.0
-      '@typescript-eslint/type-utils': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
-      '@typescript-eslint/utils': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
-      '@typescript-eslint/visitor-keys': 6.0.0
+      '@typescript-eslint/parser': 6.2.1(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/scope-manager': 6.2.1
+      '@typescript-eslint/type-utils': 6.2.1(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/utils': 6.2.1(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/visitor-keys': 6.2.1
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.40.0
-      grapheme-splitter: 1.0.4
       graphemer: 1.4.0
       ignore: 5.2.4
       natural-compare: 1.4.0
       natural-compare-lite: 1.4.0
-      semver: 7.5.0
+      semver: 7.5.4
       ts-api-utils: 1.0.1(typescript@5.1.3)
       typescript: 5.1.3
     transitivePeerDependencies:
@@ -9688,8 +9687,8 @@ packages:
       - supports-color
     dev: true
 
-  /@typescript-eslint/parser@6.0.0(eslint@8.40.0)(typescript@5.1.3):
-    resolution: {integrity: sha512-TNaufYSPrr1U8n+3xN+Yp9g31vQDJqhXzzPSHfQDLcaO4tU+mCfODPxCwf4H530zo7aUBE3QIdxCXamEnG04Tg==}
+  /@typescript-eslint/parser@6.2.1(eslint@8.40.0)(typescript@5.1.3):
+    resolution: {integrity: sha512-Ld+uL1kYFU8e6btqBFpsHkwQ35rw30IWpdQxgOqOh4NfxSDH6uCkah1ks8R/RgQqI5hHPXMaLy9fbFseIe+dIg==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
@@ -9698,10 +9697,10 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@typescript-eslint/scope-manager': 6.0.0
-      '@typescript-eslint/types': 6.0.0
-      '@typescript-eslint/typescript-estree': 6.0.0(typescript@5.1.3)
-      '@typescript-eslint/visitor-keys': 6.0.0
+      '@typescript-eslint/scope-manager': 6.2.1
+      '@typescript-eslint/types': 6.2.1
+      '@typescript-eslint/typescript-estree': 6.2.1(typescript@5.1.3)
+      '@typescript-eslint/visitor-keys': 6.2.1
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.40.0
       typescript: 5.1.3
@@ -9716,15 +9715,15 @@ packages:
       '@typescript-eslint/visitor-keys': 5.59.2
     dev: true
 
-  /@typescript-eslint/scope-manager@6.0.0:
-    resolution: {integrity: sha512-o4q0KHlgCZTqjuaZ25nw5W57NeykZT9LiMEG4do/ovwvOcPnDO1BI5BQdCsUkjxFyrCL0cSzLjvIMfR9uo7cWg==}
+  /@typescript-eslint/scope-manager@6.2.1:
+    resolution: {integrity: sha512-UCqBF9WFqv64xNsIEPfBtenbfodPXsJ3nPAr55mGPkQIkiQvgoWNo+astj9ZUfJfVKiYgAZDMnM6dIpsxUMp3Q==}
     engines: {node: ^16.0.0 || >=18.0.0}
     dependencies:
-      '@typescript-eslint/types': 6.0.0
-      '@typescript-eslint/visitor-keys': 6.0.0
+      '@typescript-eslint/types': 6.2.1
+      '@typescript-eslint/visitor-keys': 6.2.1
 
-  /@typescript-eslint/type-utils@6.0.0(eslint@8.40.0)(typescript@5.1.3):
-    resolution: {integrity: sha512-ah6LJvLgkoZ/pyJ9GAdFkzeuMZ8goV6BH7eC9FPmojrnX9yNCIsfjB+zYcnex28YO3RFvBkV6rMV6WpIqkPvoQ==}
+  /@typescript-eslint/type-utils@6.2.1(eslint@8.40.0)(typescript@5.1.3):
+    resolution: {integrity: sha512-fTfCgomBMIgu2Dh2Or3gMYgoNAnQm3RLtRp+jP7A8fY+LJ2+9PNpi5p6QB5C4RSP+U3cjI0vDlI3mspAkpPVbQ==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
@@ -9733,8 +9732,8 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@typescript-eslint/typescript-estree': 6.0.0(typescript@5.1.3)
-      '@typescript-eslint/utils': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/typescript-estree': 6.2.1(typescript@5.1.3)
+      '@typescript-eslint/utils': 6.2.1(eslint@8.40.0)(typescript@5.1.3)
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.40.0
       ts-api-utils: 1.0.1(typescript@5.1.3)
@@ -9747,8 +9746,8 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
 
-  /@typescript-eslint/types@6.0.0:
-    resolution: {integrity: sha512-Zk9KDggyZM6tj0AJWYYKgF0yQyrcnievdhG0g5FqyU3Y2DRxJn4yWY21sJC0QKBckbsdKKjYDV2yVrrEvuTgxg==}
+  /@typescript-eslint/types@6.2.1:
+    resolution: {integrity: sha512-528bGcoelrpw+sETlyM91k51Arl2ajbNT9L4JwoXE2dvRe1yd8Q64E4OL7vHYw31mlnVsf+BeeLyAZUEQtqahQ==}
     engines: {node: ^16.0.0 || >=18.0.0}
 
   /@typescript-eslint/typescript-estree@5.59.2(typescript@5.1.3):
@@ -9772,8 +9771,8 @@ packages:
       - supports-color
     dev: true
 
-  /@typescript-eslint/typescript-estree@6.0.0(typescript@5.1.3):
-    resolution: {integrity: sha512-2zq4O7P6YCQADfmJ5OTDQTP3ktajnXIRrYAtHM9ofto/CJZV3QfJ89GEaM2BNGeSr1KgmBuLhEkz5FBkS2RQhQ==}
+  /@typescript-eslint/typescript-estree@6.2.1(typescript@5.1.3):
+    resolution: {integrity: sha512-G+UJeQx9AKBHRQBpmvr8T/3K5bJa485eu+4tQBxFq0KoT22+jJyzo1B50JDT9QdC1DEmWQfdKsa8ybiNWYsi0Q==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
       typescript: '*'
@@ -9781,8 +9780,8 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@typescript-eslint/types': 6.0.0
-      '@typescript-eslint/visitor-keys': 6.0.0
+      '@typescript-eslint/types': 6.2.1
+      '@typescript-eslint/visitor-keys': 6.2.1
       debug: 4.3.4(supports-color@8.1.1)
       globby: 11.1.0
       is-glob: 4.0.3
@@ -9792,8 +9791,8 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /@typescript-eslint/utils@6.0.0(eslint@8.40.0)(typescript@5.1.3):
-    resolution: {integrity: sha512-SOr6l4NB6HE4H/ktz0JVVWNXqCJTOo/mHnvIte1ZhBQ0Cvd04x5uKZa3zT6tiodL06zf5xxdK8COiDvPnQ27JQ==}
+  /@typescript-eslint/utils@6.2.1(eslint@8.40.0)(typescript@5.1.3):
+    resolution: {integrity: sha512-eBIXQeupYmxVB6S7x+B9SdBeB6qIdXKjgQBge2J+Ouv8h9Cxm5dHf/gfAZA6dkMaag+03HdbVInuXMmqFB/lKQ==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
@@ -9801,11 +9800,10 @@ packages:
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.40.0)
       '@types/json-schema': 7.0.12
       '@types/semver': 7.5.0
-      '@typescript-eslint/scope-manager': 6.0.0
-      '@typescript-eslint/types': 6.0.0
-      '@typescript-eslint/typescript-estree': 6.0.0(typescript@5.1.3)
+      '@typescript-eslint/scope-manager': 6.2.1
+      '@typescript-eslint/types': 6.2.1
+      '@typescript-eslint/typescript-estree': 6.2.1(typescript@5.1.3)
       eslint: 8.40.0
-      eslint-scope: 5.1.1
       semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
@@ -9819,11 +9817,11 @@ packages:
       eslint-visitor-keys: 3.4.1
     dev: true
 
-  /@typescript-eslint/visitor-keys@6.0.0:
-    resolution: {integrity: sha512-cvJ63l8c0yXdeT5POHpL0Q1cZoRcmRKFCtSjNGJxPkcP571EfZMcNbzWAc7oK3D1dRzm/V5EwtkANTZxqvuuUA==}
+  /@typescript-eslint/visitor-keys@6.2.1:
+    resolution: {integrity: sha512-iTN6w3k2JEZ7cyVdZJTVJx2Lv7t6zFA8DCrJEHD2mwfc16AEvvBWVhbFh34XyG2NORCd0viIgQY1+u7kPI0WpA==}
     engines: {node: ^16.0.0 || >=18.0.0}
     dependencies:
-      '@typescript-eslint/types': 6.0.0
+      '@typescript-eslint/types': 6.2.1
       eslint-visitor-keys: 3.4.1
 
   /@typescript/twoslash@3.1.0:
@@ -13378,7 +13376,7 @@ packages:
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.26.0)(eslint@8.40.0)
-      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)
+      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
       eslint-plugin-jsx-a11y: 6.6.1(eslint@8.40.0)
       eslint-plugin-react: 7.32.2(eslint@8.40.0)
       eslint-plugin-react-hooks: 4.6.0(eslint@8.40.0)
@@ -13415,7 +13413,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       enhanced-resolve: 5.12.0
       eslint: 8.40.0
-      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0)
+      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
       get-tsconfig: 4.5.0
       globby: 13.1.3
       is-core-module: 2.12.0
@@ -13425,7 +13423,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-module-utils@2.7.4(@typescript-eslint/parser@6.0.0)(eslint-import-resolver-node@0.3.6)(eslint@8.40.0):
+  /eslint-module-utils@2.7.4(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0):
     resolution: {integrity: sha512-j4GT+rqzCoRKHwURX7pddtIPGySnX9Si/cgMI5ztrcqOPtk5dDEeZ34CQVPphnqkJytlc97Vuk05Um2mJ3gEQA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -13446,15 +13444,16 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.1.3)
       debug: 3.2.7
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.26.0)(eslint@8.40.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /eslint-plugin-import@2.26.0(@typescript-eslint/parser@6.0.0)(eslint@8.40.0):
+  /eslint-plugin-import@2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0):
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -13464,14 +13463,14 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 6.0.0(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.1.3)
       array-includes: 3.1.6
       array.prototype.flat: 1.3.1
       debug: 2.6.9
       doctrine: 2.1.0
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.4(@typescript-eslint/parser@6.0.0)(eslint-import-resolver-node@0.3.6)(eslint@8.40.0)
+      eslint-module-utils: 2.7.4(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
       has: 1.0.3
       is-core-module: 2.12.0
       is-glob: 4.0.3
@@ -13598,6 +13597,7 @@ packages:
     dependencies:
       esrecurse: 4.3.0
       estraverse: 4.3.0
+    dev: false
 
   /eslint-scope@7.2.0:
     resolution: {integrity: sha512-DYj5deGlHBfMt15J7rdtyKNq/Nqlv5KfU4iodrQ019XESsRnwXH9KAE0y3cwtUHDo2ob7CypAnCqefh6vioWRw==}
@@ -13699,6 +13699,7 @@ packages:
   /estraverse@4.3.0:
     resolution: {integrity: sha512-39nnKffWz8xN1BU/2c79n9nB9HDzo0niYUqx6xyqUnyoAnQyyWpOTdZEeiCch8BBu515t4wp9ZmgVfVhn9EBpw==}
     engines: {node: '>=4.0'}
+    dev: false
 
   /estraverse@5.3.0:
     resolution: {integrity: sha512-MMdARuVEQziNTeJD8DgMqmhwR11BRQ/cBP+pLtYdSTnf3MIO8fFeiINEbX36ZdNlfU/7A9f3gUw49B3oQsvwBA==}
@@ -13904,8 +13905,8 @@ packages:
       iconv-lite: 0.4.24
       tmp: 0.0.33
 
-  /fast-check@3.11.0:
-    resolution: {integrity: sha512-H2tctb7AGfFQfz+DEr3UWhJ3s47LXsGp5g3jeJr5tHjnf4xUvpArIqiwcDmL2EXiv+auLHIpF5MqaIpIKvpxiA==}
+  /fast-check@3.12.0:
+    resolution: {integrity: sha512-SqahE9mlL3+lhjJ39joMLwcj6F+24hfZdf/tchlNO8sHcTdrUUdA5P/ZbSFZM9Xpzs36XaneGwE0FWepm/zyOA==}
     engines: {node: '>=8.0.0'}
     dependencies:
       pure-rand: 6.0.2
@@ -20762,6 +20763,7 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+    dev: false
 
   /semver@7.5.4:
     resolution: {integrity: sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==}
@@ -23831,7 +23833,3 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
