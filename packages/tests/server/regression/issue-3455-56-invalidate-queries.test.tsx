@@ -44,11 +44,18 @@ test('invalidate with filter', async () => {
 
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery(undefined, {
-      onSuccess: () => postSpy(),
+      structuralSharing: false,
     });
     const greeting = proxy.greeting.useQuery(undefined, {
-      onSuccess: () => greetingSpy(),
+      structuralSharing: false,
     });
+
+    React.useEffect(() => {
+      if (allPosts.data) postSpy();
+    }, [allPosts.data]);
+    React.useEffect(() => {
+      if (greeting.data) greetingSpy();
+    }, [greeting.data]);
 
     const utils = proxy.useContext();
 
@@ -108,9 +115,12 @@ test('tanstack query queries are invalidated', async () => {
   function MyComponent() {
     const utils = proxy.useContext();
 
-    const rqQuery = useQuery(['test'], async () => {
-      await new Promise((res) => setTimeout(res, 500));
-      return 'Hello tanstack';
+    const rqQuery = useQuery({
+      queryKey: ['test'],
+      queryFn: async () => {
+        await new Promise((res) => setTimeout(res, 500));
+        return 'Hello tanstack';
+      },
     });
     const trpcQuery = proxy.greeting.useQuery();
 
@@ -150,23 +160,23 @@ test('mixed providers with more "advanced" filter', async () => {
   function MyComponent() {
     const utils = proxy.useContext();
 
-    const rqQuery1 = useQuery(
-      ['test', 1],
-      async () => {
+    const rqQuery1 = useQuery({
+      queryKey: ['test', 1],
+      queryFn: async () => {
         await new Promise((res) => setTimeout(res, 500));
         return 'Hello tanstack1';
       },
-      { retry: false },
-    );
+      retry: false,
+    });
 
-    const rqQuery2 = useQuery(
-      ['test', 2],
-      async () => {
+    const rqQuery2 = useQuery({
+      queryKey: ['test', 2],
+      queryFn: async () => {
         await new Promise((res) => setTimeout(res, 500));
         return 'Hello tanstack2';
       },
-      { retry: true },
-    );
+      retry: true,
+    });
 
     const trpcQuery = proxy.greeting.useQuery(undefined, {
       retry: false,

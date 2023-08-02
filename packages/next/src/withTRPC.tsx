@@ -5,7 +5,7 @@
 import {
   dehydrate,
   DehydratedState,
-  Hydrate,
+  HydrationBoundary,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
@@ -134,9 +134,9 @@ export function withTRPC<
           ssrContext={ssrContext}
         >
           <QueryClientProvider client={queryClient}>
-            <Hydrate state={hydratedState}>
+            <HydrationBoundary state={hydratedState}>
               <AppOrPage {...props} />
-            </Hydrate>
+            </HydrationBoundary>
           </QueryClientProvider>
         </trpc.Provider>
       );

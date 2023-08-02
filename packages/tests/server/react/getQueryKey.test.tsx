@@ -339,7 +339,7 @@ describe('getQueryKeys', () => {
       proxy.post.all.useQuery();
 
       const qKey = getQueryKey(proxy.post.all, undefined, 'query');
-      const isFetching = useIsFetching(qKey);
+      const isFetching = useIsFetching({ queryKey: qKey });
 
       return <div>{isFetching}</div>;
     }

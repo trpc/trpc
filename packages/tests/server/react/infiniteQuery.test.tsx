@@ -32,7 +32,7 @@ describe('Infinite Query', () => {
 
       expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -133,7 +133,7 @@ describe('Infinite Query', () => {
 
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -165,7 +165,13 @@ describe('Infinite Query', () => {
             <button
               data-testid="prefetch"
               onClick={() =>
-                trpcContext.paginatedPosts.prefetchInfinite({ limit: 1 })
+                trpcContext.paginatedPosts.prefetchInfinite(
+                  { limit: 1 },
+                  {
+                    pages: 3,
+                    getNextPageParam: (lastPage) => lastPage.nextCursor,
+                  },
+                )
               }
             >
               Prefetch
@@ -262,7 +268,7 @@ describe('Infinite Query', () => {
       );
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -294,7 +300,13 @@ describe('Infinite Query', () => {
             <button
               data-testid="fetch"
               onClick={() =>
-                trpcContext.paginatedPosts.fetchInfinite({ limit: 1 })
+                trpcContext.paginatedPosts.fetchInfinite(
+                  { limit: 1 },
+                  {
+                    pages: 3,
+                    getNextPageParam: (lastPage) => lastPage.nextCursor,
+                  },
+                )
               }
             >
               Fetch
