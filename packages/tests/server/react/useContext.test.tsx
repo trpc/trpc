@@ -42,10 +42,13 @@ const ctx = konn()
         list: t.procedure
           .input(
             z.object({
-              cursor: z.string().optional(),
+              cursor: z.number().optional(),
             }),
           )
-          .query(() => posts),
+          .query((opts) => ({
+            items: posts.slice(opts.input.cursor ?? 0),
+            time: Date.now(), // make sure each request returns a different value
+          })),
         create: t.procedure
           .input(
             z.object({
@@ -237,11 +240,12 @@ test('invalidate', async () => {
   const stableProxySpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery(undefined, {
-      onSuccess: () => {
-        stableProxySpy();
-      },
-    });
+    const allPosts = proxy.post.all.useQuery();
+
+    useEffect(() => {
+      if (allPosts.data) stableProxySpy();
+    }, [allPosts.data]);
+
     const createPostMutation = proxy.post.create.useMutation();
 
     const utils = proxy.useContext();
@@ -302,16 +306,21 @@ test('invalidate procedure for both query and infinite', async () => {
   const invalidateInfiniteSpy = vi.fn();
 
   function MyComponent() {
-    const allPostsList = proxy.post.list.useQuery(
-      { cursor: undefined },
-      {
-        onSuccess: invalidateQuerySpy,
-      },
-    );
+    const allPostsList = proxy.post.list.useQuery({ cursor: undefined });
     const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
       { cursor: undefined },
-      { onSuccess: invalidateInfiniteSpy },
+      {
+        // We don't care about the cursor here
+        getNextPageParam: () => undefined,
+      },
     );
+
+    useEffect(() => {
+      if (allPostsList.data) invalidateQuerySpy();
+    }, [allPostsList.data]);
+    useEffect(() => {
+      if (allPostsListInfinite.data) invalidateInfiniteSpy();
+    }, [allPostsListInfinite.data]);
 
     const utils = proxy.useContext();
 
@@ -330,7 +339,7 @@ test('invalidate procedure for both query and infinite', async () => {
         </div>
         <div>
           {allPostsListInfinite.data?.pages.map((page) => {
-            return page.map((post) => {
+            return page.items.map((post) => {
               return <div key={post.id}>{post.text}</div>;
             });
           })}
@@ -418,16 +427,12 @@ test('reset', async () => {
 });
 
 test('refetch', async () => {
-  const { proxy, App } = ctx;
-  const querySuccessSpy = vi.fn();
+  const { proxy, App, spyLink } = ctx;
+  spyLink.mockClear();
 
   function MyComponent() {
     const utils = proxy.useContext();
-    const allPosts = proxy.post.all.useQuery(undefined, {
-      onSuccess() {
-        querySuccessSpy();
-      },
-    });
+    const allPosts = proxy.post.all.useQuery();
 
     useEffect(() => {
       if (allPosts.data) {
@@ -444,7 +449,7 @@ test('refetch', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(querySuccessSpy).toHaveBeenCalledTimes(2);
+    expect(spyLink).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -504,7 +509,14 @@ test('setData', async () => {
 test('setInfiniteData', async () => {
   const { proxy, App } = ctx;
   function MyComponent() {
-    const listPosts = proxy.post.list.useInfiniteQuery({}, { enabled: false });
+    const listPosts = proxy.post.list.useInfiniteQuery(
+      {},
+      {
+        enabled: false,
+        getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+          lastPage.items?.length === 0 ? undefined : (lastPageParam ?? 0) + 1,
+      },
+    );
 
     const utils = proxy.useContext();
 
@@ -513,8 +525,8 @@ test('setInfiniteData', async () => {
         utils.post.list.setInfiniteData(
           {},
           {
-            pageParams: [{}],
-            pages: [[{ id: 0, text: 'setInfiniteData1' }]],
+            pageParams: [0],
+            pages: [{ items: [{ id: 0, text: 'setInfiniteData1' }], time: 0 }],
           },
         );
       }
@@ -526,20 +538,19 @@ test('setInfiniteData', async () => {
             pages: [],
           };
           return {
-            pageParams: [
-              ...data.pageParams,
-              {
-                cursor: 1,
-              },
-            ],
+            pageParams: [...data.pageParams, 1],
             pages: [
               ...data.pages,
-              [
-                {
-                  id: 1,
-                  text: 'setInfiniteData2',
-                },
-              ],
+
+              {
+                items: [
+                  {
+                    id: 1,
+                    text: 'setInfiniteData2',
+                  },
+                ],
+                time: 1,
+              },
             ],
           };
         });
@@ -562,31 +573,35 @@ test('setInfiniteData', async () => {
     expect(utils.container).toHaveTextContent('setInfiniteData1');
     expect(utils.container).toHaveTextContent('setInfiniteData2');
     expect(utils.container).toMatchInlineSnapshot(`
-    <div>
-      {
-        "pageParams": [
-            {},
-            {
-                "cursor": 1
-            }
-        ],
-        "pages": [
-            [
-                {
-                    "id": 0,
-                    "text": "setInfiniteData1"
-                }
-            ],
-            [
-                {
-                    "id": 1,
-                    "text": "setInfiniteData2"
-                }
-            ]
-        ]
-    }
-    </div>
-  `);
+      <div>
+        {
+          "pageParams": [
+              0,
+              1
+          ],
+          "pages": [
+              {
+                  "items": [
+                      {
+                          "id": 0,
+                          "text": "setInfiniteData1"
+                      }
+                  ],
+                  "time": 0
+              },
+              {
+                  "items": [
+                      {
+                          "id": 1,
+                          "text": "setInfiniteData2"
+                      }
+                  ],
+                  "time": 1
+              }
+          ]
+      }
+      </div>
+    `);
   });
 });
 
@@ -671,8 +686,14 @@ describe('cancel', () => {
   test('abort query and infinite with utils', async () => {
     const { proxy, App } = ctx;
     function MyComponent() {
-      const allList = proxy.post.list.useQuery({ cursor: '0' });
-      const allListInfinite = proxy.post.list.useInfiniteQuery({ cursor: '0' });
+      const allList = proxy.post.list.useQuery({ cursor: 0 });
+      const allListInfinite = proxy.post.list.useInfiniteQuery(
+        { cursor: '0' },
+        {
+          // We don't care about the cursor here
+          getNextPageParam: () => undefined,
+        },
+      );
       const utils = proxy.useContext();
 
       useEffect(() => {
@@ -757,7 +778,6 @@ describe('cancel', () => {
 describe('query keys are stored separately', () => {
   test('getInfiniteData() does not data from useQuery()', async () => {
     const { proxy, App } = ctx;
-
     const unset = '__unset' as const;
     const data = {
       infinite: unset as unknown,
@@ -765,12 +785,13 @@ describe('query keys are stored separately', () => {
     };
     function MyComponent() {
       const utils = proxy.useContext();
-      const { data: posts } = proxy.post.all.useQuery(undefined, {
-        onSuccess() {
-          data.infinite = utils.post.all.getInfiniteData();
-          data.query = utils.post.all.getData();
-        },
-      });
+      const { data: posts } = proxy.post.all.useQuery();
+
+      useEffect(() => {
+        if (posts === undefined) return;
+        data.infinite = utils.post.all.getInfiniteData();
+        data.query = utils.post.all.getData();
+      }, [posts]);
 
       return (
         <div>
@@ -778,7 +799,6 @@ describe('query keys are stored separately', () => {
         </div>
       );
     }
-
     render(
       <App>
         <MyComponent />
@@ -788,7 +808,6 @@ describe('query keys are stored separately', () => {
       expect(data.infinite).not.toBe(unset);
       expect(data.query).not.toBe(unset);
     });
-
     expect(data.query).toMatchInlineSnapshot(`
       Array [
         Object {

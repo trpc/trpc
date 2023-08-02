@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@prisma/client": "^4.14.1",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0-beta.9",
     "@trpc/client": "^10.36.0",
     "@trpc/next": "^10.36.0",
     "@trpc/react-query": "^10.36.0",

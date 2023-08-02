@@ -39,8 +39,8 @@ describe('invalidateQueries()', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              queryClient.invalidateQueries([['allPosts']]);
-              queryClient.invalidateQueries([['postById']]);
+              queryClient.invalidateQueries({ queryKey: [['allPosts']] });
+              queryClient.invalidateQueries({ queryKey: [['postById']] });
             }}
           />
         </>

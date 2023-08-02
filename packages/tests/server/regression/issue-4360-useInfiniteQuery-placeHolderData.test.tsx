@@ -55,10 +55,6 @@ test('with input', async () => {
         getNextPageParam(lastPage) {
           return lastPage.next;
         },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
-        },
       },
     );
 
@@ -74,10 +70,6 @@ test('with input', async () => {
         },
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );
@@ -103,10 +95,6 @@ test('good placeholderData', () => {
         },
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );

@@ -115,3 +115,11 @@ export type DeepPartial<TObject> = TObject extends object
       [P in keyof TObject]?: DeepPartial<TObject[P]>;
     }
   : TObject;
+
+/**
+ * Omits the key without removing a potential union
+ * @internal
+ */
+export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
+  ? Omit<TObj, TKey>
+  : never;

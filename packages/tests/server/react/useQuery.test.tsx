@@ -2,7 +2,6 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React, { Suspense, useEffect } from 'react';
@@ -160,6 +159,7 @@ test('useSuspenseQuery()', async () => {
 test('useInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
+    const trpcContext = proxy.useContext();
     const query1 = proxy.post.list.useInfiniteQuery(
       {},
       {
@@ -174,13 +174,15 @@ test('useInfiniteQuery()', async () => {
       return <>...</>;
     }
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
+    >(query1.data);
 
     return (
       <>
@@ -192,6 +194,21 @@ test('useInfiniteQuery()', async () => {
         >
           Fetch more
         </button>
+        <button
+          data-testid="prefetch"
+          onClick={async () => {
+            const fetched = await trpcContext.post.list.fetchInfinite({}, {});
+            expectTypeOf<{
+              pages: { items: typeof fixtureData; next?: number | undefined }[];
+              pageParams: (number | null)[];
+            }>(fetched);
+            expect(
+              fetched.pageParams.some((p) => typeof p === 'undefined'),
+            ).toBeFalsy();
+          }}
+        >
+          Fetch
+        </button>
         <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
       </>
     );
@@ -202,8 +219,11 @@ test('useInfiniteQuery()', async () => {
       <MyComponent />
     </App>,
   );
+
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
+    expect(utils.container).toHaveTextContent(`null`);
+    expect(utils.container).not.toHaveTextContent(`undefined`);
   });
   await userEvent.click(utils.getByTestId('fetchMore'));
 
@@ -227,17 +247,19 @@ test('useInfiniteQuery() initialCursor', async () => {
     );
     expect(query1.trpc.path).toBe('post.list');
 
-    if (query1.isLoading || query1.isFetching || !query1.data) {
+    if (query1.isPending || query1.isFetching || !query1.data) {
       return <>...</>;
     }
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
+    >(query1.data);
 
     return (
       <>
@@ -286,13 +308,25 @@ test('useSuspenseInfiniteQuery()', async () => {
     expect(query1.data).not.toBeFalsy();
     expect(data).not.toBeFalsy();
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
+    >(query1.data);
+
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
+    >(data);
 
     return (
       <>
@@ -325,35 +359,4 @@ test('useSuspenseInfiniteQuery()', async () => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });
-});
-
-test('useQuery options inference', () => {
-  const { appRouter, proxy, App } = ctx;
-
-  type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
-  type Options = ReactQueryProcedure['post']['byIdWithSerializable'];
-
-  function MyComponent() {
-    const options: Options = {};
-    proxy.post.byIdWithSerializable.useQuery(
-      { id: '1' },
-      {
-        ...options,
-        onSuccess: (data) => {
-          expectTypeOf(data).toMatchTypeOf<{
-            id: number;
-            date: string;
-          }>();
-        },
-      },
-    );
-
-    return <></>;
-  }
-
-  render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
 });

@@ -20,7 +20,7 @@
     "@fastify/busboy": "^1.2.1",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0-beta.9",
     "@testing-library/dom": "^9.0.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
