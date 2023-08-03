@@ -20,8 +20,26 @@ const ctx = konn()
 test('preserve `.cause` even on non-error objects', async () => {
   const url = ctx.httpUrl;
 
-  const normalResult = (await fetch(`${url}/a,b`)).json();
-  const uriEncodedResult = (await fetch(`${url}/a%2Cb`)).json();
+  const normalResult = await (
+    await fetch(`${url}/a,b?batch=1&input={}`)
+  ).json();
+  const uriEncodedResult = await (
+    await fetch(`${url}/a%2Cb?batch=1&input={}`)
+  ).json();
 
+  expect(normalResult).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "result": Object {
+          "data": "a",
+        },
+      },
+      Object {
+        "result": Object {
+          "data": "b",
+        },
+      },
+    ]
+  `);
   expect(normalResult).toEqual(uriEncodedResult);
 });
