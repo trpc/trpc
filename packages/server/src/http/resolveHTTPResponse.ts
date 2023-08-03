@@ -314,7 +314,9 @@ export async function resolveHTTPResponse<
       preprocessedBody: opts.preprocessedBody ?? false,
     });
 
-    paths = isBatchCall ? opts.path.split(',') : [opts.path];
+    paths = isBatchCall
+      ? decodeURIComponent(opts.path).split(',')
+      : [opts.path];
     ctx = await opts.createContext();
     const promises = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
