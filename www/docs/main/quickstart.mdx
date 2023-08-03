@@ -271,7 +271,7 @@ const appRouter = router({
 });
 ```
 
-</TabItem>
+  </TabItem>
   <TabItem value="yup" label="Yup">
     The input parser can be any <code>YupSchema</code>, e.g. <code>yup.string()</code> or <code>yup.object({})</code>.
 
@@ -293,6 +293,39 @@ const appRouter = router({
   // ...
   userById: publicProcedure
     .input(yup.string().required())
+    .query(async (opts) => {
+      const { input } = opts;
+      //      ^?
+      // Retrieve the user with the given ID
+      const user = await db.user.findById(input);
+      //    ^?
+      return user;
+    }),
+});
+```
+
+  </TabItem>
+  <TabItem value="valibot" label="Valibot">
+    The input parser can be any <code>BaseSchema</code> or <code>BaseSchemaAsync</code>, e.g. <code>string()</code> or <code>object({})</code>.
+
+<br />
+<br />
+
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
+// ---cut---
+import { string } from 'valibot';
+
+const appRouter = router({
+  // ...
+  userById: publicProcedure
+    .input(string())
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
