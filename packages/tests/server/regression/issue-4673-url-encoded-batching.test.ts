@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
+import { z } from 'zod';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -8,6 +9,7 @@ const ctx = konn()
     const appRouter = t.router({
       a: t.procedure.query(() => 'a'),
       b: t.procedure.query(() => 'b'),
+      withInput: t.procedure.input(z.string()).query((opts) => opts.input),
     });
 
     return routerToServerAndClientNew(appRouter);
@@ -17,7 +19,7 @@ const ctx = konn()
   })
   .done();
 
-test('preserve `.cause` even on non-error objects', async () => {
+test('handle URL encoded commas in URL.pathname', async () => {
   const url = ctx.httpUrl;
 
   const normalResult = await (
@@ -41,5 +43,33 @@ test('preserve `.cause` even on non-error objects', async () => {
       },
     ]
   `);
+});
+
+test('handle URL encoded input in search params', async () => {
+  const url = ctx.httpUrl;
+
+  const normalResult = await (
+    await fetch(
+      `${url}/withInput?batch=1&input=${JSON.stringify({ 0: 'hello' })}`,
+    )
+  ).json();
+  const uriEncodedResult = await (
+    await fetch(
+      `${url}/withInput?batch=1&input=${encodeURIComponent(
+        JSON.stringify({ 0: 'hello' }),
+      )}`,
+    )
+  ).json();
+
+  expect(normalResult).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "result": Object {
+          "data": "hello",
+        },
+      },
+    ]
+  `);
+
   expect(normalResult).toEqual(uriEncodedResult);
 });
