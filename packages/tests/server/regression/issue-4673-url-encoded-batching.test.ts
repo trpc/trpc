@@ -43,6 +43,7 @@ test('handle URL encoded commas in URL.pathname', async () => {
       },
     ]
   `);
+  expect(normalResult).toEqual(uriEncodedResult);
 });
 
 test('handle URL encoded input in search params', async () => {
