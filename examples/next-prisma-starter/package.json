@@ -25,6 +25,7 @@
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
     "postinstall": "pnpm generate"
   },
+  "engines": { "node": ">=16.8" },
   "packageManager": "pnpm@8.5.0",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
