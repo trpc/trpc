@@ -90,7 +90,7 @@ export function experimental_createTRPCNextAppDirServer<
         // 2. user calls `trpc.post.listXYZ.query()` => 'post.listXYZ' is added to the set
         // 3. user calls `trpc.post.revalidate()` => fuzzy matching on 'post' revalidates 'post.list' and 'post.listXYZ'.
         seenTags.add(cacheTag);
-        console.log('seenTags', seenTags);
+        // console.log('seenTags', seenTags);
       }
 
       return (client[procedureType] as any)(procedurePath, ...callOpts.args);
