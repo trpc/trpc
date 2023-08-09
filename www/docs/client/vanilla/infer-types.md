@@ -74,7 +74,7 @@ type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
-## Infer `TRPClientError` types
+## Infer `TRPCClientError` types
 
 It's also useful to infer the error type for your `AppRouter`
 
