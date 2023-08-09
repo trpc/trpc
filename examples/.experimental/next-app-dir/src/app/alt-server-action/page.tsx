@@ -7,6 +7,7 @@ import { JsonPreTag } from '~/components/json-pretag';
 import { api } from '~/trpc/server-http';
 import { Suspense } from 'react';
 import { createPostAction } from './_actions';
+import { WithHook } from './with-hook';
 
 export default async function Page() {
   const post = await api.getLatestPost.query();
@@ -25,6 +26,8 @@ export default async function Page() {
         <Button type="submit">Create</Button>
       </form>
 
+      <WithHook />
+
       <div className="space-y-2">
         <h2 className="text-lg font-bold">Code</h2>
         <Suspense fallback={'Reading page source...'}>
@@ -32,6 +35,8 @@ export default async function Page() {
           <ComponentCode path="./_actions.ts" />
           <h3 className="font-semibold">page.tsx</h3>
           <ComponentCode path="./page.tsx" />
+          <h3 className="font-semibold">with-hook.tsx</h3>
+          <ComponentCode path="./with-hook.tsx" />
         </Suspense>
       </div>
     </div>
