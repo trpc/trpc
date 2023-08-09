@@ -47,7 +47,7 @@
     "@trpc/react-query": "^10.37.1",
     "@trpc/server": "^10.37.1",
     "clsx": "^2.0.0",
-    "next": "^13.4.13-canary.8",
+    "next": "^13.4.13",
     "next-auth": "^4.22.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
