@@ -306,7 +306,7 @@ export function createReactQueryUtilsProxy<
       return context[contextName];
     }
 
-    return createRecursiveProxy(async (opts) => {
+    return createRecursiveProxy((opts) => {
       const path = [key, ...opts.path];
       const utilName = path.pop() as keyof AnyDecoratedProcedure;
       const args = [...opts.args] as Parameters<
@@ -337,11 +337,17 @@ export function createReactQueryUtilsProxy<
         getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       };
 
-      await overrides?.[utilName]?.({
-        queryKey: queryKey as unknown as TRPCQueryKey,
-        path,
-        input,
-      });
+      if (overrides?.[utilName]) {
+        const override = overrides?.[utilName]?.({
+          queryKey: queryKey as unknown as TRPCQueryKey,
+          path,
+          input,
+        });
+        if (override instanceof Promise) {
+          return override.then(() => contextMap[utilName]());
+        }
+      }
+
       return contextMap[utilName]();
     });
   });
