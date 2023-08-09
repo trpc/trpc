@@ -1,10 +1,9 @@
-import { createReactQueryHooks } from '@trpc/react-query';
 import {
   CreateClient,
-  createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
   CreateReactUtilsProxy,
+  createRootHooks,
   CreateTRPCReactOptions,
   DecoratedProcedureRecord,
   TRPCProvider,
@@ -36,8 +35,7 @@ export type CreateTRPCNext<TRouter extends AnyRouter> = ProtectedIntersection<
 export function experimental_createTRPCNextReactQuery<
   TRouter extends AnyRouter,
 >(opts?: CreateTRPCNextReactOptions<TRouter>): CreateTRPCNext<TRouter> {
-  const hooks = createHooksInternal<TRouter>(opts);
-  const trpc = createReactQueryHooks<TRouter>(opts);
+  const hooks = createRootHooks<TRouter>(opts);
 
   return createFlatProxy((key) => {
     if (key === 'useContext') {
@@ -63,8 +61,8 @@ export function experimental_createTRPCNextReactQuery<
       };
     }
 
-    if (trpc.hasOwnProperty(key)) {
-      return (trpc as any)[key];
+    if (hooks.hasOwnProperty(key)) {
+      return (hooks as any)[key];
     }
 
     if (key === 'useQueries') {

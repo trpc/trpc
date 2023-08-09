@@ -12,7 +12,7 @@ import superjson from 'superjson';
 
 export function TRPCReactProvider(props: {
   children: React.ReactNode;
-  headers?: Headers;
+  headers: Headers;
 }) {
   const [queryClient] = useState(
     () =>
@@ -34,14 +34,6 @@ export function TRPCReactProvider(props: {
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        // unstable_httpBatchStreamLink({
-        //   url: getUrl(),
-        //   headers() {
-        //     const headers = new Map(props.headers);
-        //     headers.set('x-trpc-source', 'nextjs-react');
-        //     return Object.fromEntries(headers);
-        //   },
-        // }),
         experimental_nextHttpLink({
           batch: true,
           unstable_stream: true,
