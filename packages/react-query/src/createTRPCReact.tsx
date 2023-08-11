@@ -3,11 +3,11 @@ import { TRPCClientErrorLike } from '@trpc/client';
 import {
   AnyMutationProcedure,
   AnyProcedure,
+  AnyProcedureRouterRecord,
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
-  ProcedureRouterRecord,
   ProtectedIntersection,
 } from '@trpc/server';
 import {
@@ -206,7 +206,7 @@ export type DecorateProcedure<
  * @internal
  */
 export type DecoratedProcedureRecord<
-  TProcedures extends ProcedureRouterRecord,
+  TProcedures extends AnyProcedureRouterRecord,
   TFlags,
   TPath extends string = '',
 > = {

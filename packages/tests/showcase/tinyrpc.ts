@@ -4,11 +4,11 @@
 import type {
   AnyMutationProcedure,
   AnyProcedure,
+  AnyProcedureRouterRecord,
   AnyQueryProcedure,
   AnyRouter,
   inferProcedureInput,
   inferProcedureOutput,
-  ProcedureRouterRecord,
 } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
 
@@ -63,7 +63,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
+type DecoratedProcedureRecord<TProcedures extends AnyProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure

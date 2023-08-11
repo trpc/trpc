@@ -12,7 +12,9 @@ import {
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
+  Procedure,
   ProcedureArgs,
+  ProcedureParams,
 } from './procedure';
 import {
   inferHandlerInput,
@@ -24,14 +26,29 @@ import {
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
-export interface ProcedureRouterRecord {
+export interface AnyProcedureRouterRecord {
   [key: string]: AnyProcedure | AnyRouter;
 }
 
 /**
+ * @deprecated use `AnyProcedureRouterRecord` instead
+ */
+export type ProcedureRouterRecord = AnyProcedureRouterRecord;
+
+export interface ProcedureRouterRecordWithConfig<
+  TConfig extends AnyRootConfig,
+> {
+  [key: string]:
+    | RouterDef<TConfig, any, any>
+    | Procedure<
+        ProcedureType,
+        ProcedureParams<TConfig, any, any, any, any, any, any>
+      >;
+}
+/**
  * @deprecated
  */
-interface DeprecatedProcedureRouterRecord {
+interface DeprecatedAnyProcedureRouterRecord {
   queries: Record<string, AnyQueryProcedure>;
   mutations: Record<string, AnyMutationProcedure>;
   subscriptions: Record<string, AnySubscriptionProcedure>;
@@ -39,11 +56,11 @@ interface DeprecatedProcedureRouterRecord {
 
 export interface RouterDef<
   TConfig extends AnyRootConfig,
-  TRecord extends ProcedureRouterRecord,
+  TRecord extends ProcedureRouterRecordWithConfig<TConfig>,
   /**
    * @deprecated
    */
-  TOld extends DeprecatedProcedureRouterRecord = {
+  TOld extends DeprecatedAnyProcedureRouterRecord = {
     // eslint-disable-next-line @typescript-eslint/ban-types
     queries: {};
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -75,7 +92,7 @@ export interface RouterDef<
 
 export type AnyRouterDef<
   TConfig extends AnyRootConfig = AnyRootConfig,
-  TOld extends DeprecatedProcedureRouterRecord = any,
+  TOld extends DeprecatedAnyProcedureRouterRecord = any,
 > = RouterDef<TConfig, any, TOld>;
 
 /**
@@ -96,7 +113,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
+type DecoratedProcedureRecord<TProcedures extends AnyProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
@@ -176,7 +193,7 @@ const reservedWords = [
  */
 export type CreateRouterInner<
   TConfig extends AnyRootConfig,
-  TProcRouterRecord extends ProcedureRouterRecord,
+  TProcRouterRecord extends ProcedureRouterRecordWithConfig<TConfig>,
 > = Router<RouterDef<TConfig, TProcRouterRecord>> &
   /**
    * This should be deleted in v11
@@ -190,7 +207,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
   config: TConfig,
 ) {
   return function createRouterInner<
-    TProcRouterRecord extends ProcedureRouterRecord,
+    TProcRouterRecord extends ProcedureRouterRecordWithConfig<TConfig>,
   >(
     procedures: TProcRouterRecord,
   ): CreateRouterInner<TConfig, TProcRouterRecord> {
@@ -205,7 +222,10 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     }
 
     const routerProcedures: ProcedureRecord = omitPrototype({});
-    function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
+    function recursiveGetPaths(
+      procedures: AnyProcedureRouterRecord,
+      path = '',
+    ) {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
@@ -221,7 +241,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         routerProcedures[newPath] = procedureOrRouter;
       }
     }
-    recursiveGetPaths(procedures);
+    recursiveGetPaths(procedures as AnyProcedureRouterRecord);
 
     const _def: AnyRouterDef<TConfig> = {
       _config: config,
@@ -307,7 +327,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
  * @internal
  */
 export function callProcedure(
-  opts: ProcedureCallOptions & { procedures: ProcedureRouterRecord },
+  opts: ProcedureCallOptions & { procedures: AnyProcedureRouterRecord },
 ) {
   const { type, path } = opts;
 

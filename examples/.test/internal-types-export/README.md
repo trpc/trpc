@@ -69,7 +69,7 @@ export declare const t: {
         _output_out: unknown;
         _meta: object;
     }, TNewParams>;
-    router: <TProcRouterRecord extends import("@trpc/server").ProcedureRouterRecord>(procedures: TProcRouterRecord) => import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
+    router: <TProcRouterRecord extends import("@trpc/server").AnyProcedureRouterRecord>(procedures: TProcRouterRecord) => import("@trpc/server").CreateRouterInner<import("@trpc/server").RootConfig<{
         ctx: object;
         meta: object;
         errorShape: import("@trpc/server").DefaultErrorShape;

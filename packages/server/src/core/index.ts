@@ -1,7 +1,7 @@
 export type {
   AnyRouter,
   ProcedureRecord,
-  ProcedureRouterRecord,
+  AnyProcedureRouterRecord,
   CreateRouterInner,
   Router,
 } from './router';

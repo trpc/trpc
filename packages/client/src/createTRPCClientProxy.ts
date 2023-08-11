@@ -2,12 +2,12 @@
 import type {
   AnyMutationProcedure,
   AnyProcedure,
+  AnyProcedureRouterRecord,
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
   IntersectionError,
   ProcedureArgs,
-  ProcedureRouterRecord,
   ProcedureType,
 } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
@@ -70,7 +70,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
  */
 type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
-  TProcedures extends ProcedureRouterRecord,
+  TProcedures extends AnyProcedureRouterRecord,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>

@@ -2,10 +2,10 @@ import { Resolver } from '@trpc/client';
 import {
   AnyMutationProcedure,
   AnyProcedure,
+  AnyProcedureRouterRecord,
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
-  ProcedureRouterRecord,
 } from '@trpc/server';
 
 export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
@@ -29,7 +29,7 @@ export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
     : never;
 
 export type NextAppDirDecoratedProcedureRecord<
-  TProcedures extends ProcedureRouterRecord,
+  TProcedures extends AnyProcedureRouterRecord,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? NextAppDirDecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
