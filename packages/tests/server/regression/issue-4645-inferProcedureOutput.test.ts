@@ -32,7 +32,7 @@ test('infer with superjson', async () => {
   const t = initTRPC.create({
     transformer: SuperJSON,
   });
-  const helloProcedure = t.procedure.input(z.string()).query((opts) => {
+  const helloProcedure = t.procedure.input(z.string()).query(() => {
     return {
       hello: Math.random() > 0.5 ? 'hello' : undefined,
     };
@@ -52,7 +52,7 @@ test('infer with superjson', async () => {
 
 test('inference helpers', async () => {
   const t = initTRPC.create();
-  const helloProcedure = t.procedure.input(z.string()).query((opts) => {
+  const helloProcedure = t.procedure.input(z.string()).query(() => {
     return {
       hello: Math.random() > 0.5 ? 'hello' : undefined,
     };
