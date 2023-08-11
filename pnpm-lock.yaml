@@ -1633,8 +1633,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.0
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1771,8 +1771,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.0
       vite:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@18.16.16)
@@ -1958,8 +1958,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -22934,8 +22934,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.11.0:
-    resolution: {integrity: sha512-qF54ZhrrME9jsicNOw16G7+4JIM2hoT5lyybCJqK7AyvU7/q7/kkmf6xaPc+GigF+GAO66ZWB12ZbFV5RyiQIA==}
+  /valibot@0.12.0:
+    resolution: {integrity: sha512-EGx/uDUpRa9wB9NkD7fsktc02rvXWlJzDTC/ihbE+NybhzAsMhns2OOdNv2R4BtdGnDvaCEGi/DbgR5RvgCS8A==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
