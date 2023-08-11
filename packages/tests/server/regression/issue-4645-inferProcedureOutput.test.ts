@@ -1,4 +1,8 @@
-import { inferProcedureOutput, initTRPC } from '@trpc/server';
+import {
+  inferProcedureOutput,
+  inferRouterOutputs,
+  initTRPC,
+} from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import SuperJSON from 'superjson';
 import { z } from 'zod';
@@ -44,4 +48,18 @@ test('infer with superjson', async () => {
     type Inferred = inferTransformedProcedureOutput<typeof helloProcedure>;
     expectTypeOf<Inferred>().toEqualTypeOf<{ hello: string | undefined }>();
   }
+});
+
+test('inference helpers', async () => {
+  const t = initTRPC.create();
+  const helloProcedure = t.procedure.input(z.string()).query((opts) => {
+    return {
+      hello: Math.random() > 0.5 ? 'hello' : undefined,
+    };
+  });
+  const router = t.router({
+    hello: helloProcedure,
+  });
+  type Outputs = inferRouterOutputs<typeof router>;
+  expectTypeOf<Outputs['hello']>().toEqualTypeOf<{ hello?: string }>();
 });
