@@ -45,6 +45,10 @@ export const appRouter = router({
       return `hello ${opts.input.text} - ${Math.random()}`;
     }),
 
+  nested: router({
+    createPost,
+  }),
+
   secret: publicProcedure.query(async (opts) => {
     if (!opts.ctx.session) {
       return 'You are not authenticated';

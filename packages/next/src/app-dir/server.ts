@@ -175,7 +175,12 @@ export function experimental_createServerActionHandler<
 
       const record = opts.router._def.record;
       const path = (proc as any)._def().path;
-      const procedure = record[path];
+      const procedure = path
+        .split('.')
+        .reduce(
+          (o: { [x: string]: any }, p: string | number) => o?.[p],
+          record,
+        );
 
       if (!procedure) {
         throw new TRPCError({
