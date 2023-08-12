@@ -111,12 +111,15 @@ type CreateMiddlewareReturnInput<
 /**
  * @internal
  */
-type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
+type deriveParamsFromConfig<
+  TConfig extends AnyRootConfig,
+  TInputIn = unknown,
+> = {
   _config: TConfig;
   // eslint-disable-next-line @typescript-eslint/ban-types
   _ctx_out: {};
-  _input_out: unknown;
-  _input_in: unknown;
+  _input_out: TInputIn;
+  _input_in: TInputIn;
   _output_in: unknown;
   _output_out: unknown;
   _meta: TConfig['$types']['meta'];
@@ -159,10 +162,13 @@ export type MiddlewareFunction<
 /**
  * @internal
  */
-export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
+export function createMiddlewareFactory<
+  TConfig extends AnyRootConfig,
+  TInputIn = unknown,
+>() {
   function createMiddlewareInner<TNewParams extends ProcedureParams>(
     middlewares: MiddlewareFunction<any, any>[],
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
     return {
       _middlewares: middlewares,
       unstable_pipe(middlewareBuilderOrFn) {
@@ -180,22 +186,31 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   }
 
   function createMiddleware<TNewParams extends ProcedureParams>(
-    fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+    fn: MiddlewareFunction<
+      deriveParamsFromConfig<TConfig, TInputIn>,
+      TNewParams
+    >,
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
     return createMiddlewareInner([fn]);
   }
 
   return createMiddleware;
 }
 
-export const standaloneMiddleware = <TCtx extends object>() => ({
+export const standaloneMiddleware = <
+  TCtx extends {
+    ctx?: object;
+    input?: object;
+  },
+>() => ({
   create: createMiddlewareFactory<
     RootConfig<{
-      ctx: TCtx;
+      ctx: TCtx extends { ctx: infer T } ? T : object;
       meta: object;
       errorShape: object;
       transformer: object;
-    }>
+    }>,
+    TCtx extends { input: infer T } ? T : unknown
   >(),
 });
 
