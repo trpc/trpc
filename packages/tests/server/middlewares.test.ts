@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC, standaloneMiddleware } from '@trpc/server/src';
 
 test('decorate independently', () => {
   type User = {
@@ -51,6 +51,184 @@ test('decorate independently', () => {
       foo: 'foo';
       bar: 'bar';
       baz: 'baz';
+    }>();
+  });
+});
+
+test('standalone middlewares that define the ctx they require and can be used in different tRPC instances', () => {
+  type Human = {
+    id: string;
+    name: string;
+  };
+  type HumanContext = {
+    user: Human;
+  };
+  const tHuman = initTRPC.context<HumanContext>().create();
+
+  type Alien = {
+    id: string;
+    name: Buffer; // aliens have weird names
+  };
+  type AlienContext = {
+    user: Alien;
+    planet: 'mars' | 'venus';
+  };
+  const tAlien = initTRPC.context<AlienContext>().create();
+
+  const addFooToCtxMiddleware = standaloneMiddleware().create((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<object>();
+    return opts.next({
+      ctx: {
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const addUserNameLengthToCtxMiddleware = standaloneMiddleware<{
+    user: Human | Alien;
+  }>().create((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      user: Human | Alien;
+    }>();
+    return opts.next({
+      ctx: {
+        nameLength: opts.ctx.user.name.length,
+      },
+    });
+  });
+
+  const determineIfUserNameIsLongMiddleware = standaloneMiddleware<{
+    nameLength: number;
+  }>().create((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      nameLength: number;
+    }>();
+
+    return opts.next({
+      ctx: {
+        nameIsLong: opts.ctx.nameLength > 10,
+      },
+    });
+  });
+
+  const mapUserToUserTypeMiddleware = standaloneMiddleware<{
+    user: Human | Alien;
+  }>().create((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      user: Human | Alien;
+    }>();
+    return opts.next({
+      ctx: {
+        user:
+          typeof opts.ctx.user.name === 'string'
+            ? ('human' as const)
+            : ('alien' as const),
+      },
+    });
+  });
+
+  // This is not OK because determineIfUserNameIsLongMiddleware requires { nameLength: number } which is not in either context:
+  const expectErrorHumanContextDoesNotHaveNameLength = tHuman.procedure.use(
+    // @ts-expect-error: no user in context
+    determineIfUserNameIsLongMiddleware,
+  );
+  const expectErrorAlienContextDoesNotHaveNameLength = tAlien.procedure.use(
+    // @ts-expect-error: no user in context
+    determineIfUserNameIsLongMiddleware,
+  );
+
+  expectTypeOf(
+    expectErrorHumanContextDoesNotHaveNameLength,
+  ).toEqualTypeOf<'The context type is not compatible with the middleware'>();
+
+  expectTypeOf(
+    expectErrorAlienContextDoesNotHaveNameLength,
+  ).toEqualTypeOf<'The context type is not compatible with the middleware'>();
+
+  // This is not OK because determineIfUserNameIsLongMiddleware requires { nameLength: number } which is not in HumanContext & { foo: string }
+  const expectErrorFooMiddlewareDoesNotAddNameLength = tHuman.procedure
+    .use(addFooToCtxMiddleware)
+    // @ts-expect-error: no nameLength in context
+    .use(determineIfUserNameIsLongMiddleware);
+
+  expectTypeOf(
+    expectErrorFooMiddlewareDoesNotAddNameLength,
+  ).toEqualTypeOf<'The context type is not compatible with the middleware'>();
+
+  // This is OK because the context provides { user: Human } or { user: Alien } which is what addUserNameLengthToCtx requires
+  tHuman.procedure
+    .use(addFooToCtxMiddleware)
+    .use(addUserNameLengthToCtxMiddleware)
+    // determineIfUserNameIsLongMiddleware only needs { nameLength: number }, so overwriting user is fine
+    .use(mapUserToUserTypeMiddleware)
+    .use(determineIfUserNameIsLongMiddleware)
+    .query(({ ctx }) => {
+      expectTypeOf(ctx).toEqualTypeOf<{
+        user: 'human' | 'alien';
+        nameLength: number;
+        nameIsLong: boolean;
+        foo: 'foo';
+      }>();
+    });
+
+  tAlien.procedure
+    .use(addFooToCtxMiddleware)
+    .use(addUserNameLengthToCtxMiddleware)
+    // determineIfUserNameIsLongMiddleware only needs { nameLength: number }, so overwriting user is fine
+    .use(mapUserToUserTypeMiddleware)
+    .use(determineIfUserNameIsLongMiddleware)
+    .query(({ ctx }) => {
+      expectTypeOf(ctx).toEqualTypeOf<{
+        user: 'human' | 'alien';
+        nameLength: number;
+        nameIsLong: boolean;
+        planet: 'mars' | 'venus';
+        foo: 'foo';
+      }>();
+    });
+
+  const _invalidPipedVersion1 = addFooToCtxMiddleware
+    // This is not OK because the requirements of the later middlewares are not met
+    // @ts-expect-error: No user in context at this point
+    .unstable_pipe(addUserNameLengthToCtxMiddleware)
+    // @ts-expect-error: No user in context at this point
+    .unstable_pipe(mapUserToUserTypeMiddleware)
+    .unstable_pipe(determineIfUserNameIsLongMiddleware);
+
+  const requireUserAndAddFooToCtxMiddleware = standaloneMiddleware<{
+    user: Human | Alien;
+  }>().create((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      user: Human | Alien;
+    }>();
+    return opts.next({
+      ctx: {
+        foo: 'foo' as const,
+      },
+    });
+  });
+
+  const validPipedVersion = requireUserAndAddFooToCtxMiddleware
+    .unstable_pipe(addUserNameLengthToCtxMiddleware)
+    .unstable_pipe(mapUserToUserTypeMiddleware)
+    .unstable_pipe(determineIfUserNameIsLongMiddleware);
+
+  tHuman.procedure.use(validPipedVersion).query(({ ctx }) => {
+    expectTypeOf(ctx).toEqualTypeOf<{
+      user: 'human' | 'alien';
+      nameLength: number;
+      nameIsLong: boolean;
+      foo: 'foo';
+    }>();
+  });
+
+  tAlien.procedure.use(validPipedVersion).query(({ ctx }) => {
+    expectTypeOf(ctx).toEqualTypeOf<{
+      user: 'human' | 'alien';
+      nameLength: number;
+      nameIsLong: boolean;
+      planet: 'mars' | 'venus';
+      foo: 'foo';
     }>();
   });
 });

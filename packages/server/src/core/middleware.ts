@@ -1,6 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
-import { AnyRootConfig } from './internals/config';
+import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
@@ -187,6 +187,17 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
 
   return createMiddleware;
 }
+
+export const standaloneMiddleware = <TCtx extends object>() => ({
+  create: createMiddlewareFactory<
+    RootConfig<{
+      ctx: TCtx;
+      meta: object;
+      errorShape: object;
+      transformer: object;
+    }>
+  >(),
+});
 
 function isPlainObject(obj: unknown) {
   return obj && typeof obj === 'object' && !Array.isArray(obj);
