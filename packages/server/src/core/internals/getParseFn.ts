@@ -1,3 +1,4 @@
+import { parseAsync } from 'valibot';
 import { Parser } from '../parser';
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
@@ -17,8 +18,13 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
 
   if (typeof parser.parse === 'function') {
     // ParserZodEsque
-    // ParserValibotEsque
+    // ParserValibotEsque (<= v0.12.X)
     return parser.parse.bind(parser);
+  }
+
+  if (typeof parser._parse === 'function') {
+    // ParserValibotEsque (>= v0.13.X)
+    return (value) => parseAsync(parser, value);
   }
 
   if (typeof parser.validateSync === 'function') {
