@@ -129,32 +129,20 @@ test('standalone middlewares that define the ctx/input they require and can be u
   });
 
   // This is not OK because determineIfUserNameIsLongMiddleware requires { nameLength: number } which is not in either context:
-  const expectErrorHumanContextDoesNotHaveNameLength = tHuman.procedure.use(
+  tHuman.procedure.use(
     // @ts-expect-error: no user in context
     determineIfUserNameIsLongMiddleware,
   );
-  const expectErrorAlienContextDoesNotHaveNameLength = tAlien.procedure.use(
+  tAlien.procedure.use(
     // @ts-expect-error: no user in context
     determineIfUserNameIsLongMiddleware,
   );
-
-  expectTypeOf(
-    expectErrorHumanContextDoesNotHaveNameLength,
-  ).toEqualTypeOf<'The context type is not compatible with the middleware'>();
-
-  expectTypeOf(
-    expectErrorAlienContextDoesNotHaveNameLength,
-  ).toEqualTypeOf<'The context type is not compatible with the middleware'>();
 
   // This is not OK because determineIfUserNameIsLongMiddleware requires { nameLength: number } which is not in HumanContext & { foo: string }
-  const expectErrorFooMiddlewareDoesNotAddNameLength = tHuman.procedure
+  tHuman.procedure
     .use(addFooToCtxMiddleware)
     // @ts-expect-error: no nameLength in context
     .use(determineIfUserNameIsLongMiddleware);
-
-  expectTypeOf(
-    expectErrorFooMiddlewareDoesNotAddNameLength,
-  ).toEqualTypeOf<'The context type is not compatible with the middleware'>();
 
   // This is OK because the context provides { user: Human } or { user: Alien } which is what addUserNameLengthToCtx requires
   tHuman.procedure
@@ -188,7 +176,7 @@ test('standalone middlewares that define the ctx/input they require and can be u
       }>();
     });
 
-  const _invalidPipedVersion1 = addFooToCtxMiddleware
+  addFooToCtxMiddleware
     // This is not OK because the requirements of the later middlewares are not met
     // @ts-expect-error: No user in context at this point
     .unstable_pipe(addUserNameLengthToCtxMiddleware)

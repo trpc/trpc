@@ -138,9 +138,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     fn:
       | MiddlewareBuilder<TParams, $Params>
       | MiddlewareFunction<TParams, $Params>,
-  ): TParams['_ctx_out'] extends $Params['_config']['$types']['ctx']
-    ? CreateProcedureReturnInput<TParams, $Params>
-    : `The context type is not compatible with the middleware`;
+  ): CreateProcedureReturnInput<TParams, $Params>;
   /**
    * Extend the procedure with another procedure.
    * @warning The TypeScript inference fails when chaining concatenated procedures.
@@ -258,7 +256,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 
       return createNewBuilder(_def, {
         middlewares: middlewares as ProcedureBuilderMiddleware[],
-      }) as any; // FIXME: I can't type this properly
+      }) as AnyProcedureBuilder;
     },
     query(resolver) {
       return createResolver(
