@@ -249,6 +249,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       return createNewBuilder(_def, builder._def) as any;
     },
     use(middlewareBuilderOrFn) {
+      // Distinguish between a middleware builder and a middleware function
       const middlewares =
         '_middlewares' in middlewareBuilderOrFn
           ? middlewareBuilderOrFn._middlewares
