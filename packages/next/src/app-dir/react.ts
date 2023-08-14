@@ -32,6 +32,7 @@ export type CreateTRPCNext<TRouter extends AnyRouter> = ProtectedIntersection<
   DecoratedProcedureRecord<TRouter['_def']['record'], null>
 >;
 
+// ts-prune-ignore-next
 export function experimental_createTRPCNextReactQuery<
   TRouter extends AnyRouter,
 >(opts?: CreateTRPCNextReactOptions<TRouter>): CreateTRPCNext<TRouter> {
