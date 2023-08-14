@@ -167,7 +167,7 @@ importers:
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@tanstack/react-query-next-experimental':
         specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(next@13.4.13)(react-dom@18.2.0)(react@18.2.0)
+        version: 5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(next@13.4.15)(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.37.1
         version: link:../../../packages/client
@@ -196,11 +196,11 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.13)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.15)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -275,8 +275,8 @@ importers:
         specifier: ^10.37.1
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -330,8 +330,8 @@ importers:
         specifier: ^10.37.1
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -404,8 +404,8 @@ importers:
         specifier: ^10.37.1
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -459,8 +459,8 @@ importers:
         specifier: ^10.35.0
         version: link:../../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -868,8 +868,8 @@ importers:
         specifier: ^10.37.1
         version: link:../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -917,8 +917,8 @@ importers:
         specifier: ^10.37.1
         version: link:../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -963,8 +963,8 @@ importers:
         specifier: ^10.37.1
         version: link:../../packages/server
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1015,8 +1015,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1124,11 +1124,11 @@ importers:
         specifier: ^22.4.13
         version: 22.4.13
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-i18next:
         specifier: ^13.2.2
-        version: 13.2.2(i18next@22.4.13)(next@13.4.13)(react-i18next@12.2.0)(react@18.2.0)
+        version: 13.2.2(i18next@22.4.13)(next@13.4.15)(react-i18next@12.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1203,11 +1203,11 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.13)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.15)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1474,8 +1474,8 @@ importers:
         specifier: ^4.17.1
         version: 4.18.2
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1519,8 +1519,8 @@ importers:
         specifier: ^4.17.1
         version: 4.18.2
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1597,8 +1597,8 @@ importers:
         specifier: ^1.3.1
         version: 1.8.8
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1732,8 +1732,8 @@ importers:
         specifier: ^1.3.1
         version: 1.8.8
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.0
@@ -1904,11 +1904,11 @@ importers:
         specifier: ^8.40.0
         version: 8.40.0
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.13)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.15)(react-dom@18.2.0)(react@18.2.0)
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -1961,8 +1961,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       next:
-        specifier: ^13.4.13
-        version: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.4.15
+        version: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: latest
         version: 18.2.0
@@ -8155,8 +8155,8 @@ packages:
       '@napi-rs/magic-string-win32-x64-msvc': 0.3.4
     dev: false
 
-  /@next/env@13.4.13:
-    resolution: {integrity: sha512-fwz2QgVg08v7ZL7KmbQBLF2PubR/6zQdKBgmHEl3BCyWTEDsAQEijjw2gbFhI1tcKfLdOOJUXntz5vZ4S0Polg==}
+  /@next/env@13.4.15:
+    resolution: {integrity: sha512-GQXUy/y5NW4VbrKQMbLjsuTykJ7+Jtb9zcKH1WrmgI1zG7yCoZQaoI65YFNksEh+9EPSHX6Xr7U1/StIIAOXog==}
 
   /@next/eslint-plugin-next@13.4.3:
     resolution: {integrity: sha512-5B0uOnh7wyUY9vNNdIA6NUvWozhrZaTMZOzdirYAefqD0ZBK5C/h3+KMYdCKrR7JrXGvVpWnHtv54b3dCzwICA==}
@@ -8164,72 +8164,72 @@ packages:
       glob: 7.1.7
     dev: true
 
-  /@next/swc-darwin-arm64@13.4.13:
-    resolution: {integrity: sha512-ZptVhHjzUuivnXMNCJ6lER33HN7lC+rZ01z+PM10Ows21NHFYMvGhi5iXkGtBDk6VmtzsbqnAjnx4Oz5um0FjA==}
+  /@next/swc-darwin-arm64@13.4.15:
+    resolution: {integrity: sha512-S4/5CwFxUtV+MnXXv5a+zGpx8Swm6WfzKYrcKbyYgl71Ek7bj0TrqZXASD2HeXIlHwr+0SJnnhSFcU09Y4tHjA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     optional: true
 
-  /@next/swc-darwin-x64@13.4.13:
-    resolution: {integrity: sha512-t9nTiWCLApw8W4G1kqJyYP7y6/7lyal3PftmRturIxAIBlZss9wrtVN8nci50StDHmIlIDxfguYIEGVr9DbFTg==}
+  /@next/swc-darwin-x64@13.4.15:
+    resolution: {integrity: sha512-6bAi8s3vVRMFPU5qr4hZsfsQ0tzLU/Ig3tHjpJyjIN9AV3PMbTnX716P7hj1QioLfzZxIcUVnDczW7L45xHVfQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-gnu@13.4.13:
-    resolution: {integrity: sha512-xEHUqC8eqR5DHe8SOmMnDU1K3ggrJ28uIKltrQAwqFSSSmzjnN/XMocZkcVhuncuxYrpbri0iMQstRyRVdQVWg==}
+  /@next/swc-linux-arm64-gnu@13.4.15:
+    resolution: {integrity: sha512-LpMjwqsQAj269h0PIqw8drRGGpyg6cRHi8JEAKtD/putcCalQWCplfUzjtML8jplwMN1lcdPDNtFIab53t8AzQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-musl@13.4.13:
-    resolution: {integrity: sha512-sNf3MnLAm8rquSSAoeD9nVcdaDeRYOeey4stOWOyWIgbBDtP+C93amSgH/LPTDoUV7gNiU6f+ghepTjTjRgIUQ==}
+  /@next/swc-linux-arm64-musl@13.4.15:
+    resolution: {integrity: sha512-zpV8C34OtLhu+1oiXIdDC576s88/TYxN325kipuL64Zs/j2kSEinR28mcLCZQTYI2g4OwtE3XIERy4vFoY3WiA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-gnu@13.4.13:
-    resolution: {integrity: sha512-WhcRaJJSHyx9OWmKjjz+OWHumiPZWRqmM/09Bt7Up4UqUJFFhGExeztR4trtv3rflvULatu9IH/nTV8fUUgaMA==}
+  /@next/swc-linux-x64-gnu@13.4.15:
+    resolution: {integrity: sha512-Xk7QEfbX3zotvLmCoLzeGefbdyPpclCR8WyWHQOMMwUpftfmAuEVyU29WegcdfNCqYwc2QDXseVVI7xW/VwHCA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-musl@13.4.13:
-    resolution: {integrity: sha512-+Y4LLhOWWZQIDKVwr2R17lq2KSN0F1c30QVgGIWfnjjHpH8nrIWHEndhqYU+iFuW8It78CiJjQKTw4f51HD7jA==}
+  /@next/swc-linux-x64-musl@13.4.15:
+    resolution: {integrity: sha512-SxXxWBIUICkbHPUthg+T/FuRgOp75wE0e6eiLGs4P9Miq/P3kSXHv6x5LRnDreGDvYnKOlpzXlsXTxcPTRWttg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-arm64-msvc@13.4.13:
-    resolution: {integrity: sha512-rWurdOR20uxjfqd1X9vDAgv0Jb26KjyL8akF9CBeFqX8rVaBAnW/Wf6A2gYEwyYY4Bai3T7p1kro6DFrsvBAAw==}
+  /@next/swc-win32-arm64-msvc@13.4.15:
+    resolution: {integrity: sha512-Pu8zaW59XKbycyW/vzKRQOcbaZA2n3BK1zAFxv+hAO2bQ29FSGrtRb2nfhMDLwN0ggWIHKVKb+h4WMFHZkS9Qw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-ia32-msvc@13.4.13:
-    resolution: {integrity: sha512-E8bSPwRuY5ibJ3CzLQmJEt8qaWrPYuUTwnrwygPUEWoLzD5YRx9SD37oXRdU81TgGwDzCxpl7z5Nqlfk50xAog==}
+  /@next/swc-win32-ia32-msvc@13.4.15:
+    resolution: {integrity: sha512-V3y1Sc0X31mwK4cx0JQBi0wSTbPpmp/qRXjS0Vz3+2oSrbV06Oz27c/r2tW7ph0qhVp8+Jt03ZLnSc7KjjECiA==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-x64-msvc@13.4.13:
-    resolution: {integrity: sha512-4KlyC6jWRubPnppgfYsNTPeWfGCxtWLh5vaOAW/kdzAk9widqho8Qb5S4K2vHmal1tsURi7Onk2MMCV1phvyqA==}
+  /@next/swc-win32-x64-msvc@13.4.15:
+    resolution: {integrity: sha512-mUGemqDIuD2PjnqEkqMpeI8cXOTVjedo9cqoaMkrOVcoK1IX/w7h4qYeniMUCImamsDAoLms86Fq9LzxT24StQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -9521,7 +9521,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: true
 
-  /@tanstack/react-query-next-experimental@5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(next@13.4.13)(react-dom@18.2.0)(react@18.2.0):
+  /@tanstack/react-query-next-experimental@5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(next@13.4.15)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-SlM/N8g7fOmIf3QShuJu+4wvItSY3D/64KKFv6Exyo2M/vrEJvO7MZRC6WaT2V5kx35V2RAVEoa8sbgDs8NSPg==}
     peerDependencies:
       '@tanstack/react-query': 5.0.0-beta.9
@@ -9530,7 +9530,7 @@ packages:
       react-dom: ^18.0.0
     dependencies:
       '@tanstack/react-query': 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
-      next: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -17788,7 +17788,7 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: false
 
-  /next-auth@4.22.1(next@13.4.13)(react-dom@18.2.0)(react@18.2.0):
+  /next-auth@4.22.1(next@13.4.15)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-NTR3f6W7/AWXKw8GSsgSyQcDW6jkslZLH8AiZa5PQ09w1kR8uHtR9rez/E9gAq/o17+p0JYHE8QjF3RoniiObA==}
     peerDependencies:
       next: ^12.2.5 || ^13
@@ -17803,7 +17803,7 @@ packages:
       '@panva/hkdf': 1.1.1
       cookie: 0.5.0
       jose: 4.14.4
-      next: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       oauth: 0.9.15
       openid-client: 5.4.2
       preact: 10.11.3
@@ -17812,7 +17812,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       uuid: 8.3.2
 
-  /next-i18next@13.2.2(i18next@22.4.13)(next@13.4.13)(react-i18next@12.2.0)(react@18.2.0):
+  /next-i18next@13.2.2(i18next@22.4.13)(next@13.4.15)(react-i18next@12.2.0)(react@18.2.0):
     resolution: {integrity: sha512-t0WU6K+HJoq2nVQ0n6OiiEZja9GyMqtDSU74FmOafgk4ljns+iZ18bsNJiI8rOUXfFfkW96ea1N7D5kbMyT+PA==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -17827,7 +17827,7 @@ packages:
       hoist-non-react-statics: 3.3.2
       i18next: 22.4.13
       i18next-fs-backend: 2.1.1
-      next: 13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-i18next: 12.2.0(i18next@22.4.13)(react-dom@18.2.0)(react@18.2.0)
     dev: false
@@ -17836,8 +17836,8 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: true
 
-  /next@13.4.13(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-A3YVbVDNeXLhWsZ8Nf6IkxmNlmTNz0yVg186NJ97tGZqPDdPzTrHotJ+A1cuJm2XfuWPrKOUZILl5iBQkIf8Jw==}
+  /next@13.4.15(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-s4ZSBwZrvpY0IDzRtD7C5CY8FA/8ZIYqrJZHnwrf6mkUVA+Y+A6CtwBYyxml6VKgP/3DFNqCqkBQGInZuPHzmQ==}
     engines: {node: '>=16.8.0'}
     hasBin: true
     peerDependencies:
@@ -17851,7 +17851,7 @@ packages:
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.4.13
+      '@next/env': 13.4.15
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
       caniuse-lite: 1.0.30001486
@@ -17862,22 +17862,22 @@ packages:
       watchpack: 2.4.0
       zod: 3.21.4
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.4.13
-      '@next/swc-darwin-x64': 13.4.13
-      '@next/swc-linux-arm64-gnu': 13.4.13
-      '@next/swc-linux-arm64-musl': 13.4.13
-      '@next/swc-linux-x64-gnu': 13.4.13
-      '@next/swc-linux-x64-musl': 13.4.13
-      '@next/swc-win32-arm64-msvc': 13.4.13
-      '@next/swc-win32-ia32-msvc': 13.4.13
-      '@next/swc-win32-x64-msvc': 13.4.13
+      '@next/swc-darwin-arm64': 13.4.15
+      '@next/swc-darwin-x64': 13.4.15
+      '@next/swc-linux-arm64-gnu': 13.4.15
+      '@next/swc-linux-arm64-musl': 13.4.15
+      '@next/swc-linux-x64-gnu': 13.4.15
+      '@next/swc-linux-x64-musl': 13.4.15
+      '@next/swc-win32-arm64-msvc': 13.4.15
+      '@next/swc-win32-ia32-msvc': 13.4.15
+      '@next/swc-win32-x64-msvc': 13.4.15
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
     dev: true
 
-  /next@13.4.13(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-A3YVbVDNeXLhWsZ8Nf6IkxmNlmTNz0yVg186NJ97tGZqPDdPzTrHotJ+A1cuJm2XfuWPrKOUZILl5iBQkIf8Jw==}
+  /next@13.4.15(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-s4ZSBwZrvpY0IDzRtD7C5CY8FA/8ZIYqrJZHnwrf6mkUVA+Y+A6CtwBYyxml6VKgP/3DFNqCqkBQGInZuPHzmQ==}
     engines: {node: '>=16.8.0'}
     hasBin: true
     peerDependencies:
@@ -17891,7 +17891,7 @@ packages:
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.4.13
+      '@next/env': 13.4.15
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
       caniuse-lite: 1.0.30001486
@@ -17902,15 +17902,15 @@ packages:
       watchpack: 2.4.0
       zod: 3.21.4
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.4.13
-      '@next/swc-darwin-x64': 13.4.13
-      '@next/swc-linux-arm64-gnu': 13.4.13
-      '@next/swc-linux-arm64-musl': 13.4.13
-      '@next/swc-linux-x64-gnu': 13.4.13
-      '@next/swc-linux-x64-musl': 13.4.13
-      '@next/swc-win32-arm64-msvc': 13.4.13
-      '@next/swc-win32-ia32-msvc': 13.4.13
-      '@next/swc-win32-x64-msvc': 13.4.13
+      '@next/swc-darwin-arm64': 13.4.15
+      '@next/swc-darwin-x64': 13.4.15
+      '@next/swc-linux-arm64-gnu': 13.4.15
+      '@next/swc-linux-arm64-musl': 13.4.15
+      '@next/swc-linux-x64-gnu': 13.4.15
+      '@next/swc-linux-x64-musl': 13.4.15
+      '@next/swc-win32-arm64-msvc': 13.4.15
+      '@next/swc-win32-ia32-msvc': 13.4.15
+      '@next/swc-win32-x64-msvc': 13.4.15
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
