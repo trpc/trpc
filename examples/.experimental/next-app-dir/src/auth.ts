@@ -1,6 +1,6 @@
 import { type DefaultSession, type NextAuthOptions } from 'next-auth';
 import { getServerSession } from 'next-auth/next';
-import GitHub from 'next-auth/providers/github';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 declare module 'next-auth' {
   interface Session {
@@ -12,11 +12,23 @@ declare module 'next-auth' {
 
 export const options = {
   providers: [
-    GitHub({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      clientId: process.env.GITHUB_ID!,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      clientSecret: process.env.GITHUB_SECRET!,
+    CredentialsProvider({
+      id: 'github',
+      name: 'Super Secure Test Provider',
+      async authorize(credentials) {
+        if (credentials) {
+          const name = credentials.name;
+          return {
+            id: name,
+            name: name,
+            email: name,
+          };
+        }
+        return null;
+      },
+      credentials: {
+        name: { type: 'test', label: 'Name' },
+      },
     }),
   ],
   callbacks: {
