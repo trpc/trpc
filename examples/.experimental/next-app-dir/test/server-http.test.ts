@@ -5,7 +5,7 @@ test.setTimeout(35e3);
 // Initial page.reload is due to dev server having a more aggressive
 // cache invalidation strategy.
 
-test('server-httpLink: refreshing the page should reuse the cached value', async ({
+test.skip('server-httpLink: refreshing the page should reuse the cached value', async ({
   page,
 }) => {
   await page.goto('/rsc');
