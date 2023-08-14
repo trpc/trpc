@@ -10,11 +10,15 @@ async function main() {
     ],
   });
 
-  const withoutInputQuery = await client.hello.greeting.query();
-  console.log(withoutInputQuery);
+  try {
+    const withoutInputQuery = await client.hello.greeting.query();
+    console.log(withoutInputQuery);
 
-  const withInputQuery = await client.hello.greeting.query({ name: 'Alex' });
-  console.log(withInputQuery);
+    const withInputQuery = await client.hello.greeting.query({ name: 'Alex' });
+    console.log(withInputQuery);
+  } catch (error) {
+    console.error('Error:', error);
+  }
 }
 
 void main();
