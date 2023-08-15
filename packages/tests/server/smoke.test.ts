@@ -2,11 +2,7 @@ import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { TRPCClientError, wsLink } from '@trpc/client/src';
-import {
-  inferProcedureOutput,
-  inferProcedureParams,
-  initTRPC,
-} from '@trpc/server/src';
+import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
 import { observable, Unsubscribable } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
@@ -31,6 +27,7 @@ test('untyped client - happy path w/o input', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
+
   const { client, close } = routerToServerAndClientNew(router);
 
   // client is untyped

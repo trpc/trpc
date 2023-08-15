@@ -12,10 +12,8 @@ import {
   AnyMutationProcedure,
   AnyProcedure,
   AnyProcedureParams,
-  AnyQueryProcedure,
   AnySubscriptionProcedure,
   MutationProcedure,
-  Procedure,
   ProcedureParams,
   QueryProcedure,
   SubscriptionProcedure,
@@ -45,19 +43,6 @@ type CreateProcedureReturnInput<
   _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
   _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
-
-/**
- * @internal
- */
-export type BuildProcedure<
-  TType extends ProcedureType,
-  TParams extends ProcedureParams<AnyProcedureParams>,
-  TOutput,
-> = Procedure<
-  TType,
-  DefaultValue<TParams['_input_in'], void>,
-  DefaultValue<TOutput, void>
->;
 
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
@@ -147,10 +132,10 @@ export interface ProcedureBuilder<
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): QueryProcedure<
-    DefaultValue<TParams['_input_in'], void>,
-    DefaultValue<$Output, void>
-  >;
+  ): QueryProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<$Output, void>;
+  }>;
 
   /**
    * Mutation procedure
@@ -254,10 +239,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       }) as AnyProcedureBuilder;
     },
     query(resolver) {
-      return createResolver(
-        { ..._def, query: true },
-        resolver,
-      ) as AnyQueryProcedure;
+      return createResolver({ ..._def, query: true }, resolver);
     },
     mutation(resolver) {
       return createResolver(
