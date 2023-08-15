@@ -3,7 +3,7 @@ import {
   ProcedureBuilderDef,
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
-import { UnsetMarker } from './internals/utils';
+import { DefaultValue, UnsetMarker } from './internals/utils';
 import { ProcedureType } from './types';
 
 type ClientContext = Record<string, unknown>;
@@ -51,12 +51,12 @@ export type ProcedureArgs<TParams extends ProcedureParams<AnyProcedureParams>> =
  *
  * @internal
  */
-export interface Procedure<
-  TType extends ProcedureType,
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> {
+export interface Procedure<TType extends ProcedureType, TInput, TOutput> {
   _type: TType;
-  _def: ProcedureBuilderDef<TParams> & TParams;
+  _def: {
+    _input_in: TInput;
+    _output_out: TOutput;
+  };
   _procedure: true;
   /**
    * @internal
@@ -64,7 +64,16 @@ export interface Procedure<
   (opts: ProcedureCallOptions): Promise<unknown>;
 }
 
-export type AnyQueryProcedure = Procedure<'query', any>;
-export type AnyMutationProcedure = Procedure<'mutation', any>;
-export type AnySubscriptionProcedure = Procedure<'subscription', any>;
-export type AnyProcedure = Procedure<ProcedureType, any>;
+export interface QueryProcedure<TInput, TOutput>
+  extends Procedure<'query', TInput, TOutput> {}
+
+export interface MutationProcedure<TInput, TOutput>
+  extends Procedure<'mutation', TInput, TOutput> {}
+
+export interface SubscriptionProcedure<TInput, TOutput>
+  extends Procedure<'subscription', TInput, TOutput> {}
+
+export type AnyQueryProcedure = QueryProcedure<any, any>;
+export type AnyMutationProcedure = MutationProcedure<any, any>;
+export type AnySubscriptionProcedure = SubscriptionProcedure<any, any>;
+export type AnyProcedure = Procedure<ProcedureType, any, any>;

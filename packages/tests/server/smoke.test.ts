@@ -65,14 +65,6 @@ test('very happy path', async () => {
       foo?: 'bar';
     }>();
   }
-  {
-    type TParams = inferProcedureParams<(typeof router)['greeting']>;
-    type TConfig = TParams['_config'];
-    type TContext = TConfig['$types']['ctx'];
-    type TError = TConfig['$types']['errorShape'];
-    expectTypeOf<NonNullable<TContext['foo']>>().toMatchTypeOf<'bar'>();
-    expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
-  }
   const { proxy, close } = routerToServerAndClientNew(router);
   expect(await proxy.greeting.query('KATT')).toBe('hello KATT');
   await close();

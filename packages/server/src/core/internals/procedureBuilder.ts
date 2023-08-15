@@ -14,18 +14,21 @@ import {
   AnyProcedureParams,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
+  MutationProcedure,
   Procedure,
   ProcedureParams,
+  QueryProcedure,
+  SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
 import { AnyRootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
+  DefaultValue,
   DefaultValue as FallbackValue,
   middlewareMarker,
   Overwrite,
-  OverwriteKnown,
   ResolveOptions,
   UnsetMarker,
 } from './utils';
@@ -46,22 +49,15 @@ type CreateProcedureReturnInput<
 /**
  * @internal
  */
-export interface BuildProcedure<
+export type BuildProcedure<
   TType extends ProcedureType,
   TParams extends ProcedureParams<AnyProcedureParams>,
   TOutput,
-> extends Procedure<
-    TType,
-    UnsetMarker extends TParams['_output_out']
-      ? OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      : TParams
-  > {}
+> = Procedure<
+  TType,
+  DefaultValue<TParams['_input_in'], void>,
+  DefaultValue<TOutput, void>
+>;
 
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
@@ -151,7 +147,10 @@ export interface ProcedureBuilder<
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'query', TParams, $Output>;
+  ): QueryProcedure<
+    DefaultValue<TParams['_input_in'], void>,
+    DefaultValue<$Output, void>
+  >;
 
   /**
    * Mutation procedure
@@ -160,7 +159,10 @@ export interface ProcedureBuilder<
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'mutation', TParams, $Output>;
+  ): MutationProcedure<
+    DefaultValue<TParams['_input_in'], void>,
+    DefaultValue<$Output, void>
+  >;
 
   /**
    * Mutation procedure
@@ -169,7 +171,10 @@ export interface ProcedureBuilder<
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'subscription', TParams, $Output>;
+  ): SubscriptionProcedure<
+    DefaultValue<TParams['_input_in'], void>,
+    DefaultValue<$Output, void>
+  >;
   /**
    * @internal
    */
