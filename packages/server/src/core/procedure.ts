@@ -18,6 +18,7 @@ export interface ProcedureOptions {
 
 /**
  * @internal
+ * @deprecated
  */
 export type AnyProcedureParams = {
   _config: AnyRootConfig;
@@ -30,7 +31,7 @@ export type AnyProcedureParams = {
 };
 
 /**
- * @internal
+ * @deprecated
  */
 export type ProcedureParams<TParams extends AnyProcedureParams> = TParams;
 

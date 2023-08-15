@@ -12,6 +12,7 @@ import {
   AnyMutationProcedure,
   AnyProcedure,
   AnyProcedureParams,
+  AnyQueryProcedure,
   AnySubscriptionProcedure,
   MutationProcedure,
   ProcedureParams,
@@ -19,6 +20,7 @@ import {
   SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
+import { AnyProcedureBuilderParams } from './builderTypes';
 import { AnyRootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
@@ -50,9 +52,7 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-export type ProcedureBuilderDef<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> = {
+export type ProcedureBuilderDef<TParams extends AnyProcedureBuilderParams> = {
   inputs: Parser[];
   output?: Parser;
   meta?: TParams['_meta'];
@@ -65,9 +65,7 @@ export type ProcedureBuilderDef<
 
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
-export interface ProcedureBuilder<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> {
+export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
   /**
    * Add an input parser to the procedure.
    */
@@ -144,10 +142,10 @@ export interface ProcedureBuilder<
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): MutationProcedure<
-    DefaultValue<TParams['_input_in'], void>,
-    DefaultValue<$Output, void>
-  >;
+  ): MutationProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<$Output, void>;
+  }>;
 
   /**
    * Mutation procedure
@@ -156,10 +154,10 @@ export interface ProcedureBuilder<
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): SubscriptionProcedure<
-    DefaultValue<TParams['_input_in'], void>,
-    DefaultValue<$Output, void>
-  >;
+  ): SubscriptionProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<$Output, void>;
+  }>;
   /**
    * @internal
    */
@@ -239,7 +237,10 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       }) as AnyProcedureBuilder;
     },
     query(resolver) {
-      return createResolver({ ..._def, query: true }, resolver);
+      return createResolver(
+        { ..._def, query: true },
+        resolver,
+      ) as AnyQueryProcedure;
     },
     mutation(resolver) {
       return createResolver(
@@ -301,7 +302,7 @@ const result = await caller.call('myProcedure', input);
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  const procedure = async function resolve(opts: ProcedureCallOptions) {
+  async function procedure(opts: ProcedureCallOptions) {
     // is direct server-side call
     if (!opts || !('rawInput' in opts)) {
       throw new Error(codeblock);
@@ -380,8 +381,9 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       throw result.error;
     }
     return result.data;
-  };
+  }
   procedure._def = _def;
 
-  return procedure as AnyProcedure;
+  // FIXME typecast shouldn't be needed - fixittt
+  return procedure as unknown as AnyProcedure;
 }
