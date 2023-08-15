@@ -238,19 +238,19 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     },
     query(resolver) {
       return createResolver(
-        { ..._def, query: true },
+        { ..._def, type: 'query' },
         resolver,
       ) as AnyQueryProcedure;
     },
     mutation(resolver) {
       return createResolver(
-        { ..._def, mutation: true },
+        { ..._def, type: 'mutation' },
         resolver,
       ) as AnyMutationProcedure;
     },
     subscription(resolver) {
       return createResolver(
-        { ..._def, subscription: true },
+        { ..._def, type: 'subscription' },
         resolver,
       ) as AnySubscriptionProcedure;
     },
@@ -258,7 +258,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef,
+  _def: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
@@ -382,6 +382,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     }
     return result.data;
   }
+
   procedure._def = _def;
 
   // FIXME typecast shouldn't be needed - fixittt
