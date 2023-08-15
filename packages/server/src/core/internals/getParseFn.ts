@@ -21,14 +21,6 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return parser.parse.bind(parser);
   }
 
-  if (typeof parser._parse === 'function') {
-    // ParserValibotEsque (>= v0.13.X)
-    return async (value) => {
-      const { parseAsync } = await import('valibot');
-      return parseAsync(parser, value);
-    };
-  }
-
   if (typeof parser.validateSync === 'function') {
     // ParserYupEsque
     return parser.validateSync.bind(parser);
@@ -44,6 +36,14 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return (value) => {
       parser.assert(value);
       return value as TType;
+    };
+  }
+
+  if (typeof parser._parse === 'function') {
+    // ParserValibotEsque (>= v0.13.X)
+    return async (value) => {
+      const { parseAsync } = await import('valibot');
+      return parseAsync(parser, value);
     };
   }
 
