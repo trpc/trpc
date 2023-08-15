@@ -10,12 +10,14 @@ export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
     : never
   : never;
 
+export type inferRouterConfig<TRouter extends AnyRouter> =
+  inferRouterDef<TRouter>['_config'];
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['ctx'];
+  inferRouterConfig<TRouter>['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['errorShape'];
+  inferRouterConfig<TRouter>['$types']['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['meta'];
+  inferRouterConfig<TRouter>['$types']['meta'];
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -35,9 +37,6 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   : never;
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
-
-export type inferProcedureClientError<TProcedure extends AnyProcedure> =
-  inferProcedureParams<TProcedure>['_config']['errorShape'];
 
 type GetInferenceHelpers<
   TType extends 'input' | 'output',
