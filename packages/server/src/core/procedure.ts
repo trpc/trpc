@@ -1,6 +1,5 @@
 import { AnyRootConfig } from './internals/config';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
-import { UnsetMarker } from './internals/utils';
 import { ProcedureType } from './types';
 
 type ClientContext = Record<string, unknown>;
@@ -38,8 +37,8 @@ export type ProcedureParams<TParams extends AnyProcedureParams> = TParams;
 /**
  * @internal
  */
-export type ProcedureArgs<TParams extends ProcedureParams<AnyProcedureParams>> =
-  TParams['_input_in'] extends UnsetMarker
+export type ProcedureArgs<TParams extends AnyProcedure['_def']> =
+  void extends TParams['_input_in']
     ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
     ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
@@ -57,12 +56,12 @@ export interface Procedure<
   TType extends ProcedureType,
   TDef extends BuiltProcedureDef,
 > {
-  _type: TType;
   _def: {
     _input_in: TDef['input'];
     _output_out: TDef['output'];
+    procedure: true;
+    type: TType;
   };
-  _procedure: true;
   /**
    * @internal
    */

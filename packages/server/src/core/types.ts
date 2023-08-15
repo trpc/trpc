@@ -48,7 +48,10 @@ type GetInferenceHelpers<
       : TRouterOrProcedure extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<TRouterOrProcedure>
+        : inferTransformedProcedureOutput<
+            TRouter['_def']['_config'],
+            TRouterOrProcedure
+          >
       : never
     : never;
 };
