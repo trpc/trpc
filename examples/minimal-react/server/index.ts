@@ -12,6 +12,10 @@ const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
+type InputType = {
+  name?: string | null;
+};
+
 const appRouter = router({
   greeting: publicProcedure
     // This is the input schema of your procedure
@@ -23,7 +27,7 @@ const appRouter = router({
         })
         .nullish(),
     )
-    .query(({ input }) => {
+    .query(({ input }: { input: InputType }) => {
       // This is what you're returning to your client
       return {
         text: `hello ${input?.name ?? 'world'}`,
