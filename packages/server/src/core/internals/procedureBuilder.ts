@@ -53,6 +53,7 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 type ErrorMessage<TMessage extends string> = TMessage;
 
 export type ProcedureBuilderDef<TParams extends AnyProcedureBuilderParams> = {
+  procedure: true;
   inputs: Parser[];
   output?: Parser;
   meta?: TParams['_meta'];
@@ -199,6 +200,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
   _meta: TConfig['$types']['meta'];
 }> {
   const _def: AnyProcedureBuilderDef = {
+    procedure: true,
     inputs: [],
     middlewares: [],
     ...initDef,
