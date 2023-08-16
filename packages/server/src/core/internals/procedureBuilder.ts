@@ -132,7 +132,7 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): QueryProcedure<{
     input: DefaultValue<TParams['_input_in'], void>;
-    output: DefaultValue<$Output, void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
   }>;
 
   /**
@@ -144,7 +144,7 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): MutationProcedure<{
     input: DefaultValue<TParams['_input_in'], void>;
-    output: DefaultValue<$Output, void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
   }>;
 
   /**
@@ -156,7 +156,7 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): SubscriptionProcedure<{
     input: DefaultValue<TParams['_input_in'], void>;
-    output: DefaultValue<$Output, void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
   }>;
   /**
    * @internal
