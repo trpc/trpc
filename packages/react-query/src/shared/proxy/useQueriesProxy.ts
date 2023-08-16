@@ -3,6 +3,7 @@ import { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   Filter,
   inferProcedureInput,
@@ -14,23 +15,25 @@ import {
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
 
-type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
-  TData = inferTransformedProcedureOutput<TProcedure>,
->(
+type GetQueryOptions<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+  TPath extends string,
+> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
     TPath,
     inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
+    inferTransformedProcedureOutput<TConfig, TProcedure>,
     TData,
-    TRPCClientError<TProcedure>
+    TRPCClientError<TConfig>
   >,
 ) => TrpcQueryOptionsForUseQueries<
   TPath,
   inferProcedureInput<TProcedure>,
-  inferTransformedProcedureOutput<TProcedure>,
+  inferTransformedProcedureOutput<TConfig, TProcedure>,
   TData,
-  TRPCClientError<TProcedure>
+  TRPCClientError<TConfig>
 >;
 
 /**
@@ -49,6 +52,7 @@ export type UseQueriesProcedureRecord<
         `${TPath}${TKey & string}.`
       >
     : GetQueryOptions<
+        TRouter['_def']['_config'],
         TRouter['_def']['record'][TKey],
         `${TPath}${TKey & string}`
       >;

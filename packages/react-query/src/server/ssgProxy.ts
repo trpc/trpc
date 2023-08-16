@@ -14,6 +14,7 @@ import {
 import {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   callProcedure,
   ClientDataTransformerOptions,
@@ -52,17 +53,20 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
   CreateTRPCReactQueryClientConfig &
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = {
+type DecorateProcedure<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = {
   /**
    * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TProcedure>,
-      TRPCClientError<TProcedure>
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
     >,
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
@@ -71,12 +75,12 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>,
-      TRPCClientError<TProcedure>
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
     >,
   ): Promise<
     InfiniteData<
-      inferTransformedProcedureOutput<TProcedure>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
       NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
@@ -87,8 +91,8 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
   prefetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TProcedure>,
-      TRPCClientError<TProcedure>
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
     >,
   ): Promise<void>;
 
@@ -99,8 +103,8 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>,
-      TRPCClientError<TProcedure>
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
     >,
   ): Promise<void>;
 };
@@ -115,10 +119,13 @@ type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
+      DecorateProcedure<
+        TRouter['_def']['_config'],
+        TRouter['_def']['record'][TKey]
+      >;
 };
 
-type AnyDecoratedProcedure = DecorateProcedure<any>;
+type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
