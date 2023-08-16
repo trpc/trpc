@@ -7,8 +7,8 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly shape: Maybe<TShape>;
   readonly data: Maybe<TShape['data']>;
 }
-export type TRPCClientErrorLike<TRouterOrProcedure extends TRPCInferrable> =
-  TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
+export type TRPCClientErrorLike<TInferrable extends TRPCInferrable> =
+  TRPCClientErrorBase<inferErrorShape<TInferrable>>;
 
 function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
   return (

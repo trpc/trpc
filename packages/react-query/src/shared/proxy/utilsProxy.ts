@@ -13,6 +13,7 @@ import {
 import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
 import {
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   DeepPartial,
   Filter,
@@ -38,17 +39,20 @@ import {
 } from '../../internals/getQueryKey';
 import { ExtractCursorType } from '../hooks/types';
 
-type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
+type DecorateProcedure<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyQueryProcedure,
+> = {
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TProcedure>,
-      TRPCClientError<TProcedure>
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
     >,
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
@@ -57,7 +61,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TProcedure>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
       TRPCClientError<TProcedure>
     >,
   ): Promise<
