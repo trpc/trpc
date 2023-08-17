@@ -31,6 +31,9 @@ yarn add @trpc/react-query @tanstack/react-query
 
 # pnpm
 pnpm add @trpc/react-query @tanstack/react-query
+
+# Bun
+bun add @trpc/react-query @tanstack/react-query
 ```
 
 ## Basic Example

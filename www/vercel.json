@@ -256,6 +256,11 @@
       "permanent": false
     },
     {
+      "source": "/drift",
+      "destination": "https://drift.trpc.io",
+      "permanent": false
+    },
+    {
       "source": "/blog/hello-trpc",
       "destination": "/blog/introducing-trpc",
       "permanent": true
