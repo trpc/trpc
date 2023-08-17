@@ -48,14 +48,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    //     announcementBar: {
-    //       id: 'v10',
-    //       content:
-    //         "🚀 You are looking at tRPC <strong>version 10</strong>! Read the <a href='/blog/announcing-trpc-10'>announcement post</a> or see the <a href='/docs/migrate-from-v9-to-v10'>migration guide</a> if you're currently using tRPC v9",
-    //       backgroundColor: 'var(--ifm-color-primary-dark)',
-    //       textColor: '#ffffff',
-    //       isCloseable: true,
-    //     },
+    announcementBar: {
+      id: 'drift',
+      content:
+        "🚀 We've just announced a beta of <strong>tRPC Drift</strong> that helps you keep track of changes of your API. Check it out at <a href='https://drift.trpc.io'><strong>drift.trpc.io</strong></a>.",
+      backgroundColor: 'var(--ifm-color-primary-dark)',
+      textColor: '#ffffff',
+      isCloseable: true,
+    },
     navbar: {
       title: 'tRPC',
       logo: {
