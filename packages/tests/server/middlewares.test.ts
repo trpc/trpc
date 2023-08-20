@@ -1,7 +1,6 @@
 import { initTRPC, standaloneMiddleware, TRPCError } from '@trpc/server/src';
 import * as z from 'zod';
 
-
 test('decorate independently', () => {
   type User = {
     id: string;

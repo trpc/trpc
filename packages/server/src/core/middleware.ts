@@ -11,8 +11,6 @@ import {
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
-
-
 /**
  * @internal
  */
