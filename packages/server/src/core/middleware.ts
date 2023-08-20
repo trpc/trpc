@@ -11,6 +11,8 @@ import {
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
+
+
 /**
  * @internal
  */
@@ -200,13 +202,14 @@ export function createMiddlewareFactory<
 export const standaloneMiddleware = <
   TCtx extends {
     ctx?: object;
+    meta?: object;
     input?: unknown;
   },
 >() => ({
   create: createMiddlewareFactory<
     RootConfig<{
-      ctx: TCtx extends { ctx: infer T } ? T : object;
-      meta: object;
+      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
+      meta: TCtx extends { meta: infer T extends object } ? T : object;
       errorShape: object;
       transformer: object;
     }>,

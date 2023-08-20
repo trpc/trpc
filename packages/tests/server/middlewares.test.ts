@@ -1,6 +1,7 @@
 import { initTRPC, standaloneMiddleware, TRPCError } from '@trpc/server/src';
 import * as z from 'zod';
 
+
 test('decorate independently', () => {
   type User = {
     id: string;
@@ -264,6 +265,49 @@ test('standalone middlewares that define the ctx/input they require and can be u
         magicNumber: number;
       }>();
     });
+
+  // Middleware that defines a particular 'meta' shape
+  const shamefullyLogIfProcedureIsNotCoolMiddleware = standaloneMiddleware<{
+    meta: {
+      cool: boolean;
+    };
+  }>().create((opts) => {
+    expectTypeOf(opts.meta).toEqualTypeOf<
+      | {
+          cool: boolean;
+        }
+      | undefined
+    >();
+
+    if (!opts.meta?.cool) {
+      globalThis.console.log('This procedure is not cool');
+    }
+
+    return opts.next();
+  });
+
+  // This is not OK because the meta is not compatible with the middleware (cool must always be boolean)
+  const tHumanWithWrongMeta = initTRPC
+    .context<HumanContext>()
+    .meta<{ cool: string }>()
+    .create();
+  tHumanWithWrongMeta.procedure
+    .meta({ cool: 'true' })
+    // @ts-expect-error: cool must be boolean
+    .use(shamefullyLogIfProcedureIsNotCoolMiddleware);
+
+  // This is OK because the meta is compatible with the middleware
+  const tHumanWithMeta = initTRPC
+    .context<HumanContext>()
+    .meta<{ cool: boolean }>()
+    .create();
+
+  tHumanWithMeta.procedure
+    .meta({ cool: false })
+    .use(shamefullyLogIfProcedureIsNotCoolMiddleware);
+
+  // Works without the .meta() addition as well, since Meta is always a union with undefined
+  tHumanWithMeta.procedure.use(shamefullyLogIfProcedureIsNotCoolMiddleware);
 });
 
 test('pipe middlewares - inlined', async () => {
