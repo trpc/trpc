@@ -200,7 +200,7 @@ export function createMiddlewareFactory<
 export const standaloneMiddleware = <
   TCtx extends {
     ctx?: object;
-    input?: object;
+    input?: unknown;
   },
 >() => ({
   create: createMiddlewareFactory<
