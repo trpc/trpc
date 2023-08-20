@@ -13,6 +13,7 @@ import {
 import { getArrayQueryKey } from '../internals/getArrayQueryKey';
 import { CreateSSGHelpersOptions } from '../server/types';
 import { getQueryClient } from '../shared';
+import { __asyncGenerator } from 'tslib';
 
 /**
  * Create functions you can use for server-side rendering / static generation
@@ -44,6 +45,16 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
+        }).then(async result => {
+          if ("data" in result) {
+            return result.data;
+          } else {
+            let lastResult: any = null;
+            for await (const item of result.generator) {
+              lastResult = item;
+            }
+            return lastResult;
+          }
         });
       },
     });
@@ -85,6 +96,16 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
           rawInput: pathAndInput[1],
           ctx,
           type: 'query',
+        }).then(async result => {
+          if ("data" in result) {
+            return result.data;
+          } else {
+            let lastResult: any = null;
+            for await (const item of result.generator) {
+              lastResult = item;
+            }
+            return lastResult;
+          }
         });
       },
     });
