@@ -130,7 +130,11 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a meta data to the procedure.
    */
-  meta(meta: TParams['_meta']): ProcedureBuilder<TParams>;
+  meta<TMeta extends Partial<TParams['_meta']>>(
+    meta: TMeta,
+  ): ProcedureBuilder<
+    Overwrite<TParams, { _meta: Overwrite<TParams['_meta'], TMeta> }>
+  >;
   /**
    * Add a middleware to the procedure.
    */

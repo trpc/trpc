@@ -15,8 +15,9 @@ export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterDef<TRouter>['_config']['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
   inferRouterDef<TRouter>['_config']['$types']['errorShape'];
-export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['meta'];
+export type inferRouterMeta<TRouter extends AnyRouter> = Required<
+  inferRouterDef<TRouter>['_config']['$types']['meta']
+>;
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**

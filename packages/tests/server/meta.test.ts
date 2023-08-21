@@ -2,14 +2,14 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 
-test('meta is undefined in a middleware', () => {
+test('meta is "Partial<Meta> | undefined" in a middleware where defaultMeta or procedure.meta() has not injected metadata', () => {
   type Meta = {
     permissions: string[];
   };
   const t = initTRPC.meta<Meta>().create();
 
   t.middleware((opts) => {
-    expectTypeOf(opts.meta).toEqualTypeOf<Meta | undefined>();
+    expectTypeOf(opts.meta).toEqualTypeOf<Partial<Meta> | undefined>();
 
     return opts.next();
   });
@@ -23,7 +23,7 @@ describe('meta', () => {
 
   const ctx = konn()
     .beforeEach(() => {
-      const middlewareCalls = vi.fn((_opts: Meta | undefined) => {
+      const middlewareCalls = vi.fn((_opts: Partial<Meta> | undefined) => {
         // noop
       });
       const baseProc = t.procedure.use(({ next, meta }) => {

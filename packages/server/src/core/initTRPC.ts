@@ -21,7 +21,7 @@ import {
 } from './internals/config';
 import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';
-import { PickFirstDefined, ValidateShape } from './internals/utils';
+import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
@@ -103,7 +103,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
     type $Config = RootConfig<{
       ctx: $Context;
-      meta: $Meta;
+      meta: TOptions['defaultMeta'] extends infer T extends object
+        ? Overwrite<Partial<$Meta>, T>
+        : Partial<$Meta>;
       errorShape: $ErrorShape;
       transformer: $Transformer;
     }>;

@@ -381,11 +381,77 @@ test('pipe middlewares - failure', async () => {
 test('meta', () => {
   type Meta = {
     permissions: string[];
+    authLevelRequired: 'user' | 'admin';
   };
   const t = initTRPC.meta<Meta>().create();
 
   t.middleware(({ meta, next }) => {
-    expectTypeOf(meta).toMatchTypeOf<Meta | undefined>();
+    // meta is Partial<Meta> | undefined if not injected by a previous middleware or by defaultMeta
+    // for backwards compatibility reasons
+    expectTypeOf(meta).toEqualTypeOf<Partial<Meta> | undefined>();
+
+    return next();
+  });
+
+  t.procedure
+    .meta({
+      permissions: ['getUser'],
+    })
+    .use(({ meta, next }) => {
+      expectTypeOf(meta).toMatchTypeOf<{
+        // non-optional
+        permissions: string[];
+        // optional
+        authLevelRequired?: 'user' | 'admin';
+      }>();
+
+      return next();
+    })
+    .use(({ meta, next }) => {
+      expectTypeOf(meta).toMatchTypeOf<{
+        // narrowed types are propagated when chaining middlewares
+        permissions: string[];
+        authLevelRequired?: 'user' | 'admin';
+      }>();
+
+      return next();
+    });
+
+  t.procedure
+    .meta({
+      permissions: ['getUser'],
+      authLevelRequired: 'user' as const,
+    })
+    .use(({ meta, next }) => {
+      expectTypeOf(meta).toMatchTypeOf<{
+        // non-optional
+        permissions: string[];
+        // non-optional, narrowed
+        authLevelRequired: 'user';
+      }>();
+
+      return next();
+    })
+    .use(({ meta, next }) => {
+      expectTypeOf(meta).toMatchTypeOf<{
+        // narrowed types are propagated when chaining middlewares
+        permissions: string[];
+        authLevelRequired: 'user';
+      }>();
+
+      return next();
+    });
+
+  // Types are narrowed if using default meta
+  const tWithDefaultMeta = initTRPC.meta<Meta>().create({
+    defaultMeta: {
+      permissions: ['getUser'],
+      authLevelRequired: 'user',
+    },
+  });
+
+  tWithDefaultMeta.middleware(({ meta, next }) => {
+    expectTypeOf(meta).toMatchTypeOf<Meta>();
 
     return next();
   });

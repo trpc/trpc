@@ -136,7 +136,11 @@ export type MiddlewareFunction<
     path: string;
     input: TParams['_input_out'];
     rawInput: unknown;
-    meta: TParams['_meta'] | undefined;
+    // Always infer opts.meta as potentially undefined in middlewares if it hasn't been injected by a previous middleware or by defaultMeta
+    // Allowing meta to be undefined is for backwards compatibility reasons
+    meta: Record<PropertyKey, never> extends TParams['_meta']
+      ? TParams['_meta'] | undefined
+      : TParams['_meta'];
     next: {
       (): Promise<MiddlewareResult<TParams>>;
       <$Context>(opts: { ctx: $Context }): Promise<

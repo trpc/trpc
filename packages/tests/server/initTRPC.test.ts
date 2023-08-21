@@ -76,7 +76,7 @@ test('config types', () => {
 
     // ^?
     expectTypeOf<typeof t._config.$types.ctx>().toEqualTypeOf<Context>();
-    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<Meta>();
+    expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<Partial<Meta>>();
   }
 
   {
