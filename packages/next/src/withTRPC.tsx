@@ -92,7 +92,7 @@ export function withTRPC<
     ssrState: 'prepass';
     ssrContext: TSSRContext;
   };
-  return (AppOrPage: NextComponentType<any, any, any> & { getLayout?: any }): NextComponentType => {
+  return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
@@ -265,7 +265,8 @@ export function withTRPC<
     const displayName = AppOrPage.displayName || AppOrPage.name || 'Component';
     WithTRPC.displayName = `withTRPC(${displayName})`;
 
-    // Hack to carry through layout
+    // Hack to carry through layout if it exists
+    // @ts-ignore
     WithTRPC.getLayout = AppOrPage.getLayout;
 
     return WithTRPC as any;

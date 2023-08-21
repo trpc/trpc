@@ -319,6 +319,8 @@ export function createRootHooks<
       ...ssrOpts,
       queryKey,
       queryFn: (queryFunctionContext) => {
+
+
         const actualOpts = {
           ...ssrOpts,
           trpc: {
@@ -328,12 +330,13 @@ export function createRootHooks<
               : {}),
           },
         };
+        const args = getClientArgs(pathAndInput, actualOpts);
 
         if (opts?.streaming) {
           return (async () => {
             let lastVal: any | undefined;
             for await (const result of (client as any).queryGenerator(
-              ...getClientArgs(pathAndInput, actualOpts),
+              ...args,
             )) {
               lastVal = result;
               setStreamingData(result);
@@ -342,7 +345,7 @@ export function createRootHooks<
           })();
         } else {
           return (client as any).query(
-            ...getClientArgs(pathAndInput, actualOpts),
+            ...args,
           );
         }
       },
