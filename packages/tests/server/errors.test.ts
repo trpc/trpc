@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import http from 'http';
+import * as http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import {
   createTRPCProxyClient,

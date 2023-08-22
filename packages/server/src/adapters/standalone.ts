@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import http from 'http';
+import * as http from 'http';
 import { AnyRouter } from '../core';
 import {
   NodeHTTPCreateContextFnOptions,

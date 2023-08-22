@@ -1,4 +1,4 @@
-import http from 'http';
+import * as http from 'http';
 import { waitError } from '../___testHelpers';
 import {
   createTRPCProxyClient,

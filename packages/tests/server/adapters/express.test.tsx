@@ -1,4 +1,4 @@
-import http from 'http';
+import * as http from 'http';
 import { Context, router } from './__router';
 import {
   createTRPCProxyClient,

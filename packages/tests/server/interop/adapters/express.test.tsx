@@ -1,4 +1,4 @@
-import http from 'http';
+import * as http from 'http';
 import { Context, router } from './__router';
 import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
