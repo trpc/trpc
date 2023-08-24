@@ -197,7 +197,7 @@ export function createMiddlewareFactory<
   return createMiddleware;
 }
 
-export const standaloneMiddleware = <
+export const experimental_standaloneMiddleware = <
   TCtx extends {
     ctx?: object;
     meta?: object;

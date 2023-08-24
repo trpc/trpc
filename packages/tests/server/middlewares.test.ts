@@ -1,4 +1,8 @@
-import { initTRPC, standaloneMiddleware, TRPCError } from '@trpc/server/src';
+import {
+  experimental_standaloneMiddleware,
+  initTRPC,
+  TRPCError,
+} from '@trpc/server/src';
 import * as z from 'zod';
 
 test('decorate independently', () => {
@@ -76,16 +80,18 @@ test('standalone middlewares that define the ctx/input they require and can be u
   };
   const tAlien = initTRPC.context<AlienContext>().create();
 
-  const addFooToCtxMiddleware = standaloneMiddleware().create((opts) => {
-    expectTypeOf(opts.ctx).toEqualTypeOf<object>();
-    return opts.next({
-      ctx: {
-        foo: 'foo' as const,
-      },
-    });
-  });
+  const addFooToCtxMiddleware = experimental_standaloneMiddleware().create(
+    (opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<object>();
+      return opts.next({
+        ctx: {
+          foo: 'foo' as const,
+        },
+      });
+    },
+  );
 
-  const addUserNameLengthToCtxMiddleware = standaloneMiddleware<{
+  const addUserNameLengthToCtxMiddleware = experimental_standaloneMiddleware<{
     ctx: { user: Human | Alien };
   }>().create((opts) => {
     expectTypeOf(opts.ctx).toEqualTypeOf<{
@@ -98,21 +104,22 @@ test('standalone middlewares that define the ctx/input they require and can be u
     });
   });
 
-  const determineIfUserNameIsLongMiddleware = standaloneMiddleware<{
-    ctx: { nameLength: number };
-  }>().create((opts) => {
-    expectTypeOf(opts.ctx).toEqualTypeOf<{
-      nameLength: number;
-    }>();
+  const determineIfUserNameIsLongMiddleware =
+    experimental_standaloneMiddleware<{
+      ctx: { nameLength: number };
+    }>().create((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        nameLength: number;
+      }>();
 
-    return opts.next({
-      ctx: {
-        nameIsLong: opts.ctx.nameLength > 10,
-      },
+      return opts.next({
+        ctx: {
+          nameIsLong: opts.ctx.nameLength > 10,
+        },
+      });
     });
-  });
 
-  const mapUserToUserTypeMiddleware = standaloneMiddleware<{
+  const mapUserToUserTypeMiddleware = experimental_standaloneMiddleware<{
     ctx: { user: Human | Alien };
   }>().create((opts) => {
     expectTypeOf(opts.ctx).toEqualTypeOf<{
@@ -184,18 +191,19 @@ test('standalone middlewares that define the ctx/input they require and can be u
     .unstable_pipe(mapUserToUserTypeMiddleware)
     .unstable_pipe(determineIfUserNameIsLongMiddleware);
 
-  const requireUserAndAddFooToCtxMiddleware = standaloneMiddleware<{
-    ctx: { user: Human | Alien };
-  }>().create((opts) => {
-    expectTypeOf(opts.ctx).toEqualTypeOf<{
-      user: Human | Alien;
-    }>();
-    return opts.next({
-      ctx: {
-        foo: 'foo' as const,
-      },
+  const requireUserAndAddFooToCtxMiddleware =
+    experimental_standaloneMiddleware<{
+      ctx: { user: Human | Alien };
+    }>().create((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        user: Human | Alien;
+      }>();
+      return opts.next({
+        ctx: {
+          foo: 'foo' as const,
+        },
+      });
     });
-  });
 
   const validPipedVersion = requireUserAndAddFooToCtxMiddleware
     .unstable_pipe(addUserNameLengthToCtxMiddleware)
@@ -222,26 +230,27 @@ test('standalone middlewares that define the ctx/input they require and can be u
   });
 
   // Middleware chain using standalone middleware that requires a particular 'input' shape
-  const ensureMagicNumberIsNotLongerThanNameLength = standaloneMiddleware<{
-    ctx: { nameLength: number };
-    input: { magicNumber: number };
-  }>().create((opts) => {
-    expectTypeOf(opts.ctx).toEqualTypeOf<{
-      nameLength: number;
-    }>();
-    expectTypeOf(opts.input).toEqualTypeOf<{
-      magicNumber: number;
-    }>();
+  const ensureMagicNumberIsNotLongerThanNameLength =
+    experimental_standaloneMiddleware<{
+      ctx: { nameLength: number };
+      input: { magicNumber: number };
+    }>().create((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        nameLength: number;
+      }>();
+      expectTypeOf(opts.input).toEqualTypeOf<{
+        magicNumber: number;
+      }>();
 
-    if (opts.input.magicNumber > opts.ctx.nameLength) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'magicNumber is too high',
-      });
-    }
+      if (opts.input.magicNumber > opts.ctx.nameLength) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'magicNumber is too high',
+        });
+      }
 
-    return opts.next();
-  });
+      return opts.next();
+    });
 
   // This is not OK because the input is not compatible with the middleware (magicNumber must always be number)
   tHuman.procedure
@@ -266,24 +275,25 @@ test('standalone middlewares that define the ctx/input they require and can be u
     });
 
   // Middleware that defines a particular 'meta' shape
-  const shamefullyLogIfProcedureIsNotCoolMiddleware = standaloneMiddleware<{
-    meta: {
-      cool: boolean;
-    };
-  }>().create((opts) => {
-    expectTypeOf(opts.meta).toEqualTypeOf<
-      | {
-          cool: boolean;
-        }
-      | undefined
-    >();
+  const shamefullyLogIfProcedureIsNotCoolMiddleware =
+    experimental_standaloneMiddleware<{
+      meta: {
+        cool: boolean;
+      };
+    }>().create((opts) => {
+      expectTypeOf(opts.meta).toEqualTypeOf<
+        | {
+            cool: boolean;
+          }
+        | undefined
+      >();
 
-    if (!opts.meta?.cool) {
-      globalThis.console.log('This procedure is not cool');
-    }
+      if (!opts.meta?.cool) {
+        globalThis.console.log('This procedure is not cool');
+      }
 
-    return opts.next();
-  });
+      return opts.next();
+    });
 
   // This is not OK because the meta is not compatible with the middleware (cool must always be boolean)
   const tHumanWithWrongMeta = initTRPC
