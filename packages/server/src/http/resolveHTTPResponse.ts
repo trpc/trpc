@@ -307,6 +307,8 @@ export async function resolveHTTPResponse<
       });
     }
 
+    ctx = await opts.createContext();
+
     const inputs = await contentTypeHandler.getInputs({
       isBatchCall,
       req,
@@ -317,7 +319,6 @@ export async function resolveHTTPResponse<
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
-    ctx = await opts.createContext();
     const promises = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
     );
