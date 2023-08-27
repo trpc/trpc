@@ -45,8 +45,12 @@ export function createHTTPServer<TRouter extends AnyRouter>(
 
   return {
     server,
-    listen: (port?: number, hostname?: string) => {
-      server.listen(port, hostname);
+    listen: (
+      port?: number,
+      hostname?: string,
+      listeningListener?: () => void,
+    ) => {
+      server.listen(port, hostname, listeningListener);
       const actualPort =
         port === 0 ? ((server.address() as any).port as number) : port;
 
