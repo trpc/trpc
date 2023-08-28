@@ -287,6 +287,10 @@ export async function resolveHTTPResponse<
     req.headers['trpc-batch-mode'] === 'stream';
 
   try {
+    // we create context first so that unless `createContext()` throws,
+    // error handler may access context information
+    ctx = await opts.createContext();
+
     if (opts.error) {
       throw opts.error;
     }
@@ -306,8 +310,6 @@ export async function resolveHTTPResponse<
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
-
-    ctx = await opts.createContext();
 
     const inputs = await contentTypeHandler.getInputs({
       isBatchCall,
