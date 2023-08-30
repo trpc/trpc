@@ -517,9 +517,6 @@ importers:
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0

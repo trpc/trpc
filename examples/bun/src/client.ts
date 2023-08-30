@@ -17,10 +17,7 @@ async function main() {
   await delay(100);
 
   // parallel queries
-  await Promise.all([
-    proxy.hello.query(),
-    proxy.hello.query('client'),
-  ]);
+  await Promise.all([proxy.hello.query(), proxy.hello.query('client')]);
   await delay(100);
 
   const postCreate = await proxy.post.createPost.mutate({

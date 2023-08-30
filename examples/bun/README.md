@@ -4,11 +4,11 @@
 [Install Bun](https://bun.sh/docs/installation) then run:
 
 ```sh
-bun run src/index.ts
+bun dev:server
 ```
 
 Run the client in another terminal:
 
 ```sh
-bun run src/client.ts
+bun dev:client
 ```
