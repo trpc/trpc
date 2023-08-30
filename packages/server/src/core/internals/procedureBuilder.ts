@@ -304,6 +304,7 @@ function createResolver(
               promiseResolve();
             } catch (err) {
               promiseReject(err);
+              throw err;
             }
           })();
           return Promise.resolve({

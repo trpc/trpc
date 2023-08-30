@@ -421,15 +421,30 @@ export async function resolveHTTPResponse<
     const indexedPromises = new Map(
       srcPromises.map((promise, index) => [
         index,
-        promise.then((r) => [index, r] as const),
+        promise.then((r) => [index, r, "success"] as const).catch((err) => [index, err, "error"] as const),
       ])
     );
 
     while (indexedPromises.size > 0) {
-      const [index, resultWrapper] = await Promise.race(
+      const [index, resultWrapper, status] = await Promise.race(
         indexedPromises.values(),
       );
       indexedPromises.delete(index);
+
+      if(status === "error") {
+        const path = paths[index];
+        const input = inputs[index];
+        const { body } = caughtErrorToData(resultWrapper, {
+          opts,
+          ctx,
+          type,
+          path,
+          input,
+        });
+
+        onChunk([index, body]);
+        continue;
+      }
 
       if (resultWrapper.next && resultWrapper.generator) {
         indexedPromises.set(index, resultWrapper.next.then(r => [index, {
@@ -437,7 +452,7 @@ export async function resolveHTTPResponse<
           skip: r.done ?? false,
           next: r.done ? undefined : resultWrapper.generator?.next(),
           generator: resultWrapper.generator,
-        }]));
+        }, "success"] as const).catch((err: any) => [index, err, "error"] as const));
       }
 
       if (resultWrapper.skip)
