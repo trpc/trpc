@@ -76,11 +76,11 @@
     "!**/*.test.*"
   ],
   "peerDependencies": {
-    "@trpc/server": "10.38.0"
+    "@trpc/server": "10.38.1"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "10.38.0",
+    "@trpc/server": "10.38.1",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.16.16",
     "eslint": "^8.40.0",
