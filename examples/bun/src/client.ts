@@ -18,7 +18,6 @@ async function main() {
 
   // parallel queries
   await Promise.all([
-    //
     proxy.hello.query(),
     proxy.hello.query('client'),
   ]);

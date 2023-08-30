@@ -1,10 +1,10 @@
 - [Bun](https://bun.sh)
-- Vanilla TRPCClient in Deno
+- Vanilla tRPC Client in Bun
 
 [Install Bun](https://bun.sh/docs/installation) then run:
 
 ```sh
-bun run src/server.ts
+bun run src/index.ts
 ```
 
 Run the client in another terminal:
