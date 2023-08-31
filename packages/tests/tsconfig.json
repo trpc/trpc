@@ -4,6 +4,7 @@
   "compilerOptions": {
     "skipLibCheck": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "noPropertyAccessFromIndexSignature": false,
     "target": "ES2020",
     "types": ["node", "vitest/globals"],
     "noUnusedLocals": false
