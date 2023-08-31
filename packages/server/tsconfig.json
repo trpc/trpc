@@ -3,7 +3,6 @@
   "include": ["src"],
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "target": "ES2020",
-    "noPropertyAccessFromIndexSignature": true
+    "target": "ES2020"
   }
 }
