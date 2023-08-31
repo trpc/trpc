@@ -6,6 +6,7 @@ import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
+import * as v from 'valibot';
 import * as yup from 'yup';
 import { z } from 'zod';
 
@@ -130,6 +131,91 @@ test('zod transform mixed input/output', async () => {
               }
             ]]
           `);
+
+  await close();
+});
+
+test('valibot', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(v.number()).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(123);
+
+  await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Invalid type]',
+  );
+  expect(res.input).toBe(123);
+  await close();
+});
+
+test('valibot async', async () => {
+  const t = initTRPC.create();
+  const input = v.stringAsync([
+    v.customAsync(async (value) => value === 'foo'),
+  ]);
+
+  const router = t.router({
+    q: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input).toBeString();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+
+  await expect(proxy.q.query('bar')).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Invalid input]',
+  );
+  const res = await proxy.q.query('foo');
+  expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": "foo",
+      }
+    `);
+  await close();
+});
+
+test('valibot transform mixed input/output', async () => {
+  const t = initTRPC.create();
+  const input = v.object({
+    length: v.transform(v.string(), (s) => s.length),
+  });
+
+  const router = t.router({
+    num: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input.length).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+
+  await expect(proxy.num.query({ length: '123' })).resolves
+    .toMatchInlineSnapshot(`
+            Object {
+              "input": Object {
+                "length": 3,
+              },
+            }
+          `);
+
+  await expect(
+    // @ts-expect-error this should only accept a string
+    proxy.num.query({ length: 123 }),
+  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Invalid type]');
 
   await close();
 });
