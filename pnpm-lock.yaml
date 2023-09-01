@@ -1679,8 +1679,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@effect/schema':
-        specifier: ^0.33.0
-        version: 0.33.0(@effect/data@0.17.1)(@effect/io@0.38.0)
+        specifier: ^0.34.0
+        version: 0.34.0(@effect/data@0.18.3)(@effect/io@0.39.0)
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1905,8 +1905,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@effect/schema':
-        specifier: ^0.33.0
-        version: 0.33.0(@effect/data@0.17.1)(@effect/io@0.38.0)
+        specifier: ^0.34.0
+        version: 0.34.0(@effect/data@0.18.3)(@effect/io@0.39.0)
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -6314,24 +6314,24 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.17.1:
-    resolution: {integrity: sha512-QCYkLE5Y5Dm5Yax5R3GmW4ZIgTx7W+kSZ7yq5eqQ/mFWa8i4yxbLuu8cudqzdeZtRtTGZKlhDxfFfgVtMywXJg==}
+  /@effect/data@0.18.3:
+    resolution: {integrity: sha512-xNG4CwxE758EK0v81EIPnKv9QeU/x9st1Doab/Fjf7sb9V3n55C85aBiKChpKgGD8pKCPHcjGydLsRHVUvzpwg==}
 
-  /@effect/io@0.38.0(@effect/data@0.17.1):
-    resolution: {integrity: sha512-qlVC9ASxNC+L2NKX5qOV9672CE5wWizfwBSFaX2XLI7CC118WRvohCTIPQ52n50Bj5TmR20+na+U9C7e4VkqzA==}
+  /@effect/io@0.39.0(@effect/data@0.18.3):
+    resolution: {integrity: sha512-9rlW1Pvn6ww1eaxPCg5+PeRlzYA7AfUJwiduPSMfXwgvqdR24gBGCoGgaD8aSKeOE1V1xhgOUNqbaf/oGsmbtQ==}
     peerDependencies:
-      '@effect/data': ^0.17.1
+      '@effect/data': ^0.18.0
     dependencies:
-      '@effect/data': 0.17.1
+      '@effect/data': 0.18.3
 
-  /@effect/schema@0.33.0(@effect/data@0.17.1)(@effect/io@0.38.0):
-    resolution: {integrity: sha512-K/IDp8aZpqqy2IBydnRtjNF7Sg/qZjiR5t+OANDZ2yOmTHRgtvWM4fwYV5kGYzEBZaBZEqUGjzj4KOqbsQhCEw==}
+  /@effect/schema@0.34.0(@effect/data@0.18.3)(@effect/io@0.39.0):
+    resolution: {integrity: sha512-7BdriGSWYj+f9jVqIq6PyfLoPztV05RW1Sj+mdKX3gAwqqIM7MBwkM0kTaLYKAFbGXTE9AK83uG2SSfzMigqTA==}
     peerDependencies:
-      '@effect/data': ^0.17.1
-      '@effect/io': ^0.38.0
+      '@effect/data': ^0.18.3
+      '@effect/io': ^0.39.0
     dependencies:
-      '@effect/data': 0.17.1
-      '@effect/io': 0.38.0(@effect/data@0.17.1)
+      '@effect/data': 0.18.3
+      '@effect/io': 0.39.0(@effect/data@0.18.3)
       fast-check: 3.12.0
 
   /@emotion/is-prop-valid@0.8.8:
