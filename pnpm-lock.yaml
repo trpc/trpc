@@ -1679,8 +1679,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@effect/schema':
-        specifier: ^0.34.0
-        version: 0.34.0(@effect/data@0.18.3)(@effect/io@0.39.0)
+        specifier: ^0.35.0
+        version: 0.35.0(@effect/data@0.18.3)(@effect/io@0.40.0)
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1905,8 +1905,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@effect/schema':
-        specifier: ^0.34.0
-        version: 0.34.0(@effect/data@0.18.3)(@effect/io@0.39.0)
+        specifier: ^0.35.0
+        version: 0.35.0(@effect/data@0.18.3)(@effect/io@0.40.0)
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -6317,21 +6317,21 @@ packages:
   /@effect/data@0.18.3:
     resolution: {integrity: sha512-xNG4CwxE758EK0v81EIPnKv9QeU/x9st1Doab/Fjf7sb9V3n55C85aBiKChpKgGD8pKCPHcjGydLsRHVUvzpwg==}
 
-  /@effect/io@0.39.0(@effect/data@0.18.3):
-    resolution: {integrity: sha512-9rlW1Pvn6ww1eaxPCg5+PeRlzYA7AfUJwiduPSMfXwgvqdR24gBGCoGgaD8aSKeOE1V1xhgOUNqbaf/oGsmbtQ==}
+  /@effect/io@0.40.0(@effect/data@0.18.3):
+    resolution: {integrity: sha512-S9qkhFBgjq7TBg3E3CjWOU5/Q8zkynz7wfs0DSIspDPDPJ2rBko+ZCGl1dLzOspVOMX0g4EK4W6vDvW6ogL2Bg==}
     peerDependencies:
       '@effect/data': ^0.18.0
     dependencies:
       '@effect/data': 0.18.3
 
-  /@effect/schema@0.34.0(@effect/data@0.18.3)(@effect/io@0.39.0):
-    resolution: {integrity: sha512-7BdriGSWYj+f9jVqIq6PyfLoPztV05RW1Sj+mdKX3gAwqqIM7MBwkM0kTaLYKAFbGXTE9AK83uG2SSfzMigqTA==}
+  /@effect/schema@0.35.0(@effect/data@0.18.3)(@effect/io@0.40.0):
+    resolution: {integrity: sha512-NRlBGW/L1z9mi9M2U1YudD5rMOHm/IvIsL7CT2r8d2oDKuM4iY+R/43IV5lfi458nwtDBn60StzG9t5SPHwL3w==}
     peerDependencies:
       '@effect/data': ^0.18.3
-      '@effect/io': ^0.39.0
+      '@effect/io': ^0.40.0
     dependencies:
       '@effect/data': 0.18.3
-      '@effect/io': 0.39.0(@effect/data@0.18.3)
+      '@effect/io': 0.40.0(@effect/data@0.18.3)
       fast-check: 3.12.0
 
   /@emotion/is-prop-valid@0.8.8:
