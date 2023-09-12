@@ -22,7 +22,7 @@
         "package.json"
       ]
     },
-    "codegen-test": {
+    "codegen-tests": {
       "outputs": [
         "server/__generated__/bigBoi/**",
         "server/__generated__/bigLegacyRouter/**"
@@ -57,11 +57,11 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build", "codegen-test"],
+      "dependsOn": ["^build", "codegen-tests"],
       "cache": false
     },
     "test-ci": {
-      "dependsOn": ["^build", "codegen-test"],
+      "dependsOn": ["^build", "codegen-tests"],
       "cache": false
     },
     "test-dev": {
@@ -75,7 +75,7 @@
     "test-watch": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["^build", "codegen-test"]
+      "dependsOn": ["^build", "codegen-tests"]
     },
     "type-check": {
       "dependsOn": ["^build"],
