@@ -3,8 +3,8 @@
     "yzhang.markdown-all-in-one",
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
-    "bungcip.better-toml",
+    "tamasfe.even-better-toml",
     "orta.vscode-twoslash-queries",
-    "yoavbls.pretty-ts-errors"
+    "yoavbls.pretty-ts-errors",
   ]
 }
