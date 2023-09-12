@@ -313,7 +313,7 @@ const appRouter = router({
 
   </TabItem>
   <TabItem value="valibot" label="Valibot">
-    The input parser can be any <code>BaseSchema</code> or <code>BaseSchemaAsync</code>, e.g. <code>string()</code> or <code>object({})</code>.
+    With Valibot, you simply need to <code>wrap</code> your schema with TypeSchema.
 
 <br />
 <br />
@@ -327,12 +327,13 @@ const appRouter = router({
 import { db } from './db';
 import { publicProcedure, router } from './trpc';
 // ---cut---
+import { wrap } from '@decs/typeschema';
 import { string } from 'valibot';
 
 const appRouter = router({
   // ...
   userById: publicProcedure
-    .input(string())
+    .input(wrap(string()))
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
