@@ -7,7 +7,7 @@
     "scripts/getRollupConfig.ts"
   ],
   "pipeline": {
-    "codegen:entrypoints": {
+    "codegen-entrypoints": {
       "outputs": [
         "app-dir/**",
         "links/**",
@@ -22,7 +22,7 @@
         "package.json"
       ]
     },
-    "test-codegen": {
+    "codegen-test": {
       "outputs": [
         "server/__generated__/bigBoi/**",
         "server/__generated__/bigLegacyRouter/**"
@@ -32,7 +32,7 @@
       "cache": false
     },
     "build": {
-      "dependsOn": ["^build", "codegen:entrypoints", "prebuild"],
+      "dependsOn": ["^build", "codegen-entrypoints", "prebuild"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
@@ -57,11 +57,11 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build", "test-codegen"],
+      "dependsOn": ["^build", "codegen-test"],
       "cache": false
     },
     "test-ci": {
-      "dependsOn": ["^build", "test-codegen"],
+      "dependsOn": ["^build", "codegen-test"],
       "cache": false
     },
     "test-dev": {
@@ -75,7 +75,7 @@
     "test-watch": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["^build", "test-codegen"]
+      "dependsOn": ["^build", "codegen-test"]
     },
     "type-check": {
       "dependsOn": ["^build"],
