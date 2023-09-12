@@ -185,11 +185,11 @@ export function httpRequest(
     fetchHTTPResponse(opts, ac)
       .then((_res) => {
         meta.response = _res;
+        done = true;
         return _res.json();
       })
       .then((json) => {
         meta.responseJSON = json;
-        done = true;
         resolve({
           json: json as TRPCResponse,
           meta,
