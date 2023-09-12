@@ -1,6 +1,6 @@
 {
   "name": "www",
-  "version": "10.37.1",
+  "version": "10.38.2",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -29,10 +29,10 @@
     "@docusaurus/theme-common": "^2.4.1",
     "@docusaurus/types": "^2.4.1",
     "@mdx-js/react": "^1.6.22",
-    "@trpc/client": "^10.37.1",
-    "@trpc/next": "^10.37.1",
-    "@trpc/react-query": "^10.37.1",
-    "@trpc/server": "^10.37.1",
+    "@trpc/client": "^10.38.2",
+    "@trpc/next": "^10.38.2",
+    "@trpc/react-query": "^10.38.2",
+    "@trpc/server": "^10.38.2",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "clsx": "^2.0.0",
@@ -61,7 +61,7 @@
   "devDependencies": {
     "@babel/core": "^7.18.6",
     "@babel/preset-env": "^7.18.6",
-    "@effect/schema": "^0.33.0",
+    "@effect/schema": "^0.36.0",
     "@octokit/graphql": "^7.0.0",
     "@octokit/graphql-schema": "^14.0.0",
     "@tsconfig/docusaurus": "^2.0.0",

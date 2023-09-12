@@ -1,0 +1,27 @@
+{
+  "name": "@examples/bun",
+  "private": true,
+  "version": "10.38.2",
+  "scripts": {
+    "build": "bun build src/index.ts --outdir ./dist && bun build src/client.ts --outdir ./dist",
+    "dev:server": "bun run src/index.ts --watch",
+    "dev:client": "wait-port 3000 && bun run src/client.ts --watch",
+    "start:server": "bun run dist/index.js",
+    "start:client": "wait-port 3000 && bun run dist/client.js",
+    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives */*.ts",
+    "test-dev": "start-server-and-test 'bun run src/index.ts' 3000 'bun run src/client.ts'",
+    "test-start": "start-server-and-test 'bun run dist/index.js' 3000 'bun run dist/client.js'",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trpc/client": "^10.38.2",
+    "@trpc/server": "^10.38.2"
+  },
+  "devDependencies": {
+    "bun-types": "^0.7.3",
+    "eslint": "^8.40.0",
+    "start-server-and-test": "^1.12.0",
+    "typescript": "^5.1.3",
+    "wait-port": "^1.0.1"
+  }
+}
