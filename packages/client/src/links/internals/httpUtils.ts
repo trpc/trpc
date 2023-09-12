@@ -180,6 +180,7 @@ export function httpRequest(
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const meta = {} as HTTPResult['meta'];
 
+  let done = false;
   const promise = new Promise<HTTPResult>((resolve, reject) => {
     fetchHTTPResponse(opts, ac)
       .then((_res) => {
@@ -188,17 +189,21 @@ export function httpRequest(
       })
       .then((json) => {
         meta.responseJSON = json;
+        done = true;
         resolve({
           json: json as TRPCResponse,
           meta,
         });
       })
       .catch((err) => {
+        done = true;
         reject(TRPCClientError.from(err, { meta }));
       });
   });
   const cancel = () => {
-    ac?.abort();
+    if (!done) {
+      ac?.abort();
+    }
   };
   return { promise, cancel };
 }

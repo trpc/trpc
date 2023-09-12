@@ -53,7 +53,6 @@ test('httpBatchLink', async () => {
       /// ..
     });
 
-  expect(abortController.signal).toBe(false);
-
+  expect(abortController.signal.aborted).toBe(false);
   await close();
 });
