@@ -30,7 +30,13 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 
 ### Testing
 
-> Note: you will want to have `pnpm dev` running in parallel in another terminal
+Open one terminal and run:
+
+```bash
+pnpm dev
+```
+
+In a second terminal, you can run the tests in watch mode using
 
 ```bash
 pnpm test-watch
