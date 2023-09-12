@@ -32,15 +32,7 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 
 > Note: you will want to have `pnpm dev` running in parallel in another terminal
 
-First, run
-
 ```bash
-pnpm test
-```
-
-in the project root directory. This will make sure all the build artifacts and codegen has run. After that, you can run the tests in watch mode using
-
-```
 pnpm test-watch
 
 # example if you want to test a specific test file:
