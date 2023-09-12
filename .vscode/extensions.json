@@ -5,6 +5,6 @@
     "dbaeumer.vscode-eslint",
     "tamasfe.even-better-toml",
     "orta.vscode-twoslash-queries",
-    "yoavbls.pretty-ts-errors",
+    "yoavbls.pretty-ts-errors"
   ]
 }
