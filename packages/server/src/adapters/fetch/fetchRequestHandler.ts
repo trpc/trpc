@@ -25,10 +25,9 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     query: url.searchParams,
     method: opts.req.method,
     headers: Object.fromEntries(opts.req.headers),
-    body:
-      opts.req.headers.get('content-type') === 'application/json'
-        ? await opts.req.text()
-        : '',
+    body: opts.req.headers.get('content-type')?.startsWith('application/json')
+      ? await opts.req.text()
+      : '',
   };
 
   let resolve: (value: Response) => void;
