@@ -180,10 +180,12 @@ export function httpRequest(
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const meta = {} as HTTPResult['meta'];
 
+  let done = false;
   const promise = new Promise<HTTPResult>((resolve, reject) => {
     fetchHTTPResponse(opts, ac)
       .then((_res) => {
         meta.response = _res;
+        done = true;
         return _res.json();
       })
       .then((json) => {
@@ -194,11 +196,14 @@ export function httpRequest(
         });
       })
       .catch((err) => {
+        done = true;
         reject(TRPCClientError.from(err, { meta }));
       });
   });
   const cancel = () => {
-    ac?.abort();
+    if (!done) {
+      ac?.abort();
+    }
   };
   return { promise, cancel };
 }
