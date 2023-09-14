@@ -6,6 +6,7 @@ import {
   Maybe,
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
+import { isObject } from './internals/isObject';
 
 type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
 
@@ -24,14 +25,23 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
   TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
-function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
+function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
   return (
     cause instanceof TRPCClientError ||
     /**
      * @deprecated
      * Delete in next major
      */
-    cause.name === 'TRPCClientError'
+    (cause instanceof Error && cause.name === 'TRPCClientError')
+  );
+}
+
+function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
+  return (
+    isObject(obj) &&
+    isObject(obj.error) &&
+    typeof obj.error.code === 'number' &&
+    typeof obj.error.message === 'string'
   );
 }
 
@@ -74,19 +84,11 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   }
 
   public static from<TRouterOrProcedure extends ErrorInferrable>(
-    cause: Error | TRPCErrorResponse<any>,
+    _cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
-    if (!(cause instanceof Error)) {
-      return new TRPCClientError<TRouterOrProcedure>(
-        cause.error.message ?? '',
-        {
-          ...opts,
-          cause: undefined,
-          result: cause as any,
-        },
-      );
-    }
+    const cause = _cause as unknown;
+
     if (isTRPCClientError(cause)) {
       if (opts.meta) {
         // Decorate with meta error data
@@ -97,11 +99,22 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
       }
       return cause;
     }
+    if (isTRPCErrorResponse(cause)) {
+      return new TRPCClientError(cause.error.message, {
+        ...opts,
+        result: cause,
+      });
+    }
+    if (!(cause instanceof Error)) {
+      return new TRPCClientError('Unknown error', {
+        ...opts,
+        cause: cause as any,
+      });
+    }
 
-    return new TRPCClientError<TRouterOrProcedure>(cause.message, {
+    return new TRPCClientError(cause.message, {
       ...opts,
       cause,
-      result: null,
     });
   }
 }

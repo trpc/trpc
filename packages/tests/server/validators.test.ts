@@ -1,4 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { wrap } from '@decs/typeschema';
 import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server/src';
 import * as arktype from 'arktype';
@@ -6,6 +7,7 @@ import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
+import * as v from 'valibot';
 import * as yup from 'yup';
 import { z } from 'zod';
 
@@ -130,6 +132,93 @@ test('zod transform mixed input/output', async () => {
               }
             ]]
           `);
+
+  await close();
+});
+
+test('valibot', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(wrap(v.number())).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+  const res = await proxy.num.query(123);
+
+  await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Assertion failed]',
+  );
+  expect(res.input).toBe(123);
+  await close();
+});
+
+test('valibot async', async () => {
+  const t = initTRPC.create();
+  const input = wrap(
+    v.stringAsync([v.customAsync(async (value) => value === 'foo')]),
+  );
+
+  const router = t.router({
+    q: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input).toBeString();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+
+  await expect(proxy.q.query('bar')).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Assertion failed]',
+  );
+  const res = await proxy.q.query('foo');
+  expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": "foo",
+      }
+    `);
+  await close();
+});
+
+test('valibot transform mixed input/output', async () => {
+  const t = initTRPC.create();
+  const input = wrap(
+    v.object({
+      length: v.transform(v.string(), (s) => s.length),
+    }),
+  );
+
+  const router = t.router({
+    num: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input.length).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router);
+
+  await expect(proxy.num.query({ length: '123' })).resolves
+    .toMatchInlineSnapshot(`
+            Object {
+              "input": Object {
+                "length": 3,
+              },
+            }
+          `);
+
+  await expect(
+    // @ts-expect-error this should only accept a string
+    proxy.num.query({ length: 123 }),
+  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Assertion failed]');
 
   await close();
 });

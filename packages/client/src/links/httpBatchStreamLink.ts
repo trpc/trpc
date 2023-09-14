@@ -1,12 +1,22 @@
 import { NonEmptyArray } from '../internals/types';
-import { HTTPBatchStreamLinkOptions } from './HTTPBatchStreamLinkOptions';
+import { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import {
   createHTTPBatchLink,
   RequesterFn,
 } from './internals/createHTTPBatchLink';
 import { getTextDecoder } from './internals/getTextDecoder';
 import { streamingJsonHttpRequester } from './internals/parseJSONStream';
+import { TextDecoderEsque } from './internals/streamingUtils';
 import { Operation } from './types';
+
+export interface HTTPBatchStreamLinkOptions extends HTTPBatchLinkOptions {
+  /**
+   * Will default to the webAPI `TextDecoder`,
+   * but you can use this option if your client
+   * runtime doesn't provide it.
+   */
+  textDecoder?: TextDecoderEsque;
+}
 
 const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions> = (
   requesterOpts,

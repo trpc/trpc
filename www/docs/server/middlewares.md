@@ -249,3 +249,68 @@ fooMiddleware.unstable_pipe(barMiddleware);
 // ✅ `ctx.a` overlaps from `barMiddleware` and `fooMiddleware`
 barMiddleware.unstable_pipe(fooMiddleware);
 ```
+
+## Experimental: standalone middlewares
+
+:::info
+Caution: we have prefixed this as `experimental_` and it may change with any tRPC release. [Read more](/docs/faq#experimental).
+:::
+
+tRPC has a new experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that
+the `Context` type is tied to the `Context` type of the tRPC instance. This means that you cannot use the same middleware with multiple tRPC instances that have different `Context` types.
+
+Using `experimental_standaloneMiddleware` you can create a middleware that explicitly defines its requirements, i.e. the Context, Input and Meta types:
+
+```ts twoslash
+// @target: esnext
+import {
+  experimental_standaloneMiddleware,
+  initTRPC,
+  TRPCError,
+} from '@trpc/server';
+import * as z from 'zod';
+
+const projectAccessMiddleware = experimental_standaloneMiddleware<{
+  ctx: { allowedProjects: string[] }; // defaults to 'object' if not defined
+  input: { projectId: string }; // defaults to 'unknown' if not defined
+  // 'meta', not defined here, defaults to 'object | undefined'
+}>().create((opts) => {
+  if (!opts.ctx.allowedProjects.includes(opts.input.projectId)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Not allowed',
+    });
+  }
+
+  return opts.next();
+});
+
+const t1 = initTRPC
+  .context<{
+    allowedProjects: string[];
+  }>()
+  .create();
+
+// ✅ `ctx.allowedProjects` satisfies "string[]" and `input.projectId` satisfies "string"
+const accessControlledProcedure = t1.procedure
+  .input(z.object({ projectId: z.string() }))
+  .use(projectAccessMiddleware);
+
+// @errors: 2345
+// ❌ `ctx.allowedProjects` satisfies "string[]" but `input.projectId` does not satisfy "string"
+const accessControlledProcedure2 = t1.procedure
+  .input(z.object({ projectId: z.number() }))
+  .use(projectAccessMiddleware);
+
+// @errors: 2345
+// ❌ `ctx.allowedProjects` does not satisfy "string[]" even though `input.projectId` satisfies "string"
+const t2 = initTRPC
+  .context<{
+    allowedProjects: number[];
+  }>()
+  .create();
+
+const accessControlledProcedure3 = t2.procedure
+  .input(z.object({ projectId: z.string() }))
+  .use(projectAccessMiddleware);
+```

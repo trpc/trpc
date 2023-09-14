@@ -387,6 +387,32 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [Valibot](https://github.com/fabian-hiller/valibot)
+
+```ts twoslash
+import { wrap } from '@decs/typeschema';
+import { initTRPC } from '@trpc/server';
+import { object, string } from 'valibot';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(wrap(object({ name: string() })))
+    .output(wrap(object({ greeting: string() })))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Contributing your own Validator Library
 
 If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.

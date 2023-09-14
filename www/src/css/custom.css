@@ -43,7 +43,7 @@
 }
 
 html {
-  @apply scroll-smooth selection:bg-sky-500/75 selection:text-white;
+  @apply selection:bg-sky-500/75 selection:text-white;
 }
 
 div[class^='announcementBar_'] {
