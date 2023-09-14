@@ -56,6 +56,10 @@ Testing is currently coalesced in [./packages/tests](./packages/tests); we impor
 pnpm lint-fix
 ```
 
+### Troubleshooting
+
+If you get any cryptic errors you can usually get past them by doing `pnpm clean && pnpm install`; if this doesn't work, feel free to open an issue.
+
 ### Documentation
 
 ```bash
