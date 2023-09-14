@@ -75,9 +75,10 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   }
 
   public static from<TRouterOrProcedure extends ErrorInferrable>(
-    cause: Error | TRPCErrorResponse<any>,
+    _cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
+    const cause = _cause as unknown;
     if (!(cause instanceof Error)) {
       const message =
         isObject(cause) &&
