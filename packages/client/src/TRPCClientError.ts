@@ -25,14 +25,14 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
   TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
-function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
+function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
   return (
     cause instanceof TRPCClientError ||
     /**
      * @deprecated
      * Delete in next major
      */
-    cause.name === 'TRPCClientError'
+    (cause instanceof Error && cause.name === 'TRPCClientError')
   );
 }
 
@@ -89,6 +89,16 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   ): TRPCClientError<TRouterOrProcedure> {
     const cause = _cause as unknown;
 
+    if (isTRPCClientError(cause)) {
+      if (opts.meta) {
+        // Decorate with meta error data
+        cause.meta = {
+          ...cause.meta,
+          ...opts.meta,
+        };
+      }
+      return cause;
+    }
     if (isTRPCErrorResponse(cause)) {
       return new TRPCClientError<TRouterOrProcedure>(cause.error.message, {
         ...opts,
@@ -102,21 +112,9 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
       });
     }
 
-    if (isTRPCClientError(cause)) {
-      if (opts.meta) {
-        // Decorate with meta error data
-        cause.meta = {
-          ...cause.meta,
-          ...opts.meta,
-        };
-      }
-      return cause;
-    }
-
     return new TRPCClientError<TRouterOrProcedure>(cause.message, {
       ...opts,
-      cause: cause as any,
-      result: null,
+      cause,
     });
   }
 }
