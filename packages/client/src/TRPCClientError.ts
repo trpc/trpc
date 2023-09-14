@@ -100,21 +100,24 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
       return cause;
     }
     if (isTRPCErrorResponse(cause)) {
-      return new TRPCClientError<TRouterOrProcedure>(cause.error.message, {
+      return new TRPCClientError(cause.error.message, {
         ...opts,
-        result: cause.error,
+        result: cause,
+        cause: undefined,
       });
     }
     if (!(cause instanceof Error)) {
-      return new TRPCClientError<TRouterOrProcedure>('Unknown error', {
+      return new TRPCClientError('Unknown error', {
         ...opts,
         cause: cause as any,
+        result: null,
       });
     }
 
-    return new TRPCClientError<TRouterOrProcedure>(cause.message, {
+    return new TRPCClientError(cause.message, {
       ...opts,
       cause,
+      result: null,
     });
   }
 }
