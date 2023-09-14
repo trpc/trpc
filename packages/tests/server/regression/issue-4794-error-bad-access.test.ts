@@ -12,5 +12,7 @@ test('test passing non error like object to TRPCClientError.from', () => {
 test('empty obj', () => {
   const cause = {};
 
-  expect(TRPCClientError.from(cause as any)).toMatchInlineSnapshot('[TRPCClientError: Unknown error]');
+  expect(TRPCClientError.from(cause as any)).toMatchInlineSnapshot(
+    '[TRPCClientError: Unknown error]',
+  );
 });
