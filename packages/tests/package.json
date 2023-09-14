@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tests",
-  "version": "10.38.2",
+  "version": "10.38.3",
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
@@ -28,10 +28,10 @@
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
-    "@trpc/client": "10.38.2",
-    "@trpc/next": "10.38.2",
-    "@trpc/react-query": "10.38.2",
-    "@trpc/server": "10.38.2",
+    "@trpc/client": "10.38.3",
+    "@trpc/next": "10.38.3",
+    "@trpc/react-query": "10.38.3",
+    "@trpc/server": "10.38.3",
     "@types/node": "^18.16.16",
     "@types/testing-library__jest-dom": "^5.14.5",
     "@vitest/coverage-istanbul": "^0.32.0",
