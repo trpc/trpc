@@ -152,7 +152,7 @@ test('valibot', async () => {
   const res = await proxy.num.query(123);
 
   await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid type]',
+    '[TRPCClientError: Assertion failed]',
   );
   expect(res.input).toBe(123);
   await close();
@@ -176,7 +176,7 @@ test('valibot async', async () => {
   const { close, proxy } = routerToServerAndClientNew(router);
 
   await expect(proxy.q.query('bar')).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid input]',
+    '[TRPCClientError: Assertion failed]',
   );
   const res = await proxy.q.query('foo');
   expect(res).toMatchInlineSnapshot(`
@@ -218,7 +218,7 @@ test('valibot transform mixed input/output', async () => {
   await expect(
     // @ts-expect-error this should only accept a string
     proxy.num.query({ length: 123 }),
-  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Invalid type]');
+  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Assertion failed]');
 
   await close();
 });
