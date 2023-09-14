@@ -6,6 +6,7 @@ import {
   Maybe,
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
+import { isObject } from './internals/isObject';
 
 type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
 
@@ -24,15 +25,21 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
   TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
-function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
+function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
   return (
     cause instanceof TRPCClientError ||
     /**
      * @deprecated
      * Delete in next major
      */
-    cause.name === 'TRPCClientError'
+    (cause instanceof Error && cause.name === 'TRPCClientError')
   );
+}
+
+function isErrorLike(obj: unknown): obj is {
+  message: string;
+} {
+  return isObject(obj) && typeof obj.message === 'string';
 }
 
 export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
@@ -77,16 +84,6 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
     cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
-    if (!(cause instanceof Error)) {
-      return new TRPCClientError<TRouterOrProcedure>(
-        cause.error.message ?? '',
-        {
-          ...opts,
-          cause: undefined,
-          result: cause as any,
-        },
-      );
-    }
     if (isTRPCClientError(cause)) {
       if (opts.meta) {
         // Decorate with meta error data
@@ -98,9 +95,11 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
       return cause;
     }
 
-    return new TRPCClientError<TRouterOrProcedure>(cause.message, {
+    const message = isErrorLike(cause) ? cause.message : 'Unknown error';
+
+    return new TRPCClientError<TRouterOrProcedure>(message, {
       ...opts,
-      cause,
+      cause: cause as any,
       result: null,
     });
   }
