@@ -79,7 +79,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   ): TRPCClientError<TRouterOrProcedure> {
     if (!(cause instanceof Error)) {
       return new TRPCClientError<TRouterOrProcedure>(
-        cause.error.message ?? '',
+        cause.error?.message ?? '',
         {
           ...opts,
           cause: undefined,
