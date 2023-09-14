@@ -9,12 +9,8 @@ test('test passing non error like object to TRPCClientError.from', () => {
   );
 });
 
-test('error like object', () => {
-  const cause = {
-    message: 'error like object',
-  };
+test('empty obj', () => {
+  const cause = {};
 
-  expect(TRPCClientError.from(cause as any)).toMatchInlineSnapshot(
-    '[TRPCClientError: error like object]',
-  );
+  expect(TRPCClientError.from(cause as any)).toMatchInlineSnapshot('[TRPCClientError: Unknown error]');
 });

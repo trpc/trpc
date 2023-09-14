@@ -36,6 +36,15 @@ function isTRPCClientError(cause: Error): cause is TRPCClientError<any> {
   );
 }
 
+function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
+  return (
+    isObject(obj) &&
+    isObject(obj.error) &&
+    typeof obj.error.code === 'number' &&
+    typeof obj.error.message === 'string'
+  );
+}
+
 export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
@@ -79,18 +88,17 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
     const cause = _cause as unknown;
-    if (!(cause instanceof Error)) {
-      const message =
-        isObject(cause) &&
-        isObject(cause.error) &&
-        typeof cause.error.message === 'string'
-          ? cause.error.message
-          : 'Unknown error';
 
-      return new TRPCClientError<TRouterOrProcedure>(message, {
+    if (isTRPCErrorResponse(cause)) {
+      return new TRPCClientError<TRouterOrProcedure>(cause.error.message, {
         ...opts,
-        cause: undefined,
-        result: cause as any,
+        result: cause.error,
+      });
+    }
+    if (!(cause instanceof Error)) {
+      return new TRPCClientError<TRouterOrProcedure>('Unknown error', {
+        ...opts,
+        cause: cause as any,
       });
     }
 
