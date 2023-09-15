@@ -1,4 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { wrap } from '@decs/typeschema';
 import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server/src';
 import * as arktype from 'arktype';
@@ -139,7 +140,7 @@ test('valibot', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v.number()).query(({ input }) => {
+    num: t.procedure.input(wrap(v.number())).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -151,7 +152,7 @@ test('valibot', async () => {
   const res = await proxy.num.query(123);
 
   await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid type]',
+    '[TRPCClientError: Assertion failed]',
   );
   expect(res.input).toBe(123);
   await close();
@@ -159,9 +160,9 @@ test('valibot', async () => {
 
 test('valibot async', async () => {
   const t = initTRPC.create();
-  const input = v.stringAsync([
-    v.customAsync(async (value) => value === 'foo'),
-  ]);
+  const input = wrap(
+    v.stringAsync([v.customAsync(async (value) => value === 'foo')]),
+  );
 
   const router = t.router({
     q: t.procedure.input(input).query(({ input }) => {
@@ -175,7 +176,7 @@ test('valibot async', async () => {
   const { close, proxy } = routerToServerAndClientNew(router);
 
   await expect(proxy.q.query('bar')).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Invalid input]',
+    '[TRPCClientError: Assertion failed]',
   );
   const res = await proxy.q.query('foo');
   expect(res).toMatchInlineSnapshot(`
@@ -188,9 +189,11 @@ test('valibot async', async () => {
 
 test('valibot transform mixed input/output', async () => {
   const t = initTRPC.create();
-  const input = v.object({
-    length: v.transform(v.string(), (s) => s.length),
-  });
+  const input = wrap(
+    v.object({
+      length: v.transform(v.string(), (s) => s.length),
+    }),
+  );
 
   const router = t.router({
     num: t.procedure.input(input).query(({ input }) => {
@@ -215,7 +218,7 @@ test('valibot transform mixed input/output', async () => {
   await expect(
     // @ts-expect-error this should only accept a string
     proxy.num.query({ length: 123 }),
-  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Invalid type]');
+  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Assertion failed]');
 
   await close();
 });
