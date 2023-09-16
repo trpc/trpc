@@ -29,7 +29,7 @@ export const topSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 35,
+    "weight": 37,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -113,7 +113,7 @@ export const allSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 35,
+    "weight": 37,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -273,7 +273,7 @@ export const allSponsors = [
   {
     "name": "Interval",
     "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 18,
+    "weight": 19,
     "login": "interval",
     "link": "https://interval.com/?ref=trpc",
     "createdAt": 1668779128000
@@ -389,5 +389,21 @@ export const allSponsors = [
     "login": "A-Local-Cart",
     "link": "https://www.alocalcart.com/?ref=trpc",
     "createdAt": 1693505333000
+  },
+  {
+    "name": "Aleksandr Blokh",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4045375?u=b094249cddefa0dcee28f16e19a386b4b2c4312a&v=4",
+    "weight": 2,
+    "login": "AlexBlokh",
+    "link": "http://drizzle.team/?ref=trpc",
+    "createdAt": 1694781638000
+  },
+  {
+    "name": "Drizzle Team",
+    "imgSrc": "https://avatars.githubusercontent.com/u/108468352?v=4",
+    "weight": 2,
+    "login": "drizzle-team",
+    "link": "https://drizzle.team/?ref=trpc",
+    "createdAt": 1694781987000
   }
 ] as const;

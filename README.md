@@ -225,6 +225,10 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://github.com/drwpwrs"><img src="https://avatars.githubusercontent.com/u/49917220?u=ceb7a6b68f6366882ac7bc599383382f48e41e94&v=4&s=100" width="100" alt="Drew%20Powers"/><br />Drew Powers</a></td>
    <td align="center"><a href="https://armand-salle.fr/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/28579123?u=599cf31dd442873b22f68d2973bad4b5c48d6f9f&v=4&s=100" width="100" alt="Armand%20SALLE"/><br />Armand SALLE</a></td>
    <td align="center"><a href="https://www.alocalcart.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/143630784?v=4&s=100" width="100" alt="A%20Local%20Cart"/><br />A Local Cart</a></td>
+   <td align="center"><a href="http://drizzle.team/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/4045375?u=b094249cddefa0dcee28f16e19a386b4b2c4312a&v=4&s=100" width="100" alt="Aleksandr%20Blokh"/><br />Aleksandr Blokh</a></td>
+   <td align="center"><a href="https://drizzle.team/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/108468352?v=4&s=100" width="100" alt="Drizzle%20Team"/><br />Drizzle Team</a></td>
+  </tr>
+  <tr>
    <td align="center"><a href="https://github.com/syhner"><img src="https://avatars.githubusercontent.com/u/71605633?v=4&s=100" width="100" alt="Siraj"/><br />Siraj</a></td>
   </tr>
 </table>
