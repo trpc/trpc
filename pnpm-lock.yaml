@@ -1684,7 +1684,7 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.11.2
-        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
+        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.2)
       '@effect/schema':
         specifier: ^0.36.0
         version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
@@ -1913,7 +1913,7 @@ importers:
         version: 7.20.2(@babel/core@7.20.2)
       '@decs/typeschema':
         specifier: ^0.11.2
-        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(yup@1.0.0)(zod@3.20.2)
+        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(yup@1.0.0)(zod@3.22.2)
       '@effect/schema':
         specifier: ^0.36.0
         version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
@@ -5524,7 +5524,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(yup@1.0.0)(zod@3.20.2):
+  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(yup@1.0.0)(zod@3.22.2):
     resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -5589,10 +5589,10 @@ packages:
       superstruct: 1.0.3
       valibot: 0.15.0
       yup: 1.0.0
-      zod: 3.20.2
+      zod: 3.22.2
     dev: true
 
-  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
+  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.2):
     resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -5657,7 +5657,7 @@ packages:
       valibot: 0.15.0
       vite: 4.1.2(@types/node@18.16.16)
       yup: 1.0.0
-      zod: 3.20.2
+      zod: 3.22.2
     dev: false
 
   /@docsearch/css@3.3.0:
