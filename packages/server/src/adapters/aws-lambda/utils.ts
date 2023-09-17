@@ -1,5 +1,6 @@
 import type {
   APIGatewayProxyEvent,
+  APIGatewayProxyEventPathParameters,
   APIGatewayProxyEventV2,
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
@@ -98,6 +99,26 @@ export function getHTTPMethod(event: APIGatewayEvent) {
 }
 
 export function getPath(event: APIGatewayEvent) {
+  const yandexCloudEvent = event as unknown as {
+    pathParams?: APIGatewayProxyEventPathParameters;
+    url: string;
+  };
+  const yandexPathParams = yandexCloudEvent.pathParams;
+  if (!!yandexPathParams && isPayloadV1(event)) {
+    if (!yandexPathParams) {
+      // Then this event was not triggered by a resource denoted with {proxy+}
+      return event.path.split('/').pop() ?? '';
+    }
+    const matches = event.path.matchAll(/\{(.*?)\}/g);
+    for (const match of matches) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const group = match[1]!;
+      if (group.includes('+') && yandexPathParams) {
+        return yandexPathParams[group.replace('+', '')] ?? '';
+      }
+    }
+    return event.path.slice(1);
+  }
   if (isPayloadV1(event)) {
     if (!event.pathParameters) {
       // Then this event was not triggered by a resource denoted with {proxy+}
