@@ -15,6 +15,10 @@ We have prefixed this as `unstable_` as it's a new API, but you're safe to use i
 
 > All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
 
+:::note
+If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! [Read more](https://trpc.io/docs/client/links/httpBatchLink).
+:::
+
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
