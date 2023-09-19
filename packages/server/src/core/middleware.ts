@@ -1,6 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
-import { AnyRootConfig, RootConfig } from './internals/config';
+import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
@@ -113,15 +113,12 @@ type CreateMiddlewareReturnInput<
 /**
  * @internal
  */
-type deriveParamsFromConfig<
-  TConfig extends AnyRootConfig,
-  TInputIn = unknown,
-> = {
+type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
   _config: TConfig;
   // eslint-disable-next-line @typescript-eslint/ban-types
   _ctx_out: {};
-  _input_out: TInputIn;
-  _input_in: TInputIn;
+  _input_out: unknown;
+  _input_in: unknown;
   _output_in: unknown;
   _output_out: unknown;
   _meta: TConfig['$types']['meta'];
@@ -164,15 +161,12 @@ export type MiddlewareFunction<
 /**
  * @internal
  */
-export function createMiddlewareFactory<
-  TConfig extends AnyRootConfig,
-  TInputIn = unknown,
->() {
+export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   function createMiddlewareInner<
     TNewParams extends ProcedureParams<AnyProcedureParams>,
   >(
     middlewares: MiddlewareFunction<any, any>[],
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return {
       _middlewares: middlewares,
       unstable_pipe(middlewareBuilderOrFn) {
@@ -192,34 +186,13 @@ export function createMiddlewareFactory<
   function createMiddleware<
     TNewParams extends ProcedureParams<AnyProcedureParams>,
   >(
-    fn: MiddlewareFunction<
-      deriveParamsFromConfig<TConfig, TInputIn>,
-      TNewParams
-    >,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+    fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
     return createMiddlewareInner([fn]);
   }
 
   return createMiddleware;
 }
-
-export const experimental_standaloneMiddleware = <
-  TCtx extends {
-    ctx?: object;
-    meta?: object;
-    input?: unknown;
-  },
->() => ({
-  create: createMiddlewareFactory<
-    RootConfig<{
-      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
-      meta: TCtx extends { meta: infer T extends object } ? T : object;
-      errorShape: object;
-      transformer: object;
-    }>,
-    TCtx extends { input: infer T } ? T : unknown
-  >(),
-});
 
 function isPlainObject(obj: unknown) {
   return obj && typeof obj === 'object' && !Array.isArray(obj);

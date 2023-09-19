@@ -18,11 +18,7 @@ export type {
   ProcedureOptions,
 } from './procedure';
 export type { inferParser } from './parser';
-export {
-  createInputMiddleware,
-  createOutputMiddleware,
-  experimental_standaloneMiddleware,
-} from './middleware';
+export { createInputMiddleware, createOutputMiddleware } from './middleware';
 export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
 export { initTRPC } from './initTRPC';
 export * from './types';

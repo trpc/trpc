@@ -4,7 +4,7 @@ import { getPostBody } from './getPostBody';
 
 export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
   isMatch(opts) {
-    return !!opts.req.headers['content-type']?.startsWith('application/json');
+    return opts.req.headers['content-type'] === 'application/json';
   },
   getBody: getPostBody,
   getInputs: getJsonContentTypeInputs,
