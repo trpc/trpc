@@ -80,7 +80,7 @@
   },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3",
-    "@trpc/server": "workspace:*",
+    "@trpc/server": "10.38.3",
     "@types/isomorphic-fetch": "^0.0.36",
     "@types/node": "^18.17.17",
     "eslint": "^8.49.0",

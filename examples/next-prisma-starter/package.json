@@ -38,7 +38,7 @@
     "singleQuote": true
   },
   "dependencies": {
-    "@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter",
+    "@prisma/client": "5.3.1",
     "@tanstack/react-query": "5.0.0-beta.9",
     "@trpc/client": "^10.38.3",
     "@trpc/next": "^10.38.3",
@@ -67,7 +67,7 @@
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.30",
     "prettier": "^2.8.8",
-    "prisma": "https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter",
+    "prisma": "5.3.1",
     "start-server-and-test": "^1.15.4",
     "tailwindcss": "^3.3.3",
     "tsx": "^3.12.10",
