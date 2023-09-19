@@ -26,14 +26,7 @@ export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
   TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
 
 function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
-  return (
-    cause instanceof TRPCClientError ||
-    /**
-     * @deprecated
-     * Delete in next major
-     */
-    (cause instanceof Error && cause.name === 'TRPCClientError')
-  );
+  return cause instanceof TRPCClientError;
 }
 
 function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
@@ -102,7 +95,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
     if (isTRPCErrorResponse(cause)) {
       return new TRPCClientError(cause.error.message, {
         ...opts,
-        result: cause,
+        result: cause as any,
       });
     }
     if (!(cause instanceof Error)) {
