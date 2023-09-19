@@ -3,10 +3,10 @@
   "version": "10.38.3",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.38.3",
-    "undici": "^5.14.0"
+    "@trpc/client": "workspace:^",
+    "undici": "^5.24.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.16"
+    "@types/node": "^18.17.17"
   }
 }

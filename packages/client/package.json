@@ -79,18 +79,18 @@
     "@trpc/server": "10.38.3"
   },
   "devDependencies": {
-    "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "10.38.3",
+    "@testing-library/dom": "^9.3.3",
+    "@trpc/server": "workspace:*",
     "@types/isomorphic-fetch": "^0.0.36",
-    "@types/node": "^18.16.16",
-    "eslint": "^8.40.0",
+    "@types/node": "^18.17.17",
+    "eslint": "^8.49.0",
     "expect-type": "^0.16.0",
     "isomorphic-fetch": "^3.0.0",
-    "node-fetch": "^3.3.0",
+    "node-fetch": "^3.3.2",
     "rollup": "^2.79.1",
-    "tsx": "^3.12.7",
-    "undici": "^5.14.0",
-    "vitest": "^0.32.0"
+    "tsx": "^3.12.10",
+    "undici": "^5.24.0",
+    "vitest": "^0.32.4"
   },
   "publishConfig": {
     "access": "public"
