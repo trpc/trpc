@@ -145,19 +145,19 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -170,10 +170,10 @@ importers:
         version: 18.2.4
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.17)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -215,23 +215,23 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -270,23 +270,23 @@ importers:
   examples/.test/big-router-declaration:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -319,10 +319,10 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
     devDependencies:
       '@tsconfig/esm':
@@ -344,23 +344,23 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -399,8 +399,8 @@ importers:
   examples/.test/ssg-infinite-serialization:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -415,7 +415,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -451,10 +451,10 @@ importers:
   examples/bun:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
     devDependencies:
       bun-types:
@@ -476,10 +476,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -510,13 +510,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -559,13 +559,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -611,10 +611,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -663,10 +663,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       tsx:
         specifier: ^3.12.7
@@ -739,16 +739,16 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -779,7 +779,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -807,7 +807,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/client
       undici:
         specifier: ^5.14.0
@@ -820,7 +820,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -833,23 +833,23 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -882,23 +882,23 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -928,23 +928,23 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -977,26 +977,26 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
         version: 2.0.0
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1083,19 +1083,19 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1105,10 +1105,10 @@ importers:
         version: 22.4.13
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-i18next:
         specifier: ^13.2.2
-        version: 13.2.2(i18next@22.4.13)(next@13.4.8)(react-i18next@12.2.0)(react@18.2.0)
+        version: 13.2.2(i18next@22.4.13)(next@13.4.17)(react-i18next@12.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1135,8 +1135,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.33
+        version: 5.0.0-beta.33(@tanstack/react-query@5.0.0-beta.31)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1165,29 +1165,29 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
         version: 2.0.0
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.17)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1211,8 +1211,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.33
+        version: 5.0.0-beta.33(@tanstack/react-query@5.0.0-beta.31)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1277,10 +1277,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -1304,13 +1304,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1350,10 +1350,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -1384,7 +1384,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@trpc/server':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.36
@@ -1424,16 +1424,16 @@ importers:
         version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../client
       '@trpc/react-query':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1455,7 +1455,7 @@ importers:
         version: 4.18.2
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1475,13 +1475,13 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../client
       '@trpc/server':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1500,7 +1500,7 @@ importers:
         version: 4.18.2
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1523,8 +1523,8 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
         version: 8.10.115
@@ -1578,7 +1578,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -1604,8 +1604,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.12.0
-        version: 0.12.0
+        specifier: ^0.15.0
+        version: 0.15.0
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1624,9 +1624,12 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.0.0
         version: 4.20230215.0
+      '@decs/typeschema':
+        specifier: ^0.11.2
+        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.3)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
         specifier: ^0.36.0
-        version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
+        version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.3)
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1637,8 +1640,8 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
-        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0-beta.31
+        version: 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
@@ -1652,16 +1655,16 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@trpc/client':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../client
       '@trpc/next':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../next
       '@trpc/react-query':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.38.2
+        specifier: 10.38.3
         version: link:../server
       '@types/node':
         specifier: ^18.16.16
@@ -1713,7 +1716,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.0
@@ -1742,8 +1745,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.12.0
-        version: 0.12.0
+        specifier: ^0.15.0
+        version: 0.15.0
       vite:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@18.16.16)
@@ -1796,16 +1799,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../packages/client
       '@trpc/next':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.2
+        specifier: ^10.38.3
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.0.0
@@ -1850,9 +1853,12 @@ importers:
       '@babel/preset-env':
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
+      '@decs/typeschema':
+        specifier: ^0.11.2
+        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.3)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
         specifier: ^0.36.0
-        version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
+        version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.3)
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -1885,10 +1891,10 @@ importers:
         version: 8.40.0
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@13.4.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 4.22.1(next@13.4.17)(react-dom@18.2.0)(react@18.2.0)
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -1929,8 +1935,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.12.0
-        version: 0.12.0
+        specifier: ^0.15.0
+        version: 0.15.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -1942,7 +1948,7 @@ importers:
         version: 1.0.0
       next:
         specifier: ^13.4.8
-        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: latest
         version: 18.2.0
@@ -5460,6 +5466,142 @@ packages:
     dev: false
     optional: true
 
+  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.3)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(yup@1.0.0)(zod@3.20.2):
+    resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
+    peerDependencies:
+      '@deepkit/type': ^1.0.1-alpha.97
+      '@effect/data': ^0.18.5
+      '@effect/io': ^0.40.1
+      '@effect/schema': ^0.36.1
+      '@sinclair/typebox': ^0.31.14
+      ajv: ^8.12.0
+      arktype: ^1.0.21-alpha
+      fp-ts: ^2.16.0
+      io-ts: ^2.2.20
+      joi: ^17.10.1
+      ow: ^0.28.2
+      runtypes: ^6.7.0
+      superstruct: ^1.0.3
+      valibot: ^0.15.0
+      vite: ^4.4.9
+      yup: ^1.2.0
+      zod: ^3.22.2
+    peerDependenciesMeta:
+      '@deepkit/type':
+        optional: true
+      '@effect/data':
+        optional: true
+      '@effect/io':
+        optional: true
+      '@effect/schema':
+        optional: true
+      '@sinclair/typebox':
+        optional: true
+      ajv:
+        optional: true
+      arktype:
+        optional: true
+      fp-ts:
+        optional: true
+      io-ts:
+        optional: true
+      joi:
+        optional: true
+      ow:
+        optional: true
+      runtypes:
+        optional: true
+      superstruct:
+        optional: true
+      valibot:
+        optional: true
+      vite:
+        optional: true
+      yup:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@effect/data': 0.18.5
+      '@effect/io': 0.40.3(@effect/data@0.18.5)
+      '@effect/schema': 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.3)
+      ajv: 6.12.6
+      arktype: 1.0.14-alpha
+      runtypes: 6.6.0
+      superstruct: 1.0.3
+      valibot: 0.15.0
+      yup: 1.0.0
+      zod: 3.20.2
+    dev: true
+
+  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.3)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.15.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
+    resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
+    peerDependencies:
+      '@deepkit/type': ^1.0.1-alpha.97
+      '@effect/data': ^0.18.5
+      '@effect/io': ^0.40.1
+      '@effect/schema': ^0.36.1
+      '@sinclair/typebox': ^0.31.14
+      ajv: ^8.12.0
+      arktype: ^1.0.21-alpha
+      fp-ts: ^2.16.0
+      io-ts: ^2.2.20
+      joi: ^17.10.1
+      ow: ^0.28.2
+      runtypes: ^6.7.0
+      superstruct: ^1.0.3
+      valibot: ^0.15.0
+      vite: ^4.4.9
+      yup: ^1.2.0
+      zod: ^3.22.2
+    peerDependenciesMeta:
+      '@deepkit/type':
+        optional: true
+      '@effect/data':
+        optional: true
+      '@effect/io':
+        optional: true
+      '@effect/schema':
+        optional: true
+      '@sinclair/typebox':
+        optional: true
+      ajv:
+        optional: true
+      arktype:
+        optional: true
+      fp-ts:
+        optional: true
+      io-ts:
+        optional: true
+      joi:
+        optional: true
+      ow:
+        optional: true
+      runtypes:
+        optional: true
+      superstruct:
+        optional: true
+      valibot:
+        optional: true
+      vite:
+        optional: true
+      yup:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@effect/data': 0.18.5
+      '@effect/io': 0.40.3(@effect/data@0.18.5)
+      '@effect/schema': 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.3)
+      arktype: 1.0.14-alpha
+      runtypes: 6.6.0
+      superstruct: 1.0.3
+      valibot: 0.15.0
+      vite: 4.1.2(@types/node@18.16.16)
+      yup: 1.0.0
+      zod: 3.20.2
+    dev: false
+
   /@docsearch/css@3.3.0:
     resolution: {integrity: sha512-rODCdDtGyudLj+Va8b6w6Y85KE85bXRsps/R4Yjwt5vueXKXZQKYw0aA9knxLBT6a/bI/GMrAcmCR75KYOM6hg==}
     dev: false
@@ -6263,21 +6405,21 @@ packages:
   /@effect/data@0.18.5:
     resolution: {integrity: sha512-VFPJ0prGq3eF6/eZYKVI/1IC1purdGJXEHJC1ggKynPko03upjtmeCeCsEyMiY12DzVIAuME425JndiFb7m2xw==}
 
-  /@effect/io@0.40.1(@effect/data@0.18.5):
-    resolution: {integrity: sha512-OeMK7JonvW/D6Z377cOsuCSHUbsO9ZkmAIDmzQ1Qffx8+h5yUXRm0htmPwKkxtCHZr2QxyZfSBzxSzrGU7asXQ==}
+  /@effect/io@0.40.3(@effect/data@0.18.5):
+    resolution: {integrity: sha512-bnHBFq1XzXn94x2w5FcXZz3MbY7N3YrhiI2CrncJr3WcGRDc2rCYIpPupw0JQGFcJsoopTj1BNfBuBR5s4/RyA==}
     peerDependencies:
       '@effect/data': ^0.18.5
     dependencies:
       '@effect/data': 0.18.5
 
-  /@effect/schema@0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1):
+  /@effect/schema@0.36.0(@effect/data@0.18.5)(@effect/io@0.40.3):
     resolution: {integrity: sha512-KiE/Ptt+hSivXM3cfe2RTnJg0fgRqa8lpreprEpHg5d8c8tOTWIS86anvicSNlPgWe99RlUOvLTf9vSwPzAjXQ==}
     peerDependencies:
       '@effect/data': ^0.18.5
       '@effect/io': ^0.40.1
     dependencies:
       '@effect/data': 0.18.5
-      '@effect/io': 0.40.1(@effect/data@0.18.5)
+      '@effect/io': 0.40.3(@effect/data@0.18.5)
       fast-check: 3.12.0
 
   /@emotion/is-prop-valid@0.8.8:
@@ -8131,8 +8273,8 @@ packages:
       '@napi-rs/magic-string-win32-x64-msvc': 0.3.4
     dev: false
 
-  /@next/env@13.4.8:
-    resolution: {integrity: sha512-twuSf1klb3k9wXI7IZhbZGtFCWvGD4wXTY2rmvzIgVhXhs7ISThrbNyutBx3jWIL8Y/Hk9+woytFz5QsgtcRKQ==}
+  /@next/env@13.4.17:
+    resolution: {integrity: sha512-rSGmt25Wxk0vGzZxDWBLE8jVW/C/JN20P3IhHc2tKVajEGy/oxStD9PbqcbCz6yOub82jYAWLqnoMITnssB+3g==}
 
   /@next/eslint-plugin-next@13.4.3:
     resolution: {integrity: sha512-5B0uOnh7wyUY9vNNdIA6NUvWozhrZaTMZOzdirYAefqD0ZBK5C/h3+KMYdCKrR7JrXGvVpWnHtv54b3dCzwICA==}
@@ -8140,72 +8282,72 @@ packages:
       glob: 7.1.7
     dev: true
 
-  /@next/swc-darwin-arm64@13.4.8:
-    resolution: {integrity: sha512-MSFplVM4dTWOuKAUv0XR9gY7AWtMSBu9os9f+kp+s5rWhM1I2CdR3obFttd6366nS/W/VZxbPM5oEIdlIa46zA==}
+  /@next/swc-darwin-arm64@13.4.17:
+    resolution: {integrity: sha512-dzsHchMmBwa6w6Gf5sp5+WmVt9/H4KWdSHy45aFE/UNmgr9V9eKfTW29k9Np9glLCEzrwnU1MztbAqDrnV9gEA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     optional: true
 
-  /@next/swc-darwin-x64@13.4.8:
-    resolution: {integrity: sha512-Reox+UXgonon9P0WNDE6w85DGtyBqGitl/ryznOvn6TvfxEaZIpTgeu3ZrJLU9dHSMhiK7YAM793mE/Zii2/Qw==}
+  /@next/swc-darwin-x64@13.4.17:
+    resolution: {integrity: sha512-iH6UpMj3S40cZkJwYD+uBsAYACNu9TUCae47q2kqx1WzO3JuN/m5Zg22Cpwum/HLRJUa7ysJva/FG2noXbI0yw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-gnu@13.4.8:
-    resolution: {integrity: sha512-kdyzYvAYtqQVgzIKNN7e1rLU8aZv86FDSRqPlOkKZlvqudvTO0iohuTPmnEEDlECeBM6qRPShNffotDcU/R2KA==}
+  /@next/swc-linux-arm64-gnu@13.4.17:
+    resolution: {integrity: sha512-yj3YKGkSg52GL+4XhdfidibYJoq/5pYkQAc8Z4Q1e1nJ7CTOKn4KobTDLXqC5QVJncQRxC2u6vGaMLBe2UUa5Q==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-arm64-musl@13.4.8:
-    resolution: {integrity: sha512-oWxx4yRkUGcR81XwbI+T0zhZ3bDF6V1aVLpG+C7hSG50ULpV8gC39UxVO22/bv93ZlcfMY4zl8xkz9Klct6dpQ==}
+  /@next/swc-linux-arm64-musl@13.4.17:
+    resolution: {integrity: sha512-w8+8ShThIgIgIkLk22NY+ZMF/yf5Dl6+tqOaNUzXy6b0gQSwtpVb0t4eSTx2VUqRxLl36dv9cqomGbthvuPiGA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-gnu@13.4.8:
-    resolution: {integrity: sha512-anhtvuO6eE9YRhYnaEGTfbpH3L5gT/9qPFcNoi6xS432r/4DAtpJY8kNktqkTVevVIC/pVumqO8tV59PR3zbNg==}
+  /@next/swc-linux-x64-gnu@13.4.17:
+    resolution: {integrity: sha512-IQlJNdxvfqgHxJU6ITERf9qaA0m6mRo/gD0al/5CcXvs6cDihR/UzI09Bc+3vQSJV3ACAzrZjsF7dtdzVutvog==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-linux-x64-musl@13.4.8:
-    resolution: {integrity: sha512-aR+J4wWfNgH1DwCCBNjan7Iumx0lLtn+2/rEYuhIrYLY4vnxqSVGz9u3fXcgUwo6Q9LT8NFkaqK1vPprdq+BXg==}
+  /@next/swc-linux-x64-musl@13.4.17:
+    resolution: {integrity: sha512-retAiJGtOS216pqAcNOwBUOqgqDH7kYzzj4jLrfVcb/sCQJ+JawMwayc3LEbpvMDZx8CHLECcs6bB45mMxkZEw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-arm64-msvc@13.4.8:
-    resolution: {integrity: sha512-OWBKIrJwQBTqrat0xhxEB/jcsjJR3+diD9nc/Y8F1mRdQzsn4bPsomgJyuqPVZs6Lz3K18qdIkvywmfSq75SsQ==}
+  /@next/swc-win32-arm64-msvc@13.4.17:
+    resolution: {integrity: sha512-PtaemQL9rwoRtS6kgjXxfRQLUbzBmtMxaXZTBnKnb+EjrDFkC+YI82kktL97LMrHRGQsMJcBQQtNQDJCBJmu2Q==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-ia32-msvc@13.4.8:
-    resolution: {integrity: sha512-agiPWGjUndXGTOn4ChbKipQXRA6/UPkywAWIkx7BhgGv48TiJfHTK6MGfBoL9tS6B4mtW39++uy0wFPnfD0JWg==}
+  /@next/swc-win32-ia32-msvc@13.4.17:
+    resolution: {integrity: sha512-5jJVxit2B3g/zRWJJ6/YeMHBch7PL10O5qR5BZyuFCoO/bg6MPtz5+U+FvbVCSgCKePU19lRGNsyX+BAu/V+vw==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
     optional: true
 
-  /@next/swc-win32-x64-msvc@13.4.8:
-    resolution: {integrity: sha512-UIRKoByVKbuR6SnFG4JM8EMFlJrfEGuUQ1ihxzEleWcNwRMMiVaCj1KyqfTOW8VTQhJ0u8P1Ngg6q1RwnIBTtw==}
+  /@next/swc-win32-x64-msvc@13.4.17:
+    resolution: {integrity: sha512-3QOf2LfziycZW1iVgiA63xVVUMkawurZJ/jwgBqziUNw4r8XHLenNTgbn5XcdHqKuZKUuLSi/6v1/4myGWM0GA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -9212,28 +9354,28 @@ packages:
       defer-to-connect: 2.0.1
     dev: true
 
-  /@tanstack/query-core@5.0.0-beta.9:
-    resolution: {integrity: sha512-SXaTZ+K/Gw4kd7ZAtHrc0AgffcdLVOHMX0ECgDbyZ8F5hxwS/Fi7F3r1FTiVBxDf1QW4oAiHQW65zhGWikRSng==}
+  /@tanstack/query-core@5.0.0-beta.31:
+    resolution: {integrity: sha512-XOpDJqRLIcbrC9AFb2/JzgvshS4Gwl7v9M2t4qXHFYRCwaLD+cL18QzMntqz0VeLMHzBShUFPeJUFzuUwTm/Gg==}
 
-  /@tanstack/query-devtools@5.0.0-beta.1:
-    resolution: {integrity: sha512-n+UFgL4C/OWNpmVR8v/cj4WIMw5xapGLsZS0qHXgGrpXqNTp2IPWzeU848KHpL7BqBQZeuKDj20BuID+1FsmgA==}
+  /@tanstack/query-devtools@5.0.0-beta.33:
+    resolution: {integrity: sha512-khg+nUIWLeCqMzbjWuJ0mmuheRWUkItRpn+ZOWsq4/v2/OrgHwSRPUjbIhfLc73rDxSu/XvIMkij8aY9A705qg==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-vUxeCKPWcyLfbkl7QN/PIcRZgkxCQlTr6vI56SkHm1sroahaKQysVErtXlj4ekkfmKAXkR40AMS5s0XCDh8fdA==}
+  /@tanstack/react-query-devtools@5.0.0-beta.33(@tanstack/react-query@5.0.0-beta.31)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-9xmO3GjFlafwvFN1xsyTFDGIlJT4CJqDYWkSyS2TVI6x8t6jNVi4LzyXhCYEXKrP/eqw6pBHDy4fspNRqDDxiQ==}
     peerDependencies:
-      '@tanstack/react-query': 5.0.0-beta.9
+      '@tanstack/react-query': ^5.0.0-beta.31
       react: ^18.0.0
       react-dom: ^18.0.0
     dependencies:
-      '@tanstack/query-devtools': 5.0.0-beta.1
-      '@tanstack/react-query': 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/query-devtools': 5.0.0-beta.33
+      '@tanstack/react-query': 5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: true
 
-  /@tanstack/react-query@5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-9gCv+sKOrxUGshOeiQM+jlOvIvfnUPY4bjTpdsfim1wqoY5qjP+yw4KqHImP+t3gNRYgt2CpXsLaEkU3/2x8jg==}
+  /@tanstack/react-query@5.0.0-beta.31(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-rXGD+FWguHmkq0xyRyeTpbvVesIqxklO8xrcTrAZ3UGa8yB2HOuOuk6lGQC4+X+fH38NYDaK7J5QSc6QBiLbTg==}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
@@ -9244,7 +9386,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 5.0.0-beta.9
+      '@tanstack/query-core': 5.0.0-beta.31
       client-only: 0.0.1
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -17484,7 +17626,7 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: false
 
-  /next-auth@4.22.1(next@13.4.8)(react-dom@18.2.0)(react@18.2.0):
+  /next-auth@4.22.1(next@13.4.17)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-NTR3f6W7/AWXKw8GSsgSyQcDW6jkslZLH8AiZa5PQ09w1kR8uHtR9rez/E9gAq/o17+p0JYHE8QjF3RoniiObA==}
     peerDependencies:
       next: ^12.2.5 || ^13
@@ -17499,7 +17641,7 @@ packages:
       '@panva/hkdf': 1.1.1
       cookie: 0.5.0
       jose: 4.14.4
-      next: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       oauth: 0.9.15
       openid-client: 5.4.2
       preact: 10.11.3
@@ -17508,7 +17650,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       uuid: 8.3.2
 
-  /next-i18next@13.2.2(i18next@22.4.13)(next@13.4.8)(react-i18next@12.2.0)(react@18.2.0):
+  /next-i18next@13.2.2(i18next@22.4.13)(next@13.4.17)(react-i18next@12.2.0)(react@18.2.0):
     resolution: {integrity: sha512-t0WU6K+HJoq2nVQ0n6OiiEZja9GyMqtDSU74FmOafgk4ljns+iZ18bsNJiI8rOUXfFfkW96ea1N7D5kbMyT+PA==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -17523,7 +17665,7 @@ packages:
       hoist-non-react-statics: 3.3.2
       i18next: 22.4.13
       i18next-fs-backend: 2.1.1
-      next: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      next: 13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-i18next: 12.2.0(i18next@22.4.13)(react-dom@18.2.0)(react@18.2.0)
     dev: false
@@ -17532,25 +17674,22 @@ packages:
     resolution: {integrity: sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==}
     dev: true
 
-  /next@13.4.8(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-lxUjndYKjZHGK3CWeN2RI+/6ni6EUvjiqGWXAYPxUfGIdFGQ5XoisrqAJ/dF74aP27buAfs8MKIbIMMdxjqSBg==}
+  /next@13.4.17(@babel/core@7.20.2)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-f0L+lbQA+GFkHu9wpupiURLFIEEPSVQhUuR+5lQNI+aFzbCbCGl7h0Vurs1jA4wtP7T7fEO0iSWmt37+88wIZA==}
     engines: {node: '>=16.8.0'}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
-      fibers: '>= 3.1.0'
       react: ^18.2.0
       react-dom: ^18.2.0
       sass: ^1.3.0
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
-      fibers:
-        optional: true
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.4.8
+      '@next/env': 13.4.17
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
       caniuse-lite: 1.0.30001486
@@ -17561,39 +17700,36 @@ packages:
       watchpack: 2.4.0
       zod: 3.21.4
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.4.8
-      '@next/swc-darwin-x64': 13.4.8
-      '@next/swc-linux-arm64-gnu': 13.4.8
-      '@next/swc-linux-arm64-musl': 13.4.8
-      '@next/swc-linux-x64-gnu': 13.4.8
-      '@next/swc-linux-x64-musl': 13.4.8
-      '@next/swc-win32-arm64-msvc': 13.4.8
-      '@next/swc-win32-ia32-msvc': 13.4.8
-      '@next/swc-win32-x64-msvc': 13.4.8
+      '@next/swc-darwin-arm64': 13.4.17
+      '@next/swc-darwin-x64': 13.4.17
+      '@next/swc-linux-arm64-gnu': 13.4.17
+      '@next/swc-linux-arm64-musl': 13.4.17
+      '@next/swc-linux-x64-gnu': 13.4.17
+      '@next/swc-linux-x64-musl': 13.4.17
+      '@next/swc-win32-arm64-msvc': 13.4.17
+      '@next/swc-win32-ia32-msvc': 13.4.17
+      '@next/swc-win32-x64-msvc': 13.4.17
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
     dev: true
 
-  /next@13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-lxUjndYKjZHGK3CWeN2RI+/6ni6EUvjiqGWXAYPxUfGIdFGQ5XoisrqAJ/dF74aP27buAfs8MKIbIMMdxjqSBg==}
+  /next@13.4.17(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-f0L+lbQA+GFkHu9wpupiURLFIEEPSVQhUuR+5lQNI+aFzbCbCGl7h0Vurs1jA4wtP7T7fEO0iSWmt37+88wIZA==}
     engines: {node: '>=16.8.0'}
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
-      fibers: '>= 3.1.0'
       react: ^18.2.0
       react-dom: ^18.2.0
       sass: ^1.3.0
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
-      fibers:
-        optional: true
       sass:
         optional: true
     dependencies:
-      '@next/env': 13.4.8
+      '@next/env': 13.4.17
       '@swc/helpers': 0.5.1
       busboy: 1.6.0
       caniuse-lite: 1.0.30001486
@@ -17604,15 +17740,15 @@ packages:
       watchpack: 2.4.0
       zod: 3.21.4
     optionalDependencies:
-      '@next/swc-darwin-arm64': 13.4.8
-      '@next/swc-darwin-x64': 13.4.8
-      '@next/swc-linux-arm64-gnu': 13.4.8
-      '@next/swc-linux-arm64-musl': 13.4.8
-      '@next/swc-linux-x64-gnu': 13.4.8
-      '@next/swc-linux-x64-musl': 13.4.8
-      '@next/swc-win32-arm64-msvc': 13.4.8
-      '@next/swc-win32-ia32-msvc': 13.4.8
-      '@next/swc-win32-x64-msvc': 13.4.8
+      '@next/swc-darwin-arm64': 13.4.17
+      '@next/swc-darwin-x64': 13.4.17
+      '@next/swc-linux-arm64-gnu': 13.4.17
+      '@next/swc-linux-arm64-musl': 13.4.17
+      '@next/swc-linux-x64-gnu': 13.4.17
+      '@next/swc-linux-x64-musl': 13.4.17
+      '@next/swc-win32-arm64-msvc': 13.4.17
+      '@next/swc-win32-ia32-msvc': 13.4.17
+      '@next/swc-win32-x64-msvc': 13.4.17
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
@@ -22915,8 +23051,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.12.0:
-    resolution: {integrity: sha512-EGx/uDUpRa9wB9NkD7fsktc02rvXWlJzDTC/ihbE+NybhzAsMhns2OOdNv2R4BtdGnDvaCEGi/DbgR5RvgCS8A==}
+  /valibot@0.15.0:
+    resolution: {integrity: sha512-OOE8+EeR/TO/uks08FGYe/6DJVIgkD4Ap3dkd8M4ws/bCaQUg3XDk1PGDFiAUJqyQilW/QZ5buBEA3R1gIgQ0g==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
@@ -23935,3 +24071,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
