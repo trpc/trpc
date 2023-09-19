@@ -85,10 +85,6 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;
 
-
-
-// ---cut---
-
 // @filename: routers/_app.ts
 import { router, publicProcedure, mergeRouters } from '../trpc';
 import { z } from 'zod';
