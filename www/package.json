@@ -85,8 +85,8 @@
     "tailwindcss": "^3.3.3",
     "tailwindcss-elevation": "^2.0.0",
     "tsx": "^3.12.10",
-    "typedoc": "^0.24.8",
-    "typedoc-plugin-markdown": "4.0.0-next.20",
+    "typedoc": "^0.24.7",
+    "typedoc-plugin-markdown": "^4.0.0-next.13",
     "typescript": "^5.2.2",
     "valibot": "^0.15.0",
     "yup": "^1.2.0"
