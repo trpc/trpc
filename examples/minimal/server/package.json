@@ -3,7 +3,7 @@
   "version": "10.38.3",
   "private": true,
   "dependencies": {
-    "@trpc/server": "workspace:^",
+    "@trpc/server": "^10.38.3",
     "zod": "^3.22.2"
   },
   "devDependencies": {

@@ -14,8 +14,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/client": "workspace:^",
-    "@trpc/server": "workspace:^"
+    "@trpc/client": "^10.38.3",
+    "@trpc/server": "^10.38.3"
   },
   "devDependencies": {
     "bun-types": "^0.7.3",

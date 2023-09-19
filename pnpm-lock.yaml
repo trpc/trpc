@@ -148,16 +148,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       '@types/node':
         specifier: ^18.17.17
@@ -218,16 +218,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.19
@@ -273,16 +273,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.19
@@ -319,10 +319,10 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
     devDependencies:
       '@tsconfig/esm':
@@ -347,16 +347,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.19
@@ -402,16 +402,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       next:
         specifier: ^13.4.19
@@ -451,10 +451,10 @@ importers:
   examples/bun:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
     devDependencies:
       bun-types:
@@ -476,10 +476,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       zod:
         specifier: ^3.22.2
@@ -510,13 +510,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       express:
         specifier: ^4.18.2
@@ -559,13 +559,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       express:
         specifier: ^4.18.2
@@ -611,10 +611,10 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       fastify:
         specifier: ^4.23.2
@@ -663,10 +663,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       tsx:
         specifier: ^3.12.10
@@ -742,13 +742,13 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -779,7 +779,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -807,7 +807,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/client
       undici:
         specifier: ^5.24.0
@@ -820,7 +820,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../../packages/server
       zod:
         specifier: ^3.22.2
@@ -836,16 +836,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       next:
         specifier: ^13.4.19
@@ -885,16 +885,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       next:
         specifier: ^13.4.19
@@ -931,16 +931,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       next:
         specifier: ^13.4.19
@@ -980,16 +980,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1086,16 +1086,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1168,16 +1168,16 @@ importers:
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1277,10 +1277,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       '@types/node':
         specifier: ^18.17.17
@@ -1304,13 +1304,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       ws:
         specifier: ^8.14.1
@@ -1350,10 +1350,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/client
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../../packages/server
       zod:
         specifier: ^3.22.2
@@ -1799,16 +1799,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../packages/client
       '@trpc/next':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: workspace:^
+        specifier: ^10.38.3
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.3.0

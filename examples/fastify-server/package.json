@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@fastify/websocket": "^7.2.0",
-    "@trpc/client": "workspace:^",
-    "@trpc/server": "workspace:^",
+    "@trpc/client": "^10.38.3",
+    "@trpc/server": "^10.38.3",
     "fastify": "^4.23.2",
     "superjson": "^1.13.1",
     "tslib": "^2.6.2",
