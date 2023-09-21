@@ -269,7 +269,7 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
     }
     try {
       const data = await parse({
-        getValue: () => result.data,
+        getValue: async () => result.data,
       });
       return {
         ...result,
