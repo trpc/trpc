@@ -5,6 +5,7 @@ import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
+  GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
@@ -155,7 +156,9 @@ export type MiddlewareFunction<
           _meta: TParams['_meta'];
         }>
       >;
-      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
+      (opts: { getRawInput: GetRawInputFn }): Promise<
+        MiddlewareResult<TParams>
+      >;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
