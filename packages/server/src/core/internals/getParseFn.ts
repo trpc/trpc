@@ -1,6 +1,20 @@
+import { MaybePromise } from '@trpc/server/types';
 import { Parser } from '../parser';
+import { GetRawInputFn } from './utils';
 
-export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+export type ParseFn<TType> = (opts: {
+  getRawInput: GetRawInputFn;
+}) => Promise<TType>;
+
+function createParseFn<TOutput>(
+  parser: (input: unknown) => MaybePromise<TOutput>,
+): ParseFn<TOutput> {
+  return async (opts) => {
+    const rawInput = await opts.getRawInput();
+    const output = await parser(rawInput);
+    return output;
+  };
+}
 
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
@@ -12,31 +26,31 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
 
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque
-    return parser.parseAsync.bind(parser);
+    return createParseFn(parser.parseAsync.bind(parser));
   }
 
   if (typeof parser.parse === 'function') {
     // ParserZodEsque
     // ParserValibotEsque (<= v0.12.X)
-    return parser.parse.bind(parser);
+    return createParseFn(parser.parse.bind(parser));
   }
 
   if (typeof parser.validateSync === 'function') {
     // ParserYupEsque
-    return parser.validateSync.bind(parser);
+    return createParseFn(parser.validateSync.bind(parser));
   }
 
   if (typeof parser.create === 'function') {
     // ParserSuperstructEsque
-    return parser.create.bind(parser);
+    return createParseFn(parser.create.bind(parser));
   }
 
   if (typeof parser.assert === 'function') {
     // ParserScaleEsque
-    return (value) => {
+    return createParseFn((value) => {
       parser.assert(value);
       return value as TType;
-    };
+    });
   }
 
   throw new Error('Could not find a validator fn');

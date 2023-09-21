@@ -1,13 +1,13 @@
 import { TRPCError } from '../error/TRPCError';
-import { Simplify } from '../types';
+import { inferAsyncReturnType, Simplify } from '../types';
 import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
+  GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
-  RawInput,
 } from './internals/utils';
 import { AnyProcedureParams, ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
@@ -141,7 +141,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    rawInput: RawInput;
+    getRawInput: GetRawInputFn;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
@@ -231,14 +231,10 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: ProcedureBuilderMiddleware = async ({
-    next,
-    rawInput,
-    input,
-  }) => {
-    let parsedInput: ReturnType<typeof parse>;
+  const inputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
+    let parsedInput: inferAsyncReturnType<typeof parse>;
     try {
-      parsedInput = await parse(rawInput);
+      parsedInput = await parse(opts);
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -248,14 +244,14 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
 
     // Multiple input parsers
     const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
+      isPlainObject(opts.input) && isPlainObject(parsedInput)
         ? {
-            ...input,
+            ...opts.input,
             ...parsedInput,
           }
         : parsedInput;
 
-    return next({ input: combinedInput });
+    return await opts.next({ input: combinedInput });
   };
   inputMiddleware._type = 'input';
   return inputMiddleware;
@@ -265,14 +261,16 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
-  const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
-    const result = await next();
+  const outputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
+    const result = await opts.next();
     if (!result.ok) {
       // pass through failures without validating
       return result;
     }
     try {
-      const data = await parse(result.data);
+      const data = await parse({
+        getRawInput: () => result.data,
+      });
       return {
         ...result,
         data,

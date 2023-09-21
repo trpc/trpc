@@ -23,10 +23,10 @@ import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
   DefaultValue as FallbackValue,
+  GetRawInputFn,
   middlewareMarker,
   Overwrite,
   OverwriteKnown,
-  RawInput,
   ResolveOptions,
   UnsetMarker,
 } from './utils';
@@ -297,7 +297,7 @@ function createResolver(
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  rawInput: RawInput;
+  rawInput: GetRawInputFn;
   input?: unknown;
   path: string;
   type: ProcedureType;
@@ -327,7 +327,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         ctx: any;
         index: number;
         input?: unknown;
-        rawInput?: RawInput;
+        rawInput?: GetRawInputFn;
       } = {
         index: 0,
         ctx: opts.ctx,
@@ -340,7 +340,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: callOpts.rawInput ?? opts.rawInput,
+          getRawInput: callOpts.rawInput ?? opts.rawInput,
           meta: _def.meta,
           input: callOpts.input,
           next(_nextOpts?: any) {
@@ -348,7 +348,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
               | {
                   ctx?: Record<string, unknown>;
                   input?: unknown;
-                  rawInput?: RawInput;
+                  rawInput?: GetRawInputFn;
                 }
               | undefined;
 

@@ -48,6 +48,7 @@ export type Maybe<TType> = TType | null | undefined;
 
 /**
  * @internal
+ * @deprecated this is not used anymore
  */
 export type ThenArg<TType> = TType extends PromiseLike<infer U>
   ? ThenArg<U>
@@ -84,7 +85,7 @@ export type InferLast<TType> = TType & {
  * @public
  */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
-  ThenArg<ReturnType<TFunction>>;
+  Awaited<ReturnType<TFunction>>;
 
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;

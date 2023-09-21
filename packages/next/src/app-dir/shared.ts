@@ -10,7 +10,6 @@ import {
   Filter,
   inferHandlerInput,
   ProtectedIntersection,
-  ThenArg,
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
 
@@ -40,11 +39,11 @@ type NextAppRouterUse<TRouter extends AnyRouter> = {
   <TData extends Promise<unknown>[]>(
     cb: (t: UseProcedureRecord<TRouter>) => [...TData],
   ): {
-    [TKey in keyof TData]: ThenArg<TData[TKey]>;
+    [TKey in keyof TData]: Awaited<TData[TKey]>;
   };
   <TData extends Promise<unknown>>(
     cb: (t: UseProcedureRecord<TRouter>) => TData,
-  ): ThenArg<TData>;
+  ): Awaited<TData>;
 };
 type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
   use: NextAppRouterUse<TRouter>;
