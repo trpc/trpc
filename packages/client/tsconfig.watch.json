@@ -6,7 +6,6 @@
     "target": "ES2020",
     "noEmit": true,
     "emitDeclarationOnly": false,
-    "pretty": true,
-    "watch": true
+    "pretty": true
   }
 }
