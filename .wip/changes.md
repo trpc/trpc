@@ -20,4 +20,6 @@ FIXME: Update our docs where applicable
 
 ## `rawInput` is now a lazy getter
 
-Only affects custom input parsers and arktype
+Affects you if you're using custom validators, ArkType or EffectTS.
+
+To work around it, you can use `wrap()`.

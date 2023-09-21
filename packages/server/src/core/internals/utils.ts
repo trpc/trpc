@@ -1,4 +1,4 @@
-import { MaybePromise, Simplify } from '../../types';
+import { Simplify } from '../../types';
 import { AnyProcedureParams, ProcedureParams } from '../procedure';
 
 /**
