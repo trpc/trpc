@@ -140,7 +140,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    rawInput: unknown;
+    getRawInput: unknown;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
@@ -232,7 +232,7 @@ function isPlainObject(obj: unknown) {
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   const inputMiddleware: ProcedureBuilderMiddleware = async ({
     next,
-    rawInput,
+    getRawInput: rawInput,
     input,
   }) => {
     let parsedInput: ReturnType<typeof parse>;
