@@ -18,7 +18,7 @@ test('root context override on nested middlewares', () => {
   });
 
   const formDataMiddleware = t.middleware(async ({ next }) => {
-    return next({ rawInput: new FormData() });
+    return next({ getRawInput: new FormData() });
   });
 
   // root context -> enforceApiKey -> formDataMiddleware

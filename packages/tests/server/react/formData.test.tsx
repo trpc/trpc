@@ -50,7 +50,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: formData,
           });
         })
         .input(
@@ -69,7 +69,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: formData,
           });
         })
         .input(
