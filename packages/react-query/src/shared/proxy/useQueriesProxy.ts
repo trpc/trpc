@@ -13,6 +13,7 @@ import {
 } from '@trpc/server/shared';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
+import { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
   TData = inferTransformedProcedureOutput<TProcedure>,
@@ -64,14 +65,17 @@ export function createUseQueriesProxy<TRouter extends AnyRouter>(
   return createRecursiveProxy((opts) => {
     const arrayPath = opts.path;
     const dotPath = arrayPath.join('.');
-    const [input, ...rest] = opts.args;
+    const [input, _opts] = opts.args as [
+      unknown,
+      Partial<QueryOptions> & TRPCUseQueryBaseOptions,
+    ];
 
     const options: QueryOptions = {
       queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
       queryFn: () => {
-        return client.query(dotPath, input);
+        return client.query(dotPath, input, _opts?.trpc);
       },
-      ...(rest[0] as any),
+      ..._opts,
     };
 
     return options;
