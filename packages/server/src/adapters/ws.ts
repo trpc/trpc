@@ -191,7 +191,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
-          rawInput: () => input,
+          rawInput: async () => input,
           ctx,
           type,
         });

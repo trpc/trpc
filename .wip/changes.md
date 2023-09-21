@@ -20,4 +20,4 @@ FIXME: Update our docs where applicable
 
 ## `rawInput` is now a lazy getter
 
-Only affects custom input parsers
+Only affects custom input parsers and arktype

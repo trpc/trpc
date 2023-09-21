@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { wrap } from '@decs/typeschema';
 import * as S from '@effect/schema/Schema';
+import { ParseFn } from '@trpc/server/core/internals/getParseFn';
 import { initTRPC } from '@trpc/server/src';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
@@ -318,7 +319,7 @@ test('arktype schema - [not officially supported]', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(arktype.type({ text: 'string' }).assert)
+      .input(wrap(arktype.type({ text: 'string' }).assert))
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
         return {
@@ -332,9 +333,7 @@ test('arktype schema - [not officially supported]', async () => {
   expect(res.input).toMatchObject({ text: '123' });
 
   // @ts-expect-error this only accepts a `number`
-  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
-	[TRPCClientError: Must be an object (was string)]
-`);
+  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot('[TRPCClientError: Assertion failed]');
   await close();
 });
 
@@ -343,7 +342,7 @@ test('effect schema - [not officially supported]', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(S.parseSync(S.struct({ text: S.string })))
+      .input(wrap(S.parseSync(S.struct({ text: S.string }))))
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
         return {
@@ -357,10 +356,7 @@ test('effect schema - [not officially supported]', async () => {
   expect(res.input).toMatchObject({ text: '123' });
 
   // @ts-expect-error this only accepts a `number`
-  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot(`
-	[TRPCClientError: error(s) found
-	└─ Expected a generic object, actual "13"]
-`);
+  await expect(proxy.num.query('13')).rejects.toMatchInlineSnapshot('[TRPCClientError: Assertion failed]');
   await close();
 });
 
@@ -390,39 +386,13 @@ test('runtypes', async () => {
 test('validator fn', async () => {
   const t = initTRPC.create();
 
-  const numParser = (input: unknown) => {
+  const numParser: ParseFn<number> = async (opts) => {
+    const input = await opts.getValue();
     if (typeof input !== 'number') {
       throw new Error('Not a number');
     }
     return input;
   };
-
-  const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
-      expectTypeOf(input).toBeNumber();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, proxy } = routerToServerAndClientNew(router);
-  const res = await proxy.num.query(123);
-  await expect(proxy.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Not a number]`,
-  );
-  expect(res.input).toBe(123);
-  await close();
-});
-
-test('async validator fn', async () => {
-  const t = initTRPC.create();
-  async function numParser(input: unknown) {
-    if (typeof input !== 'number') {
-      throw new Error('Not a number');
-    }
-    return input;
-  }
 
   const router = t.router({
     num: t.procedure.input(numParser).query(({ input }) => {
