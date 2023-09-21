@@ -17,7 +17,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
 
   if (typeof parser.parse === 'function') {
     // ParserZodEsque
-    // ParserValibotEsque
+    // ParserValibotEsque (<= v0.12.X)
     return parser.parse.bind(parser);
   }
 

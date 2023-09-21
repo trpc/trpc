@@ -4,8 +4,8 @@ import type {
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '@trpc/server/rpc';
+import { isObject } from '../internals/isObject';
 import type { TRPCClientRuntime } from '../links';
-import { isObject } from '../links/internals/isObject';
 
 // FIXME:
 // - the generics here are probably unnecessary
