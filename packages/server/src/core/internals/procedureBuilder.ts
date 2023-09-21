@@ -23,7 +23,7 @@ import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
   DefaultValue as FallbackValue,
-  GetRawInputOrOutputFn,
+  GetRawValueFn,
   middlewareMarker,
   Overwrite,
   OverwriteKnown,
@@ -297,7 +297,7 @@ function createResolver(
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  rawInput: GetRawInputOrOutputFn;
+  getRawInput: GetRawValueFn;
   input?: unknown;
   path: string;
   type: ProcedureType;
@@ -317,7 +317,7 @@ const result = await caller.call('myProcedure', input);
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
-    if (!opts || !('rawInput' in opts)) {
+    if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
     }
 
@@ -327,7 +327,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         ctx: any;
         index: number;
         input?: unknown;
-        rawInput?: GetRawInputOrOutputFn;
+        getRawInput?: GetRawValueFn;
       } = {
         index: 0,
         ctx: opts.ctx,
@@ -340,7 +340,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          getValue: callOpts.rawInput ?? opts.rawInput,
+          getValue: callOpts.getRawInput ?? opts.getRawInput,
           meta: _def.meta,
           input: callOpts.input,
           next(_nextOpts?: any) {
@@ -348,7 +348,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
               | {
                   ctx?: Record<string, unknown>;
                   input?: unknown;
-                  rawInput?: GetRawInputOrOutputFn;
+                  getRawInput?: GetRawValueFn;
                 }
               | undefined;
 
@@ -362,10 +362,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
-              rawInput:
-                nextOpts && 'rawInput' in nextOpts
-                  ? nextOpts.rawInput
-                  : callOpts.rawInput,
+              getRawInput:
+                nextOpts && 'getRawInput' in nextOpts
+                  ? nextOpts.getRawInput
+                  : callOpts.getRawInput,
             });
           },
         });

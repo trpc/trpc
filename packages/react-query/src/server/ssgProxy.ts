@@ -143,7 +143,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
           return callProcedure({
             procedures: router._def.procedures,
             path: queryOpts.path,
-            rawInput: async () => queryOpts.input,
+            getRawInput: async () => queryOpts.input,
             ctx,
             type: 'query',
           });

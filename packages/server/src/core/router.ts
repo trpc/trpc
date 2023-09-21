@@ -176,7 +176,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
 
           return procedure({
             path: fullPath,
-            rawInput: async () => args[0],
+            getRawInput: async () => args[0],
             ctx,
             type,
           });

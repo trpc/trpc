@@ -1,9 +1,9 @@
 import { MaybePromise } from '@trpc/server/types';
 import { Parser } from '../parser';
-import { GetRawInputOrOutputFn } from './utils';
+import { GetRawValueFn } from './utils';
 
 export type ParseFn<TType> = (opts: {
-  getValue: GetRawInputOrOutputFn;
+  getValue: GetRawValueFn;
 }) => Promise<TType>;
 
 function createParseFn<TOutput>(

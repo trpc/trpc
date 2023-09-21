@@ -40,7 +40,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               const procedureResult = await callProcedure({
                 procedures: opts.router._def.procedures,
                 path,
-                rawInput: input,
+                getRawInput: input,
                 ctx: ctx,
                 type,
               });
