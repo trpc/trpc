@@ -23,14 +23,12 @@
       ]
     },
     "codegen-tests": {
-      "outputs": [
-        "server/__generated__/bigBoi/**",
-        "server/__generated__/bigLegacyRouter/**"
-      ]
+      "outputs": ["server/__generated__/bigBoi/**"]
     },
     "prebuild": {
       "cache": false
     },
+    "ts-watch": {},
     "build": {
       "dependsOn": ["^build", "codegen-entrypoints", "prebuild"],
       "outputs": [
