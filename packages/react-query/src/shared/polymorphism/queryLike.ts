@@ -21,19 +21,15 @@ export type QueryLike<
 /**
  * Use to unwrap a QueryLike's input
  */
-export type InferQueryLikeInput<
-  TConfig extends AnyRootConfig,
-  TQueryLike extends QueryLike,
-> = TQueryLike extends QueryLike<TConfig, infer TProcedure>
-  ? inferProcedureInput<TProcedure>
-  : never;
+export type InferQueryLikeInput<TQueryLike extends QueryLike> =
+  TQueryLike extends QueryLike<any, infer TProcedure>
+    ? inferProcedureInput<TProcedure>
+    : never;
 
 /**
  * Use to unwrap a QueryLike's data output
  */
-export type InferQueryLikeData<
-  TConfig extends AnyRootConfig,
-  TQueryLike extends QueryLike,
-> = TQueryLike extends QueryLike<TConfig, infer TProcedure>
-  ? inferTransformedProcedureOutput<TConfig, TProcedure>
-  : never;
+export type InferQueryLikeData<TQueryLike extends QueryLike> =
+  TQueryLike extends QueryLike<infer TConfig, infer TProcedure>
+    ? inferTransformedProcedureOutput<TConfig, TProcedure>
+    : never;
