@@ -1,16 +1,16 @@
 import { MaybePromise } from '@trpc/server/types';
 import { Parser } from '../parser';
-import { GetRawInputFn } from './utils';
+import { GetRawInputOrOutputFn } from './utils';
 
 export type ParseFn<TType> = (opts: {
-  getRawInput: GetRawInputFn;
+  getValue: GetRawInputOrOutputFn;
 }) => Promise<TType>;
 
 function createParseFn<TOutput>(
   parser: (input: unknown) => MaybePromise<TOutput>,
 ): ParseFn<TOutput> {
   return async (opts) => {
-    const rawInput = await opts.getRawInput();
+    const rawInput = await opts.getValue();
     const output = await parser(rawInput);
     return output;
   };

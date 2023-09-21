@@ -5,7 +5,7 @@ import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
-  GetRawInputFn,
+  GetRawInputOrOutputFn,
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
@@ -141,7 +141,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    getRawInput: GetRawInputFn;
+    getValue: GetRawInputOrOutputFn;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
@@ -269,7 +269,7 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
     }
     try {
       const data = await parse({
-        getRawInput: () => result.data,
+        getValue: () => result.data,
       });
       return {
         ...result,
