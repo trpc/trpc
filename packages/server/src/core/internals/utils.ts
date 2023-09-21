@@ -81,3 +81,9 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
+
+/**
+ * @internal
+ * Returns the raw input type of a procedure
+ */
+export type GetRawInputFn = () => Promise<unknown>;
