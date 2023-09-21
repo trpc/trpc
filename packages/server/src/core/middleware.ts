@@ -7,6 +7,7 @@ import {
   DefaultValue as FallbackValue,
   MiddlewareMarker,
   Overwrite,
+  RawInput,
 } from './internals/utils';
 import { AnyProcedureParams, ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
@@ -140,7 +141,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    rawInput: unknown;
+    rawInput: RawInput;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;

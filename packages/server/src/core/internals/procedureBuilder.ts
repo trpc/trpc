@@ -26,6 +26,7 @@ import {
   middlewareMarker,
   Overwrite,
   OverwriteKnown,
+  RawInput,
   ResolveOptions,
   UnsetMarker,
 } from './utils';
@@ -296,7 +297,7 @@ function createResolver(
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  rawInput: unknown;
+  rawInput: RawInput;
   input?: unknown;
   path: string;
   type: ProcedureType;
@@ -326,7 +327,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         ctx: any;
         index: number;
         input?: unknown;
-        rawInput?: unknown;
+        rawInput?: RawInput;
       } = {
         index: 0,
         ctx: opts.ctx,
@@ -347,7 +348,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
               | {
                   ctx?: Record<string, unknown>;
                   input?: unknown;
-                  rawInput?: unknown;
+                  rawInput?: RawInput;
                 }
               | undefined;
 

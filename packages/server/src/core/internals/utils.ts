@@ -1,4 +1,4 @@
-import { Simplify } from '../../types';
+import { MaybePromise, Simplify } from '../../types';
 import { AnyProcedureParams, ProcedureParams } from '../procedure';
 
 /**
@@ -81,3 +81,9 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
+
+/**
+ * @internal
+ * Returns the raw input type of a procedure
+ */
+export type RawInput = () => MaybePromise<unknown>;

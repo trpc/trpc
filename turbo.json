@@ -28,6 +28,7 @@
     "prebuild": {
       "cache": false
     },
+    "ts-watch": {},
     "build": {
       "dependsOn": ["^build", "codegen-entrypoints", "prebuild"],
       "outputs": [

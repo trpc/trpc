@@ -150,7 +150,7 @@ async function inputToProcedureCall<
     const data = await callProcedure({
       procedures: opts.router._def.procedures,
       path,
-      rawInput: input,
+      rawInput: () => input,
       ctx,
       type,
     });
