@@ -317,7 +317,7 @@ const result = await caller.call('myProcedure', input);
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
-    if (!opts || !('rawInput' in opts)) {
+    if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
     }
 
