@@ -23,3 +23,8 @@ FIXME: Update our docs where applicable
 Affects you if you're using custom validators, ArkType or EffectTS.
 
 To work around it, you can use `wrap()`.
+
+## Removal of some internal types the were exposed
+
+- `Unwrap<T>`
+- `ThenArg<T>`
