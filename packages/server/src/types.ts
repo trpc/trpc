@@ -48,14 +48,6 @@ export type Maybe<TType> = TType | null | undefined;
 
 /**
  * @internal
- * @deprecated this is not used anymore
- */
-export type ThenArg<TType> = TType extends PromiseLike<infer U>
-  ? ThenArg<U>
-  : TType;
-
-/**
- * @internal
  * @see https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
  */
 export type Simplify<TType> = TType extends any[] | Date
@@ -98,14 +90,6 @@ export type Filter<TObj extends object, TFilter> = Pick<
   TObj,
   FilterKeys<TObj, TFilter>
 >;
-
-/**
- * Unwrap return type if the type is a function (sync or async), else use the type as is
- * @internal
- */
-export type Unwrap<TType> = TType extends (...args: any[]) => infer R
-  ? ThenArg<R>
-  : TType;
 
 /**
  * Makes the object recursively optional

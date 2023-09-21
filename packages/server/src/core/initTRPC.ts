@@ -11,7 +11,7 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
-import { FlatOverwrite, Unwrap } from '../types';
+import { FlatOverwrite } from '../types';
 import {
   CreateRootConfigTypes,
   isServerDefault,
@@ -50,7 +50,7 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
       | RootConfigTypes['ctx']
       | ((...args: unknown[]) => RootConfigTypes['ctx']),
   >() {
-    type NextParams = FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>;
+    type NextParams = FlatOverwrite<TParams, { ctx: Awaited<TNewContext> }>;
 
     return new TRPCBuilder<NextParams>();
   }
