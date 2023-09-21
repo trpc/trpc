@@ -17,3 +17,5 @@
 Check their migration guide: https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5
 
 FIXME: Update our docs where applicable
+
+## `rawInput` in middleware is now a `getRawInput`
