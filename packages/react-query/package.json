@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react-query",
-  "version": "10.38.4",
+  "version": "10.38.3",
   "description": "The tRPC React library",
   "author": "KATT",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
-    "ts-watch": "tsc --project tsconfig.watch.json"
+    "ts-watch": "tsc --project tsconfig.watch.json --watch"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -36,11 +36,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./ssg": {
-      "import": "./dist/ssg/index.mjs",
-      "require": "./dist/ssg/index.js",
-      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
@@ -50,7 +45,6 @@
     "package.json",
     "server",
     "shared",
-    "ssg",
     "!**/*.test.*"
   ],
   "eslintConfig": {
@@ -63,16 +57,16 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.38.4",
-    "@trpc/server": "10.38.4",
+    "@tanstack/react-query": "^5.0.0-beta.9",
+    "@trpc/client": "10.38.3",
+    "@trpc/server": "10.38.3",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.38.4",
-    "@trpc/server": "10.38.4",
+    "@tanstack/react-query": "^5.0.0-beta.9",
+    "@trpc/client": "10.38.3",
+    "@trpc/server": "10.38.3",
     "@types/express": "^4.17.17",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.8",
