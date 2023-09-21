@@ -1,4 +1,4 @@
-import { MaybePromise } from '@trpc/server/types';
+import { MaybePromise } from '../../types';
 import { Parser } from '../parser';
 import { GetRawValueFn } from './utils';
 
