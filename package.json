@@ -20,7 +20,7 @@
     "format": "prettier \"**/*\" --ignore-unknown",
     "format:write": "pnpm format --write --list-different",
     "lint-prune": "! ts-prune | grep -v \"used in module\"",
-    "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -type d -prune | xargs rm -rf",
+    "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
     "codegen:override-prisma": "tsx scripts/addPrismaOverrides.ts",
     "codegen:tests": "turbo codegen-tests",
     "codegen:entrypoints": "turbo codegen-entrypoints",
