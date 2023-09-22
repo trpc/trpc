@@ -5,6 +5,7 @@ import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
+  GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
@@ -140,7 +141,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    rawInput: unknown;
+    getRawInput: GetRawInputFn;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
@@ -155,7 +156,9 @@ export type MiddlewareFunction<
           _meta: TParams['_meta'];
         }>
       >;
-      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
+      (opts: { getRawInput: GetRawInputFn }): Promise<
+        MiddlewareResult<TParams>
+      >;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
@@ -230,12 +233,10 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: ProcedureBuilderMiddleware = async ({
-    next,
-    rawInput,
-    input,
-  }) => {
+  const inputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
     let parsedInput: ReturnType<typeof parse>;
+
+    const rawInput = await opts.getRawInput();
     try {
       parsedInput = await parse(rawInput);
     } catch (cause) {
@@ -247,14 +248,14 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
 
     // Multiple input parsers
     const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
+      isPlainObject(opts.input) && isPlainObject(parsedInput)
         ? {
-            ...input,
+            ...opts.input,
             ...parsedInput,
           }
         : parsedInput;
 
-    return next({ input: combinedInput });
+    return opts.next({ input: combinedInput });
   };
   inputMiddleware._type = 'input';
   return inputMiddleware;

@@ -14,7 +14,7 @@ test('call proc directly', async () => {
     ctx: {},
     path: 'asd',
     type: 'query',
-    rawInput: {},
+    getRawInput: async () => ({}),
   });
 
   expect(result).toBe('hello');

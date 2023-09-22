@@ -23,6 +23,7 @@ import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
   DefaultValue as FallbackValue,
+  GetRawInputFn,
   middlewareMarker,
   Overwrite,
   OverwriteKnown,
@@ -296,7 +297,7 @@ function createResolver(
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  rawInput: unknown;
+  getRawInput: GetRawInputFn;
   input?: unknown;
   path: string;
   type: ProcedureType;
@@ -316,7 +317,7 @@ const result = await caller.call('myProcedure', input);
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   const procedure = async function resolve(opts: ProcedureCallOptions) {
     // is direct server-side call
-    if (!opts || !('rawInput' in opts)) {
+    if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
     }
 
@@ -326,7 +327,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         ctx: any;
         index: number;
         input?: unknown;
-        rawInput?: unknown;
+        getRawInput?: GetRawInputFn;
       } = {
         index: 0,
         ctx: opts.ctx,
@@ -339,7 +340,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: callOpts.rawInput ?? opts.rawInput,
+          getRawInput: callOpts.getRawInput ?? opts.getRawInput,
           meta: _def.meta,
           input: callOpts.input,
           next(_nextOpts?: any) {
@@ -347,7 +348,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
               | {
                   ctx?: Record<string, unknown>;
                   input?: unknown;
-                  rawInput?: unknown;
+                  getRawInput?: GetRawInputFn;
                 }
               | undefined;
 
@@ -361,10 +362,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
-              rawInput:
-                nextOpts && 'rawInput' in nextOpts
-                  ? nextOpts.rawInput
-                  : callOpts.rawInput,
+              getRawInput:
+                nextOpts && 'getRawInput' in nextOpts
+                  ? nextOpts.getRawInput
+                  : callOpts.getRawInput,
             });
           },
         });
