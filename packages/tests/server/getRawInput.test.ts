@@ -25,3 +25,26 @@ test('middleware swap', async () => {
 
   expect(result).toBe('foo');
 });
+
+test('untyped caller', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    test: t.procedure
+      .use((opts) => {
+        const raw = opts.getRawInput();
+        return opts.next({
+          input: raw,
+        });
+      })
+      .query((opts) => opts.input),
+  });
+
+  const result = await router.test({
+    getRawInput: () => Promise.resolve('foo'),
+    ctx: {},
+    path: 'test',
+    type: 'query',
+    input: 'foo',
+  });
+  expect(result).toBe('foo');
+});
