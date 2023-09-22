@@ -236,8 +236,8 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   const inputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
     let parsedInput: ReturnType<typeof parse>;
 
+    const rawInput = await opts.getRawInput();
     try {
-      const rawInput = await opts.getRawInput();
       parsedInput = await parse(rawInput);
     } catch (cause) {
       throw new TRPCError({
