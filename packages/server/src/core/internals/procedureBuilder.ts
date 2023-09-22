@@ -155,7 +155,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromiseOrGenerator<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'query', TParams, $Output>;
+  ): BuildProcedure<'query', TParams, Exclude<$Output, "__BREATH">>;
 
   /**
    * Mutation procedure
@@ -164,7 +164,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromiseOrGenerator<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'mutation', TParams, $Output>;
+  ): BuildProcedure<'mutation', TParams, Exclude<$Output, "__BREATH">>;
 
   /**
    * Mutation procedure

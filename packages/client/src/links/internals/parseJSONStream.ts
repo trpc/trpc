@@ -52,7 +52,12 @@ export async function parseJSONStream<TReturn>(opts: {
      */
     const indexOfColon = line.indexOf(':');
     const indexAsStr = line.substring(2, indexOfColon - 1);
+
     const text = line.substring(indexOfColon + 1);
+
+    if(text.startsWith("heartbeat")) {
+      return;
+    }
 
     opts.onSingle(Number(indexAsStr), parse(text));
   };

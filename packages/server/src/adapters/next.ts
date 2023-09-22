@@ -58,6 +58,9 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
       req,
       res,
       path,
-    });
+    }).catch((err) => {
+      console.error("next.ts NodeHTTPRequestHandler error", err);
+      throw err;
+    })
   };
 }

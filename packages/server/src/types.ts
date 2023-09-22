@@ -72,7 +72,7 @@ export type MaybePromise<TType> = TType | Promise<TType>;
 /**
  * @public
  */
-export type MaybePromiseOrGenerator<TType> = TType | Promise<TType> | AsyncGenerator<TType>;
+export type MaybePromiseOrGenerator<TType> = TType | Promise<TType> | AsyncGenerator<TType> | AsyncGenerator<TType | "__BREATH">;
 
 /**
  * @internal

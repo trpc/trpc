@@ -63,6 +63,7 @@ interface ResolveHTTPRequestOptions<
    * Without this callback, streaming is disabled.
    */
   onChunk: (chunk: ResponseChunk) => void;
+  closedPromise?: Promise<void>;
 }
 
 function initResponse<
@@ -135,7 +136,7 @@ async function inputToProcedureCall<
   type: 'query' | 'mutation';
   input: unknown;
   path: string;
-}): Promise<{ data: TRPCResponse<unknown, inferRouterError<TRouter>> } | { generator: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>>, done: Promise<void> }> {
+}): Promise<{ data: TRPCResponse<unknown, inferRouterError<TRouter>> } | { generator: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>, void>, done: Promise<void> }> {
   const { opts, ctx, type, input, path } = procedureOpts;
   try {
     const result = await callProcedure({
@@ -148,12 +149,16 @@ async function inputToProcedureCall<
 
     if ("generator" in result) {
       const newGenerator = (async function* () {
-        for await (const r of result.generator) {
-          yield {
-            result: {
-              data: r,
+        try {
+          for await (const r of result.generator) {
+            yield {
+              result: {
+                data: r,
+              }
             }
           }
+        } finally {
+          void result.generator.return();
         }
       })()
 
@@ -308,6 +313,8 @@ export async function resolveHTTPResponse<
     onChunk &&
     req.headers['trpc-batch-mode'] === 'stream';
 
+  let results: ReturnType<typeof inputToProcedureCall>[] = [];
+  let heartBeat;
   try {
     if (opts.error) {
       throw opts.error;
@@ -338,7 +345,10 @@ export async function resolveHTTPResponse<
 
     paths = isBatchCall ? opts.path.split(',') : [opts.path];
     ctx = await opts.createContext();
-    const results = paths.map((path, index) =>
+    heartBeat = isStreamCall ? setInterval(() => {
+      onChunk?.([0, "heartbeat"]);
+    }, 500) : undefined;
+    results = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
     );
 
@@ -401,7 +411,7 @@ export async function resolveHTTPResponse<
       value: unknown,
       skip: boolean,
       next?: Promise<IteratorResult<TRPCResponse<unknown, inferRouterError<TRouter>>, any>>,
-      generator?: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>, any, unknown>
+      generator?: AsyncGenerator<TRPCResponse<unknown, inferRouterError<TRouter>>, void, unknown>
     }>[] = results.map((r) => r.then((result) => {
       if ("generator" in result) {
         return ({
@@ -426,12 +436,18 @@ export async function resolveHTTPResponse<
     );
 
     while (indexedPromises.size > 0) {
-      const [index, resultWrapper, status] = await Promise.race(
-        indexedPromises.values(),
-      );
+      const raceResult = await (opts.closedPromise ? Promise.race([
+        ...indexedPromises.values(),
+        opts.closedPromise,
+      ]) : Promise.race(indexedPromises.values()));
+      if (!raceResult) {
+        throw new Error("Closed promise was rejected");
+      }
+
+      const [index, resultWrapper, status] = raceResult;
       indexedPromises.delete(index);
 
-      if(status === "error") {
+      if (status === "error") {
         const path = paths[index];
         const input = inputs[index];
         const { body } = caughtErrorToData(resultWrapper, {
@@ -453,6 +469,10 @@ export async function resolveHTTPResponse<
           next: r.done ? undefined : resultWrapper.generator?.next(),
           generator: resultWrapper.generator,
         }, "success"] as const).catch((err: any) => [index, err, "error"] as const));
+      }
+
+      if ((resultWrapper.value as any)?.result?.data === "__BREATH") {
+        continue;
       }
 
       if (resultWrapper.skip)
@@ -482,6 +502,10 @@ export async function resolveHTTPResponse<
     }
     return;
   } catch (cause) {
+    console.error("resolveHTTPResponse", cause);
+    if (cause === "CLOSED") {
+      return;
+    }
     // we get here if
     // - batching is called when it's not enabled
     // - `createContext()` throws
@@ -489,6 +513,7 @@ export async function resolveHTTPResponse<
     // - post body is too large
     // - input deserialization fails
     // - `errorFormatter` return value is malformed
+
     const { error, untransformedJSON, body } = caughtErrorToData(cause, {
       opts,
       ctx,
@@ -512,10 +537,25 @@ export async function resolveHTTPResponse<
       headers: headResponse.headers,
       body,
     };
+  } finally {
+    clearInterval(heartBeat);
+
+    // // Make sure we finalize all the generators
+    // for (const result of results) {
+    //   void result.then(x => {
+    //     if ("generator" in x) {
+    //       void x.generator.return().catch(x => {
+    //         console.error("resolveHTTPResponse generator return error", x);
+    //       })
+    //     }
+    //   }).catch(e => {
+    //     console.error("resolveHTTPResponse promise return error", e);
+    //   })
+    // }
   }
 }
 
-async function lastGeneratorElement<TType>(generator: AsyncGenerator<TType>) {
+async function lastGeneratorElement<TType>(generator: AsyncGenerator<TType, void>) {
   let lastElement: TType | undefined = undefined;
   for await (const elem of generator) {
     lastElement = elem;

@@ -38,7 +38,7 @@ export type Resolver<TProcedure extends AnyProcedure> = (
 /** @internal */
 export type GeneratorResolver<TProcedure extends AnyProcedure> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => AsyncGenerator<inferTransformedProcedureOutput<TProcedure>>;
+) => AsyncGenerator<Exclude<inferTransformedProcedureOutput<TProcedure>, "__BREATH">, void>;
 
 type SubscriptionResolver<TProcedure extends AnyProcedure> = (
   ...args: [
