@@ -1,5 +1,6 @@
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import './___packages';
+import { waitError } from './___testHelpers';
 
 test('middleware swap', async () => {
   const t = initTRPC.create();
@@ -47,4 +48,31 @@ test('untyped caller', async () => {
     input: 'foo',
   });
   expect(result).toBe('foo');
+});
+
+test('getRawInput fails', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    test: t.procedure
+      .use((opts) => {
+        const raw = opts.getRawInput();
+        return opts.next({
+          input: raw,
+        });
+      })
+      .query((opts) => opts.input),
+  });
+
+  const result = await waitError<TRPCError>(
+    router.test({
+      getRawInput: () => Promise.reject(new Error('boo')),
+      ctx: {},
+      path: 'test',
+      type: 'query',
+      input: 'foo',
+    }),
+  );
+
+  expect(result.code).toBe('INTERNAL_SERVER_ERROR');
+  expect(result.message).toMatchInlineSnapshot('"boo"');
 });
