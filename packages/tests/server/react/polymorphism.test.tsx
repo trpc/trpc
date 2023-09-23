@@ -460,9 +460,7 @@ function RefreshExportsListButton({
 
 type ExportStatusProps<TStatus extends Factory.ExportRouteLike['status']> = {
   status: TStatus;
-  renderAdditionalFields?: (
-    data: InferQueryLikeData<any, TStatus>,
-  ) => ReactNode;
+  renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
 };
 function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({

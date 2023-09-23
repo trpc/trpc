@@ -1,9 +1,6 @@
+import { DecoratedQuery } from '@trpc/react-query/createTRPCReact';
 import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import {
-  InferQueryOptions,
-  InferQueryResult,
-} from '../../utils/inferReactQueryProcedure';
 
 /**
  * Use to request a query route which matches a given query procedure's interface
@@ -11,12 +8,7 @@ import {
 export type QueryLike<
   TConfig extends AnyRootConfig = AnyRootConfig,
   TProcedure extends AnyProcedure = AnyProcedure,
-> = {
-  useQuery: (
-    variables: inferProcedureInput<TProcedure>,
-    opts?: InferQueryOptions<TConfig, TProcedure, any>,
-  ) => InferQueryResult<TConfig, TProcedure>;
-};
+> = DecoratedQuery<TConfig, TProcedure>;
 
 /**
  * Use to unwrap a QueryLike's input

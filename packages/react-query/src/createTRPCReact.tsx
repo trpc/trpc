@@ -89,86 +89,102 @@ export interface ProcedureUseQuery<
 /**
  * @internal
  */
+export type DecoratedQuery<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = (inferProcedureInput<TProcedure> extends { cursor?: any } | void
+  ? {
+      /**
+       * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
+       */
+      useInfiniteQuery: (
+        input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+        opts: UseTRPCInfiniteQueryOptions<
+          inferProcedureInput<TProcedure>,
+          inferTransformedProcedureOutput<TConfig, TProcedure>,
+          TRPCClientErrorLike<TConfig>
+        >,
+      ) => UseTRPCInfiniteQueryResult<
+        inferTransformedProcedureOutput<TConfig, TProcedure>,
+        TRPCClientErrorLike<TConfig>,
+        inferProcedureInput<TProcedure>
+      >;
+      /**
+       * @see https://trpc.io/docs/client/react/suspense
+       */
+      useSuspenseInfiniteQuery: (
+        input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+        opts: UseTRPCSuspenseInfiniteQueryOptions<
+          inferProcedureInput<TProcedure>,
+          inferTransformedProcedureOutput<TConfig, TProcedure>,
+          TRPCClientErrorLike<TConfig>
+        >,
+      ) => UseTRPCSuspenseInfiniteQueryResult<
+        inferTransformedProcedureOutput<TConfig, TProcedure>,
+        TRPCClientErrorLike<TConfig>,
+        inferProcedureInput<TProcedure>
+      >;
+    }
+  : object) & {
+  /**
+   * @see https://trpc.io/docs/client/react/useQuery
+   */
+  useQuery: ProcedureUseQuery<TConfig, TProcedure>;
+  /**
+   * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
+   */
+  useSuspenseQuery: <
+    TQueryFnData extends inferTransformedProcedureOutput<
+      TConfig,
+      TProcedure
+    > = inferTransformedProcedureOutput<TConfig, TProcedure>,
+    TData = TQueryFnData,
+  >(
+    input: inferProcedureInput<TProcedure>,
+    opts?: UseTRPCSuspenseQueryOptions<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<TConfig>
+    >,
+  ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TConfig>>;
+};
+
+/**
+ * @internal
+ */
+export interface DecoratedMutation<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> {
+  /**
+   * @see https://trpc.io/docs/client/react/useMutation
+   */
+  useMutation: <TContext = unknown>(
+    opts?: UseTRPCMutationOptions<
+      inferProcedureInput<TProcedure>,
+      TRPCClientErrorLike<TConfig>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TContext
+    >,
+  ) => UseTRPCMutationResult<
+    inferTransformedProcedureOutput<TConfig, TProcedure>,
+    TRPCClientErrorLike<TConfig>,
+    inferProcedureInput<TProcedure>,
+    TContext
+  >;
+}
+
+/**
+ * @internal
+ */
 export type DecorateProcedure<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
   _TFlags,
 > = TProcedure extends AnyQueryProcedure
-  ? (inferProcedureInput<TProcedure> extends { cursor?: any } | void
-      ? {
-          /**
-           * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
-           */
-          useInfiniteQuery: (
-            input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            opts: UseTRPCInfiniteQueryOptions<
-              inferProcedureInput<TProcedure>,
-              inferTransformedProcedureOutput<TConfig, TProcedure>,
-              TRPCClientErrorLike<TConfig>
-            >,
-          ) => UseTRPCInfiniteQueryResult<
-            inferTransformedProcedureOutput<TConfig, TProcedure>,
-            TRPCClientErrorLike<TConfig>,
-            inferProcedureInput<TProcedure>
-          >;
-          /**
-           * @see https://trpc.io/docs/client/react/suspense
-           */
-          useSuspenseInfiniteQuery: (
-            input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-            opts: UseTRPCSuspenseInfiniteQueryOptions<
-              inferProcedureInput<TProcedure>,
-              inferTransformedProcedureOutput<TConfig, TProcedure>,
-              TRPCClientErrorLike<TConfig>
-            >,
-          ) => UseTRPCSuspenseInfiniteQueryResult<
-            inferTransformedProcedureOutput<TConfig, TProcedure>,
-            TRPCClientErrorLike<TConfig>,
-            inferProcedureInput<TProcedure>
-          >;
-        }
-      : object) & {
-      /**
-       * @see https://trpc.io/docs/client/react/useQuery
-       */
-      useQuery: ProcedureUseQuery<TConfig, TProcedure>;
-      /**
-       * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
-       */
-      useSuspenseQuery: <
-        TQueryFnData extends inferTransformedProcedureOutput<
-          TConfig,
-          TProcedure
-        > = inferTransformedProcedureOutput<TConfig, TProcedure>,
-        TData = TQueryFnData,
-      >(
-        input: inferProcedureInput<TProcedure>,
-        opts?: UseTRPCSuspenseQueryOptions<
-          TQueryFnData,
-          TData,
-          TRPCClientErrorLike<TConfig>
-        >,
-      ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TConfig>>;
-    }
+  ? DecoratedQuery<TConfig, TProcedure>
   : TProcedure extends AnyMutationProcedure
-  ? {
-      /**
-       * @see https://trpc.io/docs/client/react/useMutation
-       */
-      useMutation: <TContext = unknown>(
-        opts?: UseTRPCMutationOptions<
-          inferProcedureInput<TProcedure>,
-          TRPCClientErrorLike<TConfig>,
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
-          TContext
-        >,
-      ) => UseTRPCMutationResult<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
-        TRPCClientErrorLike<TConfig>,
-        inferProcedureInput<TProcedure>,
-        TContext
-      >;
-    }
+  ? DecoratedMutation<TConfig, TProcedure>
   : TProcedure extends AnySubscriptionProcedure
   ? {
       /**
