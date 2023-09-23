@@ -52,7 +52,6 @@ import { CreateTRPCReactOptions } from './shared/types';
 export interface ProcedureUseQuery<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
-  TPath extends string,
 > {
   <
     TQueryFnData extends inferTransformedProcedureOutput<
@@ -63,8 +62,6 @@ export interface ProcedureUseQuery<
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
-      TPath,
-      inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
       TRPCClientErrorLike<TConfig>,
@@ -81,8 +78,6 @@ export interface ProcedureUseQuery<
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
-      TPath,
-      inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
       TRPCClientErrorLike<TConfig>,
@@ -98,7 +93,6 @@ export type DecorateProcedure<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
   _TFlags,
-  TPath extends string,
 > = TProcedure extends AnyQueryProcedure
   ? (inferProcedureInput<TProcedure> extends { cursor?: any } | void
       ? {
@@ -108,7 +102,6 @@ export type DecorateProcedure<
           useInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
             opts: UseTRPCInfiniteQueryOptions<
-              TPath,
               inferProcedureInput<TProcedure>,
               inferTransformedProcedureOutput<TConfig, TProcedure>,
               TRPCClientErrorLike<TConfig>
@@ -124,7 +117,6 @@ export type DecorateProcedure<
           useSuspenseInfiniteQuery: (
             input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
             opts: UseTRPCSuspenseInfiniteQueryOptions<
-              TPath,
               inferProcedureInput<TProcedure>,
               inferTransformedProcedureOutput<TConfig, TProcedure>,
               TRPCClientErrorLike<TConfig>
@@ -139,7 +131,7 @@ export type DecorateProcedure<
       /**
        * @see https://trpc.io/docs/client/react/useQuery
        */
-      useQuery: ProcedureUseQuery<TConfig, TProcedure, TPath>;
+      useQuery: ProcedureUseQuery<TConfig, TProcedure>;
       /**
        * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
        */
@@ -152,8 +144,6 @@ export type DecorateProcedure<
       >(
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSuspenseQueryOptions<
-          TPath,
-          inferProcedureInput<TProcedure>,
           TQueryFnData,
           TData,
           TRPCClientErrorLike<TConfig>
@@ -201,22 +191,15 @@ export type DecoratedProcedureRecord<
   TConfig extends AnyRootConfig,
   TProcedures extends ProcedureRouterRecord,
   TFlags,
-  TPath extends string = '',
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<
         TConfig,
         TProcedures[TKey]['_def']['record'],
-        TFlags,
-        `${TPath}${TKey & string}.`
+        TFlags
       >
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<
-        TConfig,
-        TProcedures[TKey],
-        TFlags,
-        `${TPath}${TKey & string}`
-      >
+    ? DecorateProcedure<TConfig, TProcedures[TKey], TFlags>
     : never;
 };
 

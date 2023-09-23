@@ -249,7 +249,7 @@ export function createRootHooks<
   function useQuery(
     path: string[],
     input: unknown,
-    opts?: UseTRPCQueryOptions<unknown, unknown, unknown, unknown, TError>,
+    opts?: UseTRPCQueryOptions<unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
     const context = useContext();
     if (!context) {

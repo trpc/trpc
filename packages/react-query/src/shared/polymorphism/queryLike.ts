@@ -14,7 +14,7 @@ export type QueryLike<
 > = {
   useQuery: (
     variables: inferProcedureInput<TProcedure>,
-    opts?: InferQueryOptions<TConfig, TProcedure, any, any>,
+    opts?: InferQueryOptions<TConfig, TProcedure, any>,
   ) => InferQueryResult<TConfig, TProcedure>;
 };
 

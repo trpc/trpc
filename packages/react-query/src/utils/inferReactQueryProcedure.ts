@@ -21,12 +21,9 @@ import {
 export type InferQueryOptions<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
-  TPath extends string,
   TData = inferTransformedProcedureOutput<TConfig, TProcedure>,
 > = Omit<
   UseTRPCQueryOptions<
-    TPath,
-    inferProcedureInput<TProcedure>,
     inferTransformedProcedureOutput<TConfig, TProcedure>,
     inferTransformedProcedureOutput<TConfig, TProcedure>,
     TRPCClientErrorLike<TConfig>,
@@ -72,24 +69,14 @@ export type InferMutationResult<
   TContext
 >;
 
-export type inferReactQueryProcedureOptions<
-  TRouter extends AnyRouter,
-  TPath extends string = '',
-> = {
+export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> = {
   [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
     ? TRouterOrProcedure extends AnyRouter
-      ? inferReactQueryProcedureOptions<
-          TRouterOrProcedure,
-          `${TPath}${TKey & string}.`
-        >
+      ? inferReactQueryProcedureOptions<TRouterOrProcedure>
       : TRouterOrProcedure extends AnyMutationProcedure
       ? InferMutationOptions<TRouter['_def']['_config'], TRouterOrProcedure>
       : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<
-          TRouter['_def']['_config'],
-          TRouterOrProcedure,
-          `${TPath}${TKey & string}`
-        >
+      ? InferQueryOptions<TRouter['_def']['_config'], TRouterOrProcedure>
       : never
     : never;
 };

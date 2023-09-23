@@ -54,56 +54,38 @@ export interface TRPCUseQueryBaseOptions {
 }
 
 export interface UseTRPCQueryOptions<
-  TPath,
-  TInput,
   TOutput,
   TData,
   TError,
   TQueryOptsData = TOutput,
 > extends DistributiveOmit<
-      UseBaseQueryOptions<
-        TOutput,
-        TError,
-        TData,
-        TQueryOptsData,
-        [TPath, TInput]
-      >,
+      UseBaseQueryOptions<TOutput, TError, TData, TQueryOptsData, any>,
       'queryKey'
     >,
     TRPCUseQueryBaseOptions {}
 
-export interface UseTRPCSuspenseQueryOptions<
-  TPath,
-  TInput,
-  TOutput,
-  TData,
-  TError,
-> extends DistributiveOmit<
-      UseSuspenseQueryOptions<TOutput, TError, TData, [TPath, TInput]>,
+export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
+  extends DistributiveOmit<
+      UseSuspenseQueryOptions<TOutput, TError, TData, any>,
       'queryKey'
     >,
     TRPCUseQueryBaseOptions {}
 
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
-  TPath,
-  TInput,
   TOutput,
   TData,
   TError,
   TQueryOptsData = TOutput,
 > extends DistributiveOmit<
-    UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError, TQueryOptsData>,
+    UseTRPCQueryOptions<TOutput, TData, TError, TQueryOptsData>,
     'queryKey'
   > {
   initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
 
-export interface TRPCQueryOptions<TPath, TInput, TData, TError>
-  extends DistributiveOmit<
-      QueryOptions<TData, TError, TData, [TPath, TInput]>,
-      'queryKey'
-    >,
+export interface TRPCQueryOptions<TData, TError>
+  extends DistributiveOmit<QueryOptions<TData, TError, TData, any>, 'queryKey'>,
     TRPCUseQueryBaseOptions {
   queryKey: TRPCQueryKey;
 }
@@ -112,14 +94,14 @@ export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
-export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
+export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
   extends DistributiveOmit<
       UseInfiniteQueryOptions<
         TOutput,
         TError,
         TOutput,
         TOutput,
-        [TPath, Omit<TInput, 'cursor'>],
+        any,
         ExtractCursorType<TInput>
       >,
       'queryKey' | 'defaultPageParam'
@@ -128,18 +110,14 @@ export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
   initialCursor?: ExtractCursorType<TInput>;
 }
 
-export interface UseTRPCSuspenseInfiniteQueryOptions<
-  TPath,
-  TInput,
-  TOutput,
-  TError,
-> extends DistributiveOmit<
+export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
+  extends DistributiveOmit<
       UseSuspenseInfiniteQueryOptions<
         TOutput,
         TError,
         TOutput,
         TOutput,
-        [TPath, Omit<TInput, 'cursor'>],
+        any,
         ExtractCursorType<TInput>
       >,
       'queryKey' | 'defaultPageParam'
