@@ -94,7 +94,7 @@ export type MaybeDecoratedInfiniteQuery<
   TConfig extends AnyRootConfig,
 > = inferProcedureInput<TProcedure> extends {
   cursor?: any;
-} | void
+} // | void TODO: why was this void here? It seems to have broken after moving out? If no .input is set surely infinitequery makes no sense?
   ? {
       /**
        * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
