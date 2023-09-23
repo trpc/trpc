@@ -1,4 +1,7 @@
-import { DecoratedQuery } from '@trpc/react-query/createTRPCReact';
+import {
+  DecoratedQuery,
+  DecoratedQueryMethods,
+} from '@trpc/react-query/createTRPCReact';
 import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 
@@ -13,15 +16,17 @@ export type QueryLike<
 /**
  * Use to unwrap a QueryLike's input
  */
-export type InferQueryLikeInput<TQueryLike extends QueryLike> =
-  TQueryLike extends QueryLike<any, infer TProcedure>
-    ? inferProcedureInput<TProcedure>
-    : never;
+export type InferQueryLikeInput<
+  TQueryLike extends DecoratedQueryMethods<AnyRootConfig, any>,
+> = TQueryLike extends DecoratedQueryMethods<any, infer TProcedure>
+  ? inferProcedureInput<TProcedure>
+  : never;
 
 /**
  * Use to unwrap a QueryLike's data output
  */
-export type InferQueryLikeData<TQueryLike extends QueryLike> =
-  TQueryLike extends QueryLike<infer TConfig, infer TProcedure>
-    ? inferTransformedProcedureOutput<TConfig, TProcedure>
-    : never;
+export type InferQueryLikeData<
+  TQueryLike extends DecoratedQueryMethods<AnyRootConfig, any>,
+> = TQueryLike extends DecoratedQueryMethods<infer TConfig, infer TProcedure>
+  ? inferTransformedProcedureOutput<TConfig, TProcedure>
+  : never;

@@ -89,10 +89,12 @@ export interface ProcedureUseQuery<
 /**
  * @internal
  */
-export type DecoratedQuery<
-  TConfig extends AnyRootConfig,
+export type MaybeDecoratedInfiniteQuery<
   TProcedure extends AnyProcedure,
-> = (inferProcedureInput<TProcedure> extends { cursor?: any } | void
+  TConfig extends AnyRootConfig,
+> = inferProcedureInput<TProcedure> extends {
+  cursor?: any;
+} | void
   ? {
       /**
        * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
@@ -125,7 +127,15 @@ export type DecoratedQuery<
         inferProcedureInput<TProcedure>
       >;
     }
-  : object) & {
+  : object;
+
+/**
+ * @internal
+ */
+export type DecoratedQueryMethods<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = {
   /**
    * @see https://trpc.io/docs/client/react/useQuery
    */
@@ -148,6 +158,15 @@ export type DecoratedQuery<
     >,
   ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TConfig>>;
 };
+
+/**
+ * @internal
+ */
+export type DecoratedQuery<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = MaybeDecoratedInfiniteQuery<TProcedure, TConfig> &
+  DecoratedQueryMethods<TConfig, TProcedure>;
 
 /**
  * @internal
