@@ -311,13 +311,7 @@ export function createRootHooks<
   function useSuspenseQuery(
     path: string[],
     input: unknown,
-    opts?: UseTRPCSuspenseQueryOptions<
-      unknown,
-      unknown,
-      unknown,
-      unknown,
-      TError
-    >,
+    opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseQueryResult<unknown, TError> {
     const hookResult = useQuery(path, input, {
       ...opts,
@@ -417,7 +411,7 @@ export function createRootHooks<
   function useInfiniteQuery(
     path: string[],
     input: unknown,
-    opts: UseTRPCInfiniteQueryOptions<unknown, unknown, unknown, TError>,
+    opts: UseTRPCInfiniteQueryOptions<unknown, unknown, TError>,
   ): UseTRPCInfiniteQueryResult<unknown, TError, unknown> {
     const {
       client,
@@ -486,12 +480,7 @@ export function createRootHooks<
   function useSuspenseInfiniteQuery(
     path: string[],
     input: unknown,
-    opts: UseTRPCSuspenseInfiniteQueryOptions<
-      unknown,
-      unknown,
-      unknown,
-      TError
-    >,
+    opts: UseTRPCSuspenseInfiniteQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
     const hookResult = useInfiniteQuery(path, input, {
       ...opts,
@@ -513,7 +502,7 @@ export function createRootHooks<
 
     if (typeof window === 'undefined' && ssrState === 'prepass') {
       for (const query of queries) {
-        const queryOption = query as TRPCQueryOptions<any, any, any, any>;
+        const queryOption = query as TRPCQueryOptions<any, any>;
         if (
           queryOption.trpc?.ssr !== false &&
           !queryClient.getQueryCache().find({ queryKey: queryOption.queryKey })
@@ -527,7 +516,7 @@ export function createRootHooks<
       {
         queries: queries.map((query) => ({
           ...query,
-          queryKey: (query as TRPCQueryOptions<any, any, any, any>).queryKey,
+          queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
         })),
       },
       queryClient,
