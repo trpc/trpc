@@ -1,6 +1,6 @@
 import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import { DecoratedQuery, DecoratedQueryMethods } from '../..//createTRPCReact';
+import { DecoratedQuery, DecoratedQueryMethods } from '../../createTRPCReact';
 
 /**
  * Use to request a query route which matches a given query procedure's interface

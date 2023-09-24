@@ -132,7 +132,7 @@ export type MaybeDecoratedInfiniteQuery<
 /**
  * @internal
  */
-export type DecoratedQuery<
+export type DecoratedQueryMethods<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
 > = {
@@ -158,6 +158,15 @@ export type DecoratedQuery<
     >,
   ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TConfig>>;
 } & MaybeDecoratedInfiniteQuery<TProcedure, TConfig>;
+
+/**
+ * @internal
+ */
+export type DecoratedQuery<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = MaybeDecoratedInfiniteQuery<TProcedure, TConfig> &
+  DecoratedQueryMethods<TConfig, TProcedure>;
 
 /**
  * @internal
