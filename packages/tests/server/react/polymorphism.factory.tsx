@@ -7,7 +7,7 @@ import { AnyRootConfig, TRPCError } from '@trpc/server';
 import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
 import { createRouterFactory } from '@trpc/server/core/router';
 import z from 'zod';
-import { t } from './polymorphism.common';
+import { Config, t } from './polymorphism.common';
 
 //
 // DTOs
@@ -30,9 +30,6 @@ export type FileExportStatusType = z.infer<typeof FileExportStatus>;
 // Dependencies
 //
 
-type RouterFactory<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createRouterFactory<TConfig>
->;
 type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
   typeof createBuilder<TConfig>
 >;
@@ -46,9 +43,10 @@ export type DataProvider = FileExportStatusType[];
 
 let COUNTER = 1;
 
-export function createExportRoute<
-  TBaseProcedure extends BaseProcedure<(typeof t)['_config']>,
->(baseProcedure: TBaseProcedure, dataProvider: DataProvider) {
+export function createExportRoute<TBaseProcedure extends BaseProcedure<Config>>(
+  baseProcedure: TBaseProcedure,
+  dataProvider: DataProvider,
+) {
   return t.router({
     start: baseProcedure
       .input(FileExportRequest)

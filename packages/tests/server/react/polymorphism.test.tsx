@@ -283,6 +283,7 @@ describe('polymorphism', () => {
             {/* ... or you can adapt them to support sub-types */}
             <ExportStatus
               status={trpc.github.pullRequests.export.status}
+              //                                       ^?
               currentExport={currentExport}
               renderAdditionalFields={(data) => {
                 return `Description: "${data?.description}"`;
@@ -449,6 +450,7 @@ function RefreshExportsListButton({
 }
 
 type ExportStatusProps<TStatus extends Factory.ExportRouteLike['status']> = {
+  //                                                             ^?
   status: TStatus;
   renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
