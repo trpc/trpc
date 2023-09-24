@@ -87,14 +87,19 @@ export interface ProcedureUseQuery<
 }
 
 /**
+ * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
+ */
+type CursorInput = {
+  cursor?: any;
+} | void;
+
+/**
  * @internal
  */
 export type MaybeDecoratedInfiniteQuery<
   TProcedure extends AnyProcedure,
   TConfig extends AnyRootConfig,
-> = inferProcedureInput<TProcedure> extends {
-  cursor?: any;
-} | void
+> = inferProcedureInput<TProcedure> extends CursorInput
   ? {
       /**
        * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
