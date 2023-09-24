@@ -61,6 +61,11 @@ export interface Procedure<
     _output_out: TDef['output'];
     procedure: true;
     type: TType;
+    /**
+     * @internal
+     * Meta is not inferrable on individual procedures, only on the router
+     */
+    meta: unknown;
   };
   /**
    * @internal
