@@ -1,6 +1,6 @@
-import { DecoratedMutation } from '@trpc/react-query/createTRPCReact';
 import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { DecoratedMutation } from '../../createTRPCReact';
 
 /**
  * Use to describe a mutation route which matches a given mutation procedure's interface

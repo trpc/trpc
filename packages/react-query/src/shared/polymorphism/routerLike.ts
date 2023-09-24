@@ -1,5 +1,5 @@
-import { DecoratedProcedureRecord } from '@trpc/react-query/createTRPCReact';
 import { AnyRouter } from '@trpc/server';
+import { DecoratedProcedureRecord } from '../../createTRPCReact';
 
 /**
  * Use to describe a route path which matches a given route's interface
