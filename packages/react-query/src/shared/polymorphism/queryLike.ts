@@ -14,7 +14,7 @@ export type QueryLike<
  * Use to unwrap a QueryLike's input
  */
 export type InferQueryLikeInput<
-  TQueryLike extends DecoratedQueryMethods<AnyRootConfig, any>,
+  TQueryLike extends DecoratedQueryMethods<AnyRootConfig, AnyProcedure>,
 > = TQueryLike extends DecoratedQueryMethods<any, infer TProcedure>
   ? inferProcedureInput<TProcedure>
   : never;
@@ -23,7 +23,7 @@ export type InferQueryLikeInput<
  * Use to unwrap a QueryLike's data output
  */
 export type InferQueryLikeData<
-  TQueryLike extends DecoratedQueryMethods<AnyRootConfig, any>,
+  TQueryLike extends DecoratedQueryMethods<AnyRootConfig, AnyProcedure>,
 > = TQueryLike extends DecoratedQueryMethods<infer TConfig, infer TProcedure>
   ? inferTransformedProcedureOutput<TConfig, TProcedure>
   : never;
