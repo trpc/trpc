@@ -1,9 +1,9 @@
+import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import {
   InferQueryOptions,
   InferQueryResult,
-} from '@trpc/react-query/utils/inferReactQueryProcedure';
-import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+} from '../../utils/inferReactQueryProcedure';
 
 /**
  * Use to request a query route which matches a given query procedure's interface

@@ -1,9 +1,9 @@
+import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import {
   InferMutationOptions,
   InferMutationResult,
-} from '@trpc/react-query/utils/inferReactQueryProcedure';
-import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+} from '../../utils/inferReactQueryProcedure';
 
 /**
  * Use to describe a mutation route which matches a given mutation procedure's interface
