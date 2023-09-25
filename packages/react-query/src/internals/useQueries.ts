@@ -22,16 +22,8 @@ export type UseQueryOptionsForUseQueries<
 /**
  * @internal
  */
-export type TrpcQueryOptionsForUseQueries<
-  TPath,
-  TInput,
-  TOutput,
-  TData,
-  TError,
-> = DistributiveOmit<
-  UseTRPCQueryOptions<TPath, TInput, TOutput, TData, TError>,
-  'queryKey'
->;
+export type TrpcQueryOptionsForUseQueries<TOutput, TData, TError> =
+  DistributiveOmit<UseTRPCQueryOptions<TOutput, TData, TError>, 'queryKey'>;
 
 /**
  * @internal
