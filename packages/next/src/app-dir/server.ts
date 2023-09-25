@@ -119,7 +119,7 @@ export function experimental_createServerActionHandler<
           input: undefined,
           ctx,
           path: 'serverAction',
-          rawInput,
+          getRawInput: async () => rawInput,
           type: proc._def.type,
         });
 

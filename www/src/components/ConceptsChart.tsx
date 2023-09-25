@@ -61,7 +61,7 @@ export function ConceptsChart() {
           <td>
             <a href="/docs/subscriptions">
               <strong className="text-teal-700 dark:text-teal-400">
-                Subscription
+                Subscription&nbsp;↗
               </strong>
             </a>
           </td>
