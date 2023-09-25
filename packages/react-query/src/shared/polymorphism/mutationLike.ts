@@ -1,6 +1,9 @@
+import {
+  InferMutationOptions,
+  InferMutationResult,
+} from '@trpc/react-query/utils/inferReactQueryProcedure';
 import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/server';
 import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import { DecoratedMutation } from '../../createTRPCReact';
 
 /**
  * Use to describe a mutation route which matches a given mutation procedure's interface
@@ -8,7 +11,11 @@ import { DecoratedMutation } from '../../createTRPCReact';
 export type MutationLike<
   TConfig extends AnyRootConfig = AnyRootConfig,
   TProcedure extends AnyProcedure = AnyProcedure,
-> = DecoratedMutation<TConfig, TProcedure>;
+> = {
+  useMutation: (
+    opts?: InferMutationOptions<TConfig, TProcedure>,
+  ) => InferMutationResult<TConfig, TProcedure>;
+};
 
 /**
  * Use to unwrap a MutationLike's input

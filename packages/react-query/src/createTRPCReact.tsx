@@ -162,7 +162,7 @@ export type DecoratedQueryMethods<
       TRPCClientErrorLike<TConfig>
     >,
   ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TConfig>>;
-} & MaybeDecoratedInfiniteQuery<TProcedure, TConfig>;
+};
 
 /**
  * @internal
