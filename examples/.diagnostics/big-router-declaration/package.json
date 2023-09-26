@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "rm -rf build && tsc",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "postinstall": "tsx scripts/codegen"
   },
   "dependencies": {
