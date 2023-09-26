@@ -44,6 +44,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./unstableExternalsExport": {
+      "import": "./dist/unstableExternalsExport.mjs",
+      "require": "./dist/unstableExternalsExport.js",
+      "default": "./dist/unstableExternalsExport.js"
+    },
     "./adapters/aws-lambda": {
       "import": "./dist/adapters/aws-lambda/index.mjs",
       "require": "./dist/adapters/aws-lambda/index.js",
@@ -125,6 +130,7 @@
     "src",
     "README.md",
     "package.json",
+    "unstableExternalsExport",
     "adapters",
     "http",
     "rpc",
