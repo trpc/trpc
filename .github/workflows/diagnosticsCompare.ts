@@ -50,15 +50,24 @@ commentBody +=
 for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
   const mainValue = mainDiagnostics[metric];
   const nextValue = nextDiagnostics[metric];
-  const diffMain =
-    typeof currentPrValue === 'number' && typeof mainValue === 'number'
-      ? (currentPrValue - mainValue).toFixed(2)
-      : 'N/A';
-  const diffNext =
-    typeof currentPrValue === 'number' && typeof nextValue === 'number'
-      ? (currentPrValue - nextValue).toFixed(2)
-      : 'N/A';
-  commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} | ${diffNext} |\n`;
+
+  let diffMain = 'N/A';
+  let emojiMain = '';
+  if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
+    const diff = currentPrValue - mainValue;
+    diffMain = diff.toFixed(2);
+    emojiMain = diff > 0 ? '🔺' : diff < 0 ? '🔻' : '➖';
+  }
+
+  let diffNext = 'N/A';
+  let emojiNext = '';
+  if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
+    const diff = currentPrValue - nextValue;
+    diffNext = diff.toFixed(2);
+    emojiNext = diff > 0 ? '🔺' : diff < 0 ? '🔻' : '➖';
+  }
+
+  commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} ${emojiMain} | ${diffNext} ${emojiNext} |\n`;
 }
 
 const { owner, repo } = github.context.repo;
