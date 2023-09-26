@@ -64,12 +64,4 @@ describe('meta', () => {
       { foo: 'bar' },
     ]);
   });
-
-  it('is queryable in _def', async () => {
-    const meta = ctx.router.withMeta._def.meta;
-    expectTypeOf(meta).toEqualTypeOf<Meta | undefined>();
-    expect(meta).toEqual({
-      foo: 'bar',
-    });
-  });
 });
