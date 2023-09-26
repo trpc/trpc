@@ -145,7 +145,7 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -215,7 +215,7 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -270,7 +270,7 @@ importers:
   examples/.test/big-router-declaration:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -344,7 +344,7 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -399,7 +399,7 @@ importers:
   examples/.test/ssg-infinite-serialization:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
@@ -739,7 +739,7 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -833,7 +833,7 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -882,7 +882,7 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -928,7 +928,7 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -977,7 +977,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -1083,7 +1083,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -1135,7 +1135,7 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
@@ -1165,7 +1165,7 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.38.4
@@ -1211,7 +1211,7 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(@tanstack/react-query@5.0.0-beta.9)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
@@ -1424,7 +1424,7 @@ importers:
         version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.38.4
@@ -1475,7 +1475,7 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.38.4
@@ -1523,7 +1523,7 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
@@ -1640,7 +1640,7 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@tanstack/react-query':
-        specifier: ^5.0.0-beta.9
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
