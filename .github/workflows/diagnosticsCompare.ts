@@ -34,7 +34,7 @@ const readDiagnostics = (branch: string) => {
   return parseDiagnostics(content);
 };
 
-const baseDiagnostics = readDiagnostics(baseBranch);
+const baseDiagnostics = readDiagnostics('current-pr');
 const prDiagnostics = readDiagnostics(pr.head.ref as string);
 
 const commentTitle = 'Diagnostics Comparison';
