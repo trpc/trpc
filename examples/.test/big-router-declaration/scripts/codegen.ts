@@ -53,8 +53,8 @@ function createRouter(routerName: string) {
         )
         .query(({input}) => \`hello \${input.who}\`),
       childRouter: router({
-        hello: t.procedure.query(() => 'there'),
-        doSomething: t.procedure.mutation(() => 'okay'),
+        hello: publicProcedure.query(() => 'there'),
+        doSomething: publicProcedure.mutation(() => 'okay'),
       })
   })`.trim();
 }
