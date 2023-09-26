@@ -42,4 +42,4 @@ export const __ROUTER__NAME__ = router({
       hello: publicProcedure.query(() => 'there'),
       doSomething: publicProcedure.mutation(() => 'okay'),
     })
-})
+});
