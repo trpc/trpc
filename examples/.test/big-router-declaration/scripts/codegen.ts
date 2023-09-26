@@ -11,52 +11,11 @@ if (fs.existsSync(ROUTERS_DIR)) {
 
 fs.mkdirSync(ROUTERS_DIR, { recursive: true });
 
+// read file codege-base.ts in the same dir as this script
+const codegenBase = fs.readFileSync(__dirname + '/codegen-base.ts', 'utf-8');
+
 function createRouter(routerName: string) {
-  return `
-  import { z } from 'zod';
-  import { authedProcedure, publicProcedure, router } from '~/server/trpc';
-  
-  export const ${routerName} = router({
-    greeting: publicProcedure
-      .input(
-        z.object({
-          who: z.string()
-        })
-      )
-      .query(({input}) => \`hello \${input.who}\`),
-    greeting2: authedProcedure
-      .input(
-        z.object({
-          who: z.string()
-        })
-      )
-      .query(({input}) => \`hello \${input.who}\`),
-      greeting3: publicProcedure
-        .input(
-          z.object({
-            who: z.string()
-          })
-        )
-        .query(({input}) => \`hello \${input.who}\`),
-      greeting4: authedProcedure
-        .input(
-          z.object({
-            who: z.string()
-          })
-        )
-        .query(({input}) => \`hello \${input.who}\`),
-      greeting5: publicProcedure
-        .input(
-          z.object({
-            who: z.string()
-          })
-        )
-        .query(({input}) => \`hello \${input.who}\`),
-      childRouter: router({
-        hello: publicProcedure.query(() => 'there'),
-        doSomething: publicProcedure.mutation(() => 'okay'),
-      })
-  })`.trim();
+  return codegenBase.replace('__ROUTER__NAME__', routerName);
 }
 
 const indexBuf: string[] = [];
