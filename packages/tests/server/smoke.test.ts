@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { TRPCClientError, wsLink } from '@trpc/client/src';
-import { inferProcedureParams, initTRPC } from '@trpc/server/src';
+import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
 import { observable, Unsubscribable } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
@@ -23,25 +23,28 @@ const t = initTRPC
   });
 const { procedure } = t;
 
-test('old client - happy path w/o input', async () => {
+test('untyped client - happy path w/o input', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
+
   const { client, close } = routerToServerAndClientNew(router);
 
-  // @ts-expect-error cannot call new procedure with old client
-  expect(await client.query('hello')).toBe('world');
+  // client is untyped
+  const res = await client.query('hello');
+  expect(res).toBe('world');
+  expectTypeOf(res).toBeUnknown();
   await close();
 });
 
-test('old client - happy path with input', async () => {
+test('untyped client - happy path with input', async () => {
   const router = t.router({
     greeting: procedure
       .input(z.string())
       .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
-  // @ts-expect-error cannot call new procedure with old client
+
   expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
   await close();
 });
@@ -58,18 +61,8 @@ test('very happy path', async () => {
   });
 
   {
-    type TContext = typeof greeting._def._config.$types.ctx;
-    expectTypeOf<TContext>().toMatchTypeOf<{
-      foo?: 'bar';
-    }>();
-  }
-  {
-    type TParams = inferProcedureParams<(typeof router)['greeting']>;
-    type TConfig = TParams['_config'];
-    type TContext = TConfig['$types']['ctx'];
-    type TError = TConfig['$types']['errorShape'];
-    expectTypeOf<NonNullable<TContext['foo']>>().toMatchTypeOf<'bar'>();
-    expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
+    type TContext = inferProcedureOutput<typeof greeting>;
+    expectTypeOf<TContext>().toMatchTypeOf<string>();
   }
   const { proxy, close } = routerToServerAndClientNew(router);
   expect(await proxy.greeting.query('KATT')).toBe('hello KATT');

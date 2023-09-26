@@ -3,7 +3,7 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
+import { TRPCQueryKey } from '@trpc/react-query/src/internals/getQueryKey';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -39,8 +39,8 @@ describe('invalidateQueries()', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              queryClient.invalidateQueries([['allPosts']]);
-              queryClient.invalidateQueries([['postById']]);
+              queryClient.invalidateQueries({ queryKey: [['allPosts']] });
+              queryClient.invalidateQueries({ queryKey: [['postById']] });
             }}
           />
         </>
@@ -189,7 +189,7 @@ describe('invalidateQueries()', () => {
               utils.invalidate(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
-                  const [path, data] = queryKey as QueryKey;
+                  const [path, data] = queryKey as TRPCQueryKey;
 
                   return path[0] === 'count' && data?.input === 'test';
                 },
@@ -340,7 +340,7 @@ test('predicate type should be narrowed', () => {
           [
             string[],
             {
-              input?: { limit?: number | undefined } | void;
+              input?: { limit?: number | undefined } | undefined;
               type: 'infinite';
             }?,
           ]

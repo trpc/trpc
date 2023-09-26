@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../core';
-import { inferRouterContext } from '../../core/types';
-import { getBatchStreamFormatter, HTTPRequest } from '../../http';
+import {
+  getBatchStreamFormatter,
+  HTTPRequest,
+  ResolveHTTPRequestOptionsContextFn,
+} from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
@@ -24,8 +27,16 @@ export async function nodeHTTPRequestHandler<
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
     if (err) throw err;
 
-    const createContext = async (): Promise<inferRouterContext<TRouter>> => {
-      return await opts.createContext?.(opts);
+    //
+    // Build tRPC dependencies
+
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({
+        ...opts,
+        ...innerOpts,
+      });
     };
 
     const query = opts.req.query

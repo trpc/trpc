@@ -65,13 +65,15 @@ test('with input', async () => {
       return <>...</>;
     }
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
+    >(query1.data);
 
     return (
       <>
@@ -147,10 +149,13 @@ test('w/o input', async () => {
 
     type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
     >();
 
     return (

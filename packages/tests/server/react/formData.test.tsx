@@ -8,7 +8,7 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
+import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
 import { initTRPC } from '@trpc/server';
 import {
   experimental_createMemoryUploadHandler,
@@ -50,7 +50,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: async () => formData,
           });
         })
         .input(
@@ -69,7 +69,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: async () => formData,
           });
         })
         .input(

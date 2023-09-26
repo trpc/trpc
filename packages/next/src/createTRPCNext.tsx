@@ -1,10 +1,10 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
 import {
-  createHooksInternal,
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
   CreateReactUtilsProxy,
+  createRootHooks,
   DecoratedProcedureRecord,
   TRPCUseQueries,
 } from '@trpc/react-query/shared';
@@ -35,7 +35,11 @@ export type CreateTRPCNext<
   TFlags,
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
-  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
+  DecoratedProcedureRecord<
+    TRouter['_def']['_config'],
+    TRouter['_def']['record'],
+    TFlags
+  >
 >;
 
 export function createTRPCNext<
@@ -45,7 +49,7 @@ export function createTRPCNext<
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
 ): CreateTRPCNext<TRouter, TSSRContext, TFlags> {
-  const hooks = createHooksInternal<TRouter, TSSRContext>(opts);
+  const hooks = createRootHooks<TRouter, TSSRContext>(opts);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC(opts);

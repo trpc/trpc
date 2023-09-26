@@ -304,9 +304,7 @@ test('no input', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<UnsetMarker>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<UnsetMarker>();
-  expectTypeOf<ProcType['_output_in']>().toBeUndefined();
+  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<void>();
   expectTypeOf<ProcType['_output_out']>().toBeUndefined();
 
   const router = t.router({
@@ -333,7 +331,6 @@ test('zod default() string', async () => {
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<string>();
 
   const router = t.router({
     proc,
@@ -364,7 +361,6 @@ test('zod default() required object', async () => {
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<{ foo?: string }>();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{ foo: string }>();
 
   const router = t.router({
     proc,
@@ -403,10 +399,6 @@ test('zod default() mixed default object', async () => {
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
     { foo: string; bar?: string } | undefined
   >();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{
-    foo: string;
-    bar: string;
-  }>();
 
   const router = t.router({
     proc,
@@ -456,10 +448,6 @@ test('zod default() defaults within object', async () => {
   expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
     { foo?: string; bar?: string } | undefined
   >();
-  expectTypeOf<ProcType['_input_out']>().toEqualTypeOf<{
-    foo: string;
-    bar: string;
-  }>();
 
   const router = t.router({
     proc,

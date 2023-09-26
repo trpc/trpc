@@ -1,5 +1,4 @@
-import { inferObservableValue } from '../observable';
-import { inferTransformedProcedureOutput } from '../shared/jsonify';
+import { inferTransformedProcedureOutput } from '../shared';
 import { AnyProcedure, ProcedureArgs } from './procedure';
 import { AnyRouter, AnyRouterDef, Router } from './router';
 
@@ -11,12 +10,14 @@ export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
     : never
   : never;
 
+export type inferRouterConfig<TRouter extends AnyRouter> =
+  inferRouterDef<TRouter>['_config'];
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['ctx'];
+  inferRouterConfig<TRouter>['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['errorShape'];
+  inferRouterConfig<TRouter>['$types']['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config']['$types']['meta'];
+  inferRouterConfig<TRouter>['$types']['meta'];
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -29,26 +30,13 @@ export type inferHandlerInput<TProcedure extends AnyProcedure> = ProcedureArgs<
 >;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  inferHandlerInput<TProcedure>[0];
+  inferProcedureParams<TProcedure>['_input_in'];
 
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
-
-/**
- * @deprecated will be removed in next major as it's v9 stuff
- */
-export type inferSubscriptionOutput<
-  TRouter extends AnyRouter,
-  TPath extends string & keyof TRouter['_def']['subscriptions'],
-> = inferObservableValue<
-  inferProcedureOutput<TRouter['_def']['subscriptions'][TPath]>
->;
-
-export type inferProcedureClientError<TProcedure extends AnyProcedure> =
-  inferProcedureParams<TProcedure>['_config']['errorShape'];
 
 type GetInferenceHelpers<
   TType extends 'input' | 'output',
@@ -60,7 +48,10 @@ type GetInferenceHelpers<
       : TRouterOrProcedure extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<TRouterOrProcedure>
+        : inferTransformedProcedureOutput<
+            TRouter['_def']['_config'],
+            TRouterOrProcedure
+          >
       : never
     : never;
 };

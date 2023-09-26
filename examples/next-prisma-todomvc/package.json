@@ -2,6 +2,9 @@
   "name": "@examples/trpc-next-prisma-todomvc",
   "version": "10.38.4",
   "private": true,
+  "engines": {
+    "node": ">=18.15.0"
+  },
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
@@ -23,7 +26,7 @@
   },
   "dependencies": {
     "@prisma/client": "^4.14.1",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0-beta.9",
     "@trpc/client": "^10.38.4",
     "@trpc/next": "^10.38.4",
     "@trpc/react-query": "^10.38.4",
@@ -42,7 +45,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
-    "@tanstack/react-query-devtools": "^4.18.0",
+    "@tanstack/react-query-devtools": "^5.0.0-beta.9",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.8",
     "eslint": "^8.40.0",

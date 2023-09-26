@@ -1,7 +1,8 @@
 import './___packages';
 import { initTRPC } from '@trpc/server';
 
-test('deprecated: call proc directly', async () => {
+// FIXME: should we deprecate this?
+test('call proc directly', async () => {
   const t = initTRPC.create();
   const router = t.router({
     sub: t.router({
@@ -13,7 +14,7 @@ test('deprecated: call proc directly', async () => {
     ctx: {},
     path: 'asd',
     type: 'query',
-    rawInput: {},
+    getRawInput: async () => ({}),
   });
 
   expect(result).toBe('hello');

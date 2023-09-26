@@ -1,5 +1,5 @@
 import { createAppRouter } from './__testHelpers';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {
@@ -11,7 +11,7 @@ afterEach(async () => {
 
 test('dehydrate', async () => {
   const { db, appRouter } = factory;
-  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
   await ssg.allPosts.prefetch();
   await ssg.postById.prefetch('1');
