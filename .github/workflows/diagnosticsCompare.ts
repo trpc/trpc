@@ -10,7 +10,6 @@ if (!pr) {
   process.exit(1);
 }
 
-const baseBranch = pr.base.ref as string;
 const diagnosticsPath = 'diagnostics-results';
 const prNumber = github.context.issue.number;
 
@@ -34,21 +33,30 @@ const readDiagnostics = (branch: string) => {
   return parseDiagnostics(content);
 };
 
-const baseDiagnostics = readDiagnostics('current-pr');
-const prDiagnostics = readDiagnostics(pr.head.ref as string);
+// Read diagnostics results for the branches you are interested in
+const currentPrDiagnostics = readDiagnostics('current-pr');
+const mainDiagnostics = readDiagnostics('main');
+const nextDiagnostics = readDiagnostics('next');
 
 const commentTitle = 'Diagnostics Comparison';
 let commentBody = `## ${commentTitle}\n\n`;
-commentBody += `| Metric | Base Branch Value  | PR Branch Value | Difference |\n`;
-commentBody += '|--------|------------------|-----------------|------------|\n';
+commentBody += `| Metric | Current PR Value | Main Branch Value | Next Branch Value | Difference (Main) | Difference (Next) |\n`;
+commentBody +=
+  '|--------|------------------|-------------------|------------------|------------------|------------------|\n';
 
-for (const [metric, baseValue] of Object.entries(baseDiagnostics)) {
-  const prValue = prDiagnostics[metric];
-  const difference =
-    typeof baseValue === 'number' && typeof prValue === 'number'
-      ? (prValue - baseValue).toFixed(2)
+// Loop through the metrics and build the comment body
+for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
+  const mainValue = mainDiagnostics[metric];
+  const nextValue = nextDiagnostics[metric];
+  const diffMain =
+    typeof currentPrValue === 'number' && typeof mainValue === 'number'
+      ? (currentPrValue - mainValue).toFixed(2)
       : 'N/A';
-  commentBody += `| ${metric} | ${baseValue} | ${prValue} | ${difference} |\n`;
+  const diffNext =
+    typeof currentPrValue === 'number' && typeof nextValue === 'number'
+      ? (currentPrValue - nextValue).toFixed(2)
+      : 'N/A';
+  commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} | ${diffNext} |\n`;
 }
 
 const octokit = github.getOctokit(core.getInput('token'));
