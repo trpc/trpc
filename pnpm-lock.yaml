@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
   '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
@@ -1630,10 +1626,10 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.11.2
-        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
+        version: 0.11.2(@effect/data@0.18.6)(@effect/io@0.41.0)(@effect/schema@0.37.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
-        specifier: ^0.36.0
-        version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
+        specifier: ^0.37.0
+        version: 0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0)
       '@fastify/busboy':
         specifier: ^1.2.1
         version: 1.2.1
@@ -1859,10 +1855,10 @@ importers:
         version: 7.20.2(@babel/core@7.20.2)
       '@decs/typeschema':
         specifier: ^0.11.2
-        version: 0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2)
+        version: 0.11.2(@effect/data@0.18.6)(@effect/io@0.41.0)(@effect/schema@0.37.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
-        specifier: ^0.36.0
-        version: 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
+        specifier: ^0.37.0
+        version: 0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0)
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -5470,7 +5466,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2):
+  /@decs/typeschema@0.11.2(@effect/data@0.18.6)(@effect/io@0.41.0)(@effect/schema@0.37.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2):
     resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -5526,9 +5522,9 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@effect/data': 0.18.5
-      '@effect/io': 0.40.1(@effect/data@0.18.5)
-      '@effect/schema': 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
+      '@effect/data': 0.18.6
+      '@effect/io': 0.41.0(@effect/data@0.18.6)
+      '@effect/schema': 0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0)
       ajv: 6.12.6
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
@@ -5538,7 +5534,7 @@ packages:
       zod: 3.20.2
     dev: true
 
-  /@decs/typeschema@0.11.2(@effect/data@0.18.5)(@effect/io@0.40.1)(@effect/schema@0.36.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
+  /@decs/typeschema@0.11.2(@effect/data@0.18.6)(@effect/io@0.41.0)(@effect/schema@0.37.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
     resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -5594,9 +5590,9 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@effect/data': 0.18.5
-      '@effect/io': 0.40.1(@effect/data@0.18.5)
-      '@effect/schema': 0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1)
+      '@effect/data': 0.18.6
+      '@effect/io': 0.41.0(@effect/data@0.18.6)
+      '@effect/schema': 0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0)
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
@@ -6406,24 +6402,24 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.18.5:
-    resolution: {integrity: sha512-VFPJ0prGq3eF6/eZYKVI/1IC1purdGJXEHJC1ggKynPko03upjtmeCeCsEyMiY12DzVIAuME425JndiFb7m2xw==}
+  /@effect/data@0.18.6:
+    resolution: {integrity: sha512-gfjorojxEJ0KKxwluZLoAsPv1kkHi7MV1vQDlibClfdtC9iY9JqkJo+BjWTKsU0zV4mW2inmTZQCF72KKbn2tQ==}
 
-  /@effect/io@0.40.1(@effect/data@0.18.5):
-    resolution: {integrity: sha512-OeMK7JonvW/D6Z377cOsuCSHUbsO9ZkmAIDmzQ1Qffx8+h5yUXRm0htmPwKkxtCHZr2QxyZfSBzxSzrGU7asXQ==}
+  /@effect/io@0.41.0(@effect/data@0.18.6):
+    resolution: {integrity: sha512-gCjntDN3lbUh8wVQnwNoYlugNlWESZWsVkBFPfmOf2439EptHkvdEDNA47vR4OSB3lcqhH+J5jJHi2KWnEbRew==}
     peerDependencies:
       '@effect/data': ^0.18.5
     dependencies:
-      '@effect/data': 0.18.5
+      '@effect/data': 0.18.6
 
-  /@effect/schema@0.36.0(@effect/data@0.18.5)(@effect/io@0.40.1):
-    resolution: {integrity: sha512-KiE/Ptt+hSivXM3cfe2RTnJg0fgRqa8lpreprEpHg5d8c8tOTWIS86anvicSNlPgWe99RlUOvLTf9vSwPzAjXQ==}
+  /@effect/schema@0.37.0(@effect/data@0.18.6)(@effect/io@0.41.0):
+    resolution: {integrity: sha512-PZv5zHEW3MpY4iY45dxhBS7IZxRHM2MXODi8gAY8g+4ACEkRWcNVua1Js6/JhRhQtpur9w3dvx913kpOZ+Fpmw==}
     peerDependencies:
-      '@effect/data': ^0.18.5
-      '@effect/io': ^0.40.1
+      '@effect/data': ^0.18.6
+      '@effect/io': ^0.41.0
     dependencies:
-      '@effect/data': 0.18.5
-      '@effect/io': 0.40.1(@effect/data@0.18.5)
+      '@effect/data': 0.18.6
+      '@effect/io': 0.41.0(@effect/data@0.18.6)
       fast-check: 3.12.0
 
   /@emotion/is-prop-valid@0.8.8:
@@ -24080,3 +24076,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false

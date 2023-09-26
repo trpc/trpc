@@ -15,14 +15,11 @@ interface Def {
 }
 
 const sections: Def = {
-  diamond: [
-    //
-    'tolahq',
-    'github',
-  ],
+  diamond: [],
   gold: [
     //
     'calcom',
+    'tolahq',
   ],
   silver: [
     //
