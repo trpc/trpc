@@ -1,3 +1,8 @@
+// FIXME: this file should only export
+// - `initTRPC`
+// - `TRPCError`
+// - (maybe something else?)
+
 export * from './transformer';
 export * from './error/TRPCError';
 export * from './types';
