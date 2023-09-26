@@ -41,7 +41,10 @@ const mainDiagnostics = readDiagnostics('main');
 const nextDiagnostics = readDiagnostics('next');
 
 const commentTitle = 'Diagnostics Comparison';
-let commentBody = `## ${commentTitle}\n\n`;
+let commentBody = `
+
+<details>
+## ${commentTitle}\n\n`;
 commentBody += `| Metric | Current PR Value | Main Branch Value | Next Branch Value | Difference (Main) | Difference (Next) |\n`;
 commentBody +=
   '|--------|------------------|-------------------|------------------|------------------|------------------|\n';
@@ -70,6 +73,7 @@ for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
   commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} ${emojiMain} | ${diffNext} ${emojiNext} |\n`;
 }
 
+commentBody += `\n</details>`;
 const { owner, repo } = github.context.repo;
 
 async function run() {
