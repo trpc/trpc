@@ -3,7 +3,6 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
-  'src/unstableInternalsExport.ts',
   'src/adapters/aws-lambda/index.ts',
   'src/adapters/express.ts',
   'src/adapters/fastify/index.ts',
@@ -19,6 +18,7 @@ export const input = [
   'src/observable/index.ts',
   'src/subscription.ts',
   'src/shared/index.ts',
+  'src/unstableInternalsExport.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

@@ -44,11 +44,6 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./unstableExternalsExport": {
-      "import": "./dist/unstableExternalsExport.mjs",
-      "require": "./dist/unstableExternalsExport.js",
-      "default": "./dist/unstableExternalsExport.js"
-    },
     "./adapters/aws-lambda": {
       "import": "./dist/adapters/aws-lambda/index.mjs",
       "require": "./dist/adapters/aws-lambda/index.js",
@@ -123,6 +118,11 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
+    },
+    "./unstableInternalsExport": {
+      "import": "./dist/unstableInternalsExport.mjs",
+      "require": "./dist/unstableInternalsExport.js",
+      "default": "./dist/unstableInternalsExport.js"
     }
   },
   "files": [
@@ -130,13 +130,13 @@
     "src",
     "README.md",
     "package.json",
-    "unstableExternalsExport",
     "adapters",
     "http",
     "rpc",
     "observable",
     "subscription",
     "shared",
+    "unstableInternalsExport",
     "!**/*.test.*"
   ],
   "publishConfig": {
