@@ -2,10 +2,6 @@ name: Diagnostics
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
-      - next
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,34 +14,46 @@ jobs:
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
     strategy:
-      fail-fast: false
       matrix:
-        branch: ['main', 'next']
+        branch: [
+            #
+            'current PR',
+            'next',
+            'main',
+          ]
+        node-start: ['18.x']
         os: [ubuntu-latest]
 
+    continue-on-error: false
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: ${{ matrix.branch }}
+          fetch-depth: 1
+          ref: ${{ matrix.branch == 'current PR' && github.head_ref || matrix.branch }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
 
-      - name: Cache pnpm modules
-        uses: actions/cache@v3
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-
+            ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-
 
       - run: pnpm install --child-concurrency 3
       - run: pnpm build
+
       - run: mkdir diagnostics-results
       - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics > ../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
 
