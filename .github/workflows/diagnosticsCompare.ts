@@ -42,9 +42,10 @@ const nextDiagnostics = readDiagnostics('next');
 
 const commentTitle = 'Diagnostics Comparison';
 let commentBody = `
+## ${commentTitle}\n\n
 
-<details>
-## ${commentTitle}\n\n`;
+<details>\n`;
+
 commentBody +=
   '| Metric | PR | `main` | `next` | Diff `main` | Diff `next` |\n';
 commentBody +=
