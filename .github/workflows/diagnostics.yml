@@ -47,9 +47,9 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-
+            ${{ runner.os }}-pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-
 
       - run: pnpm install --child-concurrency 3
       - run: pnpm build
@@ -86,9 +86,9 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-current-pr-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-
+            ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-current-pr
 
       - run: pnpm install --child-concurrency 3
       - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
