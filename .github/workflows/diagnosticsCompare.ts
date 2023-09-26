@@ -3,6 +3,8 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
+const octokit = github.getOctokit(process.env.GITHUB_TOKEN as string);
+
 const pr = github.context.payload.pull_request;
 
 if (!pr) {
@@ -59,7 +61,6 @@ for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
   commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} | ${diffNext} |\n`;
 }
 
-const octokit = github.getOctokit(core.getInput('token'));
 const { owner, repo } = github.context.repo;
 
 async function run() {
