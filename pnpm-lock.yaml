@@ -139,6 +139,137 @@ importers:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
 
+  examples/.diagnostics/big-router-declaration:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.0.0-beta.9
+        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+      '@trpc/client':
+        specifier: ^10.38.4
+        version: link:../../../packages/client
+      '@trpc/next':
+        specifier: ^10.38.4
+        version: link:../../../packages/next
+      '@trpc/react-query':
+        specifier: ^10.38.4
+        version: link:../../../packages/react-query
+      '@trpc/server':
+        specifier: ^10.38.4
+        version: link:../../../packages/server
+      next:
+        specifier: ^13.4.8
+        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      zod:
+        specifier: ^3.0.0
+        version: 3.20.2
+    devDependencies:
+      '@types/node':
+        specifier: ^18.16.16
+        version: 18.16.16
+      '@types/react':
+        specifier: ^18.2.8
+        version: 18.2.8
+      '@types/react-dom':
+        specifier: ^18.2.4
+        version: 18.2.4
+      eslint:
+        specifier: ^8.40.0
+        version: 8.40.0
+      tsx:
+        specifier: ^3.12.7
+        version: 3.12.7
+      typescript:
+        specifier: ^5.1.3
+        version: 5.1.3
+
+  examples/.diagnostics/next-prisma-starter:
+    dependencies:
+      '@prisma/client':
+        specifier: ^4.14.1
+        version: 4.14.1(prisma@4.14.1)
+      '@tanstack/react-query':
+        specifier: ^5.0.0-beta.9
+        version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
+      '@trpc/client':
+        specifier: ^10.38.4
+        version: link:../../../packages/client
+      '@trpc/next':
+        specifier: ^10.38.4
+        version: link:../../../packages/next
+      '@trpc/react-query':
+        specifier: ^10.38.4
+        version: link:../../../packages/react-query
+      '@trpc/server':
+        specifier: ^10.38.4
+        version: link:../../../packages/server
+      clsx:
+        specifier: ^2.0.0
+        version: 2.0.0
+      next:
+        specifier: ^13.4.8
+        version: 13.4.8(@babel/core@7.21.8)(react-dom@18.2.0)(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
+      zod:
+        specifier: ^3.0.0
+        version: 3.20.2
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.26.1
+        version: 1.28.1
+      '@types/node':
+        specifier: ^18.16.16
+        version: 18.16.16
+      '@types/react':
+        specifier: ^18.2.8
+        version: 18.2.8
+      autoprefixer:
+        specifier: ^10.4.7
+        version: 10.4.13(postcss@8.4.14)
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
+      postcss:
+        specifier: ^8.4.14
+        version: 8.4.14
+      prettier:
+        specifier: ^2.8.8
+        version: 2.8.8
+      prisma:
+        specifier: ^4.14.1
+        version: 4.14.1
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0
+      tailwindcss:
+        specifier: ^3.3.0
+        version: 3.3.0(postcss@8.4.14)
+      tsx:
+        specifier: ^3.12.7
+        version: 3.12.7
+      typescript:
+        specifier: ^5.1.3
+        version: 5.1.3
+      vite:
+        specifier: ^4.1.2
+        version: 4.1.2(@types/node@18.16.16)
+      vitest:
+        specifier: ^0.32.0
+        version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
+
   examples/.experimental/next-app-dir:
     dependencies:
       '@hookform/resolvers':
@@ -1387,8 +1518,8 @@ importers:
         specifier: 10.38.4
         version: link:../server
       '@types/isomorphic-fetch':
-        specifier: ^0.0.36
-        version: 0.0.36
+        specifier: ^0.0.37
+        version: 0.0.37
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -8798,6 +8929,20 @@ packages:
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
 
+  /@prisma/client@4.14.1(prisma@4.14.1):
+    resolution: {integrity: sha512-TZIswkeX1ccsHG/eN2kICzg/csXll0osK3EHu1QKd8VJ3XLcXozbNELKkCNfsCUvKJAwPdDtFCzF+O+raIVldw==}
+    engines: {node: '>=14.17'}
+    requiresBuild: true
+    peerDependencies:
+      prisma: '*'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+    dependencies:
+      '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
+      prisma: 4.14.1
+    dev: false
+
   /@prisma/engines-version@4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c:
     resolution: {integrity: sha512-3jum8/YSudeSN0zGW5qkpz+wAN2V/NYCQ+BPjvHYDfWatLWlQkqy99toX0GysDeaUoBIJg1vaz2yKqiA3CFcQw==}
     dev: false
@@ -9656,8 +9801,8 @@ packages:
       ci-info: 3.8.0
     dev: false
 
-  /@types/isomorphic-fetch@0.0.36:
-    resolution: {integrity: sha512-ulw4d+vW1HKn4oErSmNN2HYEcHGq0N1C5exlrMM0CRqX1UUpFhGb5lwiom5j9KN3LBJJDLRmYIZz1ghm7FIzZw==}
+  /@types/isomorphic-fetch@0.0.37:
+    resolution: {integrity: sha512-+27HulrbyFpcalE4Agl+KHfGi4Qkcdmxv/ISi+DmUs5NECAFxRHeuZaLJj6DBfDRle6yxCOqLHJrfyVy9y5x9w==}
     dev: true
 
   /@types/istanbul-lib-coverage@2.0.4:
@@ -13613,7 +13758,7 @@ packages:
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.26.0)(eslint@8.40.0)
-      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)
+      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
       eslint-plugin-jsx-a11y: 6.6.1(eslint@8.40.0)
       eslint-plugin-react: 7.32.2(eslint@8.40.0)
       eslint-plugin-react-hooks: 4.6.0(eslint@8.40.0)
@@ -13650,7 +13795,7 @@ packages:
       debug: 4.3.4(supports-color@8.1.1)
       enhanced-resolve: 5.12.0
       eslint: 8.40.0
-      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)
+      eslint-plugin-import: 2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
       get-tsconfig: 4.6.2
       globby: 13.1.3
       is-core-module: 2.12.0
@@ -13660,7 +13805,7 @@ packages:
       - supports-color
     dev: true
 
-  /eslint-module-utils@2.7.4(@typescript-eslint/parser@6.2.1)(eslint-import-resolver-node@0.3.6)(eslint@8.40.0):
+  /eslint-module-utils@2.7.4(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0):
     resolution: {integrity: sha512-j4GT+rqzCoRKHwURX7pddtIPGySnX9Si/cgMI5ztrcqOPtk5dDEeZ34CQVPphnqkJytlc97Vuk05Um2mJ3gEQA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -13681,15 +13826,16 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 6.2.1(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.1.3)
       debug: 3.2.7
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.26.0)(eslint@8.40.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /eslint-plugin-import@2.26.0(@typescript-eslint/parser@6.2.1)(eslint@8.40.0):
+  /eslint-plugin-import@2.26.0(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0):
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
@@ -13699,14 +13845,14 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 6.2.1(eslint@8.40.0)(typescript@5.1.3)
+      '@typescript-eslint/parser': 5.59.2(eslint@8.40.0)(typescript@5.1.3)
       array-includes: 3.1.6
       array.prototype.flat: 1.3.1
       debug: 2.6.9
       doctrine: 2.1.0
       eslint: 8.40.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.4(@typescript-eslint/parser@6.2.1)(eslint-import-resolver-node@0.3.6)(eslint@8.40.0)
+      eslint-module-utils: 2.7.4(@typescript-eslint/parser@5.59.2)(eslint-import-resolver-node@0.3.6)(eslint-import-resolver-typescript@3.5.2)(eslint@8.40.0)
       has: 1.0.3
       is-core-module: 2.12.0
       is-glob: 4.0.3
@@ -19760,6 +19906,14 @@ packages:
     dependencies:
       react: 18.2.0
     dev: false
+
+  /prisma@4.14.1:
+    resolution: {integrity: sha512-z6hxzTMYqT9SIKlzD08dhzsLUpxjFKKsLpp5/kBDnSqiOjtUyyl/dC5tzxLcOa3jkEHQ8+RpB/fE3w8bgNP51g==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+    requiresBuild: true
+    dependencies:
+      '@prisma/engines': 4.14.1
 
   /prismjs@1.29.0:
     resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}

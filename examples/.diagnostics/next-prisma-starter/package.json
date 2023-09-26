@@ -1,0 +1,71 @@
+{
+  "name": "@examples/diagnostics-trpc-next-prisma-starter",
+  "version": "10.38.4",
+  "private": true,
+  "scripts": {
+    "generate": "prisma generate",
+    "prisma-studio": "prisma studio",
+    "db-seed": "prisma db seed",
+    "db-reset": "prisma migrate dev reset",
+    "dx:next": "run-s migrate-dev db-seed && next dev",
+    "dx:prisma-studio": "pnpm prisma-studio",
+    "dx": "run-p dx:* --print-label",
+    "dev": "pnpm dx:next",
+    "prebuild": "run-s generate migrate",
+    "build": "next build",
+    "start": "next start",
+    "migrate-dev": "prisma migrate dev",
+    "migrate": "prisma migrate deploy",
+    "test": "run-s test:*",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test",
+    "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
+    "postinstall": "pnpm generate"
+  },
+  "engines": {
+    "node": ">=16.8"
+  },
+  "packageManager": "pnpm@8.5.0",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "trailingComma": "all",
+    "singleQuote": true
+  },
+  "dependencies": {
+    "@prisma/client": "^4.14.1",
+    "@tanstack/react-query": "^5.0.0-beta.9",
+    "@trpc/client": "^10.38.4",
+    "@trpc/next": "^10.38.4",
+    "@trpc/react-query": "^10.38.4",
+    "@trpc/server": "^10.38.4",
+    "clsx": "^2.0.0",
+    "next": "^13.4.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "superjson": "^1.12.4",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.26.1",
+    "@types/node": "^18.16.16",
+    "@types/react": "^18.2.8",
+    "autoprefixer": "^10.4.7",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.14",
+    "prettier": "^2.8.8",
+    "prisma": "^4.14.1",
+    "start-server-and-test": "^1.12.0",
+    "tailwindcss": "^3.3.0",
+    "tsx": "^3.12.7",
+    "typescript": "^5.1.3",
+    "vite": "^4.1.2",
+    "vitest": "^0.32.0"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
