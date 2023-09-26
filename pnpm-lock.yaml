@@ -1475,7 +1475,7 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: 5.0.0-rc.1
+        specifier: ^5.0.0-rc.1
         version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.38.4
