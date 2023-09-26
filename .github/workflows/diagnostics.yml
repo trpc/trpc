@@ -24,7 +24,7 @@ jobs:
         node-start: ['18.x']
         os: [ubuntu-latest]
 
-    continue-on-error: true
+    continue-on-error: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
