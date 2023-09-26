@@ -1,5 +1,5 @@
 import { AnyProcedure } from '../core';
-import { AnyRootConfig } from '../internals';
+import { AnyRootConfig } from '../core/internals/config';
 import { inferObservableValue } from '../observable';
 import { DefaultDataTransformer } from '../transformer';
 import type { Serialize } from './internal/serialize';
