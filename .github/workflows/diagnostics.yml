@@ -2,6 +2,10 @@ name: Diagnostics
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+      - next
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,45 +18,62 @@ jobs:
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
     strategy:
+      fail-fast: false
       matrix:
-        branch: [
-            #
-            'current PR',
-            'next',
-            'main',
-          ]
-        node-start: ['18.x']
+        branch: ['main', 'next']
         os: [ubuntu-latest]
 
-    continue-on-error: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-          ref: ${{ matrix.branch == 'current PR' && github.head_ref || matrix.branch }}
+          fetch-depth: 0
+          ref: ${{ matrix.branch }}
 
-      - uses: pnpm/action-setup@v2
-
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 18.x
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
         with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-
+            ${{ runner.os }}-pnpm-
 
       - run: pnpm install --child-concurrency 3
       - run: pnpm build
+      - run: mkdir diagnostics-results
+      - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics > ../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
 
-      - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics
-      - run: cd ./examples/.diagnostics/next-prisma-starter && pnpm tsc --extendedDiagnostics
+      - name: Upload diagnostics results
+        uses: actions/upload-artifact@v2
+        with:
+          name: diagnostics-results
+          path: ./diagnostics-results
+
+  comment:
+    needs: diagnostics
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all diagnostics results
+        uses: actions/download-artifact@v2
+        with:
+          name: diagnostics-results
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - run: npm install -g ts-node typescript
+      - run: tsx ../scripts/compareDiagnostics.ts
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
