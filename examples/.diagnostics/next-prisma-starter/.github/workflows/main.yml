@@ -1,0 +1,62 @@
+name: E2E-testing
+on: [push]
+jobs:
+  e2e:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      NODE_ENV: test
+      NEXTAUTH_SECRET: supersecret
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node: ['18.x']
+        os: [ubuntu-latest]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.5.1
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          # cache: 'pnpm' # You can active this cache when your repo has a lockfile
+
+      - name: Install deps (with cache)
+        run: pnpm install
+
+      - name: Install playwright
+        run: pnpm playwright install chromium
+
+      - name: Next.js cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-${{ runner.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}-nextjs
+
+      - name: Setup Prisma
+        run: pnpm prebuild
+
+      - name: Build and test
+        run: pnpm build && pnpm test-start && pnpm test-dev
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: test results
+          path: |
+            playwright/test-results
