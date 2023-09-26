@@ -15,7 +15,12 @@ jobs:
 
     strategy:
       matrix:
-        branch: [current-PR, next, main]
+        branch: [
+            #
+            'current PR',
+            'next',
+            'main',
+          ]
         node-start: ['18.x']
         os: [ubuntu-latest]
 
@@ -25,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          ref: ${{ matrix.branch == 'current-PR' && github.head_ref || matrix.branch }}
+          ref: ${{ matrix.branch == 'current PR' && github.head_ref || matrix.branch }}
 
       - uses: pnpm/action-setup@v2
 
