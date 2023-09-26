@@ -24,7 +24,7 @@ jobs:
         node-start: ['18.x']
         os: [ubuntu-latest]
 
-    continue-on-error: false
+    continue-on-error: true
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
       - run: pnpm build
 
       - run: mkdir diagnostics-results
-      - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics > ../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
+      - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics > ../../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
 
       - name: Upload diagnostics results
         uses: actions/upload-artifact@v2
