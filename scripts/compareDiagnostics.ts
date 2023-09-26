@@ -3,7 +3,14 @@ import * as path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
-const baseBranch = github.context.payload.pull_request.base.ref as string;
+const pr = github.context.payload.pull_request;
+
+if (!pr) {
+  core.setFailed('Not a Pull Request, cannot determine the base branch.');
+  process.exit(1);
+}
+
+const baseBranch = pr.base.ref as string;
 const diagnosticsPath = 'diagnostics-results';
 const prNumber = github.context.issue.number;
 
@@ -28,9 +35,7 @@ const readDiagnostics = (branch: string) => {
 };
 
 const baseDiagnostics = readDiagnostics(baseBranch);
-const prDiagnostics = readDiagnostics(
-  github.context.payload.pull_request.head.ref as string,
-);
+const prDiagnostics = readDiagnostics(pr.head.ref as string);
 
 const commentTitle = 'Diagnostics Comparison';
 let commentBody = `## ${commentTitle}\n\n`;
@@ -50,34 +55,38 @@ for (const [metric, baseValue] of Object.entries(baseDiagnostics)) {
 const octokit = github.getOctokit(core.getInput('token'));
 const { owner, repo } = github.context.repo;
 
-let commentId: number | undefined;
-const existingComments = await octokit.issues.listComments({
-  owner,
-  repo,
-  issue_number: prNumber,
-});
-const filteredComments = existingComments.data.filter(
-  (comment) =>
-    comment.user.login === 'github-actions[bot]' &&
-    comment.body.includes(commentTitle),
-);
-
-if (filteredComments.length > 0) {
-  commentId = filteredComments[0].id;
-}
-
-if (commentId) {
-  await octokit.issues.updateComment({
-    owner,
-    repo,
-    comment_id: commentId,
-    body: commentBody,
-  });
-} else {
-  await octokit.issues.createComment({
+async function run() {
+  let commentId: number | undefined;
+  const existingComments = await octokit.rest.issues.listComments({
     owner,
     repo,
     issue_number: prNumber,
-    body: commentBody,
   });
+  const filteredComments = existingComments.data.filter(
+    (comment) =>
+      comment.user?.login === 'github-actions[bot]' &&
+      comment.body?.includes(commentTitle),
+  );
+
+  if (filteredComments[0]) {
+    commentId = filteredComments[0].id;
+  }
+
+  if (commentId) {
+    await octokit.rest.issues.updateComment({
+      owner,
+      repo,
+      comment_id: commentId,
+      body: commentBody,
+    });
+  } else {
+    await octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: prNumber,
+      body: commentBody,
+    });
+  }
 }
+
+run().catch((error) => core.setFailed(error.message));
