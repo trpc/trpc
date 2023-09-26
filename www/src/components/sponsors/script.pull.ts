@@ -204,7 +204,8 @@ async function main() {
       link: 'https://tolahq.com/?ref=trpc',
       privacyLevel: 'PUBLIC',
       login: 'tolahq',
-      createdAt: 1659304800_000,
+      // 8 months between 1st of sept and 1st of april
+      createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
     });
     const list = rawList.map((sponsor) => {
       // calculate total value
