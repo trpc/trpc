@@ -56,7 +56,7 @@ jobs:
 
       - run: mkdir diagnostics-results
       - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
-
+      - run: cat ./diagnostics-results/diagnostics-${{ matrix.branch }}.txt
       - name: Upload diagnostics results
         uses: actions/upload-artifact@v2
         with:
