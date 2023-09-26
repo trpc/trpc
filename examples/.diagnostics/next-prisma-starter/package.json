@@ -1,5 +1,5 @@
 {
-  "name": "@examples/trpc-next-prisma-starter",
+  "name": "@examples/diagnostics-trpc-next-prisma-starter",
   "version": "10.38.4",
   "private": true,
   "scripts": {

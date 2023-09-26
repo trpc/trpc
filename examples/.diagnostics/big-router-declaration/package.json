@@ -1,5 +1,5 @@
 {
-  "name": "@examples/big-router-declaration",
+  "name": "@examples/diagnostics-big-router-declaration",
   "version": "10.38.4",
   "private": true,
   "scripts": {
