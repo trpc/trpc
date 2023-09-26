@@ -77,6 +77,12 @@ jobs:
         with:
           node-version: 18.x
 
+      - name: Download diagnostics results
+        uses: actions/download-artifact@v2
+        with:
+          name: diagnostics-results
+          path: diagnostics-results
+
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -91,6 +97,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-current-pr
 
       - run: pnpm install --child-concurrency 3
+
       - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
