@@ -13,18 +13,19 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
         branch: [branch, next, main]
         node-start: ['18.x']
         os: [ubuntu-latest]
+
+    continue-on-error: true
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          ref: ${{ matrix.branch == 'current' && '' || matrix.branch }}
+          ref: ${{ matrix.branch == 'current' && github.head_ref || matrix.branch }}
 
       - uses: pnpm/action-setup@v2
 
