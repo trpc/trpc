@@ -45,7 +45,8 @@ let commentBody = `
 
 <details>
 ## ${commentTitle}\n\n`;
-commentBody += `| Metric | Current PR Value | Main Branch Value | Next Branch Value | Difference (Main) | Difference (Next) |\n`;
+commentBody +=
+  '| Metric | PR | `main` | `next` | Diff `main` | Diff `next` |\n';
 commentBody +=
   '|--------|------------------|-------------------|------------------|------------------|------------------|\n';
 
