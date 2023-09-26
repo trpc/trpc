@@ -105,7 +105,7 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
-                defaultPageParam: opts?.initialCursor ?? null,
+                initialPageParam: opts?.initialCursor ?? null,
               });
             },
             [client, queryClient],
@@ -130,7 +130,7 @@ export function createRootHooks<
                     ...getClientArgs(queryKey, opts, pageParam),
                   );
                 },
-                defaultPageParam: opts?.initialCursor ?? null,
+                initialPageParam: opts?.initialCursor ?? null,
               });
             },
             [client, queryClient],
@@ -445,7 +445,8 @@ export function createRootHooks<
     const hook = __useInfiniteQuery(
       {
         ...ssrOpts,
-        defaultPageParam: opts.initialCursor ?? null,
+        initialPageParam: opts.initialCursor ?? null,
+        persister: opts.persister,
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
@@ -484,6 +485,8 @@ export function createRootHooks<
   ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
     const hookResult = useInfiniteQuery(path, input, {
       ...opts,
+      // FIXME: How should we handle suspense hooks?
+      // @ts-expect-error - whatever?
       suspense: true,
       enabled: true,
       throwOnError: true,
