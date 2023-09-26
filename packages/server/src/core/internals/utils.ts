@@ -15,12 +15,7 @@ export type Overwrite<TType, TWith> = TType extends any
       }
     : never
   : never;
-/**
- * @internal
- */
-export type OverwriteKnown<TType, TWith> = {
-  [K in keyof TType]: K extends keyof TWith ? TWith[K] : TType[K];
-};
+
 /**
  * @internal
  */

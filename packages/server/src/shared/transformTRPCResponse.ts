@@ -1,4 +1,4 @@
-import { AnyRootConfig } from '../internals';
+import { AnyRootConfig } from '../core/internals/config';
 import { TRPCResponse, TRPCResponseMessage } from '../rpc';
 
 function transformTRPCResponseItem<

@@ -3,6 +3,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
   IntersectionError,
@@ -32,37 +33,45 @@ export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 /** @internal */
-export type Resolver<TProcedure extends AnyProcedure> = (
+export type Resolver<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferTransformedProcedureOutput<TProcedure>>;
+) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
-type SubscriptionResolver<TProcedure extends AnyProcedure> = (
+type SubscriptionResolver<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = (
   ...args: [
     input: ProcedureArgs<TProcedure['_def']>[0],
     opts: Partial<
       TRPCSubscriptionObserver<
-        inferTransformedSubscriptionOutput<TProcedure>,
-        TRPCClientError<TProcedure>
+        inferTransformedSubscriptionOutput<TConfig, TProcedure>,
+        TRPCClientError<TConfig>
       >
     > &
       ProcedureArgs<TProcedure['_def']>[1],
   ]
 ) => Unsubscribable;
 
-type DecorateProcedure<TProcedure extends AnyProcedure> =
-  TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnySubscriptionProcedure
-    ? {
-        subscribe: SubscriptionResolver<TProcedure>;
-      }
-    : never;
+type DecorateProcedure<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = TProcedure extends AnyQueryProcedure
+  ? {
+      query: Resolver<TConfig, TProcedure>;
+    }
+  : TProcedure extends AnyMutationProcedure
+  ? {
+      mutate: Resolver<TConfig, TProcedure>;
+    }
+  : TProcedure extends AnySubscriptionProcedure
+  ? {
+      subscribe: SubscriptionResolver<TConfig, TProcedure>;
+    }
+  : never;
 
 /**
  * @internal
@@ -74,11 +83,14 @@ type DecoratedProcedureRecord<
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
+    ? DecorateProcedure<TRouter['_def']['_config'], TProcedures[TKey]>
     : never;
 };
 
-const clientCallTypeMap: Record<keyof DecorateProcedure<any>, ProcedureType> = {
+const clientCallTypeMap: Record<
+  keyof DecorateProcedure<any, any>,
+  ProcedureType
+> = {
   query: 'query',
   mutate: 'mutation',
   subscribe: 'subscription',

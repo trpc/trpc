@@ -14,19 +14,21 @@ import {
   AnyProcedureParams,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
-  Procedure,
+  MutationProcedure,
   ProcedureParams,
+  QueryProcedure,
+  SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
+import { AnyProcedureBuilderParams } from './builderTypes';
 import { AnyRootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
-  DefaultValue as FallbackValue,
+  DefaultValue,
   GetRawInputFn,
   middlewareMarker,
   Overwrite,
-  OverwriteKnown,
   ResolveOptions,
   UnsetMarker,
 } from './utils';
@@ -38,31 +40,11 @@ type CreateProcedureReturnInput<
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-  _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
-  _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
-  _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
-  _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+  _input_in: DefaultValue<TNext['_input_in'], TPrev['_input_in']>;
+  _input_out: DefaultValue<TNext['_input_out'], TPrev['_input_out']>;
+  _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
+  _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
-
-/**
- * @internal
- */
-export interface BuildProcedure<
-  TType extends ProcedureType,
-  TParams extends ProcedureParams<AnyProcedureParams>,
-  TOutput,
-> extends Procedure<
-    TType,
-    UnsetMarker extends TParams['_output_out']
-      ? OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      : TParams
-  > {}
 
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
@@ -70,9 +52,8 @@ type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-export type ProcedureBuilderDef<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> = {
+export type ProcedureBuilderDef<TParams extends AnyProcedureBuilderParams> = {
+  procedure: true;
   inputs: Parser[];
   output?: Parser;
   meta?: TParams['_meta'];
@@ -85,9 +66,7 @@ export type ProcedureBuilderDef<
 
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
-export interface ProcedureBuilder<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> {
+export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
   /**
    * Add an input parser to the procedure.
    */
@@ -151,8 +130,11 @@ export interface ProcedureBuilder<
   query<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'query', TParams, $Output>;
+    ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
+  ): QueryProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
+  }>;
 
   /**
    * Mutation procedure
@@ -160,8 +142,11 @@ export interface ProcedureBuilder<
   mutation<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'mutation', TParams, $Output>;
+    ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
+  ): MutationProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
+  }>;
 
   /**
    * Mutation procedure
@@ -169,8 +154,11 @@ export interface ProcedureBuilder<
   subscription<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'subscription', TParams, $Output>;
+    ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
+  ): SubscriptionProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
+  }>;
   /**
    * @internal
    */
@@ -212,6 +200,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
   _meta: TConfig['$types']['meta'];
 }> {
   const _def: AnyProcedureBuilderDef = {
+    procedure: true,
     inputs: [],
     middlewares: [],
     ...initDef,
@@ -251,19 +240,19 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     },
     query(resolver) {
       return createResolver(
-        { ..._def, query: true },
+        { ..._def, type: 'query' },
         resolver,
       ) as AnyQueryProcedure;
     },
     mutation(resolver) {
       return createResolver(
-        { ..._def, mutation: true },
+        { ..._def, type: 'mutation' },
         resolver,
       ) as AnyMutationProcedure;
     },
     subscription(resolver) {
       return createResolver(
-        { ..._def, subscription: true },
+        { ..._def, type: 'subscription' },
         resolver,
       ) as AnySubscriptionProcedure;
     },
@@ -271,7 +260,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef,
+  _def: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
@@ -315,7 +304,7 @@ const result = await caller.call('myProcedure', input);
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  const procedure = async function resolve(opts: ProcedureCallOptions) {
+  async function procedure(opts: ProcedureCallOptions) {
     // is direct server-side call
     if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
@@ -394,8 +383,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       throw result.error;
     }
     return result.data;
-  };
+  }
+
   procedure._def = _def;
 
-  return procedure as AnyProcedure;
+  // FIXME typecast shouldn't be needed - fixittt
+  return procedure as unknown as AnyProcedure;
 }

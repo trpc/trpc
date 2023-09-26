@@ -9,9 +9,8 @@
     "test": "concurrently -P -c \"green,blue\" \"npm:test-run:vitest -- {@}\" npm:test-run:tsc",
     "test-run:vitest": "vitest --run",
     "test-run:tsc": "tsc --noEmit --pretty",
-    "test-watch": "concurrently -P -c \"green,blue\" \"npm:test-watch:vitest -- {@}\" npm:test-watch:tsc",
-    "test-watch:vitest": "vitest",
-    "test-watch:tsc": "tsc --noEmit --pretty --watch",
+    "test-watch": "vitest",
+    "ts-watch": "tsc --noEmit --pretty --watch",
     "test-ci": "concurrently \"CI=true vitest --coverage\" npm:test-run:tsc",
     "test-ui": "vitest --ui"
   },

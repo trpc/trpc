@@ -14,8 +14,6 @@ export {
   experimental_serverActionLink,
   // ts-prune-ignore-next
   type UseTRPCActionResult,
-  // ts-prune-ignore-next
-  type inferActionResultProps,
 } from './create-action-hook';
 
 type QueryResult = {

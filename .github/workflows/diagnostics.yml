@@ -1,0 +1,58 @@
+name: Diagnostics
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostics:
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    strategy:
+      matrix:
+        branch: [
+            #
+            'current PR',
+            'next',
+            'main',
+          ]
+        node-start: ['18.x']
+        os: [ubuntu-latest]
+
+    continue-on-error: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ matrix.branch == 'current PR' && github.head_ref || matrix.branch }}
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-
+
+      - run: pnpm install --child-concurrency 3
+      - run: pnpm build
+
+      - run: cd ./examples/.test/big-router-declaration && pnpm tsc --extendedDiagnostics
+      - run: cd ./examples/next-prisma-starter && pnpm tsc --extendedDiagnostics

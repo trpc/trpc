@@ -7,9 +7,7 @@ import {
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
 import {
-  AnyProcedure,
   AnyRouter,
-  inferHandlerInput,
   MaybePromise,
   ProcedureOptions,
   Simplify,
@@ -100,16 +98,6 @@ export function experimental_serverActionLink<
           });
       });
 }
-
-// ts-prune-ignore-next
-/**
- * @internal
- */
-export type inferActionResultProps<TProc extends AnyProcedure> = {
-  input: inferHandlerInput<TProc>[0];
-  output: TProc['_def']['_output_out'];
-  errorShape: TProc['_def']['_config']['$types']['errorShape'];
-};
 
 interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
