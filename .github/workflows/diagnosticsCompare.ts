@@ -39,8 +39,7 @@ const prDiagnostics = readDiagnostics(pr.head.ref as string);
 
 const commentTitle = 'Diagnostics Comparison';
 let commentBody = `## ${commentTitle}\n\n`;
-commentBody +=
-  '| Metric | Base Branch Value | PR Branch Value | Difference |\n';
+commentBody += `| Metric | Base Branch Value  | PR Branch Value | Difference |\n`;
 commentBody += '|--------|------------------|-----------------|------------|\n';
 
 for (const [metric, baseValue] of Object.entries(baseDiagnostics)) {
