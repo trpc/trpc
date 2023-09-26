@@ -68,20 +68,29 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all diagnostics results
-        uses: actions/download-artifact@v2
+      - uses: actions/checkout@v4
         with:
-          name: diagnostics-results
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18.x
 
-      - run: npm install -g ts-node typescript
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-
+
+      - run: pnpm install --child-concurrency 3
       - run: tsx ../diagnosticsCompare.ts
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
