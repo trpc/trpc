@@ -91,6 +91,6 @@ jobs:
             ${{ runner.os }}-pnpm-store-${{ github.head_ref }}-
 
       - run: pnpm install --child-concurrency 3
-      - run: tsx .github/workflows/diagnosticsCompare.ts
+      - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
