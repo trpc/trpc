@@ -92,7 +92,7 @@ const numbers: Record<string, number | string> = {};
 const timings: Record<string, number | string> = {};
 
 for (const [key, value] of Object.entries(currentPrDiagnostics)) {
-  if (key.toLowerCase().includes('Time')) {
+  if (key.toLowerCase().includes('time')) {
     timings[key] = value;
   } else {
     numbers[key] = value;
