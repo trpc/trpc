@@ -12,7 +12,7 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
-    name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
+    name: Relase canary ${{ matrix.node }} and ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
 
@@ -50,11 +50,9 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm --filter "@trpc/*" --filter root install
 
-      - name: Build
-        run: pnpm build
+      - run: pnpm build
 
-      - name: Add token
-        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: pnpm publish-canary
+      - run: pnpm publish-canary --yes
