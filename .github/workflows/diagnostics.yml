@@ -5,7 +5,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   diagnostics:
@@ -17,7 +17,7 @@ jobs:
       matrix:
         branch: [
             #
-            'current PR',
+            'current-pr',
             'next',
             'main',
           ]
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          ref: ${{ matrix.branch == 'current PR' && github.head_ref || matrix.branch }}
+          ref: ${{ matrix.branch == 'current-pr' && github.head_ref || matrix.branch }}
 
       - uses: pnpm/action-setup@v2
 
@@ -47,12 +47,57 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.branch }}-
+            pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-
 
       - run: pnpm install --child-concurrency 3
       - run: pnpm build
 
-      - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics
-      - run: cd ./examples/.diagnostics/next-prisma-starter && pnpm tsc --extendedDiagnostics
+      - run: mkdir diagnostics-results
+      - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
+      - run: cat ./diagnostics-results/diagnostics-${{ matrix.branch }}.txt
+      - name: Upload diagnostics results
+        uses: actions/upload-artifact@v2
+        with:
+          name: diagnostics-results
+          path: ./diagnostics-results
+
+  comment:
+    needs: diagnostics
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Download diagnostics results
+        uses: actions/download-artifact@v2
+        with:
+          name: diagnostics-results
+          path: diagnostics-results
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: pnpm-store-${{ github.head_ref }}-current-pr-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ github.head_ref }}-current-pr
+
+      - run: pnpm install --child-concurrency 3
+
+      - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
