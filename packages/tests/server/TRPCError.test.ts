@@ -98,10 +98,13 @@ test('should be extendable', () => {
       this.name = 'MyError';
     }
   }
-  const trpcError = new MyError();
-  expect(trpcError).toBeInstanceOf(TRPCError);
-  expect(trpcError).toBeInstanceOf(Error);
-  expect(trpcError).toBeInstanceOf(MyError);
+  const originalError = new MyError();
+  expect(originalError).toBeInstanceOf(TRPCError);
+  expect(originalError).toBeInstanceOf(Error);
+  expect(originalError).toBeInstanceOf(MyError);
+
+  const trpcError = getTRPCErrorFromUnknown(originalError);
+  expect(trpcError).toBe(originalError);
 });
 
 test('allows fuzzy matching based on error name', () => {
