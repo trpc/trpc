@@ -110,27 +110,22 @@ commentBody += `\n</details>`;
 const { owner, repo } = github.context.repo;
 
 async function run() {
-  let commentId: number | undefined;
   const existingComments = await octokit.rest.issues.listComments({
     owner,
     repo,
     issue_number: prNumber,
   });
-  const filteredComments = existingComments.data.filter(
+  const comment = existingComments.data.find(
     (comment) =>
       comment.user?.login === 'github-actions[bot]' &&
       comment.body?.includes(commentTitle),
   );
 
-  if (filteredComments[0]) {
-    commentId = filteredComments[0].id;
-  }
-
-  if (commentId) {
+  if (comment) {
     await octokit.rest.issues.updateComment({
       owner,
       repo,
-      comment_id: commentId,
+      comment_id: comment.id,
       body: commentBody,
     });
   } else {
