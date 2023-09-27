@@ -60,6 +60,8 @@ function printTable(
   commentBody += '| Metric | PR | `next` | `main` |\n';
   commentBody += '| ------ | -- | ------ | ------ |\n';
 
+  const round = (value: number) => Math.round(value * 100) / 100;
+
   // Loop through the metrics and build the comment body
   for (const [metric, currentPrValue] of Object.entries(data)) {
     const mainValue = mainDiagnostics[metric];
@@ -68,14 +70,14 @@ function printTable(
     let diffMain: string | number = 'N/A';
     let emojiMain = '';
     if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
-      diffMain = currentPrValue - mainValue;
+      diffMain = round(currentPrValue - mainValue);
       emojiMain = diffMain > 0 ? '🔺' : diffMain < 0 ? '🔽🟢' : '➖';
     }
 
     let diffNext: string | number = 'N/A';
     let emojiNext = '';
     if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
-      diffNext = currentPrValue - nextValue;
+      diffNext = round(currentPrValue - nextValue);
       emojiNext = diffNext > 0 ? '🔺' : diffNext < 0 ? '🔽🟢' : '➖';
     }
 
