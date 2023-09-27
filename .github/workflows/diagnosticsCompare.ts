@@ -44,7 +44,7 @@ const commentTitle = 'Diagnostics Comparison';
 let commentBody = `
 ## ${commentTitle}\n\n
 
-<details>\n`;
+<details>\n\n`;
 
 commentBody +=
   '| Metric | PR | `main` | `next` | Diff `main` | Diff `next` |\n';
