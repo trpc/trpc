@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -2033,11 +2029,11 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       typedoc:
-        specifier: ^0.24.7
-        version: 0.24.7(typescript@5.1.3)
+        specifier: ^0.25.0
+        version: 0.25.0(typescript@5.1.3)
       typedoc-plugin-markdown:
         specifier: ^4.0.0-next.13
-        version: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7)
+        version: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.25.0)
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -9616,7 +9612,7 @@ packages:
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
       '@tufjs/canonical-json': 1.0.0
-      minimatch: 9.0.1
+      minimatch: 9.0.3
     dev: false
 
   /@types/aria-query@5.0.1:
@@ -13034,7 +13030,7 @@ packages:
       typedoc-plugin-markdown: '>=4.0.0-next.13'
     dependencies:
       typedoc-plugin-frontmatter: 0.0.2
-      typedoc-plugin-markdown: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7)
+      typedoc-plugin-markdown: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.25.0)
     dev: true
 
   /docusaurus-preset-shiki-twoslash@1.1.41:
@@ -15039,7 +15035,7 @@ packages:
     dependencies:
       foreground-child: 3.1.1
       jackspeak: 2.2.1
-      minimatch: 9.0.1
+      minimatch: 9.0.3
       minipass: 5.0.0
       path-scurry: 1.9.2
     dev: false
@@ -15712,7 +15708,7 @@ packages:
     resolution: {integrity: sha512-C7FfFoTA+bI10qfeydT8aZbvr91vAEU+2W5BZUlzPec47oNb07SsOfwYrtxuvOYdUApPP/Qlh4DtAO51Ekk2QA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
-      minimatch: 9.0.1
+      minimatch: 9.0.3
     dev: false
 
   /ignore@5.2.4:
@@ -17521,8 +17517,8 @@ packages:
       brace-expansion: 2.0.1
     dev: false
 
-  /minimatch@9.0.1:
-    resolution: {integrity: sha512-0jWhJpD/MdhPXwPuiRkCbfYfSKp2qnn2eOc279qI7f+osl/l+prKSrvhg157zSYvx/1nmgn2NqdT6k2Z7zSH9w==}
+  /minimatch@9.0.3:
+    resolution: {integrity: sha512-RHiac9mvaRw0x3AYRgDC1CxAP7HTcNrrECeA8YYJeWnpo+2Q5CegtZjaotWTWxDG3UeGA1coE05iH1mPjT/2mg==}
     engines: {node: '>=16 || 14 >=14.17'}
     dependencies:
       brace-expansion: 2.0.1
@@ -22771,26 +22767,26 @@ packages:
       yaml: 2.3.1
     dev: true
 
-  /typedoc-plugin-markdown@4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7):
+  /typedoc-plugin-markdown@4.0.0-next.13(prettier@2.8.8)(typedoc@0.25.0):
     resolution: {integrity: sha512-ZOcLsJoGN4QI5x1iS2M5lj6bA3MABf6hA183W1KebbxcBA+SFr+XIu73Uovv3SiwqPa+viBftLzkZlLyA6J9bg==}
     peerDependencies:
       prettier: '>=1.8.0'
       typedoc: '>=0.24.0'
     dependencies:
       prettier: 2.8.8
-      typedoc: 0.24.7(typescript@5.1.3)
+      typedoc: 0.25.0(typescript@5.1.3)
     dev: true
 
-  /typedoc@0.24.7(typescript@5.1.3):
-    resolution: {integrity: sha512-zzfKDFIZADA+XRIp2rMzLe9xZ6pt12yQOhCr7cD7/PBTjhPmMyMvGrkZ2lPNJitg3Hj1SeiYFNzCsSDrlpxpKw==}
-    engines: {node: '>= 14.14'}
+  /typedoc@0.25.0(typescript@5.1.3):
+    resolution: {integrity: sha512-FvCYWhO1n5jACE0C32qg6b3dSfQ8f2VzExnnRboowHtqUD6ARzM2r8YJeZFYXhcm2hI4C2oCRDgNPk/yaQUN9g==}
+    engines: {node: '>= 16'}
     hasBin: true
     peerDependencies:
-      typescript: 4.6.x || 4.7.x || 4.8.x || 4.9.x || 5.0.x
+      typescript: 4.6.x || 4.7.x || 4.8.x || 4.9.x || 5.0.x || 5.1.x || 5.2.x
     dependencies:
       lunr: 2.3.9
       marked: 4.3.0
-      minimatch: 9.0.1
+      minimatch: 9.0.3
       shiki: 0.14.1
       typescript: 5.1.3
     dev: true
@@ -24222,3 +24218,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
