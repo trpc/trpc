@@ -124,8 +124,8 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(@swc/core@1.3.3)(rollup@2.79.1)
       rollup-plugin-typescript2:
-        specifier: ^0.35.0
-        version: 0.35.0(rollup@2.79.1)(typescript@5.1.3)
+        specifier: ^0.36.0
+        version: 0.36.0(rollup@2.79.1)(typescript@5.1.3)
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
@@ -154,16 +154,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -224,16 +224,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -279,16 +279,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -328,16 +328,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -374,10 +374,10 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
     devDependencies:
       '@tsconfig/esm':
@@ -402,16 +402,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       next:
         specifier: ^13.4.8
@@ -506,10 +506,10 @@ importers:
   examples/bun:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
     devDependencies:
       bun-types:
@@ -531,10 +531,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -565,13 +565,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -614,13 +614,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -666,10 +666,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -718,10 +718,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       tsx:
         specifier: ^3.12.7
@@ -797,13 +797,13 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -834,7 +834,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -862,7 +862,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/client
       undici:
         specifier: ^5.14.0
@@ -875,7 +875,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -891,16 +891,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -940,16 +940,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -986,16 +986,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       next:
         specifier: ^13.4.8
@@ -1035,16 +1035,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1141,16 +1141,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1223,16 +1223,16 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1332,10 +1332,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       '@types/node':
         specifier: ^18.16.16
@@ -1359,13 +1359,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1405,10 +1405,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -1439,7 +1439,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@trpc/server':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.37
@@ -1482,13 +1482,13 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../client
       '@trpc/react-query':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1533,10 +1533,10 @@ importers:
         specifier: ^5.0.0-beta.9
         version: 5.0.0-beta.9(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../client
       '@trpc/server':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1710,16 +1710,16 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@trpc/client':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../client
       '@trpc/next':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../next
       '@trpc/react-query':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../react-query
       '@trpc/server':
-        specifier: 10.38.4
+        specifier: 10.38.5
         version: link:../server
       '@types/node':
         specifier: ^18.16.16
@@ -1854,16 +1854,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../packages/client
       '@trpc/next':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: ^10.38.4
+        specifier: ^10.38.5
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.0.0
@@ -2237,7 +2237,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/client-lambda@3.279.0:
@@ -2279,7 +2279,7 @@ packages:
       '@aws-sdk/util-user-agent-node': 3.272.0
       '@aws-sdk/util-utf8': 3.254.0
       '@aws-sdk/util-waiter': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2319,7 +2319,7 @@ packages:
       '@aws-sdk/util-user-agent-browser': 3.272.0
       '@aws-sdk/util-user-agent-node': 3.272.0
       '@aws-sdk/util-utf8': 3.254.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2359,7 +2359,7 @@ packages:
       '@aws-sdk/util-user-agent-browser': 3.272.0
       '@aws-sdk/util-user-agent-node': 3.272.0
       '@aws-sdk/util-utf8': 3.254.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2403,7 +2403,7 @@ packages:
       '@aws-sdk/util-user-agent-node': 3.272.0
       '@aws-sdk/util-utf8': 3.254.0
       fast-xml-parser: 4.1.2
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2416,7 +2416,7 @@ packages:
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/util-config-provider': 3.208.0
       '@aws-sdk/util-middleware': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/credential-provider-env@3.272.0:
@@ -2425,7 +2425,7 @@ packages:
     dependencies:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/credential-provider-imds@3.272.0:
@@ -2436,7 +2436,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/url-parser': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/credential-provider-ini@3.279.0:
@@ -2451,7 +2451,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/shared-ini-file-loader': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2469,7 +2469,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/shared-ini-file-loader': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2481,7 +2481,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/shared-ini-file-loader': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/credential-provider-sso@3.279.0:
@@ -2493,7 +2493,7 @@ packages:
       '@aws-sdk/shared-ini-file-loader': 3.272.0
       '@aws-sdk/token-providers': 3.279.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2504,7 +2504,7 @@ packages:
     dependencies:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/fetch-http-handler@3.272.0:
@@ -2514,7 +2514,7 @@ packages:
       '@aws-sdk/querystring-builder': 3.272.0
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/util-base64': 3.208.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/hash-node@3.272.0:
@@ -2524,21 +2524,21 @@ packages:
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/util-buffer-from': 3.208.0
       '@aws-sdk/util-utf8': 3.254.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/invalid-dependency@3.272.0:
     resolution: {integrity: sha512-ysW6wbjl1Y78txHUQ/Tldj2Rg1BI7rpMO9B9xAF6yAX3mQ7t6SUPQG/ewOGvH2208NBIl3qP5e/hDf0Q6r/1iw==}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/is-array-buffer@3.201.0:
     resolution: {integrity: sha512-UPez5qLh3dNgt0DYnPD/q0mVJY84rA17QE26hVNOW3fAji8W2wrwrxdacWOxyXvlxWsVRcKmr+lay1MDqpAMfg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-content-length@3.272.0:
@@ -2547,7 +2547,7 @@ packages:
     dependencies:
       '@aws-sdk/protocol-http': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-endpoint@3.272.0:
@@ -2561,7 +2561,7 @@ packages:
       '@aws-sdk/url-parser': 3.272.0
       '@aws-sdk/util-config-provider': 3.208.0
       '@aws-sdk/util-middleware': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-host-header@3.278.0:
@@ -2570,7 +2570,7 @@ packages:
     dependencies:
       '@aws-sdk/protocol-http': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-logger@3.272.0:
@@ -2578,7 +2578,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-recursion-detection@3.272.0:
@@ -2587,7 +2587,7 @@ packages:
     dependencies:
       '@aws-sdk/protocol-http': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-retry@3.272.0:
@@ -2599,7 +2599,7 @@ packages:
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/util-middleware': 3.272.0
       '@aws-sdk/util-retry': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
       uuid: 8.3.2
     dev: true
 
@@ -2612,7 +2612,7 @@ packages:
       '@aws-sdk/protocol-http': 3.272.0
       '@aws-sdk/signature-v4': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-serde@3.272.0:
@@ -2620,7 +2620,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-signing@3.272.0:
@@ -2632,14 +2632,14 @@ packages:
       '@aws-sdk/signature-v4': 3.272.0
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/util-middleware': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-stack@3.272.0:
     resolution: {integrity: sha512-jhwhknnPBGhfXAGV5GXUWfEhDFoP/DN8MPCO2yC5OAxyp6oVJ8lTPLkZYMTW5VL0c0eG44dXpF4Ib01V+PlDrQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/middleware-user-agent@3.272.0:
@@ -2648,7 +2648,7 @@ packages:
     dependencies:
       '@aws-sdk/protocol-http': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/node-config-provider@3.272.0:
@@ -2658,7 +2658,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/shared-ini-file-loader': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/node-http-handler@3.272.0:
@@ -2669,7 +2669,7 @@ packages:
       '@aws-sdk/protocol-http': 3.272.0
       '@aws-sdk/querystring-builder': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/property-provider@3.272.0:
@@ -2677,7 +2677,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/protocol-http@3.272.0:
@@ -2685,7 +2685,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/querystring-builder@3.272.0:
@@ -2694,7 +2694,7 @@ packages:
     dependencies:
       '@aws-sdk/types': 3.272.0
       '@aws-sdk/util-uri-escape': 3.201.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/querystring-parser@3.272.0:
@@ -2702,7 +2702,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/service-error-classification@3.272.0:
@@ -2715,7 +2715,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/signature-v4@3.272.0:
@@ -2728,7 +2728,7 @@ packages:
       '@aws-sdk/util-middleware': 3.272.0
       '@aws-sdk/util-uri-escape': 3.201.0
       '@aws-sdk/util-utf8': 3.254.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/smithy-client@3.279.0:
@@ -2737,7 +2737,7 @@ packages:
     dependencies:
       '@aws-sdk/middleware-stack': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/token-providers@3.279.0:
@@ -2748,7 +2748,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/shared-ini-file-loader': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - aws-crt
     dev: true
@@ -2757,7 +2757,7 @@ packages:
     resolution: {integrity: sha512-MmmL6vxMGP5Bsi+4wRx4mxYlU/LX6M0noOXrDh/x5FfG7/4ZOar/nDxqDadhJtNM88cuWVHZWY59P54JzkGWmA==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/url-parser@3.272.0:
@@ -2765,7 +2765,7 @@ packages:
     dependencies:
       '@aws-sdk/querystring-parser': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-base64@3.208.0:
@@ -2773,20 +2773,20 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/util-buffer-from': 3.208.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-body-length-browser@3.188.0:
     resolution: {integrity: sha512-8VpnwFWXhnZ/iRSl9mTf+VKOX9wDE8QtN4bj9pBfxwf90H1X7E8T6NkiZD3k+HubYf2J94e7DbeHs7fuCPW5Qg==}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-body-length-node@3.208.0:
     resolution: {integrity: sha512-3zj50e5g7t/MQf53SsuuSf0hEELzMtD8RX8C76f12OSRo2Bca4FLLYHe0TZbxcfQHom8/hOaeZEyTyMogMglqg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-buffer-from@3.208.0:
@@ -2794,14 +2794,14 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/is-array-buffer': 3.201.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-config-provider@3.208.0:
     resolution: {integrity: sha512-DSRqwrERUsT34ug+anlMBIFooBEGwM8GejC7q00Y/9IPrQy50KnG5PW2NiTjuLKNi7pdEOlwTSEocJE15eDZIg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-defaults-mode-browser@3.279.0:
@@ -2811,7 +2811,7 @@ packages:
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/types': 3.272.0
       bowser: 2.11.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-defaults-mode-node@3.279.0:
@@ -2823,7 +2823,7 @@ packages:
       '@aws-sdk/node-config-provider': 3.272.0
       '@aws-sdk/property-provider': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-endpoints@3.272.0:
@@ -2831,28 +2831,28 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-hex-encoding@3.201.0:
     resolution: {integrity: sha512-7t1vR1pVxKx0motd3X9rI3m/xNp78p3sHtP5yo4NP4ARpxyJ0fokBomY8ScaH2D/B+U5o9ARxldJUdMqyBlJcA==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-locate-window@3.208.0:
     resolution: {integrity: sha512-iua1A2+P7JJEDHVgvXrRJSvsnzG7stYSGQnBVphIUlemwl6nN5D+QrgbjECtrbxRz8asYFHSzhdhECqN+tFiBg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-middleware@3.272.0:
     resolution: {integrity: sha512-Abw8m30arbwxqmeMMha5J11ESpHUNmCeSqSzE8/C4B8jZQtHY4kq7f+upzcNIQ11lsd+uzBEzNG3+dDRi0XOJQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-retry@3.272.0:
@@ -2860,14 +2860,14 @@ packages:
     engines: {node: '>= 14.0.0'}
     dependencies:
       '@aws-sdk/service-error-classification': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-uri-escape@3.201.0:
     resolution: {integrity: sha512-TeTWbGx4LU2c5rx0obHeDFeO9HvwYwQtMh1yniBz00pQb6Qt6YVOETVQikRZ+XRQwEyCg/dA375UplIpiy54mA==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-user-agent-browser@3.272.0:
@@ -2875,7 +2875,7 @@ packages:
     dependencies:
       '@aws-sdk/types': 3.272.0
       bowser: 2.11.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-user-agent-node@3.272.0:
@@ -2889,13 +2889,13 @@ packages:
     dependencies:
       '@aws-sdk/node-config-provider': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-utf8-browser@3.259.0:
     resolution: {integrity: sha512-UvFa/vR+e19XookZF8RzFZBrw2EUkQWxiBW0yYQAhvk3C+QVGl0H3ouca8LDBlBfQKXwmW3huo/59H8rwb1wJw==}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-utf8@3.254.0:
@@ -2903,7 +2903,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@aws-sdk/util-buffer-from': 3.208.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@aws-sdk/util-waiter@3.272.0:
@@ -2912,7 +2912,7 @@ packages:
     dependencies:
       '@aws-sdk/abort-controller': 3.272.0
       '@aws-sdk/types': 3.272.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: true
 
   /@babel/code-frame@7.18.6:
@@ -5816,7 +5816,7 @@ packages:
       cssnano-preset-advanced: 5.3.9(postcss@8.4.21)
       postcss: 8.4.21
       postcss-sort-media-queries: 4.3.0(postcss@8.4.21)
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /@docusaurus/logger@2.4.1:
@@ -5824,7 +5824,7 @@ packages:
     engines: {node: '>=16.14'}
     dependencies:
       chalk: 4.1.2
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /@docusaurus/mdx-loader@2.4.1(@docusaurus/types@2.4.1)(@swc/core@1.3.3)(react-dom@18.2.0)(react@18.2.0):
@@ -5848,7 +5848,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       remark-emoji: 2.2.0
       stringify-object: 3.3.0
-      tslib: 2.5.0
+      tslib: 2.6.2
       unified: 9.2.2
       unist-util-visit: 2.0.3
       url-loader: 4.1.1(file-loader@6.2.0)(webpack@5.75.0)
@@ -5906,7 +5906,7 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       reading-time: 1.5.0
-      tslib: 2.5.0
+      tslib: 2.6.2
       unist-util-visit: 2.0.3
       utility-types: 3.10.0
       webpack: 5.75.0(@swc/core@1.3.3)
@@ -5986,7 +5986,7 @@ packages:
       fs-extra: 10.1.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       webpack: 5.75.0(@swc/core@1.3.3)
     transitivePeerDependencies:
       - '@parcel/css'
@@ -6020,7 +6020,7 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-json-view: 1.21.3(react-dom@18.2.0)(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - '@parcel/css'
       - '@swc/core'
@@ -6053,7 +6053,7 @@ packages:
       '@docusaurus/utils-validation': 2.4.1(@docusaurus/types@2.4.1)(@swc/core@1.3.3)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - '@parcel/css'
       - '@swc/core'
@@ -6084,7 +6084,7 @@ packages:
       '@docusaurus/utils-validation': 2.4.1(@docusaurus/types@2.4.1)(@swc/core@1.3.3)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - '@parcel/css'
       - '@swc/core'
@@ -6115,7 +6115,7 @@ packages:
       '@docusaurus/utils-validation': 2.4.1(@docusaurus/types@2.4.1)(@swc/core@1.3.3)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - '@parcel/css'
       - '@swc/core'
@@ -6151,7 +6151,7 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       sitemap: 7.1.1
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - '@parcel/css'
       - '@swc/core'
@@ -6342,7 +6342,7 @@ packages:
       lodash: 4.17.21
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       utility-types: 3.10.0
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -6406,7 +6406,7 @@ packages:
         optional: true
     dependencies:
       '@docusaurus/types': 2.4.1(@swc/core@1.3.3)(react-dom@18.2.0)(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /@docusaurus/utils-validation@2.4.1(@docusaurus/types@2.4.1)(@swc/core@1.3.3):
@@ -6417,7 +6417,7 @@ packages:
       '@docusaurus/utils': 2.4.1(@docusaurus/types@2.4.1)(@swc/core@1.3.3)
       joi: 17.7.0
       js-yaml: 4.1.0
-      tslib: 2.5.0
+      tslib: 2.6.2
     transitivePeerDependencies:
       - '@docusaurus/types'
       - '@swc/core'
@@ -6450,7 +6450,7 @@ packages:
       micromatch: 4.0.5
       resolve-pathname: 3.0.0
       shelljs: 0.8.5
-      tslib: 2.5.0
+      tslib: 2.6.2
       url-loader: 4.1.1(file-loader@6.2.0)(webpack@5.75.0)
       webpack: 5.75.0(@swc/core@1.3.3)
     transitivePeerDependencies:
@@ -8556,7 +8556,7 @@ packages:
       nx: 16.3.2(@swc/core@1.3.3)
       semver: 7.3.4
       tmp: 0.2.1
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /@nx/nx-darwin-arm64@16.3.2:
@@ -10503,7 +10503,7 @@ packages:
     engines: {node: '>=14.15.0'}
     dependencies:
       js-yaml: 3.14.1
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /@zkochan/js-yaml@0.0.6:
@@ -11506,7 +11506,7 @@ packages:
     resolution: {integrity: sha512-gxGWBrTT1JuMx6R+o5PTXMmUnhnVzLQ9SNutD4YqKtI6ap897t3tKECYla6gCWEkplXnlNybEkZg9GEGxKFCgw==}
     dependencies:
       pascal-case: 3.1.2
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /camelcase-css@2.0.1:
@@ -13171,7 +13171,7 @@ packages:
     resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
     dependencies:
       no-case: 3.0.4
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /dot-prop@5.3.0:
@@ -17084,7 +17084,7 @@ packages:
   /lower-case@2.0.2:
     resolution: {integrity: sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /lowercase-keys@1.0.1:
@@ -17933,7 +17933,7 @@ packages:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
     dependencies:
       lower-case: 2.0.2
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /node-addon-api@3.2.1:
@@ -18289,7 +18289,7 @@ packages:
       tar-stream: 2.2.0
       tmp: 0.2.1
       tsconfig-paths: 4.2.0
-      tslib: 2.5.0
+      tslib: 2.6.2
       v8-compile-cache: 2.3.0
       yargs: 17.7.2
       yargs-parser: 21.1.1
@@ -18721,7 +18721,7 @@ packages:
     resolution: {integrity: sha512-RXlj7zCYokReqWpOPH9oYivUzLYZ5vAPIfEmCTNViosC78F8F0H9y7T7gG2M39ymgutxF5gcFEsyZQSph9Bp3A==}
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /parent-module@1.0.1:
@@ -18812,7 +18812,7 @@ packages:
     resolution: {integrity: sha512-uWlGT3YSnK9x3BQJaOdcZwrnV6hPpd8jFH1/ucpiLRPh/2zCVJKS19E4GvYHvaCcACn3foXZ0cLB9Wrx1KGe5g==}
     dependencies:
       no-case: 3.0.4
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /path-browserify@1.0.1:
@@ -20916,8 +20916,8 @@ packages:
       rollup-swc-preserve-directives: 0.3.2(@swc/core@1.3.3)(rollup@2.79.1)
     dev: false
 
-  /rollup-plugin-typescript2@0.35.0(rollup@2.79.1)(typescript@5.1.3):
-    resolution: {integrity: sha512-szcIO9hPUx3PhQl91u4pfNAH2EKbtrXaES+m163xQVE5O1CC0ea6YZV/5woiDDW3CR9jF2CszPrKN+AFiND0bg==}
+  /rollup-plugin-typescript2@0.36.0(rollup@2.79.1)(typescript@5.1.3):
+    resolution: {integrity: sha512-NB2CSQDxSe9+Oe2ahZbf+B4bh7pHwjV5L+RSYpCu7Q5ROuN94F9b6ioWwKfz3ueL3KTtmX4o2MUH2cgHDIEUsw==}
     peerDependencies:
       rollup: '>=1.26.3'
       typescript: '>=2.4.0'
@@ -20926,8 +20926,8 @@ packages:
       find-cache-dir: 3.3.2
       fs-extra: 10.1.0
       rollup: 2.79.1
-      semver: 7.5.0
-      tslib: 2.5.0
+      semver: 7.5.4
+      tslib: 2.6.2
       typescript: 5.1.3
     dev: false
 
@@ -20997,7 +20997,7 @@ packages:
   /rxjs@7.8.0:
     resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
     dependencies:
-      tslib: 2.5.0
+      tslib: 2.6.2
 
   /safe-buffer@5.1.2:
     resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}
@@ -22623,6 +22623,9 @@ packages:
 
   /tslib@2.5.0:
     resolution: {integrity: sha512-336iVw3rtn2BUK7ORdIAHTyxHGRIHVReokCR3XjbckJMK7ms8FysBfhLR8IXnAgy7T0PTPNBWKiH514FOW/WSg==}
+
+  /tslib@2.6.2:
+    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
   /tsutils@3.21.0(typescript@5.1.3):
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
