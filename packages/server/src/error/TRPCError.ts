@@ -2,8 +2,11 @@ import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 import { isObject } from './utils';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
-  if (cause instanceof TRPCError) {
-    return cause;
+  if (
+    cause instanceof TRPCError ||
+    (cause instanceof Error && cause.name === 'TRPCError')
+  ) {
+    return cause as TRPCError;
   }
 
   const trpcError = new TRPCError({
