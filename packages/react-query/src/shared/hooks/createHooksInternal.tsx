@@ -325,6 +325,7 @@ export function createRootHooks<
 
     const hook = __useSuspenseQuery(
       {
+        ...opts,
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
