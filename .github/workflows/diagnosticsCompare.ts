@@ -58,7 +58,7 @@ function printTable(
   }
 
   commentBody += '| Metric | PR | `next` | `main` |\n';
-  commentBody += '| --- | --- | --- | --- |\n';
+  commentBody += '| ------ | -- | ------ | ------ |\n';
 
   // Loop through the metrics and build the comment body
   for (const [metric, currentPrValue] of Object.entries(data)) {
