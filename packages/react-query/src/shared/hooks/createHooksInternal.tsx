@@ -229,7 +229,7 @@ export function createRootHooks<
 
     if (!context) {
       throw new Error(
-        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+        'Unable to find tRPC Context. Did you forget to wrap your App inside `withTRPC` HoC?',
       );
     }
     return context;
