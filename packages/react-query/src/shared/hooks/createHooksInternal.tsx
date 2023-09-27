@@ -3,7 +3,6 @@ import {
   useMutation as __useMutation,
   useQueries as __useQueries,
   useQuery as __useQuery,
-  useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
   useSuspenseQuery as __useSuspenseQuery,
   DehydratedState,
   hashKey,
@@ -259,11 +258,6 @@ export function createRootHooks<
     opts?: UseTRPCQueryOptions<unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
     const context = useContext();
-    if (!context) {
-      throw new Error(
-        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
-      );
-    }
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
@@ -321,11 +315,6 @@ export function createRootHooks<
     opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseQueryResult<unknown, TError> {
     const context = useContext();
-    if (!context) {
-      throw new Error(
-        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
-      );
-    }
     const queryKey = getQueryKeyInternal(path, input, 'query');
 
     const shouldAbortOnUnmount =
