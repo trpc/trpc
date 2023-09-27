@@ -3,6 +3,7 @@ import {
   useMutation as __useMutation,
   useQueries as __useQueries,
   useQuery as __useQuery,
+  useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
   useSuspenseQuery as __useSuspenseQuery,
   DehydratedState,
   hashKey,
@@ -322,7 +323,7 @@ export function createRootHooks<
       config?.abortOnUnmount ??
       context.abortOnUnmount;
 
-    const hookResult = __useSuspenseQuery(
+    const hook = __useSuspenseQuery(
       {
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
@@ -340,11 +341,11 @@ export function createRootHooks<
       context.queryClient,
     ) as UseTRPCQueryResult<unknown, TError>;
 
-    hookResult.trpc = useHookResult({
+    hook.trpc = useHookResult({
       path: path.join('.'),
     });
 
-    return [hookResult.data, hookResult as any];
+    return [hook.data, hook as any];
   }
 
   function useMutation(
@@ -496,7 +497,6 @@ export function createRootHooks<
     ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;
 
     hook.trpc = useHookResult({
-      // REVIEW: What do we want to return here?
       path: path.join('.'),
     });
     return hook;
@@ -507,17 +507,54 @@ export function createRootHooks<
     input: unknown,
     opts: UseTRPCSuspenseInfiniteQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
-    const hookResult = useInfiniteQuery(path, input, {
+    const context = useContext();
+    const queryKey = getQueryKeyInternal(path, input, 'infinite');
+
+    const defaultOpts = context.queryClient.getQueryDefaults(queryKey);
+
+    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+      ...defaultOpts,
       ...opts,
-      // FIXME: How should we handle suspense hooks?
-      // @ts-expect-error - whatever?
-      suspense: true,
-      enabled: true,
-      throwOnError: true,
+    });
+
+    // request option should take priority over global
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+
+    const hook = __useSuspenseInfiniteQuery(
+      {
+        ...opts,
+        initialPageParam: opts.initialCursor ?? null,
+        queryKey,
+        queryFn: (queryFunctionContext) => {
+          const actualOpts = {
+            ...ssrOpts,
+            trpc: {
+              ...ssrOpts?.trpc,
+              ...(shouldAbortOnUnmount
+                ? { signal: queryFunctionContext.signal }
+                : {}),
+            },
+          };
+
+          return context.client.query(
+            ...getClientArgs(
+              queryKey,
+              actualOpts,
+              queryFunctionContext.pageParam ?? opts.initialCursor,
+            ),
+          );
+        },
+      },
+      context.queryClient,
+    ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;
+
+    hook.trpc = useHookResult({
+      path: path.join('.'),
     });
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return [hookResult.data!, hookResult as any];
+    return [hook.data!, hook as any];
   }
 
   const useQueries: TRPCUseQueries<TRouter> = (queriesCallback) => {
