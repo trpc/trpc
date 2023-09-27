@@ -46,34 +46,65 @@ let commentBody = `
 
 <details>\n\n`;
 
-commentBody +=
-  '| Metric | PR | `main` | `next` | Diff `main` | Diff `next` |\n';
-commentBody +=
-  '|--------|------------------|-------------------|------------------|------------------|------------------|\n';
+function printTable(
+  title: string,
+  data: Record<string, number | string>,
+  description?: string,
+) {
+  commentBody += `### ${title}\n\n`;
 
-// Loop through the metrics and build the comment body
-for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
-  const mainValue = mainDiagnostics[metric];
-  const nextValue = nextDiagnostics[metric];
-
-  let diffMain = 'N/A';
-  let emojiMain = '';
-  if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
-    const diff = currentPrValue - mainValue;
-    diffMain = diff.toFixed(2);
-    emojiMain = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
+  if (description) {
+    commentBody += `${description}\n\n`;
   }
 
-  let diffNext = 'N/A';
-  let emojiNext = '';
-  if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
-    const diff = currentPrValue - nextValue;
-    diffNext = diff.toFixed(2);
-    emojiNext = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
+  commentBody += '| Metric | PR | `next` | `main` |\n';
+  commentBody +=
+    '|--------|------------------|-------------------|------------------|------------------|------------------|\n';
+
+  // Loop through the metrics and build the comment body
+  for (const [metric, currentPrValue] of Object.entries(data)) {
+    const mainValue = mainDiagnostics[metric];
+    const nextValue = nextDiagnostics[metric];
+
+    let diffMain = 'N/A';
+    let emojiMain = '';
+    if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
+      const diff = currentPrValue - mainValue;
+      diffMain = diff.toFixed(2);
+      emojiMain = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
+    }
+
+    let diffNext = 'N/A';
+    let emojiNext = '';
+    if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
+      const diff = currentPrValue - nextValue;
+      diffNext = diff.toFixed(2);
+      emojiNext = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
+    }
+
+    commentBody += `| ${metric} | ${currentPrValue} | ${nextValue} (${emojiNext} ${diffNext}) | ${mainValue} (${emojiMain} ${diffMain}) |\n`;
   }
 
-  commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} ${emojiMain} | ${diffNext} ${emojiNext} |\n`;
+  commentBody += '\n\n';
 }
+
+const numbers: Record<string, number | string> = {};
+const timings: Record<string, number | string> = {};
+
+for (const [key, value] of Object.entries(currentPrDiagnostics)) {
+  if (key.toLowerCase().includes('Time')) {
+    timings[key] = value;
+  } else {
+    numbers[key] = value;
+  }
+}
+
+printTable('Numbers', numbers);
+printTable(
+  'Timings',
+  timings,
+  '> Timings are **not** reliable in CI - we need to run the benchmark multiple times to get a good average.',
+);
 
 commentBody += `\n</details>`;
 const { owner, repo } = github.context.repo;
