@@ -67,6 +67,6 @@ export class TRPCError extends Error {
     super(message, { cause });
 
     this.code = opts.code;
-    this.name = this.constructor.name;
+    this.name = 'TRPCError';
   }
 }
