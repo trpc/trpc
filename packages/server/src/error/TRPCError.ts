@@ -5,6 +5,10 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {
     return cause;
   }
+  if (cause instanceof Error && cause.name === 'TRPCError') {
+    // https://github.com/trpc/trpc/pull/4848
+    return cause as TRPCError;
+  }
 
   const trpcError = new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
@@ -67,6 +71,6 @@ export class TRPCError extends Error {
     super(message, { cause });
 
     this.code = opts.code;
-    this.name = this.constructor.name;
+    this.name = 'TRPCError';
   }
 }
