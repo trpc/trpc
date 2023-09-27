@@ -66,20 +66,18 @@ function printTable(
     const mainValue = mainDiagnostics[metric];
     const nextValue = nextDiagnostics[metric];
 
-    let diffMain = 'N/A';
+    let diffMain: string | number = 'N/A';
     let emojiMain = '';
     if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
-      const diff = currentPrValue - mainValue;
-      diffMain = diff.toFixed(2);
-      emojiMain = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
+      diffMain = currentPrValue - mainValue;
+      emojiMain = diffMain > 0 ? '🔺' : diffMain < 0 ? '🔽🟢' : '➖';
     }
 
-    let diffNext = 'N/A';
+    let diffNext: string | number = 'N/A';
     let emojiNext = '';
     if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
-      const diff = currentPrValue - nextValue;
-      diffNext = diff.toFixed(2);
-      emojiNext = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
+      diffNext = currentPrValue - nextValue;
+      emojiNext = diffNext > 0 ? '🔺' : diffNext < 0 ? '🔽🟢' : '➖';
     }
 
     commentBody += `| ${metric} | ${currentPrValue} | ${nextValue} (${emojiNext} ${diffNext}) | ${mainValue} (${emojiMain} ${diffMain}) |\n`;
