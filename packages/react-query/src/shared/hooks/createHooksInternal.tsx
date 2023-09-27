@@ -225,7 +225,14 @@ export function createRootHooks<
   };
 
   function useContext() {
-    return React.useContext(Context);
+    const context = React.useContext(Context);
+
+    if (!context) {
+      throw new Error(
+        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+      );
+    }
+    return context;
   }
 
   /**
@@ -313,11 +320,39 @@ export function createRootHooks<
     input: unknown,
     opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseQueryResult<unknown, TError> {
-    const hookResult = useQuery(path, input, {
-      ...opts,
-      suspense: true,
-      enabled: true,
-      throwOnError: true,
+    const context = useContext();
+    if (!context) {
+      throw new Error(
+        'Unable to retrieve application context. Did you forget to wrap your App inside `withTRPC` HoC?',
+      );
+    }
+    const queryKey = getQueryKeyInternal(path, input, 'query');
+
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
+
+    const hookResult = __useSuspenseQuery(
+      {
+        queryKey: queryKey as any,
+        queryFn: (queryFunctionContext) => {
+          const actualOpts = {
+            trpc: {
+              ...(shouldAbortOnUnmount
+                ? { signal: queryFunctionContext.signal }
+                : {}),
+            },
+          };
+
+          return context.client.query(...getClientArgs(queryKey, actualOpts));
+        },
+      },
+      context.queryClient,
+    ) as UseTRPCQueryResult<unknown, TError>;
+
+    hookResult.trpc = useHookResult({
+      path: path.join('.'),
     });
 
     return [hookResult.data, hookResult as any];
