@@ -11,36 +11,9 @@ const fixtureData = ['1', '2', '3', '4'];
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
+    const t = initTRPC.create();
     const appRouter = t.router({
       post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-        byIdWithSerializable: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => ({
-            id: 1,
-            date: new Date(),
-          })),
         list: t.procedure
           .input(
             z.object({
