@@ -61,7 +61,7 @@ for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
   if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
     const diff = currentPrValue - mainValue;
     diffMain = diff.toFixed(2);
-    emojiMain = diff > 0 ? '🔺' : diff < 0 ? '🔻' : '➖';
+    emojiMain = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
   }
 
   let diffNext = 'N/A';
@@ -69,7 +69,7 @@ for (const [metric, currentPrValue] of Object.entries(currentPrDiagnostics)) {
   if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
     const diff = currentPrValue - nextValue;
     diffNext = diff.toFixed(2);
-    emojiNext = diff > 0 ? '🔺' : diff < 0 ? '🔻' : '➖';
+    emojiNext = diff > 0 ? '🔺' : diff < 0 ? '🔽🟢' : '➖';
   }
 
   commentBody += `| ${metric} | ${currentPrValue} | ${mainValue} | ${nextValue} | ${diffMain} ${emojiMain} | ${diffNext} ${emojiNext} |\n`;
