@@ -55,4 +55,3 @@ jobs:
       - run: pnpm build
 
       - run: cd ./examples/.diagnostics/big-router-declaration && pnpm tsc --extendedDiagnostics
-      - run: cd ./examples/.diagnostics/next-prisma-starter && pnpm tsc --extendedDiagnostics
