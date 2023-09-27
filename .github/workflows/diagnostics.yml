@@ -51,7 +51,7 @@ jobs:
           restore-keys: |
             pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-
 
-      - run: pnpm i --filter "@trpc/*" --filter "@examples/diagnostics-*"
+      - run: pnpm install --child-concurrency 3
       - run: pnpm build
 
       - run: mkdir diagnostics-results
