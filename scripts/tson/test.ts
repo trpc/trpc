@@ -68,7 +68,8 @@ import { TsonOptions } from './types';
     stringify: tsonStringifier(tsonOpts),
   };
   const orig = {
-    foo: undefined,
+    foo: 'bar',
+    undefined: undefined,
   };
   const stringified = l.stringify(orig);
   const parsed = l.parse(stringified);
