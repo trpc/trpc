@@ -132,6 +132,13 @@ const server = fastify({
   maxParamLength: 5000,
 });
 
+server.addContentTypeParser(
+  'application/json',
+  { parseAs: 'string' },
+  function (_, body, _done) {
+    _done(null, body);
+  },
+);
 server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
   trpcOptions: { router: appRouter, createContext },

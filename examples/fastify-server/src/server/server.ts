@@ -16,6 +16,14 @@ export function createServer(opts: ServerOptions) {
   const prefix = opts.prefix ?? '/trpc';
   const server = fastify({ logger: dev });
 
+  server.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    function (_, body, _done) {
+      _done(null, body);
+    },
+  );
+
   void server.register(ws);
   void server.register(fastifyTRPCPlugin, {
     prefix,
