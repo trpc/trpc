@@ -12,7 +12,7 @@ import {
 } from './types';
 
 function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
-  return Array.isArray(v) && v.length === 3 && v[0] === nonce;
+  return Array.isArray(v) && v.length === 3 && v[2] === nonce;
 }
 
 function getHandlers(opts: TsonOptions) {
@@ -65,15 +65,16 @@ function getNonce(maybeFn: TsonOptions['nonce']) {
 }
 export function tsonParser(opts: TsonOptions) {
   return function parse(str: string) {
-    let nonce = '';
+    let nonce: TsonNonce = '' as TsonNonce;
     const encoded = JSON.parse(str, function (_key, value: unknown) {
       if (!nonce) {
         // first value is always the nonce
-        nonce = value as string;
+        nonce = value as TsonNonce;
         return value;
       }
       if (isTsonTuple(value, nonce)) {
         const [type, serializedValue] = value;
+        console.log({ value });
         const transformer = opts.types[
           type
         ] as TsonTransformerEncodeDecode<unknown>;
