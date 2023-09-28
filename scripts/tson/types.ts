@@ -75,7 +75,7 @@ export interface TsonOptions {
   types: Record<string, TsonTypeHandler<any> | TsonTypeHandlerFactory<any>>;
 }
 
-export type TsonSerialized = [
-  TsonEncodedValue,
-  TsonNonce /* [maybe later?], ...TsonReferences*/,
-];
+export type TsonSerialized = {
+  json: TsonEncodedValue;
+  nonce: TsonNonce;
+};

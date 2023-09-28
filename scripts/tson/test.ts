@@ -1,3 +1,4 @@
+import { inspect } from 'util';
 import { defaultHandler, MapHandler, undefinedHandler } from './handlers';
 import { tsonEncoder, tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
@@ -87,10 +88,20 @@ import { TsonOptions } from './types';
   };
 
   const encoder = tsonEncoder(tsonOpts);
+  const stringify = tsonStringifier(tsonOpts);
+  const parse = tsonParser(tsonOpts);
+
   const orig: any = {
     foo: 'bar',
     undefined: undefined,
+    map: new Map([['foo', 'bar']]),
   };
   console.log('source', orig);
-  console.log('encoded', JSON.stringify(encoder(orig), null, 4));
+
+  const encoded = encoder(orig);
+  console.log('encoded', inspect(encoded, { depth: Infinity }));
+  const stringified = stringify(orig, 2);
+
+  const parsed = parse(stringified);
+  console.log('parsed', parsed);
 }

@@ -80,13 +80,19 @@ function getNonce(maybeFn: TsonOptions['nonce']) {
 export function tsonParser(opts: TsonOptions) {
   return function parse(str: string) {
     let nonce: TsonNonce = '' as TsonNonce;
+
     const encoded = JSON.parse(str, function (_key, value: unknown) {
-      if (!nonce) {
+      if (!nonce && typeof value === 'string') {
         // first value is always the nonce
         nonce = value as TsonNonce;
         return value;
       }
       if (isTsonTuple(value, nonce)) {
+        if (!nonce) {
+          throw new Error(
+            'Nonce not found - the "nonce" needs to be the first value in the JSON string',
+          );
+        }
         const [type, serializedValue] = value;
         console.log({ value });
         const transformer = opts.types[
@@ -95,41 +101,17 @@ export function tsonParser(opts: TsonOptions) {
         return transformer.decode(serializedValue);
       }
       return value;
-    });
+    }) as TsonSerialized;
 
-    return encoded[1];
+    return encoded.json;
   };
 }
 
 export function tsonStringifier(opts: TsonOptions) {
-  const handlers = getHandlers(opts);
-  const maybeNonce = opts.nonce;
+  const encoder = tsonEncoder(opts);
 
   return function stringify(obj: unknown, space?: string | number) {
-    const nonce = getNonce(maybeNonce);
-
-    const tson = JSON.stringify(
-      obj,
-      function replacer(_key, value) {
-        const vType = typeof value;
-
-        const primitiveHandler = handlers.primitive[vType];
-        if (primitiveHandler) {
-          if (!primitiveHandler.test || primitiveHandler.test(value)) {
-            return primitiveHandler.$encode(value, nonce);
-          }
-        }
-        for (const handler of handlers.custom) {
-          if (handler.test(value)) {
-            return handler.$encode(value, nonce);
-          }
-        }
-
-        return value;
-      },
-      space,
-    );
-    return `["${nonce}", ${tson}]`;
+    return JSON.stringify(encoder(obj), null, space);
   };
 }
 
@@ -148,8 +130,6 @@ export function tsonEncoder(opts: TsonOptions) {
 
   function walker(nonce: TsonNonce, value: unknown): unknown {
     const vType = typeof value;
-
-    console.log('type', vType, value);
 
     const primitiveHandler = handlers.primitive[vType];
     if (primitiveHandler) {
@@ -187,8 +167,11 @@ export function tsonEncoder(opts: TsonOptions) {
   return function parse(obj: unknown): TsonSerialized {
     const nonce = getNonce(maybeNonce);
 
-    const tson = walker(nonce, obj);
+    const json = walker(nonce, obj);
 
-    return [tson, nonce];
+    return {
+      nonce,
+      json,
+    };
   };
 }
