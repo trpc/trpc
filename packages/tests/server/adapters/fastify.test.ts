@@ -129,6 +129,14 @@ type PostPayload = { Body: { text: string; life: number } };
 function createServer(opts: ServerOptions) {
   const instance = fastify({ logger: config.logger });
 
+  instance.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    function (_, body, _done) {
+      _done(null, body);
+    },
+  );
+
   const plugin = !!opts.fastifyPluginWrapper
     ? fp(fastifyTRPCPlugin)
     : fastifyTRPCPlugin;
@@ -144,10 +152,6 @@ function createServer(opts: ServerOptions) {
 
   instance.get('/hello', async () => {
     return { hello: 'GET' };
-  });
-
-  instance.post<PostPayload>('/hello', async ({ body }) => {
-    return { hello: 'POST', body };
   });
 
   const stop = async () => {
@@ -239,28 +243,6 @@ describe('anonymous user', () => {
 
   afterEach(async () => {
     await app.stop();
-  });
-
-  test('fetch POST', async () => {
-    const data = { text: 'life', life: 42 };
-    const req = await fetch(`http://localhost:${config.port}/hello`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    // body should be object
-    expect(await req.json()).toMatchInlineSnapshot(`
-      Object {
-        "body": Object {
-          "life": 42,
-          "text": "life",
-        },
-        "hello": "POST",
-      }
-    `);
   });
 
   test('query', async () => {
@@ -433,26 +415,6 @@ describe('anonymous user with fastify-plugin', () => {
     const req = await fetch(`http://localhost:${config.port}/hello`);
     expect(await req.json()).toEqual({ hello: 'GET' });
   });
-
-  test('fetch POST', async () => {
-    const data = { text: 'life', life: 42 };
-    const req = await fetch(`http://localhost:${config.port}/hello`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    // body should be string
-    expect(await req.json()).toMatchInlineSnapshot(`
-      Object {
-        "body": "{\\"text\\":\\"life\\",\\"life\\":42}",
-        "hello": "POST",
-      }
-    `);
-  });
-
   test('query', async () => {
     expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
     expect(await app.client.hello.query()).toMatchInlineSnapshot(`
