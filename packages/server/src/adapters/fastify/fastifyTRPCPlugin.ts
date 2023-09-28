@@ -22,13 +22,15 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   opts: FastifyTRPCPluginOptions<TRouter>,
   done: (err?: Error) => void,
 ) {
-  fastify.addContentTypeParser(
-    'application/json',
-    { parseAs: 'string' },
-    function (_, body, _done) {
-      _done(null, body);
-    },
-  );
+  if (!fastify.hasContentTypeParser('application/json')) {
+    fastify.addContentTypeParser(
+      'application/json',
+      { parseAs: 'string' },
+      function (_, body, _done) {
+        _done(null, body);
+      },
+    );
+  }
 
   let prefix = opts.prefix ?? '';
 
