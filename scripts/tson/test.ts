@@ -56,7 +56,7 @@ import { TsonOptions } from './types';
       Map: MapHandler,
       undefined: {
         decode: () => undefined,
-        encode: () => null,
+        encode: () => 0,
         test: (v) => v === undefined,
       },
     },
@@ -71,7 +71,7 @@ import { TsonOptions } from './types';
     foo: 'bar',
     undefined: undefined,
   };
-  const stringified = l.stringify(orig);
+  const stringified = l.stringify(orig, 2);
   const parsed = l.parse(stringified);
 
   console.log('orig:', orig);
