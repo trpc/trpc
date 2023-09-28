@@ -2,10 +2,10 @@ type Branded<TType, TBrand> = TType & { __brand: TBrand };
 
 export type TsonNonce = Branded<string, 'TsonNonce'>;
 export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
-export type TsonSerializedValue = unknown;
-export type TsonReferences = Branded<TsonSerializedValue[], 'TsonReferences'>;
+export type TsonEncodedValue = unknown;
+export type TsonReferences = Branded<TsonEncodedValue[], 'TsonReferences'>;
 
-export type TsonTuple = [TsonTypeHandlerKey, TsonSerializedValue, TsonNonce];
+export type TsonTuple = [TsonTypeHandlerKey, TsonEncodedValue, TsonNonce];
 
 // there's probably a better way of getting this type
 export type TsonAllTypes =
@@ -23,6 +23,9 @@ export interface TsonTransformerNone {
    * Won't be decoded nor encoded
    */
   transform: false;
+
+  encode?: never;
+  decode?: never;
 }
 export interface TsonTransformerEncodeDecode<TValue> {
   transform?: true;
@@ -30,11 +33,11 @@ export interface TsonTransformerEncodeDecode<TValue> {
   /**
    * JSON-serializable value
    */
-  encode: (v: TValue) => TsonSerializedValue;
+  encode: (v: TValue) => TsonEncodedValue;
   /**
    * From JSON-serializable value
    */
-  decode: (v: TsonSerializedValue) => TValue;
+  decode: (v: TsonEncodedValue) => TValue;
 }
 
 export type TsonTransformer<TValue> =
@@ -72,8 +75,4 @@ export interface TsonOptions {
   types: Record<string, TsonTypeHandler<any>>;
 }
 
-export type TsonSerialized = [
-  TsonSerializedValue,
-  TsonNonce,
-  ...TsonReferences,
-];
+export type TsonSerialized = [TsonEncodedValue, TsonNonce, ...TsonReferences];

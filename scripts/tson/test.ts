@@ -1,5 +1,5 @@
 import { defaultHandler, MapHandler, undefinedHandler } from './handlers';
-import { tsonParser, tsonStringifier } from './tson';
+import { tsonEncoder, tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
 
 {
@@ -73,4 +73,25 @@ import { TsonOptions } from './types';
   console.log('orig:', orig);
   console.log('stringified:', stringified);
   console.log('parsed back:', parsed);
+}
+
+{
+  console.log('-------tson2');
+  const tsonOpts: TsonOptions = {
+    types: {
+      ...defaultHandler,
+      Map: MapHandler,
+      undefined: undefinedHandler,
+    },
+    nonce: () => `__tson-${Math.random()}`,
+  };
+
+  const encoder = tsonEncoder(tsonOpts);
+  const orig: any = {
+    foo: 'bar',
+    undefined: undefined,
+  };
+  orig.self = orig;
+  console.log('source', orig);
+  console.log('encoded', JSON.stringify(encoder(orig), null, 4));
 }

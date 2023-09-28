@@ -2,8 +2,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   TsonAllTypes,
+  TsonEncodedValue,
   TsonNonce,
   TsonOptions,
+  TsonSerialized,
   TsonTransformerEncodeDecode,
   TsonTuple,
   TsonTypeHandlerKey,
@@ -116,5 +118,118 @@ export function tsonStringifier(opts: TsonOptions) {
       space,
     );
     return `["${nonce}", ${tson}]`;
+  };
+}
+
+function getHandlers2(opts: TsonOptions) {
+  // warmup the type handlers
+  const types = Object.entries(opts.types).map(([_key, handler]) => {
+    const key = _key as TsonTypeHandlerKey;
+    const encode = handler.encode;
+
+    type WalkCallback = (innerValue: unknown) => unknown;
+    type Encoder = (
+      value: unknown,
+      nonce: TsonNonce,
+      walk: WalkCallback,
+    ) => TsonEncodedValue;
+
+    const $encode: Encoder = encode
+      ? (value, nonce, walk) => {
+          const encoded = encode(value);
+          const result: TsonTuple = [key, walk(encoded), nonce];
+          return result;
+        }
+      : (value, _nonce, walk) => {
+          return walk(value);
+        };
+    return {
+      ...handler,
+      key,
+      $encode,
+    };
+  });
+  type Handler = (typeof types)[number];
+
+  const handlerPerPrimitive: Partial<
+    Record<TsonAllTypes, Extract<Handler, TsonTypeTesterPrimitive>>
+  > = {};
+  const customTypeHandlers: Extract<Handler, TsonTypeTesterCustom>[] = [];
+
+  for (const handler of types) {
+    if (handler.primitive) {
+      if (handlerPerPrimitive[handler.primitive]) {
+        throw new Error(
+          `Multiple handlers for primitive ${handler.primitive} found`,
+        );
+      }
+      handlerPerPrimitive[handler.primitive] = handler;
+    } else {
+      customTypeHandlers.push(handler);
+    }
+  }
+  return {
+    primitive: handlerPerPrimitive,
+    custom: customTypeHandlers,
+  };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && Object.prototype.toString.call(value) === '[object Object]';
+}
+function isWalkable(
+  value: unknown,
+): value is Record<string, unknown> | unknown[] {
+  return !!value && typeof value === 'object';
+}
+
+export function tsonEncoder(opts: TsonOptions) {
+  const handlers = getHandlers2(opts);
+  const maybeNonce = opts.nonce;
+
+  function walker(nonce: TsonNonce, value: unknown): unknown {
+    const vType = typeof value;
+
+    console.log('type', vType, value);
+
+    const primitiveHandler = handlers.primitive[vType];
+    if (primitiveHandler) {
+      if (!primitiveHandler.test || primitiveHandler.test(value)) {
+        return primitiveHandler.$encode(value, nonce, (inner) => {
+          return isWalkable(inner) ? walker(nonce, inner) : inner;
+        });
+      }
+    }
+
+    for (const handler of handlers.custom) {
+      if (handler.test(value)) {
+        return handler.$encode(value, nonce, (inner) => {
+          return isWalkable(inner) ? walker(nonce, inner) : inner;
+        });
+      }
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((value) => {
+        return walker(nonce, value);
+      });
+    }
+
+    if (isPlainObject(value)) {
+      const result: Record<string, unknown> = {};
+      for (const [key, inner] of Object.entries(value)) {
+        result[key] = walker(nonce, inner);
+      }
+      return result;
+    }
+
+    return value;
+  }
+  return function parse(obj: unknown): TsonSerialized {
+    const nonce = getNonce(maybeNonce);
+
+    const tson = walker(nonce, obj);
+
+    return [tson, nonce];
   };
 }
