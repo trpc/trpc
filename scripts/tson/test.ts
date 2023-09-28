@@ -1,11 +1,11 @@
-import { defaults, MapHandler } from './handlers';
+import { defaultHandler, MapHandler, undefinedHandler } from './handlers';
 import { tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
 
 {
   const tsonOpts: TsonOptions = {
     types: {
-      ...defaults,
+      ...defaultHandler,
       Map: MapHandler,
     },
     nonce: () => `__tson-${Math.random()}`,
@@ -31,7 +31,7 @@ import { TsonOptions } from './types';
 {
   const tsonOpts: TsonOptions = {
     types: {
-      ...defaults,
+      ...defaultHandler,
       Map: MapHandler,
     },
     nonce: () => `__tson-${Math.random()}`,
@@ -52,13 +52,9 @@ import { TsonOptions } from './types';
   console.log('-------undefined');
   const tsonOpts: TsonOptions = {
     types: {
-      ...defaults,
+      ...defaultHandler,
       Map: MapHandler,
-      undefined: {
-        decode: () => undefined,
-        encode: () => 0,
-        test: (v) => v === undefined,
-      },
+      undefined: undefinedHandler,
     },
     nonce: () => `__tson-${Math.random()}`,
   };

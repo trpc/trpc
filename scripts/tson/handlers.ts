@@ -31,7 +31,17 @@ export const numberHandler: TsonTypeHandler<number> = {
     return true;
   },
 };
-export const defaults = {
+
+export const undefinedHandler: TsonTypeHandler<undefined> = {
+  primitive: 'undefined',
+  encode() {
+    return 0;
+  },
+  decode() {
+    return undefined;
+  },
+};
+export const defaultHandler = {
   Map: MapHandler,
   bigint: bigintHandler,
   numberHandler,
