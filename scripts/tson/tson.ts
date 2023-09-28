@@ -4,6 +4,7 @@ import {
   TsonOptions,
   TsonTransformerEncodeDecode,
   TsonTuple,
+  TsonTypeHandlerKey,
   TsonTypeTesterCustom,
   TsonTypeTesterPrimitive,
 } from './types';
@@ -42,7 +43,11 @@ export function tsonStringifier(opts: TsonOptions) {
         if (value.transform === false) {
           return v;
         }
-        const result: TsonTuple = [nonce, key, value.encode(v)];
+        const result: TsonTuple = [
+          nonce,
+          key as TsonTypeHandlerKey,
+          value.encode(v),
+        ];
         return result;
       },
     };
@@ -66,7 +71,10 @@ export function tsonStringifier(opts: TsonOptions) {
   }
 
   return function stringify(obj: unknown, space?: string | number) {
-    const nonce = typeof opts.nonce === 'function' ? opts.nonce() : '__tson';
+    const nonce: TsonNonce =
+      typeof opts.nonce === 'function'
+        ? (opts.nonce() as TsonNonce)
+        : ('__tson' as TsonNonce);
 
     const tson = JSON.stringify(
       obj,

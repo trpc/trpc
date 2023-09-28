@@ -1,5 +1,7 @@
-export type TsonNonce = string;
-export type TsonTypeHandlerKey = string;
+type Branded<TType, TBrand> = TType & { __brand: TBrand };
+
+export type TsonNonce = Branded<string, 'TsonNonce'>;
+export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
 export type TsonSerializedValue = unknown;
 
 export type TsonTuple = [TsonNonce, TsonTypeHandlerKey, TsonSerializedValue];
@@ -21,6 +23,7 @@ export interface TsonTransformerEncodeDecode<TValue> {
    * From JSON-serializable value
    */
   decode: (v: TsonSerializedValue) => TValue;
+  decodeSpy?: (v: unknown) => void;
 }
 
 export type TsonTransformer<TValue> =
@@ -52,7 +55,8 @@ type TsonTypeTester = TsonTypeTesterPrimitive | TsonTypeTesterCustom;
 
 export type TsonTypeHandler<TValue> = TsonTypeTester & TsonTransformer<TValue>;
 
+// export type TsonTypeHandlerFactory<TValue> = () => TsonTypeHandler<TValue>;
 export interface TsonOptions {
-  nonce?: () => TsonNonce;
-  types: Record<TsonTypeHandlerKey, TsonTypeHandler<any>>;
+  nonce?: () => string;
+  types: Record<string, TsonTypeHandler<any>>;
 }
