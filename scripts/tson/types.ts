@@ -23,7 +23,6 @@ export interface TsonTransformerEncodeDecode<TValue> {
    * From JSON-serializable value
    */
   decode: (v: TsonSerializedValue) => TValue;
-  decodeSpy?: (v: unknown) => void;
 }
 
 export type TsonTransformer<TValue> =
