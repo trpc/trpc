@@ -28,3 +28,17 @@ While we're not doing anything differently internally (just yet) this is help su
 ## Simplified types and `.d.ts` outputs
 
 Procedures in your router now only emit their input & output - where before they would also contain the full context object for every procedure, leading to unnecessary complexity in e.g. `.d.ts`.
+
+## Fastify adapter
+
+You now have to register a content type parser for JSON yourself
+
+```ts
+fastify.addContentTypeParser(
+  'application/json',
+  { parseAs: 'string' },
+  function (_, body, _done) {
+    _done(null, body);
+  },
+);
+```
