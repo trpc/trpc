@@ -10,7 +10,7 @@ const MapHandler: TsonTypeHandler<UnknownMap> = {
     return Array.from(v.entries());
   },
   decode(v) {
-    return new Map(v);
+    return new Map(v as any[]);
   },
 };
 
@@ -56,7 +56,7 @@ const tsonOpts: TsonOptions = {
     map: new Map([['foo', new Map([['bar', 'baz']])]]),
     bigint: 100n,
   };
-  const stringified = l.stringify(orig);
+  const stringified = l.stringify(orig, 2);
   const parsed = l.parse(stringified);
   console.log('orig:', orig);
   console.log('stringified:', stringified);
