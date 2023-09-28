@@ -17,8 +17,8 @@ slug: /client/react/useInfiniteQuery
 
 ```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
-import { Context } from './[trpc]';
 import { z } from 'zod';
+import { Context } from './[trpc]';
 
 export const t = initTRPC.create();
 
