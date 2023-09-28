@@ -24,25 +24,27 @@ const bigintHandler: TsonTypeHandler<bigint> = {
   },
 };
 
-const stringHandler: TsonTypeHandler<string> = {
-  primitive: 'string',
-  transform: false,
-};
 const numberHandler: TsonTypeHandler<number> = {
   primitive: 'number',
   transform: false,
+  test(v) {
+    if (isNaN(v as number)) {
+      throw new Error('NaN is not supported');
+    }
+    return true;
+  },
 };
 
 const defaults = {
   Map: MapHandler,
   bigint: bigintHandler,
   numberHandler,
-  stringHandler,
 } satisfies TsonOptions['types'];
 
 const tsonOpts: TsonOptions = {
   types: {
     ...defaults,
+    Map: MapHandler,
   },
   nonce: () => `__tson-${Math.random()}`,
 };

@@ -75,7 +75,9 @@ export function tsonStringifier(opts: TsonOptions) {
 
         const primitiveHandler = handlerPerPrimitive[vType];
         if (primitiveHandler) {
-          return primitiveHandler.$encode(value, nonce);
+          if (!primitiveHandler.test || primitiveHandler.test(value)) {
+            return primitiveHandler.$encode(value, nonce);
+          }
         }
         for (const handler of customTypeHandlers) {
           if (handler.test(value)) {

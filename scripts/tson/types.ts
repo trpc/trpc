@@ -35,7 +35,7 @@ export interface TsonTypeTesterPrimitive {
   /**
    * Test if the value is of this type
    */
-  test?: never;
+  test?: (v: unknown) => boolean;
 }
 export interface TsonTypeTesterCustom {
   /**
