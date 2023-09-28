@@ -55,7 +55,6 @@ import { TsonOptions } from './types';
       ...defaults,
       Map: MapHandler,
       undefined: {
-        primitive: 'object',
         decode: () => undefined,
         encode: () => null,
         test: (v) => v === undefined,
