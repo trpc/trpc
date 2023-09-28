@@ -1,4 +1,4 @@
-type Branded<TType, TBrand> = TType & { __brand: TBrand };
+export type Branded<TType, TBrand> = TType & { __brand: TBrand };
 
 export type TsonNonce = Branded<string, 'TsonNonce'>;
 export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;

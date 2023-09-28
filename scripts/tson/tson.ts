@@ -12,6 +12,7 @@ import {
   TsonTypeTesterCustom,
   TsonTypeTesterPrimitive,
 } from './types';
+import { walker } from './walker';
 
 function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
   return Array.isArray(v) && v.length === 3 && v[2] === nonce;
@@ -79,31 +80,21 @@ function getNonce(maybeFn: TsonOptions['nonce']) {
 }
 export function tsonParser(opts: TsonOptions) {
   return function parse(str: string) {
-    let nonce: TsonNonce = '' as TsonNonce;
+    const parsed = JSON.parse(str) as TsonSerialized;
+    const { nonce, json } = parsed;
 
-    const encoded = JSON.parse(str, function (_key, value: unknown) {
-      if (!nonce && typeof value === 'string') {
-        // first value is always the nonce
-        nonce = value as TsonNonce;
-        return value;
-      }
-      if (isTsonTuple(value, nonce)) {
-        if (!nonce) {
-          throw new Error(
-            'Nonce not found - the "nonce" needs to be the first value in the JSON string',
-          );
-        }
-        const [type, serializedValue] = value;
-        console.log({ value });
+    const result = walker(json, (node, innerWalk) => {
+      if (isTsonTuple(node, nonce)) {
+        const [type, serializedValue] = node;
         const transformer = opts.types[
           type
         ] as TsonTransformerEncodeDecode<unknown>;
-        return transformer.decode(serializedValue);
+        return [innerWalk(transformer.decode(serializedValue))];
       }
-      return value;
-    }) as TsonSerialized;
+      return null;
+    });
 
-    return encoded.json;
+    return result;
   };
 }
 
@@ -115,59 +106,30 @@ export function tsonStringifier(opts: TsonOptions) {
   };
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return !!value && Object.prototype.toString.call(value) === '[object Object]';
-}
-function isWalkable(
-  value: unknown,
-): value is Record<string, unknown> | unknown[] {
-  return !!value && typeof value === 'object';
-}
-
 export function tsonEncoder(opts: TsonOptions) {
   const handlers = getHandlers(opts);
   const maybeNonce = opts.nonce;
 
-  function walker(nonce: TsonNonce, value: unknown): unknown {
-    const vType = typeof value;
-
-    const primitiveHandler = handlers.primitive[vType];
-    if (primitiveHandler) {
-      if (!primitiveHandler.test || primitiveHandler.test(value)) {
-        return primitiveHandler.$encode(value, nonce, (inner) => {
-          return isWalkable(inner) ? walker(nonce, inner) : inner;
-        });
-      }
-    }
-
-    for (const handler of handlers.custom) {
-      if (handler.test(value)) {
-        return handler.$encode(value, nonce, (inner) => {
-          return isWalkable(inner) ? walker(nonce, inner) : inner;
-        });
-      }
-    }
-
-    if (Array.isArray(value)) {
-      return value.map((value) => {
-        return walker(nonce, value);
-      });
-    }
-
-    if (isPlainObject(value)) {
-      const result: Record<string, unknown> = {};
-      for (const [key, inner] of Object.entries(value)) {
-        result[key] = walker(nonce, inner);
-      }
-      return result;
-    }
-
-    return value;
-  }
   return function parse(obj: unknown): TsonSerialized {
     const nonce = getNonce(maybeNonce);
 
-    const json = walker(nonce, obj);
+    const json = walker(obj, (value, innerWalk) => {
+      const vType = typeof value;
+
+      const primitiveHandler = handlers.primitive[vType];
+      if (primitiveHandler) {
+        if (!primitiveHandler.test || primitiveHandler.test(value)) {
+          return [primitiveHandler.$encode(value, nonce, innerWalk)];
+        }
+      }
+      for (const handler of handlers.custom) {
+        if (handler.test(value)) {
+          return [handler.$encode(value, nonce, innerWalk)];
+        }
+      }
+
+      return null;
+    });
 
     return {
       nonce,
