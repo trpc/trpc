@@ -463,7 +463,7 @@ describe('anonymous user with fastify-plugin', () => {
 });
 
 // https://github.com/trpc/trpc/issues/4820
-describe.only('regression #4820 - content type parser already set', () => {
+describe('regression #4820 - content type parser already set', () => {
   beforeEach(async () => {
     app = createApp({
       serverOptions: {
