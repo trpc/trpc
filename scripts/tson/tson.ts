@@ -1,7 +1,9 @@
+/* eslint-disable max-params */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   TsonNonce,
   TsonOptions,
+  TsonSerialized,
   TsonTransformerEncodeDecode,
   TsonTuple,
   TsonTypeHandlerKey,
@@ -12,29 +14,8 @@ import {
 function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
   return Array.isArray(v) && v.length === 3 && v[0] === nonce;
 }
-export function tsonParser(opts: TsonOptions) {
-  return function parse(str: string) {
-    let nonce = '';
-    const encoded = JSON.parse(str, function (_key, value: unknown) {
-      if (!nonce) {
-        // first value is always the nonce
-        nonce = value as string;
-        return value;
-      }
-      if (isTsonTuple(value, nonce)) {
-        const [, type, serializedValue] = value;
-        const transformer = opts.types[
-          type
-        ] as TsonTransformerEncodeDecode<unknown>;
-        return transformer.decode(serializedValue);
-      }
-      return value;
-    });
 
-    return encoded[1];
-  };
-}
-export function tsonStringifier(opts: TsonOptions) {
+function getHandlers(opts: TsonOptions) {
   // warmup the type handlers
   const types = Object.entries(opts.types).map(([key, value]) => {
     return {
@@ -69,25 +50,59 @@ export function tsonStringifier(opts: TsonOptions) {
       );
     }
   }
+  return {
+    primitive: handlerPerPrimitive,
+    custom: customTypeHandlers,
+  };
+}
+
+function getNonce(maybeFn: TsonOptions['nonce']) {
+  return typeof maybeFn === 'function'
+    ? (maybeFn() as TsonNonce)
+    : ('__tson' as TsonNonce);
+}
+export function tsonParser(opts: TsonOptions) {
+  return function parse(str: string) {
+    let nonce = '';
+    const encoded = JSON.parse(str, function (_key, value: unknown) {
+      if (!nonce) {
+        // first value is always the nonce
+        nonce = value as string;
+        return value;
+      }
+      if (isTsonTuple(value, nonce)) {
+        const [, type, serializedValue] = value;
+        const transformer = opts.types[
+          type
+        ] as TsonTransformerEncodeDecode<unknown>;
+        return transformer.decode(serializedValue);
+      }
+      return value;
+    });
+
+    return encoded[1];
+  };
+}
+
+export function tsonStringifier(opts: TsonOptions) {
+  const handlers = getHandlers(opts);
+  const maybeNonce = opts.nonce;
 
   return function stringify(obj: unknown, space?: string | number) {
-    const nonce: TsonNonce =
-      typeof opts.nonce === 'function'
-        ? (opts.nonce() as TsonNonce)
-        : ('__tson' as TsonNonce);
+    const nonce = getNonce(maybeNonce);
 
     const tson = JSON.stringify(
       obj,
       function replacer(_key, value) {
         const vType = typeof value;
 
-        const primitiveHandler = handlerPerPrimitive[vType];
+        const primitiveHandler = handlers.primitive[vType];
         if (primitiveHandler) {
           if (!primitiveHandler.test || primitiveHandler.test(value)) {
             return primitiveHandler.$encode(value, nonce);
           }
         }
-        for (const handler of customTypeHandlers) {
+        for (const handler of handlers.custom) {
           if (handler.test(value)) {
             return handler.$encode(value, nonce);
           }

@@ -3,8 +3,15 @@ type Branded<TType, TBrand> = TType & { __brand: TBrand };
 export type TsonNonce = Branded<string, 'TsonNonce'>;
 export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
 export type TsonSerializedValue = unknown;
+export type TsonReferences = Branded<TsonSerializedValue[], 'TsonReferences'>';
 
 export type TsonTuple = [TsonNonce, TsonTypeHandlerKey, TsonSerializedValue];
+
+
+// there's probably a better way of getting this
+const type: unknown = null;
+export type TsonPrimitive = typeof type;
+
 
 export interface TsonTransformerNone {
   /**
@@ -33,7 +40,7 @@ export interface TsonTypeTesterPrimitive {
   /**
    * The type of the primitive
    */
-  primitive: string;
+  primitive: TsonPrimitive;
   /**
    * Test if the value is of this type
    */
@@ -59,3 +66,10 @@ export interface TsonOptions {
   nonce?: () => string;
   types: Record<string, TsonTypeHandler<any>>;
 }
+
+
+export type TsonSerialized = [
+  TsonSerializedValue,
+  TsonNonce,
+  ...TsonReferences
+]

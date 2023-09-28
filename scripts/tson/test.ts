@@ -2,14 +2,14 @@ import { defaults, MapHandler } from './handlers';
 import { tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
 
-const tsonOpts: TsonOptions = {
-  types: {
-    ...defaults,
-    Map: MapHandler,
-  },
-  nonce: () => `__tson-${Math.random()}`,
-};
 {
+  const tsonOpts: TsonOptions = {
+    types: {
+      ...defaults,
+      Map: MapHandler,
+    },
+    nonce: () => `__tson-${Math.random()}`,
+  };
   const l = {
     parse: tsonParser(tsonOpts),
     stringify: tsonStringifier(tsonOpts),
@@ -29,6 +29,13 @@ const tsonOpts: TsonOptions = {
   console.log(l.parse(l.stringify('asd')));
 }
 {
+  const tsonOpts: TsonOptions = {
+    types: {
+      ...defaults,
+      Map: MapHandler,
+    },
+    nonce: () => `__tson-${Math.random()}`,
+  };
   console.log('-------random nonce');
   const randomNonceStringify = tsonStringifier({
     ...tsonOpts,
@@ -40,4 +47,6 @@ const tsonOpts: TsonOptions = {
   console.log('orig', orig);
   console.log('stringified', stringified);
   console.log('parsed back', parser(stringified));
+}
+{
 }
