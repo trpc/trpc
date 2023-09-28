@@ -91,7 +91,6 @@ import { TsonOptions } from './types';
     foo: 'bar',
     undefined: undefined,
   };
-  orig.self = orig;
   console.log('source', orig);
   console.log('encoded', JSON.stringify(encoder(orig), null, 4));
 }

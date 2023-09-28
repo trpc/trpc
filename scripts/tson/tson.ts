@@ -19,20 +19,32 @@ function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
 
 function getHandlers(opts: TsonOptions) {
   // warmup the type handlers
-  const types = Object.entries(opts.types).map(([key, value]) => {
-    return {
-      ...value,
-      $encode(v: unknown, nonce: TsonNonce) {
-        if (value.transform === false) {
-          return v;
+  const types = Object.entries(opts.types).map(([_key, _handler]) => {
+    const handler = typeof _handler === 'function' ? _handler() : _handler;
+    const key = _key as TsonTypeHandlerKey;
+    const encode = handler.encode;
+
+    type WalkCallback = (innerValue: unknown) => unknown;
+    type Encoder = (
+      value: unknown,
+      nonce: TsonNonce,
+      walk?: WalkCallback,
+    ) => TsonEncodedValue;
+
+    const $encode: Encoder = encode
+      ? (value, nonce, walk) => {
+          const encoded = encode(value);
+          const walked = walk ? walk(encoded) : encoded;
+          const result: TsonTuple = [key, walked, nonce];
+          return result;
         }
-        const result: TsonTuple = [
-          key as TsonTypeHandlerKey,
-          value.encode(v),
-          nonce,
-        ];
-        return result;
-      },
+      : (value, _nonce, walk) => {
+          return walk ? walk(value) : value;
+        };
+    return {
+      ...handler,
+      key,
+      $encode,
     };
   });
   type Handler = (typeof types)[number];
@@ -121,59 +133,6 @@ export function tsonStringifier(opts: TsonOptions) {
   };
 }
 
-function getHandlers2(opts: TsonOptions) {
-  // warmup the type handlers
-  const types = Object.entries(opts.types).map(([_key, handler]) => {
-    const key = _key as TsonTypeHandlerKey;
-    const encode = handler.encode;
-
-    type WalkCallback = (innerValue: unknown) => unknown;
-    type Encoder = (
-      value: unknown,
-      nonce: TsonNonce,
-      walk: WalkCallback,
-    ) => TsonEncodedValue;
-
-    const $encode: Encoder = encode
-      ? (value, nonce, walk) => {
-          const encoded = encode(value);
-          const result: TsonTuple = [key, walk(encoded), nonce];
-          return result;
-        }
-      : (value, _nonce, walk) => {
-          return walk(value);
-        };
-    return {
-      ...handler,
-      key,
-      $encode,
-    };
-  });
-  type Handler = (typeof types)[number];
-
-  const handlerPerPrimitive: Partial<
-    Record<TsonAllTypes, Extract<Handler, TsonTypeTesterPrimitive>>
-  > = {};
-  const customTypeHandlers: Extract<Handler, TsonTypeTesterCustom>[] = [];
-
-  for (const handler of types) {
-    if (handler.primitive) {
-      if (handlerPerPrimitive[handler.primitive]) {
-        throw new Error(
-          `Multiple handlers for primitive ${handler.primitive} found`,
-        );
-      }
-      handlerPerPrimitive[handler.primitive] = handler;
-    } else {
-      customTypeHandlers.push(handler);
-    }
-  }
-  return {
-    primitive: handlerPerPrimitive,
-    custom: customTypeHandlers,
-  };
-}
-
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return !!value && Object.prototype.toString.call(value) === '[object Object]';
 }
@@ -184,7 +143,7 @@ function isWalkable(
 }
 
 export function tsonEncoder(opts: TsonOptions) {
-  const handlers = getHandlers2(opts);
+  const handlers = getHandlers(opts);
   const maybeNonce = opts.nonce;
 
   function walker(nonce: TsonNonce, value: unknown): unknown {

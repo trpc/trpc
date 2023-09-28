@@ -69,10 +69,13 @@ type TsonTypeTester = TsonTypeTesterPrimitive | TsonTypeTesterCustom;
 
 export type TsonTypeHandler<TValue> = TsonTypeTester & TsonTransformer<TValue>;
 
-// export type TsonTypeHandlerFactory<TValue> = () => TsonTypeHandler<TValue>;
+export type TsonTypeHandlerFactory<TValue> = () => TsonTypeHandler<TValue>;
 export interface TsonOptions {
   nonce?: () => string;
-  types: Record<string, TsonTypeHandler<any>>;
+  types: Record<string, TsonTypeHandler<any> | TsonTypeHandlerFactory<any>>;
 }
 
-export type TsonSerialized = [TsonEncodedValue, TsonNonce, ...TsonReferences];
+export type TsonSerialized = [
+  TsonEncodedValue,
+  TsonNonce /* [maybe later?], ...TsonReferences*/,
+];
