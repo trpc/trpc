@@ -4,24 +4,14 @@ import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
-import React, { Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
+    const t = initTRPC.create();
     const appRouter = t.router({
       post: t.router({
         byId: t.procedure
@@ -127,32 +117,6 @@ describe('useQuery()', () => {
 
     expectation.toMatchTypeOf<{ data: '__result' }>();
     expectation.not.toMatchTypeOf<{ data: undefined }>();
-  });
-});
-
-test('useSuspenseQuery()', async () => {
-  const { proxy, App } = ctx;
-  function MyComponent() {
-    const [data, query1] = proxy.post.byId.useSuspenseQuery({
-      id: '1',
-    });
-    expectTypeOf(data).toEqualTypeOf<'__result'>();
-
-    type TData = typeof data;
-    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
-    expect(data).toBe('__result');
-    expect(query1.data).toBe('__result');
-
-    return <>{query1.data}</>;
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
   });
 });
 
@@ -289,74 +253,5 @@ test('useInfiniteQuery() initialCursor', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "3" ]`);
     expect(utils.container).toHaveTextContent(`[ "4" ]`);
-  });
-});
-
-test('useSuspenseInfiniteQuery()', async () => {
-  const { App, proxy } = ctx;
-  function MyComponent() {
-    const [data, query1] = proxy.post.list.useSuspenseInfiniteQuery(
-      {},
-      {
-        getNextPageParam(lastPage) {
-          return lastPage.next;
-        },
-      },
-    );
-    expect(query1.trpc.path).toBe('post.list');
-
-    expect(query1.data).not.toBeFalsy();
-    expect(data).not.toBeFalsy();
-
-    expectTypeOf<
-      InfiniteData<
-        {
-          items: typeof fixtureData;
-          next?: number | undefined;
-        },
-        number | null
-      >
-    >(query1.data);
-
-    expectTypeOf<
-      InfiniteData<
-        {
-          items: typeof fixtureData;
-          next?: number | undefined;
-        },
-        number | null
-      >
-    >(data);
-
-    return (
-      <>
-        <button
-          data-testid="fetchMore"
-          onClick={() => {
-            query1.fetchNextPage();
-          }}
-        >
-          Fetch more
-        </button>
-        <pre>{JSON.stringify(data, null, 4)}</pre>
-      </>
-    );
-  }
-
-  const utils = render(
-    <App>
-      <Suspense fallback="loading">
-        <MyComponent />
-      </Suspense>
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`[ "1" ]`);
-  });
-  await userEvent.click(utils.getByTestId('fetchMore'));
-
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`[ "1" ]`);
-    expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });
 });

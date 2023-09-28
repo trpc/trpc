@@ -104,7 +104,7 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
         any,
         ExtractCursorType<TInput>
       >,
-      'queryKey' | 'defaultPageParam'
+      'queryKey' | 'initialPageParam'
     >,
     TRPCUseQueryBaseOptions {
   initialCursor?: ExtractCursorType<TInput>;
@@ -120,7 +120,7 @@ export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
         any,
         ExtractCursorType<TInput>
       >,
-      'queryKey' | 'defaultPageParam'
+      'queryKey' | 'initialPageParam'
     >,
     TRPCUseQueryBaseOptions {
   initialCursor?: ExtractCursorType<TInput>;

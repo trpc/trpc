@@ -224,7 +224,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             ...args1,
             queryKey,
             queryFn,
-            defaultPageParam: args1?.initialCursor ?? null,
+            initialPageParam: args1?.initialCursor ?? null,
           });
         },
         prefetch: () => {
@@ -239,7 +239,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             ...args1,
             queryKey,
             queryFn,
-            defaultPageParam: args1?.initialCursor ?? null,
+            initialPageParam: args1?.initialCursor ?? null,
           });
         },
       };

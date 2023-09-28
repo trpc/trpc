@@ -39,7 +39,7 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
       TRPCQueryKey,
       ExtractCursorType<TInput>
     >,
-    'queryKey' | 'defaultPageParam'
+    'queryKey' | 'initialPageParam'
   > &
     TRPCRequestOptions & {
       initialCursor?: ExtractCursorType<TInput>;

@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0-beta.9",
+    "@tanstack/react-query": "^5.0.0-rc.1",
     "@trpc/client": "^10.38.5",
     "@trpc/next": "^10.38.5",
     "@trpc/react-query": "^10.38.5",
