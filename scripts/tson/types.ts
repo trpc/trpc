@@ -9,8 +9,7 @@ export type TsonTuple = [TsonNonce, TsonTypeHandlerKey, TsonSerializedValue];
 
 
 // there's probably a better way of getting this
-const type: unknown = null;
-export type TsonPrimitive = typeof type;
+export type TsonAllTypes = "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function"
 
 
 export interface TsonTransformerNone {
@@ -40,7 +39,7 @@ export interface TsonTypeTesterPrimitive {
   /**
    * The type of the primitive
    */
-  primitive: TsonPrimitive;
+  primitive: TsonAllTypes;
   /**
    * Test if the value is of this type
    */

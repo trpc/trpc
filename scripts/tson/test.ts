@@ -49,4 +49,14 @@ import { TsonOptions } from './types';
   console.log('parsed back', parser(stringified));
 }
 {
+  const tsonOpts: TsonOptions = {
+    types: {
+      ...defaults,
+      Map: MapHandler,
+      undefined: {
+        primitive:
+      }
+    },
+    nonce: () => `__tson-${Math.random()}`,
+  };
 }

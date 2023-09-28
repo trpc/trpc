@@ -1,6 +1,7 @@
 /* eslint-disable max-params */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
+  TsonAllTypes,
   TsonNonce,
   TsonOptions,
   TsonSerialized,
@@ -35,19 +36,21 @@ function getHandlers(opts: TsonOptions) {
   });
   type Handler = (typeof types)[number];
 
-  const handlerPerPrimitive: Record<
-    string,
-    Extract<Handler, TsonTypeTesterPrimitive>
+  const handlerPerPrimitive: Partial<
+    Record<TsonAllTypes, Extract<Handler, TsonTypeTesterPrimitive>>
   > = {};
   const customTypeHandlers: Extract<Handler, TsonTypeTesterCustom>[] = [];
 
   for (const handler of types) {
     if (handler.primitive) {
+      if (handlerPerPrimitive[handler.primitive]) {
+        throw new Error(
+          `Multiple handlers for primitive ${handler.primitive} found`,
+        );
+      }
       handlerPerPrimitive[handler.primitive] = handler;
     } else {
-      customTypeHandlers.push(
-        handler as Extract<Handler, TsonTypeTesterCustom>,
-      );
+      customTypeHandlers.push(handler);
     }
   }
   return {
