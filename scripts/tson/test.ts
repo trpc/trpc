@@ -75,4 +75,5 @@ import { TsonOptions } from './types';
 
   console.log('orig:', orig);
   console.log('stringified:', stringified);
+  console.log('parsed back:', parsed);
 }
