@@ -117,12 +117,23 @@ type AppRouter = CreateAppRouter['appRouter'];
 interface ServerOptions {
   appRouter: AppRouter;
   fastifyPluginWrapper?: boolean;
+  withContentTypeParser?: boolean;
 }
 
 type PostPayload = { Body: { text: string; life: number } };
 
 function createServer(opts: ServerOptions) {
   const instance = fastify({ logger: config.logger });
+
+  if (opts.withContentTypeParser) {
+    instance.addContentTypeParser(
+      'application/json',
+      { parseAs: 'string' },
+      function (_, body, _done) {
+        _done(null, body);
+      },
+    );
+  }
 
   const plugin = !!opts.fastifyPluginWrapper
     ? fp(fastifyTRPCPlugin)
@@ -448,5 +459,26 @@ describe('anonymous user with fastify-plugin', () => {
             "text": "hello test",
           }
       `);
+  });
+});
+
+// https://github.com/trpc/trpc/issues/4820
+describe.only('regression #4820 - content type parser already set', () => {
+  beforeEach(async () => {
+    app = createApp({
+      serverOptions: {
+        fastifyPluginWrapper: true,
+        withContentTypeParser: true,
+      },
+    });
+    await app.start();
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('query', async () => {
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
   });
 });
