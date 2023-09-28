@@ -3,14 +3,20 @@ type Branded<TType, TBrand> = TType & { __brand: TBrand };
 export type TsonNonce = Branded<string, 'TsonNonce'>;
 export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
 export type TsonSerializedValue = unknown;
-export type TsonReferences = Branded<TsonSerializedValue[], 'TsonReferences'>';
+export type TsonReferences = Branded<TsonSerializedValue[], 'TsonReferences'>;
 
 export type TsonTuple = [TsonNonce, TsonTypeHandlerKey, TsonSerializedValue];
 
-
-// there's probably a better way of getting this
-export type TsonAllTypes = "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function"
-
+// there's probably a better way of getting this type
+export type TsonAllTypes =
+  | 'string'
+  | 'number'
+  | 'bigint'
+  | 'boolean'
+  | 'symbol'
+  | 'undefined'
+  | 'object'
+  | 'function';
 
 export interface TsonTransformerNone {
   /**
@@ -66,9 +72,8 @@ export interface TsonOptions {
   types: Record<string, TsonTypeHandler<any>>;
 }
 
-
 export type TsonSerialized = [
   TsonSerializedValue,
   TsonNonce,
-  ...TsonReferences
-]
+  ...TsonReferences,
+];

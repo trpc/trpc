@@ -49,14 +49,31 @@ import { TsonOptions } from './types';
   console.log('parsed back', parser(stringified));
 }
 {
+  console.log('-------undefined');
   const tsonOpts: TsonOptions = {
     types: {
       ...defaults,
       Map: MapHandler,
       undefined: {
-        primitive:
-      }
+        primitive: 'object',
+        decode: () => undefined,
+        encode: () => null,
+        test: (v) => v === undefined,
+      },
     },
     nonce: () => `__tson-${Math.random()}`,
   };
+
+  const l = {
+    parse: tsonParser(tsonOpts),
+    stringify: tsonStringifier(tsonOpts),
+  };
+  const orig = {
+    foo: undefined,
+  };
+  const stringified = l.stringify(orig);
+  const parsed = l.parse(stringified);
+
+  console.log('orig:', orig);
+  console.log('stringified:', stringified);
 }
