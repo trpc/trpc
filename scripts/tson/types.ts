@@ -5,7 +5,7 @@ export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
 export type TsonSerializedValue = unknown;
 export type TsonReferences = Branded<TsonSerializedValue[], 'TsonReferences'>;
 
-export type TsonTuple = [TsonNonce, TsonTypeHandlerKey, TsonSerializedValue];
+export type TsonTuple = [TsonTypeHandlerKey, TsonSerializedValue, TsonNonce];
 
 // there's probably a better way of getting this type
 export type TsonAllTypes =

@@ -25,9 +25,9 @@ function getHandlers(opts: TsonOptions) {
           return v;
         }
         const result: TsonTuple = [
-          nonce,
           key as TsonTypeHandlerKey,
           value.encode(v),
+          nonce,
         ];
         return result;
       },
@@ -73,7 +73,7 @@ export function tsonParser(opts: TsonOptions) {
         return value;
       }
       if (isTsonTuple(value, nonce)) {
-        const [, type, serializedValue] = value;
+        const [type, serializedValue] = value;
         const transformer = opts.types[
           type
         ] as TsonTransformerEncodeDecode<unknown>;
