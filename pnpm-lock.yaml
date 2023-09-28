@@ -1734,8 +1734,8 @@ importers:
         specifier: ^0.38.0
         version: 0.38.0(@effect/data@0.18.6)(@effect/io@0.41.1)
       '@fastify/busboy':
-        specifier: ^1.2.1
-        version: 1.2.1
+        specifier: ^2.0.0
+        version: 2.0.0
       '@fastify/websocket':
         specifier: ^7.1.2
         version: 7.1.2
@@ -7164,11 +7164,9 @@ packages:
       ajv-formats: 2.1.1(ajv@8.11.2)
       fast-uri: 2.2.0
 
-  /@fastify/busboy@1.2.1:
-    resolution: {integrity: sha512-7PQA7EH43S0CxcOa9OeAnaeA0oQ+e/DHNPZwSQM9CQHW76jle5+OvLdibRp/Aafs9KXbLhxyjOTkRjWUbQEd3Q==}
+  /@fastify/busboy@2.0.0:
+    resolution: {integrity: sha512-JUFJad5lv7jxj926GPgymrWQxxjPYuJNiNjNMzqT+HiuP6Vl3dk5xzG+8sTX96np0ZAluvaMzPsjhHZ5rNuNQQ==}
     engines: {node: '>=14'}
-    dependencies:
-      text-decoding: 1.0.0
     dev: false
 
   /@fastify/deepmerge@1.3.0:
@@ -22287,10 +22285,6 @@ packages:
       '@istanbuljs/schema': 0.1.3
       glob: 7.2.3
       minimatch: 3.1.2
-    dev: false
-
-  /text-decoding@1.0.0:
-    resolution: {integrity: sha512-/0TJD42KDnVwKmDK6jj3xP7E2MG7SHAOG4tyTgyUCRPdHwvkquYNLEQltmdMa3owq3TkddCVcTsoctJI8VQNKA==}
     dev: false
 
   /text-extensions@1.9.0:
