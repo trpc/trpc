@@ -4,7 +4,6 @@ import {
   TsonAllTypes,
   TsonNonce,
   TsonOptions,
-  TsonSerialized,
   TsonTransformerEncodeDecode,
   TsonTuple,
   TsonTypeHandlerKey,
