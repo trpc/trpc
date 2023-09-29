@@ -78,12 +78,11 @@ function getNonce(maybeFn: TsonOptions['nonce']) {
     ? (maybeFn() as TsonNonce)
     : ('__tson' as TsonNonce);
 }
-export function tsonParser(opts: TsonOptions) {
-  return function parse(str: string) {
-    const parsed = JSON.parse(str) as TsonSerialized;
-    const { nonce, json } = parsed;
 
-    const result = walker(json, (node, innerWalk) => {
+export function tsonDecoder(opts: TsonOptions) {
+  return function decode(obj: TsonSerialized) {
+    const nonce = obj.nonce;
+    const result = walker(obj.json, (node, innerWalk) => {
       if (isTsonTuple(node, nonce)) {
         const [type, serializedValue] = node;
         const transformer = opts.types[
@@ -96,8 +95,16 @@ export function tsonParser(opts: TsonOptions) {
       }
       return null;
     });
-
     return result;
+  };
+}
+
+export function tsonParser(opts: TsonOptions) {
+  const decoder = tsonDecoder(opts);
+  return function parse(str: string) {
+    const parsed = JSON.parse(str) as TsonSerialized;
+
+    return decoder(parsed);
   };
 }
 

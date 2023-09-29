@@ -53,8 +53,15 @@ export const undefinedHandler: TsonTypeHandler<undefined> = {
     return undefined;
   },
 };
-export const defaultHandler = {
-  Map: MapHandler,
-  bigint: bigintHandler,
-  numberHandler,
-} satisfies TsonOptions['types'];
+
+export const DateHandler: TsonTypeHandler<Date> = {
+  encode(value) {
+    return value.toJSON();
+  },
+  decode(value) {
+    return new Date(value as string);
+  },
+  test(value) {
+    return value instanceof Date;
+  },
+};
