@@ -4,7 +4,12 @@ import {
 } from './___testHelpers';
 import { DataTransformer, initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { DateHandler, MapHandler } from './tson/handlers';
+import {
+  bigintHandler,
+  DateHandler,
+  MapHandler,
+  SetHandler,
+} from './tson/handlers';
 import { tsonDecoder, tsonEncoder } from './tson/tson';
 import { TsonOptions } from './tson/types';
 
@@ -83,4 +88,77 @@ test('Map', async () => {
   expect(res).toEqual(expected);
 
   await close();
+});
+
+test('Set', async () => {
+  const t = setup({
+    Set: SetHandler,
+  });
+
+  const expected = new Set(['a', 'b']);
+
+  const router = t.router({
+    test: t.procedure.query(() => {
+      return expected;
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client: t.clientCallback,
+  });
+
+  const res = await proxy.test.query();
+
+  expect(res).toEqual(expected);
+
+  await close();
+});
+
+test('bigint', async () => {
+  const t = setup({
+    bigint: bigintHandler,
+    Set: SetHandler,
+  });
+
+  {
+    // bigint
+    const expected = 1n;
+
+    const router = t.router({
+      test: t.procedure.query(() => {
+        return expected;
+      }),
+    });
+
+    const { close, proxy } = routerToServerAndClientNew(router, {
+      client: t.clientCallback,
+    });
+
+    const res = await proxy.test.query();
+
+    expect(res).toEqual(expected);
+
+    await close();
+  }
+
+  {
+    // set of BigInt
+    const expected = new Set([1n]);
+
+    const router = t.router({
+      test: t.procedure.query(() => {
+        return expected;
+      }),
+    });
+
+    const { close, proxy } = routerToServerAndClientNew(router, {
+      client: t.clientCallback,
+    });
+
+    const res = await proxy.test.query();
+
+    expect(res).toEqual(expected);
+
+    await close();
+  }
 });
