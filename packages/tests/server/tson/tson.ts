@@ -18,8 +18,7 @@ function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
 
 function getHandlers(opts: TsonOptions) {
   // warmup the type handlers
-  const types = Object.entries(opts.types).map(([_key, _handler]) => {
-    const handler = typeof _handler === 'function' ? _handler() : _handler;
+  const types = Object.entries(opts.types).map(([_key, handler]) => {
     const key = _key as TsonTypeHandlerKey;
     const encode = handler.encode;
 
