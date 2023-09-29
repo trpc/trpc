@@ -1729,10 +1729,10 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.11.2
-        version: 0.11.2(@effect/data@0.18.6)(@effect/io@0.41.1)(@effect/schema@0.38.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
+        version: 0.11.2(@effect/schema@0.39.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
-        specifier: ^0.38.0
-        version: 0.38.0(@effect/data@0.18.6)(@effect/io@0.41.1)
+        specifier: ^0.39.0
+        version: 0.39.0(effect@2.0.0-next.37)
       '@fastify/busboy':
         specifier: ^2.0.0
         version: 2.0.0
@@ -1958,10 +1958,10 @@ importers:
         version: 7.20.2(@babel/core@7.20.2)
       '@decs/typeschema':
         specifier: ^0.11.2
-        version: 0.11.2(@effect/data@0.18.6)(@effect/io@0.41.1)(@effect/schema@0.38.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2)
+        version: 0.11.2(@effect/schema@0.39.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
-        specifier: ^0.38.0
-        version: 0.38.0(@effect/data@0.18.6)(@effect/io@0.41.1)
+        specifier: ^0.39.0
+        version: 0.39.0(effect@2.0.0-next.37)
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -5569,7 +5569,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.11.2(@effect/data@0.18.6)(@effect/io@0.41.1)(@effect/schema@0.38.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2):
+  /@decs/typeschema@0.11.2(@effect/schema@0.39.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(yup@1.0.0)(zod@3.20.2):
     resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -5625,9 +5625,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@effect/data': 0.18.6
-      '@effect/io': 0.41.1(@effect/data@0.18.6)
-      '@effect/schema': 0.38.0(@effect/data@0.18.6)(@effect/io@0.41.1)
+      '@effect/schema': 0.39.0(effect@2.0.0-next.37)
       ajv: 6.12.6
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
@@ -5637,7 +5635,7 @@ packages:
       zod: 3.20.2
     dev: true
 
-  /@decs/typeschema@0.11.2(@effect/data@0.18.6)(@effect/io@0.41.1)(@effect/schema@0.38.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
+  /@decs/typeschema@0.11.2(@effect/schema@0.39.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.17.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
     resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -5693,9 +5691,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@effect/data': 0.18.6
-      '@effect/io': 0.41.1(@effect/data@0.18.6)
-      '@effect/schema': 0.38.0(@effect/data@0.18.6)(@effect/io@0.41.1)
+      '@effect/schema': 0.39.0(effect@2.0.0-next.37)
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
@@ -6505,24 +6501,12 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/data@0.18.6:
-    resolution: {integrity: sha512-gfjorojxEJ0KKxwluZLoAsPv1kkHi7MV1vQDlibClfdtC9iY9JqkJo+BjWTKsU0zV4mW2inmTZQCF72KKbn2tQ==}
-
-  /@effect/io@0.41.1(@effect/data@0.18.6):
-    resolution: {integrity: sha512-gJ9fdN7GKkC1sryroy/bsFYugVFyjY2mhY/hwVQwLHxYluje0b5tRr7kpUnbG0ntSvuPS0JVe1604ppGUmym0g==}
+  /@effect/schema@0.39.0(effect@2.0.0-next.37):
+    resolution: {integrity: sha512-Bnu8LW6aM7B2QIPVi9YglB/BAbibboFQ7lhaE68FNCyYQcAqCLpq5gufbaCLfxsQ15h1kaD5w+minXS+JJqaxg==}
     peerDependencies:
-      '@effect/data': ^0.18.5
+      effect: 2.0.0-next.37
     dependencies:
-      '@effect/data': 0.18.6
-
-  /@effect/schema@0.38.0(@effect/data@0.18.6)(@effect/io@0.41.1):
-    resolution: {integrity: sha512-J9/tjigf7TCMkxfNtRJcmCGdJ1LMrDa3A4QkNIjnXTbzdOsiZlJucsjZFI0s2S/WEMTVaG8qCl1405rRN4fIPQ==}
-    peerDependencies:
-      '@effect/data': ^0.18.6
-      '@effect/io': ^0.41.1
-    dependencies:
-      '@effect/data': 0.18.6
-      '@effect/io': 0.41.1(@effect/data@0.18.6)
+      effect: 2.0.0-next.37
       fast-check: 3.12.0
 
   /@emotion/is-prop-valid@0.8.8:
@@ -13173,6 +13157,9 @@ packages:
 
   /ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
+
+  /effect@2.0.0-next.37:
+    resolution: {integrity: sha512-poONzql/x5pn9ZtsmabqiPPZPuiGJoMUoZccGMaCZWYY1DSD8klYNviQEker1BDU0szr+J7bmyFFjgdYT3BVfQ==}
 
   /ejs@3.1.9:
     resolution: {integrity: sha512-rC+QVNMJWv+MtPgkt0y+0rVEIdbtxVADApW9JXrUVlzHetgcyczP/E7DJmWJ4fJCZF2cPcBk0laWO9ZHMG3DmQ==}
