@@ -136,7 +136,7 @@ export function tsonEncoder(opts: TsonOptions) {
       }
 
       return null;
-    });
+    }) as TsonEncodedValue;
 
     return {
       nonce,
