@@ -6,11 +6,11 @@ function isWalkable(
   return !!value && typeof value === 'object';
 }
 type WalkResult = [unknown] | null;
-export type WalkInner = (innerValue: unknown) => unknown;
+export type TsonWalkerInnerCallback = (innerValue: unknown) => unknown;
 
 export function walker(
   value: unknown,
-  visit: (node: unknown, walkInner: WalkInner) => WalkResult,
+  visit: (node: unknown, walkInner: TsonWalkerInnerCallback) => WalkResult,
 ): unknown {
   const result = visit(value, (innerValue) => {
     return isWalkable(value) ? walker(innerValue, visit) : innerValue;
