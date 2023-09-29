@@ -12,9 +12,14 @@ import { tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
 
 function setup(opts: TsonOptions) {
+  const nonce: TsonOptions['nonce'] = () => '__tson';
+  const withDefaults: TsonOptions = {
+    nonce,
+    ...opts,
+  };
   return {
-    stringify: tsonStringifier(opts),
-    parse: tsonParser(opts),
+    stringify: tsonStringifier(withDefaults),
+    parse: tsonParser(withDefaults),
   };
 }
 
