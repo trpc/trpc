@@ -1,7 +1,9 @@
 import {
   CreateClientCallback,
   routerToServerAndClientNew,
+  waitError,
 } from './___testHelpers';
+import { TRPCClientError } from '@trpc/client';
 import { DataTransformer, initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import {
@@ -10,6 +12,7 @@ import {
   MapHandler,
   SetHandler,
 } from './tson/handlers';
+import { isPlainObject } from './tson/isPlainObject';
 import { tsonDecoder, tsonEncoder } from './tson/tson';
 import { TsonOptions } from './tson/types';
 
@@ -161,4 +164,68 @@ test('bigint', async () => {
 
     await close();
   }
+});
+
+test('guard unwanted', async () => {
+  // Sets are okay, but not Maps
+  const t = setup({
+    Set: SetHandler,
+    // defined last so it runs last
+    guard: {
+      decode: (v) => v,
+      encode: (v) => v,
+      test(v) {
+        if (
+          v &&
+          typeof v === 'object' &&
+          !Array.isArray(v) &&
+          !isPlainObject(v)
+        ) {
+          throw new Error(`Unwanted object found`);
+        }
+        return false;
+      },
+    },
+  });
+
+  const router = t.router({
+    shouldWork1: t.procedure.query(() => {
+      return {
+        set: new Set([1, 2, 3]),
+      };
+    }),
+    shouldNotWork1: t.procedure.query(() => {
+      return new Map([['a', 'b']]);
+    }),
+    shouldNotWork2: t.procedure
+      .input(z.map(z.string(), z.string()))
+      .query((opts) => {
+        return opts.input;
+      }),
+  });
+
+  const { close, proxy, httpUrl } = routerToServerAndClientNew(router, {
+    client: t.clientCallback,
+  });
+
+  expect(await proxy.shouldWork1.query()).toEqual({
+    set: new Set([1, 2, 3]),
+  });
+
+  {
+    // as output
+    const err = await waitError(proxy.shouldNotWork1.query());
+    assert(err instanceof TRPCClientError);
+
+    expect(err.message).toMatchInlineSnapshot(`"Unwanted object found"`);
+    expect(err.data.code).toBe('INTERNAL_SERVER_ERROR');
+  }
+  {
+    // as input
+
+    const err = await waitError(proxy.shouldNotWork2.query(new Map()));
+    expect(err.message).toMatchInlineSnapshot(`"Unwanted object found"`);
+  }
+
+  await close();
 });
