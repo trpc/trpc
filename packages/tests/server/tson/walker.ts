@@ -6,7 +6,7 @@ function isWalkable(
   return !!value && typeof value === 'object';
 }
 type WalkResult = [unknown] | null;
-type WalkInner = (innerValue: unknown) => unknown;
+export type WalkInner = (innerValue: unknown) => unknown;
 
 export function walker(
   value: unknown,

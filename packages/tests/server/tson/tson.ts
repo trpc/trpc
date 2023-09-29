@@ -10,7 +10,7 @@ import {
   TsonTypeTesterCustom,
   TsonTypeTesterPrimitive,
 } from './types';
-import { walker } from './walker';
+import { walker, WalkInner } from './walker';
 
 function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
   return Array.isArray(v) && v.length === 3 && v[2] === nonce;
@@ -22,11 +22,10 @@ function getHandlers(opts: TsonOptions) {
     const key = _key as TsonTypeHandlerKey;
     const encode = handler.encode;
 
-    type WalkCallback = (innerValue: unknown) => unknown;
     type Encoder = (
       value: unknown,
       nonce: TsonNonce,
-      walk?: WalkCallback,
+      walk: WalkInner,
     ) => TsonEncodedValue;
 
     const $encode: Encoder = encode
