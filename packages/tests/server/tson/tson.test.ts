@@ -1,5 +1,11 @@
 import { waitError } from '../___testHelpers';
-import { bigintHandler, DateHandler, MapHandler, SetHandler } from './handlers';
+import {
+  bigintHandler,
+  DateHandler,
+  MapHandler,
+  SetHandler,
+  undefinedHandler,
+} from './handlers';
 import { isPlainObject } from './isPlainObject';
 import { tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
@@ -23,6 +29,22 @@ test('Date', async () => {
   const encoded = ctx.stringify(date);
   const decoded = ctx.parse(encoded);
   expect(decoded).toEqual(date);
+});
+
+test('undefined', async () => {
+  const ctx = setup({
+    types: {
+      undefined: undefinedHandler,
+    },
+  });
+
+  const expected = {
+    foo: [1, undefined, 2],
+  };
+  const encoded = ctx.stringify(expected);
+  const decoded = ctx.parse(encoded);
+
+  expect(decoded).toEqual(expected);
 });
 
 test('Map', async () => {
@@ -106,8 +128,7 @@ test('guard unwanted objects', async () => {
       Set: SetHandler,
       // defined last so it runs last
       guard: {
-        decode: (v) => v,
-        encode: (v) => v,
+        transform: false,
         test(v) {
           if (
             v &&
