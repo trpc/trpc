@@ -89,9 +89,9 @@ export function tsonParser(opts: TsonOptions) {
         const transformer = opts.types[
           type
         ] as TsonTransformerEncodeDecode<unknown>;
-        console.log('node', node);
+
         const innerValue = innerWalk(serializedValue);
-        console.log({ serializedValue, innerValue });
+
         return [transformer.decode(innerValue)];
       }
       return null;
