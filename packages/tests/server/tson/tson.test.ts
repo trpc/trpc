@@ -166,6 +166,7 @@ test('lets have a look at the stringified output', async () => {
   const t = setup({
     types: {
       Set: SetHandler,
+      Map: MapHandler,
       undefined: undefinedHandler,
       bigint: bigintHandler,
     },
@@ -180,6 +181,7 @@ test('lets have a look at the stringified output', async () => {
     true,
     false,
     1n,
+    new Map([['foo', 'bar']]),
   ]);
 
   const stringified = t.stringify(expected, 2);
@@ -204,10 +206,24 @@ test('lets have a look at the stringified output', async () => {
             \\"bigint\\",
             \\"1\\",
             \\"__tson\\"
+          ],
+          [
+            \\"Map\\",
+            [
+              [
+                \\"foo\\",
+                \\"bar\\"
+              ]
+            ],
+            \\"__tson\\"
           ]
         ],
         \\"__tson\\"
       ]
     }"
   `);
+
+  const decoded = t.parse(stringified);
+
+  expect(decoded).toEqual(expected);
 });
