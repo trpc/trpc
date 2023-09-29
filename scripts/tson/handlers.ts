@@ -12,6 +12,18 @@ export const MapHandler: TsonTypeHandler<UnknownMap> = {
     return new Map(v as any[]);
   },
 };
+
+export const SetHandler: TsonTypeHandler<Set<unknown>> = {
+  test(v) {
+    return v instanceof Set;
+  },
+  encode(v) {
+    return Array.from(v.entries());
+  },
+  decode(v) {
+    return new Set(v as any[]);
+  },
+};
 export const bigintHandler: TsonTypeHandler<bigint> = {
   primitive: 'bigint',
   decode(v) {

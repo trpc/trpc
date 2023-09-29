@@ -1,5 +1,10 @@
 import { inspect } from 'util';
-import { defaultHandler, MapHandler, undefinedHandler } from './handlers';
+import {
+  defaultHandler,
+  MapHandler,
+  SetHandler,
+  undefinedHandler,
+} from './handlers';
 import { tsonEncoder, tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
 
@@ -82,6 +87,7 @@ import { TsonOptions } from './types';
     types: {
       ...defaultHandler,
       Map: MapHandler,
+      Set: SetHandler,
       undefined: undefinedHandler,
     },
     nonce: () => `__tson-${Math.random()}`,
@@ -95,6 +101,7 @@ import { TsonOptions } from './types';
     foo: 'bar',
     undefined: undefined,
     map: new Map([['foo', 'bar']]),
+    setOfBigint: new Set([100n, 200n]),
   };
   console.log('source', orig);
 
@@ -103,5 +110,5 @@ import { TsonOptions } from './types';
   const stringified = stringify(orig, 2);
 
   const parsed = parse(stringified);
-  console.log('parsed', parsed);
+  console.log('parsed', inspect(parsed, { depth: Infinity }));
 }

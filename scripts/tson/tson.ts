@@ -89,7 +89,8 @@ export function tsonParser(opts: TsonOptions) {
         const transformer = opts.types[
           type
         ] as TsonTransformerEncodeDecode<unknown>;
-        return [innerWalk(transformer.decode(serializedValue))];
+        const innerValue = innerWalk(serializedValue);
+        return [transformer.decode(innerValue)];
       }
       return null;
     });
