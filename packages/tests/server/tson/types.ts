@@ -38,6 +38,9 @@ export interface TsonTransformerEncodeDecode<
   TValue,
   TEncodedType extends EncodedType,
 > {
+  /**
+   * Use a transformer to encode and decode the value?
+   */
   transform?: true;
 
   /**
