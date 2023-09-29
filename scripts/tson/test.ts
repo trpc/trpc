@@ -8,6 +8,8 @@ import {
 import { tsonEncoder, tsonParser, tsonStringifier } from './tson';
 import { TsonOptions } from './types';
 
+const randomString = () => `_${Math.random().toString(36).slice(2)}`;
+
 // {
 //   const tsonOpts: TsonOptions = {
 //     types: {
@@ -90,7 +92,7 @@ import { TsonOptions } from './types';
       Set: SetHandler,
       undefined: undefinedHandler,
     },
-    nonce: () => `__tson-${Math.random()}`,
+    nonce: randomString,
   };
 
   const encoder = tsonEncoder(tsonOpts);
