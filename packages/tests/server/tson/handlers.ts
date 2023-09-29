@@ -22,13 +22,21 @@ export const bigintHandler: TsonTypeHandler<bigint, string> = {
   encode: (v) => v.toString(),
 };
 
+/**
+ * Prevents `NaN` and `Infinity` from being encoded
+ */
 export const numberHandler: TsonTypeHandler<number, number> = {
   primitive: 'number',
   transform: false,
   test: (v) => {
-    if (typeof v === 'number' && isNaN(v)) {
-      throw new Error('NaN is not supported');
+    const value = v as number;
+    if (isNaN(value)) {
+      throw new Error('Encountered NaN');
     }
+    if (!isFinite(value)) {
+      throw new Error('Encountered Infinity');
+    }
+
     return false;
   },
 };

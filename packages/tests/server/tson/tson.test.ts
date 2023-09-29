@@ -3,6 +3,7 @@ import {
   bigintHandler,
   DateHandler,
   MapHandler,
+  numberHandler,
   RegExpHandler,
   SetHandler,
   undefinedHandler,
@@ -36,6 +37,42 @@ test('Date', async () => {
   const stringified = ctx.stringify(date);
   const decoded = ctx.parse(stringified);
   expect(decoded).toEqual(date);
+});
+
+test('number', async () => {
+  const t = setup({
+    types: {
+      number: numberHandler,
+    },
+  });
+
+  const bad = [
+    //
+    NaN,
+    Infinity,
+    -Infinity,
+  ];
+  const good = [1, 0, -1, 1.1, -1.1];
+
+  const errors: unknown[] = [];
+
+  for (const n of bad) {
+    const err = await waitError(() => t.parse(t.stringify(n)));
+    errors.push(err);
+  }
+
+  expect(errors).toMatchInlineSnapshot(`
+    Array [
+      [Error: Encountered NaN],
+      [Error: Encountered Infinity],
+      [Error: Encountered Infinity],
+    ]
+  `);
+
+  for (const n of good) {
+    const decoded = t.parse(t.stringify(n));
+    expect(decoded).toEqual(n);
+  }
 });
 
 test('undefined', async () => {

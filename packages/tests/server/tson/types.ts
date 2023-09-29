@@ -93,7 +93,10 @@ export type TsonTypeHandler<
 
 export interface TsonOptions {
   nonce?: () => string;
-  types: Record<string, TsonTypeHandler<any, any> | TsonTypeHandler<any, never>>;
+  types: Record<
+    string,
+    TsonTypeHandler<any, any> | TsonTypeHandler<any, never>
+  >;
 }
 
 export type TsonEncoded = {
