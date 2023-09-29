@@ -1,4 +1,5 @@
-import { TsonOptions, TsonTypeHandler } from './types';
+import { isPlainObject } from './isPlainObject';
+import { TsonTypeHandler } from './types';
 
 type UnknownMap = Map<unknown, unknown>;
 export const MapHandler: TsonTypeHandler<UnknownMap> = {
@@ -63,5 +64,34 @@ export const DateHandler: TsonTypeHandler<Date> = {
   },
   test(value) {
     return value instanceof Date;
+  },
+};
+
+export class UnknownObjectGuardError extends Error {
+  /**
+   * The bad object that was found
+   */
+  public readonly value;
+
+  constructor(value: unknown) {
+    super(`Unknown object found`);
+
+    this.name = this.constructor.name;
+    this.value = value;
+  }
+}
+/**
+ * This is a guard that will throw an error if a non-plain object is found which isn't handled.
+ * @remark Make sure to define this last in the record of guards.
+ * @throws {UnknownObjectGuardError} If a non-plain object is found.
+ */
+export const unknownObjectGuard: TsonTypeHandler<unknown> = {
+  decode: (v) => v,
+  encode: (v) => v,
+  test(v) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && !isPlainObject(v)) {
+      throw new UnknownObjectGuardError(v);
+    }
+    return false;
   },
 };
