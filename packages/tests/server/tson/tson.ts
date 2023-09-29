@@ -1,5 +1,3 @@
-/* eslint-disable max-params */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   TsonAllTypes,
   TsonEncodedValue,
