@@ -2,7 +2,7 @@ export type Branded<TType, TBrand> = TType & { __brand: TBrand };
 
 export type TsonNonce = Branded<string, 'TsonNonce'>;
 export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
-export type TsonEncodedValue = Branded<unknown, 'TsonEncodedValue'>;
+export type TsonEncodedValue = unknown;
 
 export type TsonTuple = [TsonTypeHandlerKey, TsonEncodedValue, TsonNonce];
 
