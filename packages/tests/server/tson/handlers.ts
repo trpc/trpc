@@ -1,8 +1,10 @@
 import { isPlainObject } from './isPlainObject';
 import { TsonTypeHandler } from './types';
 
-type UnknownMap = Map<unknown, unknown>;
-export const MapHandler: TsonTypeHandler<UnknownMap, unknown[]> = {
+export const MapHandler: TsonTypeHandler<
+  Map<unknown, unknown>,
+  [unknown, unknown][]
+> = {
   test(v) {
     return v instanceof Map;
   },
@@ -10,7 +12,7 @@ export const MapHandler: TsonTypeHandler<UnknownMap, unknown[]> = {
     return Array.from(v.entries());
   },
   decode(v) {
-    return new Map(v as any[]);
+    return new Map(v);
   },
 };
 
@@ -22,13 +24,13 @@ export const SetHandler: TsonTypeHandler<Set<unknown>, unknown[]> = {
     return Array.from(v);
   },
   decode(v) {
-    return new Set(v as any[]);
+    return new Set(v);
   },
 };
 export const bigintHandler: TsonTypeHandler<bigint, string> = {
   primitive: 'bigint',
   decode(v) {
-    return BigInt(v as string);
+    return BigInt(v);
   },
   encode(v) {
     return v.toString();
@@ -60,7 +62,7 @@ export const DateHandler: TsonTypeHandler<Date, string> = {
     return value.toJSON();
   },
   decode(value) {
-    return new Date(value as string);
+    return new Date(value);
   },
   test(value) {
     return value instanceof Date;

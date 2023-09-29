@@ -18,7 +18,13 @@ export type TsonAllTypes =
   | 'object'
   | 'function';
 
-type JsonTypes = string | number | boolean | null | Record<string, any> | any[];
+type EncodedType =
+  | string
+  | number
+  | boolean
+  | Record<string, unknown>
+  | unknown[];
+
 export interface TsonTransformerNone {
   /**
    * Won't be decoded nor encoded
@@ -30,7 +36,7 @@ export interface TsonTransformerNone {
 }
 export interface TsonTransformerEncodeDecode<
   TValue,
-  TEncodedType extends JsonTypes,
+  TEncodedType extends EncodedType,
 > {
   transform?: true;
 
@@ -44,7 +50,7 @@ export interface TsonTransformerEncodeDecode<
   decode: (v: TEncodedType) => TValue;
 }
 
-export type TsonTransformer<TValue, TEncodedType extends JsonTypes> =
+export type TsonTransformer<TValue, TEncodedType extends EncodedType> =
   | TsonTransformerNone
   | TsonTransformerEncodeDecode<TValue, TEncodedType>;
 
@@ -73,7 +79,7 @@ type TsonTypeTester = TsonTypeTesterPrimitive | TsonTypeTesterCustom;
 
 export type TsonTypeHandler<
   TValue,
-  TEncodedType extends JsonTypes,
+  TEncodedType extends EncodedType,
 > = TsonTypeTester & TsonTransformer<TValue, TEncodedType>;
 
 export interface TsonOptions {
@@ -81,7 +87,7 @@ export interface TsonOptions {
   types: Record<string, TsonTypeHandler<any, any>>;
 }
 
-export type TsonSerialized = {
+export type TsonEncoded = {
   json: TsonEncodedValue;
   nonce: TsonNonce;
 };

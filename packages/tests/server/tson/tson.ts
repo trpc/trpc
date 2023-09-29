@@ -1,9 +1,9 @@
 import {
   TsonAllTypes,
+  TsonEncoded,
   TsonEncodedValue,
   TsonNonce,
   TsonOptions,
-  TsonSerialized,
   TsonTransformerEncodeDecode,
   TsonTuple,
   TsonTypeHandlerKey,
@@ -76,7 +76,7 @@ function getNonce(maybeFn: TsonOptions['nonce']) {
 }
 
 export function tsonDecoder(opts: TsonOptions) {
-  return function decode(obj: TsonSerialized) {
+  return function decode(obj: TsonEncoded) {
     const nonce = obj.nonce;
     const result = walker(obj.json, (node, innerWalk) => {
       if (isTsonTuple(node, nonce)) {
@@ -99,7 +99,7 @@ export function tsonDecoder(opts: TsonOptions) {
 export function tsonParser(opts: TsonOptions) {
   const decoder = tsonDecoder(opts);
   return function parse(str: string) {
-    const parsed = JSON.parse(str) as TsonSerialized;
+    const parsed = JSON.parse(str) as TsonEncoded;
 
     return decoder(parsed);
   };
@@ -117,7 +117,7 @@ export function tsonEncoder(opts: TsonOptions) {
   const handlers = getHandlers(opts);
   const maybeNonce = opts.nonce;
 
-  return function parse(obj: unknown): TsonSerialized {
+  return function parse(obj: unknown): TsonEncoded {
     const nonce = getNonce(maybeNonce);
 
     const json = walker(obj, (value, innerWalk) => {
