@@ -3,13 +3,14 @@ import {
   bigintHandler,
   DateHandler,
   MapHandler,
+  RegExpHandler,
   SetHandler,
   undefinedHandler,
   unknownObjectGuard,
   UnknownObjectGuardError,
 } from './handlers';
 import { tsonParser, tsonStringifier } from './tson';
-import { TsonOptions } from './types';
+import { TsonOptions, TsonTypeHandler } from './types';
 
 function setup(opts: TsonOptions) {
   const nonce: TsonOptions['nonce'] = () => '__tson';
@@ -160,6 +161,37 @@ test('guard unwanted objects', async () => {
     );
     expect(err.value).toEqual(expected);
   }
+});
+
+test('regex', () => {
+  const t = setup({
+    types: {
+      RegExp: RegExpHandler,
+    },
+  });
+
+  const expected = new RegExp('foo', 'g');
+
+  const stringified = t.stringify(expected, 2);
+
+  expect(stringified).toMatchInlineSnapshot(
+    `
+    "{
+      \\"nonce\\": \\"__tson\\",
+      \\"json\\": [
+        \\"RegExp\\",
+        \\"/foo/g\\",
+        \\"__tson\\"
+      ]
+    }"
+  `,
+  );
+
+  const decoded = t.parse(stringified);
+
+  expect(decoded).toBeInstanceOf(RegExp);
+  expect(decoded).toMatchInlineSnapshot('/foo/g');
+  expect(decoded + '').toEqual(expected + '');
 });
 
 test('lets have a look at the stringified output', async () => {

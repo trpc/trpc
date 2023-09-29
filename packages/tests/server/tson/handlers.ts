@@ -95,3 +95,18 @@ export const unknownObjectGuard: TsonTypeHandler<unknown> = {
     return false;
   },
 };
+
+export const RegExpHandler: TsonTypeHandler<RegExp> = {
+  test(value) {
+    return value instanceof RegExp;
+  },
+  encode(value) {
+    return '' + value;
+  },
+  decode(value) {
+    const str = value as string;
+    const body = str.slice(1, str.lastIndexOf('/'));
+    const flags = str.slice(str.lastIndexOf('/') + 1);
+    return new RegExp(body, flags);
+  },
+};
