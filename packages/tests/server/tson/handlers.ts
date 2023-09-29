@@ -26,8 +26,10 @@ export const numberHandler: TsonTypeHandler<number, number> = {
   primitive: 'number',
   transform: false,
   test: (v) => {
-    if (isNaN(v as number)) throw new Error('NaN is not supported');
-    return true;
+    if (typeof v === 'number' && isNaN(v)) {
+      throw new Error('NaN is not supported');
+    }
+    return false;
   },
 };
 
