@@ -18,7 +18,7 @@ export const SetHandler: TsonTypeHandler<Set<unknown>> = {
     return v instanceof Set;
   },
   encode(v) {
-    return Array.from(v.entries());
+    return Array.from(v);
   },
   decode(v) {
     return new Set(v as any[]);
