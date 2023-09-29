@@ -4,7 +4,7 @@ import {
 } from './___testHelpers';
 import { DataTransformer, initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { DateHandler } from './tson/handlers';
+import { DateHandler, MapHandler } from './tson/handlers';
 import { tsonDecoder, tsonEncoder } from './tson/tson';
 import { TsonOptions } from './tson/types';
 
@@ -57,6 +57,30 @@ test('Date', async () => {
   const res = await proxy.hello.query(date);
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+
+  await close();
+});
+
+test('Map', async () => {
+  const t = setup({
+    Map: MapHandler,
+  });
+
+  const expected = new Map([['a', 'b']]);
+
+  const router = t.router({
+    test: t.procedure.query(() => {
+      return expected;
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client: t.clientCallback,
+  });
+
+  const res = await proxy.test.query();
+
+  expect(res).toEqual(expected);
 
   await close();
 });
