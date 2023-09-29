@@ -78,7 +78,13 @@ export interface TsonTypeTesterCustom {
 type TsonTypeTester = TsonTypeTesterPrimitive | TsonTypeTesterCustom;
 
 export type TsonTypeHandler<
+  /**
+   * The type of the value
+   */
   TValue,
+  /**
+   * JSON-serializable value how it's stored after it's encoded
+   */
   TEncodedType extends EncodedType,
 > = TsonTypeTester & TsonTransformer<TValue, TEncodedType>;
 
