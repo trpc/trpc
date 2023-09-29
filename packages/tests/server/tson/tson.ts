@@ -81,9 +81,10 @@ export function tsonDecoder(opts: TsonOptions) {
     const result = walker(obj.json, (node, innerWalk) => {
       if (isTsonTuple(node, nonce)) {
         const [type, serializedValue] = node;
-        const transformer = opts.types[
-          type
-        ] as TsonTransformerEncodeDecode<unknown>;
+        const transformer = opts.types[type] as TsonTransformerEncodeDecode<
+          any,
+          any
+        >;
 
         const innerValue = innerWalk(serializedValue);
 

@@ -2,7 +2,7 @@ import { isPlainObject } from './isPlainObject';
 import { TsonTypeHandler } from './types';
 
 type UnknownMap = Map<unknown, unknown>;
-export const MapHandler: TsonTypeHandler<UnknownMap> = {
+export const MapHandler: TsonTypeHandler<UnknownMap, unknown[]> = {
   test(v) {
     return v instanceof Map;
   },
@@ -14,7 +14,7 @@ export const MapHandler: TsonTypeHandler<UnknownMap> = {
   },
 };
 
-export const SetHandler: TsonTypeHandler<Set<unknown>> = {
+export const SetHandler: TsonTypeHandler<Set<unknown>, unknown[]> = {
   test(v) {
     return v instanceof Set;
   },
@@ -25,7 +25,7 @@ export const SetHandler: TsonTypeHandler<Set<unknown>> = {
     return new Set(v as any[]);
   },
 };
-export const bigintHandler: TsonTypeHandler<bigint> = {
+export const bigintHandler: TsonTypeHandler<bigint, string> = {
   primitive: 'bigint',
   decode(v) {
     return BigInt(v as string);
@@ -34,7 +34,7 @@ export const bigintHandler: TsonTypeHandler<bigint> = {
     return v.toString();
   },
 };
-export const numberHandler: TsonTypeHandler<number> = {
+export const numberHandler: TsonTypeHandler<number, number> = {
   primitive: 'number',
   transform: false,
   test(v) {
@@ -45,7 +45,7 @@ export const numberHandler: TsonTypeHandler<number> = {
   },
 };
 
-export const undefinedHandler: TsonTypeHandler<undefined> = {
+export const undefinedHandler: TsonTypeHandler<undefined, 0> = {
   primitive: 'undefined',
   encode() {
     return 0;
@@ -55,7 +55,7 @@ export const undefinedHandler: TsonTypeHandler<undefined> = {
   },
 };
 
-export const DateHandler: TsonTypeHandler<Date> = {
+export const DateHandler: TsonTypeHandler<Date, string> = {
   encode(value) {
     return value.toJSON();
   },
@@ -85,9 +85,8 @@ export class UnknownObjectGuardError extends Error {
  * @remark Make sure to define this last in the record of guards.
  * @throws {UnknownObjectGuardError} If a non-plain object is found.
  */
-export const unknownObjectGuard: TsonTypeHandler<unknown> = {
-  decode: (v) => v,
-  encode: (v) => v,
+export const unknownObjectGuard: TsonTypeHandler<unknown, never> = {
+  transform: false,
   test(v) {
     if (v && typeof v === 'object' && !Array.isArray(v) && !isPlainObject(v)) {
       throw new UnknownObjectGuardError(v);
@@ -96,15 +95,14 @@ export const unknownObjectGuard: TsonTypeHandler<unknown> = {
   },
 };
 
-export const RegExpHandler: TsonTypeHandler<RegExp> = {
+export const RegExpHandler: TsonTypeHandler<RegExp, string> = {
   test(value) {
     return value instanceof RegExp;
   },
   encode(value) {
     return '' + value;
   },
-  decode(value) {
-    const str = value as string;
+  decode(str) {
     const body = str.slice(1, str.lastIndexOf('/'));
     const flags = str.slice(str.lastIndexOf('/') + 1);
     return new RegExp(body, flags);
