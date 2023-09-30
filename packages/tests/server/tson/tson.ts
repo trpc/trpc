@@ -73,7 +73,6 @@ function createEncoders(opts: TsonOptions) {
       : (value, _nonce, walk) => walk(value);
     return {
       ...handler,
-      key,
       $encode,
     };
   });
