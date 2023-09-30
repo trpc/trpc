@@ -16,12 +16,12 @@ function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
   return Array.isArray(v) && v.length === 3 && v[2] === nonce;
 }
 
-type Walker = (value: unknown) => unknown;
-type WalkerFactory = (nonce: TsonNonce) => Walker;
+type WalkFn = (value: unknown) => unknown;
+type WalkerFactory = (nonce: TsonNonce) => WalkFn;
 
 export function tsonDecoder(opts: TsonOptions) {
-  const createWalker: WalkerFactory = (nonce) => {
-    const walk: Walker = (value) => {
+  const walker: WalkerFactory = (nonce) => {
+    const walk: WalkFn = (value) => {
       if (isTsonTuple(value, nonce)) {
         const [type, serializedValue] = value;
         const transformer = opts.types[type] as TsonTransformerEncodeDecode<
@@ -40,29 +40,20 @@ export function tsonDecoder(opts: TsonOptions) {
     return walk;
   };
 
-  return function decode(obj: TsonEncoded) {
-    const nonce = obj.nonce;
-    const walker = createWalker(nonce);
-    const result = walker(obj.json);
-    return result;
-  };
+  return (obj: TsonEncoded) => walker(obj.nonce)(obj.json);
 }
 
 export function tsonParser(opts: TsonOptions) {
   const decoder = tsonDecoder(opts);
-  return function parse(str: string) {
-    const parsed = JSON.parse(str) as TsonEncoded;
 
-    return decoder(parsed);
-  };
+  return (str: string) => decoder(JSON.parse(str) as TsonEncoded);
 }
 
 export function tsonStringifier(opts: TsonOptions) {
   const encoder = tsonEncoder(opts);
 
-  return function stringify(obj: unknown, space?: string | number) {
-    return JSON.stringify(encoder(obj), null, space);
-  };
+  return (obj: unknown, space?: string | number) =>
+    JSON.stringify(encoder(obj), null, space);
 }
 
 function createEncoders(opts: TsonOptions) {
@@ -121,8 +112,8 @@ export function tsonEncoder(opts: TsonOptions) {
   const handlers = createEncoders(opts);
   const maybeNonce = opts.nonce;
 
-  const createWalker: WalkerFactory = (nonce) => {
-    const walk: Walker = (value) => {
+  const walker: WalkerFactory = (nonce) => {
+    const walk: WalkFn = (value) => {
       const type = typeof value;
 
       const primitiveHandler = handlers.primitive[type];
@@ -152,7 +143,7 @@ export function tsonEncoder(opts: TsonOptions) {
         ? (maybeNonce() as TsonNonce)
         : ('__tson' as TsonNonce);
 
-    const json = createWalker(nonce)(obj);
+    const json = walker(nonce)(obj);
 
     return {
       nonce,
