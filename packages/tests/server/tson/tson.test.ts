@@ -1,4 +1,3 @@
-import { waitError } from '../___testHelpers';
 import {
   bigintHandler,
   DateHandler,
@@ -11,7 +10,19 @@ import {
   UnknownObjectGuardError,
 } from './handlers';
 import { tsonParser, tsonStringifier } from './tson';
-import { TsonOptions, TsonTypeHandler } from './types';
+import { TsonOptions } from './types';
+
+const expectError = (fn: () => unknown) => {
+  let err: unknown;
+  try {
+    fn();
+  } catch (_err) {
+    err = _err;
+  }
+  expect(err).toBeDefined();
+  expect(err).toBeInstanceOf(Error);
+  return err as Error;
+};
 
 function setup(opts: TsonOptions) {
   const nonce: TsonOptions['nonce'] = () => '__tson';
@@ -25,7 +36,7 @@ function setup(opts: TsonOptions) {
   };
 }
 
-test('Date', async () => {
+test('Date', () => {
   const ctx = setup({
     types: {
       Date: DateHandler,
@@ -39,7 +50,7 @@ test('Date', async () => {
   expect(deserialized).toEqual(date);
 });
 
-test('number', async () => {
+test('number', () => {
   const t = setup({
     types: {
       number: numberHandler,
@@ -57,7 +68,7 @@ test('number', async () => {
   const errors: unknown[] = [];
 
   for (const n of bad) {
-    const err = await waitError(() => t.parse(t.stringify(n)));
+    const err = expectError(() => t.parse(t.stringify(n)));
     errors.push(err);
   }
 
@@ -75,7 +86,7 @@ test('number', async () => {
   }
 });
 
-test('undefined', async () => {
+test('undefined', () => {
   const ctx = setup({
     types: {
       undefined: undefinedHandler,
@@ -91,7 +102,7 @@ test('undefined', async () => {
   expect(deserialized).toEqual(expected);
 });
 
-test('Map', async () => {
+test('Map', () => {
   const t = setup({
     types: {
       Map: MapHandler,
@@ -105,7 +116,7 @@ test('Map', async () => {
   expect(deserialized).toEqual(expected);
 });
 
-test('Set', async () => {
+test('Set', () => {
   const t = setup({
     types: {
       Set: SetHandler,
@@ -119,7 +130,7 @@ test('Set', async () => {
   expect(deserialized).toEqual(expected);
 });
 
-test('bigint', async () => {
+test('bigint', () => {
   const t = setup({
     types: {
       bigint: bigintHandler,
@@ -158,7 +169,7 @@ test('bigint', async () => {
   }
 });
 
-test('guard unwanted objects', async () => {
+test('guard unwanted objects', () => {
   // Sets are okay, but not Maps
   const t = setup({
     types: {
@@ -190,7 +201,7 @@ test('guard unwanted objects', async () => {
 
     const expected = new Map([['a', 1]]);
 
-    const err = await waitError(() => t.parse(t.stringify(expected)));
+    const err = expectError(() => t.parse(t.stringify(expected)));
     assert(err instanceof UnknownObjectGuardError);
 
     expect(err).toMatchInlineSnapshot(
@@ -231,7 +242,7 @@ test('regex', () => {
   expect(deserialized + '').toEqual(expected + '');
 });
 
-test('lets have a look at the stringified output', async () => {
+test('lets have a look at the stringified output', () => {
   const t = setup({
     types: {
       Set: SetHandler,
