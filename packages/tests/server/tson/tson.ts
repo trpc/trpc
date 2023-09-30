@@ -104,10 +104,11 @@ export function tsonSerializer(opts: TsonOptions) {
       const type = typeof value;
 
       const primitiveHandler = handlers.primitive[type];
-      if (primitiveHandler) {
-        if (!primitiveHandler.test || primitiveHandler.test(value)) {
-          return primitiveHandler.$serialize(value, nonce, walk);
-        }
+      if (
+        primitiveHandler &&
+        (!primitiveHandler.test || primitiveHandler.test(value))
+      ) {
+        return primitiveHandler.$serialize(value, nonce, walk);
       }
       for (const handler of handlers.custom) {
         if (handler.test(value)) {
