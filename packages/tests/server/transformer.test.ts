@@ -16,7 +16,7 @@ import {
 import { observable } from '@trpc/server/src/observable';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
-import { createTupleson, tsonDate } from 'tupleson';
+import { createTson, tsonDate } from 'tupleson';
 import { z } from 'zod';
 
 test('superjson up and down', async () => {
@@ -547,7 +547,7 @@ describe('required transformers', () => {
 });
 
 test('tupleson', async () => {
-  const transformer = createTupleson({
+  const transformer = createTson({
     types: [tsonDate],
     nonce: () => Math.random() + '',
   });
