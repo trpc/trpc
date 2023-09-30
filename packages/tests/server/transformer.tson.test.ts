@@ -4,12 +4,7 @@ import {
 } from './___testHelpers';
 import { DataTransformer, initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import {
-  bigintHandler,
-  DateHandler,
-  MapHandler,
-  SetHandler,
-} from './tson/handlers';
+import { tsonBigint, tsonDate, tsonMap, tsonSet } from './tson/handlers';
 import { tsonDeserializer, tsonSerializer } from './tson/tson';
 import { TsonOptions } from './tson/types';
 
@@ -42,7 +37,7 @@ function setup(types: TsonOptions['types']) {
 
 test('Date', async () => {
   const t = setup({
-    Date: DateHandler,
+    Date: tsonDate,
   });
 
   const date = new Date();
@@ -68,7 +63,7 @@ test('Date', async () => {
 
 test('Map', async () => {
   const t = setup({
-    Map: MapHandler,
+    Map: tsonMap,
   });
 
   const expected = new Map([['a', 'b']]);
@@ -92,7 +87,7 @@ test('Map', async () => {
 
 test('Set', async () => {
   const t = setup({
-    Set: SetHandler,
+    Set: tsonSet,
   });
 
   const expected = new Set(['a', 'b']);
@@ -116,8 +111,8 @@ test('Set', async () => {
 
 test('bigint', async () => {
   const t = setup({
-    bigint: bigintHandler,
-    Set: SetHandler,
+    bigint: tsonBigint,
+    Set: tsonSet,
   });
 
   {

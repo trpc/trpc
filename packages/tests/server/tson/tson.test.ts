@@ -1,12 +1,12 @@
 import {
-  bigintHandler,
-  DateHandler,
-  MapHandler,
-  numberHandler,
   RegExpHandler,
-  SetHandler,
-  undefinedHandler,
-  unknownObjectGuard,
+  tsonBigint,
+  tsonDate,
+  tsonMap,
+  tsonNumber,
+  tsonSet,
+  tsonUndefined,
+  tsonUnknown,
   UnknownObjectGuardError,
 } from './handlers';
 import {
@@ -53,7 +53,7 @@ function setup(opts: TsonOptions) {
 test('Date', () => {
   const ctx = setup({
     types: {
-      Date: DateHandler,
+      Date: tsonDate,
     },
   });
 
@@ -67,7 +67,7 @@ test('Date', () => {
 test('number', () => {
   const t = setup({
     types: {
-      number: numberHandler,
+      number: tsonNumber,
     },
   });
 
@@ -103,7 +103,7 @@ test('number', () => {
 test('undefined', () => {
   const ctx = setup({
     types: {
-      undefined: undefinedHandler,
+      undefined: tsonUndefined,
     },
   });
 
@@ -119,7 +119,7 @@ test('undefined', () => {
 test('Map', () => {
   const t = setup({
     types: {
-      Map: MapHandler,
+      Map: tsonMap,
     },
   });
 
@@ -133,7 +133,7 @@ test('Map', () => {
 test('Set', () => {
   const t = setup({
     types: {
-      Set: SetHandler,
+      Set: tsonSet,
     },
   });
 
@@ -147,9 +147,9 @@ test('Set', () => {
 test('bigint', () => {
   const t = setup({
     types: {
-      bigint: bigintHandler,
-      Set: SetHandler,
-      Map: MapHandler,
+      bigint: tsonBigint,
+      Set: tsonSet,
+      Map: tsonMap,
     },
   });
 
@@ -187,9 +187,9 @@ test('guard unwanted objects', () => {
   // Sets are okay, but not Maps
   const t = setup({
     types: {
-      Set: SetHandler,
+      Set: tsonSet,
       // defined last so it runs last
-      unknownObjectGuard,
+      unknownObjectGuard: tsonUnknown,
     },
   });
 
@@ -259,10 +259,10 @@ test('regex', () => {
 test('lets have a look at the stringified output', () => {
   const t = setup({
     types: {
-      Set: SetHandler,
-      Map: MapHandler,
-      undefined: undefinedHandler,
-      bigint: bigintHandler,
+      Set: tsonSet,
+      Map: tsonMap,
+      undefined: tsonUndefined,
+      bigint: tsonBigint,
     },
   });
 
@@ -325,7 +325,7 @@ test('lets have a look at the stringified output', () => {
 test('types', () => {
   const t = setup({
     types: {
-      bigint: bigintHandler,
+      bigint: tsonBigint,
     },
   });
 

@@ -1,7 +1,7 @@
 import { TsonTypeHandler } from './types';
 import { isPlainObject } from './utils';
 
-export const MapHandler: TsonTypeHandler<
+export const tsonMap: TsonTypeHandler<
   Map<unknown, unknown>,
   [unknown, unknown][]
 > = {
@@ -10,13 +10,13 @@ export const MapHandler: TsonTypeHandler<
   deserialize: (v) => new Map(v),
 };
 
-export const SetHandler: TsonTypeHandler<Set<unknown>, unknown[]> = {
+export const tsonSet: TsonTypeHandler<Set<unknown>, unknown[]> = {
   test: (v) => v instanceof Set,
   serialize: (v) => Array.from(v),
   deserialize: (v) => new Set(v),
 };
 
-export const bigintHandler: TsonTypeHandler<bigint, string> = {
+export const tsonBigint: TsonTypeHandler<bigint, string> = {
   primitive: 'bigint',
   deserialize: (v) => BigInt(v),
   serialize: (v) => v.toString(),
@@ -25,7 +25,7 @@ export const bigintHandler: TsonTypeHandler<bigint, string> = {
 /**
  * Prevents `NaN` and `Infinity` from being serialized
  */
-export const numberHandler: TsonTypeHandler<number, number> = {
+export const tsonNumber: TsonTypeHandler<number, number> = {
   primitive: 'number',
   transform: false,
   test: (v) => {
@@ -41,13 +41,13 @@ export const numberHandler: TsonTypeHandler<number, number> = {
   },
 };
 
-export const undefinedHandler: TsonTypeHandler<undefined, 0> = {
+export const tsonUndefined: TsonTypeHandler<undefined, 0> = {
   primitive: 'undefined',
   serialize: () => 0,
   deserialize: () => undefined,
 };
 
-export const DateHandler: TsonTypeHandler<Date, string> = {
+export const tsonDate: TsonTypeHandler<Date, string> = {
   serialize: (value) => value.toJSON(),
   deserialize: (value) => new Date(value),
   test: (value) => value instanceof Date,
@@ -63,7 +63,7 @@ export class UnknownObjectGuardError extends Error {
   }
 }
 
-export const unknownObjectGuard: TsonTypeHandler<unknown, never> = {
+export const tsonUnknown: TsonTypeHandler<unknown, never> = {
   transform: false,
   test: (v) => {
     if (v && typeof v === 'object' && !Array.isArray(v) && !isPlainObject(v)) {
