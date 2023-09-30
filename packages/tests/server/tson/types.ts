@@ -104,11 +104,11 @@ export interface TsonOptions {
 
 const serialized = Symbol('serialized');
 
-export type TsonSerialized<TValue = unknown> = {
+export interface TsonSerialized<TValue = unknown> {
   json: TsonSerializedValue;
   nonce: TsonNonce;
   [serialized]: TValue;
-};
+}
 
 export type TsonSerializeFn = <TValue>(obj: TValue) => TsonSerialized<TValue>;
 
