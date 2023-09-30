@@ -1,7 +1,7 @@
 const brand = Symbol('branded');
 
 export type TsonBranded<TType, TBrand> = TType & { [brand]: TBrand };
-export type inferBrand<TType> = TType extends TsonBranded<infer _, infer T>
+type inferBrand<TType> = TType extends TsonBranded<infer _, infer T>
   ? T
   : never;
 export type TsonNonce = TsonBranded<string, 'TsonNonce'>;
@@ -102,24 +102,25 @@ export interface TsonOptions {
   >;
 }
 
-export type TsonSerialized = {
+const serialized = Symbol('serialized');
+
+export type TsonSerialized<TValue = unknown> = {
   json: TsonSerializedValue;
   nonce: TsonNonce;
+  [serialized]: TValue;
 };
 
-export type TsonSerializeFn = <TValue>(
-  obj: TValue,
-) => TsonBranded<TsonSerialized, TValue>;
+export type TsonSerializeFn = <TValue>(obj: TValue) => TsonSerialized<TValue>;
 
-export type TsonDeserializeFn = <TSerialized extends TsonSerialized>(
-  data: TSerialized,
-) => inferBrand<TSerialized>;
+export type TsonDeserializeFn = <TValue>(
+  data: TsonSerialized<TValue>,
+) => TValue;
 
-export type TsonParseFn = <TValue extends string>(
-  string: TValue,
-) => inferBrand<TValue>;
+type TsonStringified<TValue> = string & { [serialized]: TValue };
 
 export type TsonStringifyFn = <TValue>(
   obj: TValue,
   space?: string | number,
-) => TsonBranded<string, TValue>;
+) => TsonStringified<TValue>;
+
+export type TsonParseFn = <TValue>(string: TsonStringified<TValue>) => TValue;

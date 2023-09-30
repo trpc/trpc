@@ -141,7 +141,7 @@ export function tsonSerializer(opts: TsonOptions): TsonSerializeFn {
     return {
       nonce,
       json,
-    };
+    } as TsonSerialized<any>;
   }) as TsonSerializeFn;
 }
 
