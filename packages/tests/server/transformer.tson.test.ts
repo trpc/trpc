@@ -12,7 +12,7 @@ import {
   MapHandler,
   SetHandler,
 } from './tson/handlers';
-import { tsonDecoder, tsonEncoder } from './tson/tson';
+import { tsonDeserializer, tsonSerializer } from './tson/tson';
 import { TsonOptions } from './tson/types';
 import { isPlainObject } from './tson/utils';
 
@@ -24,8 +24,8 @@ function setup(types: TsonOptions['types']) {
     nonce: randomString,
   };
   const transformer: DataTransformer = {
-    serialize: tsonEncoder(tsonOpts),
-    deserialize: tsonDecoder(tsonOpts),
+    serialize: tsonSerializer(tsonOpts),
+    deserialize: tsonDeserializer(tsonOpts),
   };
 
   const t = initTRPC.create({ transformer });
@@ -172,8 +172,8 @@ test('guard unwanted', async () => {
     Set: SetHandler,
     // defined last so it runs last
     guard: {
-      decode: (v) => v,
-      encode: (v) => v,
+      deserialize: (v) => v,
+      serialize: (v) => v,
       test(v) {
         if (
           v &&

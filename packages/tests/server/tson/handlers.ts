@@ -6,24 +6,24 @@ export const MapHandler: TsonTypeHandler<
   [unknown, unknown][]
 > = {
   test: (v) => v instanceof Map,
-  encode: (v) => Array.from(v.entries()),
-  decode: (v) => new Map(v),
+  serialize: (v) => Array.from(v.entries()),
+  deserialize: (v) => new Map(v),
 };
 
 export const SetHandler: TsonTypeHandler<Set<unknown>, unknown[]> = {
   test: (v) => v instanceof Set,
-  encode: (v) => Array.from(v),
-  decode: (v) => new Set(v),
+  serialize: (v) => Array.from(v),
+  deserialize: (v) => new Set(v),
 };
 
 export const bigintHandler: TsonTypeHandler<bigint, string> = {
   primitive: 'bigint',
-  decode: (v) => BigInt(v),
-  encode: (v) => v.toString(),
+  deserialize: (v) => BigInt(v),
+  serialize: (v) => v.toString(),
 };
 
 /**
- * Prevents `NaN` and `Infinity` from being encoded
+ * Prevents `NaN` and `Infinity` from being serialized
  */
 export const numberHandler: TsonTypeHandler<number, number> = {
   primitive: 'number',
@@ -43,13 +43,13 @@ export const numberHandler: TsonTypeHandler<number, number> = {
 
 export const undefinedHandler: TsonTypeHandler<undefined, 0> = {
   primitive: 'undefined',
-  encode: () => 0,
-  decode: () => undefined,
+  serialize: () => 0,
+  deserialize: () => undefined,
 };
 
 export const DateHandler: TsonTypeHandler<Date, string> = {
-  encode: (value) => value.toJSON(),
-  decode: (value) => new Date(value),
+  serialize: (value) => value.toJSON(),
+  deserialize: (value) => new Date(value),
   test: (value) => value instanceof Date,
 };
 
@@ -75,8 +75,8 @@ export const unknownObjectGuard: TsonTypeHandler<unknown, never> = {
 
 export const RegExpHandler: TsonTypeHandler<RegExp, string> = {
   test: (value) => value instanceof RegExp,
-  encode: (value) => '' + value,
-  decode: (str) => {
+  serialize: (value) => '' + value,
+  deserialize: (str) => {
     const body = str.slice(1, str.lastIndexOf('/'));
     const flags = str.slice(str.lastIndexOf('/') + 1);
     return new RegExp(body, flags);

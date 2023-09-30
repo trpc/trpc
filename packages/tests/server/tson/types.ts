@@ -2,9 +2,9 @@ export type Branded<TType, TBrand> = TType & { __brand: TBrand };
 
 export type TsonNonce = Branded<string, 'TsonNonce'>;
 export type TsonTypeHandlerKey = Branded<string, 'TsonTypeHandlerKey'>;
-export type TsonEncodedValue = unknown;
+export type TsonSerializedValue = unknown;
 
-export type TsonTuple = [TsonTypeHandlerKey, TsonEncodedValue, TsonNonce];
+export type TsonTuple = [TsonTypeHandlerKey, TsonSerializedValue, TsonNonce];
 
 // there's probably a better way of getting this type
 export type TsonAllTypes =
@@ -17,7 +17,7 @@ export type TsonAllTypes =
   | 'object'
   | 'function';
 
-type EncodedType =
+type SerializedType =
   | string
   | number
   | boolean
@@ -26,35 +26,35 @@ type EncodedType =
 
 export interface TsonTransformerNone {
   /**
-   * Won't be decoded nor encoded
+   * Won't be deserialized nor serialized
    */
   transform: false;
 
-  encode?: never;
-  decode?: never;
+  serialize?: never;
+  deserialize?: never;
 }
-export interface TsonTransformerEncodeDecode<
+export interface TsonTransformerSerializeDeserialize<
   TValue,
-  TEncodedType extends EncodedType,
+  TSerializedType extends SerializedType,
 > {
   /**
-   * Use a transformer to encode and decode the value?
+   * Use a transformer to serialize and deserialize the value?
    */
   transform?: true;
 
   /**
    * JSON-serializable value
    */
-  encode: (v: TValue) => TEncodedType;
+  serialize: (v: TValue) => TSerializedType;
   /**
    * From JSON-serializable value
    */
-  decode: (v: TEncodedType) => TValue;
+  deserialize: (v: TSerializedType) => TValue;
 }
 
-export type TsonTransformer<TValue, TEncodedType extends EncodedType> =
+export type TsonTransformer<TValue, TSerializedType extends SerializedType> =
   | TsonTransformerNone
-  | TsonTransformerEncodeDecode<TValue, TEncodedType>;
+  | TsonTransformerSerializeDeserialize<TValue, TSerializedType>;
 
 export interface TsonTypeTesterPrimitive {
   /**
@@ -85,10 +85,10 @@ export type TsonTypeHandler<
    */
   TValue,
   /**
-   * JSON-serializable value how it's stored after it's encoded
+   * JSON-serializable value how it's stored after it's serialized
    */
-  TEncodedType extends EncodedType,
-> = TsonTypeTester & TsonTransformer<TValue, TEncodedType>;
+  TSerializedType extends SerializedType,
+> = TsonTypeTester & TsonTransformer<TValue, TSerializedType>;
 
 export interface TsonOptions {
   nonce?: () => string;
@@ -98,7 +98,7 @@ export interface TsonOptions {
   >;
 }
 
-export type TsonEncoded = {
-  json: TsonEncodedValue;
+export type TsonSerialized = {
+  json: TsonSerializedValue;
   nonce: TsonNonce;
 };

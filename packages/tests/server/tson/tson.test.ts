@@ -35,8 +35,8 @@ test('Date', async () => {
   const date = new Date();
 
   const stringified = ctx.stringify(date);
-  const decoded = ctx.parse(stringified);
-  expect(decoded).toEqual(date);
+  const deserialized = ctx.parse(stringified);
+  expect(deserialized).toEqual(date);
 });
 
 test('number', async () => {
@@ -70,8 +70,8 @@ test('number', async () => {
   `);
 
   for (const n of good) {
-    const decoded = t.parse(t.stringify(n));
-    expect(decoded).toEqual(n);
+    const deserialized = t.parse(t.stringify(n));
+    expect(deserialized).toEqual(n);
   }
 });
 
@@ -86,9 +86,9 @@ test('undefined', async () => {
     foo: [1, undefined, 2],
   };
   const stringified = ctx.stringify(expected);
-  const decoded = ctx.parse(stringified);
+  const deserialized = ctx.parse(stringified);
 
-  expect(decoded).toEqual(expected);
+  expect(deserialized).toEqual(expected);
 });
 
 test('Map', async () => {
@@ -101,8 +101,8 @@ test('Map', async () => {
   const expected = new Map([['a', 'b']]);
 
   const stringified = t.stringify(expected);
-  const decoded = t.parse(stringified);
-  expect(decoded).toEqual(expected);
+  const deserialized = t.parse(stringified);
+  expect(deserialized).toEqual(expected);
 });
 
 test('Set', async () => {
@@ -115,8 +115,8 @@ test('Set', async () => {
   const expected = new Set(['a', 'b']);
 
   const stringified = t.stringify(expected);
-  const decoded = t.parse(stringified);
-  expect(decoded).toEqual(expected);
+  const deserialized = t.parse(stringified);
+  expect(deserialized).toEqual(expected);
 });
 
 test('bigint', async () => {
@@ -133,27 +133,27 @@ test('bigint', async () => {
     const expected = 1n;
 
     const stringified = t.stringify(expected);
-    const decoded = t.parse(stringified);
+    const deserialized = t.parse(stringified);
 
-    expect(decoded).toEqual(expected);
+    expect(deserialized).toEqual(expected);
 
     {
       // set of BigInt
       const expected = new Set([1n]);
 
       const stringified = t.stringify(expected);
-      const decoded = t.parse(stringified);
+      const deserialized = t.parse(stringified);
 
-      expect(decoded).toEqual(expected);
+      expect(deserialized).toEqual(expected);
     }
     {
       // set of a map of bigint
       const expected = new Set([new Map([['a', 1n]])]);
 
       const stringified = t.stringify(expected);
-      const decoded = t.parse(stringified);
+      const deserialized = t.parse(stringified);
 
-      expect(decoded).toEqual(expected);
+      expect(deserialized).toEqual(expected);
     }
   }
 });
@@ -174,16 +174,16 @@ test('guard unwanted objects', async () => {
     const expected = new Set([1]);
 
     const stringified = t.stringify(expected);
-    const decoded = t.parse(stringified);
+    const deserialized = t.parse(stringified);
 
-    expect(decoded).toEqual(expected);
+    expect(deserialized).toEqual(expected);
   }
   {
     // plain objects are okay
     const expected = { a: 1 };
     const stringified = t.stringify(expected);
-    const decoded = t.parse(stringified);
-    expect(decoded).toEqual(expected);
+    const deserialized = t.parse(stringified);
+    expect(deserialized).toEqual(expected);
   }
   {
     // maps are not okay
@@ -224,11 +224,11 @@ test('regex', () => {
   `,
   );
 
-  const decoded = t.parse(stringified);
+  const deserialized = t.parse(stringified);
 
-  expect(decoded).toBeInstanceOf(RegExp);
-  expect(decoded).toMatchInlineSnapshot('/foo/g');
-  expect(decoded + '').toEqual(expected + '');
+  expect(deserialized).toBeInstanceOf(RegExp);
+  expect(deserialized).toMatchInlineSnapshot('/foo/g');
+  expect(deserialized + '').toEqual(expected + '');
 });
 
 test('lets have a look at the stringified output', async () => {
@@ -292,7 +292,7 @@ test('lets have a look at the stringified output', async () => {
     }"
   `);
 
-  const decoded = t.parse(stringified);
+  const deserialized = t.parse(stringified);
 
-  expect(decoded).toEqual(expected);
+  expect(deserialized).toEqual(expected);
 });

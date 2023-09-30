@@ -1,10 +1,10 @@
 import {
   TsonAllTypes,
-  TsonEncoded,
-  TsonEncodedValue,
   TsonNonce,
   TsonOptions,
-  TsonTransformerEncodeDecode,
+  TsonSerialized,
+  TsonSerializedValue,
+  TsonTransformerSerializeDeserialize,
   TsonTuple,
   TsonTypeHandlerKey,
   TsonTypeTesterCustom,
@@ -19,16 +19,15 @@ function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
 type WalkFn = (value: unknown) => unknown;
 type WalkerFactory = (nonce: TsonNonce) => WalkFn;
 
-export function tsonDecoder(opts: TsonOptions) {
+export function tsonDeserializer(opts: TsonOptions) {
   const walker: WalkerFactory = (nonce) => {
     const walk: WalkFn = (value) => {
       if (isTsonTuple(value, nonce)) {
         const [type, serializedValue] = value;
-        const transformer = opts.types[type] as TsonTransformerEncodeDecode<
-          any,
-          any
-        >;
-        return transformer.decode(walk(serializedValue));
+        const transformer = opts.types[
+          type
+        ] as TsonTransformerSerializeDeserialize<any, any>;
+        return transformer.deserialize(walk(serializedValue));
       }
 
       return mapOrReturn(value, walk);
@@ -36,40 +35,40 @@ export function tsonDecoder(opts: TsonOptions) {
     return walk;
   };
 
-  return (obj: TsonEncoded) => walker(obj.nonce)(obj.json);
+  return (obj: TsonSerialized) => walker(obj.nonce)(obj.json);
 }
 
 export function tsonParser(opts: TsonOptions) {
-  const decoder = tsonDecoder(opts);
+  const deserializer = tsonDeserializer(opts);
 
-  return (str: string) => decoder(JSON.parse(str) as TsonEncoded);
+  return (str: string) => deserializer(JSON.parse(str) as TsonSerialized);
 }
 
 export function tsonStringifier(opts: TsonOptions) {
-  const encoder = tsonEncoder(opts);
+  const serializer = tsonSerializer(opts);
 
   return (obj: unknown, space?: string | number) =>
-    JSON.stringify(encoder(obj), null, space);
+    JSON.stringify(serializer(obj), null, space);
 }
 
-function createEncoders(opts: TsonOptions) {
+function createSerializers(opts: TsonOptions) {
   // warmup the type handlers
   const types = Object.entries(opts.types).map(([_key, handler]) => {
     const key = _key as TsonTypeHandlerKey;
-    const encode = handler.encode;
+    const serialize = handler.serialize;
 
-    type Encoder = (
+    type Serializer = (
       value: unknown,
       nonce: TsonNonce,
       walk: WalkFn,
-    ) => TsonEncodedValue;
+    ) => TsonSerializedValue;
 
-    const $encode: Encoder = encode
-      ? (value, nonce, walk): TsonTuple => [key, walk(encode(value)), nonce]
+    const $serialize: Serializer = serialize
+      ? (value, nonce, walk): TsonTuple => [key, walk(serialize(value)), nonce]
       : (value, _nonce, walk) => walk(value);
     return {
       ...handler,
-      $encode,
+      $serialize,
     };
   });
   type Handler = (typeof types)[number];
@@ -96,8 +95,8 @@ function createEncoders(opts: TsonOptions) {
     custom: customTypeHandlers,
   };
 }
-export function tsonEncoder(opts: TsonOptions) {
-  const handlers = createEncoders(opts);
+export function tsonSerializer(opts: TsonOptions) {
+  const handlers = createSerializers(opts);
   const maybeNonce = opts.nonce;
 
   const walker: WalkerFactory = (nonce) => {
@@ -107,12 +106,12 @@ export function tsonEncoder(opts: TsonOptions) {
       const primitiveHandler = handlers.primitive[type];
       if (primitiveHandler) {
         if (!primitiveHandler.test || primitiveHandler.test(value)) {
-          return primitiveHandler.$encode(value, nonce, walk);
+          return primitiveHandler.$serialize(value, nonce, walk);
         }
       }
       for (const handler of handlers.custom) {
         if (handler.test(value)) {
-          return handler.$encode(value, nonce, walk);
+          return handler.$serialize(value, nonce, walk);
         }
       }
 
@@ -121,7 +120,7 @@ export function tsonEncoder(opts: TsonOptions) {
 
     return walk;
   };
-  return function parse(obj: unknown): TsonEncoded {
+  return (obj: unknown): TsonSerialized => {
     const nonce: TsonNonce =
       typeof maybeNonce === 'function'
         ? (maybeNonce() as TsonNonce)
