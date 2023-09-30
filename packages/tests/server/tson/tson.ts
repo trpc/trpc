@@ -69,15 +69,8 @@ function createEncoders(opts: TsonOptions) {
     ) => TsonEncodedValue;
 
     const $encode: Encoder = encode
-      ? (value, nonce, walk) => {
-          const encoded = encode(value);
-          const walked = walk ? walk(encoded) : encoded;
-          const result: TsonTuple = [key, walked, nonce];
-          return result;
-        }
-      : (value, _nonce, walk) => {
-          return walk ? walk(value) : value;
-        };
+      ? (value, nonce, walk): TsonTuple => [key, walk(encode(value)), nonce]
+      : (value, _nonce, walk) => walk(value);
     return {
       ...handler,
       key,
