@@ -73,7 +73,7 @@ export const tsonUnknown: TsonTypeHandler<unknown, never> = {
   },
 };
 
-export const RegExpHandler: TsonTypeHandler<RegExp, string> = {
+export const tsonRegExp: TsonTypeHandler<RegExp, string> = {
   test: (value) => value instanceof RegExp,
   serialize: (value) => '' + value,
   deserialize: (str) => {

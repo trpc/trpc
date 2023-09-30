@@ -1,9 +1,9 @@
 import {
-  RegExpHandler,
   tsonBigint,
   tsonDate,
   tsonMap,
   tsonNumber,
+  tsonRegExp,
   tsonSet,
   tsonUndefined,
   tsonUnknown,
@@ -228,7 +228,7 @@ test('guard unwanted objects', () => {
 test('regex', () => {
   const t = setup({
     types: {
-      RegExp: RegExpHandler,
+      RegExp: tsonRegExp,
     },
   });
 
