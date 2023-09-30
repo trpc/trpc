@@ -15,7 +15,7 @@ import {
   tsonSerializer,
   tsonStringifier,
 } from './tson';
-import { TsonNonce, TsonOptions } from './types';
+import { TsonOptions } from './types';
 
 const expectError = (fn: () => unknown) => {
   let err: unknown;
