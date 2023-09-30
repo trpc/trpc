@@ -65,7 +65,7 @@ function createEncoders(opts: TsonOptions) {
     type Encoder = (
       value: unknown,
       nonce: TsonNonce,
-      walk: ReturnType<WalkerFactory>,
+      walk: WalkFn,
     ) => TsonEncodedValue;
 
     const $encode: Encoder = encode
