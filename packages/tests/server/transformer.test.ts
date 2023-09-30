@@ -16,6 +16,7 @@ import {
 import { observable } from '@trpc/server/src/observable';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
+import { createTupleson, tsonDate } from 'tupleson';
 import { z } from 'zod';
 
 test('superjson up and down', async () => {
@@ -543,4 +544,37 @@ describe('required transformers', () => {
       transformer,
     });
   });
+});
+
+test('tupleson', async () => {
+  const transformer = createTupleson({
+    types: [tsonDate],
+    nonce: () => Math.random() + '',
+  });
+  const date = new Date();
+  const fn = vi.fn();
+
+  const t = initTRPC.create({ transformer });
+
+  const router = t.router({
+    hello: t.procedure.input(z.date()).query(({ input }) => {
+      fn(input);
+      return input;
+    }),
+  });
+
+  const { close, proxy } = routerToServerAndClientNew(router, {
+    client({ httpUrl }) {
+      return {
+        transformer,
+        links: [httpBatchLink({ url: httpUrl })],
+      };
+    },
+  });
+
+  const res = await proxy.hello.query(date);
+  expect(res.getTime()).toBe(date.getTime());
+  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+
+  await close();
 });
