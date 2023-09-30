@@ -12,9 +12,9 @@ import {
   MapHandler,
   SetHandler,
 } from './tson/handlers';
-import { isPlainObject } from './tson/isPlainObject';
 import { tsonDecoder, tsonEncoder } from './tson/tson';
 import { TsonOptions } from './tson/types';
+import { isPlainObject } from './tson/utils';
 
 const randomString = () => `_${Math.random().toString(36).slice(2)}`;
 

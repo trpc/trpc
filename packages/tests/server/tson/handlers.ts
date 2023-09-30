@@ -1,5 +1,5 @@
-import { isPlainObject } from './isPlainObject';
 import { TsonTypeHandler } from './types';
+import { isPlainObject } from './utils';
 
 export const MapHandler: TsonTypeHandler<
   Map<unknown, unknown>,
