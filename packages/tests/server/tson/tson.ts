@@ -10,7 +10,7 @@ import {
   TsonTypeTesterCustom,
   TsonTypeTesterPrimitive,
 } from './types';
-import { isPlainObjectOrArray, map } from './utils';
+import { isPlainObject } from './utils';
 
 function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
   return Array.isArray(v) && v.length === 3 && v[2] === nonce;
@@ -31,11 +31,7 @@ export function tsonDecoder(opts: TsonOptions) {
         return transformer.decode(walk(serializedValue));
       }
 
-      if (isPlainObjectOrArray(value)) {
-        return map(value, walk);
-      }
-
-      return value;
+      return mapOrReturn(value, walk);
     };
     return walk;
   };
@@ -120,11 +116,7 @@ export function tsonEncoder(opts: TsonOptions) {
         }
       }
 
-      if (isPlainObjectOrArray(value)) {
-        return map(value, walk);
-      }
-
-      return value;
+      return mapOrReturn(value, walk);
     };
 
     return walk;
@@ -142,4 +134,25 @@ export function tsonEncoder(opts: TsonOptions) {
       json,
     };
   };
+}
+
+/**
+ * Maps over an object or array, returning a new object or array with the same keys.
+ * If the input is not an object or array, the input is returned.
+ */
+export function mapOrReturn(
+  input: unknown,
+  fn: (val: unknown, key: number | string) => unknown,
+): unknown {
+  if (Array.isArray(input)) {
+    return input.map(fn);
+  }
+  if (isPlainObject(input)) {
+    const output: typeof input = {};
+    for (const [key, value] of Object.entries(input)) {
+      output[key] = fn(value, key);
+    }
+    return output;
+  }
+  return input;
 }
