@@ -83,7 +83,7 @@ export interface TsonTypeTesterCustom {
 
 type TsonTypeTester = TsonTypeTesterPrimitive | TsonTypeTesterCustom;
 
-export type TsonTypeHandler<
+export type TsonType<
   /**
    * The type of the value
    */
@@ -96,10 +96,7 @@ export type TsonTypeHandler<
 
 export interface TsonOptions {
   nonce?: () => string;
-  types: Record<
-    string,
-    TsonTypeHandler<any, any> | TsonTypeHandler<any, never>
-  >;
+  types: Record<string, TsonType<any, any> | TsonType<any, never>>;
 }
 
 const serialized = Symbol('serialized');

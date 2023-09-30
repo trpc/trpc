@@ -1,22 +1,19 @@
-import { TsonTypeHandler } from './types';
+import { TsonType } from './types';
 import { isPlainObject } from './utils';
 
-export const tsonMap: TsonTypeHandler<
-  Map<unknown, unknown>,
-  [unknown, unknown][]
-> = {
+export const tsonMap: TsonType<Map<unknown, unknown>, [unknown, unknown][]> = {
   test: (v) => v instanceof Map,
   serialize: (v) => Array.from(v.entries()),
   deserialize: (v) => new Map(v),
 };
 
-export const tsonSet: TsonTypeHandler<Set<unknown>, unknown[]> = {
+export const tsonSet: TsonType<Set<unknown>, unknown[]> = {
   test: (v) => v instanceof Set,
   serialize: (v) => Array.from(v),
   deserialize: (v) => new Set(v),
 };
 
-export const tsonBigint: TsonTypeHandler<bigint, string> = {
+export const tsonBigint: TsonType<bigint, string> = {
   primitive: 'bigint',
   deserialize: (v) => BigInt(v),
   serialize: (v) => v.toString(),
@@ -25,7 +22,7 @@ export const tsonBigint: TsonTypeHandler<bigint, string> = {
 /**
  * Prevents `NaN` and `Infinity` from being serialized
  */
-export const tsonNumber: TsonTypeHandler<number, number> = {
+export const tsonNumber: TsonType<number, number> = {
   primitive: 'number',
   transform: false,
   test: (v) => {
@@ -41,13 +38,13 @@ export const tsonNumber: TsonTypeHandler<number, number> = {
   },
 };
 
-export const tsonUndefined: TsonTypeHandler<undefined, 0> = {
+export const tsonUndefined: TsonType<undefined, 0> = {
   primitive: 'undefined',
   serialize: () => 0,
   deserialize: () => undefined,
 };
 
-export const tsonDate: TsonTypeHandler<Date, string> = {
+export const tsonDate: TsonType<Date, string> = {
   serialize: (value) => value.toJSON(),
   deserialize: (value) => new Date(value),
   test: (value) => value instanceof Date,
@@ -63,7 +60,7 @@ export class UnknownObjectGuardError extends Error {
   }
 }
 
-export const tsonUnknown: TsonTypeHandler<unknown, never> = {
+export const tsonUnknown: TsonType<unknown, never> = {
   transform: false,
   test: (v) => {
     if (v && typeof v === 'object' && !Array.isArray(v) && !isPlainObject(v)) {
@@ -73,7 +70,7 @@ export const tsonUnknown: TsonTypeHandler<unknown, never> = {
   },
 };
 
-export const tsonRegExp: TsonTypeHandler<RegExp, string> = {
+export const tsonRegExp: TsonType<RegExp, string> = {
   test: (value) => value instanceof RegExp,
   serialize: (value) => '' + value,
   deserialize: (str) => {
