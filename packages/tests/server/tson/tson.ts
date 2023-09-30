@@ -16,28 +16,34 @@ function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
   return Array.isArray(v) && v.length === 3 && v[2] === nonce;
 }
 
-type WalkerFactory = (nonce: TsonNonce) => (value: unknown) => unknown;
+type Walker = (value: unknown) => unknown;
+type WalkerFactory = (nonce: TsonNonce) => Walker;
 
 export function tsonDecoder(opts: TsonOptions) {
-  const walk: WalkerFactory = (nonce) => (value) => {
-    if (isTsonTuple(value, nonce)) {
-      const [type, serializedValue] = value;
-      const transformer = opts.types[type] as TsonTransformerEncodeDecode<
-        any,
-        any
-      >;
-      return transformer.decode(walk(nonce)(serializedValue));
-    }
+  const createWalker: WalkerFactory = (nonce) => {
+    const walk: Walker = (value) => {
+      if (isTsonTuple(value, nonce)) {
+        const [type, serializedValue] = value;
+        const transformer = opts.types[type] as TsonTransformerEncodeDecode<
+          any,
+          any
+        >;
+        return transformer.decode(walk(serializedValue));
+      }
 
-    if (isPlainObjectOrArray(value)) {
-      return map(value, (val) => walk(nonce)(val));
-    }
+      if (isPlainObjectOrArray(value)) {
+        return map(value, walk);
+      }
 
-    return value;
+      return value;
+    };
+    return walk;
   };
+
   return function decode(obj: TsonEncoded) {
     const nonce = obj.nonce;
-    const result = walk(nonce)(obj.json);
+    const walker = createWalker(nonce);
+    const result = walker(obj.json);
     return result;
   };
 }
@@ -115,28 +121,30 @@ export function tsonEncoder(opts: TsonOptions) {
   const handlers = createEncoders(opts);
   const maybeNonce = opts.nonce;
 
-  const walk: WalkerFactory = (nonce) => (value) => {
-    const type = typeof value;
+  const createWalker: WalkerFactory = (nonce) => {
+    const walk: Walker = (value) => {
+      const type = typeof value;
 
-    const primitiveHandler = handlers.primitive[type];
-    if (primitiveHandler) {
-      if (!primitiveHandler.test || primitiveHandler.test(value)) {
-        return primitiveHandler.$encode(value, nonce, walk(nonce));
+      const primitiveHandler = handlers.primitive[type];
+      if (primitiveHandler) {
+        if (!primitiveHandler.test || primitiveHandler.test(value)) {
+          return primitiveHandler.$encode(value, nonce, walk);
+        }
       }
-    }
-    for (const handler of handlers.custom) {
-      if (handler.test(value)) {
-        return handler.$encode(value, nonce, walk(nonce));
+      for (const handler of handlers.custom) {
+        if (handler.test(value)) {
+          return handler.$encode(value, nonce, walk);
+        }
       }
-    }
 
-    if (isPlainObjectOrArray(value)) {
-      return map(value, (val) => {
-        return walk(nonce)(val);
-      });
-    }
+      if (isPlainObjectOrArray(value)) {
+        return map(value, walk);
+      }
 
-    return value;
+      return value;
+    };
+
+    return walk;
   };
   return function parse(obj: unknown): TsonEncoded {
     const nonce: TsonNonce =
@@ -144,7 +152,7 @@ export function tsonEncoder(opts: TsonOptions) {
         ? (maybeNonce() as TsonNonce)
         : ('__tson' as TsonNonce);
 
-    const json = walk(nonce)(obj);
+    const json = createWalker(nonce)(obj);
 
     return {
       nonce,
