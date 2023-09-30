@@ -9,8 +9,13 @@ import {
   unknownObjectGuard,
   UnknownObjectGuardError,
 } from './handlers';
-import { tsonParser, tsonStringifier } from './tson';
-import { TsonOptions } from './types';
+import {
+  tsonDeserializer,
+  tsonParser,
+  tsonSerializer,
+  tsonStringifier,
+} from './tson';
+import { TsonNonce, TsonOptions } from './types';
 
 const expectError = (fn: () => unknown) => {
   let err: unknown;
@@ -23,6 +28,13 @@ const expectError = (fn: () => unknown) => {
   expect(err).toBeInstanceOf(Error);
   return err as Error;
 };
+const ignoreErrrors = (fn: () => unknown) => {
+  try {
+    fn();
+  } catch (_err) {
+    // ignore
+  }
+};
 
 function setup(opts: TsonOptions) {
   const nonce: TsonOptions['nonce'] = () => '__tson';
@@ -33,6 +45,8 @@ function setup(opts: TsonOptions) {
   return {
     stringify: tsonStringifier(withDefaults),
     parse: tsonParser(withDefaults),
+    serializer: tsonSerializer(withDefaults),
+    deserialize: tsonDeserializer(withDefaults),
   };
 }
 
@@ -95,7 +109,7 @@ test('undefined', () => {
 
   const expected = {
     foo: [1, undefined, 2],
-  };
+  } as const;
   const stringified = ctx.stringify(expected);
   const deserialized = ctx.parse(stringified);
 
@@ -306,4 +320,25 @@ test('lets have a look at the stringified output', () => {
   const deserialized = t.parse(stringified);
 
   expect(deserialized).toEqual(expected);
+});
+
+test('types', () => {
+  const t = setup({
+    types: {
+      bigint: bigintHandler,
+    },
+  });
+
+  const expected = 1n;
+  {
+    const stringified = t.stringify(expected);
+    const parsed = t.parse(stringified);
+    expectTypeOf(parsed).toEqualTypeOf(expected);
+  }
+  {
+    const serialized = t.serializer(expected);
+    const deserialized = t.deserialize(serialized);
+
+    expectTypeOf(deserialized).toEqualTypeOf(expected);
+  }
 });

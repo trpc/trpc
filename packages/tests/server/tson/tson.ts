@@ -1,9 +1,13 @@
 import {
   TsonAllTypes,
+  TsonDeserializeFn,
   TsonNonce,
   TsonOptions,
+  TsonParseFn,
   TsonSerialized,
   TsonSerializedValue,
+  TsonSerializeFn,
+  TsonStringifyFn,
   TsonTransformerSerializeDeserialize,
   TsonTuple,
   TsonTypeHandlerKey,
@@ -19,7 +23,7 @@ function isTsonTuple(v: unknown, nonce: string): v is TsonTuple {
 type WalkFn = (value: unknown) => unknown;
 type WalkerFactory = (nonce: TsonNonce) => WalkFn;
 
-export function tsonDeserializer(opts: TsonOptions) {
+export function tsonDeserializer(opts: TsonOptions): TsonDeserializeFn {
   const walker: WalkerFactory = (nonce) => {
     const walk: WalkFn = (value) => {
       if (isTsonTuple(value, nonce)) {
@@ -35,68 +39,73 @@ export function tsonDeserializer(opts: TsonOptions) {
     return walk;
   };
 
-  return (obj: TsonSerialized) => walker(obj.nonce)(obj.json);
+  return ((obj: TsonSerialized) =>
+    walker(obj.nonce)(obj.json)) as TsonDeserializeFn;
 }
 
-export function tsonParser(opts: TsonOptions) {
+export function tsonParser(opts: TsonOptions): TsonParseFn {
   const deserializer = tsonDeserializer(opts);
 
-  return (str: string) => deserializer(JSON.parse(str) as TsonSerialized);
+  return ((str: string) =>
+    deserializer(JSON.parse(str) as TsonSerialized)) as TsonParseFn;
 }
 
-export function tsonStringifier(opts: TsonOptions) {
+export function tsonStringifier(opts: TsonOptions): TsonStringifyFn {
   const serializer = tsonSerializer(opts);
 
-  return (obj: unknown, space?: string | number) =>
-    JSON.stringify(serializer(obj), null, space);
+  return ((obj: unknown, space?: string | number) =>
+    JSON.stringify(serializer(obj), null, space)) as TsonStringifyFn;
 }
 
-function createSerializers(opts: TsonOptions) {
-  // warmup the type handlers
-  const types = Object.entries(opts.types).map(([_key, handler]) => {
-    const key = _key as TsonTypeHandlerKey;
-    const serialize = handler.serialize;
+export function tsonSerializer(opts: TsonOptions): TsonSerializeFn {
+  const handlers = (() => {
+    // warmup the type handlers
+    const types = Object.entries(opts.types).map(([_key, handler]) => {
+      const key = _key as TsonTypeHandlerKey;
+      const serialize = handler.serialize;
 
-    type Serializer = (
-      value: unknown,
-      nonce: TsonNonce,
-      walk: WalkFn,
-    ) => TsonSerializedValue;
+      type Serializer = (
+        value: unknown,
+        nonce: TsonNonce,
+        walk: WalkFn,
+      ) => TsonSerializedValue;
 
-    const $serialize: Serializer = serialize
-      ? (value, nonce, walk): TsonTuple => [key, walk(serialize(value)), nonce]
-      : (value, _nonce, walk) => walk(value);
-    return {
-      ...handler,
-      $serialize,
-    };
-  });
-  type Handler = (typeof types)[number];
+      const $serialize: Serializer = serialize
+        ? (value, nonce, walk): TsonTuple => [
+            key,
+            walk(serialize(value)),
+            nonce,
+          ]
+        : (value, _nonce, walk) => walk(value);
+      return {
+        ...handler,
+        $serialize,
+      };
+    });
+    type Handler = (typeof types)[number];
 
-  const handlerPerPrimitive: Partial<
-    Record<TsonAllTypes, Extract<Handler, TsonTypeTesterPrimitive>>
-  > = {};
-  const customTypeHandlers: Extract<Handler, TsonTypeTesterCustom>[] = [];
+    const handlerPerPrimitive: Partial<
+      Record<TsonAllTypes, Extract<Handler, TsonTypeTesterPrimitive>>
+    > = {};
+    const customTypeHandlers: Extract<Handler, TsonTypeTesterCustom>[] = [];
 
-  for (const handler of types) {
-    if (handler.primitive) {
-      if (handlerPerPrimitive[handler.primitive]) {
-        throw new Error(
-          `Multiple handlers for primitive ${handler.primitive} found`,
-        );
+    for (const handler of types) {
+      if (handler.primitive) {
+        if (handlerPerPrimitive[handler.primitive]) {
+          throw new Error(
+            `Multiple handlers for primitive ${handler.primitive} found`,
+          );
+        }
+        handlerPerPrimitive[handler.primitive] = handler;
+      } else {
+        customTypeHandlers.push(handler);
       }
-      handlerPerPrimitive[handler.primitive] = handler;
-    } else {
-      customTypeHandlers.push(handler);
     }
-  }
-  return {
-    primitive: handlerPerPrimitive,
-    custom: customTypeHandlers,
-  };
-}
-export function tsonSerializer(opts: TsonOptions) {
-  const handlers = createSerializers(opts);
+    return {
+      primitive: handlerPerPrimitive,
+      custom: customTypeHandlers,
+    };
+  })();
   const maybeNonce = opts.nonce;
 
   const walker: WalkerFactory = (nonce) => {
@@ -121,7 +130,7 @@ export function tsonSerializer(opts: TsonOptions) {
 
     return walk;
   };
-  return (obj: unknown): TsonSerialized => {
+  return ((obj): TsonSerialized => {
     const nonce: TsonNonce =
       typeof maybeNonce === 'function'
         ? (maybeNonce() as TsonNonce)
@@ -133,7 +142,7 @@ export function tsonSerializer(opts: TsonOptions) {
       nonce,
       json,
     };
-  };
+  }) as TsonSerializeFn;
 }
 
 /**
