@@ -30,9 +30,7 @@ export function tsonDecoder(opts: TsonOptions) {
     }
 
     if (isPlainObjectOrArray(value)) {
-      return map(value, (val) => {
-        return walk(nonce)(val);
-      });
+      return map(value, (val) => walk(nonce)(val));
     }
 
     return value;
