@@ -1,9 +1,7 @@
-export const isPlainObject = (
-  payload: unknown,
-): payload is Record<string, unknown> => {
-  if (typeof payload !== 'object' || payload === null) return false;
-  if (payload === Object.prototype) return false;
-  if (Object.getPrototypeOf(payload) === null) return true;
+export const isPlainObject = (obj: unknown): obj is Record<string, unknown> => {
+  if (!obj || typeof obj !== 'object') return false;
+  if (obj === Object.prototype) return false;
+  if (Object.getPrototypeOf(obj) === null) return true;
 
-  return Object.getPrototypeOf(payload) === Object.prototype;
+  return Object.getPrototypeOf(obj) === Object.prototype;
 };
