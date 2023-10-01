@@ -6393,7 +6393,7 @@ packages:
     engines: {node: '>=16.14'}
     dependencies:
       fs-extra: 10.1.0
-      tslib: 2.6.2
+      tslib: 2.5.0
     dev: false
 
   /@docusaurus/types@2.4.1(@swc/core@1.3.3)(react-dom@18.2.0)(react@18.2.0):
@@ -8871,7 +8871,7 @@ packages:
       open: 8.4.2
       picocolors: 1.0.0
       tiny-glob: 0.2.9
-      tslib: 2.6.2
+      tslib: 2.5.0
     dev: true
 
   /@playwright/test@1.28.1:
@@ -9414,7 +9414,7 @@ packages:
   /@swc/helpers@0.5.1:
     resolution: {integrity: sha512-sJ902EfIzn1Fa+qYmjdQqh8tPsoxyBz+8yBKC2HKUxyezKJFwPGOn7pv4WY6QuQW//ySQi5lJjA/ZT9sNWWNTg==}
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.5.0
 
   /@swc/wasm@1.2.122:
     resolution: {integrity: sha512-sM1VCWQxmNhFtdxME+8UXNyPNhxNu7zdb6ikWpz0YKAQQFRGT5ThZgJrubEpah335SUToNg8pkdDF7ibVCjxbQ==}
@@ -15235,7 +15235,7 @@ packages:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
     dependencies:
       graphql: 16.6.0
-      tslib: 2.6.2
+      tslib: 2.5.0
     dev: true
 
   /graphql@15.8.0:
@@ -22103,7 +22103,7 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     dependencies:
       '@pkgr/utils': 2.3.1
-      tslib: 2.6.2
+      tslib: 2.5.0
     dev: true
 
   /tailwind-merge@1.8.0:
@@ -24207,3 +24207,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
