@@ -58,7 +58,7 @@
     "superstruct": "^1.0.0",
     "tsx": "^3.12.7",
     "typescript": "^5.1.3",
-    "valibot": "^0.17.0",
+    "valibot": "^0.18.0",
     "vite": "^4.1.2",
     "vitest": "^0.32.0",
     "vitest-environment-miniflare": "^2.12.0",
