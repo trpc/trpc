@@ -1498,9 +1498,6 @@ importers:
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
-      expect-type:
-        specifier: ^0.16.0
-        version: 0.16.0
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1661,9 +1658,6 @@ importers:
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
-      expect-type:
-        specifier: ^0.16.0
-        version: 0.16.0
       express:
         specifier: ^4.17.1
         version: 4.18.2
@@ -1799,9 +1793,6 @@ importers:
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
-      expect-type:
-        specifier: 0.17.0-1
-        version: 0.17.0-1
       fastify:
         specifier: ^4.13.0
         version: 4.13.0
@@ -14150,16 +14141,6 @@ packages:
     resolution: {integrity: sha512-eNTPlAD67BmP31LDINZ3U7HSF8l57TxOY2PmBJ1shpCvpnxBF93mWCE8YHBnXs8qiUZJc9WDcWIeC3a2HIAMfw==}
     engines: {node: '>=6'}
     dev: true
-
-  /expect-type@0.16.0:
-    resolution: {integrity: sha512-wCpFeVBiAPGiYkQZzaqvGuuBnNCHbtnowMOBpBGY8a27XbG8VAit3lklWph1r8VmgsH61mOZqI3NuGm8bZnUlw==}
-    engines: {node: '>=12.0.0'}
-    dev: true
-
-  /expect-type@0.17.0-1:
-    resolution: {integrity: sha512-r2ubQsBXoo916ifRzrdVXayJDZEZnBMLk2mBkgvZwINSATyqTNYWDDRaZFAqyh1a4Wz0g3bLUDCmJkmqi8zBQw==}
-    engines: {node: '>=12.0.0'}
-    dev: false
 
   /express@4.18.2:
     resolution: {integrity: sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==}
