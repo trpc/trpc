@@ -1845,8 +1845,8 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       tupleson:
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: ^0.10.0
+        version: 0.10.0
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -22601,8 +22601,8 @@ packages:
       - supports-color
     dev: false
 
-  /tupleson@0.9.0:
-    resolution: {integrity: sha512-uRuM0q+8uNV+qBEEIViCRXQC5b8c1qdO8vv1F1ZetTSWk/oZweX/w/8ldhBZ/uS07KA/2gwjqgda3uuNrJu2YQ==}
+  /tupleson@0.10.0:
+    resolution: {integrity: sha512-hPFPf0w1Ol+OXC/vvB/CEh+2pJWlKqgx+e5JDJ34Tw2KJp318ijTqM+zmhJpAx5kE6Qk7tmPwH7c9Qz8HkFF8A==}
     engines: {node: '>=18'}
     dev: false
 
