@@ -38,7 +38,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?: CreateClientCallback;
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
   },
 ) {
   // http
