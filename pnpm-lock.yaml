@@ -1728,8 +1728,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@decs/typeschema':
-        specifier: ^0.11.2
-        version: 0.11.2(@effect/schema@0.39.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
+        specifier: ^0.12.0
+        version: 0.12.0(@effect/schema@0.39.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
         specifier: ^0.39.0
         version: 0.39.0(effect@2.0.0-next.37)
@@ -1960,8 +1960,8 @@ importers:
         specifier: ^7.18.6
         version: 7.20.2(@babel/core@7.20.2)
       '@decs/typeschema':
-        specifier: ^0.11.2
-        version: 0.11.2(@effect/schema@0.39.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(yup@1.0.0)(zod@3.20.2)
+        specifier: ^0.12.0
+        version: 0.12.0(@effect/schema@0.39.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(yup@1.0.0)(zod@3.20.2)
       '@effect/schema':
         specifier: ^0.39.0
         version: 0.39.0(effect@2.0.0-next.37)
@@ -5572,32 +5572,29 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.11.2(@effect/schema@0.39.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(yup@1.0.0)(zod@3.20.2):
-    resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
+  /@decs/typeschema@0.12.0(@effect/schema@0.39.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(yup@1.0.0)(zod@3.20.2):
+    resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
-      '@effect/data': ^0.18.5
-      '@effect/io': ^0.40.1
-      '@effect/schema': ^0.36.1
-      '@sinclair/typebox': ^0.31.14
+      '@effect/data': ^0.18.6
+      '@effect/schema': ^0.36.5
+      '@sinclair/typebox': ^0.31.15
       ajv: ^8.12.0
       arktype: ^1.0.21-alpha
-      fp-ts: ^2.16.0
+      fp-ts: ^2.16.1
       io-ts: ^2.2.20
-      joi: ^17.10.1
+      joi: ^17.10.2
       ow: ^0.28.2
       runtypes: ^6.7.0
       superstruct: ^1.0.3
-      valibot: ^0.15.0
-      vite: ^4.4.9
+      valibot: ^0.17.0
+      vite: ^4.4.10
       yup: ^1.2.0
       zod: ^3.22.2
     peerDependenciesMeta:
       '@deepkit/type':
         optional: true
       '@effect/data':
-        optional: true
-      '@effect/io':
         optional: true
       '@effect/schema':
         optional: true
@@ -5638,32 +5635,29 @@ packages:
       zod: 3.20.2
     dev: true
 
-  /@decs/typeschema@0.11.2(@effect/schema@0.39.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
-    resolution: {integrity: sha512-PpAsvks/a0X4d+u+sEGU3llpbTGI8RpUgzBCB2byYbbNiTL5xoYeD8Qt0GmXzGhsTKFr5D0fHyHkqezkcrk/Sg==}
+  /@decs/typeschema@0.12.0(@effect/schema@0.39.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.18.0)(vite@4.1.2)(yup@1.0.0)(zod@3.20.2):
+    resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
-      '@effect/data': ^0.18.5
-      '@effect/io': ^0.40.1
-      '@effect/schema': ^0.36.1
-      '@sinclair/typebox': ^0.31.14
+      '@effect/data': ^0.18.6
+      '@effect/schema': ^0.36.5
+      '@sinclair/typebox': ^0.31.15
       ajv: ^8.12.0
       arktype: ^1.0.21-alpha
-      fp-ts: ^2.16.0
+      fp-ts: ^2.16.1
       io-ts: ^2.2.20
-      joi: ^17.10.1
+      joi: ^17.10.2
       ow: ^0.28.2
       runtypes: ^6.7.0
       superstruct: ^1.0.3
-      valibot: ^0.15.0
-      vite: ^4.4.9
+      valibot: ^0.17.0
+      vite: ^4.4.10
       yup: ^1.2.0
       zod: ^3.22.2
     peerDependenciesMeta:
       '@deepkit/type':
         optional: true
       '@effect/data':
-        optional: true
-      '@effect/io':
         optional: true
       '@effect/schema':
         optional: true
