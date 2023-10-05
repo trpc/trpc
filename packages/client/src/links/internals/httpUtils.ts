@@ -17,7 +17,7 @@ import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
  * @internal
  */
 export interface HTTPLinkBaseOptions {
-  url: string;
+  url: string | URL;
   /**
    * Add ponyfill for fetch
    */
@@ -38,7 +38,7 @@ export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions,
 ): ResolvedHTTPLinkOptions {
   return {
-    url: opts.url,
+    url: opts.url.toString(),
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
   };
