@@ -1116,7 +1116,7 @@ export const tweets = {
             {
                 "id": "1029051636",
                 "username": "grabbou",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1585984423379587074/hAOlKGNS_normal.jpg",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1672503099317993474/uVJMO2u4_normal.jpg",
                 "public_metrics": {
                     "followers_count": 10891,
                     "following_count": 416,
@@ -1212,7 +1212,7 @@ export const tweets = {
             {
                 "id": "1568731775400124417",
                 "username": "christian_legge",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1569016481286864897/G7rAUufS_normal.jpg",
+                "profile_image_url": "https://pbs.twimg.com/profile_images/1655595464253685760/YPFy_BlZ_normal.jpg",
                 "public_metrics": {
                     "followers_count": 13,
                     "following_count": 30,

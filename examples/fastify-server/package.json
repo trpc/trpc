@@ -1,6 +1,6 @@
 {
   "name": "@examples/fastify-server",
-  "version": "10.34.0",
+  "version": "10.38.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@fastify/websocket": "^7.1.2",
-    "@trpc/client": "^10.34.0",
-    "@trpc/server": "^10.34.0",
+    "@trpc/client": "^10.38.5",
+    "@trpc/server": "^10.38.5",
     "fastify": "^4.13.0",
     "superjson": "^1.12.4",
     "tslib": "^2.5.0",

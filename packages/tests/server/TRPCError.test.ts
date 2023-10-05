@@ -90,3 +90,33 @@ describe('getTRPCErrorFromUnknown', () => {
     expect(typeof trpcError.stack).toEqual('string');
   });
 });
+
+test('should be extendable', () => {
+  class MyError extends TRPCError {
+    constructor() {
+      super({ code: 'FORBIDDEN' });
+      this.name = 'MyError';
+    }
+  }
+  const originalError = new MyError();
+  expect(originalError).toBeInstanceOf(TRPCError);
+  expect(originalError).toBeInstanceOf(Error);
+  expect(originalError).toBeInstanceOf(MyError);
+
+  const trpcError = getTRPCErrorFromUnknown(originalError);
+  expect(trpcError).toBe(originalError);
+});
+
+test('allows fuzzy matching based on error name', () => {
+  class MyError extends Error {
+    constructor() {
+      super('wat');
+      this.name = 'TRPCError';
+    }
+  }
+  const originalError = new MyError();
+
+  const trpcError = getTRPCErrorFromUnknown(originalError);
+
+  expect(trpcError).toBe(originalError);
+});

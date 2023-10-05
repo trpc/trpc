@@ -110,6 +110,13 @@ pnpm add @trpc/server @trpc/client
 ```
 
   </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bun add @trpc/server @trpc/client
+```
+
+  </TabItem>
 </Tabs>
 
 ## Defining a backend router
@@ -271,7 +278,7 @@ const appRouter = router({
 });
 ```
 
-</TabItem>
+  </TabItem>
   <TabItem value="yup" label="Yup">
     The input parser can be any <code>YupSchema</code>, e.g. <code>yup.string()</code> or <code>yup.object({})</code>.
 
@@ -293,6 +300,40 @@ const appRouter = router({
   // ...
   userById: publicProcedure
     .input(yup.string().required())
+    .query(async (opts) => {
+      const { input } = opts;
+      //      ^?
+      // Retrieve the user with the given ID
+      const user = await db.user.findById(input);
+      //    ^?
+      return user;
+    }),
+});
+```
+
+  </TabItem>
+  <TabItem value="valibot" label="Valibot">
+    With Valibot, you simply need to <code>wrap</code> your schema with [TypeSchema](https://typeschema.com).
+
+<br />
+<br />
+
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
+// ---cut---
+import { wrap } from '@decs/typeschema';
+import { string } from 'valibot';
+
+const appRouter = router({
+  // ...
+  userById: publicProcedure
+    .input(wrap(string()))
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
