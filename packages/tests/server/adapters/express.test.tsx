@@ -36,6 +36,7 @@ async function startServer() {
     '/trpc',
     trpcExpress.createExpressMiddleware({
       router,
+      maxBodySize: 10, // 10 bytes,
       createContext,
     }),
   );
@@ -138,5 +139,14 @@ test('error query', async () => {
     await t.client.exampleError.query();
   } catch (e) {
     expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+  }
+});
+
+test('payload too large', async () => {
+  try {
+    await t.client.exampleMutation.mutate({ payload: 'a'.repeat(100) });
+    expect(true).toBe(false); // should not be reached
+  } catch (e) {
+    expect(e).toStrictEqual(new TRPCClientError('PAYLOAD_TOO_LARGE'));
   }
 });

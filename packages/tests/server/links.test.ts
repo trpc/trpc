@@ -722,3 +722,53 @@ test('chain makes unsub', async () => {
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   await close();
 });
+
+test('init with URL object', async () => {
+  const serverCall = vi.fn();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(({}) => {
+      serverCall();
+      return 'world';
+    }),
+  });
+
+  const { httpPort, close } = routerToServerAndClientNew(router);
+  const url = new URL(`http://localhost:${httpPort}`);
+
+  const chain = createChain({
+    links: [httpLink({ url: url })(mockRuntime)],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+    },
+  });
+
+  const result = await observableToPromise(chain).promise;
+  expect(result?.context?.response).toBeTruthy();
+  result.context!.response = '[redacted]' as any;
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "context": Object {
+        "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
+      },
+      "result": Object {
+        "data": "world",
+        "type": "data",
+      },
+    }
+  `);
+
+  expect(serverCall).toHaveBeenCalledTimes(1);
+
+  await close();
+});
