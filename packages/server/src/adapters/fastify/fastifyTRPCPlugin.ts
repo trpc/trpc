@@ -22,6 +22,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   opts: FastifyTRPCPluginOptions<TRouter>,
   done: (err?: Error) => void,
 ) {
+  fastify.removeContentTypeParser('application/json');
   fastify.addContentTypeParser(
     'application/json',
     { parseAs: 'string' },
