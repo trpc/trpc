@@ -38,7 +38,7 @@ export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions,
 ): ResolvedHTTPLinkOptions {
   return {
-    url: opts.url.toString(),
+    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
   };
