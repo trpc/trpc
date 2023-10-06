@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import {
   createTRPCProxyClient,
