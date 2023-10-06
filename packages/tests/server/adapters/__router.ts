@@ -27,4 +27,7 @@ export const router = t.router({
       message: 'Unexpected error',
     });
   }),
+  exampleMutation: t.procedure
+    .input(z.object({ payload: z.string() }))
+    .mutation(() => 'ok'),
 });
