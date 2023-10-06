@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -1498,6 +1502,9 @@ importers:
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
+      expect-type:
+        specifier: ^0.17.0
+        version: 0.17.0
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1658,6 +1665,9 @@ importers:
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
+      expect-type:
+        specifier: ^0.17.0
+        version: 0.17.0
       express:
         specifier: ^4.17.1
         version: 4.18.2
@@ -14140,6 +14150,11 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
+  /expect-type@0.17.0:
+    resolution: {integrity: sha512-m7peQshFPL8LMTNvYjh0fjPy0tQgOyi1wtgCt6vnh+iaa+JJPWQT3cf1W2GzBo4v/otDr29RJzJGepGJb+G6hg==}
+    engines: {node: '>=12.0.0'}
+    dev: true
+
   /express@4.18.2:
     resolution: {integrity: sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==}
     engines: {node: '>= 0.10.0'}
@@ -24191,7 +24206,3 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
