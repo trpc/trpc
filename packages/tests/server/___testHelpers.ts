@@ -27,19 +27,19 @@ import './___packages';
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
 
+export type CreateClientCallback = (opts: {
+  httpUrl: string;
+  wssUrl: string;
+  wsClient: TRPCWebSocketClient;
+}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?:
-      | Partial<WithTRPCConfig<TRouter>>
-      | ((opts: {
-          httpUrl: string;
-          wssUrl: string;
-          wsClient: TRPCWebSocketClient;
-        }) => Partial<WithTRPCConfig<AnyNewRouter>>);
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
   },
 ) {
   // http
