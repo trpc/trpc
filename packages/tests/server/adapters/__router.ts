@@ -27,4 +27,5 @@ export const router = t.router({
       message: 'Unexpected error',
     });
   }),
+  mut: t.procedure.input(z.string()).mutation((opts) => opts.input),
 });

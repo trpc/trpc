@@ -1,4 +1,5 @@
 import http from 'http';
+import { waitError } from '../___testHelpers';
 import { Context, router } from './__router';
 import {
   createTRPCProxyClient,
@@ -36,6 +37,7 @@ async function startServer() {
     trpcExpress.createExpressMiddleware({
       router,
       createContext,
+      maxBodySize: 100, // 100 bytes
     }),
   );
   const { server, port } = await new Promise<{
@@ -105,4 +107,15 @@ test('error query', async () => {
   } catch (e) {
     expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
   }
+});
+
+// regression: https://github.com/trpc/trpc/issues/4886
+test('regression #4886 payload too large', async () => {
+  const err = await waitError(
+    t.client.mut.mutate('0'.repeat(101)),
+    TRPCClientError<typeof t.router>,
+  );
+  expect(err).toMatchInlineSnapshot('[TRPCClientError: PAYLOAD_TOO_LARGE]');
+
+  expect(err.data?.code).toBe('PAYLOAD_TOO_LARGE');
 });
