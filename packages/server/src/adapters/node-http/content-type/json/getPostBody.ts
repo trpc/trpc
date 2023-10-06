@@ -28,7 +28,6 @@ export async function getPostBody(opts: {
           ok: false,
           error: new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }),
         });
-        req.socket.destroy();
       }
     });
     req.on('end', () => {
