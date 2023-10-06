@@ -140,7 +140,7 @@ const startServer = async <TRouter extends AnyRouter>(
     invalidTrpcQuery?: boolean;
   } = {},
 ) => {
-  let ac = new AbortController();
+  const ac = new AbortController();
   const handler = createCustomHandler(Object.assign({ createContext }, opts));
   server = createCustomServer(
     async (req, res) => {
