@@ -57,18 +57,10 @@ There are a few [examples](https://trpc.io/docs/example-apps) that you can use f
 
 **Quick start with a full-stack Next.js example:**
 
+**Support yarn npx pnpm bunx**
+
 ```sh
-# yarn
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# npm
-npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# pnpm
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# bun
-bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+yarn|npx|pnpm|bunx create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
