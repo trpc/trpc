@@ -15,8 +15,7 @@ import { z } from 'zod';
 
 // start of custom server
 
-// The query type here is just to show it might
-// not extend express's req.query type
+// The query type here is just to show it might not extend express's req.query type
 // invalidTrpcQuery is used to let trpc know that passing the query to URLSearchParams would cause it to throw
 type AugmentedRequest = IncomingMessage & {
   query?: any[] | Record<string, any>;
