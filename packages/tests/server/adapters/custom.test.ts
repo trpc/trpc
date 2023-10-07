@@ -13,7 +13,7 @@ import {
 import fetch from 'node-fetch';
 import { z } from 'zod';
 
-// start of custom server
+// Start of custom server
 
 // The query type here is just to show it might not extend express's req.query type
 // invalidTrpcQuery is used to let trpc know that passing the query to URLSearchParams would cause it to throw
@@ -29,7 +29,7 @@ const defaultQueryParser: QueryParser = (req) => {
   return new URL(req.url!, `https://${req.headers.host}`).searchParams;
 };
 
-// just returning an array as an example of something a parser might return that could cause trpc to throw
+// Just returning an array as an example of something a parser might return that could cause trpc to throw
 const invalidTrpcQueryParser: QueryParser = (req) => {
   return [req];
 };
@@ -78,9 +78,9 @@ const createCustomServer = (
     );
   });
 
-// end of custom server
+// End of custom server
 
-// start of custom adapter
+// Start of custom adapter
 
 type CreateCustomContextOptions = NodeHTTPCreateContextFnOptions<
   AugmentedRequest,
@@ -99,7 +99,7 @@ const createCustomHandler = <TRouter extends AnyRouter>(
     });
   };
 
-// end of custom adapter
+// End of custom adapter
 
 const createContext = async ({ req, res }: CreateCustomContextOptions) => {
   return {
@@ -146,7 +146,7 @@ const startServer = async <TRouter extends AnyRouter>(
       res.customMethod('Request listner');
       // Do some more custom stuff with your server before calling the custom handler
       // The handler could be middlewear that your server runs
-      // you could just pass handler to createCustomServer directly
+      // You could just pass handler to createCustomServer directly
       try {
         return await handler(req, res);
       } catch (e) {
@@ -230,7 +230,7 @@ test('middleware res has custom methods', async () => {
 });
 
 // These tests are the same as the ones in standalone.test.ts but are testing the custom adpater in this file
-// if the standalone adapter needs to be change, then it's possible that the custom adpater used here
+// If the standalone adapter needs to be change, then it's possible that the custom adpater used here
 // will also need to be changed for the other tests to succeed
 
 test('simple query', async () => {
