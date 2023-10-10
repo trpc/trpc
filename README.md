@@ -75,8 +75,6 @@ bunx create-next-app --example https://github.com/trpc/trpc --example-path examp
 
 ## Star History
 
-> tRPC is rapidly gaining momentum!
-
 <a href="https://star-history.com/#trpc/trpc"><img src="https://api.star-history.com/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
 
 ## Core Team
