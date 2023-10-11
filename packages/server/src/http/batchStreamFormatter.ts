@@ -29,43 +29,11 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
       }>;
 
   let first = true;
-  let separator: string = ',';
-  let open: () => string = () => '';
-  let close: () => string;
+  let separator = ',';
+  let open = () => '';
+  let close;
 
-  switch (style) {
-    case 'event-stream':
-      separator = '\n\n';
-      open = () => {
-        initResponse();
-        return `data: ${JSON.stringify({ result: { type: 'start' } })}\n\n`;
-      };
-      close = () => `\n\ndata: ${JSON.stringify({ result: { type: 'end' } })}`;
-      break;
-    case 'json-stream':
-      open = () => {
-        initResponse();
-        return '{';
-      };
-      close = () => '}';
-      break;
-    case 'batch':
-      buffer = new Set();
-      close = () => {
-        initResponse();
-        return stringify(items!);
-      };
-      break;
-    case 'single':
-      buffer = new Set();
-      close = () => {
-        initResponse();
-        return stringify(items![0]!);
-      };
-      break;
-  }
-
-  function initResponse() {
+  const initResponse = (head: { status: number; headers: HTTPHeaders }) => {
     items =
       buffer &&
       Array.from(buffer)
@@ -85,15 +53,47 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
     }
 
     if (meta.status) head.status = meta.status;
-  }
+  };
 
-  function stringify(
+  const stringify = (
     data:
       | TRPCResponse<unknown, inferRouterError<TRouter>>
       | TRPCResponse<unknown, inferRouterError<TRouter>>[],
-  ) {
+  ) => {
     const serialized = transformTRPCResponse(router._def._config, data);
     return JSON.stringify(serialized);
+  };
+
+  switch (style) {
+    case 'event-stream':
+      separator = '\n\n';
+      open = () => {
+        initResponse(head);
+        return `data: ${JSON.stringify({ result: { type: 'start' } })}\n\n`;
+      };
+      close = () => `\n\ndata: ${JSON.stringify({ result: { type: 'end' } })}`;
+      break;
+    case 'json-stream':
+      open = () => {
+        initResponse(head);
+        return '{';
+      };
+      close = () => '}';
+      break;
+    case 'batch':
+      buffer = new Set();
+      close = () => {
+        initResponse(head);
+        return stringify(items!);
+      };
+      break;
+    case 'single':
+      buffer = new Set();
+      close = () => {
+        initResponse(head);
+        return stringify(items![0]!);
+      };
+      break;
   }
 
   function format(
@@ -113,8 +113,8 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
         buffer?.add({ index, value: data });
         return '';
     }
-  }
+  };
 
   format.end = close;
-  return format;
+  return format
 }
