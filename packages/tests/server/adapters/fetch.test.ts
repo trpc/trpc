@@ -22,9 +22,6 @@ globalThis.Response = MiniflareResponse as any;
 // miniflare must use the web stream "polyfill"
 globalThis.ReadableStream = MiniflareReadableStream as any;
 
-const port = 8788;
-const url = `http://localhost:${port}`;
-
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
     if (req.headers.get('authorization') === 'meow') {
@@ -83,18 +80,19 @@ function createAppRouter() {
 
 type AppRouter = ReturnType<typeof createAppRouter>;
 
-async function startServer() {
+async function startServer(endpoint = '') {
   const router = createAppRouter();
 
   const mf = new Miniflare({
     script: '//',
-    port,
+    port: 0,
     compatibilityFlags: ['streams_enable_constructors'],
   });
+
   const globalScope = await mf.getGlobalScope();
   globalScope.addEventListener('fetch', (event: FetchEvent) => {
     const response = fetchRequestHandler({
-      endpoint: '',
+      endpoint,
       req: event.request,
       router,
       createContext,
@@ -107,12 +105,15 @@ async function startServer() {
     event.respondWith(response);
   });
   const server = await mf.startServer();
+  const port = (server.address() as any).port;
+  const url = `http://localhost:${port}`;
 
   const client = createTRPCProxyClient<typeof router>({
     links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
   return {
+    url,
     close: () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
@@ -124,17 +125,125 @@ async function startServer() {
   };
 }
 
-let t: inferAsyncReturnType<typeof startServer>;
-beforeAll(async () => {
-  t = await startServer();
-});
-afterAll(async () => {
-  await t.close();
+describe('with default server', () => {
+  let t: inferAsyncReturnType<typeof startServer>;
+  beforeAll(async () => {
+    t = await startServer();
+  });
+  afterAll(async () => {
+    await t.close();
+  });
+
+  test('simple query', async () => {
+    expect(
+      await t.client.hello.query({
+        who: 'test',
+      }),
+    ).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello test",
+    }
+  `);
+
+    expect(await t.client.hello.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello world",
+    }
+  `);
+  });
+
+  test('streaming', async () => {
+    const orderedResults: number[] = [];
+    const linkSpy: TRPCLink<AppRouter> = () => {
+      // here we just got initialized in the app - this happens once per app
+      // useful for storing cache for instance
+      return ({ next, op }) => {
+        // this is when passing the result to the next link
+        // each link needs to return an observable which propagates results
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(value) {
+              orderedResults.push((value.result as any).data);
+              observer.next(value);
+            },
+            error: observer.error,
+          });
+          return unsubscribe;
+        });
+      };
+    };
+
+    const client = createTRPCProxyClient<AppRouter>({
+      links: [
+        linkSpy,
+        unstable_httpBatchStreamLink({
+          url: t.url,
+          fetch: fetch as any,
+        }),
+      ],
+    });
+
+    const results = await Promise.all([
+      client.deferred.query({ wait: 3 }),
+      client.deferred.query({ wait: 1 }),
+      client.deferred.query({ wait: 2 }),
+    ]);
+    expect(results).toEqual([3, 1, 2]);
+    expect(orderedResults).toEqual([1, 2, 3]);
+  });
+
+  test('query with headers', async () => {
+    const client = createTRPCProxyClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: t.url,
+          fetch: fetch as any,
+          headers: { authorization: 'meow' },
+        }),
+      ],
+    });
+
+    expect(await client.hello.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello KATT",
+    }
+  `);
+  });
+
+  test('response with headers', async () => {
+    const customLink: TRPCLink<AppRouter> = () => {
+      return ({ next, op }) => {
+        return next(op).pipe(
+          tap({
+            next(result) {
+              const context = result.context as { response: Response };
+              expect(context.response.headers.get('x-foo')).toBe('bar');
+            },
+          }),
+        );
+      };
+    };
+
+    const client = createTRPCProxyClient<AppRouter>({
+      links: [
+        customLink,
+        httpBatchLink({
+          url: t.url,
+          fetch: fetch as any,
+          headers: { authorization: 'meow' },
+        }),
+      ],
+    });
+
+    await client.foo.query();
+  });
 });
 
-test('simple query', async () => {
+// https://github.com/trpc/trpc/pull/4893
+test('with / endpoint', async () => {
+  const custom = await startServer('/');
   expect(
-    await t.client.hello.query({
+    await custom.client.hello.query({
       who: 'test',
     }),
   ).toMatchInlineSnapshot(`
@@ -143,95 +252,10 @@ test('simple query', async () => {
     }
   `);
 
-  expect(await t.client.hello.query()).toMatchInlineSnapshot(`
+  expect(await custom.client.hello.query()).toMatchInlineSnapshot(`
     Object {
       "text": "hello world",
     }
   `);
-});
-
-test('streaming', async () => {
-  const orderedResults: number[] = [];
-  const linkSpy: TRPCLink<AppRouter> = () => {
-    // here we just got initialized in the app - this happens once per app
-    // useful for storing cache for instance
-    return ({ next, op }) => {
-      // this is when passing the result to the next link
-      // each link needs to return an observable which propagates results
-      return observable((observer) => {
-        const unsubscribe = next(op).subscribe({
-          next(value) {
-            orderedResults.push((value.result as any).data);
-            observer.next(value);
-          },
-          error: observer.error,
-        });
-        return unsubscribe;
-      });
-    };
-  };
-
-  const client = createTRPCProxyClient<AppRouter>({
-    links: [
-      linkSpy,
-      unstable_httpBatchStreamLink({
-        url,
-        fetch: fetch as any,
-      }),
-    ],
-  });
-
-  const results = await Promise.all([
-    client.deferred.query({ wait: 3 }),
-    client.deferred.query({ wait: 1 }),
-    client.deferred.query({ wait: 2 }),
-  ]);
-  expect(results).toEqual([3, 1, 2]);
-  expect(orderedResults).toEqual([1, 2, 3]);
-});
-
-test('query with headers', async () => {
-  const client = createTRPCProxyClient<AppRouter>({
-    links: [
-      httpBatchLink({
-        url,
-        fetch: fetch as any,
-        headers: { authorization: 'meow' },
-      }),
-    ],
-  });
-
-  expect(await client.hello.query()).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello KATT",
-    }
-  `);
-});
-
-test('response with headers', async () => {
-  const customLink: TRPCLink<AppRouter> = () => {
-    return ({ next, op }) => {
-      return next(op).pipe(
-        tap({
-          next(result) {
-            const context = result.context as { response: Response };
-            expect(context.response.headers.get('x-foo')).toBe('bar');
-          },
-        }),
-      );
-    };
-  };
-
-  const client = createTRPCProxyClient<AppRouter>({
-    links: [
-      customLink,
-      httpBatchLink({
-        url,
-        fetch: fetch as any,
-        headers: { authorization: 'meow' },
-      }),
-    ],
-  });
-
-  await client.foo.query();
+  await custom.close();
 });
