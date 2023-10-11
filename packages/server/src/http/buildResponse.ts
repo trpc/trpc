@@ -78,27 +78,10 @@ export function buildResponse<
   if (streamMode === 'none') style = isBatchCall ? 'batch' : 'single';
   else style = streamMode === 'sse' ? 'event-stream' : 'json-stream';
 
-  const head: { status: number; headers: HTTPHeaders } = {
-    status: 207,
-    headers: {
-      'Content-Type':
-        style === 'event-stream' ? 'text/event-stream' : 'application/json',
-    },
-  };
-
-  const body = writeBody();
-  const partial = { ...head, body } as StreamHTTPResponse;
-
-  partial.json = Response.prototype.json.bind(partial);
-  partial.text = Response.prototype.text.bind(partial);
-
-  return partial;
-
-  function writeBody() {
+  const writeBody = () => {
     const encoder = new TextEncoder();
     let queue: AsyncGenerator<string, void, number> | void;
-
-    const body = new ReadableStream<Uint8Array>({
+    return new ReadableStream<Uint8Array>({
       async start(controller) {
         queue = createBodyGenerator();
         const first = await queue.next();
@@ -117,18 +100,38 @@ export function buildResponse<
         queue = undefined;
       },
     });
+  };
 
-    return body;
-  }
+  const head = {
+    status: 207,
+    headers: {
+      'Content-Type':
+        style === 'event-stream' ? 'text/event-stream' : 'application/json',
+    },
+  };
+
+  const headProxy = new Proxy(head as unknown as StreamHTTPResponse, {
+    get(_, prop) {
+      if (prop === 'text') return () => new Response(writeBody()).text();
+      if (prop === 'json') return () => new Response(writeBody()).json();
+      if (prop === 'body') return writeBody();
+      return head[prop as keyof typeof head];
+    },
+    set(_, p, newValue) {
+      if (p === 'status') {head.status = newValue; return true}
+      return Reflect.set(_, p, newValue);
+    }
+  });
+
+  return headProxy;
 
   async function* createBodyGenerator(): AsyncGenerator<string, void, number> {
     try {
       const formatOutput = createBodyFormatter({
         style,
         router,
-        head,
-        onResponseInit: ({ data = [], errors = [] } = {}) => {
-          return (
+        head: headProxy,
+        onResponseInit: ({ data = [], errors = [] } = {}) => 
             responseMeta?.({
               data,
               errors,
@@ -137,8 +140,7 @@ export function buildResponse<
               type,
               eagerGeneration: style.includes('stream'),
             }) ?? {}
-          );
-        },
+
       });
 
       // Map each promise to a tuple of its index and its result so we can resolve them out of order and still
