@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
-import { getBatchStreamFormatter, HTTPRequest } from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
+import { HTTPRequest } from '../../http';
+import { resolveHTTPFetchResponse } from '../../http/resolveHTTPResponse';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
 import {
@@ -64,50 +63,7 @@ export async function nodeHTTPRequestHandler<
       body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
-    let isStream = false;
-    let formatter: ReturnType<typeof getBatchStreamFormatter>;
-    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
-      if (
-        'status' in head &&
-        (!opts.res.statusCode || opts.res.statusCode === 200)
-      ) {
-        opts.res.statusCode = head.status;
-      }
-      for (const [key, value] of Object.entries(head.headers ?? {})) {
-        /* istanbul ignore if -- @preserve */
-        if (typeof value === 'undefined') {
-          continue;
-        }
-        opts.res.setHeader(key, value);
-      }
-      if (isStreaming) {
-        opts.res.setHeader('Transfer-Encoding', 'chunked');
-        const vary = opts.res.getHeader('Vary');
-        opts.res.setHeader(
-          'Vary',
-          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
-        );
-        isStream = true;
-        formatter = getBatchStreamFormatter();
-        opts.res.flushHeaders();
-      }
-    };
-
-    const unstable_onChunk = ([index, string]: ResponseChunk) => {
-      if (index === -1) {
-        /**
-         * Full response, no streaming. This can happen
-         * - if the response is an error
-         * - if response is empty (HEAD request)
-         */
-        opts.res.end(string);
-      } else {
-        opts.res.write(formatter!(index, string));
-        opts.res.flush?.();
-      }
-    };
-
-    await resolveHTTPResponse({
+    const res = await resolveHTTPFetchResponse({
       batching: opts.batching,
       responseMeta: opts.responseMeta,
       path: opts.path,
@@ -123,14 +79,20 @@ export async function nodeHTTPRequestHandler<
         });
       },
       contentTypeHandler,
-      unstable_onHead,
-      unstable_onChunk,
     });
 
-    if (isStream) {
-      opts.res.write(formatter!.end());
-      opts.res.end();
+    // res is of type `Request` but node.js wants us to call res.send etc
+
+    opts.res.statusCode = res.status;
+    opts.res.statusMessage = res.statusText;
+    for (const [key, value] of res.headers.entries()) {
+      opts.res.setHeader(key, value);
     }
+
+    for await (const chunk of res.body) {
+      opts.res.write(chunk);
+    }
+    opts.res.end();
 
     return opts.res;
   });

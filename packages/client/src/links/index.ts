@@ -12,3 +12,4 @@ export * from './httpFormDataLink';
 // These are not public (yet) as we get this functionality from tanstack query
 // export * from './internals/retryLink';
 // export * from './internals/dedupeLink';
+export * from './httpTuplesonLink';

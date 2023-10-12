@@ -28,11 +28,11 @@ import {
 } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
-function asyncIterableToReadableStream<T>(
-  iterable: AsyncIterable<T>,
-): ReadableStream<T> {
-  let controller: ReadableStreamDefaultController<T> = undefined as any;
-  const stream = new ReadableStream<T>({
+function asyncIterableToReadableStream<TValue>(
+  iterable: AsyncIterable<TValue>,
+): ReadableStream<TValue> {
+  let controller: ReadableStreamDefaultController<TValue> = undefined as any;
+  const stream = new ReadableStream<TValue>({
     start(c) {
       controller = c;
     },
@@ -50,6 +50,8 @@ function asyncIterableToReadableStream<T>(
 
 const tsonStringify = createTsonStringifyAsync({
   types: [tsonAsyncIterator, tsonPromise],
+  // FIXME this should be configurable - just having it as a static value for tests to work
+  nonce: () => '__tson'
 });
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
