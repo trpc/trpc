@@ -12,6 +12,7 @@ import {
   ErrorFormatter,
   ErrorFormatterShape,
 } from '../error/formatter';
+import { unstable_createTsonAsyncOptions } from '../shared';
 import { createFlatProxy } from '../shared/createProxy';
 import {
   DataTransformerOptions,
@@ -129,28 +130,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       runtime?.transformer ?? defaultTransformer,
     ) as $Transformer;
 
-    function createTsonAsyncOptions(): TsonAsyncOptions {
-      if (!runtime?.unstable_tuplesonOptions) {
-        return {
-          types: [tsonPromise, tsonAsyncIterator],
-        };
-      }
-      const opts: TsonAsyncOptions = {
-        ...runtime.unstable_tuplesonOptions,
-        types: [...(runtime.unstable_tuplesonOptions.types ?? [])],
-      };
-
-      // make sure tsonAsyncIterator and tsonPromise is always included even if not passed
-      if (!opts.types.find((it) => it.key === tsonPromise.key)) {
-        opts.types.push(tsonPromise);
-      }
-      if (!opts.types.find((it) => it.key === tsonAsyncIterator.key)) {
-        opts.types.push(tsonAsyncIterator);
-      }
-      return opts;
-    }
-
-    const tuplesonOpts = createTsonAsyncOptions();
+    const tuplesonOpts = unstable_createTsonAsyncOptions(
+      runtime?.unstable_tuplesonOptions,
+    );
 
     const config: $Config = {
       transformer,

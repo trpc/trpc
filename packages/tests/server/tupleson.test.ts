@@ -232,7 +232,7 @@ describe('no transformer', () => {
     `);
   });
 
-  test.todo('out-of-order streaming', async () => {
+  test.only('out-of-order streaming', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
