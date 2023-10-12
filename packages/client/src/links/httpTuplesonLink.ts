@@ -61,7 +61,6 @@ async function* readableStreamToAsyncIterable(
   const reader = stream.getReader();
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
       // Read from the stream
       const result = await reader.read();
