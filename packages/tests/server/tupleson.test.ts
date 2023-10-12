@@ -379,4 +379,22 @@ describe('with transformer', () => {
       ]
     `);
   });
+
+  test('async iterator', async () => {
+    const { proxy } = ctx;
+
+    const results = await proxy.iterator.query();
+
+    const resultsArray = [];
+    for await (const result of results) {
+      resultsArray.push(result);
+    }
+    expect(resultsArray).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+  });
 });
