@@ -100,7 +100,7 @@ describe('no transformer', () => {
     // parse each thing with text decoder
     const decoder = new TextDecoder();
 
-    for await (const chunk of stream) {
+    for await (const chunk of stream as any) {
       result.push(decoder.decode(chunk));
     }
 
