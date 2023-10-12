@@ -130,7 +130,7 @@ const streamRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
       {
         ...requesterOpts,
         contentTypeHeader: 'application/json',
-        batchModeHeader: 'stream',
+        batchModeHeader: 'tupleson',
         getUrl,
         getBody,
         inputs,

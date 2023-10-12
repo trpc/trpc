@@ -91,7 +91,7 @@ export type GetBody = (
 ) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  batchModeHeader?: 'stream';
+  batchModeHeader?: 'stream' | 'tupleson';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
