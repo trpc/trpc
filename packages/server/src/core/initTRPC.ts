@@ -136,6 +136,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
           `Tried to access "$types.${key}" which is not available at runtime`,
         );
       }),
+      // TODO initialize tupleson serializer/deserializer here
     };
 
     {
