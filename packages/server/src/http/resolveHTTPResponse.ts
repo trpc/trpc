@@ -288,10 +288,14 @@ export async function resolveHTTPResponse<
 
     if (unstable_streamSupport !== undefined) return response;
 
+    const body = await response.text();
+    const status = response.status;
+    const headers = response.headers;
+
     return {
-      status: response.status,
-      headers: response.headers,
-      body: await response.text(),
+      body,
+      status,
+      headers,
     };
   } catch (cause) {
     // we get here if
