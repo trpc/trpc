@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { TRPCResponse } from '@trpc/server/rpc';
 import { unstable_createTsonAsyncOptions } from '@trpc/server/shared';
 import { createTsonParseAsync, TsonAsyncOptions } from 'tupleson';
 import { NonEmptyArray, WebReadableStreamEsque } from '../internals/types';
@@ -13,11 +14,10 @@ import {
   fetchHTTPResponse,
   getBody,
   getUrl,
-  HTTPBaseRequestOptions,
   HTTPResult,
 } from './internals/httpUtils';
 import { TextDecoderEsque } from './internals/streamingUtils';
-import { HTTPHeaders, Operation } from './types';
+import { Operation } from './types';
 
 export interface HTTPTuplesonLinkOptions extends HTTPBatchLinkOptions {
   /**
@@ -94,7 +94,7 @@ async function* readableStreamToAsyncIterable(
       }
 
       // Else yield the chunk
-      yield result.value as T;
+      yield result.value;
     }
   } finally {
     reader.releaseLock();
@@ -110,48 +110,6 @@ async function* mapIterable<T, TValue>(
   }
 }
 
-const streamingJsonHttpRequester = (
-  opts: HTTPBaseRequestOptions & {
-    headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-    textDecoder: TextDecoderEsque;
-    parseAsync: ReturnType<typeof createTsonParseAsync>;
-  },
-) => {
-  const ac = opts.AbortController ? new opts.AbortController() : null;
-  const responsePromise = fetchHTTPResponse(
-    {
-      ...opts,
-      contentTypeHeader: 'application/json',
-      batchModeHeader: 'stream',
-      getUrl,
-      getBody,
-    },
-    ac,
-  );
-  const cancel = () => ac?.abort();
-  const textDecoder = new TextDecoder();
-  const promise = responsePromise.then(async (res) => {
-    const stringIterator = mapIterable(
-      readableStreamToAsyncIterable(res.body!),
-      (v) => textDecoder.decode(v as BufferSource),
-    );
-
-    const output = await opts.parseAsync<Promise<any>[]>(stringIterator);
-    const meta: HTTPResult['meta'] = {
-      response: res,
-    };
-
-    const result = output.map((item) => ({
-      meta,
-      json: item,
-    }));
-
-    return result;
-  });
-
-  return { cancel, promise };
-};
-
 const streamRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
   requesterOpts,
 ) => {
@@ -159,37 +117,75 @@ const streamRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
   const tuplesonOpts = unstable_createTsonAsyncOptions(
     requesterOpts.opts.tuplesonOptions,
   );
-  return (batchOps) => {
+  return (batchOps, unitResolver) => {
+    // do a request
+    const parseAsync = createTsonParseAsync(tuplesonOpts);
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
 
-    const { cancel, promise } = streamingJsonHttpRequester({
-      ...requesterOpts,
-      textDecoder,
-      path,
-      inputs,
-      headers() {
-        if (!requesterOpts.opts.headers) {
-          return {};
-        }
-        if (typeof requesterOpts.opts.headers === 'function') {
-          return requesterOpts.opts.headers({
-            opList: batchOps as NonEmptyArray<Operation>,
-          });
-        }
-        return requesterOpts.opts.headers;
+    const ac = requesterOpts.AbortController
+      ? new requesterOpts.AbortController()
+      : null;
+    const responsePromise = fetchHTTPResponse(
+      {
+        ...requesterOpts,
+        contentTypeHeader: 'application/json',
+        batchModeHeader: 'stream',
+        getUrl,
+        getBody,
+        inputs,
+        path,
+        headers() {
+          if (!requesterOpts.opts.headers) {
+            return {};
+          }
+          if (typeof requesterOpts.opts.headers === 'function') {
+            return requesterOpts.opts.headers({
+              opList: batchOps as NonEmptyArray<Operation>,
+            });
+          }
+          return requesterOpts.opts.headers;
+        },
       },
-      parseAsync: createTsonParseAsync(tuplesonOpts),
+      ac,
+    );
+    const cancel = () => ac?.abort();
+    const promise = responsePromise.then(async (res) => {
+      const stringIterator = mapIterable(
+        readableStreamToAsyncIterable(res.body!),
+        (v) => textDecoder.decode(v as any),
+      );
+
+      const output = await parseAsync<Promise<TRPCResponse>[]>(stringIterator);
+      const meta: HTTPResult['meta'] = {
+        response: res,
+      };
+
+      for (const [index, promise] of output.entries()) {
+        promise
+          .then((json) => {
+            unitResolver(index, {
+              meta,
+              json,
+            });
+          })
+          .catch((err) => {
+            throw err;
+          });
+      }
+
+      return Promise.allSettled(output);
     });
 
     return {
+      cancel,
+
       /**
        * return an empty array because the batchLoader expects an array of results
        * but we've already called the `unitResolver` for each of them, there's
        * nothing left to do here.
        */
       promise: promise.then(() => []),
-      cancel,
     };
   };
 };
