@@ -99,15 +99,44 @@ describe('no transformer', () => {
     expect(json).toMatchInlineSnapshot(`
       Array [
         Object {
-          "result": Object {
-            "data": 1,
-          },
+          "json": Array [
+            Array [
+              "Promise",
+              0,
+              "__tson",
+            ],
+            Array [
+              "Promise",
+              1,
+              "__tson",
+            ],
+          ],
+          "nonce": "__tson",
         },
-        Object {
-          "result": Object {
-            "data": 2,
-          },
-        },
+        Array [
+          Array [
+            0,
+            Array [
+              0,
+              Object {
+                "result": Object {
+                  "data": 1,
+                },
+              },
+            ],
+          ],
+          Array [
+            1,
+            Array [
+              0,
+              Object {
+                "result": Object {
+                  "data": 2,
+                },
+              },
+            ],
+          ],
+        ],
       ]
     `);
   });

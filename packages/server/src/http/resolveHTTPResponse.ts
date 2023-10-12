@@ -51,7 +51,7 @@ function asyncIterableToReadableStream<TValue>(
 const tsonStringify = createTsonStringifyAsync({
   types: [tsonAsyncIterator, tsonPromise],
   // FIXME this should be configurable - just having it as a static value for tests to work
-  nonce: () => '__tson'
+  nonce: () => '__tson',
 });
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
