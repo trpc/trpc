@@ -1,3 +1,4 @@
+import { TsonAsyncOptions } from 'tupleson';
 import { ErrorFormatter } from '../../error/formatter';
 import type { TRPCErrorShape } from '../../rpc';
 
@@ -10,6 +11,7 @@ export interface RootConfigTypes {
   meta: object;
   errorShape: unknown;
   transformer: unknown;
+  unstable_tuplesonOptions: TsonAsyncOptions;
 }
 
 /**
@@ -60,6 +62,11 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   isDev: boolean;
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
+
+  /**
+   * @internal
+   */
+  unstable_tuplesonOptions?: TTypes['unstable_tuplesonOptions'];
 }
 
 /**
@@ -86,4 +93,5 @@ export type AnyRootConfig = RootConfig<{
   meta: any;
   errorShape: any;
   transformer: any;
+  unstable_tuplesonOptions: any;
 }>;

@@ -1,3 +1,4 @@
+import { TsonAsyncOptions } from 'tupleson';
 import {
   DefaultErrorShape,
   defaultFormatter,
@@ -9,6 +10,7 @@ import {
   DataTransformerOptions,
   DefaultDataTransformer,
   defaultTransformer,
+  DefaultTsonConfig,
   getDataTransformer,
 } from '../transformer';
 import { FlatOverwrite, Unwrap } from '../types';
@@ -35,6 +37,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
       : object;
     errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
+    unstable_tuplesonOptions: TsonAsyncOptions;
   }>;
 
 /**
@@ -99,6 +102,10 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     type $Transformer = TOptions['transformer'] extends DataTransformerOptions
       ? TOptions['transformer']
       : DefaultDataTransformer;
+    type $TuplesonOptions =
+      TOptions['unstable_tuplesonOptions'] extends TsonAsyncOptions
+        ? TOptions['unstable_tuplesonOptions']
+        : DefaultTsonConfig;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
     type $Config = RootConfig<{
@@ -106,6 +113,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       meta: $Meta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
+      unstable_tuplesonOptions: $TuplesonOptions;
     }>;
 
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
