@@ -136,6 +136,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "tupleson": "^0.16.9"
+  },
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
     "@tanstack/react-query": "^4.18.0",

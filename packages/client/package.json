@@ -78,6 +78,9 @@
   "peerDependencies": {
     "@trpc/server": "10.40.0"
   },
+  "dependencies": {
+    "tupleson": "^0.16.9"
+  },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
     "@trpc/server": "10.40.0",
