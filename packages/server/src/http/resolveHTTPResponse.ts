@@ -48,11 +48,6 @@ function asyncIterableToReadableStream<TValue>(
   return stream;
 }
 
-const tsonStringify = createTsonStringifyAsync({
-  types: [tsonAsyncIterator, tsonPromise],
-  // FIXME this should be configurable - just having it as a static value for tests to work
-  nonce: () => '__tson',
-});
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
@@ -618,7 +613,7 @@ export async function resolveHTTPFetchResponse<
       responseMeta: opts.responseMeta,
     });
 
-    const tson = tsonStringify(
+    const tson = router._def._config.unstable_tupleson.serializeAsync(
       procedureCalls.map((p) =>
         p.then((result) => {
           // transform

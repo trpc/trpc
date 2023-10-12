@@ -10,7 +10,11 @@ describe('no transformer', () => {
   const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC.create({});
+      const t = initTRPC.create({
+        unstable_tuplesonOptions: {
+          nonce: () => '__tson',
+        },
+      });
       orderedResults.length = 0;
       const router = t.router({
         deferred: t.procedure
@@ -183,6 +187,9 @@ describe('with transformer', () => {
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
+        unstable_tuplesonOptions: {
+          nonce: () => '__tson',
+        },
       });
       orderedResults.length = 0;
 

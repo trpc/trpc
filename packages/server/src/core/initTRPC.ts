@@ -1,4 +1,11 @@
-import { TsonAsyncOptions } from 'tupleson';
+import {
+  createTsonDeserialize,
+  createTsonStringifyAsync,
+  tsonAsyncIterator,
+  TsonAsyncOptions,
+  TsonOptions,
+  tsonPromise,
+} from 'tupleson';
 import {
   DefaultErrorShape,
   defaultFormatter,
@@ -121,6 +128,29 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       runtime?.transformer ?? defaultTransformer,
     ) as $Transformer;
 
+    function createTsonAsyncOptions(): TsonAsyncOptions {
+      if (!runtime?.unstable_tuplesonOptions) {
+        return {
+          types: [tsonPromise, tsonAsyncIterator],
+        };
+      }
+      const opts: TsonAsyncOptions = {
+        ...runtime.unstable_tuplesonOptions,
+        types: [...(runtime.unstable_tuplesonOptions.types ?? [])],
+      };
+
+      // make sure tsonAsyncIterator and tsonPromise is always included even if not passed
+      if (!opts.types.find((it) => it.key === tsonPromise.key)) {
+        opts.types.push(tsonPromise);
+      }
+      if (!opts.types.find((it) => it.key === tsonAsyncIterator.key)) {
+        opts.types.push(tsonAsyncIterator);
+      }
+      return opts;
+    }
+
+    const tuplesonOpts = createTsonAsyncOptions();
+
     const config: $Config = {
       transformer,
       isDev:
@@ -136,8 +166,11 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
           `Tried to access "$types.${key}" which is not available at runtime`,
         );
       }),
-      // TODO initialize tupleson serializer/deserializer here
-      // Note: the deserializer should probably be *sync* as we don't want to stream inputs to the server
+      unstable_tuplesonOptions: tuplesonOpts as $TuplesonOptions,
+      unstable_tupleson: {
+        deserializeSync: createTsonDeserialize(tuplesonOpts as TsonOptions),
+        serializeAsync: createTsonStringifyAsync(tuplesonOpts),
+      },
     };
 
     {
