@@ -83,7 +83,10 @@ export async function nodeHTTPRequestHandler<
 
     // res is of type `Request` but node.js wants us to call res.send etc
 
-    opts.res.statusCode = res.status;
+    opts.res.statusCode =
+      opts.res.statusCode && opts.res.statusCode !== 200
+        ? opts.res.statusCode
+        : res.status;
     opts.res.statusMessage = res.statusText;
     for (const [key, value] of res.headers.entries()) {
       opts.res.setHeader(key, value);
