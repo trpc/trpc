@@ -55,7 +55,7 @@ Object {
   },
 }
 `);
-
+    console.log(res.headers);
     expect(res.headers.get('cache-control')).toMatchInlineSnapshot(
       `"s-maxage=1, stale-while-revalidate=86400"`,
     );

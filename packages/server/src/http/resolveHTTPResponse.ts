@@ -1,21 +1,13 @@
-import {
-  AnyRouter,
-  callProcedure,
-  inferRouterContext,
-  inferRouterError,
-  ProcedureType,
-} from '../core';
+import { AnyRouter, callProcedure, inferRouterContext, inferRouterError, ProcedureType } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { Maybe } from '../types';
 import { buildResponse } from './buildResponse';
-import {
-  BaseContentTypeHandler,
-  getJsonContentTypeInputs,
-} from './contentType';
+import { BaseContentTypeHandler, getJsonContentTypeInputs } from './contentType';
 import { HTTPResponse, StreamHTTPResponse } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
+
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -324,10 +316,15 @@ export async function resolveHTTPResponse<
     });
 
     if (unstable_streamSupport !== undefined) return headResponse;
+    
+    const body = await headResponse.text();
+    const status = headResponse.status;
+    const headers = headResponse.headers;
+
     return {
-      status: headResponse.status,
-      headers: headResponse.headers,
-      body: await headResponse.text(),
+      body,
+      status,
+      headers,
     };
   }
 }

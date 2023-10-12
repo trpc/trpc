@@ -43,16 +43,22 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
       'error' in response ? [response.error] : [],
     );
 
+    console.log('initialhead', head);
+
     if (style.includes('stream')) head.status = 102;
     else head.status = items ? getHTTPStatusCode(items) : 204;
 
     const meta = onResponseInit({ data: items, errors });
+
+    console.log('meta', meta);
 
     for (const [key, value] of Object.entries(meta.headers ?? {})) {
       head.headers[key] = value;
     }
 
     if (meta.status) head.status = meta.status;
+
+    console.log('head', head);
   };
 
   const stringify = (
@@ -68,14 +74,18 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
     case 'event-stream':
       separator = '\n\n';
       open = () => {
+        console.log('open(estream)', head);
         initResponse(head);
+        console.log('open-inited(estream)', head);
         return `data: ${JSON.stringify({ result: { type: 'start' } })}\n\n`;
       };
       close = () => `\n\ndata: ${JSON.stringify({ result: { type: 'end' } })}`;
       break;
     case 'json-stream':
       open = () => {
+        console.log('open(jstream)', head);
         initResponse(head);
+        console.log('open-inited(jstream)', head);
         return '{';
       };
       close = () => '}';
@@ -83,14 +93,18 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
     case 'batch':
       buffer = new Set();
       close = () => {
+        console.log('close(batch)', head);
         initResponse(head);
+        console.log('close-inited(batch)', head);
         return stringify(items!);
       };
       break;
     case 'single':
       buffer = new Set();
       close = () => {
+        console.log('close(single)', head);
         initResponse(head);
+        console.log('close-inited(single)', head);
         return stringify(items![0]!);
       };
       break;
@@ -113,8 +127,8 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
         buffer?.add({ index, value: data });
         return '';
     }
-  };
+  }
 
   format.end = close;
-  return format
+  return format;
 }

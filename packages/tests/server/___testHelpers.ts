@@ -45,6 +45,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   type OnError = OnErrorFunction<TRouter, IncomingMessage>;
 
   const onError = vitest.fn<Parameters<OnError>, void>();
+  console.log(opts?.server);
   const httpServer = createHTTPServer({
     router: router,
     createContext: ({ req, res }) => ({ req, res }),

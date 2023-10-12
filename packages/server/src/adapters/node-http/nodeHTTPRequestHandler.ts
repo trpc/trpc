@@ -87,6 +87,8 @@ export async function nodeHTTPRequestHandler<
     if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
       res.statusCode = result.status;
     }
+
+    console.log('result', result);
     for (const [key, value] of Object.entries(result.headers ?? {})) {
       if (typeof value === 'undefined') {
         continue;
