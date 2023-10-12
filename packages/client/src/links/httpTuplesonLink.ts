@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { unstable_createTsonAsyncOptions } from '@trpc/server/shared';
 import { createTsonParseAsync, TsonAsyncOptions } from 'tupleson';
-import { NonEmptyArray } from '../internals/types';
+import { NonEmptyArray, WebReadableStreamEsque } from '../internals/types';
 import { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import {
   createHTTPBatchLink,
@@ -13,6 +14,7 @@ import {
   getBody,
   getUrl,
   HTTPBaseRequestOptions,
+  HTTPResult,
 } from './internals/httpUtils';
 import { TextDecoderEsque } from './internals/streamingUtils';
 import { HTTPHeaders, Operation } from './types';
@@ -27,9 +29,56 @@ export interface HTTPTuplesonLinkOptions extends HTTPBatchLinkOptions {
   tuplesonOptions?: Partial<TsonAsyncOptions>;
 }
 
-async function* readableStreamToAsyncIterable<T>(
-  stream: ReadableStream<T>,
-): AsyncIterable<T> {
+export function createDeferred<TValue>() {
+  type PromiseResolve = (value: TValue) => void;
+  type PromiseReject = (reason: unknown) => void;
+  const deferred = {} as {
+    promise: Promise<TValue>;
+    reject: PromiseReject;
+    resolve: PromiseResolve;
+  };
+  deferred.promise = new Promise<TValue>((resolve, reject) => {
+    deferred.resolve = resolve;
+    deferred.reject = reject;
+  });
+  return deferred;
+}
+
+async function* readableStreamToAsyncIterable(
+  stream:
+    | ReadableStream<unknown>
+    | NodeJS.ReadableStream
+    | WebReadableStreamEsque,
+): AsyncIterable<unknown> {
+  if (!('getReader' in stream)) {
+    // NodeJS.ReadableStream
+    const buffer: unknown[] = [];
+    let nextValue = createDeferred<0>();
+
+    stream.on('data', (chunk) => {
+      buffer.push(chunk);
+      nextValue.resolve(0);
+      nextValue = createDeferred();
+    });
+    const onEndPromise = new Promise<1>((resolve) => {
+      stream.on('end', () => {
+        resolve(1);
+      });
+    });
+
+    while (true) {
+      const done = await Promise.race([nextValue.promise, onEndPromise]);
+
+      while (buffer.length > 0) {
+        yield buffer.shift();
+      }
+
+      if (done) {
+        return;
+      }
+    }
+  }
+
   // Get a lock on the stream
   const reader = stream.getReader();
 
@@ -45,7 +94,7 @@ async function* readableStreamToAsyncIterable<T>(
       }
 
       // Else yield the chunk
-      yield result.value;
+      yield result.value as T;
     }
   } finally {
     reader.releaseLock();
@@ -83,17 +132,21 @@ const streamingJsonHttpRequester = (
   const textDecoder = new TextDecoder();
   const promise = responsePromise.then(async (res) => {
     const stringIterator = mapIterable(
-      readableStreamToAsyncIterable(res.body as any),
-      (v) => textDecoder.decode(v as any),
+      readableStreamToAsyncIterable(res.body!),
+      (v) => textDecoder.decode(v as BufferSource),
     );
 
-    type FIXME = any;
+    const output = await opts.parseAsync<Promise<any>[]>(stringIterator);
+    const meta: HTTPResult['meta'] = {
+      response: res,
+    };
 
-    const output = await opts.parseAsync<FIXME>(stringIterator);
+    const result = output.map((item) => ({
+      meta,
+      json: item,
+    }));
 
-    console.log({ output });
-
-    // FIXME
+    return result;
   });
 
   return { cancel, promise };
