@@ -67,9 +67,6 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 
-  /**
-   * @internal
-   */
   unstable_tuplesonOptions?: Partial<TTypes['unstable_tuplesonOptions']>;
   unstable_tupleson: {
     serializeAsync: ReturnType<typeof createTsonStringifyAsync>;

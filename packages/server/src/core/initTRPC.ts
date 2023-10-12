@@ -72,8 +72,9 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   }
 
   create<
-    TOptions extends Partial<
-      RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>
+    TOptions extends Omit<
+      Partial<RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>>,
+      'unstable_tupleson'
     >,
   >(
     options?:
@@ -97,7 +98,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];
-  type $Runtime = Partial<RuntimeConfig<$Generics>>;
+  type $Runtime = Omit<Partial<RuntimeConfig<$Generics>>, 'unstable_tupleson'>;
 
   return function initTRPCInner<TOptions extends $Runtime>(
     runtime?: ValidateShape<TOptions, $Runtime>,
