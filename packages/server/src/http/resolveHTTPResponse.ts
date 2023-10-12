@@ -487,7 +487,7 @@ export async function resolveHTTPResponse<
   }
 }
 
-export async function resolveHTTPResponseNew<
+export async function resolveHTTPFetchResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
