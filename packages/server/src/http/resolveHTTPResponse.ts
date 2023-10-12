@@ -498,7 +498,7 @@ export async function resolveHTTPFetchResponse<
     'unstable_onChunk' | 'unstable_onHead'
   >,
 ): Promise<Response> {
-  const { router, req, unstable_onHead, unstable_onChunk } = opts;
+  const { router, req } = opts;
 
   if (req.method === 'HEAD') {
     return new Response(null, {
@@ -594,7 +594,6 @@ export async function resolveHTTPFetchResponse<
         result,
       );
       const body = JSON.stringify(transformedJSON);
-      unstable_onChunk?.([-1, body]);
 
       return new Response(body, {
         status: headResponse.status,
@@ -604,7 +603,7 @@ export async function resolveHTTPFetchResponse<
 
     /**
      * Streaming response:
-     * - block on none, call `onChunk` as soon as each response is ready
+     * - Use tupleson to stream the response
      * - create headers with minimal data (cannot know the response body in advance)
      * - return void
      */
@@ -624,6 +623,7 @@ export async function resolveHTTPFetchResponse<
       ),
     );
 
+    // TODO - maybe tupleson should return a ReadableStream??
     const stream = asyncIterableToReadableStream(tson);
 
     return new Response(stream, {
@@ -652,9 +652,6 @@ export async function resolveHTTPFetchResponse<
       untransformedJSON,
       errors: [error],
     });
-    unstable_onHead?.(headResponse, false);
-
-    unstable_onChunk?.([-1, body]);
 
     return new Response(body, {
       status: headResponse.status,
