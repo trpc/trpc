@@ -41,6 +41,7 @@ function mockReq({
 }
 function mockRes() {
   const res = new EventEmitter() as any;
+  new TextDecoder();
 
   let data = '';
 
@@ -49,15 +50,19 @@ function mockRes() {
   const write = vi.fn((buf) => {
     data += new TextDecoder().decode(buf);
   });
+  const json = vi.fn();
+
   res.setHeader = setHeader;
   res.end = end;
   res.write = write;
+  res.json = json;
 
   return {
     res,
     setHeader,
     end,
     write,
+    json,
     data: () => {
       return data;
     },
@@ -75,11 +80,11 @@ test('bad setup', async () => {
   });
 
   const { req } = mockReq({ query: {} });
-  const { res, data } = mockRes();
+  const { res, json } = mockRes();
 
   await handler(req, res);
 
-  const responseJson: any = data();
+  const responseJson: any = json.mock.calls[0][0];
   expect(responseJson.ok).toMatchInlineSnapshot(`undefined`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
     `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
