@@ -1,9 +1,9 @@
 import { waitFor } from '@testing-library/dom';
-import { OperationLink } from '..';
-import { AnyRouter } from '../../../server/src';
-import { observable } from '../../../server/src/observable';
+import { AnyRouter } from '@trpc/server/src';
+import { observable } from '@trpc/server/src/observable';
+import { OperationLink } from '../..';
+import { createChain } from './createChain';
 import { dedupeLink } from './dedupeLink';
-import { createChain } from './internals/createChain';
 
 test('dedupeLink', async () => {
   const endingLinkTriggered = vi.fn();
@@ -26,7 +26,9 @@ test('dedupeLink', async () => {
           });
           subscribe.complete();
         }, 1);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+        };
       });
     },
   ];
@@ -86,7 +88,9 @@ test('dedupe - cancel one does not cancel the other', async () => {
           });
           subscribe.complete();
         }, 1);
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(timer);
+        };
       });
     },
   ];

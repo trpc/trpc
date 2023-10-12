@@ -25,7 +25,7 @@ async function parseMultipartFormData(
   request: NodeHTTPRequest,
   uploadHandler: UploadHandler,
 ): Promise<FormData> {
-  const contentType = request.headers['content-type'] || '';
+  const contentType = request.headers['content-type'] ?? '';
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
   if (!boundary || type !== 'multipart/form-data') {
@@ -58,7 +58,7 @@ async function parseMultipartFormData(
 function isMultipartFormDataRequest(req: NodeHTTPRequest) {
   const contentTypeHeader = req.headers['content-type'];
   return (
-    contentTypeHeader?.startsWith('multipart/form-data') ||
+    contentTypeHeader?.startsWith('multipart/form-data') ??
     contentTypeHeader === 'application/x-www-form-urlencoded'
   );
 }
@@ -100,6 +100,9 @@ export const nodeHTTPFormDataContentTypeHandler =
 export { parseMultipartFormData as experimental_parseMultipartFormData };
 export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
 export { createFileUploadHandler as experimental_createFileUploadHandler } from './fileUploadHandler';
-export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
+export {
+  composeUploadHandlers as experimental_composeUploadHandlers,
+  MaxPartSizeExceededError,
+} from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };

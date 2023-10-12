@@ -57,10 +57,10 @@ async function getRawProcedureResult<
 >(procedureOpts: {
   opts: Pick<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'router' | 'onError' | 'req'
+    'onError' | 'req' | 'router'
   >;
   ctx: inferRouterContext<TRouter> | undefined;
-  type: 'query' | 'mutation';
+  type: 'mutation' | 'query';
   input: unknown;
   path: string;
 }): Promise<TRPCResponse<unknown, inferRouterError<TRouter>>> {
@@ -104,7 +104,7 @@ function caughtErrorToData<
   errorOpts: {
     opts: Pick<
       ResolveHTTPRequestOptions<TRouter, TRequest>,
-      'router' | 'onError' | 'req'
+      'onError' | 'req' | 'router'
     >;
     ctx: inferRouterContext<TRouter> | undefined;
     type: ProcedureType | 'unknown';
@@ -222,6 +222,17 @@ export async function resolveHTTPResponse<
   }
 
   try {
+    // we create context first so that (unless `createContext()` throws)
+    // error handler may access context information
+    //
+    // this way even if the client sends malformed input that might cause an exception:
+    //  - `opts.error` has value,
+    //  - batching is not enabled,
+    //  - `type` is unknown,
+    //  - `getInputs` throws because of malformed JSON,
+    // context value is still available to the error handler
+    ctx = await opts.createContext();
+
     if (opts.error) {
       throw opts.error;
     }
@@ -256,8 +267,9 @@ export async function resolveHTTPResponse<
       preprocessedBody: opts.preprocessedBody ?? false,
     });
 
-    paths = isBatchCall ? opts.path.split(',') : [opts.path];
-    ctx = await opts.createContext();
+    paths = isBatchCall
+      ? decodeURIComponent(opts.path).split(',')
+      : [opts.path];
     const promises = paths.map((path, index) =>
       getRawProcedureResult({ opts, ctx, type, input: inputs[index], path }),
     );

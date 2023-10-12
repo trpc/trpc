@@ -149,7 +149,7 @@ describe('polymorphism', () => {
       function IssuesExportPage() {
         const utils = trpc.useContext();
 
-        const [currentExport, setCurrentExport] = useState<null | number>(null);
+        const [currentExport, setCurrentExport] = useState<number | null>(null);
 
         return (
           <>
@@ -206,7 +206,7 @@ describe('polymorphism', () => {
       function DiscussionsExportPage() {
         const utils = trpc.useContext();
 
-        const [currentExport, setCurrentExport] = useState<null | number>(null);
+        const [currentExport, setCurrentExport] = useState<number | null>(null);
 
         return (
           <>
@@ -269,7 +269,7 @@ describe('polymorphism', () => {
       function PullRequestsExportPage() {
         const utils = trpc.useContext();
 
-        const [currentExport, setCurrentExport] = useState<null | number>(null);
+        const [currentExport, setCurrentExport] = useState<number | null>(null);
 
         return (
           <>

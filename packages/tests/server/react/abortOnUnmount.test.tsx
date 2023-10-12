@@ -25,8 +25,18 @@ const ctx = konn()
       const x = useIsFetching();
       return (
         <div>
-          <button data-testid="setQ1" onClick={() => setQuery(1)} />
-          <button data-testid="setQ2" onClick={() => setQuery(2)} />
+          <button
+            data-testid="setQ1"
+            onClick={() => {
+              setQuery(1);
+            }}
+          />
+          <button
+            data-testid="setQ2"
+            onClick={() => {
+              setQuery(2);
+            }}
+          />
           {query === 1 && <Query1 />}
           {query === 2 && <Query2 />}
           <div>isFetching: {x}</div>
@@ -39,8 +49,18 @@ const ctx = konn()
       const x = useIsFetching();
       return (
         <div>
-          <button data-testid="setQ1" onClick={() => setQuery(1)} />
-          <button data-testid="setQ2" onClick={() => setQuery(2)} />
+          <button
+            data-testid="setQ1"
+            onClick={() => {
+              setQuery(1);
+            }}
+          />
+          <button
+            data-testid="setQ2"
+            onClick={() => {
+              setQuery(2);
+            }}
+          />
           {query === 1 && <Query3 />}
           {query === 2 && <Query4 />}
           <div>isFetching: {x}</div>

@@ -30,14 +30,22 @@ In another terminal, you can for instance navigate to `examples/next-prisma-star
 
 ### Testing
 
-> Note: you will want to have `pnpm dev` running in parallel in another terminal
+Open one terminal and run:
 
 ```bash
-# in project root directory
+pnpm dev
+```
+
+In a second terminal, you can run the tests in watch mode using
+
+```bash
 pnpm test-watch
 
 # example if you want to test a specific test file:
 pnpm test-watch react
+
+# run only a regression test while fixing a bug
+pnpm test-watch 3085
 ```
 
 Testing is currently coalesced in [./packages/tests](./packages/tests); we import the different libs from here, this makes it easier for us to do integration testing + getting test coverage on the whole codebase.
@@ -47,6 +55,10 @@ Testing is currently coalesced in [./packages/tests](./packages/tests); we impor
 ```bash
 pnpm lint-fix
 ```
+
+### Troubleshooting
+
+If you get any cryptic errors you can usually get past them by doing `pnpm clean && pnpm install`; if this doesn't work, feel free to open an issue.
 
 ### Documentation
 

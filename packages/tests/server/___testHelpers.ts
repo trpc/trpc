@@ -26,19 +26,19 @@ import './___packages';
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
 
+export type CreateClientCallback = (opts: {
+  httpUrl: string;
+  wssUrl: string;
+  wsClient: TRPCWebSocketClient;
+}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?:
-      | Partial<WithTRPCConfig<TRouter>>
-      | ((opts: {
-          httpUrl: string;
-          wssUrl: string;
-          wsClient: TRPCWebSocketClient;
-        }) => Partial<WithTRPCConfig<AnyNewRouter>>);
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
   },
 ) {
   // http
@@ -94,7 +94,9 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       await Promise.all([
         new Promise((resolve) => httpServer.server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => ws.close());
+          wss.clients.forEach((ws) => {
+            ws.close();
+          });
           wss.close(resolve);
         }),
       ]);
@@ -122,7 +124,7 @@ export async function waitError<TError extends Error = Error>(
   /**
    * Function callback or promise that you expect will throw
    */
-  fnOrPromise: (() => Promise<unknown> | unknown) | Promise<unknown>,
+  fnOrPromise: Promise<unknown> | (() => unknown),
   /**
    * Force error constructor to be of specific type
    * @default Error
@@ -145,7 +147,7 @@ export async function waitError<TError extends Error = Error>(
   throw new Error('Function did not throw');
 }
 
-export const ignoreErrors = async (fn: () => Promise<unknown> | unknown) => {
+export const ignoreErrors = async (fn: () => unknown) => {
   try {
     await fn();
   } catch {

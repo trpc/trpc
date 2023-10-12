@@ -31,6 +31,9 @@ const appRouter = router({
   post: postRouter, // put procedures under "post" namespace
 });
 
+// You can then access the merged route with
+// http://localhost:3000/trpc/<NAMESPACE>.<PROCEDURE>
+
 export type AppRouter = typeof appRouter;
 
 
@@ -81,10 +84,6 @@ export const middleware = t.middleware;
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;
-
-
-
-// ---cut---
 
 // @filename: routers/_app.ts
 import { router, publicProcedure, mergeRouters } from '../trpc';

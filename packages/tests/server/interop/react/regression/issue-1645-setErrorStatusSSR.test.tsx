@@ -36,7 +36,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
         error: query2.error,
       },
     };
-    return <>{JSON.stringify(query1.data || null)}</>;
+    return <>{JSON.stringify(query1.data ?? null)}</>;
   };
 
   const Wrapped = withTRPC({

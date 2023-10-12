@@ -3,6 +3,13 @@ export type ParserZodEsque<TInput, TParsedInput> = {
   _output: TParsedInput;
 };
 
+export type ParserValibotEsque<TInput, TParsedInput> = {
+  types?: {
+    input: TInput;
+    output: TParsedInput;
+  };
+};
+
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -13,7 +20,7 @@ export type ParserSuperstructEsque<TInput> = {
 
 export type ParserCustomValidatorEsque<TInput> = (
   input: unknown,
-) => TInput | Promise<TInput>;
+) => Promise<TInput> | TInput;
 
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
@@ -24,18 +31,17 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserWithoutInput<TInput> =
-  | ParserYupEsque<TInput>
-  | ParserSuperstructEsque<TInput>
   | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
-  | ParserScaleEsque<TInput>;
+  | ParserScaleEsque<TInput>
+  | ParserSuperstructEsque<TInput>
+  | ParserYupEsque<TInput>;
 
-export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
-  TInput,
-  TParsedInput
->;
+export type ParserWithInputOutput<TInput, TParsedInput> =
+  | ParserZodEsque<TInput, TParsedInput>
+  | ParserValibotEsque<TInput, TParsedInput>;
 
-export type Parser = ParserWithoutInput<any> | ParserWithInputOutput<any, any>;
+export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
 export type inferParser<TParser extends Parser> =
   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>

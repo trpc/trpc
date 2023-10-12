@@ -15,11 +15,11 @@ type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
-> = {
+> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
   path: string;
-} & FastifyHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,

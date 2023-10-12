@@ -83,6 +83,7 @@ module.exports = {
             'client/react/useInfiniteQuery',
             'client/react/useContext',
             'client/react/useQueries',
+            'client/react/suspense',
             'client/react/getQueryKey',
             'client/react/aborting-procedure-calls',
           ],

@@ -9,7 +9,7 @@ import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
 import { ResponseMeta } from '../types';
 
-export type HTTPHeaders = Dict<string | string[]>;
+export type HTTPHeaders = Dict<string[] | string>;
 
 /** @deprecated - use StreamHTTPResponse instead */
 export interface HTTPResponse {

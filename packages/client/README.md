@@ -31,6 +31,9 @@ yarn add @trpc/client
 
 # pnpm
 pnpm add @trpc/client
+
+# Bun
+bun add @trpc/client
 ```
 
 ## Basic Example

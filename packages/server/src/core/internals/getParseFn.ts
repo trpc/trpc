@@ -1,32 +1,33 @@
 import { Parser } from '../parser';
 
-export type ParseFn<TType> = (value: unknown) => TType | Promise<TType>;
+export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
   if (typeof parser === 'function') {
-    // ProcedureParserCustomValidatorEsque
+    // ParserCustomValidatorEsque
     return parser;
   }
 
   if (typeof parser.parseAsync === 'function') {
-    // ProcedureParserZodEsque
+    // ParserZodEsque
     return parser.parseAsync.bind(parser);
   }
 
   if (typeof parser.parse === 'function') {
-    // ProcedureParserZodEsque
+    // ParserZodEsque
+    // ParserValibotEsque (<= v0.12.X)
     return parser.parse.bind(parser);
   }
 
   if (typeof parser.validateSync === 'function') {
-    // ProcedureParserYupEsque
+    // ParserYupEsque
     return parser.validateSync.bind(parser);
   }
 
   if (typeof parser.create === 'function') {
-    // ProcedureParserSuperstructEsque
+    // ParserSuperstructEsque
     return parser.create.bind(parser);
   }
 

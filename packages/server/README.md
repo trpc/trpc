@@ -31,6 +31,9 @@ yarn add @trpc/server
 
 # pnpm
 pnpm add @trpc/server
+
+# Bun
+bun add @trpc/server
 ```
 
 We also recommend installing `zod` to validate procedure inputs.

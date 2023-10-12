@@ -10,7 +10,7 @@ import {
   unstable_httpBatchStreamLink,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { retryLink } from '@trpc/client/src/links/retryLink';
+import { retryLink } from '@trpc/client/src/links/internals/retryLink';
 import { AnyRouter, initTRPC } from '@trpc/server/src';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
@@ -72,6 +72,11 @@ test('chainer', async () => {
     Object {
       "context": Object {
         "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
       },
       "result": Object {
         "data": "world",
@@ -174,6 +179,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello world",
@@ -183,6 +200,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello alexdotjs",
@@ -561,6 +590,35 @@ describe('loggerLink', () => {
     );
   });
 
+  test('ansi color mode', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, colorMode: 'ansi' })(mockRuntime),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {},
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+      `"\x1b[30;46m >> query \x1b[1;30;46m #1 n/a \x1b[0m"`,
+    );
+    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+      `"\x1b[97;46m << query \x1b[1;97;46m #1 n/a \x1b[0m"`,
+    );
+  });
+
   test('custom logger', () => {
     const logFn = vi.fn();
     createChain({
@@ -662,5 +720,55 @@ test('chain makes unsub', async () => {
   expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
   expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
+  await close();
+});
+
+test('init with URL object', async () => {
+  const serverCall = vi.fn();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(({}) => {
+      serverCall();
+      return 'world';
+    }),
+  });
+
+  const { httpPort, close } = routerToServerAndClientNew(router);
+  const url = new URL(`http://localhost:${httpPort}`);
+
+  const chain = createChain({
+    links: [httpLink({ url: url })(mockRuntime)],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+    },
+  });
+
+  const result = await observableToPromise(chain).promise;
+  expect(result?.context?.response).toBeTruthy();
+  result.context!.response = '[redacted]' as any;
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "context": Object {
+        "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
+      },
+      "result": Object {
+        "data": "world",
+        "type": "data",
+      },
+    }
+  `);
+
+  expect(serverCall).toHaveBeenCalledTimes(1);
+
   await close();
 });

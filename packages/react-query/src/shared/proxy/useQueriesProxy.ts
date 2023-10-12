@@ -13,6 +13,7 @@ import {
 } from '@trpc/server/shared';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
+import { TRPCReactRequestOptions } from '../hooks/types';
 
 type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
   TData = inferTransformedProcedureOutput<TProcedure>,
@@ -42,7 +43,7 @@ export type UseQueriesProcedureRecord<
 > = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
-    AnyRouter | AnyQueryProcedure
+    AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseQueriesProcedureRecord<
         TRouter['_def']['record'][TKey],
@@ -63,16 +64,24 @@ export function createUseQueriesProxy<TRouter extends AnyRouter>(
 ) {
   return createRecursiveProxy((opts) => {
     const path = opts.path.join('.');
-    const [input, ...rest] = opts.args;
+    const [input, _opts] = opts.args as [
+      unknown,
+      (
+        | undefined
+        | {
+            trpc?: TRPCReactRequestOptions;
+          }
+      ),
+    ];
 
     const queryKey = getQueryKeyInternal(path, input);
 
     const options: QueryOptions = {
       queryKey,
       queryFn: () => {
-        return client.query(path, input);
+        return client.query(path, input, _opts?.trpc);
       },
-      ...(rest[0] as any),
+      ...(_opts as any),
     };
 
     return options;
