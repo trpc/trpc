@@ -87,7 +87,7 @@ async function* mapIterable<TFrom, TTo>(
   }
 }
 
-const streamRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
+const tuplesonRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
   requesterOpts,
 ) => {
   const textDecoder = getTextDecoder(requesterOpts.opts.textDecoder);
@@ -167,4 +167,5 @@ const streamRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
   };
 };
 
-export const unstable_httpTuplesonLink = createHTTPBatchLink(streamRequester);
+export const experimental_httpTuplesonLink =
+  createHTTPBatchLink(tuplesonRequester);

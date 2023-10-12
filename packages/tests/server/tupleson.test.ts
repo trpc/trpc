@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { TRPCLink, unstable_httpTuplesonLink } from '@trpc/client';
+import { experimental_httpTuplesonLink, TRPCLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
@@ -64,7 +64,7 @@ describe('no transformer', () => {
           return {
             links: [
               linkSpy,
-              unstable_httpTuplesonLink({
+              experimental_httpTuplesonLink({
                 url: opts.httpUrl,
               }),
             ],
@@ -330,7 +330,7 @@ describe('with transformer', () => {
             transformer: superjson,
             links: [
               linkSpy,
-              unstable_httpTuplesonLink({
+              experimental_httpTuplesonLink({
                 url: opts.httpUrl,
               }),
             ],
