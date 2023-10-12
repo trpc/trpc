@@ -32,6 +32,12 @@ describe('no transformer', () => {
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
+        iterator: t.procedure.query(async function* iterator() {
+          for (const i of [1, 2, 3]) {
+            await new Promise<void>((resolve) => setTimeout(resolve, i * 10));
+            yield i;
+          }
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -144,6 +150,88 @@ describe('no transformer', () => {
       ]
     `);
   });
+
+  test('test a raw iterator', async () => {
+    const url = ctx.httpUrl + `/iterator?batch=1&input={}`;
+
+    const res = await fetch(url, {
+      headers: {
+        'trpc-batch-mode': 'tupleson',
+      },
+    });
+
+    const stream = res.body!;
+    const result: string[] = [];
+
+    // parse each thing with text decoder
+    const decoder = new TextDecoder();
+
+    for await (const chunk of stream) {
+      result.push(decoder.decode(chunk));
+    }
+
+    const json = JSON.parse(result.join(''));
+
+    expect(json).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "json": Array [
+            Array [
+              "Promise",
+              0,
+              "__tson",
+            ],
+          ],
+          "nonce": "__tson",
+        },
+        Array [
+          Array [
+            0,
+            Array [
+              0,
+              Object {
+                "result": Object {
+                  "data": Array [
+                    "AsyncIterable",
+                    1,
+                    "__tson",
+                  ],
+                },
+              },
+            ],
+          ],
+          Array [
+            1,
+            Array [
+              0,
+              1,
+            ],
+          ],
+          Array [
+            1,
+            Array [
+              0,
+              2,
+            ],
+          ],
+          Array [
+            1,
+            Array [
+              0,
+              3,
+            ],
+          ],
+          Array [
+            1,
+            Array [
+              2,
+            ],
+          ],
+        ],
+      ]
+    `);
+  });
+
   test.todo('out-of-order streaming', async () => {
     const { proxy } = ctx;
 
@@ -208,6 +296,12 @@ describe('with transformer', () => {
           }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }),
+        iterator: t.procedure.query(async function* iterator() {
+          for (const i of [1, 2, 3]) {
+            await new Promise<void>((resolve) => setTimeout(resolve, i * 10));
+            yield i;
+          }
         }),
       });
 
