@@ -42,7 +42,6 @@ function mockReq({
 
 function mockRes() {
   const res = new EventEmitter() as any;
-  new TextDecoder();
 
   let data = '';
 
