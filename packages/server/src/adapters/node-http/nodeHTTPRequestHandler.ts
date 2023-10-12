@@ -89,8 +89,10 @@ export async function nodeHTTPRequestHandler<
       opts.res.setHeader(key, value);
     }
 
-    for await (const chunk of res.body as unknown as AsyncIterable<Buffer>) {
-      opts.res.write(chunk);
+    if (res.body) {
+      for await (const chunk of res.body as unknown as AsyncIterable<Buffer>) {
+        opts.res.write(chunk);
+      }
     }
     opts.res.end();
 

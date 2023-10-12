@@ -49,14 +49,26 @@ function mockReq(opts: {
 function mockRes() {
   const res = new EventEmitter() as any;
 
-  const json = vi.fn(() => res);
+  let data = '';
+
   const setHeader = vi.fn(() => res);
   const end = vi.fn(() => res);
-  res.json = json;
+  const write = vi.fn((buf) => {
+    data += new TextDecoder().decode(buf);
+  });
   res.setHeader = setHeader;
   res.end = end;
+  res.write = write;
 
-  return { res, json, setHeader, end };
+  return {
+    res,
+    setHeader,
+    end,
+    write,
+    data: () => {
+      return data;
+    },
+  };
 }
 
 describe('string inputs are properly serialized and deserialized', () => {
@@ -86,9 +98,9 @@ describe('string inputs are properly serialized and deserialized', () => {
       method: 'POST',
       body: JSON.stringify('something'),
     });
-    const { res, end } = mockRes();
+    const { res, data } = mockRes();
     await handler(req, res);
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    const json: any = JSON.parse(data());
 
     expect(json).toMatchInlineSnapshot(`
       Object {
@@ -129,9 +141,10 @@ describe('works good with bodyParser disabled', () => {
       parseBody: false,
       body: JSON.stringify('something'),
     });
-    const { res, end } = mockRes();
+    const { res, data } = mockRes();
     await handler(req, res);
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]).result.data;
+
+    const json: any = JSON.parse(data()).result.data;
     expect(res.statusCode).toBe(200);
     expect(json).toMatchInlineSnapshot('"did mutate something"');
   });

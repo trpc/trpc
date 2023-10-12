@@ -42,14 +42,26 @@ function mockReq({
 function mockRes() {
   const res = new EventEmitter() as any;
 
-  const json = vi.fn(() => res);
+  let data = '';
+
   const setHeader = vi.fn(() => res);
   const end = vi.fn(() => res);
-  res.json = json;
+  const write = vi.fn((buf) => {
+    data += new TextDecoder().decode(buf);
+  });
   res.setHeader = setHeader;
   res.end = end;
+  res.write = write;
 
-  return { res, json, setHeader, end };
+  return {
+    res,
+    setHeader,
+    end,
+    write,
+    data: () => {
+      return data;
+    },
+  };
 }
 test('bad setup', async () => {
   const t = initTRPC.create();
@@ -63,11 +75,11 @@ test('bad setup', async () => {
   });
 
   const { req } = mockReq({ query: {} });
-  const { res, json } = mockRes();
+  const { res, data } = mockRes();
 
   await handler(req, res);
 
-  const responseJson: any = (json.mock.calls[0] as any)[0];
+  const responseJson: any = data();
   expect(responseJson.ok).toMatchInlineSnapshot(`undefined`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
     `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
@@ -92,12 +104,12 @@ describe('ok request', () => {
         trpc: ['hello'],
       },
     });
-    const { res, end } = mockRes();
+    const { res, end, data } = mockRes();
 
     await handler(req, res);
     expect(res.statusCode).toBe(200);
 
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    const json: any = JSON.parse(data());
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -113,12 +125,12 @@ describe('ok request', () => {
         trpc: 'hello',
       },
     });
-    const { res, end } = mockRes();
+    const { res, end, data } = mockRes();
 
     await handler(req, res);
     expect(res.statusCode).toBe(200);
 
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    const json: any = JSON.parse(data());
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -145,12 +157,12 @@ test('404', async () => {
       trpc: ['not-found-path'],
     },
   });
-  const { res, end } = mockRes();
+  const { res, end, data } = mockRes();
 
   await handler(req, res);
 
   expect(res.statusCode).toBe(404);
-  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+  const json: any = JSON.parse(data());
 
   expect(json.error.message).toMatchInlineSnapshot(
     `"No \\"query\\"-procedure on path \\"not-found-path\\""`,
@@ -176,12 +188,12 @@ test('payload too large', async () => {
     method: 'POST',
     body: '123456789',
   });
-  const { res, end } = mockRes();
+  const { res, end, data } = mockRes();
 
   await handler(req, res);
 
   expect(res.statusCode).toBe(413);
-  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+  const json: any = JSON.parse(data());
 
   expect(json.error.message).toMatchInlineSnapshot(`"PAYLOAD_TOO_LARGE"`);
 });
