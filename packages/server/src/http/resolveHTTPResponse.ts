@@ -1,4 +1,9 @@
 import {
+  createTsonStringifyAsync,
+  tsonAsyncIterator,
+  tsonPromise,
+} from 'tupleson';
+import {
   AnyRouter,
   callProcedure,
   inferRouterContext,
@@ -15,9 +20,37 @@ import {
   getJsonContentTypeInputs,
 } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
-import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
+import {
+  HTTPHeaders,
+  httpHeadersToFetchHeaders,
+  HTTPResponse,
+  ResponseChunk,
+} from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
+function asyncIterableToReadableStream<T>(
+  iterable: AsyncIterable<T>,
+): ReadableStream<T> {
+  let controller: ReadableStreamDefaultController<T> = undefined as any;
+  const stream = new ReadableStream<T>({
+    start(c) {
+      controller = c;
+    },
+  });
+  (async () => {
+    for await (const chunk of iterable) {
+      controller.enqueue(chunk);
+    }
+    controller.close();
+  })().catch(() => {
+    // do nothing
+  });
+  return stream;
+}
+
+const tsonStringify = createTsonStringifyAsync({
+  types: [tsonAsyncIterator, tsonPromise],
+});
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
@@ -451,5 +484,179 @@ export async function resolveHTTPResponse<
       headers: headResponse.headers,
       body,
     };
+  }
+}
+
+export async function resolveHTTPResponseNew<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+>(
+  opts: PartialBy<
+    ResolveHTTPRequestOptions<TRouter, TRequest>,
+    'unstable_onChunk' | 'unstable_onHead'
+  >,
+): Promise<Response> {
+  const { router, req, unstable_onHead, unstable_onChunk } = opts;
+
+  if (req.method === 'HEAD') {
+    return new Response(null, {
+      status: 204,
+    });
+  }
+  const contentTypeHandler =
+    opts.contentTypeHandler ?? fallbackContentTypeHandler;
+  const batchingEnabled = opts.batching?.enabled ?? true;
+  const type =
+    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
+  let ctx: inferRouterContext<TRouter> | undefined = undefined;
+  let paths: string[] | undefined;
+
+  const isBatchCall = !!req.query.get('batch');
+  const isStreamCall =
+    (isBatchCall && req.headers['trpc-batch-mode'] === 'stream') ||
+    req.headers['trpc-batch-mode'] === 'tupleson';
+
+  try {
+    // we create context first so that (unless `createContext()` throws)
+    // error handler may access context information
+    //
+    // this way even if the client sends malformed input that might cause an exception:
+    //  - `opts.error` has value,
+    //  - batching is not enabled,
+    //  - `type` is unknown,
+    //  - `getInputs` throws because of malformed JSON,
+    // context value is still available to the error handler
+    ctx = await opts.createContext();
+
+    if (opts.error) {
+      throw opts.error;
+    }
+    if (isBatchCall && !batchingEnabled) {
+      throw new Error(`Batching is not enabled on the server`);
+    }
+    /* istanbul ignore if -- @preserve */
+    if (type === 'subscription') {
+      // TODO - we can actually do this now
+      throw new TRPCError({
+        message: 'Subscriptions should use wsLink',
+        code: 'METHOD_NOT_SUPPORTED',
+      });
+    }
+    if (type === 'unknown') {
+      throw new TRPCError({
+        message: `Unexpected request method ${req.method}`,
+        code: 'METHOD_NOT_SUPPORTED',
+      });
+    }
+
+    const inputs = await contentTypeHandler.getInputs({
+      isBatchCall,
+      req,
+      router,
+      preprocessedBody: opts.preprocessedBody ?? false,
+    });
+
+    paths = isBatchCall
+      ? decodeURIComponent(opts.path).split(',')
+      : [opts.path];
+    const procedureCalls = paths.map((path, index) =>
+      inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
+    );
+
+    if (!isStreamCall) {
+      /**
+       * Non-streaming response:
+       * - await all responses in parallel, blocking on the slowest one
+       * - create headers with known response body
+       * - return a complete HTTPResponse
+       */
+
+      const untransformedJSON = await Promise.all(procedureCalls);
+      const errors = untransformedJSON.flatMap((response) =>
+        'error' in response ? [response.error] : [],
+      );
+
+      const headResponse = initResponse({
+        ctx,
+        paths,
+        type,
+        responseMeta: opts.responseMeta,
+        untransformedJSON,
+        errors,
+      });
+
+      // return body stuff
+      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
+      const transformedJSON = transformTRPCResponse(
+        router._def._config,
+        result,
+      );
+      const body = JSON.stringify(transformedJSON);
+      unstable_onChunk?.([-1, body]);
+
+      return new Response(body, {
+        status: headResponse.status,
+        headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      });
+    }
+
+    /**
+     * Streaming response:
+     * - block on none, call `onChunk` as soon as each response is ready
+     * - create headers with minimal data (cannot know the response body in advance)
+     * - return void
+     */
+    const headResponse = initResponse({
+      ctx,
+      paths,
+      type,
+      responseMeta: opts.responseMeta,
+    });
+
+    const tson = tsonStringify(
+      procedureCalls.map((p) =>
+        p.then((result) => {
+          // transform
+          return transformTRPCResponse(router._def._config, result);
+        }),
+      ),
+    );
+
+    const stream = asyncIterableToReadableStream(tson);
+
+    return new Response(stream, {
+      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      status: headResponse.status,
+    });
+  } catch (cause) {
+    // we get here if
+    // - batching is called when it's not enabled
+    // - `createContext()` throws
+    // - `router._def._config.transformer.output.serialize()` throws
+    // - post body is too large
+    // - input deserialization fails
+    // - `errorFormatter` return value is malformed
+    const { error, untransformedJSON, body } = caughtErrorToData(cause, {
+      opts,
+      ctx,
+      type,
+    });
+
+    const headResponse = initResponse({
+      ctx,
+      paths,
+      type,
+      responseMeta: opts.responseMeta,
+      untransformedJSON,
+      errors: [error],
+    });
+    unstable_onHead?.(headResponse, false);
+
+    unstable_onChunk?.([-1, body]);
+
+    return new Response(body, {
+      status: headResponse.status,
+      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+    });
   }
 }
