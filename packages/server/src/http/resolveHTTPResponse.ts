@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   AnyRouter,
   callProcedure,
@@ -10,6 +11,7 @@ import { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
 import { Maybe } from '../types';
+import { getBatchStreamFormatter } from './batchStreamFormatter';
 import {
   BaseContentTypeHandler,
   getJsonContentTypeInputs,
@@ -508,9 +510,19 @@ export async function resolveHTTPFetchResponse<
   let paths: string[] | undefined;
 
   const isBatchCall = !!req.query.get('batch');
-  const isStreamCall =
-    (isBatchCall && req.headers['trpc-batch-mode'] === 'stream') ||
-    req.headers['trpc-batch-mode'] === 'tupleson';
+
+  let streamMode: 'tupleson' | 'stream' | false = false;
+  if (isBatchCall) {
+    if (req.headers['trpc-batch-mode'] === 'tupleson') {
+      streamMode = 'tupleson';
+    }
+    if (req.headers['trpc-batch-mode'] === 'stream') {
+      /**
+       * @deprecated
+       */
+      streamMode = 'stream';
+    }
+  }
 
   try {
     // we create context first so that (unless `createContext()` throws)
@@ -555,11 +567,11 @@ export async function resolveHTTPFetchResponse<
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
-    const procedureCalls = paths.map((path, index) =>
+    const promises = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
     );
 
-    if (!isStreamCall) {
+    if (!streamMode) {
       /**
        * Non-streaming response:
        * - await all responses in parallel, blocking on the slowest one
@@ -567,7 +579,7 @@ export async function resolveHTTPFetchResponse<
        * - return a complete HTTPResponse
        */
 
-      const untransformedJSON = await Promise.all(procedureCalls);
+      const untransformedJSON = await Promise.all(promises);
       const errors = untransformedJSON.flatMap((response) =>
         'error' in response ? [response.error] : [],
       );
@@ -608,22 +620,86 @@ export async function resolveHTTPFetchResponse<
       responseMeta: opts.responseMeta,
     });
 
-    const tson = router._def._config.unstable_tupleson.serializeAsync(
-      procedureCalls.map((p) =>
-        p.then((result) => {
-          // transform
-          return transformTRPCResponse(router._def._config, result);
-        }),
-      ),
-    );
+    switch (streamMode) {
+      case 'tupleson': {
+        const tson = router._def._config.unstable_tupleson.serializeAsync(
+          promises.map((p) =>
+            p.then((result) => {
+              // transform
+              return transformTRPCResponse(router._def._config, result);
+            }),
+          ),
+        );
 
-    // TODO - maybe tupleson should return a ReadableStream??
-    const stream = asyncIterableToReadableStream(tson);
+        // TODO - maybe tupleson should return a ReadableStream??
+        const stream = asyncIterableToReadableStream(tson);
 
-    return new Response(stream, {
-      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
-      status: headResponse.status,
-    });
+        return new Response(stream, {
+          headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+          status: headResponse.status,
+        });
+      }
+
+      /**
+       * @deprecated
+       */
+      case 'stream': {
+        let controller: ReadableStreamDefaultController<string> =
+          undefined as any;
+        const stream = new ReadableStream({
+          start(c) {
+            controller = c;
+          },
+        });
+        async function exec() {
+          const indexedPromises = new Map(
+            promises.map((promise, index) => [
+              index,
+              promise.then((r) => [index, r] as const),
+            ]),
+          );
+          const formatter = getBatchStreamFormatter();
+
+          while (indexedPromises.size > 0) {
+            const [index, untransformedJSON] = await Promise.race(
+              indexedPromises.values(),
+            );
+            indexedPromises.delete(index);
+
+            try {
+              const transformedJSON = transformTRPCResponse(
+                router._def._config,
+                untransformedJSON,
+              );
+              const body = JSON.stringify(transformedJSON);
+
+              controller.enqueue(formatter(index, body));
+            } catch (cause) {
+              const path = paths![index];
+              const input = inputs[index];
+              const { body } = caughtErrorToData(cause, {
+                opts,
+                ctx,
+                type,
+                path,
+                input,
+              });
+
+              controller.enqueue(formatter(index, body));
+            }
+          }
+          controller.close();
+        }
+        exec().catch((err) => {
+          controller.error(err);
+        });
+
+        return new Response(stream, {
+          headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+          status: headResponse.status,
+        });
+      }
+    }
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled

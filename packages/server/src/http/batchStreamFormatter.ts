@@ -16,6 +16,7 @@
  * ,"0":"response #1"
  * }
  * ```
+ * @deprecated
  */
 export function getBatchStreamFormatter() {
   let first = true;

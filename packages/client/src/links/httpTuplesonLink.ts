@@ -79,10 +79,10 @@ async function* readableStreamToAsyncIterable(
   }
 }
 
-async function* mapIterable<T, TValue>(
-  iterable: AsyncIterable<T>,
-  fn: (v: T) => TValue,
-): AsyncIterable<TValue> {
+async function* mapIterable<TFrom, TTo>(
+  iterable: AsyncIterable<TFrom>,
+  fn: (v: TFrom) => TTo,
+): AsyncIterable<TTo> {
   for await (const value of iterable) {
     yield fn(value);
   }
