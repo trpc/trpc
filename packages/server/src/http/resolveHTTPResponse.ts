@@ -264,6 +264,7 @@ function caughtErrorToData<
  * Non-streaming signature for `resolveHTTPResponse`:
  * @param opts.unstable_onHead `undefined`
  * @param opts.unstable_onChunk `undefined`
+ * @deprecated use `resolveHTTPFetchResponse` instead
  * @returns `Promise<HTTPResponse>`
  */
 export async function resolveHTTPResponse<
@@ -280,12 +281,15 @@ export async function resolveHTTPResponse<
  * @param opts.unstable_onHead called as soon as the response head is known
  * @param opts.unstable_onChunk called for every procedure with `[index, result]`
  * @returns `Promise<void>` since the response is streamed
+ * @deprecated use `resolveHTTPFetchResponse` instead
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>;
-// implementation
+/**
+ * @deprecated use `resolveHTTPFetchResponse` instead
+ */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
