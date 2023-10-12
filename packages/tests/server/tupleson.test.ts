@@ -166,7 +166,7 @@ describe('no transformer', () => {
     // parse each thing with text decoder
     const decoder = new TextDecoder();
 
-    for await (const chunk of stream) {
+    for await (const chunk of stream as any) {
       result.push(decoder.decode(chunk));
     }
 
@@ -232,7 +232,7 @@ describe('no transformer', () => {
     `);
   });
 
-  test.only('out-of-order streaming', async () => {
+  test('out-of-order streaming', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
@@ -246,7 +246,7 @@ describe('no transformer', () => {
     // streaming preserves response order
     expect(orderedResults).toEqual([1, 2, 3]);
   });
-  test.todo('out-of-order streaming with error', async () => {
+  test('out-of-order streaming with error', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.allSettled([
@@ -344,7 +344,7 @@ describe('with transformer', () => {
     })
     .done();
 
-  test.todo('out-of-order streaming', async () => {
+  test('out-of-order streaming', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.all([
@@ -358,7 +358,7 @@ describe('with transformer', () => {
     // streaming preserves response order
     expect(orderedResults).toEqual([1, 2, 3]);
   });
-  test.todo('out-of-order streaming with error', async () => {
+  test('out-of-order streaming with error', async () => {
     const { proxy } = ctx;
 
     const results = await Promise.allSettled([

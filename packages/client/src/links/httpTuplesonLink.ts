@@ -51,32 +51,10 @@ async function* readableStreamToAsyncIterable(
     | WebReadableStreamEsque,
 ): AsyncIterable<unknown> {
   if (!('getReader' in stream)) {
-    // NodeJS.ReadableStream
-    const buffer: unknown[] = [];
-    let nextValue = createDeferred<0>();
-
-    stream.on('data', (chunk) => {
-      buffer.push(chunk);
-      nextValue.resolve(0);
-      nextValue = createDeferred();
-    });
-    const onEndPromise = new Promise<1>((resolve) => {
-      stream.on('end', () => {
-        resolve(1);
-      });
-    });
-
-    while (true) {
-      const done = await Promise.race([nextValue.promise, onEndPromise]);
-
-      while (buffer.length > 0) {
-        yield buffer.shift();
-      }
-
-      if (done) {
-        return;
-      }
+    for await (const chunk of stream) {
+      yield chunk;
     }
+    return;
   }
 
   // Get a lock on the stream
