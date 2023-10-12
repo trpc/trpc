@@ -137,6 +137,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
         );
       }),
       // TODO initialize tupleson serializer/deserializer here
+      // Note: the deserializer should probably be *sync* as we don't want to stream inputs to the server
     };
 
     {
