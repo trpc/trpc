@@ -1484,8 +1484,8 @@ importers:
   packages/client:
     dependencies:
       tupleson:
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.17.2
+        version: 0.17.2
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.0.0
@@ -1630,8 +1630,8 @@ importers:
   packages/server:
     dependencies:
       tupleson:
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.17.2
+        version: 0.17.2
     devDependencies:
       '@fastify/websocket':
         specifier: ^7.1.2
@@ -1856,8 +1856,8 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       tupleson:
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.17.2
+        version: 0.17.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -22607,8 +22607,8 @@ packages:
       - supports-color
     dev: false
 
-  /tupleson@0.17.0:
-    resolution: {integrity: sha512-CF3aC6Ol4vFi4w3cNppoKhSWa8NvC7Y8XTcDgZVJkejJ7y44y8B8L6Sw//mvPAtgAKqm3ag6vy/cGKJaeULhig==}
+  /tupleson@0.17.2:
+    resolution: {integrity: sha512-R/Oap0uuEbFH0NbRLc/PoH9ktRh7abnN/YZFDNObm8nnb0e4WsZlVuDfCQQ0tWrqmjQZSSpPj+F7Edc4Kuav0g==}
     engines: {node: '>=18'}
     dev: false
 
