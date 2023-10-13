@@ -286,7 +286,7 @@ export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
-  opts: Omit<
+  opts: PartialBy<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
     'unstable_onChunk' | 'unstable_onHead'
   >,
@@ -489,7 +489,7 @@ export async function resolveHTTPFetchResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 >(
-  opts: PartialBy<
+  opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
     'unstable_onChunk' | 'unstable_onHead'
   >,
