@@ -79,7 +79,7 @@
     "@trpc/server": "10.40.0"
   },
   "dependencies": {
-    "tupleson": "^0.17.2"
+    "tupleson": "^0.17.3"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
