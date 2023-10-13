@@ -137,7 +137,7 @@
     "access": "public"
   },
   "dependencies": {
-    "tupleson": "^0.17.3"
+    "tupleson": "^0.17.4"
   },
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",

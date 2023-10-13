@@ -1,4 +1,4 @@
-import { tsonAsyncIterator, TsonAsyncOptions, tsonPromise } from 'tupleson';
+import { tsonAsyncIterable, TsonAsyncOptions, tsonPromise } from 'tupleson';
 
 /**
  * @internal
@@ -8,7 +8,7 @@ export function unstable_createTsonAsyncOptions(
 ): TsonAsyncOptions {
   if (!opts) {
     return {
-      types: [tsonPromise, tsonAsyncIterator],
+      types: [tsonPromise, tsonAsyncIterable],
     };
   }
   const _opts: TsonAsyncOptions = {
@@ -16,12 +16,12 @@ export function unstable_createTsonAsyncOptions(
     types: [...(opts.types ?? [])],
   };
 
-  // make sure tsonAsyncIterator and tsonPromise is always included even if not passed
+  // make sure tsonAsyncIterable and tsonPromise is always included even if not passed
   if (!_opts.types.find((it) => it.key === tsonPromise.key)) {
     _opts.types.push(tsonPromise);
   }
-  if (!_opts.types.find((it) => it.key === tsonAsyncIterator.key)) {
-    _opts.types.push(tsonAsyncIterator);
+  if (!_opts.types.find((it) => it.key === tsonAsyncIterable.key)) {
+    _opts.types.push(tsonAsyncIterable);
   }
 
   return _opts;
