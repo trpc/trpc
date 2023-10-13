@@ -60,6 +60,11 @@
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
     },
+    "./links/httpTuplesonLink": {
+      "import": "./dist/links/httpTuplesonLink.mjs",
+      "require": "./dist/links/httpTuplesonLink.js",
+      "default": "./dist/links/httpTuplesonLink.js"
+    },
     "./shared": {
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
