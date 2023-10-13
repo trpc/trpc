@@ -215,7 +215,7 @@ type DecorateProcedure<
 type DecorateRouter = {
   /**
    * Invalidate the full router
-   * @link https://trpc.io/docs/v10/useContext#query-invalidation
+   * @link https://trpc.io/docs/v10/useUtils#query-invalidation
    * @link https://tanstack.com/query/v5/docs/react/guides/query-invalidation
    */
   invalidate(

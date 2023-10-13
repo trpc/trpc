@@ -82,17 +82,17 @@
     },
     {
       "source": "/docs/invalidateQuery",
-      "destination": "/docs/reactjs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/useUtils#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/invalidateQueries",
-      "destination": "/docs/reactjs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/useUtils#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/query-invalidation",
-      "destination": "/docs/reactjs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/useUtils#query-invalidation",
       "permanent": true
     },
     {
@@ -116,8 +116,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/useContext",
-      "destination": "/docs/reactjs/useContext",
+      "source": "/docs/useUtils",
+      "destination": "/docs/reactjs/useUtils",
       "permanent": true
     },
     {
@@ -267,7 +267,7 @@
     },
     {
       "source": "/docs/v10/invalidateQueries",
-      "destination": "/docs/reactjs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/useUtils#query-invalidation",
       "permanent": true
     },
     {
@@ -277,12 +277,12 @@
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/reactjs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/useUtils#query-invalidation",
       "permanent": true
     },
     {
       "source": "/docs/v10/query-invalidation",
-      "destination": "/docs/reactjs/useContext#query-invalidation",
+      "destination": "/docs/reactjs/useUtils#query-invalidation",
       "permanent": true
     },
     {
@@ -396,8 +396,8 @@
       "permanent": true
     },
     {
-      "source": "/docs/reactjs/useContext",
-      "destination": "/docs/client/react/useContext",
+      "source": "/docs/reactjs/useUtils",
+      "destination": "/docs/client/react/useUtils",
       "permanent": true
     },
     {
@@ -498,6 +498,11 @@
     {
       "source": "/docs/reactjs/:path",
       "destination": "/docs/client/react/:path",
+      "permanent": true
+    },
+    {
+      "source": "/docs/useContext",
+      "destination": "/docs/reactjs/useUtils",
       "permanent": true
     }
   ]

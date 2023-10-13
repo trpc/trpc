@@ -68,7 +68,7 @@ describe('useQuery()', () => {
 
       // @ts-expect-error Should not exist
       proxy.post.byId.useInfiniteQuery;
-      const utils = proxy.useContext();
+      const utils = proxy.useUtils();
 
       useEffect(() => {
         utils.post.byId.invalidate();
@@ -123,7 +123,7 @@ describe('useQuery()', () => {
 test('useInfiniteQuery()', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
-    const trpcContext = proxy.useContext();
+    const trpcContext = proxy.useUtils();
     const query1 = proxy.post.list.useInfiniteQuery(
       {},
       {

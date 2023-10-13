@@ -250,6 +250,10 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
    * @see https://trpc.io/docs/client/react/useContext
    */
+  useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  /**
+   * @deprecated prefer calling useUtils. The method has been renamed and this one will be removed in a future version
+   */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
@@ -281,9 +285,9 @@ export function createHooksInternalProxy<
   type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 
   return createFlatProxy<CreateHooksInternalProxy>((key) => {
-    if (key === 'useContext') {
+    if (key === 'useContext' || key === 'useUtils') {
       return () => {
-        const context = trpc.useContext();
+        const context = trpc.useUtils();
         // create a stable reference of the utils context
         return useMemo(() => {
           return (createReactQueryUtilsProxy as any)(context);

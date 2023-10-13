@@ -224,7 +224,7 @@ export function createRootHooks<
     );
   };
 
-  function useContext() {
+  function useUtils() {
     const context = React.useContext(Context);
 
     if (!context) {
@@ -242,7 +242,7 @@ export function createRootHooks<
   function useSSRQueryOptionsIfNeeded<
     TOptions extends { retryOnMount?: boolean } | undefined,
   >(queryKey: TRPCQueryKey, opts: TOptions): TOptions {
-    const { queryClient, ssrState } = useContext();
+    const { queryClient, ssrState } = useUtils();
     return ssrState &&
       ssrState !== 'mounted' &&
       queryClient.getQueryCache().find({ queryKey })?.state.status === 'error'
@@ -258,7 +258,7 @@ export function createRootHooks<
     input: unknown,
     opts?: UseTRPCQueryOptions<unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
-    const context = useContext();
+    const context = useUtils();
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
       context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
@@ -315,7 +315,7 @@ export function createRootHooks<
     input: unknown,
     opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseQueryResult<unknown, TError> {
-    const context = useContext();
+    const context = useUtils();
     const queryKey = getQueryKeyInternal(path, input, 'query');
 
     const shouldAbortOnUnmount =
@@ -353,7 +353,7 @@ export function createRootHooks<
     path: string[],
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
-    const { client } = useContext();
+    const { client } = useUtils();
     const queryClient = useQueryClient();
 
     const mutationKey = [path];
@@ -395,7 +395,7 @@ export function createRootHooks<
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
-    const { client } = useContext();
+    const { client } = useUtils();
 
     const optsRef = useRef<typeof opts>(opts);
     optsRef.current = opts;
@@ -445,7 +445,7 @@ export function createRootHooks<
       prefetchInfiniteQuery,
       queryClient,
       abortOnUnmount,
-    } = useContext();
+    } = useUtils();
     const queryKey = getQueryKeyInternal(path, input, 'infinite');
 
     const defaultOpts = queryClient.getQueryDefaults(queryKey);
@@ -508,7 +508,7 @@ export function createRootHooks<
     input: unknown,
     opts: UseTRPCSuspenseInfiniteQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
-    const context = useContext();
+    const context = useUtils();
     const queryKey = getQueryKeyInternal(path, input, 'infinite');
 
     const defaultOpts = context.queryClient.getQueryDefaults(queryKey);
@@ -559,7 +559,7 @@ export function createRootHooks<
   }
 
   const useQueries: TRPCUseQueries<TRouter> = (queriesCallback) => {
-    const { ssrState, queryClient, prefetchQuery, client } = useContext();
+    const { ssrState, queryClient, prefetchQuery, client } = useUtils();
 
     const proxy = createUseQueriesProxy(client);
 
@@ -605,7 +605,7 @@ export function createRootHooks<
   return {
     Provider: TRPCProvider,
     createClient,
-    useContext,
+    useUtils,
     useQuery,
     useSuspenseQuery,
     useQueries,
