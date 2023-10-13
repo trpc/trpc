@@ -43,7 +43,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
       : object;
     errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
-    unstable_tuplesonOptions: TsonAsyncOptions;
+    experimental_tuplesonOptions: TsonAsyncOptions;
   }>;
 
 /**
@@ -73,7 +73,7 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   create<
     TOptions extends Omit<
       Partial<RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>>,
-      'unstable_tupleson'
+      'experimental_tupleson'
     >,
   >(
     options?:
@@ -97,7 +97,10 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];
-  type $Runtime = Omit<Partial<RuntimeConfig<$Generics>>, 'unstable_tupleson'>;
+  type $Runtime = Omit<
+    Partial<RuntimeConfig<$Generics>>,
+    'experimental_tupleson'
+  >;
 
   return function initTRPCInner<TOptions extends $Runtime>(
     runtime?: ValidateShape<TOptions, $Runtime>,
@@ -110,8 +113,8 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       ? TOptions['transformer']
       : DefaultDataTransformer;
     type $TuplesonOptions =
-      TOptions['unstable_tuplesonOptions'] extends TsonAsyncOptions
-        ? TOptions['unstable_tuplesonOptions']
+      TOptions['experimental_tuplesonOptions'] extends TsonAsyncOptions
+        ? TOptions['experimental_tuplesonOptions']
         : DefaultTsonConfig;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
@@ -120,7 +123,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       meta: $Meta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
-      unstable_tuplesonOptions: $TuplesonOptions;
+      experimental_tuplesonOptions: $TuplesonOptions;
     }>;
 
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
@@ -129,7 +132,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     ) as $Transformer;
 
     const tuplesonOpts = unstable_createTsonAsyncOptions(
-      runtime?.unstable_tuplesonOptions,
+      runtime?.experimental_tuplesonOptions,
     );
 
     const config: $Config = {
@@ -147,8 +150,8 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
           `Tried to access "$types.${key}" which is not available at runtime`,
         );
       }),
-      unstable_tuplesonOptions: tuplesonOpts as $TuplesonOptions,
-      unstable_tupleson: {
+      experimental_tuplesonOptions: tuplesonOpts as $TuplesonOptions,
+      experimental_tupleson: {
         deserializeSync: createTsonDeserialize(tuplesonOpts as TsonOptions),
         serializeAsync: createTsonStringifyAsync(tuplesonOpts),
       },

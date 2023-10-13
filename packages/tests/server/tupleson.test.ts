@@ -1,5 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { experimental_httpTuplesonLink, TRPCLink } from '@trpc/client';
+import { TRPCLink } from '@trpc/client';
+import { experimental_httpTuplesonLink } from '@trpc/client/links/httpTuplesonLink';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
@@ -11,7 +12,7 @@ describe('no transformer', () => {
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create({
-        unstable_tuplesonOptions: {
+        experimental_tuplesonOptions: {
           nonce: () => '__tson',
         },
       });
@@ -275,7 +276,7 @@ describe('with transformer', () => {
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
-        unstable_tuplesonOptions: {
+        experimental_tuplesonOptions: {
           nonce: () => '__tson',
         },
       });

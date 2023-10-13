@@ -108,7 +108,7 @@ export type MigrateRouter<
       errorShape: TErrorShape;
       meta: TMeta;
       transformer: TTransformer;
-      unstable_tuplesonOptions: any;
+      experimental_tuplesonOptions: any;
     }>,
     {},
     {
@@ -118,7 +118,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: TTransformer;
-          unstable_tuplesonOptions: any;
+          experimental_tuplesonOptions: any;
         }>,
         TQueries,
         'query'
@@ -129,7 +129,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: TTransformer;
-          unstable_tuplesonOptions: any;
+          experimental_tuplesonOptions: any;
         }>,
         TMutations,
         'mutation'
@@ -140,7 +140,7 @@ export type MigrateRouter<
           errorShape: TErrorShape;
           meta: TMeta;
           transformer: TTransformer;
-          unstable_tuplesonOptions: any;
+          experimental_tuplesonOptions: any;
         }>,
         TSubscriptions,
         'subscription'

@@ -622,7 +622,7 @@ export async function resolveHTTPFetchResponse<
 
     switch (streamMode) {
       case 'tupleson': {
-        const tson = router._def._config.unstable_tupleson.serializeAsync(
+        const tson = router._def._config.experimental_tupleson.serializeAsync(
           promises.map((p) =>
             p.then((result) => {
               // transform

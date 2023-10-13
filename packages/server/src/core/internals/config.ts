@@ -15,7 +15,7 @@ export interface RootConfigTypes {
   meta: object;
   errorShape: unknown;
   transformer: unknown;
-  unstable_tuplesonOptions: TsonAsyncOptions;
+  experimental_tuplesonOptions: TsonAsyncOptions;
 }
 
 /**
@@ -67,8 +67,10 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 
-  unstable_tuplesonOptions?: Partial<TTypes['unstable_tuplesonOptions']>;
-  unstable_tupleson: {
+  experimental_tuplesonOptions?: Partial<
+    TTypes['experimental_tuplesonOptions']
+  >;
+  experimental_tupleson: {
     serializeAsync: ReturnType<typeof createTsonStringifyAsync>;
     deserializeSync: ReturnType<typeof createTsonDeserialize>;
   };
@@ -98,5 +100,5 @@ export type AnyRootConfig = RootConfig<{
   meta: any;
   errorShape: any;
   transformer: any;
-  unstable_tuplesonOptions: any;
+  experimental_tuplesonOptions: any;
 }>;
