@@ -28,8 +28,11 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
     // /procedure -> procedure
     const path = new URL(href).pathname.slice(1);
 
+    const { router, ...restOpts } = opts;
+    // for some reason this is needed for the types to work
     await nodeHTTPRequestHandler({
-      ...opts,
+      ...restOpts,
+      router,
       req,
       res,
       path,

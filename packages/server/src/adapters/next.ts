@@ -53,8 +53,11 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
       return;
     }
 
+    const { router, ...restOpts } = opts;
+
     await nodeHTTPRequestHandler({
-      ...opts,
+      ...restOpts,
+      router,
       req,
       res,
       path,
