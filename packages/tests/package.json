@@ -54,7 +54,7 @@
     "react-dom": "^18.2.0",
     "runtypes": "^6.6.0",
     "scale-codec": "^0.13.0",
-    "superjson": "^1.12.4",
+    "superjson": "^2.0.0",
     "superstruct": "^1.0.0",
     "tsx": "^3.12.7",
     "tupleson": "^0.19.0",
