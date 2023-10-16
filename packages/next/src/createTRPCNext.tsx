@@ -21,7 +21,15 @@ export interface CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
 > {
+  /**
+   * @see https://trpc.io/docs/client/react/useContext
+   */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  /**
+   * Identical to `useContext()`
+   *
+   * @see https://trpc.io/docs/client/react/useContext
+   */
   useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
