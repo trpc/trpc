@@ -54,7 +54,7 @@ export function createTRPCNext<
   return createFlatProxy((key) => {
     if (key === 'useContext' || key === 'useUtils') {
       return () => {
-        const context = hooks.useContext();
+        const context = hooks.useTrpcContext();
         // create a stable reference of the utils context
         return useMemo(() => {
           return (createReactQueryUtilsProxy as any)(context);

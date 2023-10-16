@@ -272,7 +272,7 @@ function __createHooksInternal<
     );
   };
 
-  function useContext() {
+  function useTrpcContext() {
     return React.useContext(Context);
   }
 
@@ -287,7 +287,7 @@ function __createHooksInternal<
     type: Exclude<QueryType, 'any'>,
     opts: TOptions,
   ): TOptions {
-    const { queryClient, ssrState } = useContext();
+    const { queryClient, ssrState } = useTrpcContext();
     return ssrState &&
       ssrState !== 'mounted' &&
       queryClient.getQueryCache().find(getArrayQueryKey(pathAndInput, type))
@@ -314,7 +314,7 @@ function __createHooksInternal<
     >,
   ): UseTRPCQueryResult<TData, TError> {
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
-      useContext();
+      useTrpcContext();
 
     if (
       typeof window === 'undefined' &&
@@ -372,7 +372,7 @@ function __createHooksInternal<
     TMutationValues[TPath]['input'],
     TContext
   > {
-    const { client } = useContext();
+    const { client } = useTrpcContext();
     const queryClient = useQueryClient({ context: ReactQueryContext });
 
     const hook = __useMutation(
@@ -431,7 +431,7 @@ function __createHooksInternal<
   ) {
     const enabled = opts?.enabled ?? true;
     const queryKey = hashQueryKey(pathAndInput);
-    const { client } = useContext();
+    const { client } = useTrpcContext();
 
     useEffect(() => {
       if (!enabled) {
@@ -488,7 +488,7 @@ function __createHooksInternal<
       prefetchInfiniteQuery,
       queryClient,
       abortOnUnmount,
-    } = useContext();
+    } = useTrpcContext();
 
     if (
       typeof window === 'undefined' &&
@@ -539,7 +539,7 @@ function __createHooksInternal<
   }
 
   const useQueries: TRPCUseQueries<TRouter> = (queriesCallback, context) => {
-    const { ssrState, queryClient, prefetchQuery, client } = useContext();
+    const { ssrState, queryClient, prefetchQuery, client } = useTrpcContext();
 
     const proxy = createUseQueriesProxy(client);
 
@@ -585,7 +585,7 @@ function __createHooksInternal<
   return {
     Provider: TRPCProvider,
     createClient,
-    useContext,
+    useTrpcContext,
     useQuery,
     useQueries,
     useMutation,

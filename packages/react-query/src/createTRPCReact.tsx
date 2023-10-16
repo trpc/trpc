@@ -263,7 +263,7 @@ export function createHooksInternalProxy<
   return createFlatProxy<CreateHooksInternalProxy>((key) => {
     if (key === 'useContext' || key === 'useUtils') {
       return () => {
-        const context = trpc.useContext();
+        const context = trpc.useTrpcContext();
         // create a stable reference of the utils context
         return useMemo(() => {
           return (createReactQueryUtilsProxy as any)(context);
