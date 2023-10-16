@@ -190,8 +190,8 @@ importers:
         specifier: ^7.43.3
         version: 7.43.3(react@18.2.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       trpc-api:
         specifier: link:./src/trpc
         version: link:src/trpc
@@ -306,8 +306,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       zod:
         specifier: ^3.0.0
         version: 3.20.2
@@ -523,8 +523,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       zod:
         specifier: ^3.0.0
         version: 3.20.2
@@ -723,8 +723,8 @@ importers:
         specifier: ^4.13.0
         version: 4.13.0
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       tslib:
         specifier: ^2.5.0
         version: 2.5.0
@@ -1107,8 +1107,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       zod:
         specifier: ^3.0.0
         version: 3.20.2
@@ -1222,8 +1222,8 @@ importers:
         specifier: ^12.2.0
         version: 12.2.0(i18next@22.4.13)(react-dom@18.2.0)(react@18.2.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       todomvc-app-css:
         specifier: ^2.3.0
         version: 2.4.2
@@ -1298,8 +1298,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.0.0
+        version: 2.0.0
       tsx:
         specifier: ^3.12.7
         version: 3.12.7
@@ -22025,6 +22025,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       copy-anything: 3.0.2
+    dev: true
 
   /superjson@2.0.0:
     resolution: {integrity: sha512-W3n+NJ7TFjaLle8ihIIvsr/bbuKpnxeatsyjmhy7iSkom+/cshaHziCQAWXrHGWJVQSQFDOuES6C3nSEvcbrQg==}
