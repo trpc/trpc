@@ -22,6 +22,7 @@ export interface CreateTRPCNextBase<
   TSSRContext extends NextPageContext,
 > {
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
 }
@@ -51,7 +52,7 @@ export function createTRPCNext<
   const _withTRPC = withTRPC(opts);
 
   return createFlatProxy((key) => {
-    if (key === 'useContext') {
+    if (key === 'useContext' || key === 'useUtils') {
       return () => {
         const context = hooks.useContext();
         // create a stable reference of the utils context
