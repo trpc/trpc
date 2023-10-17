@@ -51,7 +51,7 @@ export type UseQueriesProcedureRecord<TRouter extends AnyRouter> = {
  * Create proxy for `useQueries` options
  * @internal
  */
-export function createUseQueriesProxy<TRouter extends AnyRouter>(
+export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ) {
   return createRecursiveProxy((opts) => {

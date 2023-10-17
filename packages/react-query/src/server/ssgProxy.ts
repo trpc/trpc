@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import {
   getUntypedClient,
-  inferRouterProxyClient,
+  inferRouterClient,
   TRPCClientError,
   TRPCUntypedClient,
 } from '@trpc/client';
@@ -46,7 +46,7 @@ interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
 }
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
-  client: inferRouterProxyClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =

@@ -1,9 +1,9 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
 import {
-  createReactProxyDecoration,
-  createReactQueryUtilsProxy,
-  CreateReactUtilsProxy,
+  createReactDecoration,
+  createReactQueryUtils,
+  CreateReactUtils,
   createRootHooks,
   DecoratedProcedureRecord,
   TRPCUseQueries,
@@ -21,7 +21,7 @@ export interface CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
 > {
-  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  useContext(): CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
 }
@@ -60,7 +60,7 @@ export function createTRPCNext<
         const context = hooks.useContext();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtilsProxy as any)(context);
+          return (createReactQueryUtils as any)(context);
         }, [context]);
       };
     }
@@ -73,6 +73,6 @@ export function createTRPCNext<
       return _withTRPC;
     }
 
-    return createReactProxyDecoration(key, hooks);
+    return createReactDecoration(key, hooks);
   });
 }

@@ -6,7 +6,7 @@ import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
  * Create proxy for decorating procedures
  * @internal
  */
-export function createReactProxyDecoration<
+export function createReactDecoration<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(name: string, hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
