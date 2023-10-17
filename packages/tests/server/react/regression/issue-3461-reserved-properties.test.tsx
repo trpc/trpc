@@ -61,7 +61,7 @@ test('utils client', async () => {
   const { proxy, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     expectTypeOf(utils).toEqualTypeOf<IntersectionError<'client'>>();
 

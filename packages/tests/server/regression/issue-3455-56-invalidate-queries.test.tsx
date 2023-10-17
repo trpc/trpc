@@ -50,7 +50,7 @@ test('invalidate with filter', async () => {
       onSuccess: () => greetingSpy(),
     });
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     return (
       <>
@@ -106,7 +106,7 @@ test('tanstack query queries are invalidated', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     const rqQuery = useQuery(['test'], async () => {
       await new Promise((res) => setTimeout(res, 500));
@@ -148,7 +148,7 @@ test('mixed providers with more "advanced" filter', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     const rqQuery1 = useQuery(
       ['test', 1],

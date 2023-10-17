@@ -76,7 +76,7 @@ test('useDehydratedState() - internal', async () => {
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {
-    const utils = hooks.useContext();
+    const utils = hooks.useUtils();
 
     const state = hooks.useDehydratedState(utils.client, dehydratedState);
     return <h1>{JSON.stringify(state)}</h1>;
@@ -104,7 +104,7 @@ test('useDehydratedState() - external', async () => {
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {
-    const utils = hooks.useContext();
+    const utils = hooks.useUtils();
 
     const state = hooks.useDehydratedState(utils.client, dehydratedState);
     return <h1>{JSON.stringify(state)}</h1>;
