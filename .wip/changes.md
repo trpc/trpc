@@ -12,6 +12,10 @@
 - `createProxySSGHelpers` is now deprecated but aliased to `createSSGHelpers` for backwards compatibility.
 - Removed exported type `CreateSSGHelpersOptions`
 
+## Exports names `AbcProxyXyz` has been renamed to `AbcXyz`
+
+The proxy names were due to v9 using the `AbcXyz` names, these have been removed and the proxy ones have been renamed to the non-proxy names.
+
 ## React Query peerDep is now v5
 
 Check their migration guide: https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5
