@@ -401,11 +401,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/reactjs/useContext",
-      "destination": "/docs/client/react/useUtils",
-      "permanent": true
-    },
-    {
       "source": "/docs/reactjs/useInfiniteQuery",
       "destination": "/docs/client/react/useInfiniteQuery",
       "permanent": true
