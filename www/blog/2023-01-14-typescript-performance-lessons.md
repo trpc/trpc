@@ -63,7 +63,7 @@ This is where things get interesting and we can start to learn about the perform
 A longer bar means more time spent performing that process. I've selected the top green bar for this screenshot, indicating that `src/pages/index.ts` is the bottleneck. Under the `Duration` field, you'll see that it took 332ms - an enormous amount of time to spend type-checking! The blue `checkVariableDeclaration` bar tells us the compiler spent most of its time on one variable.
 Clicking on that bar will tell us which one it is:
 ![trace info showing the variable's position is 275](https://user-images.githubusercontent.com/58836760/212483649-65e30d0f-497b-4af4-a58d-57f83e92a273.png)
-The `pos` field reveals the position of the variable in the file's text. Going to that position in `src/pages/index.ts` reveals that the culprit is `utils = trpc.useContext()`!
+The `pos` field reveals the position of the variable in the file's text. Going to that position in `src/pages/index.ts` reveals that the culprit is `utils = trpc.useUtils()`!
 
 But how could this be? We're just using a simple hook! Let's look at the code:
 
@@ -74,7 +74,7 @@ const trpc = createTRPCReact<AppRouter>();
 const Home: NextPage = () => {
   const { data } = trpc.r0.greeting.useQuery({ who: 'from tRPC' });
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   utils.r49.greeting.invalidate();
 };
@@ -82,7 +82,7 @@ const Home: NextPage = () => {
 export default Home;
 ```
 
-Okay, not much to see here. We only see a single `useContext` and a query invalidation. Nothing that _should be_ TypeScript heavy at face value, indicating that the problem must be deeper in the stack. Let's look at the types behind this variable:
+Okay, not much to see here. We only see a single `useUtils` and a query invalidation. Nothing that _should be_ TypeScript heavy at face value, indicating that the problem must be deeper in the stack. Let's look at the types behind this variable:
 
 ```ts
 type DecorateProcedure<
