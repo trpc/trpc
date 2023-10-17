@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
   HTTPHeaders,
   splitLink,
@@ -202,7 +202,7 @@ interface ClientOptions {
 function createClient(opts: ClientOptions = {}) {
   const host = `localhost:${config.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       splitLink({

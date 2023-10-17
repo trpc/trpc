@@ -30,14 +30,14 @@ export const t = initTRPC.create({
 });
 ```
 
-#### 3. Add to `createTRPCProxyClient()` or `createTRPCNext()`
+#### 3. Add to `createTRPCClient()` or `createTRPCNext()`
 
 ```ts
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
 
-export const client = createTRPCProxyClient<AppRouter>({
+export const client = createTRPCClient<AppRouter>({
   transformer: superjson, // <--
   // [...]
 });
@@ -107,13 +107,13 @@ export const appRouter = t.router({
 });
 ```
 
-#### 4. Add to `createTRPCProxyClient()`
+#### 4. Add to `createTRPCClient()`
 
 ```ts title='client.ts'
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import { transformer } from '../utils/trpc';
 
-export const client = createTRPCProxyClient<AppRouter>({
+export const client = createTRPCClient<AppRouter>({
   transformer, // <--
   // [...]
 });

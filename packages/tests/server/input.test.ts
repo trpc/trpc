@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { createTRPCProxyClient, TRPCClientError } from '@trpc/client';
+import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import {
   inferProcedureInput,
   inferProcedureParams,
@@ -494,7 +494,7 @@ test('double validators with undefined', async () => {
     const router = t.router({
       proc,
     });
-    const client = createTRPCProxyClient<typeof router>({
+    const client = createTRPCClient<typeof router>({
       links: [],
     });
 
@@ -530,7 +530,7 @@ test('double validators with undefined', async () => {
     const router = t.router({
       proc,
     });
-    const client = createTRPCProxyClient<typeof router>({
+    const client = createTRPCClient<typeof router>({
       links: [],
     });
 
@@ -564,7 +564,7 @@ test('merges optional with required property', async () => {
   //    ^?
   expectTypeOf<Input>().toEqualTypeOf<{ id: string }>();
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     links: [],
   });
 

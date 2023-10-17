@@ -2,7 +2,7 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
   httpBatchLink,
   HTTPHeaders,
@@ -469,7 +469,7 @@ test('void mutation response', async () => {
     url: `ws://localhost:${wssPort}`,
     WebSocket: WebSocket as any,
   });
-  const wsClient = createTRPCProxyClient<typeof router>({
+  const wsClient = createTRPCClient<typeof router>({
     links: [wsLink({ client: ws })],
   });
 

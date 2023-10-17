@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   loggerLink,
@@ -381,7 +381,7 @@ describe('batching', () => {
     {
       // queries should be batched into a single request
       // url length: 2146 < 9999
-      const clientWithBigMaxURLLength = createTRPCProxyClient<typeof router>({
+      const clientWithBigMaxURLLength = createTRPCClient<typeof router>({
         links: [httpBatchLink({ url: httpUrl, maxURLLength: 9999 })],
       });
 
@@ -417,7 +417,7 @@ describe('batching', () => {
           },
         },
       });
-    const client = createTRPCProxyClient<typeof router>({
+    const client = createTRPCClient<typeof router>({
       ...trpcClientOptions,
       links: [
         httpBatchLink({
@@ -454,7 +454,7 @@ test('create client with links', async () => {
   const { close, router, httpPort, trpcClientOptions } =
     routerToServerAndClientNew(appRouter);
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     ...trpcClientOptions,
     links: [
       retryLink({ attempts: 3 }),

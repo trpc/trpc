@@ -2,7 +2,7 @@
 import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   TRPCClientError,
@@ -418,7 +418,7 @@ describe('links have meta data about http failures', async () => {
   test('httpLink', async () => {
     let meta = undefined as Record<string, unknown> | undefined;
 
-    const client: any = createTRPCProxyClient<any>({
+    const client: any = createTRPCClient<any>({
       links: [
         () => {
           return ({ next, op }) => {
@@ -460,7 +460,7 @@ describe('links have meta data about http failures', async () => {
   test('httpBatchLink', async () => {
     let meta = undefined as Record<string, unknown> | undefined;
 
-    const client: any = createTRPCProxyClient<any>({
+    const client: any = createTRPCClient<any>({
       links: [
         () => {
           return ({ next, op }) => {
@@ -538,7 +538,7 @@ describe('links have meta data about http failures', async () => {
         return unsubscribe;
       });
 
-    const client: any = createTRPCProxyClient<any>({
+    const client: any = createTRPCClient<any>({
       links: [
         customErrorLink,
         httpLink({

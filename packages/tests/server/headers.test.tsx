@@ -1,9 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-  httpLink,
-} from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client/src';
 import { Dict, initTRPC } from '@trpc/server/src';
 
 describe('pass headers', () => {
@@ -41,14 +37,14 @@ describe('pass headers', () => {
   });
 
   test('no headers', async () => {
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [httpBatchLink({ url: httpUrl })],
     });
     expect(await client.hello.query()).toMatchInlineSnapshot(`Object {}`);
   });
 
   test('custom headers', async () => {
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
           url: httpUrl,
@@ -68,7 +64,7 @@ Object {
   });
 
   test('async headers', async () => {
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
           url: httpUrl,
@@ -91,7 +87,7 @@ Object {
     type LinkContext = {
       headers: Dict<string[] | string>;
     };
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
           url: httpUrl,
@@ -127,7 +123,7 @@ Object {
     type LinkContext = {
       headers: Dict<string[] | string>;
     };
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         httpLink({
           url: httpUrl,

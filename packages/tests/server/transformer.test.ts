@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
   httpBatchLink,
   httpLink,
@@ -502,7 +502,7 @@ describe('required transformers', () => {
     const t = initTRPC.create({});
     const router = t.router({});
 
-    createTRPCProxyClient<typeof router>({
+    createTRPCClient<typeof router>({
       links: [httpBatchLink({ url: '' })],
     });
   });
@@ -514,7 +514,7 @@ describe('required transformers', () => {
     });
     const router = t.router({});
 
-    createTRPCProxyClient<typeof router>({
+    createTRPCClient<typeof router>({
       links: [httpBatchLink({ url: '' })],
       transformer,
     });
@@ -528,7 +528,7 @@ describe('required transformers', () => {
     const router = t.router({});
 
     // @ts-expect-error missing transformer on frontend
-    createTRPCProxyClient<typeof router>({
+    createTRPCClient<typeof router>({
       links: [httpBatchLink({ url: '' })],
     });
   });
@@ -538,7 +538,7 @@ describe('required transformers', () => {
     const t = initTRPC.create({});
     const router = t.router({});
 
-    createTRPCProxyClient<typeof router>({
+    createTRPCClient<typeof router>({
       links: [httpBatchLink({ url: '' })],
       // @ts-expect-error missing transformer on backend
       transformer,

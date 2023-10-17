@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { IntersectionError } from '@trpc/server';
 import { initTRPC } from '@trpc/server/src/core';
@@ -15,7 +15,7 @@ test('vanilla client', async () => {
     a: t.procedure.query(() => 'a'),
   });
 
-  const client = createTRPCProxyClient<typeof appRouter>({ links: [] });
+  const client = createTRPCClient<typeof appRouter>({ links: [] });
 
   expectTypeOf(client).toMatchTypeOf<IntersectionError<'links'>>();
 });
