@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import { TRPCClientError, wsLink } from '@trpc/client/src';
+import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client/src';
 import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
 import { observable, Unsubscribable } from '@trpc/server/src/observable';
 import { z } from 'zod';
@@ -29,9 +29,10 @@ test('untyped client - happy path w/o input', async () => {
   });
 
   const { client, close } = routerToServerAndClientNew(router);
+  const untypedClient = getUntypedClient(client);
 
   // client is untyped
-  const res = await client.query('hello');
+  const res = await untypedClient.query('hello');
   expect(res).toBe('world');
   expectTypeOf(res).toBeUnknown();
   await close();
@@ -44,8 +45,9 @@ test('untyped client - happy path with input', async () => {
       .query(({ input }) => `hello ${input}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
+  const untypedClient = getUntypedClient(client);
 
-  expect(await client.query('greeting', 'KATT')).toBe('hello KATT');
+  expect(await untypedClient.query('greeting', 'KATT')).toBe('hello KATT');
   await close();
 });
 
@@ -64,8 +66,8 @@ test('very happy path', async () => {
     type TContext = inferProcedureOutput<typeof greeting>;
     expectTypeOf<TContext>().toMatchTypeOf<string>();
   }
-  const { proxy, close } = routerToServerAndClientNew(router);
-  expect(await proxy.greeting.query('KATT')).toBe('hello KATT');
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.greeting.query('KATT')).toBe('hello KATT');
   await close();
 });
 
@@ -88,8 +90,8 @@ test('middleware', async () => {
       })
       .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
   });
-  const { proxy, close } = routerToServerAndClientNew(router);
-  expect(await proxy.greeting.query()).toBe('hello KATT');
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.greeting.query()).toBe('hello KATT');
   await close();
 });
 
@@ -97,10 +99,10 @@ test('sad path', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
-  const { proxy, close } = routerToServerAndClientNew(router);
+  const { client, close } = routerToServerAndClientNew(router);
 
   // @ts-expect-error this procedure does not exist
-  const result = await waitError(proxy.not.found.query(), TRPCClientError);
+  const result = await waitError(client.not.found.query(), TRPCClientError);
   expect(result).toMatchInlineSnapshot(
     `[TRPCClientError: No "query"-procedure on path "not.found"]`,
   );
@@ -111,9 +113,9 @@ test('call a mutation as a query', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
-  const { proxy, close } = routerToServerAndClientNew(router);
+  const { client, close } = routerToServerAndClientNew(router);
 
-  await expect((proxy.hello as any).mutate()).rejects.toMatchInlineSnapshot(
+  await expect((client.hello as any).mutate()).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
   );
 
@@ -172,13 +174,13 @@ test('subscriptions', async () => {
     }),
   });
 
-  const { proxy, close } = routerToServerAndClientNew(router, {
+  const { client, close } = routerToServerAndClientNew(router, {
     client: ({ wsClient }) => ({
       links: [wsLink({ client: wsClient })],
     }),
   });
 
-  const subscription = proxy.onEvent.subscribe(10, {
+  const subscription = client.onEvent.subscribe(10, {
     onStarted: onStartedMock,
     onData: (data) => {
       expectTypeOf(data).toMatchTypeOf<number>();

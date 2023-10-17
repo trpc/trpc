@@ -94,9 +94,9 @@ test('useDehydratedState() - internal', async () => {
 });
 
 test('useDehydratedState() - external', async () => {
-  const { App, hooks, proxy } = ctx;
+  const { App, hooks, client } = ctx;
 
-  const ssg = createServerSideHelpers({ client: proxy });
+  const ssg = createServerSideHelpers({ client: client });
   const res = await ssg.hello.fetch();
   expect(res).toBe('world');
   expectTypeOf(res).toMatchTypeOf<string>();

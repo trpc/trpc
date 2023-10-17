@@ -39,10 +39,10 @@ const ctx = konn()
   .done();
 
 test('with input', async () => {
-  const { proxy } = ctx;
+  const { client } = ctx;
 
   ignoreErrors(() => {
-    proxy.post.list.useInfiniteQuery(
+    client.post.list.useInfiniteQuery(
       { foo: 'bar' },
       {
         // @ts-expect-error can't return page data that doesn't match the output type
@@ -58,7 +58,7 @@ test('with input', async () => {
       },
     );
 
-    proxy.post.list.useSuspenseInfiniteQuery(
+    client.post.list.useSuspenseInfiniteQuery(
       { foo: 'bar' },
       {
         // @ts-expect-error can't return page data that doesn't match the output type
@@ -77,10 +77,10 @@ test('with input', async () => {
 });
 
 test('good placeholderData', () => {
-  const { proxy } = ctx;
+  const { client } = ctx;
 
   ignoreErrors(() => {
-    proxy.post.list.useInfiniteQuery(
+    client.post.list.useInfiniteQuery(
       { foo: 'bar' },
       {
         placeholderData() {

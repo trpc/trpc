@@ -34,12 +34,12 @@ test('basic', async () => {
   });
 
   const onError = vi.fn();
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
-  const clientError = await waitError(proxy.err.query(), TRPCClientError);
+  const clientError = await waitError(client.err.query(), TRPCClientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
@@ -65,13 +65,13 @@ test('input error', async () => {
       return null;
     }),
   });
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
   const clientError = await waitError(
-    proxy.err.mutate(1 as any),
+    client.err.mutate(1 as any),
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(`
@@ -109,12 +109,12 @@ test('unauthorized()', async () => {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }),
   });
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
-  const clientError = await waitError(proxy.err.query(), TRPCClientError);
+  const clientError = await waitError(client.err.query(), TRPCClientError);
   expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0]![0]!.error;
@@ -154,13 +154,13 @@ describe('formatError()', () => {
       }),
     });
 
-    const { close, proxy } = routerToServerAndClientNew(router, {
+    const { close, client } = routerToServerAndClientNew(router, {
       server: {
         onError,
       },
     });
     const clientError = await waitError(
-      proxy.err.mutate(1 as any),
+      client.err.mutate(1 as any),
       TRPCClientError,
     );
     delete clientError.data.stack;
@@ -288,13 +288,13 @@ test('make sure object is ignoring prototype', async () => {
     hello: t.procedure.query(() => 'there'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
   const clientError = await waitError(
-    (proxy as any).toString.query(),
+    (client as any).toString.query(),
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(
@@ -315,10 +315,10 @@ test('allow using built-in Object-properties', async () => {
     hasOwnProperty: t.procedure.query(() => 'hasOwnPropertyValue'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
-  expect(await proxy.toString.query()).toBe('toStringValue');
-  expect(await proxy.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
+  expect(await client.toString.query()).toBe('toStringValue');
+  expect(await client.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
   await close();
 });
 
@@ -347,13 +347,13 @@ test('retain stack trace', async () => {
     }),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
 
-  const clientError = await waitError(() => proxy.hello.query());
+  const clientError = await waitError(() => client.hello.query());
   expect(clientError.name).toBe('TRPCClientError');
 
   expect(onError).toHaveBeenCalledTimes(1);

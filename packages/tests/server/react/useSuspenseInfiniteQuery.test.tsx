@@ -40,9 +40,9 @@ const ctx = konn()
   .done();
 
 test('useSuspenseInfiniteQuery()', async () => {
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
   function MyComponent() {
-    const [data, query1] = proxy.post.list.useSuspenseInfiniteQuery(
+    const [data, query1] = client.post.list.useSuspenseInfiniteQuery(
       {},
       {
         getNextPageParam(lastPage) {

@@ -77,7 +77,7 @@ describe('double input validator', () => {
       roomId: '123',
       text: 'hello',
     };
-    const result = await ctx.proxy.sendMessage.mutate(data);
+    const result = await ctx.client.sendMessage.mutate(data);
 
     expect(result).toEqual(data);
     expectTypeOf(result).toMatchTypeOf(data);
@@ -91,7 +91,7 @@ describe('double input validator', () => {
         roomId: '',
       };
       const error = await waitError<TRPCClientError<AppRouter>>(
-        ctx.proxy.sendMessage.mutate(input),
+        ctx.client.sendMessage.mutate(input),
         TRPCClientError,
       );
       expect(error.data).toHaveProperty('zod');
@@ -110,7 +110,7 @@ describe('double input validator', () => {
       };
 
       const error = await waitError<TRPCClientError<AppRouter>>(
-        ctx.proxy.sendMessage.mutate(input),
+        ctx.client.sendMessage.mutate(input),
         TRPCClientError,
       );
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
@@ -190,10 +190,10 @@ describe('multiple input validators with optionals', () => {
 
     const opts = routerToServerAndClientNew(webhookRouter);
 
-    await expect(opts.proxy.byId.query()).resolves.toBeUndefined();
-    await expect(opts.proxy.byId.query(undefined)).resolves.toBeUndefined();
+    await expect(opts.client.byId.query()).resolves.toBeUndefined();
+    await expect(opts.client.byId.query(undefined)).resolves.toBeUndefined();
     await expect(
-      opts.proxy.byId.query({ id: '123', webhookId: '456' }),
+      opts.client.byId.query({ id: '123', webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
@@ -223,17 +223,17 @@ describe('multiple input validators with optionals', () => {
     const opts = routerToServerAndClientNew(webhookRouter);
 
     await expect(
-      opts.proxy.byId.query({ id: '123', webhookId: '456' }),
+      opts.client.byId.query({ id: '123', webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
     });
     // @ts-expect-error - missing id and webhookId
-    await expect(opts.proxy.byId.query()).rejects.toThrow();
+    await expect(opts.client.byId.query()).rejects.toThrow();
     // @ts-expect-error - missing id and webhookId
-    await expect(opts.proxy.byId.query(undefined)).rejects.toThrow();
+    await expect(opts.client.byId.query(undefined)).rejects.toThrow();
     await expect(
-      opts.proxy.byId.query({ id: '123', eventTypeId: 1, webhookId: '456' }),
+      opts.client.byId.query({ id: '123', eventTypeId: 1, webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       eventTypeId: 1,
@@ -265,13 +265,13 @@ describe('multiple input validators with optionals', () => {
 
     const opts = routerToServerAndClientNew(webhookRouter);
     await expect(
-      opts.proxy.byId.query({ id: '123', webhookId: '456' }),
+      opts.client.byId.query({ id: '123', webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
     });
     await expect(
-      opts.proxy.byId.query({ id: '123', webhookId: '456', foo: 'bar' }),
+      opts.client.byId.query({ id: '123', webhookId: '456', foo: 'bar' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
@@ -313,7 +313,7 @@ test('no input', async () => {
 
   const opts = routerToServerAndClientNew(router);
 
-  await expect(opts.proxy.proc.query()).resolves.toBeUndefined();
+  await expect(opts.client.proc.query()).resolves.toBeUndefined();
 
   await opts.close();
 });
@@ -338,8 +338,8 @@ test('zod default() string', async () => {
 
   const opts = routerToServerAndClientNew(router);
 
-  await expect(opts.proxy.proc.query()).resolves.toBe('bar');
-  await expect(opts.proxy.proc.query('hello')).resolves.toBe('hello');
+  await expect(opts.client.proc.query()).resolves.toBe('bar');
+  await expect(opts.client.proc.query('hello')).resolves.toBe('hello');
 
   await opts.close();
 });
@@ -368,10 +368,10 @@ test('zod default() required object', async () => {
 
   const opts = routerToServerAndClientNew(router);
 
-  await expect(opts.proxy.proc.query({ foo: 'bar' })).resolves.toEqual({
+  await expect(opts.client.proc.query({ foo: 'bar' })).resolves.toEqual({
     foo: 'bar',
   });
-  await expect(opts.proxy.proc.query({})).resolves.toEqual({ foo: 'foo' });
+  await expect(opts.client.proc.query({})).resolves.toEqual({ foo: 'foo' });
 
   await opts.close();
 });
@@ -407,17 +407,17 @@ test('zod default() mixed default object', async () => {
   const opts = routerToServerAndClientNew(router);
 
   await expect(
-    opts.proxy.proc.query({ foo: 'bar', bar: 'foo' }),
+    opts.client.proc.query({ foo: 'bar', bar: 'foo' }),
   ).resolves.toEqual({ foo: 'bar', bar: 'foo' });
-  await expect(opts.proxy.proc.query({ foo: 'fooFoo' })).resolves.toEqual({
+  await expect(opts.client.proc.query({ foo: 'fooFoo' })).resolves.toEqual({
     foo: 'fooFoo',
     bar: 'barFoo',
   });
-  await expect(opts.proxy.proc.query({ foo: 'bar' })).resolves.toEqual({
+  await expect(opts.client.proc.query({ foo: 'bar' })).resolves.toEqual({
     foo: 'bar',
     bar: 'barFoo',
   });
-  await expect(opts.proxy.proc.query(undefined)).resolves.toEqual({
+  await expect(opts.client.proc.query(undefined)).resolves.toEqual({
     foo: 'fooBar',
     bar: 'barFoo',
   });
@@ -456,9 +456,9 @@ test('zod default() defaults within object', async () => {
   const opts = routerToServerAndClientNew(router);
 
   await expect(
-    opts.proxy.proc.query({ foo: 'bar', bar: 'foo' }),
+    opts.client.proc.query({ foo: 'bar', bar: 'foo' }),
   ).resolves.toEqual({ foo: 'bar', bar: 'foo' });
-  await expect(opts.proxy.proc.query(undefined)).resolves.toEqual({
+  await expect(opts.client.proc.query(undefined)).resolves.toEqual({
     foo: 'defaultFoo',
     bar: 'defaultBar',
   });

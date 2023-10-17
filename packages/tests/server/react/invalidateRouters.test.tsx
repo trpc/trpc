@@ -190,27 +190,29 @@ const ctx = konn()
  * A hook that will subscribe the component to all the hooks for the
  * invalidation test.
  */
-const useSetupAllTestHooks = (proxy: (typeof ctx)['proxy']) => {
+const useSetupAllTestHooks = (client: (typeof ctx)['client']) => {
   const hooks = {
     user: {
-      listAll: proxy.user.listAll.useQuery(),
+      listAll: client.user.listAll.useQuery(),
       byId: {
-        '1': proxy.user.byId.useQuery({ userId: '1' }),
-        '2': proxy.user.byId.useQuery({ userId: '2' }),
+        '1': client.user.byId.useQuery({ userId: '1' }),
+        '2': client.user.byId.useQuery({ userId: '2' }),
       },
       details: {
         getByUserId: {
-          '1': proxy.user.details.getByUserId.useQuery({ userId: '1' }),
-          '2': proxy.user.details.getByUserId.useQuery({ userId: '2' }),
+          '1': client.user.details.getByUserId.useQuery({ userId: '1' }),
+          '2': client.user.details.getByUserId.useQuery({ userId: '2' }),
         },
       },
     },
-    'user.current.email.getMain': proxy['user.current.email.getMain'].useQuery({
-      getExtraDetails: false,
-    }), // Really not a fan of allowing `.` in property names...
+    'user.current.email.getMain': client['user.current.email.getMain'].useQuery(
+      {
+        getExtraDetails: false,
+      },
+    ), // Really not a fan of allowing `.` in property names...
     posts: {
-      getAll: proxy.posts.getAll.useQuery(),
-      getAllInfinite: proxy.posts.getAllInfinite.useInfiniteQuery(
+      getAll: client.posts.getAll.useQuery(),
+      getAllInfinite: client.posts.getAllInfinite.useInfiniteQuery(
         {
           limit: 1,
         },
@@ -219,12 +221,12 @@ const useSetupAllTestHooks = (proxy: (typeof ctx)['proxy']) => {
         },
       ),
       byId: {
-        '1': proxy.posts.byId.useQuery({ id: '1' }),
-        '2': proxy.posts.byId.useQuery({ id: '2' }),
+        '1': client.posts.byId.useQuery({ id: '1' }),
+        '2': client.posts.byId.useQuery({ id: '2' }),
       },
       'comments.getById': {
-        1: proxy.posts['comments.getById'].useQuery({ id: 1 }),
-        2: proxy.posts['comments.getById'].useQuery({ id: 2 }),
+        1: client.posts['comments.getById'].useQuery({ id: 1 }),
+        2: client.posts['comments.getById'].useQuery({ id: 2 }),
       },
     },
   };
@@ -237,12 +239,12 @@ const useSetupAllTestHooks = (proxy: (typeof ctx)['proxy']) => {
 //---------------------------------------------------------------------------------------------------
 
 test('Check invalidation of Whole router', async () => {
-  const { proxy, App, resolvers } = ctx;
+  const { client, App, resolvers } = ctx;
   function MyComponent() {
-    useSetupAllTestHooks(ctx.proxy);
+    useSetupAllTestHooks(ctx.client);
     const isFetching = useIsFetching();
 
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     return (
       <div>
@@ -302,12 +304,12 @@ test('Check invalidation of Whole router', async () => {
 //---------------------------------------------------------------------------------------------------
 
 test('Check invalidating at router root invalidates all', async () => {
-  const { proxy, App, resolvers } = ctx;
+  const { client, App, resolvers } = ctx;
   function MyComponent() {
-    useSetupAllTestHooks(ctx.proxy);
+    useSetupAllTestHooks(ctx.client);
     const isFetching = useIsFetching();
 
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     return (
       <div>
@@ -361,12 +363,12 @@ test('Check invalidating at router root invalidates all', async () => {
 //---------------------------------------------------------------------------------------------------
 
 test('test TS types of the input variable', async () => {
-  const { proxy, App, resolvers } = ctx;
+  const { client, App, resolvers } = ctx;
   function MyComponent() {
-    useSetupAllTestHooks(ctx.proxy);
+    useSetupAllTestHooks(ctx.client);
     const isFetching = useIsFetching();
 
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     ignoreErrors(() => {
       // @ts-expect-error from user.details should not see id from `posts.byid`

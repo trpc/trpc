@@ -36,7 +36,7 @@ describe('without transformer', () => {
     .done();
 
   test('output', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     type Output = inferRouterOutputs<typeof appRouter>['greeting'];
     expectTypeOf<Output>().toEqualTypeOf<{
@@ -44,7 +44,7 @@ describe('without transformer', () => {
       date: string;
     }>();
 
-    const res = await proxy.greeting.query();
+    const res = await client.greeting.query();
     expectTypeOf(res).toEqualTypeOf<{
       message: string;
       date: string;
@@ -87,7 +87,7 @@ describe('with transformer', () => {
     .done();
 
   test('output', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     type Output = inferRouterOutputs<typeof appRouter>['greeting'];
     expectTypeOf<Output>().toEqualTypeOf<{
@@ -95,7 +95,7 @@ describe('with transformer', () => {
       date: Date;
     }>();
 
-    const res = await proxy.greeting.query();
+    const res = await client.greeting.query();
     expectTypeOf(res).toEqualTypeOf<{
       message: string;
       date: Date;

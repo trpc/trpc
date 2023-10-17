@@ -32,10 +32,10 @@ test('utils client', async () => {
     a: t.procedure.query(() => 'a'),
   });
 
-  const { proxy, App } = getServerAndReactClient(appRouter);
+  const { client, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    expectTypeOf(proxy).toMatchTypeOf<IntersectionError<'Provider'>>();
+    expectTypeOf(client).toMatchTypeOf<IntersectionError<'Provider'>>();
 
     return null;
   }
@@ -58,10 +58,10 @@ test('utils client', async () => {
     }),
   });
 
-  const { proxy, App } = getServerAndReactClient(appRouter);
+  const { client, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     expectTypeOf(utils).toEqualTypeOf<IntersectionError<'client'>>();
 

@@ -46,16 +46,16 @@ describe('no transformer', () => {
       .done();
 
     test('query with response: good', async () => {
-      expect(await ctx.proxy.goodQuery.query()).toBe('good');
+      expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
+      expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
-      expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
+      expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
+      expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
@@ -82,16 +82,16 @@ describe('no transformer', () => {
       .done();
 
     test('query with response: good', async () => {
-      expect(await ctx.proxy.goodQuery.query()).toBe('good');
+      expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
+      expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
-      expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
+      expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
+      expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
@@ -118,16 +118,16 @@ describe('no transformer', () => {
       .done();
 
     test('query with response: good', async () => {
-      expect(await ctx.proxy.goodQuery.query()).toBe('good');
+      expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
+      expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
-      expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
+      expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
+      expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
@@ -154,16 +154,16 @@ describe('no transformer', () => {
       .done();
 
     test('query with response: good', async () => {
-      expect(await ctx.proxy.goodQuery.query()).toBe('good');
+      expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
+      expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
-      expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
+      expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
+      expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 });
@@ -212,16 +212,16 @@ describe('with superjson', () => {
       .done();
 
     test('query with response: good', async () => {
-      expect(await ctx.proxy.goodQuery.query()).toBe('good');
+      expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
+      expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
-      expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
+      expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
+      expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
@@ -249,16 +249,16 @@ describe('with superjson', () => {
       .done();
 
     test('query with response: good', async () => {
-      expect(await ctx.proxy.goodQuery.query()).toBe('good');
+      expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
-      expect(await ctx.proxy.voidQuery.query()).toBe(undefined);
+      expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
-      expect(await ctx.proxy.goodMutation.mutate()).toBe('good');
+      expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
-      expect(await ctx.proxy.voidMutation.mutate()).toBe(undefined);
+      expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 });

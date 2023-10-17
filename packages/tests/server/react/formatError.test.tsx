@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 test('react types test', async () => {
-  const { trpc, client } = factory;
+  const { trpc, App } = factory;
   function MyComponent() {
     const mutation = trpc.addPost.useMutation();
 
@@ -42,18 +42,12 @@ test('react types test', async () => {
     }
     return <></>;
   }
-  function App() {
-    const [queryClient] = useState(() => createQueryClient());
-    return (
-      <trpc.Provider {...{ queryClient, client }}>
-        <QueryClientProvider client={queryClient}>
-          <MyComponent />
-        </QueryClientProvider>
-      </trpc.Provider>
-    );
-  }
 
-  const utils = render(<App />);
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('fieldErrors');
     expect(utils.getByTestId('err').innerText).toMatchInlineSnapshot(

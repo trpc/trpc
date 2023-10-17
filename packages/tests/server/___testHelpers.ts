@@ -1,7 +1,7 @@
 import { IncomingMessage } from 'http';
 import { AddressInfo } from 'net';
 import {
-  createTRPCClientProxy,
+  createTRPCClient,
   createTRPCUntypedClient,
   createWSClient,
   httpBatchLink,
@@ -86,12 +86,11 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       : {}),
   } as WithTRPCConfig<typeof router>;
 
-  const client = createTRPCUntypedClient<typeof router>(trpcClientOptions);
-  const proxy = createTRPCClientProxy<typeof router>(client);
+  const client = createTRPCClient<typeof router>(trpcClientOptions);
+
   return {
     wsClient,
     client,
-    proxy,
     close: async () => {
       await Promise.all([
         new Promise((resolve) => server.close(resolve)),

@@ -3,6 +3,7 @@ import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   experimental_formDataLink,
+  getUntypedClient,
   httpBatchLink,
   loggerLink,
   splitLink,
@@ -121,18 +122,17 @@ const ctx = konn()
     });
 
     const queryClient = createQueryClient();
-    const proxy = createTRPCReact<TRouter, unknown>();
-    const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
+    const trpc = createTRPCReact<TRouter, unknown>();
 
     const client = opts.client;
 
     function App(props: { children: ReactNode }) {
       return (
-        <baseProxy.Provider {...{ queryClient, client }}>
+        <trpc.Provider {...{ queryClient, client: getUntypedClient(client) }}>
           <QueryClientProvider client={queryClient}>
             {props.children}
           </QueryClientProvider>
-        </baseProxy.Provider>
+        </trpc.Provider>
       );
     }
 
@@ -158,7 +158,7 @@ test('upload file', async () => {
     }),
   );
 
-  const fileContents = await ctx.proxy.uploadFile.mutate(form);
+  const fileContents = await ctx.client.uploadFile.mutate(form);
 
   expect(fileContents).toMatchInlineSnapshot(`
     Object {
@@ -175,8 +175,8 @@ test('polymorphic - accept both JSON and FormData', async () => {
   const form = new FormData();
   form.set('text', 'foo');
 
-  const formDataRes = await ctx.proxy.polymorphic.mutate(form);
-  const jsonRes = await ctx.proxy.polymorphic.mutate({
+  const formDataRes = await ctx.client.polymorphic.mutate(form);
+  const jsonRes = await ctx.client.polymorphic.mutate({
     text: 'foo',
   });
   expect(formDataRes).toEqual(jsonRes);

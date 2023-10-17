@@ -33,9 +33,9 @@ const ctx = konn()
   .done();
 
 test('useQuery()', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const greetingQuery = proxy.greeting.useQuery(
+    const greetingQuery = client.greeting.useQuery(
       {
         id: '1',
       },
@@ -78,9 +78,9 @@ test('useQuery()', async () => {
 });
 
 test('useMutation()', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const doSomethingMutation = proxy.doSomething.useMutation({
+    const doSomethingMutation = client.doSomething.useMutation({
       trpc: {
         context: {
           foo: 'bar',
