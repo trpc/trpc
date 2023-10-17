@@ -14,7 +14,9 @@
 
 ## Exports names `AbcProxyXyz` has been renamed to `AbcXyz`
 
-The proxy names were due to v9 using the `AbcXyz` names, these have been removed and the proxy ones have been renamed to the non-proxy names.
+The proxy names were due to v9 using the `AbcXyz` names, these have been removed and the proxy ones have been renamed to the non-proxy names, e.g:
+
+- `createTRPCClient` was deprecated from v9, and is now completely removed. The `createTRPCProxyClient` has been renamed to `createTRPCClient` instead. `createTRPCProxyClient` is now marked as deprecated.
 
 ## React Query peerDep is now v5
 
