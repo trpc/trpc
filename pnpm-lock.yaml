@@ -151,8 +151,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../../packages/client
@@ -221,8 +221,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../../packages/client
@@ -276,8 +276,8 @@ importers:
   examples/.test/big-router-declaration:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../../packages/client
@@ -325,8 +325,8 @@ importers:
   examples/.test/diagnostics-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../../packages/client
@@ -399,8 +399,8 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../../packages/client
@@ -454,8 +454,8 @@ importers:
   examples/.test/ssg-infinite-serialization:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -794,8 +794,8 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../../packages/client
@@ -888,8 +888,8 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../packages/client
@@ -937,8 +937,8 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../packages/client
@@ -983,8 +983,8 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../packages/client
@@ -1032,8 +1032,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../packages/client
@@ -1138,8 +1138,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../packages/client
@@ -1190,8 +1190,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(@tanstack/react-query@5.0.0-rc.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1220,8 +1220,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.40.0
         version: link:../../packages/client
@@ -1266,8 +1266,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(@tanstack/react-query@5.0.0-rc.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1476,8 +1476,8 @@ importers:
         version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.40.0
         version: link:../client
@@ -1527,8 +1527,8 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.40.0
         version: link:../client
@@ -1575,8 +1575,8 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
         version: 8.10.115
@@ -1689,8 +1689,8 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@tanstack/react-query':
-        specifier: ^5.0.0-rc.1
-        version: 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
@@ -9495,28 +9495,28 @@ packages:
       defer-to-connect: 2.0.1
     dev: true
 
-  /@tanstack/query-core@5.0.0-rc.1:
-    resolution: {integrity: sha512-6jzPCwvEHS+Y3QCildpOlIrqJXXJ+v2EvbtCnbKUi6FpOrrfoSPacVB3nr0cjSBG/rCXnTB0aaevx9T8iT9CrQ==}
+  /@tanstack/query-core@5.0.0:
+    resolution: {integrity: sha512-Y1BpiA6BblJd/UlVqxEVeAG7IACn568YJuTTItAiecBI7En+33g780kg+/8lhgl+BzcUPN7o+NjBrSRGJoemyQ==}
 
-  /@tanstack/query-devtools@5.0.0-rc.1:
-    resolution: {integrity: sha512-33ECTglWAllVT6IfUhqvgKbJulOtOP8+z9W/i0FlmWKNaEwzaR8lpa4pOCyLCZA2p5XW97nSJ/JfPOzeYQN/jQ==}
+  /@tanstack/query-devtools@5.0.0:
+    resolution: {integrity: sha512-WATg9+nreAmtTRHzxvCFN6j4ucUVbkJNd8ErcYmf7Y6GsJw/BGscd4rWS7cdAP7zfTcPjHjGaRB041pcv8dNvA==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.0.0-rc.1(@tanstack/react-query@5.0.0-rc.1)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-RG/ffNv8ZdMPdoIZZrO7jS0DXZ6h0vKxkLbE5A1FET9UzHQ0EFnjc+pw0plC3x9z61bSsT0wPujgDqwOyoK6pg==}
+  /@tanstack/react-query-devtools@5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-4yw29d89eOqUmliRKGmEOjuq2AGSM3i4jjw/YFMrErg0neVITy2bkoU3fPXZ339czlupqq0b4e20uFVtqkEqGQ==}
     peerDependencies:
-      '@tanstack/react-query': ^5.0.0-rc.1
+      '@tanstack/react-query': ^5.0.0
       react: ^18.0.0
       react-dom: ^18.0.0
     dependencies:
-      '@tanstack/query-devtools': 5.0.0-rc.1
-      '@tanstack/react-query': 5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/query-devtools': 5.0.0
+      '@tanstack/react-query': 5.0.0(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: true
 
-  /@tanstack/react-query@5.0.0-rc.1(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-hFz2j/pp+faqwaBbp0KV8kgn01GfErfA1BtcwHVE/E+GJINU2ZOAiVJ43LR05JCWnIu4b9pAnOBMHv55GshMZQ==}
+  /@tanstack/react-query@5.0.0(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-diQoC8FNBcO5Uf5yuaJlXthTtbO1xM8kzOX+pSBUMT9n/cqQ/u1wJGCtukvhDWA+6j07WmIj4bfqNbd2KOB6jQ==}
     peerDependencies:
       react: ^18.0.0
       react-dom: ^18.0.0
@@ -9527,8 +9527,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 5.0.0-rc.1
-      client-only: 0.0.1
+      '@tanstack/query-core': 5.0.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
 
