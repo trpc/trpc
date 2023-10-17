@@ -231,12 +231,12 @@ export type DecoratedProcedureRecord<
  */
 export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
+   * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
+   *
    * @see https://trpc.io/docs/client/react/useContext
    */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   /**
-   * Identical to `useContext()`
-   *
    * @see https://trpc.io/docs/client/react/useContext
    */
   useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
