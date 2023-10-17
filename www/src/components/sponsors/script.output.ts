@@ -5,7 +5,7 @@ export const topSponsors = [
   {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 102,
+    "weight": 101,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc",
     "createdAt": 1656581731000
@@ -16,7 +16,7 @@ export const topSponsors = [
     "weight": 57,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1674835130012
+    "createdAt": 1676307389337
   },
   {
     "name": "Flightcontrol",
@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 20,
+    "weight": 22,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -63,8 +63,8 @@ export const allSponsors = [
     "createdAt": 1625953397000
   },
   {
-    "name": "sam3d",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=eb908aaeba5c44f4868b81f4dc8ef8f44ca19243&v=4",
+    "name": "Brooke",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=c2d0658cefbdb7508ce904a6c0f7aa1a600ba934&v=4",
     "weight": 3,
     "login": "sam3d",
     "link": "https://github.com/sam3d",
@@ -161,7 +161,7 @@ export const allSponsors = [
   {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 102,
+    "weight": 101,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc",
     "createdAt": 1656581731000
@@ -217,7 +217,7 @@ export const allSponsors = [
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 20,
+    "weight": 22,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -300,15 +300,7 @@ export const allSponsors = [
     "weight": 57,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1674835130012
-  },
-  {
-    "name": "Matthew Brimmer",
-    "imgSrc": "https://avatars.githubusercontent.com/u/19143056?u=5e87113d3e0bcf7a838e9d1928ae4da54664be51&v=4",
-    "weight": 7,
-    "login": "mbrimmer83",
-    "link": "https://easycoders.io/?ref=trpc",
-    "createdAt": 1675609257000
+    "createdAt": 1676307389337
   },
   {
     "name": "John Shahawy",
@@ -351,14 +343,6 @@ export const allSponsors = [
     "createdAt": 1688028927000
   },
   {
-    "name": "Siraj",
-    "imgSrc": "https://avatars.githubusercontent.com/u/71605633?v=4",
-    "weight": 1,
-    "login": "syhner",
-    "link": "https://github.com/syhner",
-    "createdAt": 1693166190000
-  },
-  {
     "name": "A Local Cart",
     "imgSrc": "https://avatars.githubusercontent.com/u/143630784?v=4",
     "weight": 2,
@@ -377,9 +361,17 @@ export const allSponsors = [
   {
     "name": "Drizzle Team",
     "imgSrc": "https://avatars.githubusercontent.com/u/108468352?v=4",
-    "weight": 2,
+    "weight": 1,
     "login": "drizzle-team",
     "link": "https://drizzle.team/?ref=trpc",
     "createdAt": 1694781987000
+  },
+  {
+    "name": "Jesse De Lira",
+    "imgSrc": "https://avatars.githubusercontent.com/u/38845310?u=22f4f0975e367a1e7c43e246c53f860938a0394a&v=4",
+    "weight": 2,
+    "login": "jessedelira",
+    "link": "http://gym-tracker.app/?ref=trpc",
+    "createdAt": 1696131423000
   }
 ] as const;
