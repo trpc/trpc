@@ -194,7 +194,11 @@ export function createRootHooks<
           ),
           setQueryData: useCallback(
             (queryKey, updater, options) => {
-              return queryClient.setQueryData(queryKey, updater as any, options);
+              return queryClient.setQueryData(
+                queryKey,
+                updater as any,
+                options,
+              );
             },
             [queryClient],
           ),
@@ -206,7 +210,11 @@ export function createRootHooks<
           ),
           setInfiniteQueryData: useCallback(
             (queryKey, updater, options) => {
-              return queryClient.setQueryData(queryKey, updater as any, options);
+              return queryClient.setQueryData(
+                queryKey,
+                updater as any,
+                options,
+              );
             },
             [queryClient],
           ),
