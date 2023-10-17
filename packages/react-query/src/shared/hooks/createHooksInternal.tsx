@@ -194,12 +194,15 @@ export function createRootHooks<
           ),
           setQueryData: useCallback(
             (queryKey, updater, options) => {
-              return queryClient.setQueryData(queryKey, updater, options);
+              return queryClient.setQueryData(
+                queryKey,
+                updater as any,
+                options,
+              );
             },
             [queryClient],
           ),
           getQueryData: useCallback(
-            // REVIEW: Should this take opts?? The types doesn't have it
             (queryKey) => {
               return queryClient.getQueryData(queryKey);
             },
@@ -207,7 +210,11 @@ export function createRootHooks<
           ),
           setInfiniteQueryData: useCallback(
             (queryKey, updater, options) => {
-              return queryClient.setQueryData(queryKey, updater, options);
+              return queryClient.setQueryData(
+                queryKey,
+                updater as any,
+                options,
+              );
             },
             [queryClient],
           ),

@@ -21,7 +21,7 @@
     "@fastify/busboy": "^2.0.0",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
-    "@tanstack/react-query": "^5.0.0-rc.1",
+    "@tanstack/react-query": "^5.0.0",
     "@testing-library/dom": "^9.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
