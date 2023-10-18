@@ -1,3 +1,4 @@
+import { gzipSync } from 'zlib';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -48,16 +49,66 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   };
 }
 
+interface MinimalAPIGatewayResult {
+  isBase64Encoded?: boolean;
+  body?: string;
+  headers?: Record<string, string | number | boolean>;
+}
+
+function acceptsGzipEncoding(acceptsEncoding?: string | number | boolean) {
+  if (!acceptsEncoding) {
+    return false;
+  }
+
+  return (
+    String(acceptsEncoding).trim() === '*' ||
+    String(acceptsEncoding).toLowerCase().includes('gzip')
+  );
+}
+
+// TODO: the thing is, gzip could be in the header but explicitly disabled like with "gzip;q=0"
+// There's also not much reason not to support other formats, br,deflate etc beyond laziness
+// ALSO we probably don't have to configure this in tRPC< we could just honour what the Accept-Encoding header tells us in general
+function maybeGzipBody(
+  event: APIGatewayEvent,
+  resp: MinimalAPIGatewayResult,
+  gzipping?: AWSLambdaOptions<any, any>['gzipping'],
+) {
+  if (
+    gzipping?.enabled &&
+    resp.body &&
+    acceptsGzipEncoding(event.headers['Accept-Encoding'])
+  ) {
+    const threshold = gzipping.thresholdBytes ?? 0;
+
+    if (resp.body.length >= threshold) {
+      resp.isBase64Encoded = true;
+      resp.body = gzipSync(resp.body).toString('base64');
+
+      resp.headers ??= {};
+      resp.headers['Content-Encoding'] = 'gzip';
+    }
+  }
+}
+
 function tRPCOutputToAPIGatewayOutput<
+  TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
->(event: TEvent, response: HTTPResponse): TResult {
+>(
+  event: TEvent,
+  response: HTTPResponse,
+  opts: AWSLambdaOptions<TRouter, TEvent>,
+): TResult {
   if (isPayloadV1(event)) {
     const resp: APIGatewayProxyResult = {
       statusCode: response.status,
       body: response.body ?? '',
       headers: transformHeaders(response.headers ?? {}),
     };
+
+    maybeGzipBody(event, resp, opts.gzipping);
+
     return resp as TResult;
   } else if (isPayloadV2(event)) {
     const resp: APIGatewayProxyStructuredResultV2 = {
@@ -65,6 +116,9 @@ function tRPCOutputToAPIGatewayOutput<
       body: response.body ?? undefined,
       headers: transformHeaders(response.headers ?? {}),
     };
+
+    maybeGzipBody(event, resp, opts.gzipping);
+
     return resp as TResult;
   } else {
     throw new TRPCError({
@@ -114,6 +168,10 @@ export function awsLambdaRequestHandler<
       },
     });
 
-    return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+    return tRPCOutputToAPIGatewayOutput<TRouter, TEvent, TResult>(
+      event,
+      response,
+      opts,
+    );
   };
 }

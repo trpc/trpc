@@ -38,6 +38,10 @@ export type AWSLambdaOptions<
       batching?: {
         enabled: boolean;
       };
+      gzipping?: {
+        enabled: boolean;
+        thresholdBytes?: number;
+      };
       onError?: OnErrorFunction<TRouter, TEvent>;
       responseMeta?: ResponseMetaFn<TRouter>;
     } & (
