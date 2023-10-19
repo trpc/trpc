@@ -137,7 +137,7 @@ describe('polymorphism', () => {
        * and pass the specific backend functionality which is needed need
        */
       function IssuesExportPage() {
-        const utils = trpc.useContext();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
@@ -194,7 +194,7 @@ describe('polymorphism', () => {
       const { trpc } = ctx;
 
       function DiscussionsExportPage() {
-        const utils = trpc.useContext();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
@@ -257,7 +257,7 @@ describe('polymorphism', () => {
        * but also extend types and functionality
        */
       function PullRequestsExportPage() {
-        const utils = trpc.useContext();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
