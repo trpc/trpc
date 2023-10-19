@@ -21,7 +21,16 @@ export interface CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
 > {
+  /**
+   * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
+   *
+   * @see https://trpc.io/docs/client/react/useUtils
+   */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  /**
+   * @see https://trpc.io/docs/client/react/useUtils
+   */
+  useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
 }
@@ -55,9 +64,9 @@ export function createTRPCNext<
   const _withTRPC = withTRPC(opts);
 
   return createFlatProxy((key) => {
-    if (key === 'useContext') {
+    if (key === 'useContext' || key === 'useUtils') {
       return () => {
-        const context = hooks.useContext();
+        const context = hooks.useUtils();
         // create a stable reference of the utils context
         return useMemo(() => {
           return (createReactQueryUtilsProxy as any)(context);
