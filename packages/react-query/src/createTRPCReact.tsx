@@ -231,9 +231,15 @@ export type DecoratedProcedureRecord<
  */
 export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
-   * @see https://trpc.io/docs/client/react/useContext
+   * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
+   *
+   * @see https://trpc.io/docs/client/react/useUtils
    */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  /**
+   * @see https://trpc.io/docs/client/react/useUtils
+   */
+  useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
@@ -260,9 +266,9 @@ export function createHooksInternalProxy<
   type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 
   return createFlatProxy<CreateHooksInternalProxy>((key) => {
-    if (key === 'useContext') {
+    if (key === 'useContext' || key === 'useUtils') {
       return () => {
-        const context = trpc.useContext();
+        const context = trpc.useUtils();
         // create a stable reference of the utils context
         return useMemo(() => {
           return (createReactQueryUtilsProxy as any)(context);

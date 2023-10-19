@@ -237,7 +237,7 @@ test('Check invalidation of Whole router', async () => {
     useSetupAllTestHooks(ctx.proxy);
     const isFetching = useIsFetching();
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     return (
       <div>
@@ -302,7 +302,7 @@ test('Check invalidating at router root invalidates all', async () => {
     useSetupAllTestHooks(ctx.proxy);
     const isFetching = useIsFetching();
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     return (
       <div>
@@ -361,7 +361,7 @@ test('test TS types of the input variable', async () => {
     useSetupAllTestHooks(ctx.proxy);
     const isFetching = useIsFetching();
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     ignoreErrors(() => {
       // @ts-expect-error from user.details should not see id from `posts.byid`
