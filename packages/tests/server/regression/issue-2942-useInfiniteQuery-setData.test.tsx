@@ -48,7 +48,7 @@ const ctx = konn()
 test('with input', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
-    const utils = proxy.useUtils();
+    const utils = proxy.useContext();
     const query1 = proxy.post.list.useInfiniteQuery(
       {
         foo: 'bar',
@@ -130,7 +130,7 @@ test('with input', async () => {
 test('w/o input', async () => {
   const { App, proxy } = ctx;
   function MyComponent() {
-    const utils = proxy.useUtils();
+    const utils = proxy.useContext();
     const query1 = proxy.post.list.useInfiniteQuery(
       {},
       {
