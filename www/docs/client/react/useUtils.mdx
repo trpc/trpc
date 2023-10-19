@@ -9,17 +9,7 @@ slug: /client/react/useUtils
 
 :::note
 
-In v10, `useUtils` no longer exposes the raw `queryClient`. If you need some of the methods that aren't wrapped by tRPC yet, import and use them directly from `@tanstack/react-query`:
-
-<br />
-
-```tsx
-import { useQueryClient } from '@tanstack/react-query';
-
-function MyComponent() {
-  const queryClient = useQueryClient();
-}
-```
+This hook was called `useContext()` until `10.41.0` (and is still aliased for the foreseeable future)
 
 :::
 
