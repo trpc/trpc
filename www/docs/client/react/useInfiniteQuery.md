@@ -88,7 +88,7 @@ This helper gets the currently cached data from an existing infinite query
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const myMutation = trpc.infinitePosts.add.useMutation({
     async onMutate(opts) {
@@ -108,7 +108,7 @@ This helper allows you to update a query's cached data
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const myMutation = trpc.infinitePosts.delete.useMutation({
     async onMutate(opts) {
