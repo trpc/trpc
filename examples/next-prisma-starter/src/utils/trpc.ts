@@ -32,7 +32,7 @@ export interface SSRContext extends NextPageContext {
   /**
    * Set HTTP Status code
    * @example
-   * const utils = trpc.useUtils();
+   * const utils = trpc.useContext();
    * if (utils.ssrContext) {
    *   utils.ssrContext.status = 404;
    * }
