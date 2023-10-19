@@ -24,11 +24,11 @@ export interface CreateTRPCNextBase<
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @see https://trpc.io/docs/client/react/useContext
+   * @see https://trpc.io/docs/client/react/useUtils
    */
   useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   /**
-   * @see https://trpc.io/docs/client/react/useContext
+   * @see https://trpc.io/docs/client/react/useUtils
    */
   useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
