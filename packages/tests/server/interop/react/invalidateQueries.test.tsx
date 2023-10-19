@@ -93,7 +93,7 @@ describe('invalidateQueries()', () => {
       const postByIdQuery = trpc.useQuery(['postById', '1'], {
         staleTime: Infinity,
       });
-      const utils = trpc.useUtils();
+      const utils = trpc.useContext();
       return (
         <>
           <pre>
@@ -160,7 +160,7 @@ describe('invalidateQueries()', () => {
       const countQuery = trpc.useQuery(['count', 'test'], {
         staleTime: Infinity,
       });
-      const utils = trpc.useUtils();
+      const utils = trpc.useContext();
       return (
         <>
           <pre>count:{countQuery.data}</pre>

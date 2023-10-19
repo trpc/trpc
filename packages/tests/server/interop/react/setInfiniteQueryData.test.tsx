@@ -17,7 +17,7 @@ describe('setInfiniteQueryData()', () => {
   test('with & without callback', async () => {
     const { trpc, client } = factory;
     function MyComponent() {
-      const utils = trpc.useUtils();
+      const utils = trpc.useContext();
       const allPostsQuery = trpc.useInfiniteQuery(['paginatedPosts', {}], {
         enabled: false,
         getNextPageParam: (next) => next.nextCursor,

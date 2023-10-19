@@ -121,7 +121,7 @@ describe('Infinite Query', () => {
     const { trpc, client } = factory;
 
     function MyComponent() {
-      const trpcContext = trpc.useUtils();
+      const trpcContext = trpc.useContext();
       const q = trpc.useInfiniteQuery(
         [
           'paginatedPosts',
@@ -256,7 +256,7 @@ describe('Infinite Query', () => {
     const { trpc, client } = factory;
 
     function MyComponent() {
-      const trpcContext = trpc.useUtils();
+      const trpcContext = trpc.useContext();
       const q = trpc.useInfiniteQuery(
         [
           'paginatedPosts',
