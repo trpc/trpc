@@ -81,7 +81,7 @@
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
     "@trpc/server": "10.40.0",
-    "@types/isomorphic-fetch": "^0.0.37",
+    "@types/isomorphic-fetch": "^0.0.38",
     "@types/node": "^18.16.16",
     "eslint": "^8.40.0",
     "isomorphic-fetch": "^3.0.0",
