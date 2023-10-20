@@ -1,6 +1,6 @@
 import {
   createTsonDeserialize,
-  createTsonStringifyAsync,
+  createTsonStreamAsync,
   TsonAsyncOptions,
 } from 'tupleson';
 import { ErrorFormatter } from '../../error/formatter';
@@ -70,8 +70,11 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   experimental_tuplesonOptions?: Partial<
     TTypes['experimental_tuplesonOptions']
   >;
+  /**
+   * @internal
+   */
   experimental_tupleson: {
-    serializeAsync: ReturnType<typeof createTsonStringifyAsync>;
+    serializeAsync: ReturnType<typeof createTsonStreamAsync>;
     deserializeSync: ReturnType<typeof createTsonDeserialize>;
   };
 }

@@ -1,6 +1,6 @@
 import {
   createTsonDeserialize,
-  createTsonStringifyAsync,
+  createTsonStreamAsync,
   TsonAsyncOptions,
   TsonOptions,
 } from 'tupleson';
@@ -153,7 +153,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       experimental_tuplesonOptions: tuplesonOpts as $TuplesonOptions,
       experimental_tupleson: {
         deserializeSync: createTsonDeserialize(tuplesonOpts as TsonOptions),
-        serializeAsync: createTsonStringifyAsync(tuplesonOpts),
+        serializeAsync: createTsonStreamAsync(tuplesonOpts),
       },
     };
 

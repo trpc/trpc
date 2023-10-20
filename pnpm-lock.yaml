@@ -1854,7 +1854,7 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       tupleson:
-        specifier: ^0.21.0
+        specifier: 0.21.0
         version: 0.21.0
       typescript:
         specifier: ^5.1.3
