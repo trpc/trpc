@@ -5,6 +5,7 @@ import {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  ProcedureArgs,
   ProcedureRouterRecord,
 } from '@trpc/server';
 
@@ -13,7 +14,7 @@ export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
     ? {
         query: Resolver<TProcedure>;
         revalidate: (
-          input?: unknown,
+          input?: ProcedureArgs<TProcedure['_def']>[0],
         ) => Promise<
           { revalidated: false; error: string } | { revalidated: true }
         >;

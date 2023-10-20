@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.40.0",
+  "version": "10.41.0",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -137,7 +137,7 @@
     "access": "public"
   },
   "dependencies": {
-    "tupleson": "^0.17.4"
+    "tupleson": "0.21.0"
   },
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
@@ -153,7 +153,6 @@
     "aws-lambda": "^1.0.7",
     "devalue": "^4.0.0",
     "eslint": "^8.40.0",
-    "expect-type": "^0.17.0",
     "express": "^4.17.1",
     "fastify": "^4.13.0",
     "fastify-plugin": "^4.5.0",

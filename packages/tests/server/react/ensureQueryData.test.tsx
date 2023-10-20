@@ -17,7 +17,7 @@ describe('ensureQueryData()', () => {
     const { trpc, client } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       const queryClient = useQueryClient();
 
       useEffect(() => {
