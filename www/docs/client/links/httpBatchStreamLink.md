@@ -68,8 +68,8 @@ const client = createTRPCProxyClient<AppRouter>({
 
 Compared to a regular `httpBatchLink`, a `unstable_httpBatchStreamLink` will:
 
-- Cause the requests to be sent with a `Trpc-Batch-Mode: stream` header
-- Cause the response to be sent with a `Transfer-Encoding: chunked` and `Vary: trpc-batch-mode` headers
+- Cause the requests to be sent with a `trpc-stream: stream` header
+- Cause the response to be sent with a `Transfer-Encoding: chunked` and `Vary: trpc-stream` headers
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
 ## Compatibility (client-side)

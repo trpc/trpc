@@ -161,9 +161,7 @@ export async function fetchHTTPResponse(
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
-    ...(opts.batchModeHeader
-      ? { 'trpc-batch-mode': opts.batchModeHeader }
-      : {}),
+    ...(opts.batchModeHeader ? { 'trpc-stream': opts.batchModeHeader } : {}),
     ...resolvedHeaders,
   };
 

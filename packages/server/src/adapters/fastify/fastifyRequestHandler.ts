@@ -71,8 +71,8 @@ export async function fastifyRequestHandler<
       void opts.res.header(
         'Vary',
         opts.res.hasHeader('Vary')
-          ? 'trpc-batch-mode, ' + opts.res.getHeader('Vary')
-          : 'trpc-batch-mode',
+          ? 'trpc-stream, ' + opts.res.getHeader('Vary')
+          : 'trpc-stream',
       );
       stream = new Readable();
       stream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154

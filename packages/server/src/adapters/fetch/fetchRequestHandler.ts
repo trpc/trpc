@@ -55,7 +55,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     status = head.status;
     if (isStreaming) {
       resHeaders.set('Transfer-Encoding', 'chunked');
-      resHeaders.append('Vary', 'trpc-batch-mode');
+      resHeaders.append('Vary', 'trpc-stream');
       const stream = new ReadableStream({
         start(c) {
           controller = c;

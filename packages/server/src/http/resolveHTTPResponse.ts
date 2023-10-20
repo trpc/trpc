@@ -300,7 +300,7 @@ export async function resolveHTTPResponse<
     isBatchCall &&
     unstable_onHead &&
     unstable_onChunk &&
-    req.headers['trpc-batch-mode'] === 'stream';
+    req.headers['trpc-stream'] === 'stream';
 
   try {
     // we create context first so that (unless `createContext()` throws)
@@ -497,8 +497,8 @@ export async function resolveHTTPFetchResponse<
   const isBatchCall = !!req.query.get('batch');
 
   let streamMode: TRPCBatchModeHeader | false = false;
-  if (isBatchCall && req.headers['trpc-batch-mode']) {
-    streamMode = req.headers['trpc-batch-mode'] as TRPCBatchModeHeader;
+  if (req.headers['trpc-stream']) {
+    streamMode = req.headers['trpc-stream'] as TRPCBatchModeHeader;
   }
 
   try {
