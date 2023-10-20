@@ -13,16 +13,15 @@ export function unstable_createTsonAsyncOptions(
   }
   const _opts: TsonAsyncOptions = {
     ...opts,
-    types: [...(opts.types ?? [])],
+    types: [
+      // make sure tsonAsyncIterable and tsonPromise is always included even if not passed
+      tsonPromise,
+      tsonAsyncIterable,
+      ...(opts.types ?? []).filter(
+        (it) => it.key !== tsonPromise.key && it.key !== tsonAsyncIterable.key,
+      ),
+    ],
   };
-
-  // make sure tsonAsyncIterable and tsonPromise is always included even if not passed
-  if (!_opts.types.find((it) => it.key === tsonPromise.key)) {
-    _opts.types.push(tsonPromise);
-  }
-  if (!_opts.types.find((it) => it.key === tsonAsyncIterable.key)) {
-    _opts.types.push(tsonAsyncIterable);
-  }
 
   return _opts;
 }
