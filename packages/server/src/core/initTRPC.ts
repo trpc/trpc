@@ -1,9 +1,4 @@
-import {
-  createTsonDeserialize,
-  createTsonStreamAsync,
-  TsonAsyncOptions,
-  TsonOptions,
-} from 'tupleson';
+import { TsonAsyncOptions } from 'tupleson';
 import {
   DefaultErrorShape,
   defaultFormatter,
@@ -151,10 +146,6 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
         );
       }),
       experimental_tuplesonOptions: tuplesonOpts as $TuplesonOptions,
-      experimental_tupleson: {
-        deserializeSync: createTsonDeserialize(tuplesonOpts as TsonOptions),
-        serializeAsync: createTsonStreamAsync(tuplesonOpts),
-      },
     };
 
     {

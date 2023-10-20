@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { createTsonSerializeJsonStreamResponse } from 'tupleson';
 import {
   AnyRouter,
   callProcedure,
@@ -24,26 +25,6 @@ import {
   ResponseChunk,
 } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
-
-function asyncIterableToReadableStream<TValue>(
-  iterable: AsyncIterable<TValue>,
-): ReadableStream<TValue> {
-  let controller: ReadableStreamDefaultController<TValue> = undefined as any;
-  const stream = new ReadableStream<TValue>({
-    start(c) {
-      controller = c;
-    },
-  });
-  (async () => {
-    for await (const chunk of iterable) {
-      controller.enqueue(chunk);
-    }
-    controller.close();
-  })().catch(() => {
-    // do nothing
-  });
-  return stream;
-}
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -511,10 +492,10 @@ export async function resolveHTTPFetchResponse<
 
   const isBatchCall = !!req.query.get('batch');
 
-  let streamMode: 'tupleson' | 'stream' | false = false;
+  let streamMode: 'tupleson-json' | 'stream' | false = false;
   if (isBatchCall) {
-    if (req.headers['trpc-batch-mode'] === 'tupleson') {
-      streamMode = 'tupleson';
+    if (req.headers['trpc-batch-mode'] === 'tupleson-json') {
+      streamMode = 'tupleson-json';
     }
     if (req.headers['trpc-batch-mode'] === 'stream') {
       /**
@@ -621,8 +602,11 @@ export async function resolveHTTPFetchResponse<
     });
 
     switch (streamMode) {
-      case 'tupleson': {
-        const tson = router._def._config.experimental_tupleson.serializeAsync(
+      case 'tupleson-json': {
+        const toResponse = createTsonSerializeJsonStreamResponse(
+          router._def._config.experimental_tuplesonOptions as any,
+        );
+        return toResponse(
           promises.map((p) =>
             p.then((result) => {
               // transform
@@ -630,14 +614,6 @@ export async function resolveHTTPFetchResponse<
             }),
           ),
         );
-
-        // TODO - maybe tupleson should return a ReadableStream??
-        const stream = asyncIterableToReadableStream(tson);
-
-        return new Response(stream, {
-          headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
-          status: headResponse.status,
-        });
       }
 
       /**

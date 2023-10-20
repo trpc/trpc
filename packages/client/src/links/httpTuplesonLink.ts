@@ -107,7 +107,7 @@ const tuplesonRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
       {
         ...requesterOpts,
         contentTypeHeader: 'application/json',
-        batchModeHeader: 'tupleson',
+        batchModeHeader: 'tupleson-json',
         getUrl,
         getBody,
         inputs,

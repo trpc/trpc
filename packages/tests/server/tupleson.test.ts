@@ -91,7 +91,7 @@ describe('no transformer', () => {
 
     const res = await fetch(url, {
       headers: {
-        'trpc-batch-mode': 'tupleson',
+        'trpc-batch-mode': 'tupleson-json',
       },
     });
 
@@ -157,7 +157,7 @@ describe('no transformer', () => {
 
     const res = await fetch(url, {
       headers: {
-        'trpc-batch-mode': 'tupleson',
+        'trpc-batch-mode': 'tupleson-json',
       },
     });
 

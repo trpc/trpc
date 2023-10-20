@@ -90,7 +90,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     isServer: routerList.some((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types as any,
     experimental_tuplesonOptions: routerList[0]?._def._config,
-    experimental_tupleson: routerList[0]?._def._config.experimental_tupleson,
+    // experimental_tupleson: routerList[0]?._def._config.experimental_tupleson,
   })(record);
   return router as any;
 }
