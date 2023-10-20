@@ -24,7 +24,11 @@ import {
   HTTPResponse,
   ResponseChunk,
 } from './internals/types';
-import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
+import {
+  HTTPBaseHandlerOptions,
+  HTTPRequest,
+  TRPCBatchModeHeader,
+} from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -492,17 +496,9 @@ export async function resolveHTTPFetchResponse<
 
   const isBatchCall = !!req.query.get('batch');
 
-  let streamMode: 'tupleson-json' | 'stream' | false = false;
-  if (isBatchCall) {
-    if (req.headers['trpc-batch-mode'] === 'tupleson-json') {
-      streamMode = 'tupleson-json';
-    }
-    if (req.headers['trpc-batch-mode'] === 'stream') {
-      /**
-       * @deprecated
-       */
-      streamMode = 'stream';
-    }
+  let streamMode: TRPCBatchModeHeader | false = false;
+  if (isBatchCall && req.headers['trpc-batch-mode']) {
+    streamMode = req.headers['trpc-batch-mode'] as TRPCBatchModeHeader;
   }
 
   try {
@@ -674,6 +670,9 @@ export async function resolveHTTPFetchResponse<
           headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
           status: headResponse.status,
         });
+      }
+      default: {
+        throw new Error(`Unhandled stream mode ${streamMode}`);
       }
     }
   } catch (cause) {

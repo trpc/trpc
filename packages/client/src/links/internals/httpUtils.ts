@@ -1,4 +1,5 @@
 import { ProcedureType } from '@trpc/server';
+import { TRPCBatchModeHeader } from '@trpc/server/http';
 import { TRPCResponse } from '@trpc/server/rpc';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
@@ -91,7 +92,7 @@ export type GetBody = (
 ) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  batchModeHeader?: 'stream' | 'tupleson-json';
+  batchModeHeader?: TRPCBatchModeHeader;
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
