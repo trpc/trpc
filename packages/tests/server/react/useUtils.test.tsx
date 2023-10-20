@@ -78,7 +78,7 @@ test('client query', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = client.useContext();
+    const utils = client.useUtils();
     const [post, setPost] = useState<Post>();
 
     useEffect(() => {
@@ -106,7 +106,7 @@ test('client query sad path', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = client.useContext();
+    const utils = client.useUtils();
     const [isError, setIsError] = useState(false);
 
     useEffect(() => {
@@ -137,7 +137,7 @@ test('client mutation', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = client.useContext();
+    const utils = client.useUtils();
     const { data: posts } = client.post.all.useQuery();
     const [newPost, setNewPost] = useState<Post>();
 
@@ -174,7 +174,7 @@ test('fetch', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = client.useContext();
+    const utils = client.useUtils();
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
@@ -205,7 +205,7 @@ test('prefetch', async () => {
     renderclient(allPosts.data);
     return (
       <>
-        {allPosts.data!.map((post) => {
+        {allPosts.data?.map((post) => {
           return <div key={post.id}>{post.text}</div>;
         })}
       </>
@@ -213,7 +213,7 @@ test('prefetch', async () => {
   }
 
   function MyComponent() {
-    const utils = client.useContext();
+    const utils = client.useUtils();
     const [hasPrefetched, setHasPrefetched] = useState(false);
     useEffect(() => {
       utils.post.all.prefetch().then(() => {
@@ -248,7 +248,7 @@ test('invalidate', async () => {
 
     const createPostMutation = client.post.create.useMutation();
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     if (!allPosts.data) {
       return <>...</>;
@@ -322,7 +322,7 @@ test('invalidate procedure for both query and infinite', async () => {
       if (allPostsListInfinite.data) invalidateInfiniteSpy();
     }, [allPostsListInfinite.data]);
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     return (
       <>
@@ -380,7 +380,7 @@ test('reset', async () => {
     const allPosts = client.post.all.useQuery();
     const createPostMutation = client.post.create.useMutation();
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     useEffect(() => {
       stableclientSpy(client);
@@ -431,7 +431,7 @@ test('refetch', async () => {
   spyLink.mockClear();
 
   function MyComponent() {
-    const utils = client.useContext();
+    const utils = client.useUtils();
     const allPosts = client.post.all.useQuery();
 
     useEffect(() => {
@@ -458,7 +458,7 @@ test('setData', async () => {
   function MyComponent() {
     const allPosts = client.post.all.useQuery(undefined, { enabled: false });
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     useEffect(() => {
       if (!allPosts.data) {
@@ -518,7 +518,7 @@ test('setInfiniteData', async () => {
       },
     );
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     useEffect(() => {
       if (!listPosts.data) {
@@ -610,7 +610,7 @@ test('getData', async () => {
   function MyComponent() {
     const allPosts = client.post.all.useQuery();
     const [posts, setPosts] = useState<Post[]>([]);
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     useEffect(() => {
       if (allPosts.data) {
@@ -649,7 +649,7 @@ describe('cancel', () => {
     const { client, App } = ctx;
     function MyComponent() {
       const allPosts = client.post.all.useQuery();
-      const utils = client.useContext();
+      const utils = client.useUtils();
 
       useEffect(() => {
         utils.post.all.cancel();
@@ -694,7 +694,7 @@ describe('cancel', () => {
           getNextPageParam: () => undefined,
         },
       );
-      const utils = client.useContext();
+      const utils = client.useUtils();
 
       useEffect(() => {
         utils.post.list.cancel();
@@ -784,7 +784,7 @@ describe('query keys are stored separately', () => {
       query: unset as unknown,
     };
     function MyComponent() {
-      const utils = client.useContext();
+      const utils = client.useUtils();
       const { data: posts } = client.post.all.useQuery();
 
       useEffect(() => {

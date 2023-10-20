@@ -68,7 +68,7 @@ describe('useQuery()', () => {
 
       // @ts-expect-error Should not exist
       client.post.byId.useInfiniteQuery;
-      const utils = client.useContext();
+      const utils = client.useUtils();
 
       useEffect(() => {
         utils.post.byId.invalidate();

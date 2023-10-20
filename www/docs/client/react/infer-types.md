@@ -82,7 +82,7 @@ import {
 type PostCreateOptions = ReactQueryOptions['post']['create'];
 
 function usePostCreate(options?: PostCreateOptions) {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   return trpc.post.create.useMutation({
     ...options,
@@ -165,7 +165,7 @@ export type { MyRouterLike, MyRouterUtilsLike } from './factory';
 // @include: server
 // @noErrors
 // ---cut---
-import type { MyRouterLike, MyRouterUtilsLike, trpc, useContext } from './trpc';
+import type { MyRouterLike, MyRouterUtilsLike, trpc, useUtils } from './trpc';
 
 type MyGenericComponentProps = {
   route: MyRouterLike;
@@ -194,7 +194,7 @@ function MyGenericComponent(props: MyGenericComponentProps) {
 }
 
 function MyPageComponent() {
-  const utils = useContext();
+  const utils = useUtils();
 
   return (
     <MyGenericComponent
@@ -205,7 +205,7 @@ function MyPageComponent() {
 }
 
 function MyOtherPageComponent() {
-  const utils = useContext();
+  const utils = useUtils();
 
   return (
     <MyGenericComponent

@@ -17,7 +17,7 @@ describe('setQueryData()', () => {
   test('without & without callback', async () => {
     const { trpc, client, App } = factory;
     function MyComponent() {
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
         enabled: false,
       });

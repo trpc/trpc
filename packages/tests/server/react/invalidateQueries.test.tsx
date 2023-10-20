@@ -95,7 +95,7 @@ describe('invalidateQueries()', () => {
       const postByIdQuery = trpc.postById.useQuery('1', {
         staleTime: Infinity,
       });
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       return (
         <>
           <pre>
@@ -156,7 +156,7 @@ describe('invalidateQueries()', () => {
       const countQuery = trpc.count.useQuery('test', {
         staleTime: Infinity,
       });
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       return (
         <>
           <pre>count:{countQuery.data}</pre>
@@ -249,7 +249,7 @@ describe('invalidateQueries()', () => {
           staleTime: Infinity,
         },
       );
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       return (
         <>
           <pre>mockPostQuery1:{mockPostQuery1.status}</pre>
@@ -304,7 +304,7 @@ describe('invalidateQueries()', () => {
 test('predicate type should be narrowed', () => {
   const { trpc } = factory;
   () => {
-    const utils = trpc.useContext();
+    const utils = trpc.useUtils();
 
     // simple
     utils.postById.invalidate('123', {

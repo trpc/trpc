@@ -244,7 +244,7 @@ test('Check invalidation of Whole router', async () => {
     useSetupAllTestHooks(ctx.client);
     const isFetching = useIsFetching();
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     return (
       <div>
@@ -309,7 +309,7 @@ test('Check invalidating at router root invalidates all', async () => {
     useSetupAllTestHooks(ctx.client);
     const isFetching = useIsFetching();
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     return (
       <div>
@@ -368,7 +368,7 @@ test('test TS types of the input variable', async () => {
     useSetupAllTestHooks(ctx.client);
     const isFetching = useIsFetching();
 
-    const utils = client.useContext();
+    const utils = client.useUtils();
 
     ignoreErrors(() => {
       // @ts-expect-error from user.details should not see id from `posts.byid`

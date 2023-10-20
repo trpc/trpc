@@ -3,7 +3,6 @@ name: Release canary
 on:
   push:
     branches: [next]
-  pull_request:
 
 jobs:
   canary:
