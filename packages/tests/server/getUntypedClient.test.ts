@@ -20,9 +20,9 @@ const ctx = konn()
   .done();
 
 test('getUntypedClient()', async () => {
-  const proxy = ctx.proxy;
-  expect(await proxy.foo.query()).toBe('bar');
-  const untyped = getUntypedClient(proxy);
+  const client = ctx.client;
+  expect(await client.foo.query()).toBe('bar');
+  const untyped = getUntypedClient(client);
 
   type TRouter = typeof untyped extends TRPCUntypedClient<infer T> ? T : never;
 

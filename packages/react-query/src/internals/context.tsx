@@ -14,7 +14,7 @@ import {
   Updater,
 } from '@tanstack/react-query';
 import {
-  CreateTRPCProxyClient,
+  CreateTRPCClient,
   TRPCClientError,
   TRPCRequestOptions,
   TRPCUntypedClient,
@@ -48,7 +48,7 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
 
-export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
+export interface TRPCContextPropsBase<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`
    */
@@ -78,22 +78,22 @@ export interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {
 /**
  * @internal
  */
-export type DecoratedProxyTRPCContextProps<
+export type DecoratedTRPCContextProps<
   TRouter extends AnyRouter,
   TSSRContext,
-> = ProxyTRPCContextProps<TRouter, TSSRContext> & {
-  client: CreateTRPCProxyClient<TRouter>;
+> = TRPCContextPropsBase<TRouter, TSSRContext> & {
+  client: CreateTRPCClient<TRouter>;
 };
 
 export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
-  extends ProxyTRPCContextProps<TRouter, TSSRContext> {
+  extends TRPCContextPropsBase<TRouter, TSSRContext> {
   /**
    * The react-query `QueryClient`
    */
   queryClient: QueryClient;
 }
 
-export const contextProps: (keyof ProxyTRPCContextProps<any, any>)[] = [
+export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
   'client',
   'ssrContext',
   'ssrState',

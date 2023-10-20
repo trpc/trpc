@@ -18,9 +18,9 @@ import {
 import { useMemo } from 'react';
 import { TRPCUseQueries } from './internals/useQueries';
 import {
-  createReactProxyDecoration,
-  createReactQueryUtilsProxy,
-  CreateReactUtilsProxy,
+  createReactDecoration,
+  createReactQueryUtils,
+  CreateReactUtils,
 } from './shared';
 import {
   CreateReactQueryHooks,
@@ -252,11 +252,11 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
    *
    * @see https://trpc.io/docs/client/react/useUtils
    */
-  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
    * @see https://trpc.io/docs/client/react/useUtils
    */
-  useUtils(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
@@ -279,20 +279,20 @@ export type CreateTRPCReact<
 /**
  * @internal
  */
-export function createHooksInternalProxy<
+export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
   TFlags = null,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  type CreateHooksInternalProxy = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
+  type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
 
-  return createFlatProxy<CreateHooksInternalProxy>((key) => {
+  return createFlatProxy<CreateHooksInternal>((key) => {
     if (key === 'useContext' || key === 'useUtils') {
       return () => {
         const context = trpc.useUtils();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtilsProxy as any)(context);
+          return (createReactQueryUtils as any)(context);
         }, [context]);
       };
     }
@@ -301,7 +301,7 @@ export function createHooksInternalProxy<
       return (trpc as any)[key];
     }
 
-    return createReactProxyDecoration(key, trpc);
+    return createReactDecoration(key, trpc);
   });
 }
 
@@ -313,7 +313,7 @@ export function createTRPCReact<
   opts?: CreateTRPCReactOptions<TRouter>,
 ): CreateTRPCReact<TRouter, TSSRContext, TFlags> {
   const hooks = createRootHooks<TRouter, TSSRContext>(opts);
-  const proxy = createHooksInternalProxy<TRouter, TSSRContext, TFlags>(hooks);
+  const proxy = createHooksInternal<TRouter, TSSRContext, TFlags>(hooks);
 
   return proxy as any;
 }

@@ -27,9 +27,9 @@ const ctx = konn()
   })
   .done();
 test('useSuspenseQuery()', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const [data, query1] = proxy.post.byId.useSuspenseQuery({
+    const [data, query1] = client.post.byId.useSuspenseQuery({
       id: '1',
     });
     expectTypeOf(data).toEqualTypeOf<'__result'>();

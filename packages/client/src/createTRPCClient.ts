@@ -29,7 +29,7 @@ import { TRPCClientError } from './TRPCClientError';
 /**
  * @public
  **/
-export type inferRouterProxyClient<TRouter extends AnyRouter> =
+export type inferRouterClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 /** @internal */
@@ -106,21 +106,20 @@ export const clientCallTypeToProcedureType = (
 /**
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
-export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
-  inferRouterProxyClient<TRouter> extends infer $ProcedureRecord
+export type CreateTRPCClient<TRouter extends AnyRouter> =
+  inferRouterClient<TRouter> extends infer $ProcedureRecord
     ? UntypedClientProperties & keyof $ProcedureRecord extends never
-      ? inferRouterProxyClient<TRouter>
+      ? inferRouterClient<TRouter>
       : IntersectionError<UntypedClientProperties & keyof $ProcedureRecord>
     : never;
 
 /**
- * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
-): CreateTRPCProxyClient<TRouter> {
-  return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
+): CreateTRPCClient<TRouter> {
+  return createFlatProxy<CreateTRPCClient<TRouter>>((key) => {
     if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
     }
@@ -138,9 +137,9 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   });
 }
 
-export function createTRPCProxyClient<TRouter extends AnyRouter>(
+export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): CreateTRPCProxyClient<TRouter> {
+): CreateTRPCClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
@@ -151,7 +150,7 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
-  client: inferRouterProxyClient<TRouter>,
+  client: inferRouterClient<TRouter>,
 ): TRPCUntypedClient<TRouter> {
   return (client as any).__untypedClient;
 }

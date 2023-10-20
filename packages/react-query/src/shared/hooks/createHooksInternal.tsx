@@ -27,7 +27,7 @@ import { getClientArgs } from '../../internals/getClientArgs';
 import { getQueryKeyInternal, TRPCQueryKey } from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
 import { TRPCUseQueries } from '../../internals/useQueries';
-import { createUseQueriesProxy } from '../proxy/useQueriesProxy';
+import { createUseQueries } from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import {
   CreateClient,
@@ -568,7 +568,7 @@ export function createRootHooks<
   const useQueries: TRPCUseQueries<TRouter> = (queriesCallback) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
-    const proxy = createUseQueriesProxy(client);
+    const proxy = createUseQueries(client);
 
     const queries = queriesCallback(proxy);
 

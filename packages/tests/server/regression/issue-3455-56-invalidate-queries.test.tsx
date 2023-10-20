@@ -38,15 +38,15 @@ const ctx = konn()
   .done();
 
 test('invalidate with filter', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   const greetingSpy = vi.fn();
   const postSpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery(undefined, {
+    const allPosts = client.post.all.useQuery(undefined, {
       structuralSharing: false,
     });
-    const greeting = proxy.greeting.useQuery(undefined, {
+    const greeting = client.greeting.useQuery(undefined, {
       structuralSharing: false,
     });
 
@@ -57,7 +57,7 @@ test('invalidate with filter', async () => {
       if (greeting.data) greetingSpy();
     }, [greeting.data]);
 
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     return (
       <>
@@ -110,10 +110,10 @@ test('invalidate with filter', async () => {
 });
 
 test('tanstack query queries are invalidated', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     const rqQuery = useQuery({
       queryKey: ['test'],
@@ -122,7 +122,7 @@ test('tanstack query queries are invalidated', async () => {
         return 'Hello tanstack';
       },
     });
-    const trpcQuery = proxy.greeting.useQuery();
+    const trpcQuery = client.greeting.useQuery();
 
     return (
       <>
@@ -155,10 +155,10 @@ test('tanstack query queries are invalidated', async () => {
 });
 
 test('mixed providers with more "advanced" filter', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     const rqQuery1 = useQuery({
       queryKey: ['test', 1],
@@ -178,7 +178,7 @@ test('mixed providers with more "advanced" filter', async () => {
       retry: true,
     });
 
-    const trpcQuery = proxy.greeting.useQuery(undefined, {
+    const trpcQuery = client.greeting.useQuery(undefined, {
       retry: false,
     });
 

@@ -1,7 +1,7 @@
 import http from 'http';
 import { Context, router } from './__router';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   TRPCClientError,
 } from '@trpc/client/src';
@@ -52,7 +52,7 @@ async function startServer() {
     });
   });
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     links: [
       httpBatchLink({
         url: `http://localhost:${port}/trpc`,

@@ -18,7 +18,7 @@ afterEach(async () => {
 
 describe('Infinite Query', () => {
   test('useInfiniteQuery()', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
 
     function MyComponent() {
       const q = trpc.paginatedPosts.useInfiniteQuery(
@@ -66,18 +66,12 @@ describe('Infinite Query', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
@@ -118,7 +112,7 @@ describe('Infinite Query', () => {
   });
 
   test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
 
     function MyComponent() {
       const trpcContext = trpc.useUtils();
@@ -183,18 +177,12 @@ describe('Infinite Query', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
@@ -254,7 +242,7 @@ describe('Infinite Query', () => {
   });
 
   test('useInfiniteQuery and fetchInfiniteQuery', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
 
     function MyComponent() {
       const trpcContext = trpc.useUtils();
@@ -318,18 +306,12 @@ describe('Infinite Query', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });

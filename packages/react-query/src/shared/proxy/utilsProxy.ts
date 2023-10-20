@@ -27,7 +27,7 @@ import {
 } from '@trpc/server/shared';
 import {
   contextProps,
-  DecoratedProxyTRPCContextProps,
+  DecoratedTRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -245,11 +245,11 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
-export type CreateReactUtilsProxy<
+export type CreateReactUtils<
   TRouter extends AnyRouter,
   TSSRContext,
 > = ProtectedIntersection<
-  DecoratedProxyTRPCContextProps<TRouter, TSSRContext>,
+  DecoratedTRPCContextProps<TRouter, TSSRContext>,
   DecoratedProcedureUtilsRecord<TRouter>
 >;
 
@@ -281,16 +281,12 @@ export const getQueryType = (
 /**
  * @internal
  */
-export function createReactQueryUtilsProxy<
-  TRouter extends AnyRouter,
-  TSSRContext,
->(context: TRPCContextState<AnyRouter, unknown>) {
-  type CreateReactUtilsProxyReturnType = CreateReactUtilsProxy<
-    TRouter,
-    TSSRContext
-  >;
+export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
+  context: TRPCContextState<AnyRouter, unknown>,
+) {
+  type CreateReactUtilsReturnType = CreateReactUtils<TRouter, TSSRContext>;
 
-  return createFlatProxy<CreateReactUtilsProxyReturnType>((key) => {
+  return createFlatProxy<CreateReactUtilsReturnType>((key) => {
     const contextName = key as (typeof contextProps)[number];
     if (contextName === 'client') {
       return createTRPCClientProxy(context.client);

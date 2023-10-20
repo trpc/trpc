@@ -1,7 +1,7 @@
 import { AddressInfo } from 'net';
 import { networkInterfaces } from 'os';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   TRPCClientError,
 } from '@trpc/client/src';
@@ -43,7 +43,7 @@ function findPossibleLocalAddress() {
 }
 
 function createClient(port: number, address: string) {
-  return createTRPCProxyClient<typeof router>({
+  return createTRPCClient<typeof router>({
     links: [
       httpBatchLink({
         url: `http://${address}:${port}`,

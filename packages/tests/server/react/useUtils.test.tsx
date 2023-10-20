@@ -75,10 +75,10 @@ const ctx = konn()
   .done();
 
 test('client query', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
     const [post, setPost] = useState<Post>();
 
     useEffect(() => {
@@ -103,10 +103,10 @@ test('client query', async () => {
 });
 
 test('client query sad path', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
     const [isError, setIsError] = useState(false);
 
     useEffect(() => {
@@ -134,11 +134,11 @@ test('client query sad path', async () => {
 });
 
 test('client mutation', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useUtils();
-    const { data: posts } = proxy.post.all.useQuery();
+    const utils = client.useUtils();
+    const { data: posts } = client.post.all.useQuery();
     const [newPost, setNewPost] = useState<Post>();
 
     useEffect(() => {
@@ -171,10 +171,10 @@ test('client mutation', async () => {
 });
 
 test('fetch', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
@@ -197,12 +197,12 @@ test('fetch', async () => {
 });
 
 test('prefetch', async () => {
-  const { proxy, App } = ctx;
-  const renderProxy = vi.fn();
+  const { client, App } = ctx;
+  const renderclient = vi.fn();
 
   function Posts() {
-    const allPosts = proxy.post.all.useQuery();
-    renderProxy(allPosts.data);
+    const allPosts = client.post.all.useQuery();
+    renderclient(allPosts.data);
     return (
       <>
         {allPosts.data?.map((post) => {
@@ -213,7 +213,7 @@ test('prefetch', async () => {
   }
 
   function MyComponent() {
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
     const [hasPrefetched, setHasPrefetched] = useState(false);
     useEffect(() => {
       utils.post.all.prefetch().then(() => {
@@ -231,24 +231,24 @@ test('prefetch', async () => {
   );
 
   await waitFor(() => {
-    expect(renderProxy).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
+    expect(renderclient).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
   });
 });
 
 test('invalidate', async () => {
-  const { proxy, App } = ctx;
-  const stableProxySpy = vi.fn();
+  const { client, App } = ctx;
+  const stableclientSpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
+    const allPosts = client.post.all.useQuery();
 
     useEffect(() => {
-      if (allPosts.data) stableProxySpy();
+      if (allPosts.data) stableclientSpy();
     }, [allPosts.data]);
 
-    const createPostMutation = proxy.post.create.useMutation();
+    const createPostMutation = client.post.create.useMutation();
 
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
 
     if (!allPosts.data) {
       return <>...</>;
@@ -289,7 +289,7 @@ test('invalidate', async () => {
     expect(utils.container).toHaveTextContent('done');
   });
 
-  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+  expect(stableclientSpy).toHaveBeenCalledTimes(1);
 
   const addPostButton = await utils.findByTestId('add-post');
 
@@ -297,17 +297,17 @@ test('invalidate', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('invalidate');
   });
-  expect(stableProxySpy).toHaveBeenCalledTimes(2);
+  expect(stableclientSpy).toHaveBeenCalledTimes(2);
 });
 
 test('invalidate procedure for both query and infinite', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   const invalidateQuerySpy = vi.fn();
   const invalidateInfiniteSpy = vi.fn();
 
   function MyComponent() {
-    const allPostsList = proxy.post.list.useQuery({ cursor: undefined });
-    const allPostsListInfinite = proxy.post.list.useInfiniteQuery(
+    const allPostsList = client.post.list.useQuery({ cursor: undefined });
+    const allPostsListInfinite = client.post.list.useInfiniteQuery(
       { cursor: undefined },
       {
         // We don't care about the cursor here
@@ -322,7 +322,7 @@ test('invalidate procedure for both query and infinite', async () => {
       if (allPostsListInfinite.data) invalidateInfiniteSpy();
     }, [allPostsListInfinite.data]);
 
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
 
     return (
       <>
@@ -373,17 +373,17 @@ test('invalidate procedure for both query and infinite', async () => {
 });
 
 test('reset', async () => {
-  const { proxy, App } = ctx;
-  const stableProxySpy = vi.fn();
+  const { client, App } = ctx;
+  const stableclientSpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
-    const createPostMutation = proxy.post.create.useMutation();
+    const allPosts = client.post.all.useQuery();
+    const createPostMutation = client.post.create.useMutation();
 
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
 
     useEffect(() => {
-      stableProxySpy(proxy);
+      stableclientSpy(client);
     }, []);
 
     if (!allPosts.data) {
@@ -423,16 +423,16 @@ test('reset', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('reset');
   });
-  expect(stableProxySpy).toHaveBeenCalledTimes(1);
+  expect(stableclientSpy).toHaveBeenCalledTimes(1);
 });
 
 test('refetch', async () => {
-  const { proxy, App, spyLink } = ctx;
+  const { client, App, spyLink } = ctx;
   spyLink.mockClear();
 
   function MyComponent() {
-    const utils = proxy.useUtils();
-    const allPosts = proxy.post.all.useQuery();
+    const utils = client.useUtils();
+    const allPosts = client.post.all.useQuery();
 
     useEffect(() => {
       if (allPosts.data) {
@@ -454,11 +454,11 @@ test('refetch', async () => {
 });
 
 test('setData', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery(undefined, { enabled: false });
+    const allPosts = client.post.all.useQuery(undefined, { enabled: false });
 
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
 
     useEffect(() => {
       if (!allPosts.data) {
@@ -507,9 +507,9 @@ test('setData', async () => {
 });
 
 test('setInfiniteData', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const listPosts = proxy.post.list.useInfiniteQuery(
+    const listPosts = client.post.list.useInfiniteQuery(
       {},
       {
         enabled: false,
@@ -518,7 +518,7 @@ test('setInfiniteData', async () => {
       },
     );
 
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
 
     useEffect(() => {
       if (!listPosts.data) {
@@ -606,11 +606,11 @@ test('setInfiniteData', async () => {
 });
 
 test('getData', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery();
+    const allPosts = client.post.all.useQuery();
     const [posts, setPosts] = useState<Post[]>([]);
-    const utils = proxy.useUtils();
+    const utils = client.useUtils();
 
     useEffect(() => {
       if (allPosts.data) {
@@ -646,10 +646,10 @@ test('getData', async () => {
 
 describe('cancel', () => {
   test('aborts with utils', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
     function MyComponent() {
-      const allPosts = proxy.post.all.useQuery();
-      const utils = proxy.useUtils();
+      const allPosts = client.post.all.useQuery();
+      const utils = client.useUtils();
 
       useEffect(() => {
         utils.post.all.cancel();
@@ -684,17 +684,17 @@ describe('cancel', () => {
   });
 
   test('abort query and infinite with utils', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
     function MyComponent() {
-      const allList = proxy.post.list.useQuery({ cursor: 0 });
-      const allListInfinite = proxy.post.list.useInfiniteQuery(
+      const allList = client.post.list.useQuery({ cursor: 0 });
+      const allListInfinite = client.post.list.useInfiniteQuery(
         { cursor: '0' },
         {
           // We don't care about the cursor here
           getNextPageParam: () => undefined,
         },
       );
-      const utils = proxy.useUtils();
+      const utils = client.useUtils();
 
       useEffect(() => {
         utils.post.list.cancel();
@@ -739,11 +739,11 @@ describe('cancel', () => {
   });
 
   test('typeerrors and continues with signal', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
       const ac = new AbortController();
-      const allPosts = proxy.post.all.useQuery(undefined, {
+      const allPosts = client.post.all.useQuery(undefined, {
         // @ts-expect-error Signal not allowed for React Query. We use the internal signal instead
         trpc: { signal: ac.signal },
       });
@@ -777,15 +777,15 @@ describe('cancel', () => {
 
 describe('query keys are stored separately', () => {
   test('getInfiniteData() does not data from useQuery()', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
     const unset = '__unset' as const;
     const data = {
       infinite: unset as unknown,
       query: unset as unknown,
     };
     function MyComponent() {
-      const utils = proxy.useUtils();
-      const { data: posts } = proxy.post.all.useQuery();
+      const utils = client.useUtils();
+      const { data: posts } = client.post.all.useQuery();
 
       useEffect(() => {
         if (posts === undefined) return;

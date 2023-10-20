@@ -58,17 +58,17 @@ const ctx = konn()
 
 describe('useQuery()', () => {
   test('loading data', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
     function MyComponent() {
-      const query1 = proxy.post.byId.useQuery({
+      const query1 = client.post.byId.useQuery({
         id: '1',
       });
 
       expect(query1.trpc.path).toBe('post.byId');
 
       // @ts-expect-error Should not exist
-      proxy.post.byId.useInfiniteQuery;
-      const utils = proxy.useUtils();
+      client.post.byId.useInfiniteQuery;
+      const utils = client.useUtils();
 
       useEffect(() => {
         utils.post.byId.invalidate();
@@ -98,7 +98,7 @@ describe('useQuery()', () => {
 
   test('data type without initialData', () => {
     const expectation = expectTypeOf(() =>
-      ctx.proxy.post.byId.useQuery({ id: '1' }),
+      ctx.client.post.byId.useQuery({ id: '1' }),
     ).returns;
 
     expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
@@ -107,7 +107,7 @@ describe('useQuery()', () => {
 
   test('data type with initialData', () => {
     const expectation = expectTypeOf(() =>
-      ctx.proxy.post.byId.useQuery(
+      ctx.client.post.byId.useQuery(
         { id: '1' },
         {
           initialData: '__result',
@@ -121,10 +121,10 @@ describe('useQuery()', () => {
 });
 
 test('useInfiniteQuery()', async () => {
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
   function MyComponent() {
-    const trpcContext = proxy.useContext();
-    const query1 = proxy.post.list.useInfiniteQuery(
+    const trpcContext = client.useContext();
+    const query1 = client.post.list.useInfiniteQuery(
       {},
       {
         getNextPageParam(lastPage) {
@@ -198,9 +198,9 @@ test('useInfiniteQuery()', async () => {
 });
 
 test('useInfiniteQuery() initialCursor', async () => {
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
   function MyComponent() {
-    const query1 = proxy.post.list.useInfiniteQuery(
+    const query1 = client.post.list.useInfiniteQuery(
       {},
       {
         getNextPageParam(lastPage) {

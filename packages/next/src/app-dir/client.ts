@@ -1,6 +1,6 @@
 import {
   clientCallTypeToProcedureType,
-  CreateTRPCProxyClient,
+  CreateTRPCClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
 import { AnyRouter } from '@trpc/server';
@@ -63,6 +63,6 @@ export function experimental_createTRPCNextAppDirClient<
     });
 
     return promise;
-  }) as CreateTRPCProxyClient<TRouter>;
+  }) as CreateTRPCClient<TRouter>;
   // });
 }

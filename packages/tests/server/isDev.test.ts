@@ -31,7 +31,7 @@ describe('isDev:true', () => {
 
   test('prints stacks', async () => {
     const error = (await waitError(
-      () => ctx.proxy.failingMutation.mutate(),
+      () => ctx.client.failingMutation.mutate(),
       TRPCClientError,
     )) as TRPCClientError<typeof ctx.router>;
 
@@ -46,7 +46,7 @@ describe('isDev:false', () => {
 
   test('does not print stack', async () => {
     const error = (await waitError(
-      () => ctx.proxy.failingMutation.mutate(),
+      () => ctx.client.failingMutation.mutate(),
       TRPCClientError,
     )) as TRPCClientError<typeof ctx.router>;
 
