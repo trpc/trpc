@@ -22,7 +22,11 @@ test('Fix #4947: standalone middlewares -- inputs are merged properly when using
     });
   });
 
-  const combinedInputThatSatisfiesBothMiddlewares = schemaA.merge(schemaB);
+  const combinedInputThatSatisfiesBothMiddlewares = z.object({
+    valueA: z.string(),
+    valueB: z.string(),
+    extraProp: z.string(),
+  });
 
   t.procedure
     .input(combinedInputThatSatisfiesBothMiddlewares)
@@ -30,9 +34,9 @@ test('Fix #4947: standalone middlewares -- inputs are merged properly when using
     .use(valueBUppercaserMiddleware)
     .query(
       ({
-        input: { valueA, valueB },
+        input: { valueA, valueB, extraProp },
         ctx: { valueAUppercase, valueBUppercase },
       }) =>
-        `valueA: ${valueA}, valueB: ${valueB}, valueAUppercase: ${valueAUppercase}, valueBUppercase: ${valueBUppercase}`,
+        `valueA: ${valueA}, valueB: ${valueB}, extraProp: ${extraProp}, valueAUppercase: ${valueAUppercase}, valueBUppercase: ${valueBUppercase}`,
     );
 });
