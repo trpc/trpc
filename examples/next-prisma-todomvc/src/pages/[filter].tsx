@@ -28,7 +28,7 @@ function ListItem(props: { task: Task }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const [text, setText] = useState(task.text);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export default function TodosPage(props: PageProps) {
     staleTime: 3000,
   });
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const addTask = trpc.todo.add.useMutation({
     async onMutate({ text }) {
       /**

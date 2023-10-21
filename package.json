@@ -39,7 +39,7 @@
     "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
     "publish-canary": "lerna publish --force-publish --canary --preid alpha-$(pnpm --silent canary-preid) --dist-tag $(pnpm --silent current-branch)",
     "publish-prerelease": "pnpm install && lerna publish prerelease --force-publish --dist-tag next --no-push && sleep 60 && git push --follow-tags",
-    "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d') next && git merge main"
+    "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d--%H-%M') next && git merge --ff main"
   },
   "dependencies": {
     "@changesets/changelog-github": "^0.4.8",

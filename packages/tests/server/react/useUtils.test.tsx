@@ -75,7 +75,7 @@ test('client query', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
     const [post, setPost] = useState<Post>();
 
     useEffect(() => {
@@ -103,7 +103,7 @@ test('client query sad path', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
     const [isError, setIsError] = useState(false);
 
     useEffect(() => {
@@ -134,7 +134,7 @@ test('client mutation', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
     const { data: posts } = proxy.post.all.useQuery();
     const [newPost, setNewPost] = useState<Post>();
 
@@ -171,7 +171,7 @@ test('fetch', async () => {
   const { proxy, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
@@ -210,7 +210,7 @@ test('prefetch', async () => {
   }
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
     const [hasPrefetched, setHasPrefetched] = useState(false);
     useEffect(() => {
       utils.post.all.prefetch().then(() => {
@@ -244,7 +244,7 @@ test('invalidate', async () => {
     });
     const createPostMutation = proxy.post.create.useMutation();
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     if (!allPosts.data) {
       return <>...</>;
@@ -313,7 +313,7 @@ test('invalidate procedure for both query and infinite', async () => {
       { onSuccess: invalidateInfiniteSpy },
     );
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     return (
       <>
@@ -371,7 +371,7 @@ test('reset', async () => {
     const allPosts = proxy.post.all.useQuery();
     const createPostMutation = proxy.post.create.useMutation();
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     useEffect(() => {
       stableProxySpy(proxy);
@@ -422,7 +422,7 @@ test('refetch', async () => {
   const querySuccessSpy = vi.fn();
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
     const allPosts = proxy.post.all.useQuery(undefined, {
       onSuccess() {
         querySuccessSpy();
@@ -453,7 +453,7 @@ test('setData', async () => {
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery(undefined, { enabled: false });
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     useEffect(() => {
       if (!allPosts.data) {
@@ -506,7 +506,7 @@ test('setInfiniteData', async () => {
   function MyComponent() {
     const listPosts = proxy.post.list.useInfiniteQuery({}, { enabled: false });
 
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     useEffect(() => {
       if (!listPosts.data) {
@@ -595,7 +595,7 @@ test('getData', async () => {
   function MyComponent() {
     const allPosts = proxy.post.all.useQuery();
     const [posts, setPosts] = useState<Post[]>([]);
-    const utils = proxy.useContext();
+    const utils = proxy.useUtils();
 
     useEffect(() => {
       if (allPosts.data) {
@@ -634,7 +634,7 @@ describe('cancel', () => {
     const { proxy, App } = ctx;
     function MyComponent() {
       const allPosts = proxy.post.all.useQuery();
-      const utils = proxy.useContext();
+      const utils = proxy.useUtils();
 
       useEffect(() => {
         utils.post.all.cancel();
@@ -673,7 +673,7 @@ describe('cancel', () => {
     function MyComponent() {
       const allList = proxy.post.list.useQuery({ cursor: '0' });
       const allListInfinite = proxy.post.list.useInfiniteQuery({ cursor: '0' });
-      const utils = proxy.useContext();
+      const utils = proxy.useUtils();
 
       useEffect(() => {
         utils.post.list.cancel();
@@ -764,7 +764,7 @@ describe('query keys are stored separately', () => {
       query: unset as unknown,
     };
     function MyComponent() {
-      const utils = proxy.useContext();
+      const utils = proxy.useUtils();
       const { data: posts } = proxy.post.all.useQuery(undefined, {
         onSuccess() {
           data.infinite = utils.post.all.getInfiniteData();

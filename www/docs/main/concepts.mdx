@@ -22,9 +22,11 @@ const user = await res.json();
 const user = await api.users.getById({ id: 1 });
 ```
 
+tRPC (TypeScript Remote Procedure Call) is one implementation of RPC, designed for TypeScript monorepos. It has its own flavor, but is RPC at its heart.
+
 ### Don't think about HTTP/REST implementation details
 
-If you inspect the network traffic of a tRPC app, you'll see that it's just fairly standard HTTP requests and responses. But you don't need to think about the implementation details while writing your application code. You call functions, and tRPC takes care of everything else.
+If you inspect the network traffic of a tRPC app, you'll see that it's fairly standard HTTP requests and responses, but you don't need to think about the implementation details while writing your application code. You call functions, and tRPC takes care of everything else. You should ignore details like HTTP Verbs, since they carry meaning in REST APIs, but in RPC form part of your function names instead, for instance: `getUser(id)` instead of `GET /users/:id`.
 
 ## Vocabulary
 
