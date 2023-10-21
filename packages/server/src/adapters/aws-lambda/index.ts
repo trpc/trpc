@@ -7,8 +7,13 @@ import type {
 } from 'aws-lambda';
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPRequest, resolveHTTPResponse } from '../../http';
-import { HTTPResponse } from '../../http/internals/types';
+import {
+  getBatchStreamFormatter,
+  HTTPRequest,
+  resolveHTTPResponse,
+} from '../../http';
+import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
+import { awslambda } from './lambda-stream';
 import {
   APIGatewayEvent,
   APIGatewayResult,
@@ -116,4 +121,103 @@ export function awsLambdaRequestHandler<
 
     return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
   };
+}
+
+export function awsLambdaStreamingRequestHandlerInner<
+  TRouter extends AnyRouter,
+  TEvent extends APIGatewayEvent,
+>(opts: AWSLambdaOptions<TRouter, TEvent>): awslambda.StreamifyHandler<TEvent> {
+  return async (event, response, context) => {
+    const req = lambdaEventToHTTPRequest(event);
+    const path = getPath(event);
+    const createContext = async function _createContext(): Promise<
+      inferRouterContext<TRouter>
+    > {
+      return await opts.createContext?.({ event, context });
+    };
+
+    let formatter: ReturnType<typeof getBatchStreamFormatter>;
+    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
+      response.setContentType('application/json');
+
+      // TODO: was this important?
+      // if (
+      //   'status' in head &&
+      //   (!opts.res.statusCode || opts.res.statusCode === 200)
+      // ) {
+      //   opts.res.statusCode = head.status;
+      // }
+
+      // TODO: lambda should set all the streaming headers okay,
+      //   and content-type is exposed, but arbitrary headers are not
+      // for (const [key, value] of Object.entries(head.headers ?? {})) {
+      //   /* istanbul ignore if -- @preserve */
+      //   if (typeof value === 'undefined') {
+      //     continue;
+      //   }
+      //   opts.res.setHeader(key, value);
+      // }
+
+      if (isStreaming) {
+        // opts.res.setHeader('Transfer-Encoding', 'chunked');
+        // const vary = opts.res.getHeader('Vary');
+        // opts.res.setHeader(
+        //   'Vary',
+        //   vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
+        // );
+
+        formatter = getBatchStreamFormatter();
+        // opts.res.flushHeaders();
+      }
+    };
+
+    const unstable_onChunk = ([index, string]: ResponseChunk) => {
+      if (index === -1) {
+        /**
+         * Full response, no streaming. This can happen
+         * - if the response is an error
+         * - if response is empty (HEAD request)
+         */
+        response.end(string);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        response.write(formatter!(index, string));
+
+        // Probably not needed as aws-lambda will do this for us
+        // response.flush?.();
+      }
+    };
+
+    await resolveHTTPResponse({
+      batching: opts.batching,
+      responseMeta: opts.responseMeta,
+      path: path,
+      createContext,
+      router: opts.router,
+      req,
+      error: null,
+      onError(o) {
+        opts?.onError?.({
+          ...o,
+          req: event,
+        });
+      },
+      unstable_onHead,
+      unstable_onChunk,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    response.write(formatter!.end());
+    response.end();
+  };
+}
+
+export function awsLambdaStreamingRequestHandler<
+  TRouter extends AnyRouter,
+  TEvent extends APIGatewayEvent,
+  TResult extends inferAPIGWReturn<TEvent>,
+>(opts: AWSLambdaOptions<TRouter, TEvent>) {
+  return awslambda.streamifyResponse<TEvent, TResult>(
+    awsLambdaStreamingRequestHandlerInner<TRouter, TEvent>(opts),
+  );
 }
