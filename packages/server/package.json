@@ -170,6 +170,9 @@
     "yup": "^1.0.0",
     "zod": "^3.0.0"
   },
+  "dependencies": {
+    "tupleson": "^0.21.0"
+  },
   "funding": [
     "https://trpc.io/sponsor"
   ]

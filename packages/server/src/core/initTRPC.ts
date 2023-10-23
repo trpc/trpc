@@ -1,15 +1,10 @@
-import {
-  DefaultErrorShape,
-  defaultFormatter,
-  ErrorFormatter,
-  ErrorFormatterShape,
-} from '../error/formatter';
+import { DefaultErrorShape, defaultFormatter, ErrorFormatter, ErrorFormatterShape } from '../error/formatter';
 import { createFlatProxy } from '../shared/createProxy';
 import {
   DataTransformerOptions,
   DefaultDataTransformer,
-  defaultTransformer,
   getDataTransformer,
+  TrpcTuplesonConfig,
 } from '../transformer';
 import { FlatOverwrite, Unwrap } from '../types';
 import {
@@ -35,6 +30,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
       : object;
     errorShape: TTypes['errorShape'];
     transformer: DataTransformerOptions;
+    experimental_tuplesonOptions: TrpcTuplesonConfig;
   }>;
 
 /**
@@ -98,7 +94,12 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     >;
     type $Transformer = TOptions['transformer'] extends DataTransformerOptions
       ? TOptions['transformer']
+      : ValidateShape<TOptions, $Runtime> extends infer T extends {
+          experimental_tuplesonOptions: TrpcTuplesonConfig;
+        }
+      ? ReturnType<typeof getDataTransformer<T>>
       : DefaultDataTransformer;
+
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
     type $Config = RootConfig<{
@@ -109,9 +110,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     }>;
 
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
-      runtime?.transformer ?? defaultTransformer,
-    ) as $Transformer;
+    const transformer = getDataTransformer(runtime) as $Transformer;
 
     const config: $Config = {
       transformer,

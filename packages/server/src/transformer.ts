@@ -1,3 +1,5 @@
+import { TsonAsyncOptions } from 'tupleson';
+
 /**
  * @public
  */
@@ -65,17 +67,7 @@ export type ClientDataTransformerOptions =
   | CombinedDataTransformerClient
   | DataTransformer;
 
-/**
- * @internal
- */
-export function getDataTransformer(
-  transformer: DataTransformerOptions,
-): CombinedDataTransformer {
-  if ('input' in transformer) {
-    return transformer;
-  }
-  return { input: transformer, output: transformer };
-}
+export { getDataTransformer } from './getDataTransformer';
 
 /**
  * @internal
@@ -86,9 +78,17 @@ export type DefaultDataTransformer = CombinedDataTransformer & {
 
 /**
  * @internal
+ * todo: This is not used if TSON is enabled - does the default TSON transformer need a `_default` flag?
  */
 export const defaultTransformer: DefaultDataTransformer = {
   _default: true,
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
+
+export type TrpcTuplesonConfig =
+  | TsonAsyncOptions
+  | {
+      input: TsonAsyncOptions;
+      output: TsonAsyncOptions;
+    };

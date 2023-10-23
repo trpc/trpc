@@ -1,16 +1,6 @@
-import {
-  AnyRouter,
-  ClientDataTransformerOptions,
-  CombinedDataTransformer,
-  DataTransformerOptions,
-  DefaultDataTransformer,
-} from '@trpc/server';
-import {
-  inferObservableValue,
-  observableToPromise,
-  share,
-  Unsubscribable,
-} from '@trpc/server/observable';
+import { AnyRouter, ClientDataTransformerOptions, CombinedDataTransformer, DataTransformerOptions, DefaultDataTransformer } from '@trpc/server';
+import { inferObservableValue, observableToPromise, share, Unsubscribable } from '@trpc/server/observable';
+import { getDataTransformer } from '../../../server/src/getDataTransformer';
 import { createChain } from '../links/internals/createChain';
 import {
   OperationContext,
@@ -97,31 +87,9 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    const combinedTransformer: CombinedDataTransformer = (() => {
-      const transformer = opts.transformer as
-        | DataTransformerOptions
-        | undefined;
-
-      if (!transformer) {
-        return {
-          input: {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          },
-          output: {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          },
-        };
-      }
-      if ('input' in transformer) {
-        return opts.transformer as CombinedDataTransformer;
-      }
-      return {
-        input: transformer,
-        output: transformer,
-      };
-    })();
+    const combinedTransformer = getDataTransformer(
+      opts as Extract<typeof opts, { transformer: any }>,
+    );
 
     this.runtime = {
       transformer: {

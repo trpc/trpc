@@ -91,6 +91,9 @@
     "undici": "^5.14.0",
     "vitest": "^0.32.0"
   },
+  "dependencies": {
+    "tupleson": "^0.21.0"
+  },
   "publishConfig": {
     "access": "public"
   },
