@@ -1482,6 +1482,10 @@ importers:
         version: 5.1.3
 
   packages/client:
+    dependencies:
+      tupleson:
+        specifier: ^0.21.0
+        version: 0.21.0
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.0.0
@@ -1618,6 +1622,10 @@ importers:
         version: 3.20.2
 
   packages/server:
+    dependencies:
+      tupleson:
+        specifier: ^0.21.0
+        version: 0.21.0
     devDependencies:
       '@fastify/websocket':
         specifier: ^7.1.2
