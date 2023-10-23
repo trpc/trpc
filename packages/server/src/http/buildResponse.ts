@@ -1,13 +1,7 @@
-import {
-  AnyRouter,
-  inferRouterContext,
-  inferRouterError,
-  ProcedureType,
-} from '../core';
+import { AnyRouter, inferRouterContext, inferRouterError, ProcedureType } from '../core';
 import { TRPCResponse } from '../rpc';
 import { MaybePromise } from '../types';
 import { createBodyFormatter } from './batchStreamFormatter';
-import { StreamHTTPResponse } from './internals/types';
 import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
 const counting = Symbol('COUNTING');
@@ -111,7 +105,7 @@ export function buildResponse<
     });
   };
 
-  const headProxy = new Proxy(head as unknown as StreamHTTPResponse, {
+  const headProxy = new Proxy(head as unknown as Response, {
     get(target, prop) {
       if (response === undefined) response = new Response(writeBody());
       if (prop === 'text') return () => response?.text();
@@ -124,7 +118,7 @@ export function buildResponse<
   return headProxy;
 
   async function* createBodyGenerator(
-    head: StreamHTTPResponse,
+    head: Response,
   ): AsyncGenerator<string, void, number> {
     try {
       const formatOutput = createBodyFormatter({

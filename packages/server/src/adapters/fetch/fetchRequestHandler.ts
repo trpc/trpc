@@ -3,6 +3,7 @@ import { HTTPRequest } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { FetchHandlerOptions } from './types';
 
+
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   FetchHandlerOptions<TRouter> & {
     req: Request;
@@ -24,9 +25,10 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     query: url.searchParams,
     method: opts.req.method,
     headers: Object.fromEntries(opts.req.headers),
-    body: opts.req.headers.get('content-type')?.startsWith('application/json')
-      ? await opts.req.text()
-      : '',
+    body:
+      opts.req.headers.get('content-type') === 'application/json'
+        ? await opts.req.text()
+        : '',
   };
 
   const result = await resolveHTTPResponse({
@@ -39,7 +41,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
-    unstable_streamSupport: ['json', 'sse'],
   });
 
   for (const [key, value] of Object.entries(result.headers ?? {})) {

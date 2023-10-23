@@ -1,6 +1,17 @@
-import { AnyRouter, ClientDataTransformerOptions, CombinedDataTransformer, DataTransformerOptions, DefaultDataTransformer } from '@trpc/server';
-import { inferObservableValue, observableToPromise, share, Unsubscribable } from '@trpc/server/observable';
-import { getDataTransformer } from '../../../server/src/getDataTransformer';
+import {
+  AnyRouter,
+  ClientDataTransformerOptions,
+  CombinedDataTransformer,
+  DataTransformerOptions,
+  DefaultDataTransformer,
+  getDataTransformer,
+} from '@trpc/server';
+import {
+  inferObservableValue,
+  observableToPromise,
+  share,
+  Unsubscribable,
+} from '@trpc/server/observable';
 import { createChain } from '../links/internals/createChain';
 import {
   OperationContext,

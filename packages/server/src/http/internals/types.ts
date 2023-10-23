@@ -1,33 +1,23 @@
-import {
-  AnyRouter,
-  inferRouterContext,
-  inferRouterError,
-  ProcedureType,
-} from '../../core';
+import { AnyRouter, inferRouterContext, inferRouterError, ProcedureType } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
 import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
 import { ResponseMeta } from '../types';
 
-export type HTTPHeaders = Dict<string[] | string>;
 
-/** @deprecated - use StreamHTTPResponse instead */
+/**
+ * @deprecated use the native Fetch API's `Headers` class
+ */
+export type HTTPHeaders = Dict<string | string[]>;
+
+/**
+ * @deprecated use the native Fetch API's `Response` class
+ */
 export interface HTTPResponse {
   status: number;
-  //FIXME: How is this ever unset? Can this be a required property? It would be more accurate.
   headers?: HTTPHeaders;
   body?: string;
 }
-
-export interface StreamHTTPResponse {
-  status: number;
-  headers: HTTPHeaders;
-  body: ReadableStream<Uint8Array> | null;
-  text(): Promise<string>;
-  json(): Promise<unknown>;
-}
-
-export type ResponseChunk = [procedureIndex: number, responseBody: string];
 
 /**
  * @internal

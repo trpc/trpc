@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Stream } from 'stream';
 import { AnyRouter } from '../../core';
 import { inferRouterContext } from '../../core/types';
 import { HTTPRequest } from '../../http';
@@ -80,23 +79,18 @@ export async function nodeHTTPRequestHandler<
         });
       },
       contentTypeHandler,
-      unstable_streamSupport: ['json', 'sse'],
     });
 
     const { res } = opts;
     if ('status' in result && (!res.statusCode || res.statusCode === 200)) {
       res.statusCode = result.status;
     }
-
-    console.log('result', result);
     for (const [key, value] of Object.entries(result.headers ?? {})) {
       if (typeof value === 'undefined') {
         continue;
       }
       res.setHeader(key, value);
     }
-
-    if (result.body) Stream.Readable.fromWeb(result.body as any).pipe(res);
-    else res.end();
+    res.end(result.body);
   });
 }

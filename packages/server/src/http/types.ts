@@ -1,5 +1,8 @@
-import { AnyRouter } from '../core';
+import { AnyRouter, inferRouterContext } from '../core';
+import { TRPCError } from '../error/TRPCError';
 import { BaseHandlerOptions } from '../internals/types';
+import { Maybe } from '../types';
+import { BaseContentTypeHandler } from './contentType';
 import { HTTPHeaders, ResponseMetaFn } from './internals/types';
 
 export interface HTTPRequest {
@@ -25,4 +28,16 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
 export interface ResponseMeta {
   status?: number;
   headers?: Record<string, string>;
+}
+
+export interface ResolveHTTPRequestOptions<
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+  createContext: () => Promise<inferRouterContext<TRouter>>;
+  req: TRequest;
+  path: string;
+  error?: Maybe<TRPCError>;
+  contentTypeHandler?: BaseContentTypeHandler<any>;
+  preprocessedBody?: boolean;
 }

@@ -2,7 +2,7 @@ import type { AnyRouter, inferRouterError } from '../core';
 import { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../shared';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
-import { HTTPHeaders, ResponseMetaFn } from './internals/types';
+import { ResponseMetaFn } from './internals/types';
 import { ResponseMeta } from './types';
 
 export function createBodyFormatter<TRouter extends AnyRouter>({
@@ -13,7 +13,7 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
 }: {
   style: 'single' | 'batch' | 'event-stream' | 'json-stream';
   router: TRouter;
-  head: { status: number; headers: HTTPHeaders };
+  head: { status: number; headers: Headers };
   onResponseInit?: (
     args: Partial<
       Pick<Parameters<ResponseMetaFn<TRouter>>[number], 'data' | 'errors'>
@@ -33,7 +33,7 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
   let open = () => '';
   let close;
 
-  const initResponse = (head: { status: number; headers: HTTPHeaders }) => {
+  const initResponse = (head: { status: number; headers: Headers }) => {
     items =
       buffer &&
       Array.from(buffer)
@@ -53,7 +53,7 @@ export function createBodyFormatter<TRouter extends AnyRouter>({
     console.log('meta', meta);
 
     for (const [key, value] of Object.entries(meta.headers ?? {})) {
-      head.headers[key] = value;
+      head.headers.set(key, value);
     }
 
     if (meta.status) head.status = meta.status;

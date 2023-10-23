@@ -4,6 +4,7 @@ import { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
 import { NodeHTTPCreateContextOption } from '../node-http';
 
+
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
@@ -15,11 +16,11 @@ type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
-> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
+> = {
   req: TRequest;
   res: TResponse;
   path: string;
-};
+} & FastifyHandlerOptions<TRouter, TRequest, TResponse>;
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
@@ -53,7 +54,6 @@ export async function fastifyRequestHandler<
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
-    unstable_streamSupport: ['json', 'sse'],
   });
 
   const { res } = opts;
