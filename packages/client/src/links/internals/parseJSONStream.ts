@@ -41,6 +41,8 @@ export async function parseJSONStream<TReturn>(opts: {
   const parse = opts.parse ?? JSON.parse;
 
   const onLine = (line: string) => {
+    console.log('onLine!!', line);
+
     if (opts.signal?.aborted) return;
     if (!line || line === '}') {
       return;

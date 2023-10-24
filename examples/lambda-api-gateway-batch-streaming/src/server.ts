@@ -1,5 +1,5 @@
 import { inferAsyncReturnType, initTRPC } from '@trpc/server';
-import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import { experimental_awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ const appRouter = router({
 
 export type AppRouter = typeof appRouter;
 
-export const handler = awsLambdaStreamingRequestHandler({
+export const handler = experimental_awsLambdaStreamingRequestHandler({
   router: appRouter,
   createContext,
   batching: {

@@ -45,6 +45,7 @@ const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions> = (
         },
       },
       (index, res) => {
+        console.log('UNIT!!', index, res);
         unitResolver(index, res);
       },
     );

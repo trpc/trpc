@@ -1,8 +1,20 @@
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import {
+  createTRPCProxyClient,
+  unstable_httpBatchStreamLink,
+} from '@trpc/client';
 import type { AppRouter } from './server';
 
 const client = createTRPCProxyClient<AppRouter>({
-  links: [httpBatchLink({ url: 'http://localhost:4050' })],
+  links: [
+    unstable_httpBatchStreamLink({
+      url: process.env.API_URL ?? '',
+      headers(opts) {
+        return {
+          'x-api-key': process.env.API_KEY ?? '',
+        };
+      },
+    }),
+  ],
 });
 
 void (async () => {

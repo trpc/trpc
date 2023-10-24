@@ -285,7 +285,12 @@ export async function resolveHTTPResponse<
     unstable_onHead &&
     unstable_onChunk &&
     req.headers['trpc-batch-mode'] === 'stream';
-
+  console.log('isStreamCall', isStreamCall, {
+    isBatchCall,
+    unstable_onHead,
+    unstable_onChunk,
+    batchModeHeader: req.headers['trpc-batch-mode'],
+  });
   try {
     // we create context first so that (unless `createContext()` throws)
     // error handler may access context information

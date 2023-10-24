@@ -150,12 +150,13 @@ export function awsLambdaRequestHandler<
   };
 }
 
-export function awsLambdaStreamingRequestHandlerInner<
+export function experimental_awsLambdaStreamingRequestHandlerInner<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 >(opts: AWSLambdaOptions<TRouter, TEvent>): awslambda.StreamifyHandler<TEvent> {
   return async (event, response, context) => {
-    console.log(JSON.stringify({ event, response, context }, null, 2));
+    console.log('EVENT', JSON.stringify({ event, response, context }, null, 2));
+
     const req = lambdaEventToHTTPRequest(event);
     const path = getPath(event);
     const createContext = async function _createContext(): Promise<
@@ -165,8 +166,14 @@ export function awsLambdaStreamingRequestHandlerInner<
     };
 
     let formatter: ReturnType<typeof getBatchStreamFormatter>;
-    const unstable_onHead = (_head: HTTPResponse, isStreaming: boolean) => {
-      response.setContentType('application/json');
+    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
+      console.log('ONHEAD', { head, isStreaming });
+
+      let contentType = head.headers?.['Content-Type'];
+      if (Array.isArray(contentType)) {
+        contentType = contentType[0];
+      }
+      response.setContentType(contentType ?? 'application/json');
 
       // TODO: was this important?
       // if (
@@ -187,19 +194,20 @@ export function awsLambdaStreamingRequestHandlerInner<
       // }
 
       if (isStreaming) {
-        // opts.res.setHeader('Transfer-Encoding', 'chunked');
-        // const vary = opts.res.getHeader('Vary');
-        // opts.res.setHeader(
-        //   'Vary',
-        //   vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
-        // );
-
         formatter = getBatchStreamFormatter();
-        // opts.res.flushHeaders();
+        //   opts.res.setHeader('Transfer-Encoding', 'chunked');
+        //   const vary = opts.res.getHeader('Vary');
+        //   opts.res.setHeader(
+        //     'Vary',
+        //     vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
+        //   );
+
+        //   opts.res.flushHeaders();
       }
     };
 
     const unstable_onChunk = ([index, string]: ResponseChunk) => {
+      console.log('ONCHUNK', { index, string });
       if (index === -1) {
         /**
          * Full response, no streaming. This can happen
@@ -216,6 +224,7 @@ export function awsLambdaStreamingRequestHandlerInner<
       }
     };
 
+    console.log('CHUNKS_START');
     await resolveHTTPResponse({
       batching: opts.batching,
       responseMeta: opts.responseMeta,
@@ -234,18 +243,20 @@ export function awsLambdaStreamingRequestHandlerInner<
       unstable_onChunk,
     });
 
+    console.log('CHUNKS_DONE');
+
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     response.write(formatter!.end());
     response.end();
   };
 }
 
-export function awsLambdaStreamingRequestHandler<
+export function experimental_awsLambdaStreamingRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
   TResult extends inferAPIGWReturn<TEvent>,
 >(opts: AWSLambdaOptions<TRouter, TEvent>) {
   return awslambda.streamifyResponse<TEvent, TResult>(
-    awsLambdaStreamingRequestHandlerInner<TRouter, TEvent>(opts),
+    experimental_awsLambdaStreamingRequestHandlerInner<TRouter, TEvent>(opts),
   );
 }
