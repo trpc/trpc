@@ -22,7 +22,7 @@ import fetch from 'node-fetch';
 import { z } from 'zod';
 
 const config = {
-  port: 2023,
+  port: 8088,
   logger: false,
   prefix: '/trpc',
 };
