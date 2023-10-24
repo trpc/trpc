@@ -41,7 +41,9 @@ type CreateProcedureReturnInput<
   _meta: TPrev['_meta'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
   _input_in: DefaultValue<TNext['_input_in'], TPrev['_input_in']>;
-  _input_out: DefaultValue<TNext['_input_out'], TPrev['_input_out']>;
+  _input_out: UnsetMarker extends TNext['_input_out']
+    ? TPrev['_input_out']
+    : Overwrite<TPrev['_input_out'], TNext['_input_out']>;
   _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
   _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;

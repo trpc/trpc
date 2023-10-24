@@ -100,7 +100,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: async () => formData,
           });
         })
         .input(
@@ -240,7 +240,7 @@ test('upload a combination of files and non-file text fields', async () => {
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   const fileContents =
-    await ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form);
+    await ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form);
 
   expect(fileContents).toEqual({
     files: [
@@ -280,7 +280,7 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   await expect(
-    ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
+    ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
     `"Body exceeded upload size of 100 bytes."`,
   );
@@ -299,7 +299,7 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   await expect(
-    ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
+    ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
     `"Body exceeded upload size of 100 bytes."`,
   );
