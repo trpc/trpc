@@ -1,16 +1,7 @@
-# serverless-offline + AWS Api Gateway Lambda
+# Batch Streaming + AWS Api Gateway Lambda
 
-For running locally, this project uses `serverless` to run a mocked API gateway locally, which is invoked through `start-server`. Start the server with `yarn start-server`
+Unlike with the lambda-api-gateway example, serverless-offline cannot be used here because it does not support Lambda Streaming
 
-Run the client with `yarn start-client`
+https://github.com/dherault/serverless-offline/issues/1681
 
-## Run locally with serverless & serverless-offline
-
-`$ yarn install`
-`$ yarn build`
-`$ yarn start-server`
-`$ yarn start-client`
-
-## REST API & HTTP API
-
-Run the client with `yarn start-client`
+To run this example you will need to deploy to AWS Lambda
