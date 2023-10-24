@@ -74,7 +74,7 @@
     "@trpc/client": "10.42.0",
     "@trpc/server": "10.42.0",
     "@types/express": "^4.17.17",
-    "@types/node": "^18.16.16",
+    "@types/node": "^20.0.0",
     "@types/react": "^18.2.8",
     "eslint": "^8.40.0",
     "express": "^4.17.1",
