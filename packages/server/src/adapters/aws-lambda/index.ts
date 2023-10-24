@@ -155,6 +155,7 @@ export function awsLambdaStreamingRequestHandlerInner<
   TEvent extends APIGatewayEvent,
 >(opts: AWSLambdaOptions<TRouter, TEvent>): awslambda.StreamifyHandler<TEvent> {
   return async (event, response, context) => {
+    console.log(JSON.stringify({ event, response, context }, null, 2));
     const req = lambdaEventToHTTPRequest(event);
     const path = getPath(event);
     const createContext = async function _createContext(): Promise<

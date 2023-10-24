@@ -1,5 +1,5 @@
 {
-  "name": "@examples/lambda-api-gateway",
+  "name": "@examples/lambda-api-gateway-streaming",
   "private": true,
   "version": "10.41.0",
   "type": "module",
@@ -9,8 +9,7 @@
     "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
     "type-check": "tsc",
     "start-server": "serverless offline --httpPort 4050",
-    "start-client": "tsx src/client.ts",
-    "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
+    "start-client": "tsx src/client.ts"
   },
   "dependencies": {
     "@trpc/client": "^10.41.0",
