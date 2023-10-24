@@ -32,6 +32,13 @@ import {
 } from './shared';
 import { NextAppDirDecoratedProcedureRecord } from './types';
 
+// add `cache` to react typings so the above import doesn't error
+const brand_cached = Symbol('cached');
+type cached = typeof brand_cached;
+declare module 'react' {
+  function cache<TFn extends (...args: any) => any>(fn: TFn): TFn & cached;
+}
+
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
