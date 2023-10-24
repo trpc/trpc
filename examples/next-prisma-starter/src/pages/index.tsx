@@ -6,7 +6,7 @@ import { Fragment } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
 
 const IndexPage: NextPageWithLayout = () => {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const postsQuery = trpc.post.list.useInfiniteQuery(
     {
       limit: 5,

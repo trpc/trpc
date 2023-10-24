@@ -126,6 +126,11 @@
       "permanent": true
     },
     {
+      "source": "/docs/client/react/useContext",
+      "destination": "/docs/client/react/useUtils",
+      "permanent": true
+    },
+    {
       "source": "/docs/suspense",
       "destination": "/docs/reactjs/suspense",
       "permanent": true
