@@ -13,7 +13,7 @@ import {
   resolveHTTPResponse,
 } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { awslambda } from './lambda-stream';
+import { awslambda } from './awslambda';
 import {
   APIGatewayEvent,
   APIGatewayResult,
@@ -137,7 +137,7 @@ export function awsLambdaStreamingRequestHandlerInner<
     };
 
     let formatter: ReturnType<typeof getBatchStreamFormatter>;
-    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
+    const unstable_onHead = (_head: HTTPResponse, isStreaming: boolean) => {
       response.setContentType('application/json');
 
       // TODO: was this important?
