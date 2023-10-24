@@ -1,3 +1,4 @@
+import { Writable } from 'stream';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -5,6 +6,7 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
+import { Context, Handler } from 'aws-lambda';
 import { TRPCError } from '../..';
 import { AnyRouter, inferRouterContext } from '../../core';
 import {
@@ -13,7 +15,7 @@ import {
   resolveHTTPResponse,
 } from '../../http';
 import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { awslambda } from './awslambda';
+// import { awslambda } from './awslambda';
 import {
   APIGatewayEvent,
   APIGatewayResult,
@@ -27,6 +29,31 @@ import {
 } from './utils';
 
 export * from './utils';
+
+// FIXME: would love to put this into a declaration file but rollup rejects every approach that's been tried
+// eslint-disable-next-line @typescript-eslint/no-namespace
+declare namespace awslambda {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  export namespace HttpResponseStream {
+    function from(writable: Writable, metadata: any): Writable;
+  }
+
+  export interface ResponseStreamWritable extends Writable {
+    setContentType(contentType: string): void;
+
+    setIsBase64Encoded(isBase64Encoded: boolean): void;
+  }
+
+  export type StreamifyHandler<TEvent> = (
+    event: TEvent,
+    responseStream: ResponseStreamWritable,
+    context: Context,
+  ) => Promise<void>;
+
+  export function streamifyResponse<TEvent = any, TResult = any>(
+    handler: StreamifyHandler<TEvent>,
+  ): Handler<TEvent, TResult>;
+}
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();
