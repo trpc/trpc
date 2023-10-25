@@ -50,10 +50,6 @@ export function createMemoryUploadHandler({
       chunks.push(chunk);
     }
 
-    if (typeof filename === 'string') {
-      return new File(chunks, filename, { type: contentType });
-    }
-
-    return await new Blob(chunks, { type: contentType }).text();
+    return new File(chunks, filename, { type: contentType });
   };
 }

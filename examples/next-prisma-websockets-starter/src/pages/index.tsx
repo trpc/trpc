@@ -110,7 +110,7 @@ export default function IndexPage() {
       getNextPageParam: (d) => d.nextCursor,
     },
   );
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
 
   // list of messages that are rendered
