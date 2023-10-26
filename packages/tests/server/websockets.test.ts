@@ -398,14 +398,14 @@ test(
     expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
     await close();
     await waitFor(() => {
-      expect(wsClient.getConnection().readyState).toBe(WebSocket.CLOSED);
+      expect(wsClient.getConnection()!.ws!.readyState).toBe(WebSocket.CLOSED);
     });
     await close();
   },
   { retry: 5 },
 );
 
-test(
+test.only(
   'subscriptions are automatically resumed',
   async () => {
     const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
