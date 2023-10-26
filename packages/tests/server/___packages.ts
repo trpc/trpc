@@ -30,6 +30,8 @@ vi.mock('@trpc/server/adapters/ws', () => mock_trpcServer__adapters__ws);
 
 import * as mock_trpcClient from '../../client/src';
 vi.mock('@trpc/client', () => mock_trpcClient);
+import * as mock_trpcClient__links__httpTuplesonLink from '../../client/src/links/httpTuplesonLink';
+vi.mock('@trpc/client/links/httpTuplesonLink', () => mock_trpcClient__links__httpTuplesonLink);
 
 import * as mock_trpcReact from '../../react-query/src';
 vi.mock('@trpc/react-query', () => mock_trpcReact);
