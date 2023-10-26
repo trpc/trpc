@@ -25,6 +25,7 @@ function factory(config?: { createContext: () => Promise<any> }) {
   const onNewMessageSubscription = vi.fn();
   const subscriptionEnded = vi.fn();
   const onNewClient = vi.fn();
+  const onSlowMutationCalled = vi.fn();
 
   const t = initTRPC.create();
 
@@ -34,6 +35,7 @@ function factory(config?: { createContext: () => Promise<any> }) {
     }),
 
     slow: t.procedure.mutation(async ({}) => {
+      onSlowMutationCalled();
       await waitMs(50);
       return 'slow query resolved';
     }),
@@ -109,6 +111,7 @@ function factory(config?: { createContext: () => Promise<any> }) {
     onNewClient,
     onOpenMock,
     onCloseMock,
+    onSlowMutationCalled,
   };
 }
 
@@ -388,12 +391,16 @@ test('sub emits errors', async () => {
 test(
   'wait for slow queries/mutations before disconnecting',
   async () => {
-    const { client, close, wsClient, onNewClient } = factory();
+    const { client, close, wsClient, onNewClient, onSlowMutationCalled } =
+      factory();
 
     await waitFor(() => {
       expect(onNewClient).toHaveBeenCalledTimes(1);
     });
     const promise = client.slow.mutate();
+    await waitFor(() => {
+      expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
+    });
     wsClient.close();
     expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
     await close();
@@ -402,10 +409,36 @@ test(
     });
     await close();
   },
-  { retry: 5 },
+  {
+    retry: 5,
+  },
 );
 
-test.only(
+test(
+  'requests get aborted if called before connection is established and requests dispatched',
+  async () => {
+    const { client, close, wsClient, onNewClient } = factory();
+
+    await waitFor(() => {
+      expect(onNewClient).toHaveBeenCalledTimes(1);
+    });
+    const promise = client.slow.mutate();
+    wsClient.close();
+    await expect(promise).rejects.toMatchInlineSnapshot(
+      '[TRPCClientError: Closed before connection was established]',
+    );
+    await close();
+    await waitFor(() => {
+      expect(wsClient.getConnection()!.ws!.readyState).toBe(WebSocket.CLOSED);
+    });
+    await close();
+  },
+  {
+    // retry: 5
+  },
+);
+
+test(
   'subscriptions are automatically resumed',
   async () => {
     const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
@@ -486,7 +519,9 @@ test.only(
       expect(onCloseMock).toHaveBeenCalledTimes(2);
     });
   },
-  { retry: 5 },
+  {
+    // retry: 5
+  },
 );
 
 test('not found error', async () => {

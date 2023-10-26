@@ -105,6 +105,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
       if (activeConnection?.state !== 'open') {
         return;
       }
+      for (const pending of Object.values(pendingRequests)) {
+        if (!pending.connection) {
+          pending.connection = activeConnection;
+        }
+      }
       if (outgoing.length === 1) {
         // single send
         activeConnection.ws.send(JSON.stringify(outgoing.pop()));
@@ -112,17 +117,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
         // batch send
         activeConnection.ws.send(JSON.stringify(outgoing));
       }
-      for (const pending of Object.values(pendingRequests)) {
-        if (!pending.connection) {
-          pending.connection = activeConnection;
-        }
-      }
       // clear
       outgoing = [];
     });
   }
   function tryReconnect() {
-    if (!connectTimer || killed) {
+    if (!!connectTimer || killed) {
       return;
     }
     const timeout = retryDelayFn(connectAttempt++);
@@ -148,17 +148,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     if (!hasPendingRequests) {
       conn.ws?.close();
     }
-    console.log('closeIfNoPending', hasPendingRequests, conn.id);
   }
-
-  function closeActiveSubscriptions() {
-    Object.values(pendingRequests).forEach((req) => {
-      if (req.type === 'subscription') {
-        req.callbacks.complete();
-      }
-    });
-  }
-
   function resumeSubscriptionOnReconnect(req: TRequest) {
     if (outgoing.some((r) => r.id === req.op.id)) {
       return;
@@ -203,9 +193,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
           return;
         }
         if (req.method === 'reconnect') {
-          if (self.state === 'open') {
-            onClose?.();
-          }
           reconnect();
           // notify subscribers
           for (const pendingReq of Object.values(pendingRequests)) {
@@ -253,9 +240,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       });
 
       ws.addEventListener('close', ({ code }) => {
-        console.log('closing', self.id, self.state, code);
         if (self.state === 'open') {
-          console.log('calling', onClose);
           onClose?.({ code });
         }
         self.state = 'closed';
@@ -334,9 +319,22 @@ export function createWSClient(opts: WebSocketClientOptions) {
   return {
     close: () => {
       killed = true;
-      closeActiveSubscriptions();
+
+      for (const req of Object.values(pendingRequests)) {
+        if (req.type === 'subscription') {
+          req.callbacks.complete();
+        } else if (!req.connection) {
+          // close pending requests that aren't attached to a connection yet
+          req.callbacks.error(
+            TRPCClientError.from(
+              new Error('Closed before connection was established'),
+            ),
+          );
+        }
+      }
       activeConnection && closeIfNoPending(activeConnection);
       clearTimeout(connectTimer);
+
       connectTimer = undefined;
     },
     request,
