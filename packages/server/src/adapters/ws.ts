@@ -1,96 +1,20 @@
 import { IncomingMessage } from 'http';
 import ws from 'ws';
-import {
-  AnyRouter,
-  callProcedure,
-  inferRouterContext,
-  ProcedureType,
-} from '../core';
+import { AnyRouter, callProcedure, inferRouterContext } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { BaseHandlerOptions } from '../internals/types';
 import { isObservable, Unsubscribable } from '../observable';
 import {
   JSONRPC2,
+  parseTRPCMessage,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import { CombinedDataTransformer } from '../transformer';
 import { MaybePromise } from '../types';
 import { NodeHTTPCreateContextFnOptions } from './node-http';
-
-/* istanbul ignore next -- @preserve */
-function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
-  if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
-    throw new Error('Not an object');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsProcedureType(obj: unknown): asserts obj is ProcedureType {
-  if (obj !== 'query' && obj !== 'subscription' && obj !== 'mutation') {
-    throw new Error('Invalid procedure type');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsRequestId(
-  obj: unknown,
-): asserts obj is number | string | null {
-  if (
-    obj !== null &&
-    typeof obj === 'number' &&
-    isNaN(obj) &&
-    typeof obj !== 'string'
-  ) {
-    throw new Error('Invalid request id');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsString(obj: unknown): asserts obj is string {
-  if (typeof obj !== 'string') {
-    throw new Error('Invalid string');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsJSONRPC2OrUndefined(
-  obj: unknown,
-): asserts obj is '2.0' | undefined {
-  if (typeof obj !== 'undefined' && obj !== '2.0') {
-    throw new Error('Must be JSONRPC 2.0');
-  }
-}
-export function parseMessage(
-  obj: unknown,
-  transformer: CombinedDataTransformer,
-): TRPCClientOutgoingMessage {
-  assertIsObject(obj);
-  const { method, params, id, jsonrpc } = obj;
-  assertIsRequestId(id);
-  assertIsJSONRPC2OrUndefined(jsonrpc);
-  if (method === 'subscription.stop') {
-    return {
-      id,
-      jsonrpc,
-      method,
-    };
-  }
-  assertIsProcedureType(method);
-  assertIsObject(params);
-
-  const { input: rawInput, path } = params;
-  assertIsString(path);
-  const input = transformer.input.deserialize(rawInput);
-  return {
-    id,
-    jsonrpc,
-    method,
-    params: {
-      input,
-      path,
-    },
-  };
-}
 
 /**
  * @public
@@ -304,7 +228,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
-          .map((raw) => parseMessage(raw, transformer))
+          .map((raw) => parseTRPCMessage(raw, transformer))
           .map(handleRequest);
         await Promise.all(promises);
       } catch (cause) {
