@@ -11,8 +11,8 @@ export type UploadHandlerPart = {
 };
 
 export type UploadHandler = (
-  part: UploadHandlerPart,
-) => Promise<File | NodeOnDiskFile | string | null | undefined>;
+  part: Required<UploadHandlerPart>,
+) => Promise<File | NodeOnDiskFile | null | undefined>;
 
 export function composeUploadHandlers(
   ...handlers: UploadHandler[]
@@ -32,6 +32,12 @@ export function composeUploadHandlers(
 export class MaxPartSizeExceededError extends Error {
   constructor(public field: string, public maxBytes: number) {
     super(`Field "${field}" exceeded upload size of ${maxBytes} bytes.`);
+  }
+}
+
+export class MaxBodySizeExceededError extends Error {
+  constructor(public maxBytes: number) {
+    super(`Body exceeded upload size of ${maxBytes} bytes.`);
   }
 }
 
@@ -78,10 +84,6 @@ export function createMemoryUploadHandler({
       chunks.push(chunk);
     }
 
-    if (typeof filename === 'string') {
-      return new File(chunks, filename, { type: contentType });
-    }
-
-    return await new Blob(chunks, { type: contentType }).text();
+    return new File(chunks, filename, { type: contentType });
   };
 }
