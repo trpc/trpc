@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   '@tanstack/react-query': 4.18.0
   '@tanstack/react-query-devtools': 4.18.0
@@ -1843,8 +1839,8 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       tupleson:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -22589,8 +22585,8 @@ packages:
       - supports-color
     dev: false
 
-  /tupleson@0.21.0:
-    resolution: {integrity: sha512-xJqUq17IDp5GFFbmVeUSaoTz1PRVR+2+u7KCK/Fls4s9T4iFwAZybqq47D3VlbD3xyJ1RDdQ+r889fJIKu2/nw==}
+  /tupleson@0.22.0:
+    resolution: {integrity: sha512-d+4MrelltO4vlgkT/CHY7S3nrALzLy/2eGYlLN0l0fYvCJd7ZVWZQmcB5FvMboivmhH9UAf2t/uCdTsiZ1w4oA==}
     engines: {node: '>=18'}
     dev: false
 
@@ -24195,3 +24191,7 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
