@@ -29,13 +29,13 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
   TRPCClientError<TRouter>
 >;
 
-export interface WebSocketClientOptions {
+export type WebSocketClientOptions = {
   url: string | (() => MaybePromise<string>);
   WebSocket?: typeof WebSocket;
   retryDelayMs?: typeof retryDelay;
   onOpen?: () => void;
   onClose?: (cause?: { code?: number }) => void;
-}
+};
 
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
