@@ -1,8 +1,10 @@
+import EventEmitter from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
+import { waitFor } from '@testing-library/dom';
 import { TRPCLink } from '@trpc/client';
 import { experimental_httpTuplesonLink } from '@trpc/client/links/httpTuplesonLink';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import { observable, Observer } from '@trpc/server/observable';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -397,5 +399,137 @@ describe('with transformer', () => {
         3,
       ]
     `);
+  });
+});
+
+describe.todo('subscriptions', () => {
+  type Message = {
+    id: string;
+  };
+  const orderedResults: number[] = [];
+  const ctx = konn()
+    .beforeEach(() => {
+      const t = initTRPC.create({
+        experimental_tuplesonOptions: {
+          nonce: () => '__tson',
+        },
+      });
+      const ee = new EventEmitter();
+
+      const subRef: {
+        current: Observer<Message, unknown>;
+      } = {} as any;
+      const onNewMessageSubscription = vi.fn();
+      const subscriptionEnded = vi.fn();
+      const onNewClient = vi.fn();
+
+      const router = t.router({
+        onMessage: t.procedure
+          .input(z.string().nullish())
+          .subscription(({}) => {
+            const sub = observable<Message>((emit) => {
+              subRef.current = emit;
+              const onMessage = (data: Message) => {
+                emit.next(data);
+              };
+              ee.on('server:msg', onMessage);
+              return () => {
+                subscriptionEnded();
+                ee.off('server:msg', onMessage);
+              };
+            });
+            ee.emit('subscription:created');
+            onNewMessageSubscription();
+            return sub;
+          }),
+      });
+      const opts = routerToServerAndClientNew(router, {
+        server: {},
+        client(opts) {
+          return {
+            links: [
+              experimental_httpTuplesonLink({
+                url: opts.httpUrl,
+              }),
+            ],
+          };
+        },
+      });
+      return {
+        ...opts,
+
+        ee,
+        subRef,
+        onNewMessageSubscription,
+        subscriptionEnded,
+        onNewClient,
+      };
+    })
+    .afterEach(async (opts) => {
+      await opts?.close?.();
+    })
+    .done();
+
+  test('basic subscription test', async () => {
+    ctx.ee.once('subscription:created', () => {
+      setTimeout(() => {
+        ctx.ee.emit('server:msg', {
+          id: '1',
+        });
+        ctx.ee.emit('server:msg', {
+          id: '2',
+        });
+      });
+    });
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
+    const subscription = ctx.proxy.onMessage.subscribe(undefined, {
+      onStarted() {
+        onStartedMock();
+      },
+      onData(data) {
+        expectTypeOf(data).not.toBeAny();
+        expectTypeOf(data).toMatchTypeOf<Message>();
+        onDataMock(data);
+      },
+    });
+
+    await waitFor(() => {
+      expect(onStartedMock).toHaveBeenCalledTimes(1);
+      expect(onDataMock).toHaveBeenCalledTimes(2);
+    });
+
+    ctx.ee.emit('server:msg', {
+      id: '2',
+    });
+    await waitFor(() => {
+      expect(onDataMock).toHaveBeenCalledTimes(3);
+    });
+
+    expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "id": "1",
+        },
+      ],
+      Array [
+        Object {
+          "id": "2",
+        },
+      ],
+      Array [
+        Object {
+          "id": "2",
+        },
+      ],
+    ]
+  `);
+
+    subscription.unsubscribe();
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+      expect(ctx.ee.listenerCount('server:error')).toBe(0);
+    });
   });
 });
