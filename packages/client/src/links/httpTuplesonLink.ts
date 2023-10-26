@@ -8,7 +8,6 @@ import {
   createHTTPBatchLink,
   RequesterFn,
 } from './internals/createHTTPBatchLink';
-// Stream parsing adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 import {
   fetchHTTPResponse,
   getBody,
@@ -46,15 +45,12 @@ const tuplesonRequester: RequesterFn<HTTPTuplesonLinkOptions> = (
         inputs,
         path,
         headers() {
-          if (!requesterOpts.opts.headers) {
-            return {};
-          }
           if (typeof requesterOpts.opts.headers === 'function') {
             return requesterOpts.opts.headers({
               opList: batchOps as NonEmptyArray<Operation>,
             });
           }
-          return requesterOpts.opts.headers;
+          return requesterOpts.opts.headers ?? {};
         },
       },
       ac,
