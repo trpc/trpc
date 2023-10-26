@@ -72,13 +72,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
     Object.create(null);
   let connectAttempt = 0;
   let connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  let connectionIndex = 0;
   let activeConnection: null | Connection = createConnection();
   /**
    * Global connection has been killed
    */
   let killed = false;
 
-  type Connection =
+  type Connection = {
+    id: number;
+  } & (
     | {
         state: 'open';
         ws: WebSocket;
@@ -90,7 +93,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
     | {
         state: 'connecting';
         ws?: WebSocket;
-      };
+      }
+  );
 
   /**
    * tries to send the list of messages
@@ -144,6 +148,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     if (!hasPendingRequests) {
       conn.ws?.close();
     }
+    console.log('closeIfNoPending', hasPendingRequests, conn.id);
   }
 
   function closeActiveSubscriptions() {
@@ -163,6 +168,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
   function createConnection(): Connection {
     const self: Connection = {
+      id: ++connectionIndex,
       state: 'connecting',
     } as Connection;
 
@@ -177,7 +183,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       const ws = new WebSocketImpl(urlString);
       self.ws = ws;
 
-      clearTimeout(connectTimer as any);
+      clearTimeout(connectTimer);
       connectTimer = undefined;
 
       ws.addEventListener('open', () => {
@@ -240,14 +246,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
         } else {
           handleIncomingResponse(msg);
         }
-        if (self !== activeConnection || self.state === 'closed') {
+        if (self !== activeConnection) {
           // when receiving a message, we close old connection that has no pending requests
           closeIfNoPending(self);
         }
       });
 
       ws.addEventListener('close', ({ code }) => {
+        console.log('closing', self.id, self.state, code);
         if (self.state === 'open') {
+          console.log('calling', onClose);
           onClose?.({ code });
         }
         self.state = 'closed';
@@ -328,7 +336,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       killed = true;
       closeActiveSubscriptions();
       activeConnection && closeIfNoPending(activeConnection);
-      clearTimeout(connectTimer as any);
+      clearTimeout(connectTimer);
       connectTimer = undefined;
     },
     request,
