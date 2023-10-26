@@ -7,7 +7,6 @@ import {
   ProcedureType,
 } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
 import { BaseHandlerOptions } from '../internals/types';
 import { isObservable, Unsubscribable } from '../observable';
 import {
@@ -192,7 +191,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
-          rawInput: input,
+          getRawInput: async () => input,
           ctx,
           type,
         });
@@ -311,7 +310,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = new TRPCError({
           code: 'PARSE_ERROR',
-          cause: getCauseFromUnknown(cause),
+          cause,
         });
 
         respond({

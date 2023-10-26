@@ -74,7 +74,7 @@ type PostCreateOutput = RouterOutput['post']['create'];
 //   ^?
 ```
 
-## Infer `TRPClientError` types
+## Infer `TRPCClientError` types
 
 It's also useful to infer the error type for your `AppRouter`
 
@@ -83,10 +83,10 @@ It's also useful to infer the error type for your `AppRouter`
 // @include: server
 
 // @filename: trpc.ts
-import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "./server";
 
-export const trpc = createTRPCProxyClient<AppRouter>({
+export const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",

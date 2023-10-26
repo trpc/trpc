@@ -13,7 +13,8 @@ export async function getPostBody(opts: {
         ok: true,
         data: req.body,
         // If the request headers specifies a content-type, we assume that the body has been preprocessed
-        preprocessed: req.headers['content-type'] === 'application/json',
+        preprocessed:
+          !!req.headers['content-type']?.startsWith('application/json'),
       });
       return;
     }
@@ -27,7 +28,6 @@ export async function getPostBody(opts: {
           ok: false,
           error: new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }),
         });
-        req.socket.destroy();
       }
     });
     req.on('end', () => {

@@ -46,10 +46,10 @@ const ctx = konn()
   .done();
 
 test('with input', async () => {
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
   function MyComponent() {
-    const utils = proxy.useContext();
-    const query1 = proxy.post.list.useInfiniteQuery(
+    const utils = client.useContext();
+    const query1 = client.post.list.useInfiniteQuery(
       {
         foo: 'bar',
       },
@@ -65,13 +65,15 @@ test('with input', async () => {
       return <>...</>;
     }
 
-    type TData = (typeof query1)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
-    >();
+    expectTypeOf<
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
+    >(query1.data);
 
     return (
       <>
@@ -128,10 +130,10 @@ test('with input', async () => {
 });
 
 test('w/o input', async () => {
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
   function MyComponent() {
-    const utils = proxy.useContext();
-    const query1 = proxy.post.list.useInfiniteQuery(
+    const utils = client.useContext();
+    const query1 = client.post.list.useInfiniteQuery(
       {},
       {
         getNextPageParam(lastPage) {
@@ -147,10 +149,13 @@ test('w/o input', async () => {
 
     type TData = (typeof query1)['data'];
     expectTypeOf<TData>().toMatchTypeOf<
-      InfiniteData<{
-        items: typeof fixtureData;
-        next?: number | undefined;
-      }>
+      InfiniteData<
+        {
+          items: typeof fixtureData;
+          next?: number | undefined;
+        },
+        number | null
+      >
     >();
 
     return (

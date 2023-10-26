@@ -41,7 +41,7 @@ describe('httpLink', () => {
 
   test('headers() failure', async () => {
     const error = (await waitError(
-      ctx.proxy.q.query('bad'),
+      ctx.client.q.query('bad'),
       TRPCClientError,
     )) as any as TRPCClientError<typeof appRouter>;
 
@@ -76,7 +76,7 @@ describe('httpBatchLink', () => {
 
   test('headers() failure', async () => {
     const error = (await waitError(
-      ctx.proxy.q.query('bad'),
+      ctx.client.q.query('bad'),
       TRPCClientError,
     )) as any as TRPCClientError<typeof appRouter>;
 

@@ -113,18 +113,18 @@ function factory(config?: { createContext: () => Promise<any> }) {
 }
 
 test('query', async () => {
-  const { proxy: proxy, close } = factory();
-  expect(await proxy.greeting.query()).toBe('hello world');
-  expect(await proxy.greeting.query(null)).toBe('hello world');
-  expect(await proxy.greeting.query('alexdotjs')).toBe('hello alexdotjs');
+  const { client: client, close } = factory();
+  expect(await client.greeting.query()).toBe('hello world');
+  expect(await client.greeting.query(null)).toBe('hello world');
+  expect(await client.greeting.query('alexdotjs')).toBe('hello alexdotjs');
 
   await close();
 });
 
 test('mutation', async () => {
-  const { proxy, close } = factory();
+  const { client, close } = factory();
   expect(
-    await proxy['post.edit'].mutate({
+    await client['post.edit'].mutate({
       id: 'id',
       data: { title: 'title', text: 'text' },
     }),
@@ -140,7 +140,7 @@ test('mutation', async () => {
 });
 
 test('basic subscription test', async () => {
-  const { proxy, close, ee } = factory();
+  const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
       ee.emit('server:msg', {
@@ -153,7 +153,7 @@ test('basic subscription test', async () => {
   });
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
-  const subscription = proxy.onMessage.subscribe(undefined, {
+  const subscription = client.onMessage.subscribe(undefined, {
     onStarted() {
       onStartedMock();
     },
@@ -205,7 +205,7 @@ test('basic subscription test', async () => {
 });
 
 test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
-  const { proxy, close, ee, wssPort, applyWSSHandlerOpts } = factory();
+  const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
       ee.emit('server:msg', {
@@ -220,7 +220,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  proxy.onMessage.subscribe(undefined, {
+  client.onMessage.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -278,7 +278,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
 });
 
 test('server subscription ended', async () => {
-  const { proxy, close, ee, subRef } = factory();
+  const { client, close, ee, subRef } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
       ee.emit('server:msg', {
@@ -293,7 +293,7 @@ test('server subscription ended', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  proxy.onMessage.subscribe(undefined, {
+  client.onMessage.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -314,7 +314,7 @@ test('server subscription ended', async () => {
 
 test('can close wsClient when subscribed', async () => {
   const {
-    proxy,
+    client,
     close,
     onCloseMock: wsClientOnCloseMock,
     wsClient,
@@ -329,7 +329,7 @@ test('can close wsClient when subscribed', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  proxy.onMessage.subscribe(undefined, {
+  client.onMessage.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -352,7 +352,7 @@ test('can close wsClient when subscribed', async () => {
 });
 
 test('sub emits errors', async () => {
-  const { proxy, close, wss, ee, subRef } = factory();
+  const { client, close, wss, ee, subRef } = factory();
 
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -368,7 +368,7 @@ test('sub emits errors', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  proxy.onMessage.subscribe(undefined, {
+  client.onMessage.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -388,12 +388,12 @@ test('sub emits errors', async () => {
 test(
   'wait for slow queries/mutations before disconnecting',
   async () => {
-    const { proxy, close, wsClient, onNewClient } = factory();
+    const { client, close, wsClient, onNewClient } = factory();
 
     await waitFor(() => {
       expect(onNewClient).toHaveBeenCalledTimes(1);
     });
-    const promise = proxy.slow.mutate();
+    const promise = client.slow.mutate();
     wsClient.close();
     expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
     await close();
@@ -408,7 +408,7 @@ test(
 test(
   'subscriptions are automatically resumed',
   async () => {
-    const { proxy, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
+    const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
       factory();
     ee.once('subscription:created', () => {
       setTimeout(() => {
@@ -423,7 +423,7 @@ test(
       const onErrorMock = vi.fn();
       const onStoppedMock = vi.fn();
       const onCompleteMock = vi.fn();
-      const unsub = proxy.onMessage.subscribe(undefined, {
+      const unsub = client.onMessage.subscribe(undefined, {
         onStarted: onStartedMock(),
         onData: onDataMock,
         onError: onErrorMock,
@@ -490,11 +490,11 @@ test(
 );
 
 test('not found error', async () => {
-  const { proxy, close, router } = factory();
+  const { client, close, router } = factory();
 
   const error: TRPCClientError<typeof router> = await new Promise(
     // @ts-expect-error - testing runtime typeerrors
-    (resolve, reject) => proxy.notFound.query().then(reject).catch(resolve),
+    (resolve, reject) => client.notFound.query().then(reject).catch(resolve),
   );
 
   expect(error.name).toBe('TRPCClientError');
@@ -506,8 +506,8 @@ test('not found error', async () => {
 test('batching', async () => {
   const t = factory();
   const promises = [
-    t.proxy.greeting.query(),
-    t.proxy['post.edit'].mutate({ id: '', data: { text: '', title: '' } }),
+    t.client.greeting.query(),
+    t.client['post.edit'].mutate({ id: '', data: { text: '', title: '' } }),
   ] as const;
 
   expect(await Promise.all(promises)).toMatchInlineSnapshot(`

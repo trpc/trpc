@@ -6,7 +6,7 @@ import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
  * Create proxy for decorating procedures
  * @internal
  */
-export function createReactProxyDecoration<
+export function createReactDecoration<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
 >(name: string, hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
@@ -30,16 +30,6 @@ export function createReactProxyDecoration<
     const [input, ...rest] = args;
     const opts = rest[0] || {};
 
-    if (lastArg.startsWith('useSuspense')) {
-      const fn =
-        lastArg === 'useSuspenseQuery' ? 'useQuery' : 'useInfiniteQuery';
-      const result = (hooks as any)[fn](pathCopy, input, {
-        ...opts,
-        suspense: true,
-        enabled: true,
-      });
-      return [result.data, result];
-    }
     return (hooks as any)[lastArg](pathCopy, input, opts);
   });
 }

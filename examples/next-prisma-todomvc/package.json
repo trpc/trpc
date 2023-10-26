@@ -1,7 +1,10 @@
 {
   "name": "@examples/trpc-next-prisma-todomvc",
-  "version": "10.33.0",
+  "version": "10.41.0",
   "private": true,
+  "engines": {
+    "node": ">=18.15.0"
+  },
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
@@ -23,14 +26,14 @@
   },
   "dependencies": {
     "@prisma/client": "^4.14.1",
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.33.0",
-    "@trpc/next": "^10.33.0",
-    "@trpc/react-query": "^10.33.0",
-    "@trpc/server": "^10.33.0",
-    "clsx": "^1.1.1",
+    "@tanstack/react-query": "^5.0.0",
+    "@trpc/client": "^10.41.0",
+    "@trpc/next": "^10.41.0",
+    "@trpc/react-query": "^10.41.0",
+    "@trpc/server": "^10.41.0",
+    "clsx": "^2.0.0",
     "i18next": "^22.4.13",
-    "next": "^13.4.7",
+    "next": "^13.4.8",
     "next-i18next": "^13.2.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -42,7 +45,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
-    "@tanstack/react-query-devtools": "^4.18.0",
+    "@tanstack/react-query-devtools": "^5.0.0",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.8",
     "eslint": "^8.40.0",

@@ -1,31 +1,21 @@
 ---
-id: useContext
-title: useContext
-sidebar_label: useContext()
-slug: /client/react/useContext
+id: useUtils
+title: useUtils
+sidebar_label: useUtils()
+slug: /client/react/useUtils
 ---
 
-`useContext` is a hook that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`queryClient`](https://tanstack.com/query/v4/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useContext` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
+`useUtils` is a hook that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`queryClient`](https://tanstack.com/query/v5/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useContext` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
 
 :::note
 
-In v10, `useContext` no longer exposes the raw `queryClient`. If you need some of the methods that aren't wrapped by tRPC yet, import and use them directly from `@tanstack/react-query`:
-
-<br />
-
-```tsx
-import { useQueryClient } from '@tanstack/react-query';
-
-function MyComponent() {
-  const queryClient = useQueryClient();
-}
-```
+This hook was called `useContext()` until `10.41.0` (and is still aliased for the foreseeable future)
 
 :::
 
 ## Usage
 
-`useContext` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
+`useUtils` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
 
 ```twoslash include server
 // @target: esnext
@@ -56,7 +46,7 @@ export type AppRouter = typeof appRouter;
 // @include: server
 ```
 
-Now in our component, when we navigate the object `useContext` gives us and reach the `post.all` query, we'll get access to our query helpers!
+Now in our component, when we navigate the object `useUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
 
 ```tsx twoslash title="MyComponent.tsx"
 // @target: esnext
@@ -70,7 +60,7 @@ const trpc = createTRPCReact<AppRouter>();
 // ---cut---
 // @noErrors
 function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   utils.post.all.f;
   //              ^|
   // [...]
@@ -79,22 +69,22 @@ function MyComponent() {
 
 ## Helpers
 
-These are the helpers you'll get access to via `useContext`. The table below will help you know which tRPC helper wraps which `@tanstack/react-query` helper method. Each react-query method will link to its respective docs/guide:
+These are the helpers you'll get access to via `useUtils`. The table below will help you know which tRPC helper wraps which `@tanstack/react-query` helper method. Each react-query method will link to its respective docs/guide:
 
 | tRPC helper wrapper | `@tanstack/react-query` helper method                                                                                            |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `fetch`             | [`queryClient.fetchQuery`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery)                       |
-| `prefetch`          | [`queryClient.prefetchQuery`](https://tanstack.com/query/v4/docs/guides/prefetching)                                             |
-| `fetchInfinite`     | [`queryClient.fetchInfiniteQuery`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchinfinitequery)       |
-| `prefetchInfinite`  | [`queryClient.prefetchInfiniteQuery`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientprefetchinfinitequery) |
-| `ensureData`        | [`queryClient.ensureData`](https://tanstack.com/query/v4/docs/react/reference/QueryClient#queryclientensurequerydata)            |
-| `invalidate`        | [`queryClient.invalidateQueries`](https://tanstack.com/query/v4/docs/guides/query-invalidation)                                  |
-| `refetch`           | [`queryClient.refetchQueries`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientrefetchqueries)               |
-| `cancel`            | [`queryClient.cancelQueries`](https://tanstack.com/query/v4/docs/guides/query-cancellation)                                      |
-| `setData`           | [`queryClient.setQueryData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata)                   |
-| `getData`           | [`queryClient.getQueryData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata)                   |
-| `setInfiniteData`   | [`queryClient.setInfiniteQueryData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientsetquerydata)           |
-| `getInfiniteData`   | [`queryClient.getInfiniteData`](https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientgetquerydata)                |
+| `fetch`             | [`queryClient.fetchQuery`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery)                       |
+| `prefetch`          | [`queryClient.prefetchQuery`](https://tanstack.com/query/v5/docs/guides/prefetching)                                             |
+| `fetchInfinite`     | [`queryClient.fetchInfiniteQuery`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery)       |
+| `prefetchInfinite`  | [`queryClient.prefetchInfiniteQuery`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchinfinitequery) |
+| `ensureData`        | [`queryClient.ensureData`](https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientensurequerydata)            |
+| `invalidate`        | [`queryClient.invalidateQueries`](https://tanstack.com/query/v5/docs/guides/query-invalidation)                                  |
+| `refetch`           | [`queryClient.refetchQueries`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientrefetchqueries)               |
+| `cancel`            | [`queryClient.cancelQueries`](https://tanstack.com/query/v5/docs/guides/query-cancellation)                                      |
+| `setData`           | [`queryClient.setQueryData`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata)                   |
+| `getData`           | [`queryClient.getQueryData`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata)                   |
+| `setInfiniteData`   | [`queryClient.setInfiniteQueryData`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata)           |
+| `getInfiniteData`   | [`queryClient.getInfiniteData`](https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata)                |
 
 ### ❓ The function I want isn't here!
 
@@ -111,7 +101,7 @@ import { trpc } from '../utils/trpc';
 
 function MyComponent() {
   const [apiKey, setApiKey] = useState();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   return (
     <Form
@@ -141,7 +131,7 @@ on the input passed to it to prevent unnecessary calls to the back end.
 import { trpc } from '../utils/trpc';
 
 function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const mutation = trpc.post.edit.useMutation({
     onSuccess(input) {
@@ -212,7 +202,7 @@ export const appRouter = t.router({
 import { trpc } from '../utils/trpc';
 
 function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const invalidateAllQueriesAcrossAllRouters = () => {
     // 1️⃣
@@ -275,7 +265,7 @@ export const trpc = createTRPCReact<AppRouter, SSRContext>({
 
 ## Additional Options
 
-Aside from the query helpers, the object `useContext` returns also contains the following properties:
+Aside from the query helpers, the object `useUtils` returns also contains the following properties:
 
 ```ts
 interface ProxyTRPCContextProps<TRouter extends AnyRouter, TSSRContext> {

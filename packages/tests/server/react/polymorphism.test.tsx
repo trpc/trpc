@@ -12,12 +12,13 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { InferQueryLikeData } from '@trpc/react-query/shared';
-import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
 import { z } from 'zod';
+import { t } from './polymorphism.common';
 /**
  * We define a router factory which can be used many times.
  *
@@ -34,8 +35,6 @@ import * as SubTypedFactory from './polymorphism.subtyped-factory';
  * The tRPC backend is defined here
  */
 function createTRPCApi() {
-  const t = initTRPC.create();
-
   /**
    * Backend data sources.
    *
@@ -53,19 +52,11 @@ function createTRPCApi() {
   const appRouter = t.router({
     github: t.router({
       issues: t.router({
-        export: Factory.createExportRoute(
-          t.router,
-          t.procedure,
-          IssueExportsProvider,
-        ),
+        export: Factory.createExportRoute(t.procedure, IssueExportsProvider),
       }),
       discussions: t.router({
         export: t.mergeRouters(
-          Factory.createExportRoute(
-            t.router,
-            t.procedure,
-            DiscussionExportsProvider,
-          ),
+          Factory.createExportRoute(t.procedure, DiscussionExportsProvider),
 
           // We want to be sure that routers with abstract types,
           //  which then get merged into a larger router, can be used polymorphically
@@ -80,7 +71,6 @@ function createTRPCApi() {
       }),
       pullRequests: t.router({
         export: SubTypedFactory.createSubTypedExportRoute(
-          t.router,
           t.procedure,
           PullRequestExportsProvider,
         ),
@@ -117,7 +107,9 @@ describe('polymorphism', () => {
 
       function App(props: { children: ReactNode }) {
         return (
-          <trpc.Provider {...{ queryClient, client: opts.client }}>
+          <trpc.Provider
+            {...{ queryClient, client: getUntypedClient(opts.client) }}
+          >
             <QueryClientProvider client={queryClient}>
               {props.children}
             </QueryClientProvider>
@@ -147,7 +139,7 @@ describe('polymorphism', () => {
        * and pass the specific backend functionality which is needed need
        */
       function IssuesExportPage() {
-        const utils = trpc.useContext();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
@@ -204,7 +196,7 @@ describe('polymorphism', () => {
       const { trpc } = ctx;
 
       function DiscussionsExportPage() {
-        const utils = trpc.useContext();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
@@ -267,7 +259,7 @@ describe('polymorphism', () => {
        * but also extend types and functionality
        */
       function PullRequestsExportPage() {
-        const utils = trpc.useContext();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
@@ -293,6 +285,7 @@ describe('polymorphism', () => {
             {/* ... or you can adapt them to support sub-types */}
             <ExportStatus
               status={trpc.github.pullRequests.export.status}
+              //                                       ^?
               currentExport={currentExport}
               renderAdditionalFields={(data) => {
                 return `Description: "${data?.description}"`;
@@ -459,6 +452,7 @@ function RefreshExportsListButton({
 }
 
 type ExportStatusProps<TStatus extends Factory.ExportRouteLike['status']> = {
+  //                                                             ^?
   status: TStatus;
   renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;

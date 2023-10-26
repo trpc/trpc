@@ -15,13 +15,17 @@ We have prefixed this as `unstable_` as it's a new API, but you're safe to use i
 
 > All usage and options are identical to [`httpBatchLink`](./httpBatchLink.md).
 
+:::note
+If you require the ability to change/set response headers (which includes cookies) from within your procedures, make sure to use `httpBatchLink` instead! This is due to the fact that `unstable_httpBatchStreamLink` does not support setting headers once the stream has begun. [Read more](https://trpc.io/docs/client/links/httpBatchLink).
+:::
+
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',
@@ -47,13 +51,10 @@ const somePosts = await Promise.all([
 When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use `httpBatchStreamLink` instead. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
-import {
-  createTRPCProxyClient,
-  unstable_httpBatchStreamLink,
-} from '@trpc/client';
+import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     unstable_httpBatchStreamLink({
       url: 'http://localhost:3000',

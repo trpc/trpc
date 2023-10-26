@@ -1,7 +1,7 @@
 import { IncomingMessage } from 'http';
 import { AddressInfo } from 'net';
 import {
-  createTRPCClientProxy,
+  createTRPCClient,
   createTRPCUntypedClient,
   createWSClient,
   httpBatchLink,
@@ -27,19 +27,19 @@ import './___packages';
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = ws as any;
 
+export type CreateClientCallback = (opts: {
+  httpUrl: string;
+  wssUrl: string;
+  wsClient: TRPCWebSocketClient;
+}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+
 export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?:
-      | Partial<WithTRPCConfig<TRouter>>
-      | ((opts: {
-          httpUrl: string;
-          wssUrl: string;
-          wsClient: TRPCWebSocketClient;
-        }) => Partial<WithTRPCConfig<AnyNewRouter>>);
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
   },
 ) {
   // http
@@ -86,12 +86,11 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       : {}),
   } as WithTRPCConfig<typeof router>;
 
-  const client = createTRPCUntypedClient<typeof router>(trpcClientOptions);
-  const proxy = createTRPCClientProxy<typeof router>(client);
+  const client = createTRPCClient<typeof router>(trpcClientOptions);
+
   return {
     wsClient,
     client,
-    proxy,
     close: async () => {
       await Promise.all([
         new Promise((resolve) => server.close(resolve)),

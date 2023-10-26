@@ -40,9 +40,9 @@ const ctx = konn()
   .done();
 
 test('single query', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [
+    const results = client.useQueries((t) => [
       t.post.byId({ id: '1' }),
       t.post.byId(
         { id: '1' },
@@ -68,9 +68,9 @@ test('single query', async () => {
 });
 
 test('different queries', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [t.foo(), t.bar()]);
+    const results = client.useQueries((t) => [t.foo(), t.bar()]);
 
     const foo = results[0].data;
     const bar = results[1].data;
@@ -98,9 +98,9 @@ test('different queries', async () => {
 test('mapping queries', async () => {
   const ids = ['1', '2', '3'];
 
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) =>
+    const results = client.useQueries((t) =>
       ids.map((id) => t.post.byId({ id })),
     );
 
@@ -127,9 +127,9 @@ test('mapping queries', async () => {
 });
 
 test('single query with options', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [
+    const results = client.useQueries((t) => [
       t.post.byId(
         { id: '1' },
         { enabled: false, placeholderData: '__result2' },
@@ -146,5 +146,60 @@ test('single query with options', async () => {
   );
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result2`);
+  });
+});
+
+// regression https://github.com/trpc/trpc/issues/4802
+test('regression #4802: passes context to links', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const results = client.useQueries((t) => [
+      t.post.byId(
+        { id: '1' },
+        {
+          trpc: {
+            context: {
+              id: '1',
+            },
+          },
+        },
+      ),
+      t.post.byId(
+        { id: '2' },
+        {
+          trpc: {
+            context: {
+              id: '2',
+            },
+          },
+        },
+      ),
+    ]);
+    if (results.some((v) => !v.data)) {
+      return <>...</>;
+    }
+
+    return <pre>{JSON.stringify(results, null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`__result1`);
+    expect(utils.container).toHaveTextContent(`__result2`);
+  });
+
+  expect(ctx.spyLink).toHaveBeenCalledTimes(2);
+  const ops = ctx.spyLink.mock.calls.map((it) => it[0]);
+
+  expect(ops[0]!.context).toEqual({
+    id: '1',
+  });
+  expect(ops[1]!.context).toEqual({
+    id: '2',
   });
 });

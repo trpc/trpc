@@ -4,7 +4,7 @@ import '../___packages';
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   TRPCLink,
   unstable_httpBatchStreamLink,
@@ -119,7 +119,7 @@ async function startServer() {
   });
   const server = await mf.startServer();
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
@@ -182,7 +182,7 @@ test('streaming', async () => {
     };
   };
 
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       unstable_httpBatchStreamLink({
@@ -202,7 +202,7 @@ test('streaming', async () => {
 });
 
 test('query with headers', async () => {
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
         url,
@@ -233,7 +233,7 @@ test('response with headers', async () => {
     };
   };
 
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       customLink,
       httpBatchLink({
@@ -248,7 +248,7 @@ test('response with headers', async () => {
 });
 
 test('request info', async () => {
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
         url,

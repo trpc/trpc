@@ -33,11 +33,14 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const promise = opts
           .createContext()
           .then(async (ctx) => {
-            const callProc = async () => {
+            const callProc = async (_cachebuster: string) => {
+              //   // _cachebuster is not used by us but to make sure
+              //   // that calls with different tags are properly separated
+              //   // @link https://github.com/trpc/trpc/issues/4622
               const procedureResult = await callProcedure({
                 procedures: opts.router._def.procedures,
                 path,
-                rawInput: input,
+                getRawInput: async () => input,
                 ctx: ctx,
                 type,
               });
@@ -50,10 +53,10 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               return unstable_cache(callProc, path.split('.'), {
                 revalidate,
                 tags: [cacheTag],
-              })();
+              })(cacheTag);
             }
 
-            return callProc();
+            return callProc(cacheTag);
           })
           .catch((cause) => {
             observer.error(TRPCClientError.from(cause));

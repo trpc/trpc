@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   loggerLink,
@@ -10,7 +10,7 @@ import {
   unstable_httpBatchStreamLink,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { retryLink } from '@trpc/client/src/links/retryLink';
+import { retryLink } from '@trpc/client/src/links/internals/retryLink';
 import { AnyRouter, initTRPC } from '@trpc/server/src';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
@@ -72,6 +72,11 @@ test('chainer', async () => {
     Object {
       "context": Object {
         "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
       },
       "result": Object {
         "data": "world",
@@ -174,6 +179,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello world",
@@ -183,6 +200,18 @@ describe('batching', () => {
         Object {
           "context": Object {
             "response": "[redacted]",
+            "responseJSON": Array [
+              Object {
+                "result": Object {
+                  "data": "hello world",
+                },
+              },
+              Object {
+                "result": Object {
+                  "data": "hello alexdotjs",
+                },
+              },
+            ],
           },
           "result": Object {
             "data": "hello alexdotjs",
@@ -302,7 +331,7 @@ describe('batching', () => {
       }),
     });
 
-    const { proxy, httpUrl, close, router } = routerToServerAndClientNew(
+    const { client, httpUrl, close, router } = routerToServerAndClientNew(
       appRouter,
       {
         server: {
@@ -329,8 +358,8 @@ describe('batching', () => {
       // queries should be batched into a single request
       // url length: 118 < 2083
       const res = await Promise.all([
-        proxy['big-input'].query('*'.repeat(10)),
-        proxy['big-input'].query('*'.repeat(10)),
+        client['big-input'].query('*'.repeat(10)),
+        client['big-input'].query('*'.repeat(10)),
       ]);
 
       expect(res).toEqual([10, 10]);
@@ -341,8 +370,8 @@ describe('batching', () => {
       // queries should be sent and individual requests
       // url length: 2146 > 2083
       const res = await Promise.all([
-        proxy['big-input'].query('*'.repeat(1024)),
-        proxy['big-input'].query('*'.repeat(1024)),
+        client['big-input'].query('*'.repeat(1024)),
+        client['big-input'].query('*'.repeat(1024)),
       ]);
 
       expect(res).toEqual([1024, 1024]);
@@ -352,7 +381,7 @@ describe('batching', () => {
     {
       // queries should be batched into a single request
       // url length: 2146 < 9999
-      const clientWithBigMaxURLLength = createTRPCProxyClient<typeof router>({
+      const clientWithBigMaxURLLength = createTRPCClient<typeof router>({
         links: [httpBatchLink({ url: httpUrl, maxURLLength: 9999 })],
       });
 
@@ -388,7 +417,7 @@ describe('batching', () => {
           },
         },
       });
-    const client = createTRPCProxyClient<typeof router>({
+    const client = createTRPCClient<typeof router>({
       ...trpcClientOptions,
       links: [
         httpBatchLink({
@@ -425,7 +454,7 @@ test('create client with links', async () => {
   const { close, router, httpPort, trpcClientOptions } =
     routerToServerAndClientNew(appRouter);
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     ...trpcClientOptions,
     links: [
       retryLink({ attempts: 3 }),
@@ -561,6 +590,35 @@ describe('loggerLink', () => {
     );
   });
 
+  test('ansi color mode', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, colorMode: 'ansi' })(mockRuntime),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {},
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+      `"\x1b[30;46m >> query \x1b[1;30;46m #1 n/a \x1b[0m"`,
+    );
+    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+      `"\x1b[97;46m << query \x1b[1;97;46m #1 n/a \x1b[0m"`,
+    );
+  });
+
   test('custom logger', () => {
     const logFn = vi.fn();
     createChain({
@@ -617,7 +675,7 @@ test('chain makes unsub', async () => {
     }),
   });
 
-  const { proxy, close } = routerToServerAndClientNew(appRouter, {
+  const { client, close } = routerToServerAndClientNew(appRouter, {
     client() {
       return {
         links: [
@@ -658,9 +716,59 @@ test('chain makes unsub', async () => {
       };
     },
   });
-  expect(await proxy.hello.query()).toBe('world');
+  expect(await client.hello.query()).toBe('world');
   expect(firstLinkCompleteSpy).toHaveBeenCalledTimes(1);
   expect(firstLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
   expect(secondLinkUnsubscribeSpy).toHaveBeenCalledTimes(1);
+  await close();
+});
+
+test('init with URL object', async () => {
+  const serverCall = vi.fn();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(({}) => {
+      serverCall();
+      return 'world';
+    }),
+  });
+
+  const { httpPort, close } = routerToServerAndClientNew(router);
+  const url = new URL(`http://localhost:${httpPort}`);
+
+  const chain = createChain({
+    links: [httpLink({ url: url })(mockRuntime)],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+    },
+  });
+
+  const result = await observableToPromise(chain).promise;
+  expect(result?.context?.response).toBeTruthy();
+  result.context!.response = '[redacted]' as any;
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "context": Object {
+        "response": "[redacted]",
+        "responseJSON": Object {
+          "result": Object {
+            "data": "world",
+          },
+        },
+      },
+      "result": Object {
+        "data": "world",
+        "type": "data",
+      },
+    }
+  `);
+
+  expect(serverCall).toHaveBeenCalledTimes(1);
+
   await close();
 });

@@ -3,6 +3,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
   IntersectionError,
@@ -28,41 +29,49 @@ import { TRPCClientError } from './TRPCClientError';
 /**
  * @public
  **/
-export type inferRouterProxyClient<TRouter extends AnyRouter> =
+export type inferRouterClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 /** @internal */
-export type Resolver<TProcedure extends AnyProcedure> = (
+export type Resolver<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = (
   ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferTransformedProcedureOutput<TProcedure>>;
+) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
-type SubscriptionResolver<TProcedure extends AnyProcedure> = (
+type SubscriptionResolver<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = (
   ...args: [
     input: ProcedureArgs<TProcedure['_def']>[0],
     opts: Partial<
       TRPCSubscriptionObserver<
-        inferTransformedSubscriptionOutput<TProcedure>,
-        TRPCClientError<TProcedure>
+        inferTransformedSubscriptionOutput<TConfig, TProcedure>,
+        TRPCClientError<TConfig>
       >
     > &
       ProcedureArgs<TProcedure['_def']>[1],
   ]
 ) => Unsubscribable;
 
-type DecorateProcedure<TProcedure extends AnyProcedure> =
-  TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnySubscriptionProcedure
-    ? {
-        subscribe: SubscriptionResolver<TProcedure>;
-      }
-    : never;
+type DecorateProcedure<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = TProcedure extends AnyQueryProcedure
+  ? {
+      query: Resolver<TConfig, TProcedure>;
+    }
+  : TProcedure extends AnyMutationProcedure
+  ? {
+      mutate: Resolver<TConfig, TProcedure>;
+    }
+  : TProcedure extends AnySubscriptionProcedure
+  ? {
+      subscribe: SubscriptionResolver<TConfig, TProcedure>;
+    }
+  : never;
 
 /**
  * @internal
@@ -74,11 +83,14 @@ type DecoratedProcedureRecord<
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
+    ? DecorateProcedure<TRouter['_def']['_config'], TProcedures[TKey]>
     : never;
 };
 
-const clientCallTypeMap: Record<keyof DecorateProcedure<any>, ProcedureType> = {
+const clientCallTypeMap: Record<
+  keyof DecorateProcedure<any, any>,
+  ProcedureType
+> = {
   query: 'query',
   mutate: 'mutation',
   subscribe: 'subscription',
@@ -94,21 +106,20 @@ export const clientCallTypeToProcedureType = (
 /**
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
-export type CreateTRPCProxyClient<TRouter extends AnyRouter> =
-  inferRouterProxyClient<TRouter> extends infer $ProcedureRecord
+export type CreateTRPCClient<TRouter extends AnyRouter> =
+  inferRouterClient<TRouter> extends infer $ProcedureRecord
     ? UntypedClientProperties & keyof $ProcedureRecord extends never
-      ? inferRouterProxyClient<TRouter>
+      ? inferRouterClient<TRouter>
       : IntersectionError<UntypedClientProperties & keyof $ProcedureRecord>
     : never;
 
 /**
- * @deprecated use `createTRPCProxyClient` instead
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
-): CreateTRPCProxyClient<TRouter> {
-  return createFlatProxy<CreateTRPCProxyClient<TRouter>>((key) => {
+): CreateTRPCClient<TRouter> {
+  return createFlatProxy<CreateTRPCClient<TRouter>>((key) => {
     if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
     }
@@ -126,9 +137,9 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   });
 }
 
-export function createTRPCProxyClient<TRouter extends AnyRouter>(
+export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): CreateTRPCProxyClient<TRouter> {
+): CreateTRPCClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
@@ -139,7 +150,7 @@ export function createTRPCProxyClient<TRouter extends AnyRouter>(
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
-  client: inferRouterProxyClient<TRouter>,
+  client: inferRouterClient<TRouter>,
 ): TRPCUntypedClient<TRouter> {
   return (client as any).__untypedClient;
 }

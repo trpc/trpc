@@ -63,6 +63,14 @@ pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-
 ```
 
 </TabItem>
+
+<TabItem value="bun" label="bun">
+
+```sh
+bun add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query zod
+```
+
+</TabItem>
 </Tabs>
 
 The Next.js integration is actually a combination of our [React Query Integration](../react/introduction.mdx) and some Next.js specific integrations.
@@ -257,15 +265,15 @@ The `config`-argument is a function that returns an object that configures the t
 - **Required**:
 - `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/client/links).
 - Optional:
-- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
-- `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v4/docs/reference/QueryClient)
+- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v5/docs/reference/QueryClient)
+- `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v5/docs/reference/QueryClient)
   - **Note:** You can only provide either a `queryClient` or a `queryClientConfig`.
 - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
 
 ### `overrides`: (default: `undefined`) {#overrides}
 
-Configure [overrides for React Query's hooks](/docs/client/react/usecontext#invalidate-full-cache-on-every-mutation).
+Configure [overrides for React Query's hooks](/docs/client/react/useUtils#invalidate-full-cache-on-every-mutation).
 
 ### `ssr`-boolean (default: `false`)
 

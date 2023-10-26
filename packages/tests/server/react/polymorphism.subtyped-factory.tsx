@@ -7,6 +7,7 @@ import { AnyRootConfig, TRPCError } from '@trpc/server';
 import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
 import { createRouterFactory } from '@trpc/server/core/router';
 import z from 'zod';
+import { t } from './polymorphism.common';
 import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
 
 //
@@ -45,15 +46,9 @@ export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 let COUNTER = 1;
 
 export function createSubTypedExportRoute<
-  TConfig extends AnyRootConfig,
-  TRouterFactory extends RouterFactory<TConfig>,
-  TBaseProcedure extends BaseProcedure<TConfig>,
->(
-  createRouter: TRouterFactory,
-  baseProcedure: TBaseProcedure,
-  dataProvider: SubTypedDataProvider,
-) {
-  return createRouter({
+  TBaseProcedure extends BaseProcedure<(typeof t)['_config']>,
+>(baseProcedure: TBaseProcedure, dataProvider: SubTypedDataProvider) {
+  return t.router({
     start: baseProcedure
       .input(SubTypedFileExportRequest)
       .output(SubTypedFileExportStatus)

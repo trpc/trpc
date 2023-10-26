@@ -5,16 +5,23 @@ import {
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
-import { getUntypedClient, inferRouterProxyClient } from '@trpc/client';
+import {
+  getUntypedClient,
+  inferRouterClient,
+  TRPCClientError,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   callProcedure,
   ClientDataTransformerOptions,
   Filter,
-  inferHandlerInput,
+  inferProcedureInput,
   inferRouterContext,
+  Maybe,
   ProtectedIntersection,
 } from '@trpc/server';
 import {
@@ -25,8 +32,11 @@ import {
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import {
   CreateTRPCReactQueryClientConfig,
+  ExtractCursorType,
   getQueryClient,
   getQueryType,
+  TRPCFetchInfiniteQueryOptions,
+  TRPCFetchQueryOptions,
 } from '../shared';
 
 interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
@@ -36,37 +46,67 @@ interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
 }
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
-  client: inferRouterProxyClient<TRouter>;
+  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
   CreateTRPCReactQueryClientConfig &
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = {
+type DecorateProcedure<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = {
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetch(
-    ...args: inferHandlerInput<TProcedure>
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchQueryOptions<
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetchInfinite(
-    ...args: inferHandlerInput<TProcedure>
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<
+    InfiniteData<
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
+    >
+  >;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
-  prefetch(...args: inferHandlerInput<TProcedure>): Promise<void>;
+  prefetch(
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchQueryOptions<
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
-  prefetchInfinite(...args: inferHandlerInput<TProcedure>): Promise<void>;
+  prefetchInfinite(
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<void>;
 };
 
 /**
@@ -79,10 +119,13 @@ type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
+      DecorateProcedure<
+        TRouter['_def']['_config'],
+        TRouter['_def']['record'][TKey]
+      >;
 };
 
-type AnyDecoratedProcedure = DecorateProcedure<any>;
+type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
@@ -107,7 +150,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
           return callProcedure({
             procedures: router._def.procedures,
             path: queryOpts.path,
-            rawInput: queryOpts.input,
+            getRawInput: async () => queryOpts.input,
             ctx,
             type: 'query',
           });
@@ -116,7 +159,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     }
 
     const { client } = opts;
-    const untypedClient = getUntypedClient(client);
+    const untypedClient =
+      client instanceof TRPCUntypedClient
+        ? client
+        : getUntypedClient(client as any);
 
     return {
       query: (queryOpts) =>
@@ -166,12 +212,36 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       );
 
       const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
-        fetch: () => queryClient.fetchQuery({ queryKey, queryFn }),
-        fetchInfinite: () =>
-          queryClient.fetchInfiniteQuery({ queryKey, queryFn }),
-        prefetch: () => queryClient.prefetchQuery({ queryKey, queryFn }),
-        prefetchInfinite: () =>
-          queryClient.prefetchInfiniteQuery({ queryKey, queryFn }),
+        fetch: () => {
+          const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
+          return queryClient.fetchQuery({ ...args1, queryKey, queryFn });
+        },
+        fetchInfinite: () => {
+          const args1 = args[1] as Maybe<
+            TRPCFetchInfiniteQueryOptions<any, any, any>
+          >;
+          return queryClient.fetchInfiniteQuery({
+            ...args1,
+            queryKey,
+            queryFn,
+            initialPageParam: args1?.initialCursor ?? null,
+          });
+        },
+        prefetch: () => {
+          const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
+          return queryClient.prefetchQuery({ ...args1, queryKey, queryFn });
+        },
+        prefetchInfinite: () => {
+          const args1 = args[1] as Maybe<
+            TRPCFetchInfiniteQueryOptions<any, any, any>
+          >;
+          return queryClient.prefetchInfiniteQuery({
+            ...args1,
+            queryKey,
+            queryFn,
+            initialPageParam: args1?.initialCursor ?? null,
+          });
+        },
       };
 
       return helperMap[utilName]();

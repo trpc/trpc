@@ -58,7 +58,10 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
+  }) as NextAppDirDecoratedProcedureRecord<
+    TRouter['_def']['_config'],
+    TRouter['_def']['record']
+  >;
 }
 
 /**
@@ -91,7 +94,7 @@ export function experimental_createServerActionHandler<
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
-  ): TRPCActionHandler<Simplify<inferActionDef<TProc>>> {
+  ): TRPCActionHandler<Simplify<inferActionDef<TInstance['_config'], TProc>>> {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
@@ -116,8 +119,8 @@ export function experimental_createServerActionHandler<
           input: undefined,
           ctx,
           path: 'serverAction',
-          rawInput,
-          type: proc._type,
+          getRawInput: async () => rawInput,
+          type: proc._def.type,
         });
 
         const transformedJSON = transformTRPCResponse(config, {
@@ -134,7 +137,7 @@ export function experimental_createServerActionHandler<
           error,
           input: rawInput,
           path: 'serverAction',
-          type: proc._type,
+          type: proc._def.type,
         });
 
         // TODO: send the right HTTP header?!
@@ -143,7 +146,7 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<inferActionDef<TProc>>;
+    } as TRPCActionHandler<inferActionDef<TInstance['_config'], TProc>>;
   };
 }
 

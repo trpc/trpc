@@ -350,8 +350,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(S.parse(S.struct({ name: S.string })))
-    .output(S.parse(S.struct({ greeting: S.string })))
+    .input(S.parseSync(S.struct({ name: S.string })))
+    .output(S.parseSync(S.struct({ greeting: S.string })))
     .query(({ input }) => {
       //      ^?
       return {
@@ -376,6 +376,32 @@ export const appRouter = t.router({
   hello: publicProcedure
     .input(T.Record({ name: T.String }))
     .output(T.Record({ greeting: T.String }))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [Valibot](https://github.com/fabian-hiller/valibot)
+
+```ts twoslash
+import { wrap } from '@decs/typeschema';
+import { initTRPC } from '@trpc/server';
+import { object, string } from 'valibot';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(wrap(object({ name: string() })))
+    .output(wrap(object({ greeting: string() })))
     .query(({ input }) => {
       //      ^?
       return {

@@ -3,6 +3,7 @@ import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   createWSClient,
+  getUntypedClient,
   httpBatchLink,
   splitLink,
   TRPCWebSocketClient,
@@ -279,7 +280,7 @@ export function createAppRouter() {
 
   function App(props: { children: ReactNode }) {
     return (
-      <trpc.Provider {...{ queryClient, client }}>
+      <trpc.Provider {...{ queryClient, client: getUntypedClient(client) }}>
         <QueryClientProvider client={queryClient}>
           {props.children}
         </QueryClientProvider>

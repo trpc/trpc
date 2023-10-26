@@ -35,7 +35,7 @@ test('fetchInfinite', async () => {
   const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
   const post = await ssg.post.list.fetchInfinite({});
-  expectTypeOf<InfiniteData<'__infResult'>>(post);
+  expectTypeOf<InfiniteData<'__infResult', string | null>>(post);
 
   expect(post.pages).toStrictEqual(['__infResult']);
 });

@@ -8,6 +8,7 @@ import {
 } from '@trpc/server';
 import { DefaultErrorData } from '@trpc/server/src/error/formatter';
 import { konn } from 'konn';
+import { z, ZodError } from 'zod';
 
 function isTRPCClientError<TRouter extends AnyRouter>(
   cause: unknown,
@@ -39,7 +40,7 @@ describe('no custom error formatter', () => {
     .done();
 
   test('infer errors with type guard', async () => {
-    const err = await waitError(ctx.proxy.greeting.query());
+    const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
@@ -85,7 +86,7 @@ describe('with custom error formatter', () => {
     .done();
 
   test('infer errors with type guard', async () => {
-    const err = await waitError(ctx.proxy.greeting.query());
+    const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
@@ -176,7 +177,7 @@ describe('custom error sub-classes', () => {
     .done();
 
   test('infer errors with type guard', async () => {
-    const err = await waitError(ctx.proxy.greeting.query());
+    const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
@@ -207,5 +208,60 @@ describe('custom error sub-classes', () => {
         "message": "BAD_PHONE",
       }
     `);
+  });
+});
+
+describe('zod errors according to docs', () => {
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      const { shape, error } = opts;
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          zodError:
+            error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+              ? error.cause.flatten()
+              : null,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    greeting: t.procedure.input(z.number().min(10)).query((opts) => opts.input),
+  });
+  const ctx = konn()
+    .beforeEach(() => {
+      const opts = routerToServerAndClientNew(appRouter);
+
+      return opts;
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
+
+  test('zod errors according to docs', async () => {
+    // bad query
+    const err = await waitError(ctx.client.greeting.query(5));
+    assert(isTRPCClientError<typeof appRouter>(err));
+    assert(err.data);
+    assert(err.data.zodError);
+
+    expectTypeOf(err.data.zodError).toMatchTypeOf<
+      z.typeToFlattenedError<any>
+    >();
+    expect(err.data?.zodError).toMatchInlineSnapshot(`
+      Object {
+        "fieldErrors": Object {},
+        "formErrors": Array [
+          "Number must be greater than or equal to 10",
+        ],
+      }
+    `);
+
+    // good
+    expect(await ctx.client.greeting.query(10)).toBe(10);
   });
 });

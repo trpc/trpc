@@ -9,6 +9,7 @@ import {
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
+import { TRPCClientError } from '../../TRPCClientError';
 import { TextDecoderEsque } from '../internals/streamingUtils';
 import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
 
@@ -16,7 +17,7 @@ import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
  * @internal
  */
 export interface HTTPLinkBaseOptions {
-  url: string;
+  url: string | URL;
   /**
    * Add ponyfill for fetch
    */
@@ -29,7 +30,7 @@ export interface HTTPLinkBaseOptions {
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
-  fetch: FetchEsque;
+  fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
 }
 
@@ -37,8 +38,8 @@ export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions,
 ): ResolvedHTTPLinkOptions {
   return {
-    url: opts.url,
-    fetch: getFetch(opts.fetch),
+    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
+    fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
   };
 }
@@ -62,6 +63,7 @@ export interface HTTPResult {
   json: TRPCResponse;
   meta: {
     response: ResponseEsque;
+    responseJSON?: unknown;
   };
 }
 
@@ -164,7 +166,7 @@ export async function fetchHTTPResponse(
     ...resolvedHeaders,
   };
 
-  return opts.fetch(url, {
+  return getFetch(opts.fetch)(url, {
     method: METHOD[type],
     signal: ac?.signal,
     body: body,
@@ -178,22 +180,30 @@ export function httpRequest(
   const ac = opts.AbortController ? new opts.AbortController() : null;
   const meta = {} as HTTPResult['meta'];
 
+  let done = false;
   const promise = new Promise<HTTPResult>((resolve, reject) => {
     fetchHTTPResponse(opts, ac)
       .then((_res) => {
         meta.response = _res;
+        done = true;
         return _res.json();
       })
       .then((json) => {
+        meta.responseJSON = json;
         resolve({
           json: json as TRPCResponse,
           meta,
         });
       })
-      .catch(reject);
+      .catch((err) => {
+        done = true;
+        reject(TRPCClientError.from(err, { meta }));
+      });
   });
   const cancel = () => {
-    ac?.abort();
+    if (!done) {
+      ac?.abort();
+    }
   };
   return { promise, cancel };
 }

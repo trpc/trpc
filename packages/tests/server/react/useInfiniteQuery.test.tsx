@@ -18,7 +18,7 @@ afterEach(async () => {
 
 describe('Infinite Query', () => {
   test('useInfiniteQuery()', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
 
     function MyComponent() {
       const q = trpc.paginatedPosts.useInfiniteQuery(
@@ -32,7 +32,7 @@ describe('Infinite Query', () => {
 
       expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -66,18 +66,12 @@ describe('Infinite Query', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
@@ -118,10 +112,10 @@ describe('Infinite Query', () => {
   });
 
   test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
 
     function MyComponent() {
-      const trpcContext = trpc.useContext();
+      const trpcContext = trpc.useUtils();
       const q = trpc.paginatedPosts.useInfiniteQuery(
         {
           limit: 1,
@@ -133,7 +127,7 @@ describe('Infinite Query', () => {
 
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -165,7 +159,13 @@ describe('Infinite Query', () => {
             <button
               data-testid="prefetch"
               onClick={() =>
-                trpcContext.paginatedPosts.prefetchInfinite({ limit: 1 })
+                trpcContext.paginatedPosts.prefetchInfinite(
+                  { limit: 1 },
+                  {
+                    pages: 3,
+                    getNextPageParam: (lastPage) => lastPage.nextCursor,
+                  },
+                )
               }
             >
               Prefetch
@@ -177,18 +177,12 @@ describe('Infinite Query', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
@@ -248,10 +242,10 @@ describe('Infinite Query', () => {
   });
 
   test('useInfiniteQuery and fetchInfiniteQuery', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
 
     function MyComponent() {
-      const trpcContext = trpc.useContext();
+      const trpcContext = trpc.useUtils();
       const q = trpc.paginatedPosts.useInfiniteQuery(
         {
           limit: 1,
@@ -262,7 +256,7 @@ describe('Infinite Query', () => {
       );
       expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-      return q.status === 'loading' ? (
+      return q.status === 'pending' ? (
         <p>Loading...</p>
       ) : q.status === 'error' ? (
         <p>Error: {q.error.message}</p>
@@ -294,7 +288,13 @@ describe('Infinite Query', () => {
             <button
               data-testid="fetch"
               onClick={() =>
-                trpcContext.paginatedPosts.fetchInfinite({ limit: 1 })
+                trpcContext.paginatedPosts.fetchInfinite(
+                  { limit: 1 },
+                  {
+                    pages: 3,
+                    getNextPageParam: (lastPage) => lastPage.nextCursor,
+                  },
+                )
               }
             >
               Fetch
@@ -306,18 +306,12 @@ describe('Infinite Query', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });

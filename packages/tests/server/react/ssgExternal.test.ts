@@ -42,7 +42,7 @@ const ctx = konn()
 test('fetch', async () => {
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
-    client: opts.proxy,
+    client: opts.client,
   });
 
   const post = await ssg.post.byId.fetch({ id: '1' });
@@ -52,11 +52,11 @@ test('fetch', async () => {
 test('fetchInfinite', async () => {
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
-    client: opts.proxy,
+    client: opts.client,
   });
 
   const post = await ssg.post.list.fetchInfinite({});
-  expectTypeOf<InfiniteData<'__infResult'>>(post);
+  expectTypeOf<InfiniteData<'__infResult', string | null>>(post);
 
   expect(post.pages).toStrictEqual(['__infResult']);
 });
@@ -64,7 +64,7 @@ test('fetchInfinite', async () => {
 test('prefetch and dehydrate', async () => {
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
-    client: opts.proxy,
+    client: opts.client,
   });
   await ssg.post.byId.prefetch({ id: '1' });
 
@@ -75,7 +75,7 @@ test('prefetch and dehydrate', async () => {
 test('prefetchInfinite and dehydrate', async () => {
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
-    client: opts.proxy,
+    client: opts.client,
   });
   await ssg.post.list.prefetchInfinite({});
 
@@ -86,7 +86,7 @@ test('prefetchInfinite and dehydrate', async () => {
 test('prefetch faulty query and dehydrate', async () => {
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
-    client: opts.proxy,
+    client: opts.client,
     transformer: SuperJSON,
   });
 
@@ -94,4 +94,15 @@ test('prefetch faulty query and dehydrate', async () => {
 
   const data = JSON.stringify(ssg.dehydrate());
   expect(data).toContain('__error');
+});
+
+test('prefetch and dehydrate', async () => {
+  const { opts } = ctx;
+  const ssg = createServerSideHelpers({
+    client: ctx.client.createClient(opts.trpcClientOptions),
+  });
+  await ssg.post.byId.prefetch({ id: '1' });
+
+  const data = JSON.stringify(ssg.dehydrate());
+  expect(data).toContain('__result');
 });

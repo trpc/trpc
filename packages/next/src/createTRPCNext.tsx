@@ -1,9 +1,9 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
 import {
-  createReactProxyDecoration,
-  createReactQueryUtilsProxy,
-  CreateReactUtilsProxy,
+  createReactDecoration,
+  createReactQueryUtils,
+  CreateReactUtils,
   createRootHooks,
   DecoratedProcedureRecord,
   TRPCUseQueries,
@@ -21,7 +21,16 @@ export interface CreateTRPCNextBase<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
 > {
-  useContext(): CreateReactUtilsProxy<TRouter, TSSRContext>;
+  /**
+   * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
+   *
+   * @see https://trpc.io/docs/client/react/useUtils
+   */
+  useContext(): CreateReactUtils<TRouter, TSSRContext>;
+  /**
+   * @see https://trpc.io/docs/client/react/useUtils
+   */
+  useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
 }
@@ -35,7 +44,11 @@ export type CreateTRPCNext<
   TFlags,
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
-  DecoratedProcedureRecord<TRouter['_def']['record'], TFlags>
+  DecoratedProcedureRecord<
+    TRouter['_def']['_config'],
+    TRouter['_def']['record'],
+    TFlags
+  >
 >;
 
 export function createTRPCNext<
@@ -51,12 +64,12 @@ export function createTRPCNext<
   const _withTRPC = withTRPC(opts);
 
   return createFlatProxy((key) => {
-    if (key === 'useContext') {
+    if (key === 'useContext' || key === 'useUtils') {
       return () => {
-        const context = hooks.useContext();
+        const context = hooks.useUtils();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtilsProxy as any)(context);
+          return (createReactQueryUtils as any)(context);
         }, [context]);
       };
     }
@@ -69,6 +82,6 @@ export function createTRPCNext<
       return _withTRPC;
     }
 
-    return createReactProxyDecoration(key, hooks);
+    return createReactDecoration(key, hooks);
   });
 }

@@ -10,7 +10,7 @@ export async function ssgInit<TParams extends { locale?: string }>(
   opts: GetStaticPropsContext<TParams>,
 ) {
   // Using an external TRPC app
-  // const client = createTRPCProxyClient<AppRouter>({
+  // const client = createTRPCClient<AppRouter>({
   //   links: [
   //     httpBatchLink({
   //       url: 'http://localhost:3000/api/trpc',

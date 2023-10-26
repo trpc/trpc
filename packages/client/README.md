@@ -31,17 +31,20 @@ yarn add @trpc/client
 
 # pnpm
 pnpm add @trpc/client
+
+# Bun
+bun add @trpc/client
 ```
 
 ## Basic Example
 
 ```ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 // Importing the router type from the server file
 import type { AppRouter } from './server';
 
 // Initializing the tRPC client
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/trpc',

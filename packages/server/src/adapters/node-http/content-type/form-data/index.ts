@@ -100,6 +100,9 @@ export const nodeHTTPFormDataContentTypeHandler =
 export { parseMultipartFormData as experimental_parseMultipartFormData };
 export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
 export { createFileUploadHandler as experimental_createFileUploadHandler } from './fileUploadHandler';
-export { composeUploadHandlers as experimental_composeUploadHandlers } from './uploadHandler';
+export {
+  composeUploadHandlers as experimental_composeUploadHandlers,
+  MaxPartSizeExceededError,
+} from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };

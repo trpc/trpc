@@ -110,6 +110,13 @@ pnpm add @trpc/server @trpc/client
 ```
 
   </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bun add @trpc/server @trpc/client
+```
+
+  </TabItem>
 </Tabs>
 
 ## Defining a backend router
@@ -271,7 +278,7 @@ const appRouter = router({
 });
 ```
 
-</TabItem>
+  </TabItem>
   <TabItem value="yup" label="Yup">
     The input parser can be any <code>YupSchema</code>, e.g. <code>yup.string()</code> or <code>yup.object({})</code>.
 
@@ -293,6 +300,40 @@ const appRouter = router({
   // ...
   userById: publicProcedure
     .input(yup.string().required())
+    .query(async (opts) => {
+      const { input } = opts;
+      //      ^?
+      // Retrieve the user with the given ID
+      const user = await db.user.findById(input);
+      //    ^?
+      return user;
+    }),
+});
+```
+
+  </TabItem>
+  <TabItem value="valibot" label="Valibot">
+    With Valibot, you simply need to <code>wrap</code> your schema with [TypeSchema](https://typeschema.com).
+
+<br />
+<br />
+
+```ts twoslash title='server.ts'
+// @filename: trpc.ts
+// @include: trpc
+// @filename: db.ts
+// @include: db
+// @filename: server.ts
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
+// ---cut---
+import { wrap } from '@decs/typeschema';
+import { string } from 'valibot';
+
+const appRouter = router({
+  // ...
+  userById: publicProcedure
+    .input(wrap(string()))
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
@@ -411,13 +452,13 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // @include: server
 // @filename: client.ts
 // ---cut---
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 //     👆 **type-only** import
 
 // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
 // what procedures are available on the server and their input/output types.
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -441,10 +482,10 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 // @filename: server.ts
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -474,10 +515,10 @@ You can open up your Intellisense to explore your API on your frontend. You'll f
 // @filename: server.ts
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',

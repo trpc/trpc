@@ -12,10 +12,10 @@ slug: /client/links/loggerLink
 You can import and add the `loggerLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     /**
      * The function passed to enabled is an example in case you want to the link to
@@ -50,6 +50,11 @@ type LoggerLinkOptions<TRouter extends AnyRouter> = {
    * Used in the built-in defaultLogger
    */
   console?: ConsoleEsque;
+  /**
+   * Color mode used in the default logger.
+   * @default typeof window === 'undefined' ? 'ansi' : 'css'
+   */
+  colorMode?: 'ansi' | 'css';
 };
 ```
 

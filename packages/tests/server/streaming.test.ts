@@ -69,12 +69,12 @@ describe('no transformer', () => {
     .done();
 
   test('out-of-order streaming', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     const results = await Promise.all([
-      proxy.deferred.query({ wait: 3 }),
-      proxy.deferred.query({ wait: 1 }),
-      proxy.deferred.query({ wait: 2 }),
+      client.deferred.query({ wait: 3 }),
+      client.deferred.query({ wait: 1 }),
+      client.deferred.query({ wait: 2 }),
     ]);
 
     // batch preserves request order
@@ -83,11 +83,11 @@ describe('no transformer', () => {
     expect(orderedResults).toEqual([1, 2, 3]);
   });
   test('out-of-order streaming with error', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     const results = await Promise.allSettled([
-      proxy.deferred.query({ wait: 1 }),
-      proxy.error.query(),
+      client.deferred.query({ wait: 1 }),
+      client.error.query(),
     ]);
 
     expect(results).toMatchInlineSnapshot(`
@@ -172,12 +172,12 @@ describe('with transformer', () => {
     .done();
 
   test('out-of-order streaming', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     const results = await Promise.all([
-      proxy.deferred.query({ wait: 3 }),
-      proxy.deferred.query({ wait: 1 }),
-      proxy.deferred.query({ wait: 2 }),
+      client.deferred.query({ wait: 3 }),
+      client.deferred.query({ wait: 1 }),
+      client.deferred.query({ wait: 2 }),
     ]);
 
     // batch preserves request order
@@ -186,11 +186,11 @@ describe('with transformer', () => {
     expect(orderedResults).toEqual([1, 2, 3]);
   });
   test('out-of-order streaming with error', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     const results = await Promise.allSettled([
-      proxy.deferred.query({ wait: 1 }),
-      proxy.error.query(),
+      client.deferred.query({ wait: 1 }),
+      client.error.query(),
     ]);
 
     expect(results).toMatchInlineSnapshot(`

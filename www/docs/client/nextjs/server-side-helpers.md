@@ -35,17 +35,17 @@ const helpers = createServerSideHelpers({
 This method is used when you don't have direct access to your tRPC router. e.g. when developing a Next.js application and a standalone API hosted separately.
 
 ```ts
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import superjson from 'superjson';
 
-const proxyClient = createTRPCProxyClient<AppRouter>({
+const proxyClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/api/trpc',
     }),
   ],
-  transformer: SuperJSON,
+  transformer: superjson,
 });
 
 const helpers = createServerSideHelpers({
@@ -70,7 +70,7 @@ return {
 
 The rule of thumb is `prefetch` for queries that you know you'll need on the client, and `fetch` for queries that you want to use the result of on the server.
 
-The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v4/docs/react/overview) to learn more about them in detail.
+The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v5/docs/react/overview) to learn more about them in detail.
 
 :::info
 For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)

@@ -1,6 +1,7 @@
 import {
   DefinedUseQueryResult,
   DehydratedState,
+  InfiniteData,
   InfiniteQueryObserverSuccessResult,
   InitialDataFunction,
   QueryObserverSuccessResult,
@@ -11,13 +12,17 @@ import {
   UseMutationOptions,
   UseMutationResult,
   UseQueryResult,
+  UseSuspenseInfiniteQueryOptions,
+  UseSuspenseInfiniteQueryResult,
+  UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 import {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter, DistributiveOmit } from '@trpc/server';
 import { ReactNode } from 'react';
 import { TRPCContextProps } from '../../internals/context';
 import { TRPCQueryKey } from '../../internals/getQueryKey';
@@ -49,57 +54,73 @@ export interface TRPCUseQueryBaseOptions {
 }
 
 export interface UseTRPCQueryOptions<
-  TPath,
-  TInput,
   TOutput,
   TData,
   TError,
   TQueryOptsData = TOutput,
-> extends UseBaseQueryOptions<
-      TOutput,
-      TError,
-      TData,
-      TQueryOptsData,
-      [TPath, TInput]
+> extends DistributiveOmit<
+      UseBaseQueryOptions<TOutput, TError, TData, TQueryOptsData, any>,
+      'queryKey'
+    >,
+    TRPCUseQueryBaseOptions {}
+
+export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
+  extends DistributiveOmit<
+      UseSuspenseQueryOptions<TOutput, TError, TData, any>,
+      'queryKey'
     >,
     TRPCUseQueryBaseOptions {}
 
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
-  TPath,
-  TInput,
   TOutput,
   TData,
   TError,
   TQueryOptsData = TOutput,
-> extends UseTRPCQueryOptions<
-    TPath,
-    TInput,
-    TOutput,
-    TData,
-    TError,
-    TQueryOptsData
+> extends DistributiveOmit<
+    UseTRPCQueryOptions<TOutput, TData, TError, TQueryOptsData>,
+    'queryKey'
   > {
   initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
 
-export interface TRPCQueryOptions<TPath, TInput, TData, TError>
-  extends Omit<QueryOptions<TData, TError, TData, [TPath, TInput]>, 'queryKey'>,
+export interface TRPCQueryOptions<TData, TError>
+  extends DistributiveOmit<QueryOptions<TData, TError, TData, any>, 'queryKey'>,
     TRPCUseQueryBaseOptions {
   queryKey: TRPCQueryKey;
 }
 
-export type ExtractCursorType<TInput> = TInput extends { cursor: any }
+export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
-export interface UseTRPCInfiniteQueryOptions<TPath, TInput, TOutput, TError>
-  extends UseInfiniteQueryOptions<
-      TOutput,
-      TError,
-      TOutput,
-      TOutput,
-      [TPath, Omit<TInput, 'cursor'>]
+export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
+  extends DistributiveOmit<
+      UseInfiniteQueryOptions<
+        TOutput,
+        TError,
+        TOutput,
+        TOutput,
+        any,
+        ExtractCursorType<TInput>
+      >,
+      'queryKey' | 'initialPageParam'
+    >,
+    TRPCUseQueryBaseOptions {
+  initialCursor?: ExtractCursorType<TInput>;
+}
+
+export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
+  extends DistributiveOmit<
+      UseSuspenseInfiniteQueryOptions<
+        TOutput,
+        TError,
+        TOutput,
+        TOutput,
+        any,
+        ExtractCursorType<TInput>
+      >,
+      'queryKey' | 'initialPageParam'
     >,
     TRPCUseQueryBaseOptions {
   initialCursor?: ExtractCursorType<TInput>;
@@ -161,14 +182,41 @@ export type UseTRPCQuerySuccessResult<TData, TError> =
 /**
  * @internal
  */
-export type UseTRPCInfiniteQueryResult<TData, TError> = TRPCHookResult &
-  UseInfiniteQueryResult<TData, TError>;
+export type UseTRPCSuspenseQueryResult<TData, TError> = [
+  TData,
+  UseSuspenseQueryResult<TData, TError> & TRPCHookResult,
+];
 
 /**
  * @internal
  */
-export type UseTRPCInfiniteQuerySuccessResult<TData, TError> =
-  InfiniteQueryObserverSuccessResult<TData, TError> & TRPCHookResult;
+export type UseTRPCInfiniteQueryResult<TData, TError, TInput> = TRPCHookResult &
+  UseInfiniteQueryResult<
+    InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+    TError
+  >;
+
+/**
+ * @internal
+ */
+export type UseTRPCInfiniteQuerySuccessResult<TData, TError, TInput> =
+  InfiniteQueryObserverSuccessResult<
+    InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+    TError
+  > &
+    TRPCHookResult;
+
+/**
+ * @internal
+ */
+export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
+  InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+  UseSuspenseInfiniteQueryResult<
+    InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+    TError
+  > &
+    TRPCHookResult,
+];
 
 /**
  * @internal

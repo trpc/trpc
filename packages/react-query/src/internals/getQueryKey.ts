@@ -1,6 +1,7 @@
 import {
   AnyMutationProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
@@ -66,35 +67,37 @@ type GetQueryParams<
   : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
 
 type GetParams<
+  TConfig extends AnyRootConfig,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
-  TPath extends string,
   TFlags,
 > = TProcedureOrRouter extends AnyQueryProcedure
   ? [
-      procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>,
+      procedureOrRouter: DecorateProcedure<TConfig, TProcedureOrRouter, TFlags>,
       ..._params: GetQueryParams<TProcedureOrRouter>,
     ]
   : TProcedureOrRouter extends AnyMutationProcedure
-  ? [procedureOrRouter: DecorateProcedure<TProcedureOrRouter, TFlags, TPath>]
-  : [
+  ? [procedureOrRouter: DecorateProcedure<TConfig, TProcedureOrRouter, TFlags>]
+  : TProcedureOrRouter extends AnyRouter
+  ? [
       procedureOrRouter: DecoratedProcedureRecord<
+        TConfig,
         TProcedureOrRouter['_def']['record'],
-        TFlags,
-        any
+        TFlags
       >,
-    ];
+    ]
+  : never;
 
 type GetQueryKeyParams<
+  TConfig extends AnyRootConfig,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
-  TPath extends string,
   TFlags,
-> = GetParams<TProcedureOrRouter, TPath, TFlags>;
+> = GetParams<TConfig, TProcedureOrRouter, TFlags>;
 
 /**
  * Method to extract the query key for a procedure
@@ -104,13 +107,13 @@ type GetQueryKeyParams<
  * @link https://trpc.io/docs/getQueryKey
  */
 export function getQueryKey<
+  TConfig extends AnyRootConfig,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
-  TPath extends string,
   TFlags,
->(..._params: GetQueryKeyParams<TProcedureOrRouter, TPath, TFlags>) {
+>(..._params: GetQueryKeyParams<TConfig, TProcedureOrRouter, TFlags>) {
   const [procedureOrRouter, input, type] = _params;
   // @ts-expect-error - we don't expose _def on the type layer
   const path = procedureOrRouter._def().path as string[];

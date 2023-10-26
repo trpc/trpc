@@ -22,11 +22,11 @@ export type AppRouter = typeof appRouter;
 // @target: esnext
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 // ---cut---
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',

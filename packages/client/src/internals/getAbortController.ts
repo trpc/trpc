@@ -8,10 +8,11 @@ export function getAbortController(
     return customAbortControllerImpl;
   }
 
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   if (typeof window !== 'undefined' && window.AbortController) {
     return window.AbortController;
   }
-
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   if (typeof globalThis !== 'undefined' && globalThis.AbortController) {
     return globalThis.AbortController;
   }

@@ -3,6 +3,7 @@ import { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   Filter,
   inferProcedureInput,
@@ -13,44 +14,36 @@ import {
 } from '@trpc/server/shared';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
+import { TRPCUseQueryBaseOptions } from '../hooks/types';
 
-type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
-  TData = inferTransformedProcedureOutput<TProcedure>,
->(
+type GetQueryOptions<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
-    TPath,
-    inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
+    inferTransformedProcedureOutput<TConfig, TProcedure>,
     TData,
-    TRPCClientError<TProcedure>
+    TRPCClientError<TConfig>
   >,
 ) => TrpcQueryOptionsForUseQueries<
-  TPath,
-  inferProcedureInput<TProcedure>,
-  inferTransformedProcedureOutput<TProcedure>,
+  inferTransformedProcedureOutput<TConfig, TProcedure>,
   TData,
-  TRPCClientError<TProcedure>
+  TRPCClientError<TConfig>
 >;
 
 /**
  * @internal
  */
-export type UseQueriesProcedureRecord<
-  TRouter extends AnyRouter,
-  TPath extends string = '',
-> = {
+export type UseQueriesProcedureRecord<TRouter extends AnyRouter> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
     AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? UseQueriesProcedureRecord<
-        TRouter['_def']['record'][TKey],
-        `${TPath}${TKey & string}.`
-      >
+    ? UseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
     : GetQueryOptions<
-        TRouter['_def']['record'][TKey],
-        `${TPath}${TKey & string}`
+        TRouter['_def']['_config'],
+        TRouter['_def']['record'][TKey]
       >;
 };
 
@@ -58,20 +51,23 @@ export type UseQueriesProcedureRecord<
  * Create proxy for `useQueries` options
  * @internal
  */
-export function createUseQueriesProxy<TRouter extends AnyRouter>(
+export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ) {
   return createRecursiveProxy((opts) => {
     const arrayPath = opts.path;
     const dotPath = arrayPath.join('.');
-    const [input, ...rest] = opts.args;
+    const [input, _opts] = opts.args as [
+      unknown,
+      Partial<QueryOptions> & TRPCUseQueryBaseOptions,
+    ];
 
     const options: QueryOptions = {
       queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
       queryFn: () => {
-        return client.query(dotPath, input);
+        return client.query(dotPath, input, _opts?.trpc);
       },
-      ...(rest[0] as any),
+      ..._opts,
     };
 
     return options;

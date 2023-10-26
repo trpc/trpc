@@ -20,9 +20,9 @@ describe('vanilla client procedure abortion', () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
-    const { close, proxy } = routerToServerAndClientNew<Router>(router);
+    const { close, client } = routerToServerAndClientNew<Router>(router);
 
-    const promise = proxy.testQuery.query(undefined, { signal });
+    const promise = client.testQuery.query(undefined, { signal });
     abortController.abort();
 
     expect(promise).rejects.toThrowError(/aborted/);
@@ -33,9 +33,9 @@ describe('vanilla client procedure abortion', () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
-    const { close, proxy } = routerToServerAndClientNew<Router>(router);
+    const { close, client } = routerToServerAndClientNew<Router>(router);
 
-    const promise = proxy.testMutation.mutate(undefined, { signal });
+    const promise = client.testMutation.mutate(undefined, { signal });
     abortController.abort();
 
     expect(promise).rejects.toThrowError(/aborted/);

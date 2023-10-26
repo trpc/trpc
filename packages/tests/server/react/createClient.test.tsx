@@ -76,7 +76,7 @@ test('useDehydratedState() - internal', async () => {
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {
-    const utils = hooks.useContext();
+    const utils = hooks.useUtils();
 
     const state = hooks.useDehydratedState(utils.client, dehydratedState);
     return <h1>{JSON.stringify(state)}</h1>;
@@ -94,9 +94,9 @@ test('useDehydratedState() - internal', async () => {
 });
 
 test('useDehydratedState() - external', async () => {
-  const { App, hooks, proxy } = ctx;
+  const { App, hooks, client } = ctx;
 
-  const ssg = createServerSideHelpers({ client: proxy });
+  const ssg = createServerSideHelpers({ client: client });
   const res = await ssg.hello.fetch();
   expect(res).toBe('world');
   expectTypeOf(res).toMatchTypeOf<string>();
@@ -104,7 +104,7 @@ test('useDehydratedState() - external', async () => {
   const dehydratedState = ssg.dehydrate();
 
   function MyComponent() {
-    const utils = hooks.useContext();
+    const utils = hooks.useUtils();
 
     const state = hooks.useDehydratedState(utils.client, dehydratedState);
     return <h1>{JSON.stringify(state)}</h1>;

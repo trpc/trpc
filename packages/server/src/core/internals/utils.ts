@@ -15,12 +15,7 @@ export type Overwrite<TType, TWith> = TType extends any
       }
     : never
   : never;
-/**
- * @internal
- */
-export type OverwriteKnown<TType, TWith> = {
-  [K in keyof TType]: K extends keyof TWith ? TWith[K] : TType[K];
-};
+
 /**
  * @internal
  */
@@ -81,3 +76,9 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
+
+/**
+ * @internal
+ * Returns the raw input type of a procedure
+ */
+export type GetRawInputFn = () => Promise<unknown>;

@@ -23,6 +23,7 @@ export interface RouterDef<
 > {
   _config: TConfig;
   router: true;
+  procedure?: never;
   procedures: TRecord;
   record: TRecord;
 }
@@ -167,18 +168,11 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
           const fullPath = path.join('.');
           const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-          let type: ProcedureType = 'query';
-          if (procedure._def.mutation) {
-            type = 'mutation';
-          } else if (procedure._def.subscription) {
-            type = 'subscription';
-          }
-
           return procedure({
             path: fullPath,
-            rawInput: args[0],
+            getRawInput: async () => args[0],
             ctx,
-            type,
+            type: procedure._def.type,
           });
         });
 
@@ -208,6 +202,11 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
   };
 }
 
+function isProcedure(
+  procedureOrRouter: AnyProcedure | AnyRouter,
+): procedureOrRouter is AnyProcedure {
+  return !!procedureOrRouter._def.procedure;
+}
 /**
  * @internal
  */
@@ -215,15 +214,13 @@ export function callProcedure(
   opts: ProcedureCallOptions & { procedures: ProcedureRouterRecord },
 ) {
   const { type, path } = opts;
-
-  if (!(path in opts.procedures) || !opts.procedures[path]?._def[type]) {
+  const proc = opts.procedures[path];
+  if (!proc || !isProcedure(proc) || proc._def.type !== type) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `No "${type}"-procedure on path "${path}"`,
     });
   }
 
-  const procedure = opts.procedures[path] as AnyProcedure;
-
-  return procedure(opts);
+  return proc(opts);
 }

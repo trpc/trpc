@@ -4,6 +4,7 @@ import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import {
   HTTPLinkBaseOptions,
+  HTTPResult,
   jsonHttpRequester,
   Requester,
   resolveHTTPLinkOptions,
@@ -48,14 +49,16 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
               return opts.headers;
             },
           });
+          let meta: HTTPResult['meta'] | undefined = undefined;
           promise
             .then((res) => {
+              meta = res.meta;
               const transformed = transformResult(res.json, runtime);
 
               if (!transformed.ok) {
                 observer.error(
                   TRPCClientError.from(transformed.error, {
-                    meta: res.meta,
+                    meta,
                   }),
                 );
                 return;
@@ -67,7 +70,7 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
               observer.complete();
             })
             .catch((cause) => {
-              observer.error(TRPCClientError.from(cause));
+              observer.error(TRPCClientError.from(cause, { meta }));
             });
 
           return () => {
@@ -77,4 +80,7 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
   };
 }
 
+/**
+ * @see https://trpc.io/docs/client/links/httpLink
+ */
 export const httpLink = httpLinkFactory({ requester: jsonHttpRequester });

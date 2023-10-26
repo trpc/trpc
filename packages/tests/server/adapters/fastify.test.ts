@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
   HTTPHeaders,
   splitLink,
@@ -122,12 +122,23 @@ type AppRouter = CreateAppRouter['appRouter'];
 interface ServerOptions {
   appRouter: AppRouter;
   fastifyPluginWrapper?: boolean;
+  withContentTypeParser?: boolean;
 }
 
 type PostPayload = { Body: { text: string; life: number } };
 
 function createServer(opts: ServerOptions) {
   const instance = fastify({ logger: config.logger });
+
+  if (opts.withContentTypeParser) {
+    instance.addContentTypeParser(
+      'application/json',
+      { parseAs: 'string' },
+      function (_, body, _done) {
+        _done(null, body);
+      },
+    );
+  }
 
   const plugin = !!opts.fastifyPluginWrapper
     ? fp(fastifyTRPCPlugin)
@@ -191,7 +202,7 @@ interface ClientOptions {
 function createClient(opts: ClientOptions = {}) {
   const host = `localhost:${config.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       splitLink({
@@ -469,5 +480,26 @@ describe('anonymous user with fastify-plugin', () => {
             "text": "hello test",
           }
       `);
+  });
+});
+
+// https://github.com/trpc/trpc/issues/4820
+describe('regression #4820 - content type parser already set', () => {
+  beforeEach(async () => {
+    app = createApp({
+      serverOptions: {
+        fastifyPluginWrapper: true,
+        withContentTypeParser: true,
+      },
+    });
+    await app.start();
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('query', async () => {
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
   });
 });

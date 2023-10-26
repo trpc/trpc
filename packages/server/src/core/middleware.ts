@@ -1,11 +1,11 @@
 import { TRPCError } from '../error/TRPCError';
-import { getCauseFromUnknown } from '../error/utils';
 import { Simplify } from '../types';
-import { AnyRootConfig } from './internals/config';
+import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue as FallbackValue,
+  GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
@@ -114,12 +114,15 @@ type CreateMiddlewareReturnInput<
 /**
  * @internal
  */
-type deriveParamsFromConfig<TConfig extends AnyRootConfig> = {
+type deriveParamsFromConfig<
+  TConfig extends AnyRootConfig,
+  TInputIn = unknown,
+> = {
   _config: TConfig;
   // eslint-disable-next-line @typescript-eslint/ban-types
   _ctx_out: {};
-  _input_out: unknown;
-  _input_in: unknown;
+  _input_out: TInputIn;
+  _input_in: TInputIn;
   _output_in: unknown;
   _output_out: unknown;
   _meta: TConfig['$types']['meta'];
@@ -138,7 +141,7 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_out'];
-    rawInput: unknown;
+    getRawInput: GetRawInputFn;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
@@ -153,7 +156,9 @@ export type MiddlewareFunction<
           _meta: TParams['_meta'];
         }>
       >;
-      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
+      (opts: { getRawInput: GetRawInputFn }): Promise<
+        MiddlewareResult<TParams>
+      >;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
@@ -162,12 +167,15 @@ export type MiddlewareFunction<
 /**
  * @internal
  */
-export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
+export function createMiddlewareFactory<
+  TConfig extends AnyRootConfig,
+  TInputIn = unknown,
+>() {
   function createMiddlewareInner<
     TNewParams extends ProcedureParams<AnyProcedureParams>,
   >(
     middlewares: MiddlewareFunction<any, any>[],
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
     return {
       _middlewares: middlewares,
       unstable_pipe(middlewareBuilderOrFn) {
@@ -187,13 +195,34 @@ export function createMiddlewareFactory<TConfig extends AnyRootConfig>() {
   function createMiddleware<
     TNewParams extends ProcedureParams<AnyProcedureParams>,
   >(
-    fn: MiddlewareFunction<deriveParamsFromConfig<TConfig>, TNewParams>,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig>, TNewParams> {
+    fn: MiddlewareFunction<
+      deriveParamsFromConfig<TConfig, TInputIn>,
+      TNewParams
+    >,
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
     return createMiddlewareInner([fn]);
   }
 
   return createMiddleware;
 }
+
+export const experimental_standaloneMiddleware = <
+  TCtx extends {
+    ctx?: object;
+    meta?: object;
+    input?: unknown;
+  },
+>() => ({
+  create: createMiddlewareFactory<
+    RootConfig<{
+      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
+      meta: TCtx extends { meta: infer T extends object } ? T : object;
+      errorShape: object;
+      transformer: object;
+    }>,
+    TCtx extends { input: infer T } ? T : unknown
+  >(),
+});
 
 function isPlainObject(obj: unknown) {
   return obj && typeof obj === 'object' && !Array.isArray(obj);
@@ -204,31 +233,29 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: ProcedureBuilderMiddleware = async ({
-    next,
-    rawInput,
-    input,
-  }) => {
+  const inputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
     let parsedInput: ReturnType<typeof parse>;
+
+    const rawInput = await opts.getRawInput();
     try {
       parsedInput = await parse(rawInput);
     } catch (cause) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
 
     // Multiple input parsers
     const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
+      isPlainObject(opts.input) && isPlainObject(parsedInput)
         ? {
-            ...input,
+            ...opts.input,
             ...parsedInput,
           }
         : parsedInput;
 
-    return next({ input: combinedInput });
+    return opts.next({ input: combinedInput });
   };
   inputMiddleware._type = 'input';
   return inputMiddleware;
@@ -254,7 +281,7 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
       throw new TRPCError({
         message: 'Output validation failed',
         code: 'INTERNAL_SERVER_ERROR',
-        cause: getCauseFromUnknown(cause),
+        cause,
       });
     }
   };

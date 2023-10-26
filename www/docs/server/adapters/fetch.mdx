@@ -118,6 +118,13 @@ pnpm add @trpc/server zod
 ```
 
   </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bun add @trpc/server zod
+```
+
+  </TabItem>
 </Tabs>
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
@@ -338,7 +345,6 @@ import { FetchCreateContextFnOptions } from 'npm:@trpc/server/adapters/fetch';
 #### Create Deno Deploy Function
 
 ```ts title='server.ts'
-import { serve } from 'https://deno.land/std@0.140.0/http/server.ts';
 import { fetchRequestHandler } from 'npm:@trpc/server/adapters/fetch';
 import { createContext } from './context.ts';
 import { appRouter } from './router.ts';
@@ -352,7 +358,7 @@ function handler(request) {
   });
 }
 
-serve(handler);
+Deno.serve(handler);
 ```
 
 Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will be available via HTTP!
@@ -439,6 +445,13 @@ yarn global add edge-runtime
 
 ```sh
 pnpm add -g edge-runtime
+```
+
+  </TabItem>
+  <TabItem value="bun" label="bun">
+
+```sh
+bun add -g edge-runtime
 ```
 
   </TabItem>
