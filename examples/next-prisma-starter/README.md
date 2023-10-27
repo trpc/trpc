@@ -23,7 +23,7 @@ pnpm dx
 
 ### Requirements
 
-- Node >= 16.8
+- Node >= 18.0.0
 - Postgres
 
 ## Development
