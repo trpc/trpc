@@ -47,7 +47,11 @@ async function parseMultipartFormData(
 
   const formData = new FormData();
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
-    streamMultipart(Readable.toWeb(request), boundary);
+    streamMultipart(
+      // FIXME: remove typecast when bumping minimum node version to 18
+      (Readable as any).toWeb(request),
+      boundary,
+    );
 
   let currentBodySize = 0;
 
