@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.json",
   "include": ["src"],
   "compilerOptions": {
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "target": "ES2020"
+    // https://github.com/tsconfig/bases/blob/main/bases/node16.json
+    "lib": ["es2021"],
+    "module": "node16",
+    "target": "es2021"
   }
 }
