@@ -7,6 +7,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { observable, Observer } from '@trpc/server/observable';
 import { konn } from 'konn';
 import superjson from 'superjson';
+import { tsonBigint, TsonOptions } from 'tupleson';
 import { z } from 'zod';
 
 describe('no transformer', () => {
@@ -399,6 +400,65 @@ describe('with transformer', () => {
         3,
       ]
     `);
+  });
+});
+
+describe.todo('with tupleson transformer', () => {
+  const orderedResults: number[] = [];
+  const tuplesonOptions: TsonOptions = {
+    nonce: () => '__tson',
+    types: [tsonBigint],
+  };
+  const ctx = konn()
+    .beforeEach(() => {
+      const t = initTRPC.create({
+        transformer: 'tupleson', // <------- help, idk if this is the right thing
+        experimental_tuplesonOptions: tuplesonOptions,
+      });
+      orderedResults.length = 0;
+
+      const router = t.router({
+        q: t.procedure.input(z.bigint()).query(async (opts) => {
+          return {
+            input: opts.input,
+            inputAsPromise: Promise.resolve(opts.input),
+          };
+        }),
+      });
+
+      const opts = routerToServerAndClientNew(router, {
+        server: {},
+        client(opts) {
+          return {
+            links: [
+              experimental_httpTuplesonLink({
+                url: opts.httpUrl,
+                // should we pass tupleson options here?
+              }),
+            ],
+            transformer: tuplesonOptions, // <------- help, idk if this is the right thing
+          };
+        },
+      });
+      return opts;
+    })
+    .afterEach(async (opts) => {
+      await opts?.close?.();
+    })
+    .done();
+
+  test('tupleson as transformer', async () => {
+    const { proxy } = ctx;
+
+    const result = await proxy.q.query(1n);
+    expect(result.input).toBe(1n);
+
+    expectTypeOf(result).toMatchTypeOf<bigint>();
+
+    const unwrapped = await result.inputAsPromise;
+
+    expectTypeOf(unwrapped).toMatchTypeOf<bigint>();
+    expect(unwrapped).toBe(1n);
   });
 });
 
