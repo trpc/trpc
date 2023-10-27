@@ -252,7 +252,9 @@ export class NodeOnDiskFile {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));
     }
 
-    return Readable.toWeb(stream) as ReadableStream<Uint8Array>;
+    // FIXME: remove typecast when bumping minimum node version to 18
+
+    return (Readable as any).toWeb(stream) as ReadableStream<Uint8Array>;
   }
 
   async text(): Promise<string> {
