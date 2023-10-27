@@ -17,14 +17,11 @@ export type HTTPHeaders = Dict<string[] | string>;
 export function httpHeadersToFetchHeaders(headers: HTTPHeaders): Headers {
   const newHeaders = new Headers();
   for (const [key, value] of Object.entries(headers)) {
-    if (!value) {
-      continue;
-    }
     if (Array.isArray(value)) {
-      value.forEach((v) => {
+      for (const v of value) {
         newHeaders.append(key, v);
-      });
-    } else {
+      }
+    } else if (typeof value === 'string') {
       newHeaders.set(key, value);
     }
   }
