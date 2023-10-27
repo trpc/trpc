@@ -46,11 +46,11 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
 export interface HTTPLinkOptions {
   url: string;
   /**
-   * Add ponyfill for fetch
+   * Add polyfill for fetch
    */
   fetch?: typeof fetch;
   /**
-   * Add ponyfill for AbortController
+   * Add polyfill for AbortController
    */
   AbortController?: typeof AbortController | null;
   /**
