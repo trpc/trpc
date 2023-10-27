@@ -41,7 +41,7 @@
     "@trpc/react-query": "^10.43.0",
     "@trpc/server": "^10.43.0",
     "clsx": "^2.0.0",
-    "next": "^13.4.8",
+    "next": "^14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "superjson": "^1.12.4",
