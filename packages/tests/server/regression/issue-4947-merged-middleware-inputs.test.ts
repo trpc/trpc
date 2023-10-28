@@ -28,7 +28,7 @@ test('Fix #4947: standalone middlewares -- inputs are merged properly when using
     extraProp: z.string(),
   });
 
-  t.procedure
+  const proc = t.procedure
     .input(combinedInputThatSatisfiesBothMiddlewares)
     .use(valueAUppercaserMiddleware)
     .use(valueBUppercaserMiddleware)
@@ -39,4 +39,16 @@ test('Fix #4947: standalone middlewares -- inputs are merged properly when using
       }) =>
         `valueA: ${valueA}, valueB: ${valueB}, extraProp: ${extraProp}, valueAUppercase: ${valueAUppercase}, valueBUppercase: ${valueBUppercase}`,
     );
+
+  expectTypeOf(proc._def._input_in).toEqualTypeOf<{
+    valueA: string;
+    valueB: string;
+    extraProp: string;
+  }>();
+
+  expectTypeOf(proc._def._input_out).toEqualTypeOf<{
+    valueA: string;
+    valueB: string;
+    extraProp: string;
+  }>();
 });
