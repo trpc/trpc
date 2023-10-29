@@ -1,7 +1,8 @@
 import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
 import * as z from 'zod';
 
-test('Fix #4947: standalone middlewares -- inputs are merged properly when using multiple standalone middlewares', () => {
+
+test('Fix #4947: standalone middlewares -- inputs are merged properly when using multiple standalone middlewares', async () => {
   const t = initTRPC.create();
   const schemaA = z.object({ valueA: z.string() });
   const schemaB = z.object({ valueB: z.string() });
@@ -51,4 +52,20 @@ test('Fix #4947: standalone middlewares -- inputs are merged properly when using
     valueB: string;
     extraProp: string;
   }>();
+
+  const router = t.router({
+    proc,
+  });
+
+  const caller = router.createCaller({});
+
+  const result = await caller.proc({
+    valueA: 'a',
+    valueB: 'b',
+    extraProp: 'extra',
+  });
+
+  expect(result).toEqual(
+    'valueA: a, valueB: b, extraProp: extra, valueAUppercase: A, valueBUppercase: B',
+  );
 });
