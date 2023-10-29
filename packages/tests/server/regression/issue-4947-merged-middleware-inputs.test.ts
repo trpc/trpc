@@ -1,7 +1,6 @@
 import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
 import * as z from 'zod';
 
-
 test('Fix #4947: standalone middlewares -- inputs are merged properly when using multiple standalone middlewares', async () => {
   const t = initTRPC.create();
   const schemaA = z.object({ valueA: z.string() });
