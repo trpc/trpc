@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { FilterKeys, Simplify } from '../../types';
+import { Simplify } from '../../types';
 
 /**
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -18,18 +18,28 @@ type IsAny<T> = 0 extends T & 1 ? true : false;
 // support it as both a Primitive and a NonJsonPrimitive
 type JsonReturnable = JsonPrimitive | undefined;
 
-// prettier-ignore
-export type Serialize<T> =
-  IsAny<T> extends true ? any :
-  T extends JsonReturnable ? T :
-  T extends Map<any, any> | Set<any> ? object :
-  T extends NonJsonPrimitive ? never :
-  T extends { toJSON(): infer U } ? U :
-  T extends [] ? [] :
-  T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
-  T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
-  T extends object ? Simplify<SerializeObject<UndefinedToOptional<T>>> :
-  never;
+/* prettier-ignore */
+export type Serialize<T> = IsAny<T> extends true
+  ? any
+  : unknown extends T
+  ? unknown
+  : T extends JsonReturnable
+  ? T
+  : T extends Map<any, any> | Set<any>
+  ? object
+  : T extends NonJsonPrimitive
+  ? never
+  : T extends { toJSON(): infer U }
+  ? U
+  : T extends []
+  ? []
+  : T extends [unknown, ...unknown[]]
+  ? SerializeTuple<T>
+  : T extends readonly (infer U)[]
+  ? (U extends NonJsonPrimitive ? null : Serialize<U>)[]
+  : T extends object
+  ? Simplify<SerializeObject<UndefinedToOptional<T>>>
+  : never;
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {
@@ -41,7 +51,20 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
  * @internal
  **/
 export type SerializeObject<T extends object> = {
-  [k in keyof Omit<T, FilterKeys<T, NonJsonPrimitive>>]: Serialize<T[k]>;
+  [k in keyof T as k extends symbol
+    ? // never include entries where the key is a symbol
+      never
+    : // always include entries where the value is any
+    IsAny<T[k]> extends true
+    ? k
+    : // always include entries where the value is unknown
+    unknown extends T[k]
+    ? k
+    : // never include entries where the value is a non-JSON primitive
+    T[k] extends NonJsonPrimitive
+    ? never
+    : // otherwise serialize the value
+      k]: Serialize<T[k]>;
 };
 
 type FilterDefinedKeys<TObj extends object> = Exclude<
