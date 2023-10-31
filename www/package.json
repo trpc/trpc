@@ -59,14 +59,16 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.18.6",
-    "@babel/preset-env": "^7.18.6",
+    "@babel/core": "^7.23.2",
+    "@babel/preset-env": "^7.23.2",
     "@decs/typeschema": "^0.12.0",
     "@effect/schema": "^0.46.0",
     "@octokit/graphql": "^7.0.0",
     "@octokit/graphql-schema": "^14.0.0",
     "@tsconfig/docusaurus": "^2.0.0",
     "@types/node": "^18.16.16",
+    "@types/react": "^18.2.33",
+    "@types/react-dom": "^18.2.14",
     "@types/oauth": "^0.9.1",
     "arktype": "1.0.14-alpha",
     "autoprefixer": "^10.4.7",

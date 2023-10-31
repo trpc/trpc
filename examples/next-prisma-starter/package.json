@@ -54,7 +54,7 @@
   "devDependencies": {
     "@playwright/test": "^1.26.1",
     "@types/node": "^18.16.16",
-    "@types/react": "^18.2.8",
+    "@types/react": "^18.2.33",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
     "autoprefixer": "^10.4.7",
