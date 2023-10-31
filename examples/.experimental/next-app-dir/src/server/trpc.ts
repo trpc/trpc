@@ -4,7 +4,7 @@ import { auth } from '~/auth';
 import { headers } from 'next/headers';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
-import { Context } from './context';
+import type { Context } from './context';
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
