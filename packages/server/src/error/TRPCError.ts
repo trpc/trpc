@@ -72,5 +72,10 @@ export class TRPCError extends Error {
 
     this.code = opts.code;
     this.name = 'TRPCError';
+
+    if (!this.cause) {
+      // idk why this is needed, but it is
+      this.cause = cause;
+    }
   }
 }
