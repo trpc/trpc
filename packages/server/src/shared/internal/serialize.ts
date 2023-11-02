@@ -18,7 +18,6 @@ type IsAny<T> = 0 extends T & 1 ? true : false;
 // support it as both a Primitive and a NonJsonPrimitive
 type JsonReturnable = JsonPrimitive | undefined;
 
-/* prettier-ignore */
 // prettier-ignore
 export type Serialize<T> =
   IsAny<T> extends true ? any :
@@ -38,25 +37,24 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
 };
 
+// prettier-ignore
+type SerializeObjectKey<T extends Record<any, any>, TKey> = 
+  // never include entries where the key is a symbol
+  TKey extends symbol ? never : 
+  // always include entries where the value is any
+  IsAny<T[TKey]> extends true ? TKey :
+  // always include entries where the value is unknown
+  unknown extends T[TKey] ? TKey : 
+  // never include entries where the value is a non-JSON primitive
+  T[TKey] extends NonJsonPrimitive ? never : 
+  // otherwise serialize the value
+  TKey;
 /**
  * JSON serialize objects (not including arrays) and classes
  * @internal
  **/
 export type SerializeObject<T extends object> = {
-  [k in keyof T as k extends symbol
-    ? // never include entries where the key is a symbol
-      never
-    : // always include entries where the value is any
-    IsAny<T[k]> extends true
-    ? k
-    : // always include entries where the value is unknown
-    unknown extends T[k]
-    ? k
-    : // never include entries where the value is a non-JSON primitive
-    T[k] extends NonJsonPrimitive
-    ? never
-    : // otherwise serialize the value
-      k]: Serialize<T[k]>;
+  [$Key in keyof T as SerializeObjectKey<T, $Key>]: Serialize<T[$Key]>;
 };
 
 type FilterDefinedKeys<TObj extends object> = Exclude<
