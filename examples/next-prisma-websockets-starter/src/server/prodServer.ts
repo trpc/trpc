@@ -16,16 +16,16 @@ void app
   .prepare()
   .then(() => {
     const server = http.createServer((req, res) => {
-      console.log('hello req', req.url);
-      const proto = req.headers['x-forwarded-proto'];
-      if (proto && proto === 'http') {
-        // redirect to ssl
-        res.writeHead(303, {
-          location: `https://` + req.headers.host + (req.headers.url ?? ''),
-        });
-        res.end();
-        return;
-      }
+      // console.log('hello req', req.url);
+      // const proto = req.headers['x-forwarded-proto'];
+      // if (proto && proto === 'http') {
+      //   // redirect to ssl
+      //   res.writeHead(303, {
+      //     location: `https://` + req.headers.host + (req.headers.url ?? ''),
+      //   });
+      //   res.end();
+      //   return;
+      // }
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const parsedUrl = parse(req.url!, true);
       void handle(req, res, parsedUrl).catch((err) => {
