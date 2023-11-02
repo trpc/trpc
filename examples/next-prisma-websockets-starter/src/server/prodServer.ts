@@ -12,19 +12,10 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 void app.prepare().then(() => {
-  const server = http.createServer((req, res) => {
-    const proto = req.headers['x-forwarded-proto'];
-    if (proto && proto === 'http') {
-      // redirect to ssl
-      res.writeHead(303, {
-        location: `https://` + req.headers.host + (req.headers.url ?? ''),
-      });
-      res.end();
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const parsedUrl = parse(req.url!, true);
-    void handle(req, res, parsedUrl);
+  const server = http.createServer(async (req, res) => {
+    if (!req.url) return;
+    const parsedUrl = parse(req.url, true);
+    await handle(req, res, parsedUrl);
   });
   const wss = new ws.Server({ server });
   const handler = applyWSSHandler({ wss, router: appRouter, createContext });
@@ -33,6 +24,13 @@ void app.prepare().then(() => {
     console.log('SIGTERM');
     handler.broadcastReconnectNotification();
   });
+
+  server.on('upgrade', (req, socket, head) => {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit('connection', ws, req);
+    });
+  });
+
   server.listen(port);
 
   console.log(
