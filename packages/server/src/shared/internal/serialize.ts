@@ -19,27 +19,19 @@ type IsAny<T> = 0 extends T & 1 ? true : false;
 type JsonReturnable = JsonPrimitive | undefined;
 
 /* prettier-ignore */
-export type Serialize<T> = IsAny<T> extends true
-  ? any
-  : unknown extends T
-  ? unknown
-  : T extends JsonReturnable
-  ? T
-  : T extends Map<any, any> | Set<any>
-  ? object
-  : T extends NonJsonPrimitive
-  ? never
-  : T extends { toJSON(): infer U }
-  ? U
-  : T extends []
-  ? []
-  : T extends [unknown, ...unknown[]]
-  ? SerializeTuple<T>
-  : T extends readonly (infer U)[]
-  ? (U extends NonJsonPrimitive ? null : Serialize<U>)[]
-  : T extends object
-  ? Simplify<SerializeObject<UndefinedToOptional<T>>>
-  : never;
+// prettier-ignore
+export type Serialize<T> =
+  IsAny<T> extends true ? any :
+  unknown extends T ? unknown :
+  T extends JsonReturnable ? T :
+  T extends Map<any, any> | Set<any> ? object :
+  T extends NonJsonPrimitive ? never :
+  T extends { toJSON(): infer U } ? U :
+  T extends [] ? [] :
+  T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
+  T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
+  T extends object ? Simplify<SerializeObject<UndefinedToOptional<T>>> :
+  never;
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {
