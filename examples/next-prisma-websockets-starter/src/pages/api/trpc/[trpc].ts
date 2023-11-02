@@ -15,6 +15,7 @@ export default trpcNext.createNextApiHandler<AppRouter>({
    * @link https://trpc.io/docs/error-handling
    */
   onError({ error }) {
+    console.error('Something went wrong', error);
     if (error.code === 'INTERNAL_SERVER_ERROR') {
       // send to bug reporting
       console.error('Something went wrong', error);

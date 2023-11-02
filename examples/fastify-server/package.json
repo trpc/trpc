@@ -23,7 +23,7 @@
     "fastify": "^4.13.0",
     "superjson": "^1.12.4",
     "tslib": "^2.5.0",
-    "ws": "^8.0.0",
+    "ws": "^8.14.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {

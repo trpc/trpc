@@ -31,8 +31,13 @@ function getEndingLink(ctx: NextPageContext | undefined) {
       },
     });
   }
+  console.log({ WS_URL });
   const client = createWSClient({
     url: WS_URL,
+    retryDelayMs(attemptIndex) {
+      // exponential backoff
+      return 100 * Math.pow(2, attemptIndex);
+    },
   });
   return wsLink<AppRouter>({
     client,

@@ -137,6 +137,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
   function createWS() {
     const urlString = typeof url === 'function' ? url() : url;
+    console.log('createWS', { urlString });
     const conn = new WebSocketImpl(urlString);
     clearTimeout(connectTimer as any);
     connectTimer = null;
@@ -146,12 +147,14 @@ export function createWSClient(opts: WebSocketClientOptions) {
       if (conn !== activeConnection) {
         return;
       }
+      console.log('yay conn');
       connectAttempt = 0;
       state = 'open';
       onOpen?.();
       dispatch();
     });
     conn.addEventListener('error', () => {
+      console.log('nay err');
       if (conn === activeConnection) {
         tryReconnect();
       }
@@ -208,6 +211,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
 
     conn.addEventListener('close', ({ code }) => {
+      console.log('close', { code });
       if (state === 'open') {
         onClose?.({ code });
       }

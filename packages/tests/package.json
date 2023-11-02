@@ -63,7 +63,7 @@
     "vite": "^4.1.2",
     "vitest": "^0.32.0",
     "vitest-environment-miniflare": "^2.12.0",
-    "ws": "^8.0.0",
+    "ws": "^8.14.2",
     "yup": "^1.0.0",
     "zod": "^3.0.0",
     "zod-form-data": "^2.0.1"

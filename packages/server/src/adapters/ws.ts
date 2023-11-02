@@ -41,7 +41,16 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   const { wss, createContext, router } = opts;
 
   const { transformer } = router._def._config;
+  let index = 0;
   wss.on('connection', async (client, req) => {
+    const idx = index++;
+    const log = (...msg: any[]) => {
+      console.log(`[${idx}]`, ...msg);
+    };
+    log('we got a conn');
+    if (index > 3) {
+      process.exit(1);
+    }
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
@@ -68,9 +77,11 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
 
     const ctxPromise = createContext?.({ req, res: client });
+    log('here');
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
+      log('req', msg);
       const { id, jsonrpc } = msg;
       /* istanbul ignore next -- @preserve */
       if (id === null) {
@@ -187,6 +198,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       } catch (cause) /* istanbul ignore next -- @preserve */ {
         // procedure threw an error
         const error = getTRPCErrorFromUnknown(cause);
+        log('error', cause);
         opts.onError?.({ error, path, type, ctx, req, input });
         respond({
           id,
@@ -236,6 +248,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
     client.on('error', (cause) => {
+      log('error');
       opts.onError?.({
         ctx,
         error: getTRPCErrorFromUnknown(cause),
@@ -246,7 +259,8 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       });
     });
 
-    client.once('close', () => {
+    client.once('close', (code) => {
+      log('closed', { code });
       for (const sub of clientSubscriptions.values()) {
         sub.unsubscribe();
       }
@@ -254,7 +268,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     });
     async function createContextAsync() {
       try {
+        log('creating context');
         ctx = await ctxPromise;
+        log('created context');
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({
@@ -277,6 +293,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           }),
         });
 
+        log('closing');
         // close in next tick
         (global.setImmediate ?? global.setTimeout)(() => {
           client.close();
