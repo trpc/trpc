@@ -8,7 +8,6 @@ import {
   GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
-  UnsetMarker,
 } from './internals/utils';
 import { AnyProcedureParams, ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
@@ -68,9 +67,7 @@ export interface MiddlewareBuilder<
       _meta: TRoot['_meta'];
       _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
       _input_in: FallbackValue<TRoot['_input_in'], TNewParams['_input_in']>;
-      _input_out: UnsetMarker extends TNewParams['_input_out']
-        ? TRoot['_input_out']
-        : Overwrite<TRoot['_input_out'], TNewParams['_input_out']>;
+      _input_out: FallbackValue<TRoot['_input_out'], TNewParams['_input_out']>;
       _output_in: FallbackValue<TRoot['_output_in'], TNewParams['_output_in']>;
       _output_out: FallbackValue<
         TRoot['_output_out'],
@@ -108,9 +105,7 @@ type CreateMiddlewareReturnInput<
     _meta: TPrev['_meta'];
     _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
     _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
-    _input_out: UnsetMarker extends TNext['_input_out']
-      ? TPrev['_input_out']
-      : Overwrite<TPrev['_input_out'], TNext['_input_out']>;
+    _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
     _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
     _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
   }
