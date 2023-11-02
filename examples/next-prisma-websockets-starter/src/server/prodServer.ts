@@ -16,7 +16,7 @@ void app
   .prepare()
   .then(() => {
     const server = http.createServer((req, res) => {
-      // console.log('hello req', req.url);
+      console.log('hello req', req.url);
       // const proto = req.headers['x-forwarded-proto'];
       // if (proto && proto === 'http') {
       //   // redirect to ssl
