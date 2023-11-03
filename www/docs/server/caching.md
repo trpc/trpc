@@ -97,7 +97,7 @@ export const createContext = async ({
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const t = initTRPC.context<Context>().create();
 

@@ -113,7 +113,7 @@ export function createContext({ req, res }: CreateFastifyContextOptions) {
   return { req, res, user };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
 </details>

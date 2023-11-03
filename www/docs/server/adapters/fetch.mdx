@@ -202,7 +202,7 @@ export function createContext({
   return { req, resHeaders, user };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
 </details>

@@ -33,7 +33,7 @@ const t1 = initTRPC.context<typeof createContext>().create();
 t1.procedure.use(({ ctx }) => { ... });
 //                  ^?
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 const t2 = initTRPC.context<Context>().create();
 // @noErrors
 t2.procedure.use(({ ctx }) => { ... });
@@ -102,7 +102,7 @@ export async function createContext(opts: CreateNextContextOptions) {
   };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 
 // -------------------------------------------------
 // @filename: trpc.ts
@@ -198,7 +198,7 @@ export async function createContext(opts: CreateNextContextOptions) {
   };
 }
 
-export type Context = inferAsyncReturnType<typeof createContextInner>;
+export type Context = Awaited<ReturnType<typeof createContextInner>;
 
 // The usage in your router is the same as the example above.
 ```

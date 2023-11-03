@@ -33,7 +33,7 @@ function createContext({ req, res, info }: CreateFastifyContextOptions) {
   return { req, res, user, info };
 }
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 interface Message {
   id: string;

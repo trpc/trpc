@@ -48,7 +48,7 @@ const createContext = ({
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 function createAppRouter() {
   const t = initTRPC.context<Context>().create();

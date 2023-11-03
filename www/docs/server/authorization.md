@@ -38,7 +38,7 @@ export async function createContext({
     user,
   };
 }
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
 ## Option 1: Authorize using resolver

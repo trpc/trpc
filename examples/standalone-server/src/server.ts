@@ -17,7 +17,7 @@ function createContext(
 ) {
   return {};
 }
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create();
 

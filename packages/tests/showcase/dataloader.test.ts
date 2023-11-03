@@ -24,7 +24,7 @@ function createContext(_opts: CreateHTTPContextOptions) {
     }),
   };
 }
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 const ctx = konn()
   .beforeEach(() => {

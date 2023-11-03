@@ -54,7 +54,7 @@ function createContext(opts: CreateHTTPContextOptions) {
 }
 
 // Get the context type
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 // Initialize tRPC
 const t = initTRPC.context<Context>().create();
