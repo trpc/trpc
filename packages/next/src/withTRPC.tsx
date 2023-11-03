@@ -69,7 +69,7 @@ interface WithTRPCOptions<TRouter extends AnyRouter>
 
 export interface WithTRPCSSROptions<TRouter extends AnyRouter>
   extends WithTRPCOptions<TRouter> {
-  ssr: true;
+  ssr: true | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
   responseMeta?: (opts: {
     ctx: NextPageContext;
     clientErrors: TRPCClientError<TRouter>[];
@@ -145,6 +145,12 @@ export function withTRPC<
 
     if (AppOrPage.getInitialProps ?? opts.ssr) {
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
+        if (typeof opts.ssr === 'function') {
+          const shouldSSR = await opts.ssr({ ctx: appOrPageCtx.ctx });
+          if (!shouldSSR) {
+            return {};
+          }
+        }
         const AppTree = appOrPageCtx.AppTree;
 
         // Determine if we are wrapping an App component or a Page component.
