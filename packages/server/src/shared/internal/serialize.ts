@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { FilterKeys, Simplify } from '../../types';
+import { Simplify } from '../../types';
 
 /**
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -21,6 +21,7 @@ type JsonReturnable = JsonPrimitive | undefined;
 // prettier-ignore
 export type Serialize<T> =
   IsAny<T> extends true ? any :
+  unknown extends T ? unknown :
   T extends JsonReturnable ? T :
   T extends Map<any, any> | Set<any> ? object :
   T extends NonJsonPrimitive ? never :
@@ -36,12 +37,24 @@ type SerializeTuple<T extends [unknown, ...unknown[]]> = {
   [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
 };
 
+// prettier-ignore
+type SerializeObjectKey<T extends Record<any, any>, TKey> = 
+  // never include entries where the key is a symbol
+  TKey extends symbol ? never : 
+  // always include entries where the value is any
+  IsAny<T[TKey]> extends true ? TKey :
+  // always include entries where the value is unknown
+  unknown extends T[TKey] ? TKey : 
+  // never include entries where the value is a non-JSON primitive
+  T[TKey] extends NonJsonPrimitive ? never : 
+  // otherwise serialize the value
+  TKey;
 /**
  * JSON serialize objects (not including arrays) and classes
  * @internal
  **/
 export type SerializeObject<T extends object> = {
-  [k in keyof Omit<T, FilterKeys<T, NonJsonPrimitive>>]: Serialize<T[k]>;
+  [$Key in keyof T as SerializeObjectKey<T, $Key>]: Serialize<T[$Key]>;
 };
 
 type FilterDefinedKeys<TObj extends object> = Exclude<

@@ -1,4 +1,4 @@
-import { type DefaultSession, type NextAuthOptions } from 'next-auth';
+import type { DefaultSession, NextAuthOptions } from 'next-auth';
 import { getServerSession } from 'next-auth/next';
 import GitHub from 'next-auth/providers/github';
 

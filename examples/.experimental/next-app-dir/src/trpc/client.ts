@@ -7,7 +7,7 @@ import {
   experimental_serverActionLink,
 } from '@trpc/next/app-dir/client';
 import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
-import { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
 import { getUrl } from './shared';
 
