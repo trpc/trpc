@@ -240,29 +240,32 @@ export function withTRPC<
 
         const appTreeProps = getAppTreeProps(pageProps);
 
-        const meta =
-          opts.responseMeta?.({
-            ctx,
-            clientErrors: [
-              ...dehydratedCache.queries,
-              ...dehydratedCache.mutations,
-            ]
-              .map((v) => v.state.error)
-              .flatMap((err) =>
-                err instanceof Error && err.name === 'TRPCClientError'
-                  ? [err as TRPCClientError<TRouter>]
-                  : [],
-              ),
-          }) ?? {};
+        if ('responseMeta' in opts) {
+          const meta =
+            opts.responseMeta?.({
+              ctx,
+              clientErrors: [
+                ...dehydratedCache.queries,
+                ...dehydratedCache.mutations,
+              ]
+                .map((v) => v.state.error)
+                .flatMap((err) =>
+                  err instanceof Error && err.name === 'TRPCClientError'
+                    ? [err as TRPCClientError<TRouter>]
+                    : [],
+                ),
+            }) ?? {};
 
-        for (const [key, value] of Object.entries(meta.headers ?? {})) {
-          if (typeof value === 'string') {
-            ctx.res?.setHeader(key, value);
+          for (const [key, value] of Object.entries(meta.headers ?? {})) {
+            if (typeof value === 'string') {
+              ctx.res?.setHeader(key, value);
+            }
+          }
+          if (meta.status && ctx.res) {
+            ctx.res.statusCode = meta.status;
           }
         }
-        if (meta.status && ctx.res) {
-          ctx.res.statusCode = meta.status;
-        }
+
         return appTreeProps;
       };
     }
