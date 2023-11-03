@@ -1,6 +1,5 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
-import '../___packages';
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import {
@@ -9,7 +8,7 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
@@ -17,6 +16,7 @@ import {
 import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';
+import '../___packages';
 
 // miniflare does an instanceof check
 globalThis.Response = MiniflareResponse as any;

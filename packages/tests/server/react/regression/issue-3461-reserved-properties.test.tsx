@@ -2,8 +2,8 @@ import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
 import { createTRPCClient } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { IntersectionError } from '@trpc/server';
 import { initTRPC } from '@trpc/server/src/core';
+import { IntersectionError } from '@trpc/server/unstableInternalsExport';
 import React from 'react';
 import { z } from 'zod';
 
