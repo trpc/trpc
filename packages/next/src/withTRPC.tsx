@@ -145,12 +145,10 @@ export function withTRPC<
 
     if (AppOrPage.getInitialProps ?? opts.ssr) {
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
-        if (typeof opts.ssr === 'function') {
-          const shouldSSR = await opts.ssr({ ctx: appOrPageCtx.ctx });
-          if (!shouldSSR) {
-            return {};
-          }
-        }
+        const ssr =
+          typeof opts.ssr === 'function'
+            ? await opts.ssr({ ctx: appOrPageCtx.ctx })
+            : opts.ssr;
         const AppTree = appOrPageCtx.AppTree;
 
         // Determine if we are wrapping an App component or a Page component.
@@ -177,7 +175,7 @@ export function withTRPC<
         const getAppTreeProps = (props: Record<string, unknown>) =>
           isApp ? { pageProps: props } : props;
 
-        if (typeof window !== 'undefined' || !opts.ssr) {
+        if (typeof window !== 'undefined' || !ssr) {
           return getAppTreeProps(pageProps);
         }
 
