@@ -17,3 +17,11 @@ export type { RootConfig, AnyRootConfig } from './core/internals/config';
  * @deprecated
  */
 export * as unstableExternalsExport from './unstableInternalsExport';
+
+export type {
+  /**
+   * @deprecated
+   * Use `Awaited<ReturnType<T>>` instead
+   */
+  inferAsyncReturnType,
+} from './types';
