@@ -10,7 +10,6 @@
     "test-run:vitest": "vitest --run",
     "test-run:tsc": "tsc --noEmit --pretty",
     "test-watch": "vitest",
-    "ts-watch": "tsc --noEmit --pretty --watch",
     "test-ci": "concurrently \"CI=true vitest --coverage\" npm:test-run:tsc",
     "test-ui": "vitest --ui"
   },

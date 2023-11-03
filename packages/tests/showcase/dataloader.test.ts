@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from '../server/___testHelpers';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import { inferAsyncReturnType } from '@trpc/server/unstableInternalsExport';
 import DataLoader from 'dataloader';
 import { konn } from 'konn';
 import { z } from 'zod';

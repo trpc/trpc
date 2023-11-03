@@ -1,5 +1,6 @@
 import { QueryKey, UseQueryOptions } from '@tanstack/react-query';
-import { AnyRouter, DistributiveOmit } from '@trpc/server';
+import { AnyRouter } from '@trpc/server';
+import { DistributiveOmit } from '@trpc/server/unstableInternalsExport';
 import {
   UseQueriesProcedureRecord,
   UseTRPCQueryOptions,
