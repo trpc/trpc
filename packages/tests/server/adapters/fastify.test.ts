@@ -10,12 +10,13 @@ import {
   unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client/src';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
+import { inferAsyncReturnType } from '@trpc/server/unstableInternalsExport';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';

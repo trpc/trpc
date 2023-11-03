@@ -5,8 +5,8 @@ import {
   httpBatchLink,
   TRPCClientError,
 } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
 import * as trpcExpress from '@trpc/server/src/adapters/express';
+import { inferAsyncReturnType } from '@trpc/server/unstableInternalsExport';
 import express from 'express';
 import fetch from 'node-fetch';
 
@@ -75,7 +75,7 @@ async function startServer() {
   };
 }
 
-let t: trpc.inferAsyncReturnType<typeof startServer>;
+let t: inferAsyncReturnType<typeof startServer>;
 beforeAll(async () => {
   t = await startServer();
 });
