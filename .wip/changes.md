@@ -38,3 +38,9 @@ Procedures in your router now only emit their input & output - where before they
 ## `wsLink` improvements
 
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
+
+## Moved internal types to `@trpc/server/unstableInternalTypesExport`
+
+We exported a bunch of utility functions that we used in tRPC within `@trpc/server`, these have now be moved to `@trpc/server/unstableInternalTypesExport`. Needless to say, you should not use those.
+
+If you're making an adapter for tRPC, we're happy to move these to another export and ensure they don't break between minor versions.
