@@ -1,5 +1,7 @@
 import { api } from '~/trpc/server-http';
 
+export const dynamic = 'force-dynamic';
+
 async function action(fd: FormData) {
   'use server';
 
