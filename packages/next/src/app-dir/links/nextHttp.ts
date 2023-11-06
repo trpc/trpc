@@ -33,7 +33,6 @@ export function experimental_nextHttpLink<
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
-
       const link = linkFactory({
         headers: opts.headers as any,
         url: opts.url,
