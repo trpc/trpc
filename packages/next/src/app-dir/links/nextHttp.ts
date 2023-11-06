@@ -1,5 +1,4 @@
 import {
-  getFetch,
   httpBatchLink,
   HTTPBatchLinkOptions,
   httpLink,
@@ -10,7 +9,7 @@ import { AnyRouter } from '@trpc/server';
 import { generateCacheTag } from '../shared';
 
 type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
-  ? HTTPBatchLinkOptions
+  ? Omit<HTTPBatchLinkOptions, 'fetch'>
   : HTTPLinkOptions) & {
   batch?: TBatch;
   revalidate?: number | false;
@@ -39,7 +38,7 @@ export function experimental_nextHttpLink<
         headers: opts.headers as any,
         url: opts.url,
         fetch: (url, fetchOpts) => {
-          return getFetch(opts.fetch)(url, {
+          return fetch(url, {
             ...fetchOpts,
             // cache: 'no-cache',
             next: {
