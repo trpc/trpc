@@ -9,7 +9,7 @@ import { AnyRouter } from '@trpc/server';
 import { generateCacheTag } from '../shared';
 
 type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
-  ? Omit<HTTPBatchLinkOptions, 'fetch'>
+  ? HTTPBatchLinkOptions
   : HTTPLinkOptions) & {
   batch?: TBatch;
   revalidate?: number | false;
@@ -19,7 +19,7 @@ type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
 export function experimental_nextHttpLink<
   TRouter extends AnyRouter,
   TBatch extends boolean,
->(opts: NextFetchLinkOptions<TBatch>): TRPCLink<TRouter> {
+>(opts: Omit<NextFetchLinkOptions<TBatch>, 'fetch'>): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;
