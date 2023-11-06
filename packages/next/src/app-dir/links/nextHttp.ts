@@ -1,4 +1,5 @@
 import {
+  getFetch,
   httpBatchLink,
   HTTPBatchLinkOptions,
   httpLink,
@@ -33,12 +34,12 @@ export function experimental_nextHttpLink<
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
       const linkFactory = opts.batch ? httpBatchLink : httpLink;
-      const fetchFn = opts.fetch ?? fetch;
+
       const link = linkFactory({
         headers: opts.headers as any,
         url: opts.url,
         fetch: (url, fetchOpts) => {
-          return fetchFn(url, {
+          return getFetch(opts.fetch)(url, {
             ...fetchOpts,
             // cache: 'no-cache',
             next: {
