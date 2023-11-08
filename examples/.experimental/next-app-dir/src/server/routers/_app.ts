@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { protectedProcedure, publicProcedure, router } from '../trpc';
+import { publicProcedure, router } from '../trpc';
 
 let latestPost = {
   id: 0,

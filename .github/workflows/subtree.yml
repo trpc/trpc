@@ -44,7 +44,7 @@ jobs:
         run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
 
       - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 18.x
           cache: 'pnpm'

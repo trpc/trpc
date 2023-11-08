@@ -8,23 +8,36 @@
 /**
  * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
+import * as fs from 'fs/promises';
 import { Readable } from 'node:stream';
 import { streamMultipart } from '@web3-storage/multipart-parser';
 import { CombinedDataTransformer } from '../../../../transformer';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { NodeHTTPRequest } from '../../types';
-import { UploadHandler, UploadHandlerPart } from './uploadHandler';
+import { NodeOnDiskFile } from './fileUploadHandler';
+import {
+  MaxBodySizeExceededError,
+  UploadHandler,
+  UploadHandlerPart,
+} from './uploadHandler';
+
+const utfTextDecoder = new TextDecoder('utf-8');
 
 /**
  * Allows you to handle multipart forms (file uploads) for your app.
+ * Request body parts with a 'filename' property will be treated as files.
+ * The rest will be treated as text.
+ * @param request The incoming Node HTTP request
+ * @param uploadHandler A function that handles file uploads and returns a value to be used in the request body. If uploaded to disk, the returned value is a NodeOnDiskFile. If uploaded to memory, the returned value is a File.
+ * @param maxBodySize The maximum size of the request body in bytes. Defaults to Infinity.
  *
- * TODO: Update this comment
  * @see https://remix.run/utils/parse-multipart-form-data
  */
 async function parseMultipartFormData(
   request: NodeHTTPRequest,
   uploadHandler: UploadHandler,
-): Promise<FormData> {
+  maxBodySize = Infinity,
+) {
   const contentType = request.headers['content-type'] ?? '';
   const [type, boundary] = contentType.split(/\s*;\s*boundary=/);
 
@@ -36,23 +49,61 @@ async function parseMultipartFormData(
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
     streamMultipart(Readable.toWeb(request), boundary);
 
-  for await (const part of parts) {
-    if (part.done) break;
+  let currentBodySize = 0;
 
-    if (typeof part.filename === 'string') {
-      // only pass basename as the multipart/form-data spec recommends
-      // https://datatracker.ietf.org/doc/html/rfc7578#section-4.2
-      part.filename = part.filename.split(/[/\\]/).pop();
+  const nodeOnDiskFiles: NodeOnDiskFile[] = [];
+
+  try {
+    for await (const part of parts) {
+      if (part.done) break;
+
+      if (typeof part.filename === 'string') {
+        // This is a file, so the uploadHandler function will be called
+
+        // only pass basename as the multipart/form-data spec recommends
+        // https://datatracker.ietf.org/doc/html/rfc7578#section-4.2
+        part.filename = part.filename.split(/[/\\]/).pop();
+        const value = await uploadHandler(part as Required<typeof part>);
+
+        if (typeof value === 'undefined' || value === null) {
+          continue;
+        }
+        // add to cleanup array in case of error
+        if (value instanceof NodeOnDiskFile) {
+          nodeOnDiskFiles.push(value);
+        }
+
+        // if the combined size of the body exceeds the max size, throw an error
+        currentBodySize += value.size;
+        if (currentBodySize > maxBodySize) {
+          throw new MaxBodySizeExceededError(maxBodySize);
+        }
+        // add the file to the form data
+        formData.append(part.name, value as any);
+      } else {
+        // This is text, so we'll decode it and add it to the form data
+        let textualPart = '';
+        for await (const chunk of part.data) {
+          // if the combined size of the body exceeds the max size, throw an error
+          currentBodySize += chunk.length;
+          if (currentBodySize > maxBodySize) {
+            throw new MaxBodySizeExceededError(maxBodySize);
+          }
+          textualPart += utfTextDecoder.decode(chunk);
+        }
+        // add the text to the form data
+        formData.append(part.name, textualPart);
+      }
     }
 
-    const value = await uploadHandler(part);
-
-    if (typeof value !== 'undefined' && value !== null) {
-      formData.append(part.name, value as any);
-    }
+    return formData;
+  } catch (e) {
+    // clean up any files that were uploaded to disk if an error occurs
+    await Promise.all(
+      nodeOnDiskFiles.map((file) => fs.unlink(file.getFilePath())),
+    );
+    throw e;
   }
-
-  return formData;
 }
 
 function isMultipartFormDataRequest(req: NodeHTTPRequest) {
@@ -99,10 +150,14 @@ export const nodeHTTPFormDataContentTypeHandler =
 
 export { parseMultipartFormData as experimental_parseMultipartFormData };
 export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
-export { createFileUploadHandler as experimental_createFileUploadHandler } from './fileUploadHandler';
+export {
+  createFileUploadHandler as experimental_createFileUploadHandler,
+  NodeOnDiskFile as experimental_NodeOnDiskFile,
+} from './fileUploadHandler';
 export {
   composeUploadHandlers as experimental_composeUploadHandlers,
   MaxPartSizeExceededError,
+  MaxBodySizeExceededError,
 } from './uploadHandler';
 export { type UploadHandler } from './uploadHandler';
 export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };

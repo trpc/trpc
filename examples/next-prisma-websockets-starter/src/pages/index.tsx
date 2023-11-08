@@ -110,7 +110,7 @@ export default function IndexPage() {
       getPreviousPageParam: (d) => d.prevCursor,
     },
   );
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
     postsQuery;
 
