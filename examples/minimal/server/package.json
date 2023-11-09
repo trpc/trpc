@@ -1,9 +1,9 @@
 {
   "name": "@examples/minimal-server",
-  "version": "10.43.1",
+  "version": "10.43.2",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.43.1",
+    "@trpc/server": "^10.43.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {
