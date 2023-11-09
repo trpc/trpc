@@ -15,7 +15,7 @@
   "dependencies": {
     "@trpc/client": "^10.43.2",
     "@trpc/server": "^10.43.2",
-    "tsx": "^3.12.7",
+    "tsx": "^4.0.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
