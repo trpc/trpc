@@ -1,9 +1,13 @@
 import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import { TRPCClientError, wsLink } from '@trpc/client/src';
-import { inferProcedureParams, initTRPC } from '@trpc/server/src';
-import { observable, Unsubscribable } from '@trpc/server/src/observable';
+import { TRPCClientError, wsLink } from '@trpc/client';
+import {
+  inferProcedureParams,
+  inferRouterInputs,
+  initTRPC,
+} from '@trpc/server';
+import { observable, Unsubscribable } from '@trpc/server/observable';
 import { z } from 'zod';
 
 const t = initTRPC
@@ -47,6 +51,8 @@ test('old client - happy path with input', async () => {
 });
 
 test('very happy path', async () => {
+  const str = z.string();
+
   const greeting = t.procedure
     .input(z.string())
     .use(({ next }) => {
@@ -72,7 +78,10 @@ test('very happy path', async () => {
     expectTypeOf<TError['data']['foo']>().toMatchTypeOf<'bar'>();
   }
   const { proxy, close } = routerToServerAndClientNew(router);
+  type Input = inferRouterInputs<typeof router>['greeting'];
   expect(await proxy.greeting.query('KATT')).toBe('hello KATT');
+  expectTypeOf<Input>().toBeString();
+
   await close();
 });
 

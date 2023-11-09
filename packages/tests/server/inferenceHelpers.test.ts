@@ -41,6 +41,12 @@ const appRouter = t.router({
       input.text;
       return input;
     }),
+  str: t.procedure.input(z.string()).query(({ input }) => input),
+  literal: t.procedure.input(z.literal('a')).query(({ input }) => input),
+  strWithMiddleware: t.procedure
+    .input(z.string())
+    .use((opts) => opts.next())
+    .query(({ input }) => input),
 });
 type AppRouter = typeof appRouter;
 
@@ -60,6 +66,17 @@ describe('inferRouterInputs', () => {
   test('sad path', async () => {
     type Input = AppRouterInputs['sendMessage2'];
     expectTypeOf({ roomId: 2, text: 'testing' }).not.toEqualTypeOf<Input>();
+  });
+
+  test('string', async () => {
+    {
+      type Input = AppRouterInputs['str'];
+      expectTypeOf<Input>().toBeString();
+    }
+    {
+      type Input = AppRouterInputs['strWithMiddleware'];
+      expectTypeOf<Input>().toBeString();
+    }
   });
 });
 
