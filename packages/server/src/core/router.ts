@@ -1,14 +1,11 @@
-import { DefaultErrorShape, defaultFormatter } from '../error/formatter';
+import { defaultFormatter } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
-import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
-import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { createRecursiveProxy } from '../shared/createProxy';
 import { defaultTransformer } from '../transformer';
 import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import { AnyProcedure, ProcedureArgs } from './procedure';
-import { ProcedureType } from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
@@ -56,18 +53,6 @@ type RouterCaller<TDef extends AnyRouterDef> = (
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
   createCaller: RouterCaller<TDef>;
-
-  /**
-   * @deprecated
-   * FIXME: use the new standalone `getErrorShape` instead
-   */
-  getErrorShape(opts: {
-    error: TRPCError;
-    type: ProcedureType | 'unknown';
-    path: string | undefined;
-    input: unknown;
-    ctx: TDef['_config']['$types']['ctx'] | undefined;
-  }): TDef['_config']['$types']['errorShape'];
 }
 
 export type AnyRouter = Router<AnyRouterDef>;
@@ -177,25 +162,6 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         });
 
         return proxy as ReturnType<RouterCaller<any>>;
-      },
-      getErrorShape(opts) {
-        const { path, error } = opts;
-        const { code } = opts.error;
-        const shape: DefaultErrorShape = {
-          message: error.message,
-          code: TRPC_ERROR_CODES_BY_KEY[code],
-          data: {
-            code,
-            httpStatus: getHTTPStatusCodeFromError(error),
-          },
-        };
-        if (config.isDev && typeof opts.error.stack === 'string') {
-          shape.data.stack = opts.error.stack;
-        }
-        if (typeof path === 'string') {
-          shape.data.path = path;
-        }
-        return this._def._config.errorFormatter({ ...opts, shape });
       },
     };
     return router as any;

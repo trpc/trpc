@@ -17,7 +17,7 @@ import {
   AnyRootConfig,
   AnyRouter,
   callProcedure,
-  ClientDataTransformerOptions,
+  DataTransformerOptions,
   Filter,
   inferProcedureInput,
   inferRouterContext,
@@ -42,7 +42,7 @@ import {
 interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: ClientDataTransformerOptions;
+  transformer?: DataTransformerOptions;
 }
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
