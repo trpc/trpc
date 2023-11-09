@@ -553,6 +553,7 @@ export function createRootHooks<
     Provider: TRPCProvider,
     createClient,
     useContext,
+    useUtils: useContext,
     useQuery,
     useQueries,
     useMutation,

@@ -5,7 +5,7 @@ export const topSponsors = [
   {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 102,
+    "weight": 101,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc",
     "createdAt": 1656581731000
@@ -16,7 +16,7 @@ export const topSponsors = [
     "weight": 57,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1674835130012
+    "createdAt": 1677064693256
   },
   {
     "name": "Flightcontrol",
@@ -29,7 +29,7 @@ export const topSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 36,
+    "weight": 38,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 20,
+    "weight": 22,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -48,7 +48,7 @@ export const topSponsors = [
 export const allSponsors = [
   {
     "name": "Hampus Kraft",
-    "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=87f4c5cd23ae2c8b66cfca5f2ac393795b9fbf13&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=bb30f912bb9bae189257b0b51056e1d2a9b6a9ca&v=4",
     "weight": 2,
     "login": "hampuskraft",
     "link": "https://hampuskraft.com/?ref=trpc",
@@ -63,8 +63,8 @@ export const allSponsors = [
     "createdAt": 1625953397000
   },
   {
-    "name": "sam3d",
-    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=eb908aaeba5c44f4868b81f4dc8ef8f44ca19243&v=4",
+    "name": "Brooke",
+    "imgSrc": "https://avatars.githubusercontent.com/u/8385528?u=c2d0658cefbdb7508ce904a6c0f7aa1a600ba934&v=4",
     "weight": 3,
     "login": "sam3d",
     "link": "https://github.com/sam3d",
@@ -105,7 +105,7 @@ export const allSponsors = [
   {
     "name": "Jason Docton",
     "imgSrc": "https://avatars.githubusercontent.com/u/22589564?u=00737f7066b9bb06314a1ad7ca099ab252e101eb&v=4",
-    "weight": 36,
+    "weight": 38,
     "login": "JasonDocton",
     "link": "http://youarerad.org/?ref=trpc",
     "createdAt": 1645479378000
@@ -161,7 +161,7 @@ export const allSponsors = [
   {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 102,
+    "weight": 101,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc",
     "createdAt": 1656581731000
@@ -217,7 +217,7 @@ export const allSponsors = [
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 20,
+    "weight": 22,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -237,14 +237,6 @@ export const allSponsors = [
     "login": "boredland",
     "link": "https://jonas-strassel.de/?ref=trpc",
     "createdAt": 1668778944000
-  },
-  {
-    "name": "Interval",
-    "imgSrc": "https://avatars.githubusercontent.com/u/67802063?v=4",
-    "weight": 19,
-    "login": "interval",
-    "link": "https://interval.com/?ref=trpc",
-    "createdAt": 1668779128000
   },
   {
     "name": "Ascent Factory",
@@ -295,28 +287,20 @@ export const allSponsors = [
     "createdAt": 1673457748000
   },
   {
-    "name": "Tola",
-    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
-    "weight": 57,
-    "login": "tolahq",
-    "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1674835130012
-  },
-  {
-    "name": "Matthew Brimmer",
-    "imgSrc": "https://avatars.githubusercontent.com/u/19143056?u=5e87113d3e0bcf7a838e9d1928ae4da54664be51&v=4",
-    "weight": 7,
-    "login": "mbrimmer83",
-    "link": "https://easycoders.io/?ref=trpc",
-    "createdAt": 1675609257000
-  },
-  {
     "name": "John Shahawy",
     "imgSrc": "https://avatars.githubusercontent.com/u/13843114?u=9604e985cff42b118d16c17d94701b33920f515e&v=4",
     "weight": 2,
     "login": "JohnShahawy",
     "link": "https://github.com/JohnShahawy",
     "createdAt": 1676389422000
+  },
+  {
+    "name": "Tola",
+    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
+    "weight": 57,
+    "login": "tolahq",
+    "link": "https://tolahq.com/?ref=trpc",
+    "createdAt": 1677064693256
   },
   {
     "name": "Šimon Prokopec",
@@ -351,14 +335,6 @@ export const allSponsors = [
     "createdAt": 1688028927000
   },
   {
-    "name": "Siraj",
-    "imgSrc": "https://avatars.githubusercontent.com/u/71605633?v=4",
-    "weight": 1,
-    "login": "syhner",
-    "link": "https://github.com/syhner",
-    "createdAt": 1693166190000
-  },
-  {
     "name": "A Local Cart",
     "imgSrc": "https://avatars.githubusercontent.com/u/143630784?v=4",
     "weight": 2,
@@ -367,19 +343,19 @@ export const allSponsors = [
     "createdAt": 1693505333000
   },
   {
-    "name": "Aleksandr Blokh",
-    "imgSrc": "https://avatars.githubusercontent.com/u/4045375?u=b094249cddefa0dcee28f16e19a386b4b2c4312a&v=4",
-    "weight": 2,
-    "login": "AlexBlokh",
-    "link": "http://drizzle.team/?ref=trpc",
-    "createdAt": 1694781638000
-  },
-  {
     "name": "Drizzle Team",
     "imgSrc": "https://avatars.githubusercontent.com/u/108468352?v=4",
     "weight": 2,
     "login": "drizzle-team",
     "link": "https://drizzle.team/?ref=trpc",
     "createdAt": 1694781987000
+  },
+  {
+    "name": "Jesse De Lira",
+    "imgSrc": "https://avatars.githubusercontent.com/u/38845310?u=22f4f0975e367a1e7c43e246c53f860938a0394a&v=4",
+    "weight": 1,
+    "login": "jessedelira",
+    "link": "http://gym-tracker.app/?ref=trpc",
+    "createdAt": 1696131423000
   }
 ] as const;

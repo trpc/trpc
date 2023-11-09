@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "engines": {
-    "node": "^18.0.0",
+    "node": "^18.17.0",
     "pnpm": ">=8.0.0"
   },
   "packageManager": "pnpm@8.5.1",
@@ -38,7 +38,7 @@
     "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
     "publish-canary": "lerna publish --force-publish --canary --preid alpha-$(pnpm --silent canary-preid) --dist-tag $(pnpm --silent current-branch)",
     "publish-prerelease": "pnpm install && lerna publish prerelease --force-publish --dist-tag next --no-push && sleep 60 && git push --follow-tags",
-    "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d') next && git merge main"
+    "merge-main": "git checkout main && git pull && git checkout next && git pull && git checkout -b next-merge-$(date '+%Y-%m-%d--%H-%M') next && git merge --ff main"
   },
   "dependencies": {
     "@changesets/changelog-github": "^0.4.8",
@@ -61,7 +61,7 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-turbo": "^1.9.3",
-    "eslint-plugin-unicorn": "48.0.1",
+    "eslint-plugin-unicorn": "49.0.0",
     "express": "^4.17.1",
     "fast-glob": "^3.2.12",
     "hash-sum": "^2.0.0",
