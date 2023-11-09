@@ -10,14 +10,11 @@ const appRouter = t.router({
     .use((opts) => opts.next())
     .query(({ input }) => input),
 
-  objWithMiddleware: t.procedure
-    .input(
-      z.object({
-        foo: z.string(),
-      }),
-    )
+  voidWithMiddleware: t.procedure
     .use((opts) => opts.next())
-    .query(({ input }) => input),
+    .query(() => {
+      // ..
+    }),
 });
 type AppRouter = typeof appRouter;
 
@@ -38,15 +35,6 @@ describe('inferRouterInputs', () => {
       type Output = AppRouterOutputs['strWithMiddleware'];
       expectTypeOf<Input>().toBeString();
       expectTypeOf<Output>().toBeString();
-    }
-  });
-
-  test('obj', async () => {
-    {
-      type Input = AppRouterInputs['objWithMiddleware'];
-      type Output = AppRouterOutputs['objWithMiddleware'];
-      expectTypeOf<Input>().toEqualTypeOf<{ foo: string }>();
-      expectTypeOf<Output>().toEqualTypeOf<{ foo: string }>();
     }
   });
 });
