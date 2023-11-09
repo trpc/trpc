@@ -129,7 +129,7 @@ type deriveParamsFromConfig<
  */
 export type MiddlewareFunction<
   TParams extends ProcedureParams,
-  TParamsAfter extends ProcedureParams,
+  TParamsAfter extends ProcedureParams = TParams,
 > = {
   (opts: {
     ctx: Simplify<

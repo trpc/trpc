@@ -29,6 +29,15 @@ import {
   UnsetMarker,
 } from './utils';
 
+type Primitives = string | number | boolean | null | undefined;
+type CombineParserResult<TPrev, TNext> = TPrev extends UnsetMarker
+  ? TNext
+  : TNext extends UnsetMarker
+  ? TPrev
+  : TPrev extends Primitives
+  ? TPrev
+  : Overwrite<TPrev, TNext>;
+
 type CreateProcedureReturnInput<
   TPrev extends ProcedureParams,
   TNext extends ProcedureParams,
@@ -36,14 +45,10 @@ type CreateProcedureReturnInput<
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-  _input_in: UnsetMarker extends TNext['_input_in']
-    ? TPrev['_input_in']
-    : Overwrite<TPrev['_input_in'], TNext['_input_in']>;
-  _input_out: UnsetMarker extends TNext['_input_out']
-    ? TPrev['_input_out']
-    : Overwrite<TPrev['_input_out'], TNext['_input_out']>;
-  _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
-  _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+  _input_in: CombineParserResult<TPrev['_input_in'], TNext['_input_in']>;
+  _input_out: CombineParserResult<TPrev['_input_out'], TNext['_input_out']>;
+  _output_in: CombineParserResult<TPrev['_output_in'], TNext['_output_in']>;
+  _output_out: CombineParserResult<TPrev['_output_out'], TNext['_output_out']>;
 }>;
 
 /**
