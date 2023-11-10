@@ -1,6 +1,6 @@
 {
   "name": "@examples/cloudflare-workers",
-  "version": "10.43.2",
+  "version": "10.43.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,8 +9,8 @@
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.43.2",
-    "@trpc/server": "^10.43.2",
+    "@trpc/client": "^10.43.3",
+    "@trpc/server": "^10.43.3",
     "zod": "^3.0.0"
   },
   "devDependencies": {
@@ -18,7 +18,7 @@
     "@types/node": "^18.16.16",
     "eslint": "^8.40.0",
     "start-server-and-test": "^1.12.0",
-    "tsx": "^3.12.7",
+    "tsx": "^4.0.0",
     "typescript": "^5.1.3",
     "wrangler": "^2.0.17"
   },
