@@ -1,7 +1,7 @@
 {
   "name": "@examples/bun",
   "private": true,
-  "version": "10.43.2",
+  "version": "10.43.3",
   "scripts": {
     "build": "bun build src/index.ts --outdir ./dist && bun build src/client.ts --outdir ./dist",
     "dev:server": "bun run src/index.ts --watch",
@@ -14,8 +14,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/client": "^10.43.2",
-    "@trpc/server": "^10.43.2"
+    "@trpc/client": "^10.43.3",
+    "@trpc/server": "^10.43.3"
   },
   "devDependencies": {
     "bun-types": "^0.7.3",
