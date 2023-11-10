@@ -13,6 +13,12 @@ import {
 
 const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
 
+function assertAsyncIterable<T>(value: any): asserts value is AsyncIterable<T> {
+  if (!(Symbol.asyncIterator in value)) {
+    throw new Error('Expected AsyncIterable - are you using Node >= 18.0.0?');
+  }
+}
+
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -92,7 +98,8 @@ export async function nodeHTTPRequestHandler<
     }
 
     if (res.body) {
-      for await (const chunk of res.body as unknown as AsyncIterable<Buffer>) {
+      assertAsyncIterable(res.body);
+      for await (const chunk of res.body) {
         opts.res.write(chunk);
       }
     }
