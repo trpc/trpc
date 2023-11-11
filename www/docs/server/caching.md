@@ -5,7 +5,7 @@ sidebar_label: Response Caching
 slug: /server/caching
 ---
 
-The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
+The below examples uses [Vercel's edge caching](https://vercel.com/docs/edge-network/caching) to serve data to your users as fast as possible.
 
 :::info
 Always be careful with caching - especially if you handle personal information.
