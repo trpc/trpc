@@ -1,5 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
+import { AnyProcedureBuilderParams } from './internals/builderTypes';
 import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
@@ -9,7 +10,6 @@ import {
   MiddlewareMarker,
   Overwrite,
 } from './internals/utils';
-import { AnyProcedureParams, ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
 /**
@@ -26,9 +26,8 @@ interface MiddlewareResultBase {
 /**
  * @internal
  */
-interface MiddlewareOKResult<
-  _TParams extends ProcedureParams<AnyProcedureParams>,
-> extends MiddlewareResultBase {
+interface MiddlewareOKResult<_TParams extends AnyProcedureBuilderParams>
+  extends MiddlewareResultBase {
   ok: true;
   data: unknown;
   // this could be extended with `input`/`rawInput` later
@@ -37,9 +36,8 @@ interface MiddlewareOKResult<
 /**
  * @internal
  */
-interface MiddlewareErrorResult<
-  _TParams extends ProcedureParams<AnyProcedureParams>,
-> extends MiddlewareResultBase {
+interface MiddlewareErrorResult<_TParams extends AnyProcedureBuilderParams>
+  extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
 }
@@ -47,21 +45,21 @@ interface MiddlewareErrorResult<
 /**
  * @internal
  */
-export type MiddlewareResult<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-> = MiddlewareErrorResult<TParams> | MiddlewareOKResult<TParams>;
+export type MiddlewareResult<TParams extends AnyProcedureBuilderParams> =
+  | MiddlewareErrorResult<TParams>
+  | MiddlewareOKResult<TParams>;
 
 /**
  * @internal
  */
 export interface MiddlewareBuilder<
-  TRoot extends ProcedureParams<AnyProcedureParams>,
-  TNewParams extends ProcedureParams<AnyProcedureParams>,
+  TRoot extends AnyProcedureBuilderParams,
+  TNewParams extends AnyProcedureBuilderParams,
 > {
   /**
    * Create a new builder based on the current middleware builder
    */
-  unstable_pipe<$Params extends ProcedureParams<AnyProcedureParams>>(
+  unstable_pipe<$Params extends AnyProcedureBuilderParams>(
     fn: {
       _config: TRoot['_config'];
       _meta: TRoot['_meta'];
@@ -73,7 +71,7 @@ export interface MiddlewareBuilder<
         TRoot['_output_out'],
         TNewParams['_output_out']
       >;
-    } extends infer OParams extends ProcedureParams<AnyProcedureParams>
+    } extends infer OParams extends AnyProcedureBuilderParams
       ?
           | MiddlewareBuilder<OParams, $Params>
           | MiddlewareFunction<OParams, $Params>
@@ -95,9 +93,9 @@ export interface MiddlewareBuilder<
  * FIXME: there must be a nicer way of doing this, it's hard to maintain when we have several structures like this
  */
 type CreateMiddlewareReturnInput<
-  TRoot extends ProcedureParams<AnyProcedureParams>,
-  TPrev extends ProcedureParams<AnyProcedureParams>,
-  TNext extends ProcedureParams<AnyProcedureParams>,
+  TRoot extends AnyProcedureBuilderParams,
+  TPrev extends AnyProcedureBuilderParams,
+  TNext extends AnyProcedureBuilderParams,
 > = MiddlewareBuilder<
   TRoot,
   {
@@ -131,8 +129,8 @@ type deriveParamsFromConfig<
  * @internal
  */
 export type MiddlewareFunction<
-  TParams extends ProcedureParams<AnyProcedureParams>,
-  TParamsAfter extends ProcedureParams<AnyProcedureParams>,
+  TParams extends AnyProcedureBuilderParams,
+  TParamsAfter extends AnyProcedureBuilderParams,
 > = {
   (opts: {
     ctx: Simplify<
@@ -171,9 +169,7 @@ export function createMiddlewareFactory<
   TConfig extends AnyRootConfig,
   TInputIn = unknown,
 >() {
-  function createMiddlewareInner<
-    TNewParams extends ProcedureParams<AnyProcedureParams>,
-  >(
+  function createMiddlewareInner<TNewParams extends AnyProcedureBuilderParams>(
     middlewares: MiddlewareFunction<any, any>[],
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
     return {
@@ -192,9 +188,7 @@ export function createMiddlewareFactory<
     };
   }
 
-  function createMiddleware<
-    TNewParams extends ProcedureParams<AnyProcedureParams>,
-  >(
+  function createMiddleware<TNewParams extends AnyProcedureBuilderParams>(
     fn: MiddlewareFunction<
       deriveParamsFromConfig<TConfig, TInputIn>,
       TNewParams

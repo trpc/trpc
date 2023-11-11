@@ -11,11 +11,9 @@ import { inferParser, Parser } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
-  AnyProcedureParams,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   MutationProcedure,
-  ProcedureParams,
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
@@ -34,8 +32,8 @@ import {
 } from './utils';
 
 type CreateProcedureReturnInput<
-  TPrev extends ProcedureParams<AnyProcedureParams>,
-  TNext extends ProcedureParams<AnyProcedureParams>,
+  TPrev extends AnyProcedureBuilderParams,
+  TNext extends AnyProcedureBuilderParams,
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
@@ -123,7 +121,7 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
   /**
    * Add a middleware to the procedure.
    */
-  use<$Params extends ProcedureParams<AnyProcedureParams>>(
+  use<$Params extends AnyProcedureBuilderParams>(
     fn:
       | MiddlewareBuilder<TParams, $Params>
       | MiddlewareFunction<TParams, $Params>,

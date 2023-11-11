@@ -1,5 +1,8 @@
 import { AnyRootConfig } from './config';
 
+/**
+ * @internal
+ */
 export type AnyProcedureBuilderParams = {
   _config: AnyRootConfig;
   _meta: unknown;
