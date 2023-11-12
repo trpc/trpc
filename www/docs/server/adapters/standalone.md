@@ -157,7 +157,5 @@ createServer((req, res) => {
    */
 
   handler(req, res);
-});
-
-server.listen(3333);
+}).listen(3333);
 ```
