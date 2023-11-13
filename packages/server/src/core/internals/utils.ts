@@ -1,4 +1,4 @@
-import { Simplify } from '../../types';
+import { Simplify, WithoutIndexSignature } from '../../types';
 import { ProcedureParams } from '../procedure';
 
 /**
@@ -12,12 +12,18 @@ export type Overwrite<TType, TWith> = TType extends object
   ? TWith extends object
     ? // Both TType and TWith are objects: overwrite key-by-key
       {
-        [K in keyof TType | keyof TWith]: K extends keyof TWith
+        [K in  // Exclude index signature from keys
+          | keyof WithoutIndexSignature<TType>
+          | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
           ? TWith[K]
           : K extends keyof TType
           ? TType[K]
           : never;
-      }
+      } & (string extends keyof TWith // Handle cases with an index signature
+        ? { [key: string]: TWith[string] }
+        : number extends keyof TWith
+        ? { [key: number]: TWith[number] }
+        : object)
     : TWith extends any
     ? // TWith is not an object but some non-never type, so fully overwrite TType
       TWith
