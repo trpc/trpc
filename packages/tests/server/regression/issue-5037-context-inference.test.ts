@@ -1,7 +1,6 @@
 import { inferRouterOutputs, initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-
 /**
  * See @sentry/node trpc middleware:
  * https://github.com/getsentry/sentry-javascript/blob/6d424571e3cd5e99991b711f4e23d773e321e294/packages/node/src/handlers.ts#L328
