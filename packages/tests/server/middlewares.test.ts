@@ -1,4 +1,6 @@
 import {
+  composeMiddlewares,
+  experimental_standaloneInputMiddleware,
   experimental_standaloneMiddleware,
   initTRPC,
   TRPCError,
@@ -15,7 +17,7 @@ test('decorate independently', () => {
   };
   const t = initTRPC.context<Context>().create();
 
-  const fooMiddleware = t.middleware((opts) => {
+  t.middleware((opts) => {
     expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
     return opts.next({
       ctx: {
@@ -23,40 +25,6 @@ test('decorate independently', () => {
         foo: 'foo' as const,
       },
     });
-  });
-
-  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toEqualTypeOf<{
-      user: User;
-      foo: 'foo';
-    }>();
-    return opts.next({
-      ctx: {
-        bar: 'bar' as const,
-      },
-    });
-  });
-
-  const bazMiddleware = barMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toEqualTypeOf<{
-      user: User;
-      foo: 'foo';
-      bar: 'bar';
-    }>();
-    return opts.next({
-      ctx: {
-        baz: 'baz' as const,
-      },
-    });
-  });
-
-  t.procedure.use(bazMiddleware).query(({ ctx }) => {
-    expectTypeOf(ctx).toEqualTypeOf<{
-      user: User;
-      foo: 'foo';
-      bar: 'bar';
-      baz: 'baz';
-    }>();
   });
 });
 
@@ -90,6 +58,81 @@ test('standalone middlewares that define the ctx/input they require and can be u
       });
     },
   );
+
+  type Dog = {
+    type: 'dog';
+    breed: string;
+  };
+  type Cat = {
+    type: 'cat';
+    breed: string;
+  };
+  const addDogToCtxMiddleware = experimental_standaloneMiddleware().create(
+    (opts) => {
+      return opts.next({
+        ctx: {
+          animal: {
+            type: 'dog' as const,
+          },
+        },
+      });
+    },
+  );
+
+  const addDogBreedToCtxMiddleware = experimental_standaloneMiddleware<{
+    ctx: { animal: Pick<Dog, 'type'> };
+    input: { breed: string };
+  }>().create((opts) => {
+    return opts.next({
+      ctx: {
+        animal: {
+          ...opts.ctx.animal,
+          breed: opts.input.breed,
+        },
+      },
+    });
+  });
+
+  const determineFancinessOfCatBreed = experimental_standaloneMiddleware<{
+    ctx: { animal: Cat };
+  }>().create((opts) => {
+    return opts.next({
+      ctx: {
+        fancy: opts.ctx.animal.breed === 'persian',
+      },
+    });
+  });
+
+  const determineFancinessOfDogBreed = experimental_standaloneMiddleware<{
+    ctx: { animal: Dog };
+  }>().create((opts) => {
+    return opts.next({
+      ctx: {
+        fancy: opts.ctx.animal.breed === 'corgi',
+      },
+    });
+  });
+
+  const breedParser = experimental_standaloneInputMiddleware(
+    z.object({ breed: z.string() }),
+  );
+  const creedParser = experimental_standaloneInputMiddleware(
+    z.object({ creed: z.string() }),
+  );
+
+  const composedMiddlewares = composeMiddlewares(
+    addDogToCtxMiddleware,
+    breedParser,
+    creedParser,
+    addDogBreedToCtxMiddleware,
+    determineFancinessOfDogBreed,
+  );
+
+  const t = initTRPC.create();
+
+  t.procedure
+    .use(composedMiddlewares)
+    .query(({ ctx, input }) => ({ ctx, input }));
 
   const addUserNameLengthToCtxMiddleware = experimental_standaloneMiddleware<{
     ctx: { user: Human | Alien };
@@ -134,6 +177,24 @@ test('standalone middlewares that define the ctx/input they require and can be u
       },
     });
   });
+
+  const composed = composeMiddlewares(
+    addUserNameLengthToCtxMiddleware,
+    addFooToCtxMiddleware,
+    determineIfUserNameIsLongMiddleware,
+    mapUserToUserTypeMiddleware,
+  );
+
+  tHuman.procedure
+    .input(z.string())
+    .use(composed)
+    .query((opts) => {
+      const { ctx, input } = opts;
+      ctx;
+      // ^?
+      input;
+      // ^?
+    });
 
   // This is not OK because determineIfUserNameIsLongMiddleware requires { nameLength: number } which is not in either context:
   tHuman.procedure.use(
@@ -183,14 +244,6 @@ test('standalone middlewares that define the ctx/input they require and can be u
       }>();
     });
 
-  addFooToCtxMiddleware
-    // This is not OK because the requirements of the later middlewares are not met
-    // @ts-expect-error: No user in context at this point
-    .unstable_pipe(addUserNameLengthToCtxMiddleware)
-    // @ts-expect-error: No user in context at this point
-    .unstable_pipe(mapUserToUserTypeMiddleware)
-    .unstable_pipe(determineIfUserNameIsLongMiddleware);
-
   const requireUserAndAddFooToCtxMiddleware =
     experimental_standaloneMiddleware<{
       ctx: { user: Human | Alien };
@@ -204,30 +257,6 @@ test('standalone middlewares that define the ctx/input they require and can be u
         },
       });
     });
-
-  const validPipedVersion = requireUserAndAddFooToCtxMiddleware
-    .unstable_pipe(addUserNameLengthToCtxMiddleware)
-    .unstable_pipe(mapUserToUserTypeMiddleware)
-    .unstable_pipe(determineIfUserNameIsLongMiddleware);
-
-  tHuman.procedure.use(validPipedVersion).query(({ ctx }) => {
-    expectTypeOf(ctx).toEqualTypeOf<{
-      user: 'human' | 'alien';
-      nameLength: number;
-      nameIsLong: boolean;
-      foo: 'foo';
-    }>();
-  });
-
-  tAlien.procedure.use(validPipedVersion).query(({ ctx }) => {
-    expectTypeOf(ctx).toEqualTypeOf<{
-      user: 'human' | 'alien';
-      nameLength: number;
-      nameIsLong: boolean;
-      planet: 'mars' | 'venus';
-      foo: 'foo';
-    }>();
-  });
 
   // Middleware chain using standalone middleware that requires a particular 'input' shape
   const ensureMagicNumberIsNotLongerThanNameLength =
@@ -319,329 +348,6 @@ test('standalone middlewares that define the ctx/input they require and can be u
   tHumanWithMeta.procedure.use(shamefullyLogIfProcedureIsNotCoolMiddleware);
 });
 
-test('pipe middlewares - inlined', async () => {
-  const t = initTRPC
-    .context<{
-      init: 'init';
-    }>()
-    .create();
-
-  const fooMiddleware = t.middleware((opts) => {
-    return opts.next({
-      ctx: {
-        foo: 'foo' as const,
-      },
-    });
-  });
-
-  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      foo: 'foo';
-    }>();
-    return opts.next({
-      ctx: {
-        bar: 'bar' as const,
-      },
-    });
-  });
-
-  const bazMiddleware = barMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      foo: 'foo';
-      bar: 'bar';
-    }>();
-    return opts.next({
-      ctx: {
-        baz: 'baz' as const,
-      },
-    });
-  });
-
-  const testProcedure = t.procedure.use(bazMiddleware);
-  const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
-        init: 'init',
-        foo: 'foo',
-        bar: 'bar',
-        baz: 'baz',
-      });
-      expectTypeOf(ctx).toEqualTypeOf<{
-        init: 'init';
-        foo: 'foo';
-        bar: 'bar';
-        baz: 'baz';
-      }>();
-
-      return ctx;
-    }),
-  });
-
-  const caller = router.createCaller({
-    init: 'init',
-  });
-
-  expect(await caller.test()).toMatchInlineSnapshot(`
-    Object {
-      "bar": "bar",
-      "baz": "baz",
-      "foo": "foo",
-      "init": "init",
-    }
-  `);
-});
-
-test('pipe middlewares - standalone', async () => {
-  const t = initTRPC
-    .context<{
-      init: 'init';
-    }>()
-    .create();
-
-  const fooMiddleware = t.middleware((opts) => {
-    return opts.next({
-      ctx: {
-        foo: 'foo' as const,
-      },
-    });
-  });
-
-  const barMiddleware = t.middleware((opts) => {
-    return opts.next({
-      ctx: {
-        bar: 'bar' as const,
-      },
-    });
-  });
-
-  const bazMiddleware = fooMiddleware
-    .unstable_pipe(barMiddleware)
-    .unstable_pipe((opts) => {
-      expectTypeOf(opts.ctx).toMatchTypeOf<{
-        foo: 'foo';
-        bar: 'bar';
-      }>();
-      return opts.next({
-        ctx: {
-          baz: 'baz' as const,
-        },
-      });
-    });
-
-  const testProcedure = t.procedure.use(bazMiddleware);
-  const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
-        init: 'init',
-        foo: 'foo',
-        bar: 'bar',
-        baz: 'baz',
-      });
-      expectTypeOf(ctx).toEqualTypeOf<{
-        init: 'init';
-        foo: 'foo';
-        bar: 'bar';
-        baz: 'baz';
-      }>();
-
-      return ctx;
-    }),
-  });
-
-  const caller = router.createCaller({
-    init: 'init',
-  });
-
-  expect(await caller.test()).toMatchInlineSnapshot(`
-    Object {
-      "bar": "bar",
-      "baz": "baz",
-      "foo": "foo",
-      "init": "init",
-    }
-  `);
-});
-
-test('pipe middlewares - failure', async () => {
-  const t = initTRPC
-    .context<{
-      init: {
-        a: 'a';
-        b: 'b';
-        c: {
-          d: 'd';
-          e: 'e';
-        };
-      };
-    }>()
-    .create();
-
-  const fooMiddleware = t.middleware((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
-    }>();
-    opts.ctx.init.a;
-    return opts.next({
-      ctx: {
-        init: { a: 'a' as const },
-        foo: 'foo' as const,
-      },
-    });
-  });
-
-  const barMiddleware = t.middleware((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
-    }>();
-    return opts.next({
-      ctx: {
-        bar: 'bar' as const,
-      },
-    });
-  });
-
-  // @ts-expect-error barMiddleware accessing invalid property
-  const bazMiddleware = fooMiddleware.unstable_pipe(barMiddleware);
-
-  const testProcedure = t.procedure.use(bazMiddleware);
-  testProcedure.query(({ ctx }) => {
-    expectTypeOf(ctx).toEqualTypeOf<{
-      init: { a: 'a' };
-      foo: 'foo';
-      bar: 'bar';
-    }>();
-  });
-});
-
-test('pipe middlewares - override', async () => {
-  const t = initTRPC
-    .context<{
-      init: {
-        foundation: 'foundation';
-      };
-    }>()
-    .create();
-
-  const fooMiddleware = t.middleware((opts) => {
-    return opts.next({
-      ctx: {
-        init: 'override' as const,
-        foo: 'foo' as const,
-      },
-    });
-  });
-
-  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-    // @ts-expect-error foundation has been overwritten
-    opts.ctx.init.foundation;
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      init: 'override';
-      foo: 'foo';
-    }>();
-    return opts.next({
-      ctx: {
-        bar: 'bar' as const,
-      },
-    });
-  });
-
-  const testProcedure = t.procedure.use(barMiddleware);
-  const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
-        init: 'override',
-        foo: 'foo',
-        bar: 'bar',
-      });
-      expectTypeOf(ctx).toEqualTypeOf<{
-        init: 'override';
-        foo: 'foo';
-        bar: 'bar';
-      }>();
-
-      return ctx;
-    }),
-  });
-
-  const caller = router.createCaller({
-    init: {
-      foundation: 'foundation',
-    },
-  });
-
-  expect(await caller.test()).toMatchInlineSnapshot(`
-    Object {
-      "bar": "bar",
-      "foo": "foo",
-      "init": "override",
-    }
-  `);
-});
-
-test('pipe middlewares - failure', async () => {
-  const t = initTRPC
-    .context<{
-      init: {
-        a: 'a';
-        b: 'b';
-      };
-    }>()
-    .create();
-
-  const fooMiddleware = t.middleware((opts) => {
-    return opts.next({
-      ctx: {
-        init: 'override' as const,
-        foo: 'foo' as const,
-      },
-    });
-  });
-
-  const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
-      init: 'override';
-      foo: 'foo';
-    }>();
-    return opts.next({
-      ctx: {
-        bar: 'bar' as const,
-      },
-    });
-  });
-
-  const testProcedure = t.procedure.use(barMiddleware);
-  const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
-        init: 'override',
-        foo: 'foo',
-        bar: 'bar',
-      });
-      expectTypeOf(ctx).toEqualTypeOf<{
-        init: 'override';
-        foo: 'foo';
-        bar: 'bar';
-      }>();
-
-      return ctx;
-    }),
-  });
-
-  const caller = router.createCaller({
-    init: {
-      a: 'a',
-      b: 'b',
-    },
-  });
-
-  expect(await caller.test()).toMatchInlineSnapshot(`
-    Object {
-      "bar": "bar",
-      "foo": "foo",
-      "init": "override",
-    }
-  `);
-});
 test('meta', () => {
   type Meta = {
     permissions: string[];

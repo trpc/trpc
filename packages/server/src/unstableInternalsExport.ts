@@ -6,5 +6,5 @@
 export { mergeRouters } from './core/internals/mergeRouters';
 export * from './core/internals/procedureBuilder';
 export * from './core/internals/utils';
-export type { MiddlewareFunction, MiddlewareBuilder } from './core/middleware';
+export type { MiddlewareFunction } from './core/middleware';
 export * from './core/procedure';
