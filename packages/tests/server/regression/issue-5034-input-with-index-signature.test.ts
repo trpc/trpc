@@ -8,6 +8,7 @@ export function hardcodedExample() {
 }
 
 const t = initTRPC.create();
+const symbol = Symbol('symbol');
 const appRouter = t.router({
   inputWithIndexSignature: t.procedure
     .input(hardcodedExample())
@@ -18,6 +19,19 @@ const appRouter = t.router({
     .query(({ input }) => input),
   normalInput: t.procedure
     .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return input;
+    }),
+
+  middlewareWithSymbolKey: t.procedure
+    .input(z.object({ name: z.string() }))
+    .use((opts) =>
+      opts.next({
+        ctx: {
+          [symbol]: true,
+        },
+      }),
+    )
     .query(({ input }) => {
       return input;
     }),
@@ -59,5 +73,15 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     type Output = AppRouterOutputs['normalInput'];
     expectTypeOf<Input>().toEqualTypeOf<{ name: string }>();
     expectTypeOf<Output>().toEqualTypeOf<{ name: string }>();
+  });
+
+  test('middleware with symbol key', async () => {
+    type Input = AppRouterInputs['middlewareWithSymbolKey'];
+    type Output = AppRouterOutputs['middlewareWithSymbolKey'];
+    expectTypeOf<Input>().toEqualTypeOf<{ name: string }>();
+    expectTypeOf<Output>().toEqualTypeOf<{
+      name: string;
+      [symbol]: true;
+    }>();
   });
 });
