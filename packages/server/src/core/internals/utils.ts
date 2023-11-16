@@ -1,5 +1,6 @@
-import { Simplify, WithoutIndexSignature } from '../../types';
+import { Simplify } from '../../types';
 import { ProcedureParams } from '../procedure';
+import { Merge } from './vendor/type-fest/merge';
 
 /**
  * @internal
@@ -7,24 +8,11 @@ import { ProcedureParams } from '../procedure';
  * Only overwrites properties when the type to be overwritten
  * is an object. Otherwise it will just use the type from `TWith`.
  */
-export type Overwrite<TType, TWith> = TWith extends any
-  ? TType extends object
-    ? {
-        [K in  // Exclude index signature from keys
-          | keyof WithoutIndexSignature<TType>
-          | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
-          ? TWith[K]
-          : K extends keyof TType
-          ? TType[K]
-          : never;
-      } & (string extends keyof TWith // Handle cases with an index signature
-        ? { [key: string]: TWith[string] }
-        : number extends keyof TWith
-        ? { [key: number]: TWith[number] }
-        : object)
+export type Overwrite<TType, TWith> = TType extends object
+  ? TWith extends object
+    ? Merge<TType, TWith>
     : TWith
-  : never;
-
+  : TWith;
 /**
  * @internal
  */

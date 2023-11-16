@@ -126,6 +126,17 @@ const config = {
       },
     },
     {
+      files: ['packages/server/src/core/internals/vendor/type-fest/**/*'],
+      rules: {
+        '@typescript-eslint/no-floating-promises': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-unused-vars': 'off',
+        '@typescript-eslint/naming-convention': 'off',
+        'unicorn/filename-case': 'off',
+        '@typescript-eslint/ban-types': 'off',
+      },
+    },
+    {
       files: ['packages/**/*'],
       rules: {
         'no-console': 'error',
