@@ -143,7 +143,7 @@ export function createMyRouter() {
 }
 
 // Infer the type of your router, and then generate the abstract types for use in the client
-type MyRouterType = ReturnType<typeof createRouter>
+type MyRouterType = ReturnType<typeof createMyRouter>
 export MyRouterLike = RouterLike<MyRouterType>
 export MyRouterUtilsLike = UtilsLike<MyRouterType>
 ```
