@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Simplify, WithoutIndexSignature } from '../../types';
+import { OmitIndexSignature, Simplify } from '../../types';
 
 /**
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -72,10 +72,7 @@ type FilterDefinedKeys<TObj extends object> = Exclude<
  */
 type UndefinedToOptional<T extends object> =
   // Property is not a union with `undefined`, keep as-is
-  Pick<
-    WithoutIndexSignature<T>,
-    FilterDefinedKeys<WithoutIndexSignature<T>>
-  > & {
+  Pick<OmitIndexSignature<T>, FilterDefinedKeys<OmitIndexSignature<T>>> & {
     // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
     [k in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[k], undefined>;
   };

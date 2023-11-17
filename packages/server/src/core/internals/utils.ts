@@ -1,5 +1,9 @@
-import { Simplify, WithoutIndexSignature } from '../../types';
+import { OmitIndexSignature, PickIndexSignature, Simplify } from '../../types';
 import { ProcedureParams } from '../procedure';
+
+type SimpleOverwrite<TType, TWith> = {
+  [$Key in keyof TType as $Key extends keyof TWith ? never : $Key]: TType[$Key];
+} & TWith;
 
 /**
  * @internal
@@ -9,19 +13,10 @@ import { ProcedureParams } from '../procedure';
  */
 export type Overwrite<TType, TWith> = TWith extends any
   ? TType extends object
-    ? {
-        [K in  // Exclude index signature from keys
-          | keyof WithoutIndexSignature<TType>
-          | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
-          ? TWith[K]
-          : K extends keyof TType
-          ? TType[K]
-          : never;
-      } & (string extends keyof TWith // Handle cases with an index signature
-        ? { [key: string]: TWith[string] }
-        : number extends keyof TWith
-        ? { [key: number]: TWith[number] }
-        : object)
+    ? Simplify<
+        SimpleOverwrite<OmitIndexSignature<TType>, OmitIndexSignature<TWith>> &
+          SimpleOverwrite<PickIndexSignature<TWith>, PickIndexSignature<TType>>
+      >
     : TWith
   : never;
 

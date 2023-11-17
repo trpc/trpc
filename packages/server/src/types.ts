@@ -60,6 +60,7 @@ export type ThenArg<TType> = TType extends PromiseLike<infer U>
 export type Simplify<TType> = TType extends any[] | Date
   ? TType
   : { [K in keyof TType]: TType[K] };
+
 /**
  * @public
  */
@@ -123,10 +124,16 @@ export type DeepPartial<TObject> = TObject extends object
  * type information about the keys and only the index signature will remain.
  * @internal
  */
-export type WithoutIndexSignature<TObj> = {
-  [K in keyof TObj as string extends K
+export type OmitIndexSignature<TObj> = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  [$Key in keyof TObj as {} extends Record<$Key, unknown>
     ? never
-    : number extends K
-    ? never
-    : K]: TObj[K];
+    : $Key]: TObj[$Key];
+};
+
+export type PickIndexSignature<TObj> = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  [$Key in keyof TObj as {} extends Record<$Key, unknown>
+    ? $Key
+    : never]: TObj[$Key];
 };
