@@ -83,7 +83,7 @@ Since all queries are normal HTTP `GET`s, we can use normal HTTP headers to cach
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx title='server.ts'
-import {  initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
 export const createContext = async ({
