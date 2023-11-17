@@ -1,4 +1,3 @@
-import { AnyRootConfig } from './internals/config';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import { ProcedureType } from './types';
 
@@ -14,25 +13,6 @@ export interface ProcedureOptions {
   context?: ClientContext;
   signal?: AbortSignal;
 }
-
-/**
- * @internal
- * @deprecated
- */
-export type AnyProcedureParams = {
-  _config: AnyRootConfig;
-  _meta: unknown;
-  _ctx_out: unknown;
-  _input_in: unknown;
-  _input_out: unknown;
-  _output_in: unknown;
-  _output_out: unknown;
-};
-
-/**
- * @deprecated
- */
-export type ProcedureParams<TParams extends AnyProcedureParams> = TParams;
 
 /**
  * @internal
