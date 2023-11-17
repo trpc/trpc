@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -15,7 +14,7 @@ export async function createContextInner(_opts: CreateContextOptions) {
   return {};
 }
 
-export type Context = trpc.inferAsyncReturnType<typeof createContextInner>;
+export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 /**
  * Creates context for an incoming request

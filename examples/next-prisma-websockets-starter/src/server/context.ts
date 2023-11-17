@@ -1,4 +1,3 @@
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
 import { IncomingMessage } from 'http';
@@ -23,4 +22,4 @@ export const createContext = async (
   };
 };
 
-export type Context = trpc.inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;

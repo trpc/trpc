@@ -7,7 +7,7 @@
  * @see https://trpc.io/docs/v10/router
  * @see https://trpc.io/docs/v10/procedures
  */
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { ZodError } from 'zod';
 
@@ -21,7 +21,7 @@ export async function createContext(opts: trpcNext.CreateNextContextOptions) {
   };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create({
   errorFormatter(opts) {
