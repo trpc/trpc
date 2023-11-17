@@ -10,7 +10,7 @@ import {
   unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client/src';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
@@ -32,7 +32,7 @@ function createContext({ req, res }: CreateFastifyContextOptions) {
   return { req, res, user };
 }
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 interface Message {
   id: string;
@@ -111,7 +111,7 @@ function createAppRouter() {
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
 }
 
-type CreateAppRouter = inferAsyncReturnType<typeof createAppRouter>;
+type CreateAppRouter = Awaited<ReturnType<typeof createAppRouter>>;
 type AppRouter = CreateAppRouter['appRouter'];
 
 interface ServerOptions {
@@ -234,7 +234,7 @@ function createApp(opts: AppOptions = {}) {
   return { server: instance, start, stop, client, ee };
 }
 
-let app: inferAsyncReturnType<typeof createApp>;
+let app: Awaited<ReturnType<typeof createApp>>;
 
 describe('anonymous user', () => {
   beforeEach(async () => {

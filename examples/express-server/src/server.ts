@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { inferAsyncReturnType, initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import { z } from 'zod';
@@ -23,7 +23,7 @@ const createContext = ({
     user: getUser(),
   };
 };
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create();
 
