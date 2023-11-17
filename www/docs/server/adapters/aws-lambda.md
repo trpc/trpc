@@ -73,7 +73,7 @@ const createContext = ({
   event,
   context,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({}) // no context
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const handler = awsLambdaRequestHandler({
   router: appRouter,

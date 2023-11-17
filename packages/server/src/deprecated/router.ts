@@ -115,7 +115,7 @@ export type inferSubscriptionOutput<
   TRouter extends AnyRouter,
   TPath extends keyof TRouter['_def']['subscriptions'],
 > = inferObservableValue<
-  inferAsyncReturnType<TRouter['_def']['subscriptions'][TPath]['call']>
+  Awaited<ReturnType<TRouter['_def']['subscriptions'][TPath]['call']>>
 >;
 
 function getDataTransformer(

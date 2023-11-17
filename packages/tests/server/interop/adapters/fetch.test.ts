@@ -5,7 +5,6 @@
 import { Context, router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
 import * as trpcFetch from '@trpc/server/src/adapters/fetch';
 import { Miniflare } from 'miniflare';
 
@@ -68,7 +67,7 @@ async function startServer() {
   };
 }
 
-let t: trpc.inferAsyncReturnType<typeof startServer>;
+let t: Awaited<ReturnType<typeof startServer>>;
 beforeAll(async () => {
   t = await startServer();
 });
