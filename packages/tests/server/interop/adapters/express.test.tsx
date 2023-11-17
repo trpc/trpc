@@ -69,7 +69,7 @@ async function startServer() {
   };
 }
 
-let t: Awaited<ReturnType<typeof startServer>>;
+let t: trpc.inferAsyncReturnType<typeof startServer>;
 beforeAll(async () => {
   t = await startServer();
 });

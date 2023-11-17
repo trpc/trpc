@@ -9,7 +9,7 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client/src';
-import { router } from '@trpc/server/src';
+import { inferAsyncReturnType, router } from '@trpc/server/src';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
@@ -31,7 +31,7 @@ function createContext({ req, res }: CreateFastifyContextOptions) {
   return { req, res, user };
 }
 
-type Context = Awaited<ReturnType<typeof createContext>>;
+type Context = inferAsyncReturnType<typeof createContext>;
 
 interface Message {
   id: string;
@@ -97,7 +97,7 @@ function createAppRouter() {
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
 }
 
-type CreateAppRouter = Awaited<ReturnType<typeof createAppRouter>>;
+type CreateAppRouter = inferAsyncReturnType<typeof createAppRouter>;
 type AppRouter = CreateAppRouter['appRouter'];
 
 interface ServerOptions {
@@ -186,7 +186,7 @@ function createApp(opts: AppOptions = {}) {
   return { server: instance, start, stop, client, ee };
 }
 
-let app: Awaited<ReturnType<typeof createApp>>;
+let app: inferAsyncReturnType<typeof createApp>;
 
 describe('anonymous user', () => {
   beforeEach(async () => {

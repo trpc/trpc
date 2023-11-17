@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 // IMPORTANT:
 // needs to be imported from compiled output otherwise we get a false-positive
-
+import * as trpc from '@trpc/server';
 import { z } from 'zod';
 
 // https://github.com/trpc/trpc/issues/949
