@@ -10,7 +10,6 @@ The `createContext` function is called for each incoming request, so here you ca
 ## Create context from request headers
 
 ```ts title='server/context.ts'
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import { decodeAndVerifyJwtToken } from './somewhere/in/your/app/utils';
 
