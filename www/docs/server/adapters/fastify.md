@@ -104,7 +104,6 @@ A sample context is given below, save it in a file named `context.ts`:
   <summary>context.ts</summary>
 
 ```ts title='context.ts'
-import { inferAsyncReturnType } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -113,7 +112,7 @@ export function createContext({ req, res }: CreateFastifyContextOptions) {
   return { req, res, user };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
 </details>
