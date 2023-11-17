@@ -123,7 +123,7 @@ export type DeepPartial<TObject> = TObject extends object
  * type information about the keys and only the index signature will remain.
  * @internal
  */
-export type WithoutIndexSignature<TObj extends object> = {
+export type WithoutIndexSignature<TObj> = {
   [K in keyof TObj as string extends K
     ? never
     : number extends K

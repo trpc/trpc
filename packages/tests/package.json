@@ -14,7 +14,8 @@
     "test-watch:vitest": "vitest",
     "test-watch:tsc": "tsc --noEmit --pretty --watch",
     "test-ci": "concurrently \"CI=true vitest --coverage\" npm:test-run:tsc",
-    "test-ui": "vitest --ui"
+    "test-ui": "vitest --ui",
+    "ts-watch": "tsc --watch"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",

@@ -4,14 +4,12 @@ import { ProcedureParams } from '../procedure';
 /**
  * @internal
  * Overwrite properties in `TType` with properties in `TWith`
- * Only overwrites properties when both types are objects
- * Otherwise it will overwrite the entire TType with TWith,
- * unless TWith is never.
+ * Only overwrites properties when the type to be overwritten
+ * is an object. Otherwise it will just use the type from `TWith`.
  */
-export type Overwrite<TType, TWith> = TType extends object
-  ? TWith extends object
-    ? // Both TType and TWith are objects: overwrite key-by-key
-      {
+export type Overwrite<TType, TWith> = TWith extends any
+  ? TType extends object
+    ? {
         [K in  // Exclude index signature from keys
           | keyof WithoutIndexSignature<TType>
           | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
@@ -24,15 +22,7 @@ export type Overwrite<TType, TWith> = TType extends object
         : number extends keyof TWith
         ? { [key: number]: TWith[number] }
         : object)
-    : TWith extends any
-    ? // TWith is not an object but some non-never type, so fully overwrite TType
-      TWith
-    : never
-  : TType extends any
-  ? TWith extends any
-    ? // Same as above: just overwrite TType with TWith
-      TWith
-    : TType
+    : TWith
   : never;
 
 /**

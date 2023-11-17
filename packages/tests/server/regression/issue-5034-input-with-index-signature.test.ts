@@ -1,4 +1,10 @@
-import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/server';
+import {
+  inferRouterInputs,
+  inferRouterOutputs,
+  initTRPC,
+  Overwrite,
+  Simplify,
+} from '@trpc/server';
 import * as z from 'zod';
 
 export function hardcodedExample() {
@@ -8,6 +14,7 @@ export function hardcodedExample() {
 }
 
 const t = initTRPC.create();
+const symbol = Symbol('symbol');
 const appRouter = t.router({
   inputWithIndexSignature: t.procedure
     .input(hardcodedExample())
@@ -20,6 +27,22 @@ const appRouter = t.router({
     .input(z.object({ name: z.string() }))
     .query(({ input }) => {
       return input;
+    }),
+  middlewareWithSymbolKey: t.procedure
+    .use((opts) =>
+      opts.next({
+        ctx: {
+          foo: 'bar',
+          [symbol]: true,
+        } as const,
+      }),
+    )
+    .query((opts) => {
+      expectTypeOf(opts.ctx).toMatchTypeOf<{
+        foo: 'bar';
+        [symbol]: true;
+      }>();
+      return opts.ctx;
     }),
 });
 type AppRouter = typeof appRouter;
@@ -59,5 +82,45 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     type Output = AppRouterOutputs['normalInput'];
     expectTypeOf<Input>().toEqualTypeOf<{ name: string }>();
     expectTypeOf<Output>().toEqualTypeOf<{ name: string }>();
+  });
+
+  test('middleware with symbol key', async () => {
+    type Input = AppRouterInputs['middlewareWithSymbolKey'];
+    type Output = AppRouterOutputs['middlewareWithSymbolKey'];
+
+    expectTypeOf<Output>().toEqualTypeOf<{
+      foo: 'bar';
+      // symbol is stripped as part of SerializeObject
+    }>();
+  });
+
+  test('Overwrite util', () => {
+    type A = {
+      a: string;
+    };
+    type B = {
+      b: string;
+      [symbol]: true;
+    };
+    type C = {
+      a: number;
+      c: string;
+    };
+
+    type AB = Overwrite<A, B>;
+    type ABC = Overwrite<AB, C>;
+
+    expectTypeOf<AB>().toEqualTypeOf<{
+      a: string;
+      b: string;
+      [symbol]: true;
+    }>();
+
+    expectTypeOf<ABC>().toEqualTypeOf<{
+      a: number;
+      b: string;
+      c: string;
+      [symbol]: true;
+    }>();
   });
 });
