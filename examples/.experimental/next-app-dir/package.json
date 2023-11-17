@@ -29,7 +29,7 @@
     "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
     "typescript": "^5.1.3",
-    "zod": "^3.22.2"
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",

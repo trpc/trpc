@@ -19,7 +19,7 @@
     "@trpc/react-query": "^10.38.3",
     "@trpc/server": "^10.38.3",
     "ws": "^8.0.0",
-    "zod": "^3.22.2"
+    "zod": "^3.0.0"
   },
   "alias": {
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"

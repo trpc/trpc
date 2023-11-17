@@ -203,7 +203,7 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@playwright/test':
@@ -255,7 +255,7 @@ importers:
         specifier: ^5.14.0
         version: 5.16.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
       zod-form-data:
         specifier: ^2.0.1
@@ -313,7 +313,7 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@playwright/test':
@@ -360,7 +360,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540exampleslegacy-next-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -404,7 +404,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -481,7 +481,7 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@playwright/test':
@@ -540,7 +540,7 @@ importers:
         specifier: link:../../packages/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@cloudflare/workers-types':
@@ -580,7 +580,7 @@ importers:
         specifier: ^4.17.1
         version: 4.18.2
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/express':
@@ -629,7 +629,7 @@ importers:
         specifier: ^4.17.1
         version: 4.18.2
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/express':
@@ -687,7 +687,7 @@ importers:
         specifier: ^8.0.0
         version: 8.11.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -730,7 +730,7 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -843,7 +843,7 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/cors':
@@ -881,7 +881,7 @@ importers:
         specifier: link:../../../packages/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -915,7 +915,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -964,7 +964,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -1010,7 +1010,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -1065,7 +1065,7 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@playwright/test':
@@ -1115,7 +1115,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1186,7 +1186,7 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@playwright/test':
@@ -1209,7 +1209,7 @@ importers:
         version: 4.1.5
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1262,7 +1262,7 @@ importers:
         specifier: ^8.0.0
         version: 8.11.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@playwright/test':
@@ -1321,7 +1321,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1374,7 +1374,7 @@ importers:
         specifier: ^8.0.0
         version: 8.11.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -1414,7 +1414,7 @@ importers:
         specifier: link:../../packages/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@edge-runtime/types':
@@ -1527,7 +1527,7 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
 
   packages/react-query:
@@ -1572,7 +1572,7 @@ importers:
         specifier: ^3.12.7
         version: 3.12.7
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
 
   packages/server:
@@ -1674,7 +1674,7 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
 
   packages/tests:
@@ -1821,7 +1821,7 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
       zod-form-data:
         specifier: ^2.0.1
@@ -1902,7 +1902,7 @@ importers:
         specifier: ^1.5.1
         version: 1.8.0
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@babel/core':
@@ -2014,7 +2014,7 @@ importers:
         specifier: latest
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: ^3.22.2
+        specifier: ^3.0.0
         version: 3.22.2
     devDependencies:
       '@types/node':
@@ -24077,7 +24077,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540exampleslegacy-next-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)':
@@ -24094,7 +24094,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplesnext-websockets-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)':
@@ -24111,7 +24111,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)':
@@ -24128,10 +24128,10 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540exampleslegacy-next-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540exampleslegacy-next-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40exampleslegacy-next-starter}
     name: prisma
     version: 4.14.1
@@ -24141,7 +24141,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplesnext-websockets-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplesnext-websockets-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
     version: 4.14.1
@@ -24151,7 +24151,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
     version: 4.14.1
@@ -24161,7 +24161,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2540examplestrpc-next-prisma-todomvc':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
     version: 4.14.1

@@ -83,7 +83,7 @@
     "react-dom": "^18.2.0",
     "rollup": "^2.79.1",
     "tsx": "^3.12.7",
-    "zod": "^3.22.2"
+    "zod": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"
