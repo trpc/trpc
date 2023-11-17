@@ -136,7 +136,7 @@ async function startServer() {
   };
 }
 
-let t: inferAsyncReturnType<typeof startServer>;
+let t: Awaited<ReturnType<typeof startServer>>;
 beforeAll(async () => {
   t = await startServer();
 });

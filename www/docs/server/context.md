@@ -16,7 +16,7 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 This will make sure your context is properly typed in your procedures and middlewares.
 
 ```ts twoslash
-import { initTRPC, type inferAsyncReturnType } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
@@ -86,7 +86,6 @@ const helpers = createServerSideHelpers({
 // -------------------------------------------------
 // @filename: context.ts
 // -------------------------------------------------
-import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
@@ -153,7 +152,6 @@ In some scenarios it could make sense to split up your context into "inner" and 
 ### Example for inner & outer context
 
 ```ts
-import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSessionFromCookie, type Session } from './auth';
 

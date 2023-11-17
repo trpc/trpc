@@ -41,7 +41,7 @@ We also recommend installing `zod` to validate procedure inputs.
 ## Basic Example
 
 ```ts
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import {
   CreateHTTPContextOptions,
   createHTTPServer,
