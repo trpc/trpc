@@ -1,7 +1,7 @@
 import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
 import * as z from 'zod';
 
-describe('context inference w/ middlewares', () => {
+describe('input/context proper narrowing in procedure chain', () => {
   test("a narrower input type earlier in the chain should not widen because of a later middleware's wider input requirements", () => {
     const t = initTRPC.create();
 
