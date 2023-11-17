@@ -89,7 +89,7 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     type Output = AppRouterOutputs['middlewareWithSymbolKey'];
 
     expectTypeOf<Output>().toEqualTypeOf<{
-      readonly foo: 'bar';
+      foo: 'bar';
       // symbol is stripped as part of SerializeObject
     }>();
   });
