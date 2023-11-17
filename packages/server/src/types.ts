@@ -123,3 +123,18 @@ export type DeepPartial<TObject> = TObject extends object
 export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
   ? Omit<TObj, TKey>
   : never;
+
+/*
+ * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
+ * Fixes issues with iterating over keys of objects with index signatures.
+ * Without this, iterations over keys of objects with index signatures will lose
+ * type information about the keys and only the index signature will remain.
+ * @internal
+ */
+export type WithoutIndexSignature<TObj> = {
+  [K in keyof TObj as string extends K
+    ? never
+    : number extends K
+    ? never
+    : K]: TObj[K];
+};
