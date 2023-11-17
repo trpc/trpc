@@ -1,5 +1,5 @@
 {
-  "version": "10.43.5",
+  "version": "10.43.6",
   "registry": "https://registry.npmjs.org/",
   "npmClient": "pnpm",
   "$schema": "node_modules/lerna/schemas/lerna-schema.json"
