@@ -45,6 +45,7 @@ export const router = t.router;
 
 // @filename: _app.ts
 // ---cut---
+import * as trpc from '@trpc/server';
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
