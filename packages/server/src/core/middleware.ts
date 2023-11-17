@@ -7,6 +7,7 @@ import {
   DefaultValue as FallbackValue,
   MiddlewareMarker,
   Overwrite,
+  UnsetMarker,
 } from './internals/utils';
 import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
@@ -118,7 +119,7 @@ type deriveParamsFromConfig<
   _config: TConfig;
   // eslint-disable-next-line @typescript-eslint/ban-types
   _ctx_out: {};
-  _input_out: TInputIn;
+  _input_out: UnsetMarker;
   _input_in: TInputIn;
   _output_in: unknown;
   _output_out: unknown;
@@ -137,7 +138,7 @@ export type MiddlewareFunction<
     >;
     type: ProcedureType;
     path: string;
-    input: TParams['_input_out'];
+    input: TParams['_input_in'];
     rawInput: unknown;
     meta: TParams['_meta'] | undefined;
     next: {
