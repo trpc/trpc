@@ -1,8 +1,8 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { createTRPCReact } from '@trpc/react-query/src';
+import { createTRPCReact, getUntypedClient } from '@trpc/react-query/src';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React, { createContext } from 'react';
@@ -37,33 +37,26 @@ test('multiple trpcProviders', async () => {
   const A = (() => {
     return {
       trpc: createTRPCReact<(typeof ctx)['A']['router']>({
-        // No custom context defined -- will use default
+        // default context
       }),
       queryClient: createQueryClient(),
-      reactQueryContext: undefined,
     };
   })();
 
   const B = (() => {
-    const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
       trpc: createTRPCReact<(typeof ctx)['B']['router']>({
         context: createContext(null),
-        reactQueryContext,
       }),
-      reactQueryContext,
       queryClient: createQueryClient(),
     };
   })();
 
   const C = (() => {
-    const reactQueryContext = createContext<QueryClient | undefined>(undefined);
     return {
       trpc: createTRPCReact<(typeof ctx)['C']['router']>({
         context: createContext(null),
-        reactQueryContext,
       }),
-      reactQueryContext,
       queryClient: createQueryClient(),
     };
   })();
@@ -83,24 +76,21 @@ test('multiple trpcProviders', async () => {
   }
   function App() {
     return (
-      <A.trpc.Provider queryClient={A.queryClient} client={ctx.A.client}>
-        <QueryClientProvider
-          client={A.queryClient}
-          context={A.reactQueryContext}
-        >
-          <B.trpc.Provider queryClient={B.queryClient} client={ctx.B.client}>
-            <QueryClientProvider
-              client={B.queryClient}
-              context={B.reactQueryContext}
-            >
+      <A.trpc.Provider
+        queryClient={A.queryClient}
+        client={getUntypedClient(ctx.A.client)}
+      >
+        <QueryClientProvider client={A.queryClient}>
+          <B.trpc.Provider
+            queryClient={B.queryClient}
+            client={getUntypedClient(ctx.B.client)}
+          >
+            <QueryClientProvider client={B.queryClient}>
               <C.trpc.Provider
                 queryClient={C.queryClient}
-                client={ctx.C.client}
+                client={getUntypedClient(ctx.C.client)}
               >
-                <QueryClientProvider
-                  client={C.queryClient}
-                  context={C.reactQueryContext}
-                >
+                <QueryClientProvider client={C.queryClient}>
                   <MyComponent />
                 </QueryClientProvider>
               </C.trpc.Provider>

@@ -30,10 +30,6 @@ export type MergeRouters<
         router: true;
         procedures: Head['_def']['procedures'] & TRouterDef['procedures'];
         record: Head['_def']['record'] & TRouterDef['record'];
-        queries: Head['_def']['queries'] & TRouterDef['queries'];
-        mutations: Head['_def']['mutations'] & TRouterDef['mutations'];
-        subscriptions: Head['_def']['subscriptions'] &
-          TRouterDef['subscriptions'];
       }
     >
   : Router<TRouterDef> & TRouterDef['record'];

@@ -13,25 +13,27 @@ import {
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
-  Procedure,
-  ProcedureParams,
+  MutationProcedure,
+  QueryProcedure,
+  SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
+import { AnyProcedureBuilderParams } from './builderTypes';
 import { AnyRootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
   DefaultValue,
+  GetRawInputFn,
   middlewareMarker,
   Overwrite,
-  OverwriteKnown,
   ResolveOptions,
   UnsetMarker,
 } from './utils';
 
 type CreateProcedureReturnInput<
-  TPrev extends ProcedureParams,
-  TNext extends ProcedureParams,
+  TPrev extends AnyProcedureBuilderParams,
+  TNext extends AnyProcedureBuilderParams,
 > = ProcedureBuilder<{
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
@@ -44,33 +46,14 @@ type CreateProcedureReturnInput<
   _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
-/**
- * @internal
- */
-export interface BuildProcedure<
-  TType extends ProcedureType,
-  TParams extends ProcedureParams,
-  TOutput,
-> extends Procedure<
-    TType,
-    UnsetMarker extends TParams['_output_out']
-      ? OverwriteKnown<
-          TParams,
-          {
-            _output_in: TOutput;
-            _output_out: TOutput;
-          }
-        >
-      : TParams
-  > {}
-
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
   : Simplify<TType & TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
+export type ProcedureBuilderDef<TParams extends AnyProcedureBuilderParams> = {
+  procedure: true;
   inputs: Parser[];
   output?: Parser;
   meta?: TParams['_meta'];
@@ -83,7 +66,7 @@ export type ProcedureBuilderDef<TParams extends ProcedureParams> = {
 
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
-export interface ProcedureBuilder<TParams extends ProcedureParams> {
+export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
   /**
    * Add an input parser to the procedure.
    */
@@ -136,20 +119,11 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   /**
    * Add a middleware to the procedure.
    */
-  use<$Params extends ProcedureParams>(
+  use<$Params extends AnyProcedureBuilderParams>(
     fn:
       | MiddlewareBuilder<TParams, $Params>
       | MiddlewareFunction<TParams, $Params>,
   ): CreateProcedureReturnInput<TParams, $Params>;
-  /**
-   * Extend the procedure with another procedure.
-   * @warning The TypeScript inference fails when chaining concatenated procedures.
-   */
-  unstable_concat<$ProcedureBuilder extends AnyProcedureBuilder>(
-    proc: $ProcedureBuilder,
-  ): $ProcedureBuilder extends ProcedureBuilder<infer $TParams>
-    ? CreateProcedureReturnInput<TParams, $TParams>
-    : never;
   /**
    * Query procedure
    */
@@ -157,7 +131,10 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'query', TParams, $Output>;
+  ): QueryProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
+  }>;
 
   /**
    * Mutation procedure
@@ -166,7 +143,10 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'mutation', TParams, $Output>;
+  ): MutationProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
+  }>;
 
   /**
    * Mutation procedure
@@ -175,7 +155,10 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
     resolver: (
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
-  ): BuildProcedure<'subscription', TParams, $Output>;
+  ): SubscriptionProcedure<{
+    input: DefaultValue<TParams['_input_in'], void>;
+    output: DefaultValue<TParams['_output_out'], $Output>;
+  }>;
   /**
    * @internal
    */
@@ -217,6 +200,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
   _meta: TConfig['$types']['meta'];
 }> {
   const _def: AnyProcedureBuilderDef = {
+    procedure: true,
     inputs: [],
     middlewares: [],
     ...initDef,
@@ -243,13 +227,6 @@ export function createBuilder<TConfig extends AnyRootConfig>(
         meta: meta as Record<string, unknown>,
       }) as AnyProcedureBuilder;
     },
-    /**
-     * @deprecated
-     * This functionality is deprecated and will be removed in the next major version.
-     */
-    unstable_concat(builder) {
-      return createNewBuilder(_def, builder._def) as any;
-    },
     use(middlewareBuilderOrFn) {
       // Distinguish between a middleware builder and a middleware function
       const middlewares =
@@ -263,19 +240,19 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     },
     query(resolver) {
       return createResolver(
-        { ..._def, query: true },
+        { ..._def, type: 'query' },
         resolver,
       ) as AnyQueryProcedure;
     },
     mutation(resolver) {
       return createResolver(
-        { ..._def, mutation: true },
+        { ..._def, type: 'mutation' },
         resolver,
       ) as AnyMutationProcedure;
     },
     subscription(resolver) {
       return createResolver(
-        { ..._def, subscription: true },
+        { ..._def, type: 'subscription' },
         resolver,
       ) as AnySubscriptionProcedure;
     },
@@ -283,7 +260,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef,
+  _def: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: (opts: ResolveOptions<any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
@@ -309,7 +286,7 @@ function createResolver(
  */
 export interface ProcedureCallOptions {
   ctx: unknown;
-  rawInput: unknown;
+  getRawInput: GetRawInputFn;
   input?: unknown;
   path: string;
   type: ProcedureType;
@@ -327,9 +304,9 @@ const result = await caller.call('myProcedure', input);
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  const procedure = async function resolve(opts: ProcedureCallOptions) {
+  async function procedure(opts: ProcedureCallOptions) {
     // is direct server-side call
-    if (!opts || !('rawInput' in opts)) {
+    if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
     }
 
@@ -339,7 +316,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         ctx: any;
         index: number;
         input?: unknown;
-        rawInput?: unknown;
+        getRawInput?: GetRawInputFn;
       } = {
         index: 0,
         ctx: opts.ctx,
@@ -352,7 +329,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           ctx: callOpts.ctx,
           type: opts.type,
           path: opts.path,
-          rawInput: callOpts.rawInput ?? opts.rawInput,
+          getRawInput: callOpts.getRawInput ?? opts.getRawInput,
           meta: _def.meta,
           input: callOpts.input,
           next(_nextOpts?: any) {
@@ -360,7 +337,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
               | {
                   ctx?: Record<string, unknown>;
                   input?: unknown;
-                  rawInput?: unknown;
+                  getRawInput?: GetRawInputFn;
                 }
               | undefined;
 
@@ -374,10 +351,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 nextOpts && 'input' in nextOpts
                   ? nextOpts.input
                   : callOpts.input,
-              rawInput:
-                nextOpts && 'rawInput' in nextOpts
-                  ? nextOpts.rawInput
-                  : callOpts.rawInput,
+              getRawInput:
+                nextOpts && 'getRawInput' in nextOpts
+                  ? nextOpts.getRawInput
+                  : callOpts.getRawInput,
             });
           },
         });
@@ -406,9 +383,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       throw result.error;
     }
     return result.data;
-  };
-  procedure._def = _def;
-  procedure.meta = _def.meta;
+  }
 
-  return procedure as AnyProcedure;
+  procedure._def = _def;
+
+  // FIXME typecast shouldn't be needed - fixittt
+  return procedure as unknown as AnyProcedure;
 }

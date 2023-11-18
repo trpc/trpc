@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^2.9.11",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "^10.43.6",
     "@trpc/next": "^10.43.6",
     "@trpc/react-query": "^10.43.6",

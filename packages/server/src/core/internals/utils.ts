@@ -1,5 +1,5 @@
 import { Simplify, WithoutIndexSignature } from '../../types';
-import { ProcedureParams } from '../procedure';
+import { AnyProcedureBuilderParams } from './builderTypes';
 
 /**
  * @internal
@@ -26,12 +26,6 @@ export type Overwrite<TType, TWith> = TWith extends any
     : TWith
   : never;
 
-/**
- * @internal
- */
-export type OverwriteKnown<TType, TWith> = {
-  [K in keyof TType]: K extends keyof TWith ? TWith[K] : TType[K];
-};
 /**
  * @internal
  */
@@ -63,7 +57,7 @@ export type UnsetMarker = typeof unsetMarker;
 /**
  * @internal
  */
-export interface ResolveOptions<TParams extends ProcedureParams> {
+export interface ResolveOptions<TParams extends AnyProcedureBuilderParams> {
   ctx: Simplify<
     Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
   >;
@@ -90,3 +84,9 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
+
+/**
+ * @internal
+ * Returns the raw input type of a procedure
+ */
+export type GetRawInputFn = () => Promise<unknown>;

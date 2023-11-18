@@ -1,9 +1,10 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
+import '../___packages';
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   TRPCLink,
   unstable_httpBatchStreamLink,
@@ -25,7 +26,11 @@ globalThis.ReadableStream = MiniflareReadableStream as any;
 const port = 8788;
 const url = `http://localhost:${port}`;
 
-const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
+const createContext = ({
+  req,
+  resHeaders,
+  info,
+}: FetchCreateContextFnOptions) => {
   const getUser = () => {
     if (req.headers.get('authorization') === 'meow') {
       return {
@@ -38,6 +43,7 @@ const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   return {
     user: getUser(),
     resHeaders,
+    info,
   };
 };
 
@@ -63,6 +69,11 @@ function createAppRouter() {
     foo: publicProcedure.query(({ ctx }) => {
       ctx.resHeaders.set('x-foo', 'bar');
       return 'foo';
+    }),
+    request: router({
+      info: publicProcedure.query(({ ctx }) => {
+        return ctx.info;
+      }),
     }),
     deferred: publicProcedure
       .input(
@@ -108,7 +119,7 @@ async function startServer() {
   });
   const server = await mf.startServer();
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
@@ -171,7 +182,7 @@ test('streaming', async () => {
     };
   };
 
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       unstable_httpBatchStreamLink({
@@ -191,7 +202,7 @@ test('streaming', async () => {
 });
 
 test('query with headers', async () => {
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
         url,
@@ -222,7 +233,7 @@ test('response with headers', async () => {
     };
   };
 
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       customLink,
       httpBatchLink({
@@ -234,4 +245,52 @@ test('response with headers', async () => {
   });
 
   await client.foo.query();
+});
+
+test('request info', async () => {
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        url,
+        fetch: fetch as any,
+      }),
+    ],
+  });
+
+  const res = await Promise.all([
+    client.hello.query(),
+    client.hello.query({ who: 'test' }),
+    client.request.info.query(),
+  ]);
+
+  expect(res).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "text": "hello world",
+      },
+      Object {
+        "text": "hello test",
+      },
+      Object {
+        "calls": Array [
+          Object {
+            "path": "hello",
+            "type": "query",
+          },
+          Object {
+            "input": Object {
+              "who": "test",
+            },
+            "path": "hello",
+            "type": "query",
+          },
+          Object {
+            "path": "request.info",
+            "type": "query",
+          },
+        ],
+        "isBatchCall": true,
+      },
+    ]
+  `);
 });

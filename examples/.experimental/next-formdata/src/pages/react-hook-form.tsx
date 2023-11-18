@@ -114,7 +114,7 @@ export default function Page() {
               />
             </div>
             <div>
-              <button type="submit" disabled={mutation.status === 'loading'}>
+              <button type="submit" disabled={mutation.status === 'pending'}>
                 submit
               </button>
             </div>

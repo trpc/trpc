@@ -125,6 +125,14 @@ export type DeepPartial<TObject> = TObject extends object
   : TObject;
 
 /**
+ * Omits the key without removing a potential union
+ * @internal
+ */
+export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
+  ? Omit<TObj, TKey>
+  : never;
+
+/*
  * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
  * Fixes issues with iterating over keys of objects with index signatures.
  * Without this, iterations over keys of objects with index signatures will lose

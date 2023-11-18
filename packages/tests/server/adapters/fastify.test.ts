@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
   HTTPHeaders,
   splitLink,
@@ -27,9 +27,9 @@ const config = {
   prefix: '/trpc',
 };
 
-function createContext({ req, res }: CreateFastifyContextOptions) {
+function createContext({ req, res, info }: CreateFastifyContextOptions) {
   const user = { name: req.headers.username ?? 'anonymous' };
-  return { req, res, user };
+  return { req, res, user, info };
 }
 
 type Context = Awaited<ReturnType<typeof createContext>>;
@@ -93,6 +93,11 @@ function createAppRouter() {
       ee.emit('subscription:created');
       onNewMessageSubscription();
       return sub;
+    }),
+    request: router({
+      info: publicProcedure.query(({ ctx }) => {
+        return ctx.info;
+      }),
     }),
     deferred: publicProcedure
       .input(
@@ -197,7 +202,7 @@ interface ClientOptions {
 function createClient(opts: ClientOptions = {}) {
   const host = `localhost:${config.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       splitLink({
@@ -397,6 +402,22 @@ describe('authorized user', () => {
         "text": "hello nyan",
       }
     `);
+  });
+
+  test('request info', async () => {
+    const info = await app.client.request.info.query();
+
+    expect(info).toMatchInlineSnapshot(`
+      Object {
+        "calls": Array [
+          Object {
+            "path": "request.info",
+            "type": "query",
+          },
+        ],
+        "isBatchCall": true,
+      }
+  `);
   });
 
   test('mutation', async () => {

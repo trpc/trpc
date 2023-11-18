@@ -6,13 +6,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  inferActionResultProps,
-  UseTRPCActionResult,
-} from '@trpc/next/app-dir/client';
+import { UseTRPCActionResult } from '@trpc/next/app-dir/client';
 import { TRPCActionHandler } from '@trpc/next/app-dir/server';
 import { ActionHandlerDef } from '@trpc/next/dist/app-dir/shared';
-import { AnyProcedure, Simplify } from '@trpc/server';
 import { useAction } from '~/trpc/client';
 import { useRef } from 'react';
 import {

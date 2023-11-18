@@ -2,9 +2,9 @@ import {
   inferRouterInputs,
   inferRouterOutputs,
   initTRPC,
-  Overwrite,
   Simplify,
 } from '@trpc/server';
+import { Overwrite } from '@trpc/server/unstableInternalsExport';
 import * as z from 'zod';
 
 export function hardcodedExample() {

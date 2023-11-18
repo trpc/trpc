@@ -1,15 +1,16 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
+import { AnyProcedureBuilderParams } from './internals/builderTypes';
 import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
   DefaultValue,
+  GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
   UnsetMarker,
 } from './internals/utils';
-import { ProcedureParams } from './procedure';
 import { ProcedureType } from './types';
 
 /**
@@ -26,7 +27,7 @@ interface MiddlewareResultBase {
 /**
  * @internal
  */
-interface MiddlewareOKResult<_TParams extends ProcedureParams>
+interface MiddlewareOKResult<_TParams extends AnyProcedureBuilderParams>
   extends MiddlewareResultBase {
   ok: true;
   data: unknown;
@@ -36,7 +37,7 @@ interface MiddlewareOKResult<_TParams extends ProcedureParams>
 /**
  * @internal
  */
-interface MiddlewareErrorResult<_TParams extends ProcedureParams>
+interface MiddlewareErrorResult<_TParams extends AnyProcedureBuilderParams>
   extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
@@ -45,7 +46,7 @@ interface MiddlewareErrorResult<_TParams extends ProcedureParams>
 /**
  * @internal
  */
-export type MiddlewareResult<TParams extends ProcedureParams> =
+export type MiddlewareResult<TParams extends AnyProcedureBuilderParams> =
   | MiddlewareErrorResult<TParams>
   | MiddlewareOKResult<TParams>;
 
@@ -53,13 +54,13 @@ export type MiddlewareResult<TParams extends ProcedureParams> =
  * @internal
  */
 export interface MiddlewareBuilder<
-  TRoot extends ProcedureParams,
-  TNewParams extends ProcedureParams,
+  TRoot extends AnyProcedureBuilderParams,
+  TNewParams extends AnyProcedureBuilderParams,
 > {
   /**
    * Create a new builder based on the current middleware builder
    */
-  unstable_pipe<$Params extends ProcedureParams>(
+  unstable_pipe<$Params extends AnyProcedureBuilderParams>(
     fn: {
       _config: TRoot['_config'];
       _meta: TRoot['_meta'];
@@ -71,7 +72,7 @@ export interface MiddlewareBuilder<
         TRoot['_output_out'],
         TNewParams['_output_out']
       >;
-    } extends infer OParams extends ProcedureParams
+    } extends infer OParams extends AnyProcedureBuilderParams
       ?
           | MiddlewareBuilder<OParams, $Params>
           | MiddlewareFunction<OParams, $Params>
@@ -93,9 +94,9 @@ export interface MiddlewareBuilder<
  * FIXME: there must be a nicer way of doing this, it's hard to maintain when we have several structures like this
  */
 type CreateMiddlewareReturnInput<
-  TRoot extends ProcedureParams,
-  TPrev extends ProcedureParams,
-  TNext extends ProcedureParams,
+  TRoot extends AnyProcedureBuilderParams,
+  TPrev extends AnyProcedureBuilderParams,
+  TNext extends AnyProcedureBuilderParams,
 > = MiddlewareBuilder<
   TRoot,
   {
@@ -129,8 +130,8 @@ type deriveParamsFromConfig<
  * @internal
  */
 export type MiddlewareFunction<
-  TParams extends ProcedureParams,
-  TParamsAfter extends ProcedureParams,
+  TParams extends AnyProcedureBuilderParams,
+  TParamsAfter extends AnyProcedureBuilderParams,
 > = {
   (opts: {
     ctx: Simplify<
@@ -139,11 +140,11 @@ export type MiddlewareFunction<
     type: ProcedureType;
     path: string;
     input: TParams['_input_in'];
-    rawInput: unknown;
+    getRawInput: GetRawInputFn;
     meta: TParams['_meta'] | undefined;
     next: {
       (): Promise<MiddlewareResult<TParams>>;
-      <$Context>(opts: { ctx: $Context }): Promise<
+      <$Context>(opts: { ctx?: $Context; input?: unknown }): Promise<
         MiddlewareResult<{
           _config: TParams['_config'];
           _ctx_out: $Context;
@@ -154,7 +155,9 @@ export type MiddlewareFunction<
           _meta: TParams['_meta'];
         }>
       >;
-      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
+      (opts: { getRawInput: GetRawInputFn }): Promise<
+        MiddlewareResult<TParams>
+      >;
     };
   }): Promise<MiddlewareResult<TParamsAfter>>;
   _type?: string | undefined;
@@ -167,7 +170,7 @@ export function createMiddlewareFactory<
   TConfig extends AnyRootConfig,
   TInputIn = unknown,
 >() {
-  function createMiddlewareInner<TNewParams extends ProcedureParams>(
+  function createMiddlewareInner<TNewParams extends AnyProcedureBuilderParams>(
     middlewares: MiddlewareFunction<any, any>[],
   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
     return {
@@ -186,7 +189,7 @@ export function createMiddlewareFactory<
     };
   }
 
-  function createMiddleware<TNewParams extends ProcedureParams>(
+  function createMiddleware<TNewParams extends AnyProcedureBuilderParams>(
     fn: MiddlewareFunction<
       deriveParamsFromConfig<TConfig, TInputIn>,
       TNewParams
@@ -225,12 +228,10 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: ProcedureBuilderMiddleware = async ({
-    next,
-    rawInput,
-    input,
-  }) => {
+  const inputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
     let parsedInput: ReturnType<typeof parse>;
+
+    const rawInput = await opts.getRawInput();
     try {
       parsedInput = await parse(rawInput);
     } catch (cause) {
@@ -242,15 +243,14 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
 
     // Multiple input parsers
     const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
+      isPlainObject(opts.input) && isPlainObject(parsedInput)
         ? {
-            ...input,
+            ...opts.input,
             ...parsedInput,
           }
         : parsedInput;
 
-    // TODO fix this typing?
-    return next({ input: combinedInput } as any);
+    return opts.next({ input: combinedInput });
   };
   inputMiddleware._type = 'input';
   return inputMiddleware;

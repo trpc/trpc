@@ -40,9 +40,9 @@ const ctx = konn()
   .done();
 
 test('single query', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [
+    const results = client.useQueries((t) => [
       t.post.byId({ id: '1' }),
       t.post.byId(
         { id: '1' },
@@ -68,9 +68,9 @@ test('single query', async () => {
 });
 
 test('different queries', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [t.foo(), t.bar()]);
+    const results = client.useQueries((t) => [t.foo(), t.bar()]);
 
     const foo = results[0].data;
     const bar = results[1].data;
@@ -98,9 +98,9 @@ test('different queries', async () => {
 test('mapping queries', async () => {
   const ids = ['1', '2', '3'];
 
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) =>
+    const results = client.useQueries((t) =>
       ids.map((id) => t.post.byId({ id })),
     );
 
@@ -127,9 +127,9 @@ test('mapping queries', async () => {
 });
 
 test('single query with options', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const results = proxy.useQueries((t) => [
+    const results = client.useQueries((t) => [
       t.post.byId(
         { id: '1' },
         { enabled: false, placeholderData: '__result2' },
@@ -151,10 +151,10 @@ test('single query with options', async () => {
 
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const results = proxy.useQueries((t) => [
+    const results = client.useQueries((t) => [
       t.post.byId(
         { id: '1' },
         {

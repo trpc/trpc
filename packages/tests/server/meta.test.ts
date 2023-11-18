@@ -52,10 +52,10 @@ describe('meta', () => {
     })
     .done();
   it('is available in middlewares', async () => {
-    await ctx.proxy.noMeta.query();
-    await ctx.proxy.withMeta.query();
-    await ctx.proxy.noMeta.query();
-    await ctx.proxy.withMeta.query();
+    await ctx.client.noMeta.query();
+    await ctx.client.withMeta.query();
+    await ctx.client.noMeta.query();
+    await ctx.client.withMeta.query();
 
     expect(ctx.middlewareCalls.mock.calls.map((calls) => calls[0])).toEqual([
       undefined,
@@ -63,13 +63,5 @@ describe('meta', () => {
       undefined,
       { foo: 'bar' },
     ]);
-  });
-
-  it('is queryable in _def', async () => {
-    const meta = ctx.router.withMeta._def.meta;
-    expectTypeOf(meta).toEqualTypeOf<Meta | undefined>();
-    expect(meta).toEqual({
-      foo: 'bar',
-    });
   });
 });

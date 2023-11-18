@@ -24,13 +24,6 @@ export interface UseMutationOverride {
 export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   /**
    * Override behaviors of the built-in hooks
-   * @deprecated use `overrides` instead
-   */
-  unstable_overrides?: {
-    useMutation?: Partial<UseMutationOverride>;
-  };
-  /**
-   * Override behaviors of the built-in hooks
    */
   overrides?: {
     useMutation?: Partial<UseMutationOverride>;
@@ -47,9 +40,4 @@ export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
    * @default undefined
    */
   context?: React.Context<any>;
-  /**
-   * Override the default React Query context
-   * @default undefined
-   */
-  reactQueryContext?: React.Context<QueryClient | undefined>;
 }

@@ -3,7 +3,7 @@
   "version": "10.43.6",
   "private": true,
   "engines": {
-    "node": "^18.15.0"
+    "node": ">=18.15.0"
   },
   "scripts": {
     "prebuild": "prisma generate && prisma migrate deploy",
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@prisma/client": "^4.14.1",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "^10.43.6",
     "@trpc/next": "^10.43.6",
     "@trpc/react-query": "^10.43.6",
@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
-    "@tanstack/react-query-devtools": "^4.18.0",
+    "@tanstack/react-query-devtools": "^5.0.0",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.33",
     "@types/ws": "^8.2.0",

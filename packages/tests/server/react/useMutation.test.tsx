@@ -40,15 +40,6 @@ const ctx = konn()
             date: new Date(),
           })),
       }),
-      /**
-       * @deprecated
-       */
-      deprecatedRouter: t.router({
-        /**
-         * @deprecated
-         */
-        deprecatedProcedure: t.procedure.query(() => '..'),
-      }),
     });
 
     return getServerAndReactClient(appRouter);
@@ -59,9 +50,9 @@ const ctx = konn()
   .done();
 
 test('useMutation', async () => {
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
   function MyComponent() {
-    const mutation = proxy.post.create.useMutation();
+    const mutation = client.post.create.useMutation();
 
     expect(mutation.trpc.path).toBe('post.create');
 
@@ -92,7 +83,7 @@ test('useMutation', async () => {
 });
 
 test('useMutation options inference', () => {
-  const { appRouter, proxy, App } = ctx;
+  const { appRouter, client, App } = ctx;
 
   type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;
   type Options = ReactQueryProcedure['post']['createWithSerializable'];
@@ -103,7 +94,7 @@ test('useMutation options inference', () => {
 
   function MyComponent() {
     const options: Options = {};
-    proxy.post.createWithSerializable.useMutation({
+    client.post.createWithSerializable.useMutation({
       ...options,
       onSuccess: (data) => {
         expectTypeOf(data).toMatchTypeOf<{

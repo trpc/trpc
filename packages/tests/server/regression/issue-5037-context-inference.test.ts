@@ -9,7 +9,6 @@ interface TrpcMiddlewareArguments<T> {
   path: string;
   type: string;
   next: () => T;
-  rawInput: unknown;
 }
 
 /**
@@ -17,16 +16,10 @@ interface TrpcMiddlewareArguments<T> {
  * https://github.com/getsentry/sentry-javascript/blob/6d424571e3cd5e99991b711f4e23d773e321e294/packages/node/src/handlers.ts#L328
  */
 function sentryTrpcMiddleware(_options: any) {
-  return function <T>({
-    path,
-    type,
-    next,
-    rawInput,
-  }: TrpcMiddlewareArguments<T>): T {
+  return function <T>({ path, type, next }: TrpcMiddlewareArguments<T>): T {
     path;
     type;
     next;
-    rawInput;
 
     // This function is effectively what @sentry/node does to provide its trpc middleware.
     return null as any as T;

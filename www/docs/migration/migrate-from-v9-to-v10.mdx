@@ -5,36 +5,6 @@ sidebar_label: Migrate from v9 to v10
 slug: /migrate-from-v9-to-v10
 ---
 
-<!-- Reusable snippet -->
-
-```twoslash include server
-// @module: esnext
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-import { z } from "zod";
-
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  post: t.router({
-    byId: t.procedure
-      .input(z.string())
-      .query((opts) => {
-        // imaginary db call
-        return { id: 1, title: 'tRPC is the best!' };
-    }),
-    create: t.procedure
-      .input(z.object({ title: z.string(), text: z.string() }))
-      .mutation((opts) => {
-        // imaginary db call
-        return { id: "123", ...opts.input, };
-    }),
-  }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
 Welcome to tRPC v10! We're excited to bring you a new major version to continue the journey towards perfect end-to-end type safety with excellent DX.
 
 Under the hood of version 10, we are unlocking performance improvements, bringing you quality of life enhancements, and creating room for us to build new features in the future.
@@ -155,11 +125,7 @@ type GreetingInput = InferQueryInput<'greeting'>;
 
 #### Inference helpers
 
-```ts twoslash
-// @module: esnext
-// @include: server
-// @filename: index.ts
-// ---cut---
+```ts
 // Inference helpers are now shipped out of the box.
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
@@ -352,16 +318,7 @@ export const publicProcedure = t.procedure;
 1. Rename your old `appRouter` to `legacyRouter`
 2. Create a new app router:
 
-```ts twoslash title="src/server/routers/_app.ts"
-// @filename: trpc.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const router = t.router;
-export const mergeRouters = t.mergeRouters;
-export const publicProcedure = t.procedure;
-// @filename: _app.ts
-import * as trpc from '@trpc/server';
-// ---cut---
+```ts
 import { mergeRouters, publicProcedure, router } from './trpc';
 
 // Renamed from `appRouter`

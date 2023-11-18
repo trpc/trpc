@@ -2,6 +2,10 @@
   "name": "@examples/trpc-next-prisma-starter",
   "version": "10.43.6",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@8.5.1",
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
@@ -25,10 +29,6 @@
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
     "postinstall": "pnpm generate"
   },
-  "engines": {
-    "node": ">=16.8"
-  },
-  "packageManager": "pnpm@8.5.0",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@prisma/client": "^4.14.1",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "^10.43.6",
     "@trpc/next": "^10.43.6",
     "@trpc/react-query": "^10.43.6",

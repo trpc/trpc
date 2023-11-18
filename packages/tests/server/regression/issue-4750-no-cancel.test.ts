@@ -31,7 +31,7 @@ function abortControllerSpy() {
 
 test('httpLink', async () => {
   const spy = abortControllerSpy();
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     client({ httpUrl }) {
       return {
         links: [httpLink({ url: httpUrl, AbortController: spy.AC })],
@@ -39,7 +39,7 @@ test('httpLink', async () => {
     },
   });
 
-  await proxy.q.query(undefined).catch(() => {
+  await client.q.query(undefined).catch(() => {
     /// ..
   });
 
@@ -51,7 +51,7 @@ test('httpLink', async () => {
 
 test('httpBatchLink', async () => {
   const spy = abortControllerSpy();
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     client({ httpUrl }) {
       return {
         links: [httpBatchLink({ url: httpUrl, AbortController: spy.AC })],
@@ -59,7 +59,7 @@ test('httpBatchLink', async () => {
     },
   });
 
-  await proxy.q.query(undefined).catch(() => {
+  await client.q.query(undefined).catch(() => {
     /// ..
   });
 

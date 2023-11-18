@@ -12,10 +12,10 @@ export type {
   AnyQueryProcedure,
   AnyMutationProcedure,
   AnySubscriptionProcedure,
-  ProcedureParams,
   ProcedureArgs,
   ProcedureOptions,
 } from './procedure';
+export type { AnyProcedureBuilderParams } from './internals/builderTypes';
 export type { inferParser } from './parser';
 export {
   createInputMiddleware,
