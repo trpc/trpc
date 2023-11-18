@@ -8,7 +8,7 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
@@ -41,7 +41,7 @@ const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 function createAppRouter() {
   const t = initTRPC.context<Context>().create();
@@ -124,7 +124,7 @@ async function startServer() {
   };
 }
 
-let t: inferAsyncReturnType<typeof startServer>;
+let t: Awaited<ReturnType<typeof startServer>>;
 beforeAll(async () => {
   t = await startServer();
 });
