@@ -66,7 +66,7 @@
     "@octokit/graphql": "^7.0.0",
     "@octokit/graphql-schema": "^14.0.0",
     "@tsconfig/docusaurus": "^2.0.0",
-    "@types/node": "^18.16.16",
+    "@types/node": "^18.18.9",
     "@types/oauth": "^0.9.1",
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
