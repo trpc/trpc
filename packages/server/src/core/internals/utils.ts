@@ -1,6 +1,37 @@
 import { Simplify, WithoutIndexSignature } from '../../types';
 import { ProcedureParams } from '../procedure';
 
+type FilterRequired<
+  TObj,
+  TKey extends keyof TObj,
+> = undefined extends TObj[TKey]
+  ? TObj[TKey] extends undefined
+    ? TKey
+    : never
+  : TKey;
+
+type FilterUndefined<
+  TObj,
+  TKey extends keyof TObj,
+> = undefined extends TObj[TKey]
+  ? TObj[TKey] extends undefined
+    ? never
+    : TKey
+  : never;
+
+/**
+ * Replaces all undefined values with `?:`
+ * @internal
+ */
+export type EnforceOptional<TObj> = {
+  [$Key in keyof TObj as FilterRequired<TObj, $Key>]: TObj[$Key];
+} & {
+  [$Key in keyof TObj as FilterUndefined<TObj, $Key>]?: Exclude<
+    TObj[$Key],
+    undefined
+  >;
+};
+
 /**
  * @internal
  * Overwrite properties in `TType` with properties in `TWith`
