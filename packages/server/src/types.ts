@@ -1,42 +1,5 @@
 /**
  * @internal
- * @deprecated
- */
-export type identity<TType> = TType;
-
-/**
- * @deprecated
- */
-export type InferOptional<TType, TKeys extends keyof TType> = Omit<
-  TType,
-  TKeys
-> &
-  Partial<Pick<TType, TKeys>>;
-
-/**
- * @deprecated
- */
-export type UndefinedKeys<TType> = {
-  [K in keyof TType]: undefined extends TType[K] ? K : never;
-}[keyof TType];
-
-/**
- * @internal
- * @deprecated
- */
-export type FlatOverwrite<TType, TWith> = InferOptional<
-  {
-    [TKey in keyof TType | keyof TWith]: TKey extends keyof TWith
-      ? TWith[TKey]
-      : TKey extends keyof TType
-      ? TType[TKey]
-      : never;
-  },
-  UndefinedKeys<TType> | UndefinedKeys<TWith>
->;
-
-/**
- * @internal
  */
 export type IntersectionError<TKey extends string> =
   `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
