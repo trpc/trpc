@@ -5,7 +5,7 @@ sidebar_label: Response Caching
 slug: /server/caching
 ---
 
-The below examples uses [Vercel's edge caching](https://vercel.com/docs/serverless-functions/edge-caching) to serve data to your users as fast as possible.
+The below examples uses [Vercel's edge caching](https://vercel.com/docs/edge-network/caching) to serve data to your users as fast as possible.
 
 :::info
 Always be careful with caching - especially if you handle personal information.
@@ -83,7 +83,7 @@ Since all queries are normal HTTP `GET`s, we can use normal HTTP headers to cach
 > Assuming you're deploying your API somewhere that can handle stale-while-revalidate cache headers like Vercel.
 
 ```tsx title='server.ts'
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
 export const createContext = async ({
@@ -97,7 +97,7 @@ export const createContext = async ({
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const t = initTRPC.context<Context>().create();
 

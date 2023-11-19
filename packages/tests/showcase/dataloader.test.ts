@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from '../server/___testHelpers';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import DataLoader from 'dataloader';
 import { konn } from 'konn';
@@ -23,7 +23,7 @@ function createContext(_opts: CreateHTTPContextOptions) {
     }),
   };
 }
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 const ctx = konn()
   .beforeEach(() => {

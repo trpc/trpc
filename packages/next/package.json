@@ -1,6 +1,6 @@
 {
   "name": "@trpc/next",
-  "version": "10.43.3",
+  "version": "10.43.6",
   "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
@@ -66,9 +66,9 @@
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.43.3",
-    "@trpc/react-query": "10.43.3",
-    "@trpc/server": "10.43.3",
+    "@trpc/client": "10.43.6",
+    "@trpc/react-query": "10.43.6",
+    "@trpc/server": "10.43.6",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
@@ -78,9 +78,9 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.43.3",
-    "@trpc/react-query": "10.43.3",
-    "@trpc/server": "10.43.3",
+    "@trpc/client": "10.43.6",
+    "@trpc/react-query": "10.43.6",
+    "@trpc/server": "10.43.6",
     "@types/express": "^4.17.17",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.33",
