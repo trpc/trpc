@@ -12,7 +12,6 @@ export async function createContextInner(_opts: CreateContextOptions) {
   return {};
 }
 
-export type Context = Awaited<ReturnType<typeof createContextInner>>
 export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 /**
