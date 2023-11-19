@@ -16,6 +16,8 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 This will make sure your context is properly typed in your procedures and middlewares.
 
 ```ts twoslash
+import * as trpc from '@trpc/server';
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
