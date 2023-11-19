@@ -14,7 +14,6 @@ import {
   fetchRequestHandler,
 } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
-import { inferAsyncReturnType } from '@trpc/server/unstableInternalsExport';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';
 import '../___packages';

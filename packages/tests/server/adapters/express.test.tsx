@@ -6,7 +6,6 @@ import {
   TRPCClientError,
 } from '@trpc/client/src';
 import * as trpcExpress from '@trpc/server/src/adapters/express';
-import { inferAsyncReturnType } from '@trpc/server/unstableInternalsExport';
 import express from 'express';
 import fetch from 'node-fetch';
 
