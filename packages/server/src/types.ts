@@ -19,13 +19,6 @@ export type Maybe<TType> = TType | null | undefined;
 
 /**
  * @internal
- */
-export type ThenArg<TType> = TType extends PromiseLike<infer U>
-  ? ThenArg<U>
-  : TType;
-
-/**
- * @internal
  * @see https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
  */
 export type Simplify<TType> = TType extends any[] | Date
@@ -55,7 +48,7 @@ export type InferLast<TType> = TType & {
  * @public
  */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
-  ThenArg<ReturnType<TFunction>>;
+  Awaited<ReturnType<TFunction>>;
 
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
@@ -74,7 +67,7 @@ export type Filter<TObj extends object, TFilter> = Pick<
  * @internal
  */
 export type Unwrap<TType> = TType extends (...args: any[]) => infer R
-  ? ThenArg<R>
+  ? Awaited<R>
   : TType;
 
 /**

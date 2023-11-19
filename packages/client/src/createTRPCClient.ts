@@ -6,7 +6,6 @@ import type {
   AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
-  IntersectionError,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
@@ -18,6 +17,7 @@ import {
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
+import { IntersectionError } from '@trpc/server/unstableInternalsExport';
 import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {
   TRPCSubscriptionObserver,

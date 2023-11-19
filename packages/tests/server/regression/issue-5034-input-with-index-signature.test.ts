@@ -1,9 +1,4 @@
-import {
-  inferRouterInputs,
-  inferRouterOutputs,
-  initTRPC,
-  Simplify,
-} from '@trpc/server';
+import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/server';
 import { Overwrite } from '@trpc/server/unstableInternalsExport';
 import * as z from 'zod';
 

@@ -9,9 +9,10 @@ import {
   TRPCClientError,
   wsLink,
 } from '@trpc/client/src';
-import { initTRPC, Maybe, TRPCError } from '@trpc/server/src';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { observable } from '@trpc/server/src/observable';
+import { Maybe } from '@trpc/server/unstableInternalsExport';
 import { z } from 'zod';
 
 test('smoke test', async () => {

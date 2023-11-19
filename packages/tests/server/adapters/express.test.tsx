@@ -5,7 +5,6 @@ import {
   httpBatchLink,
   TRPCClientError,
 } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
 import * as trpcExpress from '@trpc/server/src/adapters/express';
 import express from 'express';
 import fetch from 'node-fetch';

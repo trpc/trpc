@@ -19,6 +19,7 @@
         "observable/**",
         "rpc/**",
         "subscription/**",
+        "unstableInternalsExport/**",
         "package.json"
       ]
     },
