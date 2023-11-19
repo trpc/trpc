@@ -198,7 +198,7 @@ export async function createContext(opts: CreateNextContextOptions) {
   };
 }
 
-export type Context = Awaited<ReturnType<typeof createContextInner>;
+export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 // The usage in your router is the same as the example above.
 ```
