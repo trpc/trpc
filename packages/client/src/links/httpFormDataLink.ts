@@ -8,7 +8,8 @@ const getBody: GetBody = (opts) => {
   if (!(opts.input instanceof FormData)) {
     throw new Error('Input is not FormData');
   }
-  return opts.input;
+  // FIXME: type cast should not be necessary
+  return opts.input as unknown as FormData;
 };
 
 const formDataRequester: Requester = (opts) => {
