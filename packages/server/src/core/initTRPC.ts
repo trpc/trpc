@@ -11,7 +11,7 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
-import { FlatOverwrite, Unwrap } from '../types';
+import { Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
   isServerDefault,
@@ -21,7 +21,7 @@ import {
 } from './internals/config';
 import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';
-import { PickFirstDefined, ValidateShape } from './internals/utils';
+import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
@@ -50,13 +50,13 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
       | RootConfigTypes['ctx']
       | ((...args: unknown[]) => RootConfigTypes['ctx']),
   >() {
-    type NextParams = FlatOverwrite<TParams, { ctx: Unwrap<TNewContext> }>;
+    type NextParams = Overwrite<TParams, { ctx: Unwrap<TNewContext> }>;
 
     return new TRPCBuilder<NextParams>();
   }
 
   meta<TNewMeta extends RootConfigTypes['meta']>() {
-    type NextParams = FlatOverwrite<TParams, { meta: TNewMeta }>;
+    type NextParams = Overwrite<TParams, { meta: TNewMeta }>;
 
     return new TRPCBuilder<NextParams>();
   }

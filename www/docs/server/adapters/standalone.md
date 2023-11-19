@@ -79,7 +79,7 @@ For more information you can look at the [quickstart guide](/docs/quickstart)
 The Standalone adapter runs a simple Node.js HTTP server.
 
 ```ts title='server.ts'
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './appRouter.ts';
 
@@ -114,7 +114,7 @@ For full information on how to configure this package, [check the docs](https://
 This example just throws open CORS to any request, which is useful for development, but you can and should configure it more strictly in a production environment.
 
 ```ts title='server.ts'
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 
@@ -140,7 +140,7 @@ The `middleware` option will accept any function which resembles a connect/node.
 
 ```ts title='server.ts'
 import { createServer } from 'http';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 
 const handler = createHTTPHandler({

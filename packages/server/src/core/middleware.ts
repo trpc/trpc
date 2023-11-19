@@ -5,10 +5,11 @@ import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import {
-  DefaultValue as FallbackValue,
+  DefaultValue,
   GetRawInputFn,
   MiddlewareMarker,
   Overwrite,
+  UnsetMarker,
 } from './internals/utils';
 import { ProcedureType } from './types';
 
@@ -64,10 +65,10 @@ export interface MiddlewareBuilder<
       _config: TRoot['_config'];
       _meta: TRoot['_meta'];
       _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-      _input_in: FallbackValue<TRoot['_input_in'], TNewParams['_input_in']>;
-      _input_out: FallbackValue<TRoot['_input_out'], TNewParams['_input_out']>;
-      _output_in: FallbackValue<TRoot['_output_in'], TNewParams['_output_in']>;
-      _output_out: FallbackValue<
+      _input_in: DefaultValue<TRoot['_input_in'], TNewParams['_input_in']>;
+      _input_out: DefaultValue<TRoot['_input_out'], TNewParams['_input_out']>;
+      _output_in: DefaultValue<TRoot['_output_in'], TNewParams['_output_in']>;
+      _output_out: DefaultValue<
         TRoot['_output_out'],
         TNewParams['_output_out']
       >;
@@ -102,10 +103,10 @@ type CreateMiddlewareReturnInput<
     _config: TPrev['_config'];
     _meta: TPrev['_meta'];
     _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-    _input_in: FallbackValue<TNext['_input_in'], TPrev['_input_in']>;
-    _input_out: FallbackValue<TNext['_input_out'], TPrev['_input_out']>;
-    _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
-    _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+    _input_in: DefaultValue<TNext['_input_in'], TPrev['_input_in']>;
+    _input_out: DefaultValue<TNext['_input_out'], TPrev['_input_out']>;
+    _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
+    _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
   }
 >;
 
@@ -119,7 +120,7 @@ type deriveParamsFromConfig<
   _config: TConfig;
   // eslint-disable-next-line @typescript-eslint/ban-types
   _ctx_out: {};
-  _input_out: TInputIn;
+  _input_out: UnsetMarker;
   _input_in: TInputIn;
   _output_in: unknown;
   _output_out: unknown;
@@ -138,7 +139,7 @@ export type MiddlewareFunction<
     >;
     type: ProcedureType;
     path: string;
-    input: TParams['_input_out'];
+    input: TParams['_input_in'];
     getRawInput: GetRawInputFn;
     meta: TParams['_meta'] | undefined;
     next: {

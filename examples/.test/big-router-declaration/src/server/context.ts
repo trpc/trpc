@@ -1,4 +1,3 @@
-import * as trpc from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 
 export interface Session {
@@ -20,7 +19,7 @@ export async function createContextInner(opts: CreateContextOptions) {
   };
 }
 
-export type Context = trpc.inferAsyncReturnType<typeof createContextInner>;
+export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 /**
  * Creates context for an incoming request

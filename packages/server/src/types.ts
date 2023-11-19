@@ -1,20 +1,28 @@
 /**
  * @internal
+ * @deprecated
  */
 export type identity<TType> = TType;
 
+/**
+ * @deprecated
+ */
 export type InferOptional<TType, TKeys extends keyof TType> = Omit<
   TType,
   TKeys
 > &
   Partial<Pick<TType, TKeys>>;
 
+/**
+ * @deprecated
+ */
 export type UndefinedKeys<TType> = {
   [K in keyof TType]: undefined extends TType[K] ? K : never;
 }[keyof TType];
 
 /**
  * @internal
+ * @deprecated
  */
 export type FlatOverwrite<TType, TWith> = InferOptional<
   {

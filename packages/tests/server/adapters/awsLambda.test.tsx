@@ -1,4 +1,4 @@
-import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src';
 import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const createContext = async ({
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 const t = initTRPC.context<Context>().create();
 
 const router = t.router({
