@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Simplify } from '../../types';
+import { Simplify, WithoutIndexSignature } from '../../types';
 
 /**
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -18,7 +18,7 @@ type IsAny<T> = 0 extends T & 1 ? true : false;
 // support it as both a Primitive and a NonJsonPrimitive
 type JsonReturnable = JsonPrimitive | undefined;
 
-// prettier-ignore
+/* prettier-ignore */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
@@ -29,6 +29,7 @@ export type Serialize<T> =
   T extends [] ? [] :
   T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
   T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
+  Record<never, never> extends T ? Record<keyof T, Serialize<T[keyof T]>> :
   T extends object ? Simplify<SerializeObject<UndefinedToOptional<T>>> :
   never;
 
@@ -72,7 +73,10 @@ type FilterDefinedKeys<TObj extends object> = Exclude<
  */
 type UndefinedToOptional<T extends object> =
   // Property is not a union with `undefined`, keep as-is
-  Pick<T, FilterDefinedKeys<T>> & {
+  Pick<
+    WithoutIndexSignature<T>,
+    FilterDefinedKeys<WithoutIndexSignature<T>>
+  > & {
     // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
     [k in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[k], undefined>;
   };

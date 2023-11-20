@@ -1,20 +1,28 @@
 /**
  * @internal
+ * @deprecated
  */
 export type identity<TType> = TType;
 
+/**
+ * @deprecated
+ */
 export type InferOptional<TType, TKeys extends keyof TType> = Omit<
   TType,
   TKeys
 > &
   Partial<Pick<TType, TKeys>>;
 
+/**
+ * @deprecated
+ */
 export type UndefinedKeys<TType> = {
   [K in keyof TType]: undefined extends TType[K] ? K : never;
 }[keyof TType];
 
 /**
  * @internal
+ * @deprecated
  */
 export type FlatOverwrite<TType, TWith> = InferOptional<
   {
@@ -115,3 +123,18 @@ export type DeepPartial<TObject> = TObject extends object
       [P in keyof TObject]?: DeepPartial<TObject[P]>;
     }
   : TObject;
+
+/**
+ * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
+ * Fixes issues with iterating over keys of objects with index signatures.
+ * Without this, iterations over keys of objects with index signatures will lose
+ * type information about the keys and only the index signature will remain.
+ * @internal
+ */
+export type WithoutIndexSignature<TObj> = {
+  [K in keyof TObj as string extends K
+    ? never
+    : number extends K
+    ? never
+    : K]: TObj[K];
+};

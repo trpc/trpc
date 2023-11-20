@@ -16,7 +16,9 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 This will make sure your context is properly typed in your procedures and middlewares.
 
 ```ts twoslash
-import { initTRPC, type inferAsyncReturnType } from '@trpc/server';
+import * as trpc from '@trpc/server';
+// ---cut---
+import { initTRPC } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
@@ -33,7 +35,7 @@ const t1 = initTRPC.context<typeof createContext>().create();
 t1.procedure.use(({ ctx }) => { ... });
 //                  ^?
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 const t2 = initTRPC.context<Context>().create();
 // @noErrors
 t2.procedure.use(({ ctx }) => { ... });
@@ -86,7 +88,6 @@ const helpers = createServerSideHelpers({
 // -------------------------------------------------
 // @filename: context.ts
 // -------------------------------------------------
-import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSession } from 'next-auth/react';
 
@@ -102,7 +103,7 @@ export async function createContext(opts: CreateNextContextOptions) {
   };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 
 // -------------------------------------------------
 // @filename: trpc.ts
@@ -153,7 +154,6 @@ In some scenarios it could make sense to split up your context into "inner" and 
 ### Example for inner & outer context
 
 ```ts
-import type { inferAsyncReturnType } from '@trpc/server';
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getSessionFromCookie, type Session } from './auth';
 
@@ -198,7 +198,7 @@ export async function createContext(opts: CreateNextContextOptions) {
   };
 }
 
-export type Context = inferAsyncReturnType<typeof createContextInner>;
+export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 // The usage in your router is the same as the example above.
 ```

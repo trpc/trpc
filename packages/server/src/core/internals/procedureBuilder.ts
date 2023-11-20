@@ -21,7 +21,7 @@ import { AnyRootConfig } from './config';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
-  DefaultValue as FallbackValue,
+  DefaultValue,
   middlewareMarker,
   Overwrite,
   OverwriteKnown,
@@ -36,14 +36,12 @@ type CreateProcedureReturnInput<
   _config: TPrev['_config'];
   _meta: TPrev['_meta'];
   _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-  _input_in: UnsetMarker extends TNext['_input_in']
-    ? TPrev['_input_in']
-    : Overwrite<TPrev['_input_in'], TNext['_input_in']>;
+  _input_in: TPrev['_input_in'];
   _input_out: UnsetMarker extends TNext['_input_out']
     ? TPrev['_input_out']
     : Overwrite<TPrev['_input_out'], TNext['_input_out']>;
-  _output_in: FallbackValue<TNext['_output_in'], TPrev['_output_in']>;
-  _output_out: FallbackValue<TNext['_output_out'], TPrev['_output_out']>;
+  _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
+  _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
 }>;
 
 /**
@@ -158,7 +156,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   query<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+    ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): BuildProcedure<'query', TParams, $Output>;
 
   /**
@@ -167,7 +165,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   mutation<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+    ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): BuildProcedure<'mutation', TParams, $Output>;
 
   /**
@@ -176,7 +174,7 @@ export interface ProcedureBuilder<TParams extends ProcedureParams> {
   subscription<$Output>(
     resolver: (
       opts: ResolveOptions<TParams>,
-    ) => MaybePromise<FallbackValue<TParams['_output_in'], $Output>>,
+    ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): BuildProcedure<'subscription', TParams, $Output>;
   /**
    * @internal
