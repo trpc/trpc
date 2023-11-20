@@ -235,3 +235,25 @@ test('response with headers', async () => {
 
   await client.foo.query();
 });
+
+// https://github.com/trpc/trpc/pull/4893
+// endpoint trailing slash test
+test('with /trpc/ endpoint', async () => {
+  const custom = await startServer('/trpc/');
+  expect(
+    await custom.client.hello.query({
+      who: 'test',
+    }),
+  ).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello test",
+    }
+  `);
+
+  expect(await custom.client.hello.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello world",
+    }
+  `5);
+  await custom.close();
+});
