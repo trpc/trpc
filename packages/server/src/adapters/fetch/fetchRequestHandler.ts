@@ -10,9 +10,6 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
     endpoint: string;
   };
 
-const trimLeadingSlash = (str: string) =>
-  str.startsWith('/') ? str.substring(1) : str;
-
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -23,10 +20,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   };
 
   const url = new URL(opts.req.url);
-  const path = trimLeadingSlash(url.pathname).slice(
-    trimLeadingSlash(opts.endpoint).length,
-  );
-
+  const path = url.pathname.slice(opts.endpoint === '/' ? 1 : opts.endpoint.length + 1);
   const req: HTTPRequest = {
     query: url.searchParams,
     method: opts.req.method,
