@@ -90,7 +90,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
     const cause = _cause as unknown;
 
     if (isTRPCClientError(cause)) {
-      if (opts.meta) {
+      if (opts.meta) {                      
         // Decorate with meta error data
         cause.meta = {
           ...cause.meta,
