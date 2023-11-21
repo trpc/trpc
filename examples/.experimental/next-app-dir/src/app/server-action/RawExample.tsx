@@ -28,7 +28,7 @@ export function RawExample() {
           //          ^?
           if ('result' in res) {
             res.result;
-            res.result.data;
+            res.result['data'];            
             //           ^?
           } else {
             res.error;
