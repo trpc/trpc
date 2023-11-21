@@ -99,8 +99,8 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
       }
       return cause;
     }
-    if (isTRPCErrorResponse(cause)) {             
-      return new TRPCClientError(cause.error.message, {
+    if (isTRPCErrorResponse(cause)) {
+      return new TRPCClientError(cause['error'].message, {
         ...opts,
         result: cause,
       });
