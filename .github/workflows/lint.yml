@@ -49,7 +49,6 @@ jobs:
         with:
           commit_message: 'chore: fix lint and/or formatting issues'
           commit_user_name: trpc-bot # defaults to "github-actions[bot]"
-          commit_author: trpc-bot <actions@github.com> # defaults to author of the commit that triggered the run
 
   lint-packages:
     runs-on: ubuntu-latest
