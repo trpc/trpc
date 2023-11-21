@@ -12,6 +12,49 @@ env:
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-all-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-all-
+
+      - name: Install deps (with cache)
+        run: pnpm install --child-concurrency 3
+
+      - name: Commit changes
+        run: |
+          if [[ $(git status --porcelain) ]]; then
+            git config --global user.email "<>"
+            git config --global user.name "trpc-bot"
+            git add .
+            git commit -m "chore: lint fix"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+        if: github.ref == 'refs/heads/main'
   lint-packages:
     runs-on: ubuntu-latest
     steps:
@@ -42,25 +85,7 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            pnpm turbo --filter="@trpc/*" lint -- --fix
-          else
-            pnpm turbo --filter="@trpc/*" lint
-          fi
-
-      - name: Commit changes
-        run: |
-          if [[ $(git status --porcelain) ]]; then
-            git config --global user.email "<>"
-            git config --global user.name "trpc-bot"
-            git add .
-            git commit -m "chore: lint fix"
-            git push
-          else
-            echo "No changes to commit"
-          fi
-        if: github.ref == 'refs/heads/main'
+        run: pnpm turbo --filter="@trpc/*" lint
 
   other-checks:
     runs-on: ubuntu-latest
@@ -97,33 +122,9 @@ jobs:
       - name: Run Manypkg
         run: pnpm manypkg check
 
-      - name: Run Manypkg
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            pnpm manypkg fix
-          else
-            pnpm manypkg check
-          fi
       - name: Run Prettier
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            pnpm format-fix
-          else
-            pnpm format
-          fi
+        run: pnpm format --list-different
 
-      - name: Commit changes
-        run: |
-          if [[ $(git status --porcelain) ]]; then
-            git config --global user.email "<>"
-            git config --global user.name "trpc-bot"
-            git add .
-            git commit -m "chore: lint fix"
-            git push
-          else
-            echo "No changes to commit"
-          fi
-        if: github.ref == 'refs/heads/main'
   lint-examples:
     runs-on: ubuntu-latest
     steps:
@@ -154,22 +155,4 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            pnpm turbo --filter="@examples/*" lint -- --fix
-          else
-            pnpm turbo --filter="@examples/*" lint
-          fi
-
-      - name: Commit changes
-        run: |
-          if [[ $(git status --porcelain) ]]; then
-            git config --global user.email "<>"
-            git config --global user.name "trpc-bot"
-            git add .
-            git commit -m "chore: lint fix"
-            git push
-          else
-            echo "No changes to commit"
-          fi
-        if: github.ref == 'refs/heads/main'
+        run: pnpm turbo --filter="@examples/*" lint
