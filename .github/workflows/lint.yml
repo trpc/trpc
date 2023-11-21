@@ -43,7 +43,12 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-      - run: pnpm lint-fix
+      - run: turbo lint -- --fix
+        continue-on-error: true
+      - run: manypkg fix
+        continue-on-error: true
+      - run: pnpm format-fix
+        continue-on-error: true
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
