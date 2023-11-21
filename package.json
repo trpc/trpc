@@ -17,7 +17,7 @@
     "vitest": "cd packages/tests && pnpm vitest",
     "oldlint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path .gitignore . --report-unused-disable-directives",
     "lint": "turbo lint",
-    "lint-fix": "turbo lint -- --fix && manypkg fix && pnpm format:write",
+    "lint-fix": "turbo lint -- --fix && manypkg fix && pnpm format-fix",
     "format": "prettier \"**/*\" --ignore-unknown",
     "format-fix": "pnpm format --write --list-different",
     "lint-prune": "! ts-prune | grep -v \"used in module\"",
