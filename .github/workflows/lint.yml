@@ -43,8 +43,7 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-      - name: Run ESLint
-        run: pnpm lint-fix
+      - run: pnpm lint-fix
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
