@@ -45,6 +45,7 @@ jobs:
 
       - name: Run ESLint
         run: pnpm lint-fix
+
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: fix lint and/or formatting issues'
