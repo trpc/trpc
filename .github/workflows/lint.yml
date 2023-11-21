@@ -47,8 +47,6 @@ jobs:
         run: pnpm lint-fix
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          # Optional. Commit message for the created commit.
-          # Defaults to "Apply automatic changes"
           commit_message: 'chore: fix lint and/or formatting issues'
 
   lint-packages:
