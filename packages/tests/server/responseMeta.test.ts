@@ -76,3 +76,50 @@ Object {
 
   await close();
 });
+
+test('cookie headers', async () => {
+  const onError = vi.fn();
+
+  interface Context {
+    req: IncomingMessage;
+    res: ServerResponse<IncomingMessage>;
+  }
+  const t = initTRPC.context<Context>().create();
+
+  const appRouter = t.router({
+    cookieEndpoint: t.procedure.query(() => {
+      return 'cookie endpoint';
+    }),
+  });
+
+  const { close, httpUrl } = routerToServerAndClientNew(appRouter, {
+    server: {
+      onError,
+      responseMeta() {
+        return {
+          headers: {
+            'Set-Cookie': ['a=b', 'b=c'],
+          },
+        };
+      },
+    },
+  });
+
+  {
+    const res = await fetch(`${httpUrl}/cookieEndpoint`);
+
+    expect(res.headers.get('set-cookie')).toMatchInlineSnapshot(`
+"a=b, b=c"
+`);
+
+    expect(await res.json()).toMatchInlineSnapshot(`
+Object {
+  "result": Object {
+    "data": "cookie endpoint",
+  },
+}
+`);
+  }
+
+  await close();
+});

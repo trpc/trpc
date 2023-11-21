@@ -1,7 +1,7 @@
 {
   "name": "@examples/minimal-react",
   "private": true,
-  "version": "10.43.6",
+  "version": "10.43.7",
   "workspaces": [
     "client",
     "server"
