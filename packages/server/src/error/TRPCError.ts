@@ -16,7 +16,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   });
 
   // Inherit stack from error
-  if (cause instanceof Error && cause.stack) {
+  if (cause instanceof Error && cause['stack']) {
     trpcError.stack = cause.stack;
   }
 
@@ -28,7 +28,7 @@ class UnknownCauseError extends Error {
 }
 
 function getCauseFromUnknown(cause: unknown): Error | undefined {
-  if (cause instanceof Error) {
+  if (cause instanceof Error) {                  
     return cause;
   }
 
