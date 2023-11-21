@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-starter",
-  "version": "10.43.6",
+  "version": "10.43.7",
   "private": true,
   "scripts": {
     "generate": "prisma generate",
@@ -40,10 +40,10 @@
   "dependencies": {
     "@prisma/client": "^4.14.1",
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.43.6",
-    "@trpc/next": "^10.43.6",
-    "@trpc/react-query": "^10.43.6",
-    "@trpc/server": "^10.43.6",
+    "@trpc/client": "^10.43.7",
+    "@trpc/next": "^10.43.7",
+    "@trpc/react-query": "^10.43.7",
+    "@trpc/server": "^10.43.7",
     "clsx": "^2.0.0",
     "next": "^14.0.1",
     "react": "^18.2.0",
