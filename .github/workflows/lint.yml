@@ -42,7 +42,25 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: pnpm turbo --filter="@trpc/*" lint
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            pnpm turbo --filter="@trpc/*" lint -- --fix
+          else
+            pnpm turbo --filter="@trpc/*" lint
+          fi
+
+      - name: Commit changes
+        run: |
+          if [[ $(git status --porcelain) ]]; then
+            git config --global user.email "<>"
+            git config --global user.name "trpc-bot"
+            git add .
+            git commit -m "chore: lint fix"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+        if: github.ref == 'refs/heads/main'
 
   other-checks:
     runs-on: ubuntu-latest
@@ -79,9 +97,33 @@ jobs:
       - name: Run Manypkg
         run: pnpm manypkg check
 
+      - name: Run Manypkg
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            pnpm manypkg fix
+          else
+            pnpm manypkg check
+          fi
       - name: Run Prettier
-        run: pnpm format --list-different
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            pnpm format-fix
+          else
+            pnpm format
+          fi
 
+      - name: Commit changes
+        run: |
+          if [[ $(git status --porcelain) ]]; then
+            git config --global user.email "<>"
+            git config --global user.name "trpc-bot"
+            git add .
+            git commit -m "chore: lint fix"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+        if: github.ref == 'refs/heads/main'
   lint-examples:
     runs-on: ubuntu-latest
     steps:
@@ -112,4 +154,22 @@ jobs:
         run: pnpm install --child-concurrency 3
 
       - name: Run ESLint
-        run: pnpm turbo --filter="@examples/*" lint
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            pnpm turbo --filter="@examples/*" lint -- --fix
+          else
+            pnpm turbo --filter="@examples/*" lint
+          fi
+
+      - name: Commit changes
+        run: |
+          if [[ $(git status --porcelain) ]]; then
+            git config --global user.email "<>"
+            git config --global user.name "trpc-bot"
+            git add .
+            git commit -m "chore: lint fix"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+        if: github.ref == 'refs/heads/main'
