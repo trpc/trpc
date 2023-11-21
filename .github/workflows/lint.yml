@@ -49,6 +49,9 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: fix lint and/or formatting issues'
+          commit_user_name: trpc-bot # defaults to "github-actions[bot]"
+          commit_user_email: actions@github.com # defaults to "41898282+github-actions[bot]@users.noreply.github.com"
+          commit_author: trpc-bot <actions@github.com> # defaults to author of the commit that triggered the run
 
   lint-packages:
     runs-on: ubuntu-latest
