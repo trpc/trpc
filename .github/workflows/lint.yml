@@ -43,18 +43,14 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-      - name: Commit changes
-        run: |
-          if [[ $(git status --porcelain) ]]; then
-            git config --global user.email "<>"
-            git config --global user.name "trpc-bot"
-            git add .
-            git commit -m "chore: lint fix"
-            git push
-          else
-            echo "No changes to commit"
-          fi
-        if: github.ref == 'refs/heads/main'
+      - name: Run ESLint
+        run: pnpm lint-fix
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          # Optional. Commit message for the created commit.
+          # Defaults to "Apply automatic changes"
+          commit_message: 'chore: fix lint and/or formatting issues'
+
   lint-packages:
     runs-on: ubuntu-latest
     steps:
