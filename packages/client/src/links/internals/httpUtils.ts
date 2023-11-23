@@ -26,6 +26,10 @@ export interface HTTPLinkBaseOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
+  /**
+   * HTTP method to use - defaults to `GET` for queries and `POST` for mutations
+   */
+  unstable_methodOverride?: 'GET' | 'POST';
 }
 
 export interface ResolvedHTTPLinkOptions {

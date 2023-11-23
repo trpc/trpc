@@ -8,7 +8,16 @@ import { TRPCError } from '../error/TRPCError';
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   onError?: OnErrorFunction<TRouter, TRequest>;
+  /**
+   * Allow batching
+   */
   batching?: {
+    enabled: boolean;
+  };
+  /**
+   * Allow method override via query param
+   */
+  unstable_methodOverride?: {
     enabled: boolean;
   };
   router: TRouter;
