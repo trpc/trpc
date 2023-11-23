@@ -160,11 +160,7 @@ function createServer(opts: ServerOptions) {
     await instance.close();
   };
   const start = async () => {
-    try {
-      await instance.listen({ port: config.port });
-    } catch (err) {
-      instance.log.error(err);
-    }
+    await instance.listen({ port: config.port });
   };
 
   return { instance, start, stop };
