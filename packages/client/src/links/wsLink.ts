@@ -106,11 +106,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
     undefined;
   let activeConnection: null | Connection = lazy ? null : createConnection();
 
-  /**
-   * Global connection has been killed
-   */
-  let killed = false;
-
   type Connection = {
     id: number;
   } & (
@@ -158,7 +153,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
   }
   function tryReconnect() {
-    if (!!connectTimer || killed) {
+    if (!!connectTimer) {
       return;
     }
 
@@ -389,7 +384,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
   return {
     close: () => {
-      killed = true;
+      connectAttempt = 0;
 
       for (const req of Object.values(pendingRequests)) {
         if (req.type === 'subscription') {
@@ -405,8 +400,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
       activeConnection && closeIfNoPending(activeConnection);
       clearTimeout(connectTimer);
-
       connectTimer = undefined;
+      activeConnection = null;
     },
     request,
     get connection() {
