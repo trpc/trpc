@@ -1,5 +1,6 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
+import '../___packages';
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import {
@@ -106,7 +107,15 @@ async function startServer(endpoint = '') {
   });
   const server = await mf.startServer();
   const port = (server.address() as any).port;
-  const url = `http://localhost:${port}${endpoint}`;
+
+  const trimSlashes = (path: string): string => {
+    path = path.startsWith('/') ? path.slice(1) : path;
+    path = path.endsWith('/') ? path.slice(0, -1) : path;
+
+    return path;
+  };
+  const path = trimSlashes(endpoint);
+  const url = `http://localhost:${port}${path && `/${path}`}`;
 
   const client = createTRPCProxyClient<typeof router>({
     links: [httpBatchLink({ url, fetch: fetch as any })],
@@ -239,66 +248,23 @@ describe('with default server', () => {
   });
 });
 
-// https://github.com/trpc/trpc/pull/4893
-test('with / endpoint', async () => {
-  const custom = await startServer('/');
+test.each([
+  // https://github.com/trpc/trpc/pull/4893
+  '/',
+  'trpc',
+  /// https://github.com/trpc/trpc/issues/5089
+  'trpc/',
+  '/trpc/',
+  '/x/y/z',
+])('with "%s" endpoint', async (endpoint) => {
+  const custom = await startServer(endpoint);
   expect(
     await custom.client.hello.query({
       who: 'test',
     }),
-  ).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello test",
-    }
-  `);
+  ).toEqual({
+    text: 'hello test',
+  });
 
-  expect(await custom.client.hello.query()).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello world",
-    }
-  `);
-  await custom.close();
-});
-
-// https://github.com/trpc/trpc/pull/4893
-// endpoint with trailing slash
-test('with /trpc/ endpoint', async () => {
-  const custom = await startServer('/trpc/');
-  expect(
-    await custom.client.hello.query({
-      who: 'test',
-    }),
-  ).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello test",
-    }
-  `);
-
-  expect(await custom.client.hello.query()).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello world",
-    }
-  `);
-  await custom.close();
-});
-
-// endpoint without trailing slash
-test('with /trpc endpoint', async () => {
-  const custom = await startServer('/trpc');
-  expect(
-    await custom.client.hello.query({
-      who: 'test',
-    }),
-  ).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello test",
-    }
-  `);
-
-  expect(await custom.client.hello.query()).toMatchInlineSnapshot(`
-    Object {
-      "text": "hello world",
-    }
-  `);
   await custom.close();
 });
