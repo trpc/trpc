@@ -24,19 +24,10 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
   TRPCClientError<TRouter>
 >;
 
-type LazyMode = {
-  enabled: true;
-  /**
-   * Disconnect after this many milliseconds of inactivity (no message sent or received and no pending requests)
-   * @default 100
-   */
-  disconnectAfterMs?: number;
-};
-
 const exponentialBackoff = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
-export type WebSocketClientOptions = {
+export interface WebSocketClientOptions {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */
@@ -59,11 +50,23 @@ export type WebSocketClientOptions = {
    */
   onClose?: (cause?: { code?: number }) => void;
   /**
-   * Lazy mode will disconnect automatically after a period of inactivity
+   * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
    * @default false
    */
-  lazy?: false | LazyMode;
-};
+  lazy?:
+    | false
+    | {
+        /**
+         * Enable lazy mode
+         */
+        enabled: true;
+        /**
+         * Close the WebSocket after this many milliseconds
+         * @default 100
+         */
+        closeMs?: number;
+      };
+}
 
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
@@ -211,7 +214,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         activeConnection.ws?.close();
         activeConnection = null;
       }
-    }, lazy.disconnectAfterMs ?? 100);
+    }, lazy.closeMs ?? 100);
   };
 
   function createConnection(): Connection {
