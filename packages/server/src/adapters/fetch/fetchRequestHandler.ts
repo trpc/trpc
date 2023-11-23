@@ -11,11 +11,10 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   };
 
 const trimSlashes = (path: string): string => {
-  let newPath = path;
-  newPath = newPath.startsWith('/') ? newPath.slice(1) : newPath;
-  newPath = newPath.endsWith('/') ? newPath.slice(0, -1) : newPath;
+  path = path.startsWith('/') ? path.slice(1) : path;
+  path = path.endsWith('/') ? path.slice(0, -1) : path;
 
-  return newPath;
+  return path;
 };
 
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
