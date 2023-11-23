@@ -35,12 +35,46 @@ export interface WebSocketLinkOptions {
 
 function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient
 
+
 export interface WebSocketClientOptions {
-  url: string;
+  /**
+   * The URL to connect to (can be a function that returns a URL)
+   */
+  url: string | (() => MaybePromise<string>);
+  /**
+   * Ponyfill which WebSocket implementation to use
+   */
   WebSocket?: typeof WebSocket;
-  retryDelayMs?: typeof retryDelay;
+  /**
+   * The number of milliseconds before a reconnect is attempted.
+   * @default {@link exponentialBackoff}
+   */
+  retryDelayMs?: typeof exponentialBackoff;
+  /**
+   * Triggered when a WebSocket connection is established
+   */
   onOpen?: () => void;
+  /**
+   * Triggered when a WebSocket connection is closed
+   */
   onClose?: (cause?: { code?: number }) => void;
+  /**
+   * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
+   * @default false
+   */
+  lazy?:
+    | false
+    | {
+        /**
+         * Enable lazy mode
+         */
+        enabled: true;
+        /**
+         * Close the WebSocket after this many milliseconds
+         * @default 100
+         */
+        closeMs?: number;
+      };
 }
 ```
 
