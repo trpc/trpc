@@ -414,7 +414,7 @@ test(
     expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
     await close();
     await waitFor(() => {
-      expect(wsClient.getConnection()!.ws!.readyState).toBe(WebSocket.CLOSED);
+      expect(wsClient.connection!.ws!.readyState).toBe(WebSocket.CLOSED);
     });
     await close();
   },
@@ -438,7 +438,7 @@ test(
     );
     await close();
     await waitFor(() => {
-      expect(wsClient.getConnection()!.ws!.readyState).toBe(WebSocket.CLOSED);
+      expect(wsClient.connection!.ws!.readyState).toBe(WebSocket.CLOSED);
     });
     await close();
   },
@@ -972,16 +972,19 @@ describe('lazy mode', () => {
         },
       },
     });
-    const { client } = ctx;
+    const { client, wsClient } = ctx;
+    expect(wsClient.connection).toBe(null);
 
     // --- do some queries and wait for the client to disconnect
     await client.greeting.query();
+    expect(wsClient.connection).not.toBe(null);
     await client.greeting.query();
 
     await waitFor(() => {
       expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
       expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
     });
+    expect(wsClient.connection).toBe(null);
 
     // --- do some more queries and wait for the client to disconnect again
     await client.greeting.query();
@@ -1002,13 +1005,16 @@ describe('lazy mode', () => {
         },
       },
     });
-    const { client } = ctx;
+    const { client, wsClient } = ctx;
 
     // --- do a subscription, check that we connect
     const onDataMock = vi.fn();
+
+    expect(wsClient.connection).toBe(null);
     const sub = client.onMessage.subscribe(undefined, {
       onData: onDataMock,
     });
+    expect(wsClient.connection).not.toBe(null);
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
     await waitFor(() => {
@@ -1036,6 +1042,8 @@ describe('lazy mode', () => {
     await waitFor(() => {
       expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
     });
+
+    expect(wsClient.connection).toBe(null);
 
     await ctx.close();
   });

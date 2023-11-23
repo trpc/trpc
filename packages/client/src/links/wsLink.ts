@@ -132,12 +132,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
    * tries to send the list of messages
    */
   function dispatch() {
+    if (!activeConnection) {
+      activeConnection = createConnection();
+      return;
+    }
     // using a timeout to batch messages
     setTimeout(() => {
-      if (!activeConnection) {
-        activeConnection = createConnection();
-        return;
-      }
       if (activeConnection?.state !== 'open') {
         return;
       }
@@ -409,7 +409,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       connectTimer = undefined;
     },
     request,
-    getConnection() {
+    get connection() {
       return activeConnection;
     },
   };
