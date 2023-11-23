@@ -21,6 +21,7 @@ const config: PlaywrightTestConfig = {
     headless: opts.headless,
     video: 'on',
   },
+  retries: process.env.CI ? 3 : 0,
 };
 
 export default config;

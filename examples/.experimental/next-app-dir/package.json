@@ -1,7 +1,7 @@
 {
   "name": "@examples/next-app-dir",
   "private": true,
-  "version": "10.43.7",
+  "version": "10.44.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,10 +14,10 @@
   "dependencies": {
     "@hookform/resolvers": "^2.9.11",
     "@tanstack/react-query": "^5.0.0",
-    "@trpc/client": "^10.43.7",
-    "@trpc/next": "^10.43.7",
-    "@trpc/react-query": "^10.43.7",
-    "@trpc/server": "^10.43.7",
+    "@trpc/client": "^10.44.0",
+    "@trpc/next": "^10.44.0",
+    "@trpc/react-query": "^10.44.0",
+    "@trpc/server": "^10.44.0",
     "@types/node": "^18.16.16",
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
