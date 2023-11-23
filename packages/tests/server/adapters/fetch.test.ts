@@ -282,7 +282,6 @@ test('with /trpc/ endpoint', async () => {
   await custom.close();
 });
 
-// https://github.com/trpc/trpc/pull/4893
 // endpoint without trailing slash
 test('with /trpc endpoint', async () => {
   const custom = await startServer('/trpc');
