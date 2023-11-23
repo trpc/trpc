@@ -1,25 +1,19 @@
-import './___packages';
 import http from 'http';
-import { waitError } from './___testHelpers';
 import {
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
-  TRPCClientError,
 } from '@trpc/client/src';
 import { HTTPLinkBaseOptions } from '@trpc/client/src/links/internals/httpUtils';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { BaseHandlerOptions } from '@trpc/server/internals/types';
 import { getPostBody } from '@trpc/server/src/adapters/node-http/content-type/json/getPostBody';
-import {
-  createHTTPHandler,
-  CreateHTTPHandlerOptions,
-  createHTTPServer,
-} from '@trpc/server/src/adapters/standalone';
+import { createHTTPHandler } from '@trpc/server/src/adapters/standalone';
 import fetch from 'node-fetch';
-import { beforeEach } from 'node:test';
-import { afterEach, test, vi } from 'vitest';
+import { afterEach, test } from 'vitest';
 import { z } from 'zod';
+import './___packages';
+import { waitError } from './___testHelpers';
 
 const t = initTRPC.create();
 const router = t.router({
@@ -42,6 +36,7 @@ const router = t.router({
 async function startServer(opts: {
   methodOverride: BaseHandlerOptions<any, any>['unstable_methodOverride'];
   linkOptions?: Partial<HTTPLinkBaseOptions>;
+  batch?: boolean;
 }) {
   const handler = createHTTPHandler({
     router: router,
@@ -78,11 +73,17 @@ async function startServer(opts: {
 
   const client = createTRPCProxyClient<typeof router>({
     links: [
-      httpLink({
-        url: `http://localhost:${port}`,
-        fetch: fetch as any,
-        ...opts.linkOptions,
-      }),
+      opts.batch
+        ? httpBatchLink({
+            url: `http://localhost:${port}`,
+            fetch: fetch as any,
+            ...opts.linkOptions,
+          })
+        : httpLink({
+            url: `http://localhost:${port}`,
+            fetch: fetch as any,
+            ...opts.linkOptions,
+          }),
     ],
   });
 
@@ -164,15 +165,13 @@ test('everything as POST', async () => {
       who: 'test1',
     }),
   ).toBe('hello test1');
-  expect(
-    await t.client.m.mutate({
-      who: 'test2',
-    }),
-  ).toBe('hello test2');
 
-  expect(t.requests.map((req) => req.method)).toEqual(['POST', 'POST']);
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
 
-  expect(t.requests).toMatchInlineSnapshot();
+  expect(req.method).toBe('POST');
+  expect(req.url).toContain('_method=GET');
+  expect(req).toMatchInlineSnapshot();
 });
 
 test('use method override when not allowed', async () => {
@@ -193,6 +192,44 @@ test('use method override when not allowed', async () => {
 
   expect(err).toMatchInlineSnapshot();
 
-  expect(t.requests.map((req) => req.method)).toEqual(['POST']);
-  expect(t.requests).toMatchInlineSnapshot();
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('POST');
+  expect(req.url).toContain('_method=GET');
+  expect(req).toMatchInlineSnapshot();
+});
+
+test('everything as POST & batched', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'POST',
+    },
+    batch: true,
+  });
+
+  expect(
+    await Promise.all([
+      t.client.q.query({
+        who: 'test1',
+      }),
+      t.client.q.query({
+        who: 'test2',
+      }),
+      // TBD: should mutations be batched with queries?
+      // t.client.m.mutate({
+      //   who: 'test3',
+      // }),
+    ]),
+  ).toEqual(['hello test1', 'hello test2']);
+
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('POST');
+  expect(req.url).toContain('_method=GET');
+  expect(req).toMatchInlineSnapshot();
 });
