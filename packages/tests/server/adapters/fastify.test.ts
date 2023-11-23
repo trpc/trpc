@@ -22,7 +22,6 @@ import fetch from 'node-fetch';
 import { z } from 'zod';
 
 const config = {
-  port: 2023,
   logger: false,
   prefix: '/trpc',
 };
@@ -164,16 +163,7 @@ function createServer(opts: ServerOptions) {
   const stop = async () => {
     await instance.close();
   };
-  const start = async () => {
-    try {
-      await instance.listen({ port: config.port });
-    } catch (err) {
-      instance.log.error(err);
-      throw err;
-    }
-  };
-
-  return { instance, start, stop };
+  return { instance, stop };
 }
 
 const orderedResults: number[] = [];
@@ -198,10 +188,11 @@ const linkSpy: TRPCLink<AppRouter> = () => {
 
 interface ClientOptions {
   headers?: HTTPHeaders;
+  port: number | string;
 }
 
-function createClient(opts: ClientOptions = {}) {
-  const host = `localhost:${config.port}${config.prefix}`;
+function createClient(opts: ClientOptions) {
+  const host = `localhost:${opts.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
   const client = createTRPCClient<AppRouter>({
     links: [
@@ -225,19 +216,22 @@ function createClient(opts: ClientOptions = {}) {
 }
 
 interface AppOptions {
-  clientOptions?: ClientOptions;
+  clientOptions?: Partial<ClientOptions>;
   serverOptions?: Partial<ServerOptions>;
 }
 
-function createApp(opts: AppOptions = {}) {
+async function createApp(opts: AppOptions = {}) {
   const { appRouter, ee } = createAppRouter();
-  const { instance, start, stop } = createServer({
+  const { instance, stop } = createServer({
     ...(opts.serverOptions ?? {}),
     appRouter,
   });
-  const { client } = createClient(opts.clientOptions);
 
-  return { server: instance, start, stop, client, ee };
+  const url = new URL(await instance.listen({ port: 0 }));
+
+  const { client } = createClient({ ...opts.clientOptions, port: url.port });
+
+  return { server: instance, stop, client, ee, url };
 }
 
 let app: Awaited<ReturnType<typeof createApp>>;
@@ -245,8 +239,7 @@ let app: Awaited<ReturnType<typeof createApp>>;
 describe('anonymous user', () => {
   beforeEach(async () => {
     orderedResults.length = 0;
-    app = createApp();
-    await app.start();
+    app = await createApp();
   });
 
   afterEach(async () => {
@@ -255,7 +248,7 @@ describe('anonymous user', () => {
 
   test('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
-    const req = await fetch(`http://localhost:${config.port}/hello`, {
+    const req = await fetch(`http://localhost:${app.url.port}/hello`, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -383,8 +376,7 @@ describe('anonymous user', () => {
 
 describe('authorized user', () => {
   beforeEach(async () => {
-    app = createApp({ clientOptions: { headers: { username: 'nyan' } } });
-    await app.start();
+    app = await createApp({ clientOptions: { headers: { username: 'nyan' } } });
   });
 
   afterEach(async () => {
@@ -433,8 +425,7 @@ describe('authorized user', () => {
 
 describe('anonymous user with fastify-plugin', () => {
   beforeEach(async () => {
-    app = createApp({ serverOptions: { fastifyPluginWrapper: true } });
-    await app.start();
+    app = await createApp({ serverOptions: { fastifyPluginWrapper: true } });
   });
 
   afterEach(async () => {
@@ -442,13 +433,13 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   test('fetch GET', async () => {
-    const req = await fetch(`http://localhost:${config.port}/hello`);
+    const req = await fetch(`http://localhost:${app.url.port}/hello`);
     expect(await req.json()).toEqual({ hello: 'GET' });
   });
 
   test('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
-    const req = await fetch(`http://localhost:${config.port}/hello`, {
+    const req = await fetch(`http://localhost:${app.url.port}/hello`, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -487,13 +478,12 @@ describe('anonymous user with fastify-plugin', () => {
 // https://github.com/trpc/trpc/issues/4820
 describe('regression #4820 - content type parser already set', () => {
   beforeEach(async () => {
-    app = createApp({
+    app = await createApp({
       serverOptions: {
         fastifyPluginWrapper: true,
         withContentTypeParser: true,
       },
     });
-    await app.start();
   });
 
   afterEach(async () => {
