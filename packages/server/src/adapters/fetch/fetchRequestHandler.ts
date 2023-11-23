@@ -29,7 +29,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   const url = new URL(opts.req.url);
   const pathname = trimSlashes(url.pathname);
   const endpoint = trimSlashes(opts.endpoint);
-  const path = pathname.slice(endpoint.length);
+  const path = trimSlashes(pathname.slice(endpoint.length));
   const req: HTTPRequest = {
     query: url.searchParams,
     method: opts.req.method,
