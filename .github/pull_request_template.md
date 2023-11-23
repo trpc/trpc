@@ -5,7 +5,7 @@ Closes #
 What changes are made in this PR? Is it a feature or a bug fix?
 
 <!--
-Note: once you create a Pull Request, we will automatically fix auto-fixable lint issues in your branch
+Note: once you create a Pull request, we will automatically fix auto-fixable lint issues in your branch
 -->
 
 ## ✅ Checklist
