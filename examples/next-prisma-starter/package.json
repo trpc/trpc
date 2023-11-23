@@ -19,7 +19,7 @@
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
     "test": "run-s test:*",
-    "test:unit": "vitest run",
+    "test:unit": "vitest",
     "test:e2e": "playwright test",
     "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test",
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
