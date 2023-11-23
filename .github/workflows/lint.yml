@@ -20,12 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.TRPC_GITHUB_TOKEN }}
-        if: github.event.pull_request.head.repo.fork == false
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-        if: github.event.pull_request.head.repo.fork == true
+          token: ${{ github.event.pull_request.head.repo.fork &&  secrets.GITHUB_TOKEN || secrets.TRPC_GITHUB_TOKEN }}
       - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v4
