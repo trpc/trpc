@@ -69,7 +69,7 @@ interface WithTRPCOptions<TRouter extends AnyRouter>
 
 export interface WithTRPCSSROptions<TRouter extends AnyRouter>
   extends WithTRPCOptions<TRouter> {
-  ssr: true;
+  ssr: true | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
   responseMeta?: (opts: {
     ctx: NextPageContext;
     clientErrors: TRPCClientError<TRouter>[];
@@ -145,6 +145,20 @@ export function withTRPC<
 
     if (AppOrPage.getInitialProps ?? opts.ssr) {
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
+        const shouldSsr = async () => {
+          if (typeof opts.ssr === 'function') {
+            if (typeof window !== 'undefined') {
+              return false;
+            }
+            try {
+              return await opts.ssr({ ctx: appOrPageCtx.ctx });
+            } catch (e) {
+              return false;
+            }
+          }
+          return opts.ssr;
+        };
+        const ssr = await shouldSsr();
         const AppTree = appOrPageCtx.AppTree;
 
         // Determine if we are wrapping an App component or a Page component.
@@ -171,7 +185,7 @@ export function withTRPC<
         const getAppTreeProps = (props: Record<string, unknown>) =>
           isApp ? { pageProps: props } : props;
 
-        if (typeof window !== 'undefined' || !opts.ssr) {
+        if (typeof window !== 'undefined' || !ssr) {
           return getAppTreeProps(pageProps);
         }
 
@@ -236,29 +250,32 @@ export function withTRPC<
 
         const appTreeProps = getAppTreeProps(pageProps);
 
-        const meta =
-          opts.responseMeta?.({
-            ctx,
-            clientErrors: [
-              ...dehydratedCache.queries,
-              ...dehydratedCache.mutations,
-            ]
-              .map((v) => v.state.error)
-              .flatMap((err) =>
-                err instanceof Error && err.name === 'TRPCClientError'
-                  ? [err as TRPCClientError<TRouter>]
-                  : [],
-              ),
-          }) ?? {};
+        if ('responseMeta' in opts) {
+          const meta =
+            opts.responseMeta?.({
+              ctx,
+              clientErrors: [
+                ...dehydratedCache.queries,
+                ...dehydratedCache.mutations,
+              ]
+                .map((v) => v.state.error)
+                .flatMap((err) =>
+                  err instanceof Error && err.name === 'TRPCClientError'
+                    ? [err as TRPCClientError<TRouter>]
+                    : [],
+                ),
+            }) ?? {};
 
-        for (const [key, value] of Object.entries(meta.headers ?? {})) {
-          if (typeof value === 'string') {
-            ctx.res?.setHeader(key, value);
+          for (const [key, value] of Object.entries(meta.headers ?? {})) {
+            if (typeof value === 'string') {
+              ctx.res?.setHeader(key, value);
+            }
+          }
+          if (meta.status && ctx.res) {
+            ctx.res.statusCode = meta.status;
           }
         }
-        if (meta.status && ctx.res) {
-          ctx.res.statusCode = meta.status;
-        }
+
         return appTreeProps;
       };
     }

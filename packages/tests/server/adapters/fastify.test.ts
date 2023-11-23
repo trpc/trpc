@@ -169,6 +169,7 @@ function createServer(opts: ServerOptions) {
       await instance.listen({ port: config.port });
     } catch (err) {
       instance.log.error(err);
+      throw err;
     }
   };
 
@@ -252,20 +253,18 @@ describe('anonymous user', () => {
     await app.stop();
   });
 
-  test(
-    'fetch POST',
-    async () => {
-      const data = { text: 'life', life: 42 };
-      const req = await fetch(`http://localhost:${config.port}/hello`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      // body should be object
-      expect(await req.json()).toMatchInlineSnapshot(`
+  test('fetch POST', async () => {
+    const data = { text: 'life', life: 42 };
+    const req = await fetch(`http://localhost:${config.port}/hello`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    // body should be object
+    expect(await req.json()).toMatchInlineSnapshot(`
       Object {
         "body": Object {
           "life": 42,
@@ -274,11 +273,7 @@ describe('anonymous user', () => {
         "hello": "POST",
       }
     `);
-    },
-    {
-      retry: 3,
-    },
-  );
+  });
 
   test('query', async () => {
     expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);

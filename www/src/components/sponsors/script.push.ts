@@ -18,7 +18,6 @@ const sections: Def = {
   diamond: [],
   gold: [
     //
-    'calcom',
     'tolahq',
   ],
   silver: [
@@ -29,10 +28,8 @@ const sections: Def = {
   bronze: [
     //
     'hidrb',
-    'snaplet',
     'flylance-apps',
     'echobind',
-    'interval',
   ],
 };
 

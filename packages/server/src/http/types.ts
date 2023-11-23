@@ -24,7 +24,7 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
 
 export interface ResponseMeta {
   status?: number;
-  headers?: Record<string, string>;
+  headers?: HTTPHeaders;
 }
 
 /** @internal */

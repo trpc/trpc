@@ -18,6 +18,10 @@ type IsAny<T> = 0 extends T & 1 ? true : false;
 // support it as both a Primitive and a NonJsonPrimitive
 type JsonReturnable = JsonPrimitive | undefined;
 
+type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
+  ? true
+  : false;
+
 /* prettier-ignore */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
@@ -29,8 +33,9 @@ export type Serialize<T> =
   T extends [] ? [] :
   T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
   T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
-  Record<never, never> extends T ? Record<keyof T, Serialize<T[keyof T]>> :
-  T extends object ? Simplify<SerializeObject<UndefinedToOptional<T>>> :
+  T extends object ?
+    IsRecord<T> extends true ? Record<keyof T, Serialize<T[keyof T]>> :
+    Simplify<SerializeObject<UndefinedToOptional<T>>> :
   never;
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */

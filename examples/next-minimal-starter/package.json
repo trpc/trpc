@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-minimal",
-  "version": "10.43.7",
+  "version": "10.44.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@trpc/client": "^10.43.7",
-    "@trpc/next": "^10.43.7",
-    "@trpc/react-query": "^10.43.7",
-    "@trpc/server": "^10.43.7",
+    "@trpc/client": "^10.44.0",
+    "@trpc/next": "^10.44.0",
+    "@trpc/react-query": "^10.44.0",
+    "@trpc/server": "^10.44.0",
     "next": "^14.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
