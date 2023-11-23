@@ -11,7 +11,8 @@ export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   };
 
 const trimSlashes = (path: string): string => {
-  let newPath = path.startsWith('/') ? path.slice(1) : path;
+  let newPath = path;
+  newPath = newPath.startsWith('/') ? newPath.slice(1) : newPath;
   newPath = newPath.endsWith('/') ? newPath.slice(0, -1) : newPath;
 
   return newPath;
