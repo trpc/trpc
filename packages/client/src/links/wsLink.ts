@@ -47,7 +47,7 @@ export type WebSocketClientOptions = {
   WebSocket?: typeof WebSocket;
   /**
    * The number of milliseconds before a reconnect is attempted.
-   * @default exponentialBackoff
+   * @default {@link exponentialBackoff}
    */
   retryDelayMs?: typeof exponentialBackoff;
   /**
