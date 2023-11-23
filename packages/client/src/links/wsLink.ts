@@ -37,14 +37,26 @@ const exponentialBackoff = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
 export type WebSocketClientOptions = {
+  /**
+   * The URL to connect to (can be a function that returns a URL)
+   */
   url: string | (() => MaybePromise<string>);
+  /**
+   * Ponyfill which WebSocket implementation to use
+   */
   WebSocket?: typeof WebSocket;
   /**
    * The number of milliseconds before a reconnect is attempted.
    * @default exponentialBackoff
    */
   retryDelayMs?: typeof exponentialBackoff;
+  /**
+   * Triggered when a WebSocket connection is established
+   */
   onOpen?: () => void;
+  /**
+   * Triggered when a WebSocket connection is closed
+   */
   onClose?: (cause?: { code?: number }) => void;
   /**
    * Lazy mode will disconnect automatically after a period of inactivity
