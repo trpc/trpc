@@ -14,18 +14,14 @@ env:
 jobs:
   autofix:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.base.ref == 'main'
-
+    # wait for to finish before running autofix and only autofix if there are errors
+    needs: [lint-packages, other-checks, lint-examples]
+    if: github.event.pull_request.base.ref == 'main' && failure()
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.TRPC_GITHUB_TOKEN }}
-        if: github.event.pull_request.head.repo.fork == false
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-        if: github.event.pull_request.head.repo.fork == true
+          token: ${{ github.event.pull_request.head.repo.fork && github.token || secrets.TRPC_GITHUB_TOKEN }}
       - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v4
