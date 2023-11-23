@@ -164,6 +164,7 @@ function createServer(opts: ServerOptions) {
       await instance.listen({ port: config.port });
     } catch (err) {
       instance.log.error(err);
+      throw err;
     }
   };
 
