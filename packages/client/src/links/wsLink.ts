@@ -134,7 +134,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   function dispatch() {
     // using a timeout to batch messages
     setTimeout(() => {
-      if (!activeConnection && lazy) {
+      if (!activeConnection) {
         activeConnection = createConnection();
         return;
       }
