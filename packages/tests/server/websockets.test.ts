@@ -971,7 +971,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          disconnectAfterMs: 100,
+          closeMs: 100,
         },
       },
     });
@@ -1004,7 +1004,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          disconnectAfterMs: 100,
+          closeMs: 100,
         },
       },
     });
