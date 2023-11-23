@@ -27,7 +27,7 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 type LazyMode = {
   enabled: true;
   /**
-   * Disconnect after this many milliseconds of inactivity
+   * Disconnect after this many milliseconds of inactivity (no message sent or received and no pending requests)
    * @default 100
    */
   disconnectAfterMs?: number;
