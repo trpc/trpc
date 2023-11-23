@@ -38,6 +38,7 @@ Procedures in your router now only emit their input & output - where before they
 ## `wsLink` improvements
 
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
+- Added new `lazy` option that makes the websocket automatically disconnect when there are no pending requests
 
 ## Moved internal types to `@trpc/server/unstableInternalTypesExport`
 
