@@ -1,5 +1,6 @@
 import './___packages';
 import http from 'http';
+import { waitError } from './___testHelpers';
 import {
   createTRPCProxyClient,
   httpBatchLink,
@@ -50,14 +51,6 @@ async function startServer(opts: {
     url: string;
     body: unknown;
   }[] = [];
-  const onRequest = vi.fn<
-    [
-      {
-        method: NonNullable<http.IncomingMessage['method']>;
-        url: string;
-      },
-    ]
-  >();
   const server = http.createServer(async (req, res) => {
     assert(req.url);
     assert(req.method);
@@ -179,5 +172,27 @@ test('everything as POST', async () => {
 
   expect(t.requests.map((req) => req.method)).toEqual(['POST', 'POST']);
 
+  expect(t.requests).toMatchInlineSnapshot();
+});
+
+test('use method override when not allowed', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: false,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'POST',
+    },
+  });
+
+  const err = await waitError(() =>
+    t.client.q.query({
+      who: 'test1',
+    }),
+  );
+
+  expect(err).toMatchInlineSnapshot();
+
+  expect(t.requests.map((req) => req.method)).toEqual(['POST']);
   expect(t.requests).toMatchInlineSnapshot();
 });
