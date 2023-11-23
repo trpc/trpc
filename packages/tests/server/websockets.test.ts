@@ -410,11 +410,13 @@ test(
     await waitFor(() => {
       expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
     });
+    const conn = wsClient.connection!;
     wsClient.close();
     expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
+
     await close();
     await waitFor(() => {
-      expect(wsClient.connection!.ws!.readyState).toBe(WebSocket.CLOSED);
+      expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
     });
     await close();
   },
@@ -432,13 +434,14 @@ test(
       expect(onNewClient).toHaveBeenCalledTimes(1);
     });
     const promise = client.slow.mutate();
+    const conn = wsClient.connection;
     wsClient.close();
     await expect(promise).rejects.toMatchInlineSnapshot(
       '[TRPCClientError: Closed before connection was established]',
     );
     await close();
     await waitFor(() => {
-      expect(wsClient.connection!.ws!.readyState).toBe(WebSocket.CLOSED);
+      expect(conn!.ws!.readyState).toBe(WebSocket.CLOSED);
     });
     await close();
   },
