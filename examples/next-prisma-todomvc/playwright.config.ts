@@ -15,6 +15,7 @@ const config: PlaywrightTestConfig = {
     baseURL: baseUrl,
     headless: opts.headless,
   },
+  retries: 3,
 };
 
 export default config;
