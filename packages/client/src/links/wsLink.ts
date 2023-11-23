@@ -90,9 +90,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let connectAttempt = 0;
   let connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   let connectionIndex = 0;
-  let activeConnection: null | Connection = lazy ? createConnection() : null;
-  const lazyDisconnectTimer: ReturnType<typeof setTimeout> | undefined =
+  let lazyDisconnectTimer: ReturnType<typeof setTimeout> | undefined =
     undefined;
+  let activeConnection: null | Connection = lazy ? null : createConnection();
 
   /**
    * Global connection has been killed
@@ -123,7 +123,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     // using a timeout to batch messages
     setTimeout(() => {
       if (!activeConnection && lazy) {
-        createConnection();
+        activeConnection = createConnection();
         return;
       }
       if (activeConnection?.state !== 'open') {
@@ -190,6 +190,23 @@ export function createWSClient(opts: WebSocketClientOptions) {
     request(req.op, req.callbacks);
   }
 
+  const startLazyDisconnectTimer = () => {
+    if (!lazy) {
+      return;
+    }
+
+    clearTimeout(lazyDisconnectTimer);
+    lazyDisconnectTimer = setTimeout(() => {
+      if (!activeConnection) {
+        return;
+      }
+      if (!hasPendingRequests(activeConnection)) {
+        activeConnection.ws?.close();
+        activeConnection = null;
+      }
+    }, lazy.disconnectAfterMs ?? 100);
+  };
+
   function createConnection(): Connection {
     const self: Connection = {
       id: ++connectionIndex,
@@ -228,6 +245,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         if (self !== activeConnection) {
           return;
         }
+
         if (req.method === 'reconnect') {
           reconnect();
           // notify subscribers
@@ -262,6 +280,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       };
       ws.addEventListener('message', ({ data }) => {
+        startLazyDisconnectTimer();
+
         const msg = JSON.parse(data) as TRPCClientIncomingMessage;
 
         if ('method' in msg) {
@@ -335,8 +355,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     // enqueue message
     outgoing.push(envelope);
+
     dispatch();
 
+    startLazyDisconnectTimer();
     return () => {
       const callbacks = pendingRequests[id]?.callbacks;
       delete pendingRequests[id];
@@ -350,6 +372,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         });
         dispatch();
       }
+      startLazyDisconnectTimer();
     };
   }
   return {

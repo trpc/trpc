@@ -1,8 +1,13 @@
 import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import { createWSClient, TRPCClientError, wsLink } from '@trpc/client/src';
-import { AnyRouter, initTRPC, TRPCError } from '@trpc/server/src';
+import {
+  createWSClient,
+  TRPCClientError,
+  WebSocketClientOptions,
+  wsLink,
+} from '@trpc/client';
+import { AnyRouter, initTRPC, TRPCError } from '@trpc/server';
 import { applyWSSHandler } from '@trpc/server/src/adapters/ws';
 import { observable, Observer } from '@trpc/server/src/observable';
 import {
@@ -16,7 +21,10 @@ type Message = {
   id: string;
 };
 
-function factory(config?: { createContext: () => Promise<any> }) {
+function factory(config?: {
+  createContext?: () => Promise<any>;
+  wsClient?: Partial<WebSocketClientOptions>;
+}) {
   const ee = new EventEmitter();
 
   const subRef: {
@@ -40,7 +48,7 @@ function factory(config?: { createContext: () => Promise<any> }) {
       return 'slow query resolved';
     }),
 
-    ['post.edit']: t.procedure
+    postEdit: t.procedure
       .input(
         z.object({
           id: z.string(),
@@ -88,6 +96,7 @@ function factory(config?: { createContext: () => Promise<any> }) {
       retryDelayMs: () => 10,
       onOpen: onOpenMock,
       onClose: onCloseMock,
+      ...config?.wsClient,
     },
     client({ wsClient }) {
       return {
@@ -127,7 +136,7 @@ test('query', async () => {
 test('mutation', async () => {
   const { client, close } = factory();
   expect(
-    await client['post.edit'].mutate({
+    await client.postEdit.mutate({
       id: 'id',
       data: { title: 'title', text: 'text' },
     }),
@@ -542,7 +551,7 @@ test('batching', async () => {
   const t = factory();
   const promises = [
     t.client.greeting.query(),
-    t.client['post.edit'].mutate({ id: '', data: { text: '', title: '' } }),
+    t.client.postEdit.mutate({ id: '', data: { text: '', title: '' } }),
   ] as const;
 
   expect(await Promise.all(promises)).toMatchInlineSnapshot(`
@@ -952,4 +961,82 @@ test('wsClient stops reconnecting after .close()', async () => {
   wsClient.close();
   await waitMs(100);
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+});
+describe('lazy mode', () => {
+  test('happy path', async () => {
+    const ctx = factory({
+      wsClient: {
+        lazy: {
+          enabled: true,
+          disconnectAfterMs: 100,
+        },
+      },
+    });
+    const { client } = ctx;
+
+    // --- do some queries and wait for the client to disconnect
+    await client.greeting.query();
+    await client.greeting.query();
+
+    await waitFor(() => {
+      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+      expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+    });
+
+    // --- do some more queries and wait for the client to disconnect again
+    await client.greeting.query();
+
+    await waitFor(() => {
+      expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
+      expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+    });
+
+    await ctx.close();
+  });
+  test('subscription', async () => {
+    const ctx = factory({
+      wsClient: {
+        lazy: {
+          enabled: true,
+          disconnectAfterMs: 100,
+        },
+      },
+    });
+    const { client } = ctx;
+
+    // --- do a subscription, check that we connect
+    const onDataMock = vi.fn();
+    const sub = client.onMessage.subscribe(undefined, {
+      onData: onDataMock,
+    });
+
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
+    await waitFor(() => {
+      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+    });
+
+    // emit a message, check that we receive it
+    ctx.ee.emit('server:msg', {
+      id: '1',
+    });
+    await waitFor(() => expect(onDataMock).toHaveBeenCalledTimes(1));
+    expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "id": "1",
+          },
+        ],
+      ]
+    `);
+
+    // close subscription, check that we disconnect
+    sub.unsubscribe();
+
+    await waitFor(() => {
+      expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+    });
+
+    await ctx.close();
+  });
 });
