@@ -232,32 +232,29 @@ function createApp(opts: AppOptions = {}) {
 
 let app: Awaited<ReturnType<typeof createApp>>;
 
-describe(
-  'fastify',
-  () => {
-    describe('anonymous user', () => {
-      beforeEach(async () => {
-        orderedResults.length = 0;
-        app = createApp();
-        await app.start();
-      });
+describe('anonymous user', () => {
+  beforeEach(async () => {
+    orderedResults.length = 0;
+    app = createApp();
+    await app.start();
+  });
 
-      afterEach(async () => {
-        await app.stop();
-      });
+  afterEach(async () => {
+    await app.stop();
+  });
 
-      test('fetch POST', async () => {
-        const data = { text: 'life', life: 42 };
-        const req = await fetch(`http://localhost:${config.port}/hello`, {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-        // body should be object
-        expect(await req.json()).toMatchInlineSnapshot(`
+  test('fetch POST', async () => {
+    const data = { text: 'life', life: 42 };
+    const req = await fetch(`http://localhost:${config.port}/hello`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    // body should be object
+    expect(await req.json()).toMatchInlineSnapshot(`
       Object {
         "body": Object {
           "life": 42,
@@ -266,76 +263,76 @@ describe(
         "hello": "POST",
       }
     `);
-      });
+  });
 
-      test('query', async () => {
-        expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
-        expect(await app.client.hello.query()).toMatchInlineSnapshot(`
+  test('query', async () => {
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
+    expect(await app.client.hello.query()).toMatchInlineSnapshot(`
           Object {
             "text": "hello anonymous",
           }
       `);
-        expect(
-          await app.client.hello.query({
-            username: 'test',
-          }),
-        ).toMatchInlineSnapshot(`
+    expect(
+      await app.client.hello.query({
+        username: 'test',
+      }),
+    ).toMatchInlineSnapshot(`
           Object {
             "text": "hello test",
           }
       `);
-      });
+  });
 
-      test('mutation', async () => {
-        expect(
-          await app.client['post.edit'].mutate({
-            id: '42',
-            data: { title: 'new_title', text: 'new_text' },
-          }),
-        ).toMatchInlineSnapshot(`
+  test('mutation', async () => {
+    expect(
+      await app.client['post.edit'].mutate({
+        id: '42',
+        data: { title: 'new_title', text: 'new_text' },
+      }),
+    ).toMatchInlineSnapshot(`
       Object {
         "error": "Unauthorized user",
       }
     `);
-      });
+  });
 
-      test('subscription', async () => {
-        app.ee.once('subscription:created', () => {
-          setTimeout(() => {
-            app.ee.emit('server:msg', {
-              id: '1',
-            });
-            app.ee.emit('server:msg', {
-              id: '2',
-            });
-          });
-        });
-
-        const onStartedMock = vi.fn();
-        const onDataMock = vi.fn();
-        const sub = app.client.onMessage.subscribe('onMessage', {
-          onStarted: onStartedMock,
-          onData(data) {
-            expectTypeOf(data).not.toBeAny();
-            expectTypeOf(data).toMatchTypeOf<Message>();
-            onDataMock(data);
-          },
-        });
-
-        await waitFor(() => {
-          expect(onStartedMock).toHaveBeenCalledTimes(1);
-          expect(onDataMock).toHaveBeenCalledTimes(2);
-        });
-
+  test('subscription', async () => {
+    app.ee.once('subscription:created', () => {
+      setTimeout(() => {
         app.ee.emit('server:msg', {
-          id: '3',
+          id: '1',
         });
-
-        await waitFor(() => {
-          expect(onDataMock).toHaveBeenCalledTimes(3);
+        app.ee.emit('server:msg', {
+          id: '2',
         });
+      });
+    });
 
-        expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
+    const sub = app.client.onMessage.subscribe('onMessage', {
+      onStarted: onStartedMock,
+      onData(data) {
+        expectTypeOf(data).not.toBeAny();
+        expectTypeOf(data).toMatchTypeOf<Message>();
+        onDataMock(data);
+      },
+    });
+
+    await waitFor(() => {
+      expect(onStartedMock).toHaveBeenCalledTimes(1);
+      expect(onDataMock).toHaveBeenCalledTimes(2);
+    });
+
+    app.ee.emit('server:msg', {
+      id: '3',
+    });
+
+    await waitFor(() => {
+      expect(onDataMock).toHaveBeenCalledTimes(3);
+    });
+
+    expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           Object {
@@ -355,134 +352,133 @@ describe(
       ]
     `);
 
-        sub.unsubscribe();
+    sub.unsubscribe();
 
-        await waitFor(() => {
-          expect(app.ee.listenerCount('server:msg')).toBe(0);
-          expect(app.ee.listenerCount('server:error')).toBe(0);
-        });
-      });
-
-      test('streaming', async () => {
-        const results = await Promise.all([
-          app.client.deferred.query({ wait: 3 }),
-          app.client.deferred.query({ wait: 1 }),
-          app.client.deferred.query({ wait: 2 }),
-        ]);
-        expect(results).toEqual([3, 1, 2]);
-        expect(orderedResults).toEqual([1, 2, 3]);
-      });
+    await waitFor(() => {
+      expect(app.ee.listenerCount('server:msg')).toBe(0);
+      expect(app.ee.listenerCount('server:error')).toBe(0);
     });
+  });
 
-    describe('authorized user', () => {
-      beforeEach(async () => {
-        app = createApp({ clientOptions: { headers: { username: 'nyan' } } });
-        await app.start();
-      });
+  test('streaming', async () => {
+    const results = await Promise.all([
+      app.client.deferred.query({ wait: 3 }),
+      app.client.deferred.query({ wait: 1 }),
+      app.client.deferred.query({ wait: 2 }),
+    ]);
+    expect(results).toEqual([3, 1, 2]);
+    expect(orderedResults).toEqual([1, 2, 3]);
+  });
+});
 
-      afterEach(async () => {
-        await app.stop();
-      });
+describe('authorized user', () => {
+  beforeEach(async () => {
+    app = createApp({ clientOptions: { headers: { username: 'nyan' } } });
+    await app.start();
+  });
 
-      test('query', async () => {
-        expect(await app.client.hello.query()).toMatchInlineSnapshot(`
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('query', async () => {
+    expect(await app.client.hello.query()).toMatchInlineSnapshot(`
       Object {
         "text": "hello nyan",
       }
     `);
-      });
+  });
 
-      test('mutation', async () => {
-        expect(
-          await app.client['post.edit'].mutate({
-            id: '42',
-            data: { title: 'new_title', text: 'new_text' },
-          }),
-        ).toMatchInlineSnapshot(`
+  test('mutation', async () => {
+    expect(
+      await app.client['post.edit'].mutate({
+        id: '42',
+        data: { title: 'new_title', text: 'new_text' },
+      }),
+    ).toMatchInlineSnapshot(`
       Object {
         "id": "42",
         "text": "new_text",
         "title": "new_title",
       }
     `);
-      });
+  });
+});
+
+describe('anonymous user with fastify-plugin', () => {
+  beforeEach(async () => {
+    app = createApp({ serverOptions: { fastifyPluginWrapper: true } });
+    await app.start();
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('fetch GET', async () => {
+    const req = await fetch(`http://localhost:${config.port}/hello`);
+    expect(await req.json()).toEqual({ hello: 'GET' });
+  });
+
+  test('fetch POST', async () => {
+    const data = { text: 'life', life: 42 };
+    const req = await fetch(`http://localhost:${config.port}/hello`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
-
-    describe('anonymous user with fastify-plugin', () => {
-      beforeEach(async () => {
-        app = createApp({ serverOptions: { fastifyPluginWrapper: true } });
-        await app.start();
-      });
-
-      afterEach(async () => {
-        await app.stop();
-      });
-
-      test('fetch GET', async () => {
-        const req = await fetch(`http://localhost:${config.port}/hello`);
-        expect(await req.json()).toEqual({ hello: 'GET' });
-      });
-
-      test('fetch POST', async () => {
-        const data = { text: 'life', life: 42 };
-        const req = await fetch(`http://localhost:${config.port}/hello`, {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        });
-        // body should be string
-        expect(await req.json()).toMatchInlineSnapshot(`
+    // body should be string
+    expect(await req.json()).toMatchInlineSnapshot(`
       Object {
         "body": "{\\"text\\":\\"life\\",\\"life\\":42}",
         "hello": "POST",
       }
     `);
-      });
+  });
 
-      test('query', async () => {
-        expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
-        expect(await app.client.hello.query()).toMatchInlineSnapshot(`
+  test('query', async () => {
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
+    expect(await app.client.hello.query()).toMatchInlineSnapshot(`
           Object {
             "text": "hello anonymous",
           }
       `);
-        expect(
-          await app.client.hello.query({
-            username: 'test',
-          }),
-        ).toMatchInlineSnapshot(`
+    expect(
+      await app.client.hello.query({
+        username: 'test',
+      }),
+    ).toMatchInlineSnapshot(`
           Object {
             "text": "hello test",
           }
       `);
-      });
+  });
+});
+
+// https://github.com/trpc/trpc/issues/4820
+describe('regression #4820 - content type parser already set', () => {
+  console.log('ran once');
+  if (Math.random() > 0.5) {
+    throw new Error('hey');
+  }
+  beforeEach(async () => {
+    app = createApp({
+      serverOptions: {
+        fastifyPluginWrapper: true,
+        withContentTypeParser: true,
+      },
     });
+    await app.start();
+  });
 
-    // https://github.com/trpc/trpc/issues/4820
-    describe('regression #4820 - content type parser already set', () => {
-      beforeEach(async () => {
-        app = createApp({
-          serverOptions: {
-            fastifyPluginWrapper: true,
-            withContentTypeParser: true,
-          },
-        });
-        await app.start();
-      });
+  afterEach(async () => {
+    await app.stop();
+  });
 
-      afterEach(async () => {
-        await app.stop();
-      });
-
-      test('query', async () => {
-        expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
-      });
-    });
-  },
-  {
-    retry: process.env.CI ? 2 : 0,
-  },
-);
+  test('query', async () => {
+    expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
+  });
+});
