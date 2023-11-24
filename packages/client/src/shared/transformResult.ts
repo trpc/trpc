@@ -1,9 +1,12 @@
-import type { AnyRouter, inferRouterError } from '@trpc/server';
 import type {
   TRPCResponse,
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '@trpc/server/rpc';
+import type {
+  AnyRouter,
+  inferRouterError,
+} from '@trpc/server/unstableInternalsExport';
 import { isObject } from '../internals/isObject';
 import type { TRPCClientRuntime } from '../links';
 

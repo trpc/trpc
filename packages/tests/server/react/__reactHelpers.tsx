@@ -8,10 +8,11 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client/src';
-import { createTRPCReact } from '@trpc/react-query/src';
-import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
+import { createTRPCReact } from '@trpc/react-query';
+import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { AnyRouter } from '@trpc/server/src';
 import React, { ReactNode } from 'react';
+import { vi } from 'vitest';
 
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,

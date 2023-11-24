@@ -1,5 +1,5 @@
-import { ProcedureType } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
+import { ProcedureType } from '@trpc/server/unstableInternalsExport';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
 import {

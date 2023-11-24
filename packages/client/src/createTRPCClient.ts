@@ -1,4 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import type { Unsubscribable } from '@trpc/server/observable';
+import {
+  createFlatProxy,
+  createRecursiveProxy,
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+} from '@trpc/server/shared';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -9,14 +16,7 @@ import type {
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
-} from '@trpc/server';
-import type { Unsubscribable } from '@trpc/server/observable';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
-} from '@trpc/server/shared';
+} from '@trpc/server/unstableInternalsExport';
 import { IntersectionError } from '@trpc/server/unstableInternalsExport';
 import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {
