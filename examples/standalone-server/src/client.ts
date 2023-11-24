@@ -1,6 +1,6 @@
 import {
   createTRPCClient,
-  createWSClient,
+  createTRPCWebSocket,
   httpLink,
   splitLink,
   wsLink,
@@ -10,7 +10,7 @@ import type { AppRouter } from './server';
 
 globalThis.WebSocket = ws as any;
 
-const wsClient = createWSClient({
+const wsClient = createTRPCWebSocket({
   url: `ws://localhost:2022`,
 });
 const trpc = createTRPCClient<AppRouter>({

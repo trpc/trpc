@@ -100,11 +100,11 @@ You can use [Links](../client/links/overview.md) to route queries and/or mutatio
 :::
 
 ```tsx title='client.ts'
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createTRPCWebSocket, wsLink } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
 
 // create persistent WebSocket connection
-const wsClient = createWSClient({
+const wsClient = createTRPCWebSocket({
   url: `ws://localhost:3001`,
 });
 

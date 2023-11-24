@@ -11,7 +11,7 @@ export { loggerLink, type LoggerLinkOptions } from './loggerLink';
 export { splitLink } from './splitLink';
 export {
   createTRPCWebSocket,
-  createWSClient,
+  createTRPCWebSocket,
   wsLink,
   type TRPCWebSocketClientOptions,
   type TRPCWebSocketClient,

@@ -3,7 +3,7 @@ import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import {
   createTRPCClient,
-  createWSClient,
+  createTRPCWebSocket,
   httpBatchLink,
   HTTPHeaders,
   TRPCClientError,
@@ -466,7 +466,7 @@ test('void mutation response', async () => {
   expect(await client.undefined.mutate()).toMatchInlineSnapshot(`undefined`);
   expect(await client.null.mutate()).toMatchInlineSnapshot(`null`);
 
-  const ws = createWSClient({
+  const ws = createTRPCWebSocket({
     url: `ws://localhost:${wssPort}`,
     WebSocket: WebSocket as any,
   });

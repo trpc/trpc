@@ -2,7 +2,7 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  createWSClient,
+  createTRPCWebSocket,
   getUntypedClient,
   httpBatchLink,
   splitLink,
@@ -229,7 +229,7 @@ export function createAppRouter() {
         },
       },
       client({ httpUrl, wssUrl }) {
-        wsClient = createWSClient({
+        wsClient = createTRPCWebSocket({
           url: wssUrl,
         });
         return {

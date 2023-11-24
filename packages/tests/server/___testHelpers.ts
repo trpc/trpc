@@ -3,7 +3,7 @@ import { IncomingMessage } from 'http';
 import { AddressInfo } from 'net';
 import {
   createTRPCClient,
-  createWSClient,
+  createTRPCWebSocket,
   httpBatchLink,
   TRPCWebSocketClient,
   TRPCWebSocketClientOptions,
@@ -80,7 +80,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   const wssUrl = `ws://localhost:${wssPort}`;
 
   // client
-  const wsClient = createWSClient({
+  const wsClient = createTRPCWebSocket({
     url: wssUrl,
     ...opts?.wsClient,
   });

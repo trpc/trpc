@@ -35,6 +35,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./unstableInternalsExport": {
+      "import": "./dist/unstableInternalsExport.mjs",
+      "require": "./dist/unstableInternalsExport.js",
+      "default": "./dist/unstableInternalsExport.js"
+    },
     "./links/httpLink": {
       "import": "./dist/links/httpLink.mjs",
       "require": "./dist/links/httpLink.js",
@@ -59,11 +64,6 @@
       "import": "./dist/links/wsLink.mjs",
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
-    },
-    "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -71,8 +71,8 @@
     "src",
     "README.md",
     "package.json",
+    "unstableInternalsExport",
     "links",
-    "shared",
     "!**/*.test.*"
   ],
   "peerDependencies": {

@@ -1,6 +1,6 @@
 import {
   createTRPCClient,
-  createWSClient,
+  createTRPCWebSocket,
   httpBatchLink,
   splitLink,
   wsLink,
@@ -13,7 +13,7 @@ import './polyfill';
 async function start() {
   const { port, prefix } = serverConfig;
   const urlEnd = `localhost:${port}${prefix}`;
-  const wsClient = createWSClient({ url: `ws://${urlEnd}` });
+  const wsClient = createTRPCWebSocket({ url: `ws://${urlEnd}` });
   const trpc = createTRPCClient<AppRouter>({
     transformer: superjson,
     links: [

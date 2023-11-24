@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import {
   createTRPCClient,
-  createWSClient,
+  createTRPCWebSocket,
   httpBatchLink,
   httpLink,
   TRPCClientError,
@@ -87,7 +87,7 @@ test('wsLink: empty superjson up and down', async () => {
 
   const { close, client } = routerToServerAndClientNew(router, {
     client({ wssUrl }) {
-      ws = createWSClient({ url: wssUrl });
+      ws = createTRPCWebSocket({ url: wssUrl });
       return {
         transformer,
         links: [wsLink({ client: ws })],
@@ -340,7 +340,7 @@ describe('transformer on router', () => {
 
     const { close, client } = routerToServerAndClientNew(router, {
       client({ wssUrl }) {
-        wsClient = createWSClient({
+        wsClient = createTRPCWebSocket({
           url: wssUrl,
         });
         return {
@@ -380,7 +380,7 @@ describe('transformer on router', () => {
 
     const { close, client } = routerToServerAndClientNew(router, {
       client({ wssUrl }) {
-        wsClient = createWSClient({
+        wsClient = createTRPCWebSocket({
           url: wssUrl,
         });
         return {

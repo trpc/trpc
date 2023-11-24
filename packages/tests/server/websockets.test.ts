@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import {
-  createWSClient,
+  createTRPCWebSocket,
   TRPCClientError,
   TRPCWebSocketClientOptions,
   wsLink,
@@ -951,7 +951,7 @@ test('wsClient stops reconnecting after .close()', async () => {
   const retryDelayMsMock = vi.fn();
   retryDelayMsMock.mockReturnValue(100);
 
-  const wsClient = createWSClient({
+  const wsClient = createTRPCWebSocket({
     url: badWsUrl,
     retryDelayMs: retryDelayMsMock,
   });

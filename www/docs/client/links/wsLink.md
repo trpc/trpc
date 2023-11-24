@@ -9,13 +9,13 @@ slug: /client/links/wsLink
 
 ## Usage
 
-To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:
+To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createTRPCWebSocket`:
 
 ```ts title="client/index.ts"
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createTRPCWebSocket, wsLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const wsClient = createWSClient({
+const wsClient = createTRPCWebSocket({
   url: 'ws://localhost:3000',
 });
 
