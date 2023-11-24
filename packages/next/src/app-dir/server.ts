@@ -3,6 +3,10 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
+import {
+  getTRPCErrorFromUnknown,
+  TRPCError,
+} from '@trpc/server/error/TRPCError';
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
   createRecursiveProxy,
@@ -14,11 +18,9 @@ import {
   AnyRootConfig,
   AnyRouter,
   CombinedDataTransformer,
-  getTRPCErrorFromUnknown,
   inferProcedureInput,
   MaybePromise,
   Simplify,
-  TRPCError,
 } from '@trpc/server/unstableInternalsExport';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
