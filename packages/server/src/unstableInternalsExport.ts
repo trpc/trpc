@@ -1,7 +1,8 @@
 /**
  * These types have to be exported so users can generate their own types definitions files
  *
- * @remark Do not `import` anything here as it will be unreliable between minor versions of tRPC
+ * Do not `import` anything here as it will be unreliable between minor versions of tRPC
+ * If you need to import something here, open an issue at https://github.com/trpc/trpc/issues and we'll find a way to move it and make the API stable
  */
 export { mergeRouters } from './core/internals/mergeRouters';
 export * from './core/internals/procedureBuilder';
