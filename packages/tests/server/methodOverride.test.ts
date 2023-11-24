@@ -174,32 +174,6 @@ test('everything as POST', async () => {
   expect(req).toMatchInlineSnapshot();
 });
 
-test('use method override when not allowed', async () => {
-  const t = await setup({
-    methodOverride: {
-      enabled: false,
-    },
-    linkOptions: {
-      unstable_methodOverride: 'POST',
-    },
-  });
-
-  const err = await waitError(() =>
-    t.client.q.query({
-      who: 'test1',
-    }),
-  );
-
-  expect(err).toMatchInlineSnapshot();
-
-  expect(t.requests).toHaveLength(1);
-  const req = t.requests[0]!;
-
-  expect(req.method).toBe('POST');
-  expect(req.url).toContain('_method=GET');
-  expect(req).toMatchInlineSnapshot();
-});
-
 test('everything as POST & batched', async () => {
   const t = await setup({
     methodOverride: {
@@ -225,6 +199,32 @@ test('everything as POST & batched', async () => {
       // }),
     ]),
   ).toEqual(['hello test1', 'hello test2']);
+
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('POST');
+  expect(req.url).toContain('_method=GET');
+  expect(req).toMatchInlineSnapshot();
+});
+
+test('use method override when not allowed', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: false,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'POST',
+    },
+  });
+
+  const err = await waitError(() =>
+    t.client.q.query({
+      who: 'test1',
+    }),
+  );
+
+  expect(err).toMatchInlineSnapshot();
 
   expect(t.requests).toHaveLength(1);
   const req = t.requests[0]!;
