@@ -3,10 +3,7 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import {
-  getTRPCErrorFromUnknown,
-  TRPCError,
-} from '@trpc/server/error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '@trpc/server';
 import { TRPCResponse } from '@trpc/server/rpc';
 import {
   createRecursiveProxy,

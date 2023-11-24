@@ -1,3 +1,4 @@
+import './___packages';
 import { IncomingMessage } from 'http';
 import { AddressInfo } from 'net';
 import {
@@ -20,7 +21,6 @@ import {
 } from '@trpc/server/src/adapters/ws';
 import fetch from 'node-fetch';
 import ws from 'ws';
-import './___packages';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
