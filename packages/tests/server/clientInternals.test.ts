@@ -1,4 +1,4 @@
-import { getFetch } from '@trpc/client';
+import { getFetch } from '@trpc/client/src/getFetch';
 import { getAbortController } from '@trpc/client/src/internals/getAbortController';
 
 describe('getAbortController() from..', () => {

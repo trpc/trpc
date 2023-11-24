@@ -4,10 +4,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import {
   getUntypedClient,
   httpBatchLink,
-  Operation,
   splitLink,
   wsLink,
 } from '@trpc/client';
+import { Operation } from '@trpc/client/links/types';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { AnyRouter } from '@trpc/server/unstableInternalsExport';

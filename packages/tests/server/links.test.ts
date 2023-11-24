@@ -4,11 +4,11 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
-  OperationLink,
   TRPCClientError,
   TRPCClientRuntime,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
+import { OperationLink } from '@trpc/client/links/types';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/internals/retryLink';
 import { initTRPC } from '@trpc/server';

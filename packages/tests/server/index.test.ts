@@ -5,10 +5,10 @@ import {
   createTRPCClient,
   createTRPCWebSocket,
   httpBatchLink,
-  HTTPHeaders,
   TRPCClientError,
   wsLink,
 } from '@trpc/client';
+import { HTTPHeaders } from '@trpc/client/links/types';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { observable } from '@trpc/server/src/observable';

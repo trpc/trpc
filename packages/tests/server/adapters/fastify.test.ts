@@ -4,12 +4,12 @@ import { waitFor } from '@testing-library/react';
 import {
   createTRPCClient,
   createTRPCWebSocket,
-  HTTPHeaders,
   splitLink,
   TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client';
+import { HTTPHeaders } from '@trpc/client/links/types';
 import { initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,
