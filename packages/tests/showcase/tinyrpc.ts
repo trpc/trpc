@@ -1,6 +1,7 @@
 /**
  * @see https://trpc.io/blog/tinyrpc-client
  */
+import type { TRPCResponse } from '@trpc/server/rpc';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -9,8 +10,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   ProcedureRouterRecord,
-} from '@trpc/server';
-import type { TRPCResponse } from '@trpc/server/rpc';
+} from '@trpc/server/unstableInternalsExport';
 
 interface ProxyCallbackOptions {
   path: string[];

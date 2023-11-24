@@ -5,7 +5,7 @@
 
 // export * from './transformer';
 export { TRPCError } from './error/TRPCError';
-export { initTRPC } from './core';
+export { initTRPC, experimental_standaloneMiddleware } from './core';
 export type { RootConfig, AnyRootConfig } from './core/internals/config';
 
 export type {
