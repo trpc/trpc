@@ -1,4 +1,5 @@
 import { TRPCClientErrorLike } from '@trpc/client';
+import { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -6,8 +7,7 @@ import {
   AnyRootConfig,
   AnyRouter,
   inferProcedureInput,
-} from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+} from '@trpc/server/unstableInternalsExport';
 import {
   UseTRPCMutationOptions,
   UseTRPCMutationResult,

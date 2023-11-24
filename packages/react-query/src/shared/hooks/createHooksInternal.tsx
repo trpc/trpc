@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createTRPCUntypedClient, TRPCClientErrorLike } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import React, {
   useCallback,
   useEffect,

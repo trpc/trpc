@@ -1,5 +1,10 @@
 import { TRPCClientErrorLike } from '@trpc/client';
 import {
+  createFlatProxy,
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+} from '@trpc/server/shared';
+import {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
@@ -8,13 +13,8 @@ import {
   AnySubscriptionProcedure,
   inferProcedureInput,
   ProcedureRouterRecord,
-} from '@trpc/server';
-import {
-  createFlatProxy,
-  inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
-} from '@trpc/server/shared';
-import { ProtectedIntersection } from '@trpc/server/unstableInternalsExport';
+  ProtectedIntersection,
+} from '@trpc/server/unstableInternalsExport';
 import { useMemo } from 'react';
 import { TRPCUseQueries } from './internals/useQueries';
 import {

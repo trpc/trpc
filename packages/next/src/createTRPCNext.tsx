@@ -8,9 +8,11 @@ import {
   DecoratedProcedureRecord,
   TRPCUseQueries,
 } from '@trpc/react-query/shared';
-import { AnyRouter } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
-import { ProtectedIntersection } from '@trpc/server/unstableInternalsExport';
+import {
+  AnyRouter,
+  ProtectedIntersection,
+} from '@trpc/server/unstableInternalsExport';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
 import { withTRPC, WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';

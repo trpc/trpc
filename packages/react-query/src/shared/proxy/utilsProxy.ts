@@ -12,19 +12,17 @@ import {
 } from '@tanstack/react-query';
 import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
 import {
-  AnyQueryProcedure,
-  AnyRootConfig,
-  AnyRouter,
-  inferProcedureInput,
-} from '@trpc/server';
-import {
   createFlatProxy,
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/server/shared';
 import {
+  AnyQueryProcedure,
+  AnyRootConfig,
+  AnyRouter,
   DeepPartial,
   Filter,
+  inferProcedureInput,
   ProtectedIntersection,
 } from '@trpc/server/unstableInternalsExport';
 import {

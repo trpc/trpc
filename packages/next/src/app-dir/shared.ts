@@ -3,16 +3,14 @@ import {
   Resolver,
   TRPCUntypedClient,
 } from '@trpc/client';
+import { createRecursiveProxy } from '@trpc/server/shared';
 import {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-  inferHandlerInput,
-} from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
-import {
   Filter,
+  inferHandlerInput,
   ProtectedIntersection,
 } from '@trpc/server/unstableInternalsExport';
 

@@ -1,4 +1,4 @@
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import { DecoratedProcedureUtilsRecord } from '../proxy/utilsProxy';
 
 /**

@@ -12,22 +12,20 @@ import {
   TRPCUntypedClient,
 } from '@trpc/client';
 import {
+  createFlatProxy,
+  createRecursiveProxy,
+  inferTransformedProcedureOutput,
+} from '@trpc/server/shared';
+import {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
   callProcedure,
   DataTransformerOptions,
+  Filter,
   inferProcedureInput,
   inferRouterContext,
-} from '@trpc/server';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
-import {
-  Filter,
   Maybe,
   ProtectedIntersection,
 } from '@trpc/server/unstableInternalsExport';

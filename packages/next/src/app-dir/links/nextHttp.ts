@@ -5,7 +5,7 @@ import {
   HTTPLinkOptions,
   TRPCLink,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import { generateCacheTag } from '../shared';
 
 type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true

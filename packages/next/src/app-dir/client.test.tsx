@@ -1,6 +1,6 @@
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server/unstableInternalsExport';
 import React from 'react';
 import superjson from 'superjson';
 import { z } from 'zod';
