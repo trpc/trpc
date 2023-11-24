@@ -26,17 +26,17 @@ const trpcClient = createTRPCClient<AppRouter>({
 
 ## `wsLink` Options
 
-The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
+The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `TRPCWebSocketClientOptions`:
 
 ```ts
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
 }
 
-function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient
+function createTRPCWebSocket(opts: TRPCWebSocketClientOptions) => TRPCWebSocketClient
 
 
-export interface WebSocketClientOptions {
+export interface TRPCWebSocketClientOptions {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */

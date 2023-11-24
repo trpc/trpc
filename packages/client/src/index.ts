@@ -2,9 +2,10 @@ export * from './createTRPCUntypedClient';
 export * from './createTRPCClient';
 export * from './getFetch';
 export * from './TRPCClientError';
-export * from './links';
+export * from './links/index';
 
 export {
+  createTRPCClient,
   /**
    * @deprecated - use `createTRPCClient` instead
    */

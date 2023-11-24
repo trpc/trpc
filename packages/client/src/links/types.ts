@@ -53,7 +53,11 @@ export type TRPCFetch = (
 
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
-  // FIXME: we should be able to remove this - added as `withTRPC()` needs it, but we can have it as an extra option on SSR instead
+
+  /**
+   * FIXME: we should be able to remove this - added as `withTRPC()` needs it, but we can have it as an extra option on SSR instead
+   * @deprecated
+   */
   combinedTransformer: CombinedDataTransformer;
 }
 

@@ -31,7 +31,7 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 const exponentialBackoff = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
-export interface WebSocketClientOptions {
+export interface TRPCWebSocketClientOptions {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */
@@ -72,7 +72,7 @@ export interface WebSocketClientOptions {
       };
 }
 
-export function createWSClient(opts: WebSocketClientOptions) {
+export function createTRPCWebSocket(opts: TRPCWebSocketClientOptions) {
   const {
     url,
     WebSocket: WebSocketImpl = WebSocket,
@@ -416,7 +416,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     },
   };
 }
-export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
+export type TRPCWebSocketClient = ReturnType<typeof createTRPCWebSocket>;
 
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
@@ -480,3 +480,8 @@ export function wsLink<TRouter extends AnyRouter>(
     };
   };
 }
+
+/**
+ * @deprecated - use `createTRPCWebSocket()` instead
+ */
+export const createWSClient = createTRPCWebSocket;

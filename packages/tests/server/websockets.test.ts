@@ -4,7 +4,7 @@ import { waitFor } from '@testing-library/react';
 import {
   createWSClient,
   TRPCClientError,
-  WebSocketClientOptions,
+  TRPCWebSocketClientOptions,
   wsLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -24,7 +24,7 @@ type Message = {
 
 function factory(config?: {
   createContext?: () => Promise<any>;
-  wsClient?: Partial<WebSocketClientOptions>;
+  wsClient?: Partial<TRPCWebSocketClientOptions>;
 }) {
   const ee = new EventEmitter();
 

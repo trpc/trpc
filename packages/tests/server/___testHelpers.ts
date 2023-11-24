@@ -6,7 +6,7 @@ import {
   createWSClient,
   httpBatchLink,
   TRPCWebSocketClient,
-  WebSocketClientOptions,
+  TRPCWebSocketClientOptions,
 } from '@trpc/client';
 import { WithTRPCConfig } from '@trpc/next';
 import { OnErrorFunction } from '@trpc/server/internals/types';
@@ -45,7 +45,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
-    wsClient?: Partial<WebSocketClientOptions>;
+    wsClient?: Partial<TRPCWebSocketClientOptions>;
     client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
   },
 ) {
