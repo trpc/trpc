@@ -17,7 +17,6 @@ export const input = [
   'src/rpc/index.ts',
   'src/observable/index.ts',
   'src/subscription.ts',
-  'src/shared/index.ts',
   'src/unstableInternalsExport.ts',
 ];
 
