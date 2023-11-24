@@ -5,8 +5,7 @@
 
 // export * from './transformer';
 export { TRPCError } from './error/TRPCError';
-export * from './core';
-export { type DefaultErrorShape } from './error/formatter';
+export { initTRPC } from './core';
 export type { RootConfig, AnyRootConfig } from './core/internals/config';
 
 export type {
