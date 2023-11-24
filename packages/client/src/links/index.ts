@@ -6,16 +6,16 @@ export {
   unstable_httpBatchStreamLink,
   type HTTPBatchStreamLinkOptions,
 } from './httpBatchStreamLink';
-export { httpLink, HTTPLinkOptions } from './httpLink';
-export { loggerLink, LoggerLinkOptions } from './loggerLink';
+export { httpLink, type HTTPLinkOptions } from './httpLink';
+export { loggerLink, type LoggerLinkOptions } from './loggerLink';
 export { splitLink } from './splitLink';
 export {
   createTRPCWebSocket,
   createWSClient,
   wsLink,
-  TRPCWebSocketClientOptions,
-  TRPCWebSocketClient,
-  WebSocketLinkOptions,
+  type TRPCWebSocketClientOptions,
+  type TRPCWebSocketClient,
+  type WebSocketLinkOptions,
 } from './wsLink';
 export { experimental_formDataLink } from './httpFormDataLink';
 
