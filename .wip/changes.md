@@ -40,10 +40,8 @@ Procedures in your router now only emit their input & output - where before they
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
 - Added new `lazy` option that makes the websocket automatically disconnect when there are no pending requests
 
-## Moved internal types to `@trpc/server/unstableInternalsExport`
+## Moved internal types
 
-We moved a bunch of utility functions that we used in tRPC within `@trpc/server`, these have now be moved to `@trpc/server/unstableInternalsExport`. Needless to say, you should not use those.
+We moved a bunch of utility functions and type helpers that we use within the different tRPC packages from the root entries `@trpc/server`, these have now be moved to `@trpc/server/unstableInternalsExport`.
 
 If you're making an adapter for tRPC, we're happy to move these to another export and ensure they don't break between minor versions.
-
-Refactor: `inferAsyncReturnType<x>` -> `Awaited<ReturnType<x>>`
