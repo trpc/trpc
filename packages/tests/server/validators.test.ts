@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { wrap } from '@decs/typeschema';
 import * as S from '@effect/schema/Schema';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
 import * as T from 'runtypes';

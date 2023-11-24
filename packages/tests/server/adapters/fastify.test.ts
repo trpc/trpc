@@ -9,7 +9,7 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,

@@ -7,9 +7,9 @@ import {
   httpLink,
   TRPCClientError,
   TRPCLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { initTRPC } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
 import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';

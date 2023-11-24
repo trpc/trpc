@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/src/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';

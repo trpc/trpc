@@ -8,7 +8,7 @@ import {
   HTTPHeaders,
   TRPCClientError,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { observable } from '@trpc/server/src/observable';

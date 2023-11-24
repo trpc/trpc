@@ -7,10 +7,10 @@ import {
   Operation,
   splitLink,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
-import { AnyRouter } from '@trpc/server/src';
+import { AnyRouter } from '@trpc/server';
 import React, { ReactNode } from 'react';
 import { vi } from 'vitest';
 

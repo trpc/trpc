@@ -2,7 +2,7 @@
 import { createAppRouter } from './__testHelpers';
 import { DehydratedState } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
-import { withTRPC } from '@trpc/next/src';
+import { withTRPC } from '@trpc/next';
 import { konn } from 'konn';
 import { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
 import React from 'react';

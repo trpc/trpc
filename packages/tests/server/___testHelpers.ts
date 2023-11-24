@@ -2,15 +2,14 @@ import { IncomingMessage } from 'http';
 import { AddressInfo } from 'net';
 import {
   createTRPCClient,
-  createTRPCUntypedClient,
   createWSClient,
   httpBatchLink,
   TRPCWebSocketClient,
   WebSocketClientOptions,
-} from '@trpc/client/src';
-import { WithTRPCConfig } from '@trpc/next/src';
+} from '@trpc/client';
+import { WithTRPCConfig } from '@trpc/next';
+import { AnyRouter as AnyNewRouter } from '@trpc/server';
 import { OnErrorFunction } from '@trpc/server/internals/types';
-import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
