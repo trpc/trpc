@@ -3,14 +3,15 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
-  'src/shared.ts',
   'src/unstableInternalsExport.ts',
-  // @deprecated - remove for v12
+  // <@deprecated - remove for v12>
+  'src/shared.ts',
   'src/links/httpLink.ts',
   'src/links/httpBatchLink.ts',
   'src/links/splitLink.ts',
   'src/links/loggerLink.ts',
   'src/links/wsLink.ts',
+  // </@deprecated>
 ];
 
 export default function rollup(): RollupOptions[] {
