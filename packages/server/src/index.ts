@@ -1,9 +1,3 @@
-// FIXME: this file should only export
-// - `initTRPC`
-// - `TRPCError`
-// - (maybe something else?)
-
-// export * from './transformer';
 export { TRPCError } from './error/TRPCError';
 export {
   initTRPC,
@@ -11,7 +5,6 @@ export {
   type inferRouterInputs,
   type inferRouterOutputs,
 } from './core';
-export type { RootConfig, AnyRootConfig } from './core/internals/config';
 
 export type {
   /**
