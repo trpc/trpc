@@ -3,6 +3,7 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
+  'src/shared.ts',
   'src/unstableInternalsExport.ts',
   // @deprecated - remove for v12
   'src/links/httpLink.ts',

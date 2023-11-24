@@ -1,6 +1,6 @@
 import { observable } from '@trpc/server/observable';
 import { AnyRouter } from '@trpc/server/unstableInternalsExport';
-import { transformResult } from '../shared/transformResult';
+import { transformResult } from '../internals/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import {
   HTTPLinkBaseOptions,

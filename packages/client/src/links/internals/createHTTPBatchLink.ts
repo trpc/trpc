@@ -1,7 +1,7 @@
 import { observable } from '@trpc/server/observable';
 import { AnyRouter, ProcedureType } from '@trpc/server/unstableInternalsExport';
 import { dataLoader } from '../../internals/dataLoader';
-import { transformResult } from '../../shared/transformResult';
+import { transformResult } from '../../internals/transformResult';
 import { TRPCClientError } from '../../TRPCClientError';
 import { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
 import { CancelFn, Operation, TRPCClientRuntime, TRPCLink } from '../types';

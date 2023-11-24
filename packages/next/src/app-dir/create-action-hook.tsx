@@ -5,7 +5,7 @@ import {
   TRPCLink,
   TRPCRequestOptions,
 } from '@trpc/client';
-import { transformResult } from '@trpc/client/shared';
+import { transformResult } from '@trpc/client/unstableInternalsExport';
 import { observable } from '@trpc/server/observable';
 import {
   AnyRouter,

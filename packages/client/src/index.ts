@@ -1,6 +1,6 @@
 export * from './createTRPCUntypedClient';
 export * from './createTRPCClient';
-export * from './getFetch';
+
 export { TRPCClientError, type TRPCClientErrorLike } from './TRPCClientError';
 export * from './links/index';
 
