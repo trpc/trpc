@@ -231,6 +231,10 @@ export function createTRPCWebSocket(opts: TRPCWebSocketClientOptions) {
 
     const onError = () => {
       self.state = 'closed';
+      if (self.ws?.readyState === WebSocketImpl.OPEN) {
+        self.ws.close();
+      }
+
       if (self === activeConnection) {
         tryReconnect();
       }
