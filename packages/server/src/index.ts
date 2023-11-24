@@ -4,6 +4,8 @@ export {
   experimental_standaloneMiddleware,
   type inferRouterInputs,
   type inferRouterOutputs,
+  type inferProcedureInput,
+  type inferProcedureOutput,
 } from './core';
 
 export type {
