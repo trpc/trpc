@@ -18,9 +18,9 @@ export type {
 } from './types';
 
 export type {
-  AnyRouter as TRPCRouter,
+  AnyRouter as AnyTRPCRouter,
   /**
-   * @deprecated use `TRPCRouter` instead
+   * @deprecated use `AnyTRPCRouter` instead
    */
   AnyRouter,
 } from './core';
