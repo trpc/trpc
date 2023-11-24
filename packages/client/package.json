@@ -40,6 +40,11 @@
       "require": "./dist/unstableInternalsExport.js",
       "default": "./dist/unstableInternalsExport.js"
     },
+    "./shared": {
+      "import": "./dist/shared.mjs",
+      "require": "./dist/shared.js",
+      "default": "./dist/shared.js"
+    },
     "./links/httpLink": {
       "import": "./dist/links/httpLink.mjs",
       "require": "./dist/links/httpLink.js",
@@ -72,6 +77,7 @@
     "README.md",
     "package.json",
     "unstableInternalsExport",
+    "shared",
     "links",
     "!**/*.test.*"
   ],
