@@ -6,6 +6,7 @@ export {
   type inferRouterOutputs,
   type inferProcedureInput,
   type inferProcedureOutput,
+  type inferRouterError,
 } from './core';
 
 export type {
@@ -15,3 +16,11 @@ export type {
    */
   inferAsyncReturnType,
 } from './types';
+
+export type {
+  AnyRouter as TRPCRouter,
+  /**
+   * @deprecated use `TRPCRouter` instead
+   */
+  AnyRouter,
+} from './core';
