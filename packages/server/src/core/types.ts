@@ -56,11 +56,17 @@ type GetInferenceHelpers<
     : never;
 };
 
+/**
+ * @see https://trpc.io/docs/client/vanilla/infer-types
+ */
 export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'input',
   TRouter
 >;
 
+/**
+ * @see https://trpc.io/docs/client/vanilla/infer-types
+ */
 export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'output',
   TRouter
