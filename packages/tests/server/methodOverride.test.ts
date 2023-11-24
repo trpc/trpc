@@ -113,7 +113,7 @@ afterEach(async () => {
   }
 });
 
-test('standard', async () => {
+test('normal queries (sanity check)', async () => {
   const t = await setup({
     methodOverride: {
       enabled: false,
@@ -148,6 +148,49 @@ test('standard', async () => {
       },
     ]
   `);
+});
+
+test('client does what it should', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'POST',
+    },
+  });
+
+  expect(
+    await t.client.q.query({
+      who: 'test1',
+    }),
+  ).toBe('hello test1');
+
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('POST');
+  expect(req.url).toContain('_method=GET'); // maybe this should be _type=query? or instead?
+});
+
+test('server does what it should', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+  });
+
+  const res = await fetch(`http://localhost:${t.port}/q?_method=GET&`, {
+    method: 'POST',
+    body: JSON.stringify({
+      who: 'test1',
+    }),
+  });
+
+  const json = await res.json();
+
+  expect(res.ok).toBeTruthy();
+  expect(json).toMatchInlineSnapshot();
 });
 
 test('everything as POST', async () => {
