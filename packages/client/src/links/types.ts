@@ -42,15 +42,6 @@ export type Operation<TInput = unknown> = {
  */
 export type HTTPHeaders = Record<string, string[] | string | undefined>;
 
-/**
- * The default `fetch` implementation has an overloaded signature. By convention this library
- * only uses the overload taking a string and options object.
- */
-export type TRPCFetch = (
-  url: string,
-  options?: RequestInit,
-) => Promise<ResponseEsque>;
-
 export interface TRPCClientRuntime {
   transformer: DataTransformer;
 
@@ -78,14 +69,6 @@ export type OperationResultObservable<
   TRouter extends AnyRouter,
   TOutput,
 > = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
-
-/**
- * @internal
- */
-export type OperationResultObserver<
-  TRouter extends AnyRouter,
-  TOutput,
-> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
 /**
  * @internal
