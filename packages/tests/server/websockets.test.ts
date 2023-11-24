@@ -7,13 +7,14 @@ import {
   WebSocketClientOptions,
   wsLink,
 } from '@trpc/client';
-import { AnyRouter, initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { applyWSSHandler } from '@trpc/server/src/adapters/ws';
 import { observable, Observer } from '@trpc/server/src/observable';
 import {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/src/rpc';
+import { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 

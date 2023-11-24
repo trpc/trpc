@@ -1,5 +1,6 @@
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
-import { AnyRouter, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+import { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import { konn } from 'konn';
 import './___packages';
 import { routerToServerAndClientNew } from './___testHelpers';

@@ -10,7 +10,7 @@ import {
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import React, { ReactNode } from 'react';
 import { vi } from 'vitest';
 

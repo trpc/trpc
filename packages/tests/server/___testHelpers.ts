@@ -9,7 +9,6 @@ import {
   WebSocketClientOptions,
 } from '@trpc/client';
 import { WithTRPCConfig } from '@trpc/next';
-import { AnyRouter as AnyNewRouter } from '@trpc/server';
 import { OnErrorFunction } from '@trpc/server/internals/types';
 import {
   CreateHTTPHandlerOptions,
@@ -19,6 +18,15 @@ import {
   applyWSSHandler,
   WSSHandlerOptions,
 } from '@trpc/server/src/adapters/ws';
+import {
+  AnyProcedureBuilderParams,
+  AnyRouter,
+  DefaultErrorShape,
+  inferProcedureInput,
+  inferProcedureOutput,
+  inferProcedureParams,
+  inferRouterMeta,
+} from '@trpc/server/unstableInternalsExport';
 import fetch from 'node-fetch';
 import ws from 'ws';
 
@@ -30,9 +38,9 @@ export type CreateClientCallback = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
-}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+}) => Partial<WithTRPCConfig<AnyRouter>>;
 
-export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
+export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;

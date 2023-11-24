@@ -1,6 +1,14 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { inferProcedureOutput, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+import {
+  AnyProcedureBuilderParams,
+  AnyRouter,
+  DefaultErrorShape,
+  inferProcedureOutput,
+  inferProcedureParams,
+  inferRouterMeta,
+} from '@trpc/server/unstableInternalsExport';
 import { konn } from 'konn';
 import * as React from 'react';
 import * as z from 'zod';

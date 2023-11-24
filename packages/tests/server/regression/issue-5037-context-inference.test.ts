@@ -1,11 +1,9 @@
+import { inferRouterOutputs, initTRPC, TRPCError } from '@trpc/server';
+import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import {
   AnyProcedureBuilderParams,
-  inferRouterOutputs,
-  initTRPC,
-  TRPCError,
-} from '@trpc/server';
-import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
-import { ProcedureBuilder } from '@trpc/server/unstableInternalsExport';
+  ProcedureBuilder,
+} from '@trpc/server/unstableInternalsExport';
 import { z } from 'zod';
 
 /**
