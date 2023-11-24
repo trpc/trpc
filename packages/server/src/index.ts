@@ -8,8 +8,8 @@ export { TRPCError } from './error/TRPCError';
 export {
   initTRPC,
   experimental_standaloneMiddleware,
-  inferRouterInputs,
-  inferRouterOutputs,
+  type inferRouterInputs,
+  type inferRouterOutputs,
 } from './core';
 export type { RootConfig, AnyRootConfig } from './core/internals/config';
 
