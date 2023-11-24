@@ -14,3 +14,5 @@ export * from './core';
 export type { RootConfig, AnyRootConfig } from './core/internals/config';
 export * from './transformer';
 export { type DefaultErrorShape } from './error/formatter';
+
+export * from './error/TRPCError';

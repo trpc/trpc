@@ -3,8 +3,8 @@
 // - `TRPCError`
 // - (maybe something else?)
 
-export * from './transformer';
-export * from './error/TRPCError';
+// export * from './transformer';
+export { TRPCError } from './error/TRPCError';
 export * from './core';
 export { type DefaultErrorShape } from './error/formatter';
 export type { RootConfig, AnyRootConfig } from './core/internals/config';
