@@ -4,7 +4,7 @@ export { type HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 export { httpBatchLink } from './httpBatchLink';
 export {
   unstable_httpBatchStreamLink,
-  HTTPBatchStreamLinkOptions,
+  type HTTPBatchStreamLinkOptions,
 } from './httpBatchStreamLink';
 export { httpLink, HTTPLinkOptions } from './httpLink';
 export { loggerLink, LoggerLinkOptions } from './loggerLink';
