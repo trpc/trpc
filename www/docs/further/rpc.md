@@ -13,6 +13,32 @@ slug: /rpc
 | `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
 | <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
 
+### Overriding the default HTTP method
+
+To override the HTTP method used for queries/mutations, you can use the `unstable_methodOverride` option:
+
+```tsx title = 'server/httpHandler.ts'
+// Your server must separately allow the client to override the HTTP method
+const handler = createHTTPHandler({
+  router: router,
+  unstable_methodOverride: {
+    enabled: true,
+  },
+});
+```
+
+```tsx title = 'client/trpc.ts'
+// The client can then specify which HTTP method to use for all queries/mutations
+const client = createTRPCProxyClient<typeof router>({
+  links: [
+    httpLink({
+      url: `http://localhost:3000`,
+      unstable_methodOverride: 'POST', // all queries and mutations will be sent to the tRPC Server as POST requests. Supported: GET, POST
+    }),
+  ],
+});
+```
+
 ## Accessing nested procedures
 
 Nested procedures are separated by dots, so for a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
