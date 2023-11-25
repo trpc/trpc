@@ -102,6 +102,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     path,
     router: opts.router,
     batching: opts.batching,
+    unstable_methodOverride: opts.unstable_methodOverride,
     responseMeta: opts.responseMeta,
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });

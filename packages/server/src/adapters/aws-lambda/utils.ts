@@ -38,6 +38,9 @@ export type AWSLambdaOptions<
       batching?: {
         enabled: boolean;
       };
+      unstable_methodOverride?: {
+        enabled: boolean;
+      };
       onError?: OnErrorFunction<TRouter, TEvent>;
       responseMeta?: ResponseMetaFn<TRouter>;
     } & (

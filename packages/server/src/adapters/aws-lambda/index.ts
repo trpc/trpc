@@ -101,7 +101,8 @@ export function awsLambdaRequestHandler<
     const response = await resolveHTTPResponse({
       router: opts.router,
       batching: opts.batching,
-      responseMeta: opts?.responseMeta,
+      responseMeta: opts.responseMeta,
+      unstable_methodOverride: opts.unstable_methodOverride,
       createContext,
       req,
       path,
