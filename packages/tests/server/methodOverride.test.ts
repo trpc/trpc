@@ -40,6 +40,7 @@ async function startServer(opts: {
 }) {
   const handler = createHTTPHandler({
     router: router,
+    unstable_methodOverride: opts.methodOverride,
   });
   const requests: {
     method: string;
@@ -170,7 +171,7 @@ test('client does what it should', async () => {
   const req = t.requests[0]!;
 
   expect(req.method).toBe('POST');
-  expect(req.url).toContain('_method=GET'); // maybe this should be _type=query? or instead?
+  expect(req.url).toContain('_procedureType=query'); // maybe this should be _type=query? or instead?
 });
 
 test('server does what it should', async () => {
@@ -180,17 +181,26 @@ test('server does what it should', async () => {
     },
   });
 
-  const res = await fetch(`http://localhost:${t.port}/q?_method=GET&`, {
-    method: 'POST',
-    body: JSON.stringify({
-      who: 'test1',
-    }),
-  });
+  const res = await fetch(
+    `http://localhost:${t.port}/q?_procedureType=query&`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        who: 'test1',
+      }),
+    },
+  );
 
   const json = await res.json();
 
   expect(res.ok).toBeTruthy();
-  expect(json).toMatchInlineSnapshot();
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": "hello test1",
+      },
+    }
+  `);
 });
 
 test('everything as POST', async () => {
@@ -213,8 +223,16 @@ test('everything as POST', async () => {
   const req = t.requests[0]!;
 
   expect(req.method).toBe('POST');
-  expect(req.url).toContain('_method=GET');
-  expect(req).toMatchInlineSnapshot();
+  expect(req.url).toContain('_procedureType=query');
+  expect(req).toMatchInlineSnapshot(`
+    Object {
+      "body": Object {
+        "who": "test1",
+      },
+      "method": "POST",
+      "url": "/q?_procedureType=query",
+    }
+  `);
 });
 
 test('everything as POST & batched', async () => {
@@ -247,8 +265,21 @@ test('everything as POST & batched', async () => {
   const req = t.requests[0]!;
 
   expect(req.method).toBe('POST');
-  expect(req.url).toContain('_method=GET');
-  expect(req).toMatchInlineSnapshot();
+  expect(req.url).toContain('_procedureType=query');
+  expect(req).toMatchInlineSnapshot(`
+    Object {
+      "body": Object {
+        "0": Object {
+          "who": "test1",
+        },
+        "1": Object {
+          "who": "test2",
+        },
+      },
+      "method": "POST",
+      "url": "/q,q?batch=1&_procedureType=query",
+    }
+  `);
 });
 
 test('use method override when not allowed', async () => {
@@ -267,12 +298,22 @@ test('use method override when not allowed', async () => {
     }),
   );
 
-  expect(err).toMatchInlineSnapshot();
+  expect(err).toMatchInlineSnapshot(
+    '[TRPCClientError: Cannot use methodOverride on the client when methodOverride is not enabled on the server]',
+  );
 
   expect(t.requests).toHaveLength(1);
   const req = t.requests[0]!;
 
   expect(req.method).toBe('POST');
-  expect(req.url).toContain('_method=GET');
-  expect(req).toMatchInlineSnapshot();
+  expect(req.url).toContain('_procedureType=query');
+  expect(req).toMatchInlineSnapshot(`
+    Object {
+      "body": Object {
+        "who": "test1",
+      },
+      "method": "POST",
+      "url": "/q?_procedureType=query",
+    }
+  `);
 });

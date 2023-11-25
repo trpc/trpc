@@ -36,6 +36,7 @@ export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
+  unstable_methodOverride?: 'GET' | 'POST';
 }
 
 export function resolveHTTPLinkOptions(
@@ -45,6 +46,7 @@ export function resolveHTTPLinkOptions(
     url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
+    unstable_methodOverride: opts.unstable_methodOverride,
   };
 }
 
@@ -62,6 +64,16 @@ const METHOD = {
   query: 'GET',
   mutation: 'POST',
 } as const;
+
+const resolveMethod = (opts: HTTPBaseRequestOptions) => {
+  if (opts.type === 'subscription') {
+    throw new TRPCClientError('Subscriptions should use wsLink');
+  }
+  if (opts.unstable_methodOverride) {
+    return opts.unstable_methodOverride;
+  }
+  return METHOD[opts.type];
+};
 
 export interface HTTPResult {
   json: TRPCResponse;
@@ -101,13 +113,26 @@ export type ContentOptions = {
   getBody: GetBody;
 };
 
+export const isGET = (opts: HTTPBaseRequestOptions) =>
+  opts.unstable_methodOverride === 'GET' ||
+  (opts.type === 'query' && opts.unstable_methodOverride !== 'POST');
+
+export const isPOST = (opts: HTTPBaseRequestOptions) =>
+  opts.unstable_methodOverride === 'POST' ||
+  (opts.type === 'mutation' && opts.unstable_methodOverride !== 'GET');
+
 export const getUrl: GetUrl = (opts) => {
   let url = opts.url + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }
-  if (opts.type === 'query') {
+
+  if (opts.unstable_methodOverride && opts.type !== 'subscription') {
+    queryParts.push(`_procedureType=${opts.type}`);
+  }
+
+  if (isGET(opts)) {
     const input = getInput(opts);
     if (input !== undefined) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
@@ -120,7 +145,7 @@ export const getUrl: GetUrl = (opts) => {
 };
 
 export const getBody: GetBody = (opts) => {
-  if (opts.type === 'query') {
+  if (isGET(opts)) {
     return undefined;
   }
   const input = getInput(opts);
@@ -171,7 +196,7 @@ export async function fetchHTTPResponse(
   };
 
   return getFetch(opts.fetch)(url, {
-    method: METHOD[type],
+    method: resolveMethod(opts),
     signal: ac?.signal,
     body: body,
     headers,

@@ -1,5 +1,5 @@
 import { httpLinkFactory } from './httpLink';
-import { GetBody, httpRequest, Requester } from './internals/httpUtils';
+import { GetBody, httpRequest, isPOST, Requester } from './internals/httpUtils';
 
 const getBody: GetBody = (opts) => {
   if (!('input' in opts)) {
@@ -12,7 +12,7 @@ const getBody: GetBody = (opts) => {
 };
 
 const formDataRequester: Requester = (opts) => {
-  if (opts.type !== 'mutation') {
+  if (!isPOST(opts)) {
     // TODO(?) handle formdata queries
     throw new Error('We only handle mutations with formdata');
   }

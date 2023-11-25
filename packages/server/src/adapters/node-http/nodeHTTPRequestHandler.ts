@@ -109,6 +109,7 @@ export async function nodeHTTPRequestHandler<
 
     await resolveHTTPResponse({
       batching: opts.batching,
+      unstable_methodOverride: opts.unstable_methodOverride,
       responseMeta: opts.responseMeta,
       path: opts.path,
       createContext,

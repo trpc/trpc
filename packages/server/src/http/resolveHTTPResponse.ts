@@ -69,6 +69,41 @@ interface ResolveHTTPRequestOptions<
   unstable_onChunk: (chunk: ResponseChunk) => void;
 }
 
+const resolveProcedureType = <
+  TRouter extends AnyRouter,
+  TRequest extends HTTPRequest,
+>(
+  opts: Pick<
+    ResolveHTTPRequestOptions<TRouter, TRequest>,
+    'req' | 'unstable_methodOverride'
+  >,
+): ProcedureType | 'unknown' => {
+  const { req, unstable_methodOverride } = opts;
+
+  const overriddenProcedureType = req.query.get('_procedureType');
+
+  if (!unstable_methodOverride?.enabled) {
+    if (overriddenProcedureType) {
+      throw new TRPCError({
+        message: `Cannot use methodOverride on the client when methodOverride is not enabled on the server`,
+        code: 'BAD_REQUEST',
+      });
+    }
+    return HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? 'unknown';
+  }
+
+  if (
+    overriddenProcedureType !== 'query' &&
+    overriddenProcedureType !== 'mutation'
+  ) {
+    throw new TRPCError({
+      message: `Invalid procedureType ${overriddenProcedureType}; must be "query" or "mutation"`,
+      code: 'BAD_REQUEST',
+    });
+  }
+  return overriddenProcedureType;
+};
+
 function initResponse<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
@@ -274,8 +309,6 @@ export async function resolveHTTPResponse<
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const batchingEnabled = opts.batching?.enabled ?? true;
-  const type =
-    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined;
 
@@ -286,6 +319,7 @@ export async function resolveHTTPResponse<
     unstable_onChunk &&
     req.headers['trpc-batch-mode'] === 'stream';
 
+  let type: ProcedureType | 'unknown' = 'unknown';
   try {
     // we create context first so that (unless `createContext()` throws)
     // error handler may access context information
@@ -297,6 +331,11 @@ export async function resolveHTTPResponse<
     //  - `getInputs` throws because of malformed JSON,
     // context value is still available to the error handler
     ctx = await opts.createContext();
+
+    // procedure type is normally determined by the HTTP method,
+    // but it can be overridden by the client using the 'methodOverride' option if the server allows it
+    // resolveProcedureType will throw on invalid/illegal values when overriding
+    type = resolveProcedureType(opts);
 
     if (opts.error) {
       throw opts.error;
@@ -318,6 +357,8 @@ export async function resolveHTTPResponse<
       });
     }
 
+    const mutationOrQuery = type; // appease TypeScript
+
     const inputs = await contentTypeHandler.getInputs({
       isBatchCall,
       req,
@@ -329,7 +370,13 @@ export async function resolveHTTPResponse<
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
     const promises = paths.map((path, index) =>
-      inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
+      inputToProcedureCall({
+        opts,
+        ctx,
+        type: mutationOrQuery,
+        input: inputs[index],
+        path,
+      }),
     );
 
     if (!isStreamCall) {
