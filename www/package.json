@@ -6,7 +6,7 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "dev:og-image": "cd og-image && pnpm dev --port 3001",
-    "dev:docusaurus": "docusaurus start",
+    "dev:docusaurus": "NODE_OPTIONS=--max_old_space_size=16384 docusaurus start",
     "dev": "run-p dev:* --print-label",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
