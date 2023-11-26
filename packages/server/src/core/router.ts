@@ -8,17 +8,17 @@ import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
 import {
-  AnyMutationProcedure,
-  AnyProcedure,
-  AnyQueryProcedure,
-  AnySubscriptionProcedure,
-  ProcedureArgs,
+  type AnyMutationProcedure,
+  type AnyProcedure,
+  type AnyQueryProcedure,
+  type AnySubscriptionProcedure,
+  type ProcedureArgs,
 } from './procedure';
 import {
-  inferHandlerInput,
-  inferProcedureOutput,
-  ProcedureType,
   procedureTypes,
+  type inferHandlerInput,
+  type inferProcedureOutput,
+  type ProcedureType,
 } from './types';
 
 /** @internal **/

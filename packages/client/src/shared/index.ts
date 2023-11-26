@@ -1,1 +1,1 @@
-export * from './transformResult';
+export { transformResult } from './transformResult';

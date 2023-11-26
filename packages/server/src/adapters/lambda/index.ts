@@ -4,7 +4,22 @@ import {
 } from '../aws-lambda';
 import { APIGatewayEvent } from '../aws-lambda/utils';
 
-export * from '../aws-lambda';
+export {
+  isPayloadV1,
+  isPayloadV2,
+  getHTTPMethod,
+  getPath,
+  transformHeaders,
+  UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+  type DefinedAPIGatewayPayloadFormats,
+  type APIGatewayPayloadFormatVersion,
+  type APIGatewayEvent,
+  type APIGatewayResult,
+  type CreateAWSLambdaContextOptions,
+  type AWSLambdaCreateContextFn,
+  type AWSLambdaOptions,
+  awsLambdaRequestHandler,
+} from '../aws-lambda';
 
 /**
  * @deprecated use `aws-lambda` instead

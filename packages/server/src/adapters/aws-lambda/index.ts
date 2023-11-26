@@ -21,7 +21,21 @@ import {
   UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
 } from './utils';
 
-export * from './utils';
+export {
+  isPayloadV1,
+  isPayloadV2,
+  getHTTPMethod,
+  getPath,
+  transformHeaders,
+  UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+  type DefinedAPIGatewayPayloadFormats,
+  type APIGatewayPayloadFormatVersion,
+  type APIGatewayEvent,
+  type APIGatewayResult,
+  type CreateAWSLambdaContextOptions,
+  type AWSLambdaCreateContextFn,
+  type AWSLambdaOptions,
+} from './utils';
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();

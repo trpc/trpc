@@ -7,4 +7,7 @@ export { createRootHooks } from './createHooksInternal';
  * @deprecated
  * DELETE ME
  */
-export * from './deprecated/createHooksInternal';
+export {
+  createHooksInternal,
+  type CreateReactQueryHooks,
+} from './deprecated/createHooksInternal';

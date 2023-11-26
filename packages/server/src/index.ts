@@ -1,6 +1,78 @@
-export * from './transformer';
-export * from './error/TRPCError';
-export * from './types';
+export {
+  getDataTransformer,
+  defaultTransformer,
+  type DataTransformer,
+  type CombinedDataTransformer,
+  type CombinedDataTransformerClient,
+  type DataTransformerOptions,
+  type ClientDataTransformerOptions,
+  type DefaultDataTransformer,
+} from './transformer';
+export { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+export {
+  type InferOptional,
+  type UndefinedKeys,
+  type FlatOverwrite,
+  type IntersectionError,
+  type ProtectedIntersection,
+  type Maybe,
+  type ThenArg,
+  type Simplify,
+  type Dict,
+  type MaybePromise,
+  type InferLast,
+  type inferAsyncReturnType,
+  type FilterKeys,
+  type Filter,
+  type Unwrap,
+  type DeepPartial,
+  type WithoutIndexSignature,
+} from './types';
 export { router } from './deprecated/router';
-export * from './core';
-export * from './internals';
+export {
+  type AnyRouter,
+  type ProcedureRecord,
+  type ProcedureRouterRecord,
+  type CreateRouterInner,
+  type Router,
+  callProcedure,
+  type Procedure,
+  type AnyProcedure,
+  type AnyQueryProcedure,
+  type AnyMutationProcedure,
+  type AnySubscriptionProcedure,
+  type ProcedureParams,
+  type ProcedureArgs,
+  type ProcedureOptions,
+  type inferParser,
+  createInputMiddleware,
+  createOutputMiddleware,
+  experimental_standaloneMiddleware,
+  type MiddlewareFunction,
+  type MiddlewareBuilder,
+  initTRPC,
+  type inferRouterDef,
+  type inferRouterContext,
+  type inferRouterError,
+  type inferRouterMeta,
+  procedureTypes,
+  type ProcedureType,
+  type inferHandlerInput,
+  type inferProcedureInput,
+  type inferProcedureParams,
+  type inferProcedureOutput,
+  type inferSubscriptionOutput,
+  type inferProcedureClientError,
+  type inferRouterInputs,
+  type inferRouterOutputs,
+} from './core';
+export {
+  type DefaultErrorShape,
+  type mergeRouters,
+  type RootConfig,
+  type AnyRootConfig,
+  type ProcedureBuilder,
+  type BuildProcedure,
+  type Overwrite,
+  type unsetMarker,
+} from './internals';
