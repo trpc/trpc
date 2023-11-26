@@ -10,6 +10,7 @@ export {
   createTRPCClientProxy,
   createTRPCProxyClient,
   getUntypedClient,
+  type CreateTRPCProxyClient,
   type inferRouterProxyClient,
   type Resolver,
 } from './createTRPCClientProxy';
