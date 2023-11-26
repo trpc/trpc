@@ -1,10 +1,4 @@
 /**
- * @internal
- * @deprecated
- */
-export type identity<TType> = TType;
-
-/**
  * @deprecated
  */
 export type InferOptional<TType, TKeys extends keyof TType> = Omit<
