@@ -151,7 +151,7 @@ test('normal queries (sanity check)', async () => {
   `);
 });
 
-test('client does what it should', async () => {
+test('client: sends query as POST when methodOverride=POST', async () => {
   const t = await setup({
     methodOverride: {
       enabled: true,
@@ -174,7 +174,30 @@ test('client does what it should', async () => {
   expect(req.url).toContain('_procedureType=query'); // maybe this should be _type=query? or instead?
 });
 
-test('server does what it should', async () => {
+test('client: sends mutation as GET when methodOverride=GET', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'GET',
+    },
+  });
+
+  expect(
+    await t.client.m.mutate({
+      who: 'test1',
+    }),
+  ).toBe('hello test1');
+
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('GET');
+  expect(req.url).toContain('_procedureType=mutation');
+});
+
+test('server: resolves request to a query despite POST method when methodOverride is enabled', async () => {
   const t = await setup({
     methodOverride: {
       enabled: true,
@@ -203,7 +226,34 @@ test('server does what it should', async () => {
   `);
 });
 
-test('everything as POST', async () => {
+test('server: resolves request to a mutation despite GET method when methodOverride is enabled', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+  });
+
+  const urlencodedBody = encodeURIComponent(JSON.stringify({ who: 'test1' }));
+  const res = await fetch(
+    `http://localhost:${t.port}/m?_procedureType=mutation&input=${urlencodedBody}`,
+    {
+      method: 'GET',
+    },
+  );
+
+  const json = await res.json();
+
+  expect(res.ok).toBeTruthy();
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": "hello test1",
+      },
+    }
+  `);
+});
+
+test('client&server: e2e query as POST', async () => {
   const t = await setup({
     methodOverride: {
       enabled: true,
@@ -235,7 +285,38 @@ test('everything as POST', async () => {
   `);
 });
 
-test('everything as POST & batched', async () => {
+test('client&server: e2e mutation as GET', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'GET',
+    },
+  });
+
+  expect(
+    await t.client.m.mutate({
+      who: 'test1',
+    }),
+  ).toBe('hello test1');
+
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('GET');
+  expect(req.url).toContain('_procedureType=mutation');
+  const urlencodedBody = encodeURIComponent(JSON.stringify({ who: 'test1' }));
+  expect(req).toMatchInlineSnapshot(`
+    Object {
+      "body": null,
+      "method": "GET",
+      "url": "/m?_procedureType=mutation&input=${urlencodedBody}",
+    }
+  `);
+});
+
+test('client/server: e2e batched query as POST', async () => {
   const t = await setup({
     methodOverride: {
       enabled: true,
@@ -282,7 +363,46 @@ test('everything as POST & batched', async () => {
   `);
 });
 
-test('use method override when not allowed', async () => {
+test('client/server: e2e batched mutation as GET', async () => {
+  const t = await setup({
+    methodOverride: {
+      enabled: true,
+    },
+    linkOptions: {
+      unstable_methodOverride: 'GET',
+    },
+    batch: true,
+  });
+
+  expect(
+    await Promise.all([
+      t.client.m.mutate({
+        who: 'test1',
+      }),
+      t.client.m.mutate({
+        who: 'test2',
+      }),
+    ]),
+  ).toEqual(['hello test1', 'hello test2']);
+
+  expect(t.requests).toHaveLength(1);
+  const req = t.requests[0]!;
+
+  expect(req.method).toBe('GET');
+  expect(req.url).toContain('_procedureType=mutation');
+  const urlencodedBody = encodeURIComponent(
+    JSON.stringify({ '0': { who: 'test1' }, '1': { who: 'test2' } }),
+  );
+  expect(req).toMatchInlineSnapshot(`
+    Object {
+      "body": null,
+      "method": "GET",
+      "url": "/m,m?batch=1&_procedureType=mutation&input=${urlencodedBody}",
+    }
+  `);
+});
+
+test('server: rejects method override from client when not enabled on the server', async () => {
   const t = await setup({
     methodOverride: {
       enabled: false,
