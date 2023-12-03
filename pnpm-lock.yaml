@@ -1701,8 +1701,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1723,7 +1723,7 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
         specifier: ^0.49.0
         version: 0.49.0(effect@2.0.0-next.56)(fast-check@3.13.2)
@@ -1845,8 +1845,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       vite:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@18.16.16)
@@ -1955,7 +1955,7 @@ importers:
         version: 7.23.2(@babel/core@7.23.2)
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
         specifier: ^0.49.0
         version: 0.49.0(effect@2.0.0-next.56)(fast-check@3.13.2)
@@ -2041,8 +2041,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -4544,7 +4544,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4602,12 +4602,12 @@ packages:
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
-      valibot: 0.21.0
+      valibot: 0.22.0
       yup: 1.0.0
       zod: 3.22.4
     dev: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4664,7 +4664,7 @@ packages:
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
-      valibot: 0.21.0
+      valibot: 0.22.0
       vite: 4.1.2(@types/node@18.16.16)
       yup: 1.0.0
       zod: 3.22.4
@@ -22823,8 +22823,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.21.0:
-    resolution: {integrity: sha512-XnzpX93b1vQL7CB3fHlhpLg7OutYpc3ke8SKOvp7IXgicRfTdP/w8+bf0DjhVsySq6YdF4Opld05mj6bTobo9g==}
+  /valibot@0.22.0:
+    resolution: {integrity: sha512-tINTvsrvSaN6wN4Hxes1KG7VMM7nysk4zD0Q7CjE8Id7Zx1tKKaF3eGGP84N6nkhqiv0fgyArUeDoRNF0JO4ng==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
