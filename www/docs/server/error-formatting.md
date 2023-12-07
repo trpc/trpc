@@ -7,9 +7,9 @@ slug: /server/error-formatting
 
 The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)
 
-## Usage example highlighted
+## Usage example-zod validation error
 
-### Adding custom formatting
+### Serverside
 
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
@@ -50,6 +50,40 @@ export function MyComponent() {
   return <>[...]</>;
 }
 ```
+
+## Usage example-prisma conflict
+
+In this one we even change http status code of the response from 500 to 409
+
+### Serverside
+
+```ts title='server.ts'
+import { initTRPC } from '@trpc/server';
+import { Prisma } from '@prisma/client'
+
+export const t = initTRPC.context<Context>().create({
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+      const prismaError = error.cause as Prisma.PrismaClientKnownRequestError;
+      if (prismaError && prismaError.code === 'P2002' && prismaError.meta) {
+        // https://www.prisma.io/docs/reference/api-reference/error-reference#p2002
+        return {
+          error,
+          ...shape,
+          data: {
+            ...shape.data,
+            httpStatus: 409
+          },
+          code: 409,
+          message: `Operation ${shape.data.path} failed: same value already exists for field "${prismaError.meta.target}"`
+        }
+      }
+
+      // rest of your formatter for all other cases
+  },
+});
+```
+
 
 ## All properties sent to `errorFormatter()`
 
