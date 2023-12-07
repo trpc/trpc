@@ -76,7 +76,7 @@ export const t = initTRPC.context<Context>().create({
           },
           code: 409,
           message: `Operation ${shape.data.path} failed: same value already exists for field "${prismaError.meta.target}"`
-        }
+        };
       }
 
       // rest of your formatter for all other cases
