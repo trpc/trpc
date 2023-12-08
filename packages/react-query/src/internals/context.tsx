@@ -109,7 +109,14 @@ type TRPCContextResetQueries<TRouter extends AnyRouter> =
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
-> extends Required<TRPCContextProps<TRouter, TSSRContext>> {
+> extends Required<TRPCContextProps<TRouter, TSSRContext>>,
+    QueryUtils<TRouter> {}
+
+/**
+ * @deprecated
+ * @internal
+ **/
+export interface QueryUtils<TRouter extends AnyRouter> {
   /**
    * @link https://tanstack.com/query/v4/docs/reference/QueryClient#queryclientfetchquery
    */
