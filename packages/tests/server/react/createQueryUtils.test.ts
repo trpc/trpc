@@ -218,13 +218,7 @@ describe('createQueryUtils()', () => {
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createQueryUtils(queryClient, client);
-    const data: Post[] = [
-      {
-        createdAt: Date.now(),
-        id: '1',
-        title: 'first post, setQueriesData',
-      },
-    ];
+    const createdAt = Date.now();
 
     clientUtils.paginatedPosts.setInfiniteData(
       {},
@@ -235,7 +229,7 @@ describe('createQueryUtils()', () => {
               {
                 id: 'id',
                 title: 'infinitePosts.title1',
-                createdAt: Date.now(),
+                createdAt,
               },
             ],
             nextCursor: null,
@@ -252,7 +246,7 @@ describe('createQueryUtils()', () => {
             {
               id: 'id',
               title: 'infinitePosts.title1',
-              createdAt: Date.now(),
+              createdAt,
             },
           ],
           nextCursor: null,
