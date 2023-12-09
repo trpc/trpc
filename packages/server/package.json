@@ -165,7 +165,7 @@
     "superjson": "^1.12.4",
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
-    "tsx": "^4.0.0",
+    "tsx": "^4.6.0",
     "typescript": "^5.1.3",
     "valibot": "^0.22.0",
     "vitest": "^0.32.0",
