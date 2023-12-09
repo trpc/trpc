@@ -27,6 +27,7 @@ import {
 import {
   contextProps,
   DecoratedProxyTRPCContextProps,
+  QueryUtils,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -227,6 +228,9 @@ export type CreateReactUtilsProxy<
   DecoratedProcedureUtilsRecord<TRouter>
 >;
 
+export type CreateQueryUtilsProxy<TRouter extends AnyRouter> =
+  DecoratedProcedureUtilsRecord<TRouter>;
+
 /**
  * @internal
  */
@@ -248,6 +252,69 @@ export function createReactQueryUtilsProxy<
       return context[contextName];
     }
 
+    return createRecursiveProxy(({ path, args }) => {
+      const pathCopy = [key, ...path];
+      const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
+
+      const fullPath = pathCopy.join('.');
+
+      const getOpts = (name: typeof utilName) => {
+        if (['setData', 'setInfiniteData'].includes(name)) {
+          const [input, updater, ...rest] = args as Parameters<
+            AnyDecoratedProcedure[typeof utilName]
+          >;
+          const queryKey = getQueryKeyInternal(fullPath, input);
+          return {
+            queryKey,
+            updater,
+            rest,
+          };
+        }
+
+        const [input, ...rest] = args as Parameters<
+          AnyDecoratedProcedure[typeof utilName]
+        >;
+        const queryKey = getQueryKeyInternal(fullPath, input);
+        return {
+          queryKey,
+          rest,
+        };
+      };
+
+      const { queryKey, rest, updater } = getOpts(utilName);
+
+      const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+        fetch: () => context.fetchQuery(queryKey, ...rest),
+        fetchInfinite: () => context.fetchInfiniteQuery(queryKey, ...rest),
+        prefetch: () => context.prefetchQuery(queryKey, ...rest),
+        prefetchInfinite: () =>
+          context.prefetchInfiniteQuery(queryKey, ...rest),
+        ensureData: () => context.ensureQueryData(queryKey, ...rest),
+        invalidate: () => context.invalidateQueries(queryKey, ...rest),
+        reset: () => context.resetQueries(queryKey, ...rest),
+        refetch: () => context.refetchQueries(queryKey, ...rest),
+        cancel: () => context.cancelQuery(queryKey, ...rest),
+        setData: () => {
+          context.setQueryData(queryKey, updater, ...rest);
+        },
+        setInfiniteData: () => {
+          context.setInfiniteQueryData(queryKey, updater, ...rest);
+        },
+        getData: () => context.getQueryData(queryKey),
+        getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+      };
+
+      return contextMap[utilName]();
+    });
+  });
+}
+
+export function createQueryClientUtilsProxy<TRouter extends AnyRouter>(
+  context: QueryUtils<AnyRouter>,
+) {
+  type CreateQueryClientUtilsProxyReturnType = CreateQueryUtilsProxy<TRouter>;
+
+  return createFlatProxy<CreateQueryClientUtilsProxyReturnType>((key) => {
     return createRecursiveProxy(({ path, args }) => {
       const pathCopy = [key, ...path];
       const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;

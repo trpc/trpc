@@ -11,7 +11,6 @@ export * from './queryClient';
 export * from './types';
 export * from './hooks/types';
 export * from './polymorphism';
-export * from './createQueryUtils';
 
 export {
   /**

@@ -113,7 +113,6 @@ export interface TRPCContextState<
     QueryUtils<TRouter> {}
 
 /**
- * @deprecated
  * @internal
  **/
 export interface QueryUtils<TRouter extends AnyRouter> {
