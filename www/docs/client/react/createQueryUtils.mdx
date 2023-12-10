@@ -55,11 +55,10 @@ The reason for using `useState` in the creation of the `queryClient` and the `TR
 Now in our component, when we navigate the object `useUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
 
 ```tsx title="MyPage.tsx"
-import { createTRPCReact } from '@trpc/react-query';
 import { QueryClient } from '@tanstack/react-query';
-import type { AppRouter } from './server';
+import { createQueryUtils, createTRPCReact } from '@trpc/react-query';
 import { useLoaderData } from 'react-router-dom';
-import { createQueryUtils } from '@trpc/react-query';
+import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();
 
@@ -67,7 +66,8 @@ const queryClient = new QueryClient();
 
 const clientUtils = createQueryUtils({ queryClient, client: trpc });
 
-export async function loader() { // This is a react-router loader
+// This is a react-router loader
+export async function loader() {
   const allPostsData = await clientUtils.post.all.ensureData(); // Fetches data if it doesn't exist in the cache
 
   return {
@@ -75,7 +75,8 @@ export async function loader() { // This is a react-router loader
   };
 }
 
-export function Component () { // This is a react component
+// This is a react component
+export function Component() {
   const loaderData = useLoaderData() as Awaited<ReturnType<typeof loader>>;
 
   const allPostQuery = trpc.post.all.useQuery({
