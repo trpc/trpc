@@ -22,7 +22,7 @@ You should avoid using `createQueryUtils` in React Components. Instead, use `use
 
 ## Usage
 
-`useUtils` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
+`createQueryUtils` returns an object with all the available queries you have in your routers. You use it the same way as your `trpc` client object. Once you reach a query, you'll have access to the query helpers. For example, let's say you have a `post` router with an `all` query:
 
 ```twoslash include server
 // @target: esnext
@@ -48,11 +48,7 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-:::note
-The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can move them if you wish.
-:::
-
-Now in our component, when we navigate the object `useUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
+Now in our component, when we navigate the object `createQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
 
 ```tsx title="MyPage.tsx"
 import { QueryClient } from '@tanstack/react-query';
