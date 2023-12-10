@@ -14,7 +14,7 @@ describe('createQueryUtils()', () => {
   test('ensureData()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     async function prefetch() {
       const initialQuery = await clientUtils.postById.ensureData('1');
@@ -50,7 +50,7 @@ describe('createQueryUtils()', () => {
   test('fetchQuery()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     const query = await clientUtils.postById.fetch('1');
     expect(query.title).toBe('first post');
@@ -59,7 +59,7 @@ describe('createQueryUtils()', () => {
   test('fetchInfiniteQuery()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     const q = await clientUtils.paginatedPosts.fetchInfinite(
       {
@@ -77,7 +77,7 @@ describe('createQueryUtils()', () => {
   test('prefetchQuery()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     await clientUtils.postById.prefetch('1');
 
@@ -91,7 +91,7 @@ describe('createQueryUtils()', () => {
   test('prefetchInfiniteQuery()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     await clientUtils.paginatedPosts.prefetchInfinite(
       {
@@ -111,7 +111,7 @@ describe('createQueryUtils()', () => {
   test('invalidateQueries()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     await clientUtils.postById.fetch('1');
 
@@ -130,7 +130,7 @@ describe('createQueryUtils()', () => {
   test('resetQueries()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     await clientUtils.postById.fetch('1', {
       initialData: {
@@ -156,7 +156,7 @@ describe('createQueryUtils()', () => {
   test('refetchQueries()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
 
     await clientUtils.postById.fetch('1');
 
@@ -173,7 +173,7 @@ describe('createQueryUtils()', () => {
   test('setQueriesData()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
     const data: Post = {
       createdAt: Date.now(),
       id: '1',
@@ -188,7 +188,7 @@ describe('createQueryUtils()', () => {
   test('cancelQuery()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
     clientUtils.postById.fetch('1', {
       queryFn: async () => {
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -202,7 +202,7 @@ describe('createQueryUtils()', () => {
   test('getQueryData()', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
     const data: Post = {
       createdAt: Date.now(),
       id: '1',
@@ -217,7 +217,7 @@ describe('createQueryUtils()', () => {
   test('set and get infinite query data', async () => {
     const { client } = factory;
     const queryClient = createQueryClient();
-    const clientUtils = createQueryUtils(queryClient, client);
+    const clientUtils = createQueryUtils({ queryClient, client });
     const createdAt = Date.now();
 
     clientUtils.paginatedPosts.setInfiniteData(

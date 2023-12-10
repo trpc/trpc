@@ -5,18 +5,28 @@ import { getArrayQueryKey } from '../internals/getArrayQueryKey';
 import { getClientArgs } from '../internals/getClientArgs';
 import { createQueryClientUtilsProxy } from '../shared';
 
+interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
+  /**
+   * The query client to use
+   */
+  queryClient: QueryClient;
+  /**
+   * The TRPC client to use
+   */
+  client: TRPCClient<TRouter>;
+}
+
 /**
  * Create a query client utility functions
  *
  * DO NOT USE THIS IN REACT COMPONENTS, use `useUtils()` instead
- * @param queryClient The react-query client
- * @param client The TRPC client
  * @returns Query Client utility functions
  */
 export function createQueryUtils<TRouter extends AnyRouter>(
-  queryClient: QueryClient,
-  client: TRPCClient<TRouter>,
+  opts: CreateQueryUtilsOptions<TRouter>,
 ) {
+  const { queryClient, client } = opts;
+
   return createQueryClientUtilsProxy<TRouter>({
     fetchQuery: (pathAndInput, opts) => {
       return queryClient.fetchQuery({
