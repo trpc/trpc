@@ -14,7 +14,7 @@ export const CompaniesUsing = () => {
       <SectionTitle
         id="companies-using"
         title="As used by"
-        description="Many developers are loving tRPC and what it brings to them."
+        description="tRPC is tried and trusted by leading tech teams."
       />
       <div className="my-6 inline-flex w-full flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-200px),transparent_100%)]">
         {animationRow.map((_, index) => (
