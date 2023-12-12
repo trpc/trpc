@@ -1652,6 +1652,9 @@ importers:
       aws-lambda:
         specifier: ^1.0.7
         version: 1.0.7
+      bun-types:
+        specifier: ^0.7.3
+        version: 0.7.3
       devalue:
         specifier: ^4.0.0
         version: 4.3.0

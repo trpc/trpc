@@ -13,6 +13,7 @@ export const input = [
   'src/adapters/standalone.ts',
   'src/adapters/ws.ts',
   'src/adapters/fetch/index.ts',
+  'src/adapters/bun/index.ts',
   'src/http/index.ts',
   'src/rpc/index.ts',
   'src/observable/index.ts',
