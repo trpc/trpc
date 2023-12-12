@@ -9,6 +9,7 @@ import React, { useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
+import { CompaniesUsing } from '../components/CompaniesUsing';
 import { Features } from '../components/Features';
 import { GithubSponsorButton } from '../components/GithubSponsorButton';
 import { GithubStarsButton } from '../components/GithubStarsButton';
@@ -281,6 +282,10 @@ const HomeContent: React.FC = () => {
 
       <section className={'mx-auto hidden max-w-[1600px] md:block'}>
         <TryItOut />
+      </section>
+
+      <section>
+        <CompaniesUsing />
       </section>
 
       <section className="mx-auto max-w-[80ch] px-6 md:px-0">
