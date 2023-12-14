@@ -453,7 +453,7 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // @filename: client.ts
 // ---cut---
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './server';
+import type { AppRouter } from '../server';
 //     👆 **type-only** import
 
 // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
