@@ -47,6 +47,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   if (opts.useWSS) {
     applyWSSHandler<TRouter>({
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
+      prefix,
       wss: fastify.websocketServer,
     });
     // eslint-disable-next-line @typescript-eslint/no-empty-function
