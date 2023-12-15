@@ -164,6 +164,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
     reconnectInMs(timeout);
   }
   function hasPendingRequests(conn?: Connection) {
+    if (activeConnection === conn && outgoing.length > 0) {
+      return true;
+    }
     const requests = Object.values(pendingRequests);
     if (!conn) {
       return requests.length > 0;

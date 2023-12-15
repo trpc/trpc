@@ -1070,4 +1070,49 @@ describe('lazy mode', () => {
 
     await ctx.close();
   });
+
+  test('race condition on dispatching / instant close', async () => {
+    const ctx = factory({
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 0,
+        },
+      },
+    });
+    const { client, wsClient } = ctx;
+    expect(wsClient.connection).toBe(null);
+
+    // --- do some queries and wait for the client to disconnect
+    {
+      const res = await client.greeting.query('query 1');
+      expect(res).toMatchInlineSnapshot('"hello query 1"');
+
+      await waitFor(() => {
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+      });
+      expect(wsClient.connection).toBe(null);
+    }
+
+    {
+      // --- do some more queries and wait for the client to disconnect again
+      const res = await Promise.all([
+        client.greeting.query('query 3'),
+        client.greeting.query('query 4'),
+      ]);
+      expect(res).toMatchInlineSnapshot(`
+        Array [
+          "hello query 3",
+          "hello query 4",
+        ]
+      `);
+
+      await waitFor(() => {
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+      });
+    }
+    await ctx.close();
+  });
 });
