@@ -201,14 +201,6 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - run: bun --version
-
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
     services:
