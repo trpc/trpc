@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@trpc/client": "^10.44.1",
-    "undici": "^5.14.0"
+    "undici": "^6.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.0"
