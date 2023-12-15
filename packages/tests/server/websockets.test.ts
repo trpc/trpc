@@ -1071,6 +1071,7 @@ describe('lazy mode', () => {
     await ctx.close();
   });
 
+  // https://github.com/trpc/trpc/pull/5152
   test('race condition on dispatching / instant close', async () => {
     const ctx = factory({
       wsClient: {
