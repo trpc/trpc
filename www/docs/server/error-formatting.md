@@ -7,7 +7,7 @@ slug: /server/error-formatting
 
 The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components)
 
-## Usage example-zod validation error
+## Usage example: Zod validation error
 
 ### Serverside
 
