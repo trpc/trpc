@@ -262,9 +262,9 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ matrix.node-start }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ matrix.node-start }}
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
