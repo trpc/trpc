@@ -56,8 +56,8 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/prettier':
         specifier: ^2.7.2
         version: 2.7.2
@@ -170,8 +170,8 @@ importers:
         specifier: ^10.44.1
         version: link:../../../packages/server
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -252,8 +252,8 @@ importers:
         specifier: ^7.43.3
         version: 7.43.3(react@18.2.0)
       undici:
-        specifier: ^5.14.0
-        version: 5.16.0
+        specifier: ^6.0.1
+        version: 6.0.1
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -262,8 +262,8 @@ importers:
         version: 2.0.1(zod@3.22.4)
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -308,8 +308,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -357,8 +357,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -394,8 +394,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -437,8 +437,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -490,7 +490,7 @@ importers:
         version: 1.28.1
       '@types/node':
         specifier: ^18.16.16
-        version: 18.16.16
+        version: 18.19.3
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -548,8 +548,8 @@ importers:
         specifier: ^4.0.0
         version: 4.20230215.0
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -588,8 +588,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -637,8 +637,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -692,8 +692,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/ws':
         specifier: ^8.2.0
         version: 8.5.4
@@ -735,8 +735,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       esbuild:
         specifier: ^0.17.10
         version: 0.17.10
@@ -759,8 +759,8 @@ importers:
   examples/minimal:
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -833,7 +833,7 @@ importers:
         version: 5.1.3
       vite:
         specifier: ^4.1.2
-        version: 4.1.2(@types/node@18.16.16)
+        version: 4.1.2(@types/node@20.10.4)
 
   examples/minimal-react/server:
     dependencies:
@@ -851,8 +851,8 @@ importers:
         specifier: ^2.8.13
         version: 2.8.13
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -869,12 +869,12 @@ importers:
         specifier: ^10.44.1
         version: link:../../../packages/client
       undici:
-        specifier: ^5.14.0
-        version: 5.16.0
+        specifier: ^6.0.1
+        version: 6.0.1
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
 
   examples/minimal/server:
     dependencies:
@@ -886,8 +886,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
 
   examples/next-big-router:
     dependencies:
@@ -920,8 +920,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -969,8 +969,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1015,8 +1015,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1073,8 +1073,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1131,7 +1131,7 @@ importers:
         version: 5.1.3
       vite:
         specifier: ^4.1.2
-        version: 4.1.2(@types/node@18.16.16)
+        version: 4.1.2(@types/node@20.10.4)
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1197,8 +1197,8 @@ importers:
         specifier: ^5.0.0
         version: 5.14.0(@tanstack/react-query@5.14.0)(react@18.2.0)
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1273,8 +1273,8 @@ importers:
         specifier: ^5.0.0
         version: 5.14.0(@tanstack/react-query@5.14.0)(react@18.2.0)
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1342,8 +1342,8 @@ importers:
         specifier: ^10.44.1
         version: link:../../packages/server
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -1379,8 +1379,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/ws':
         specifier: ^8.2.0
         version: 8.5.4
@@ -1449,8 +1449,8 @@ importers:
         specifier: ^0.0.39
         version: 0.0.39
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -1467,8 +1467,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       undici:
-        specifier: ^5.14.0
-        version: 5.16.0
+        specifier: ^6.0.1
+        version: 6.0.1
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1495,8 +1495,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1543,8 +1543,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1591,8 +1591,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -1720,8 +1720,8 @@ importers:
         specifier: 10.44.1
         version: link:../server
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/testing-library__jest-dom':
         specifier: link:vendor/@types/testing-library__jest-dom
         version: link:vendor/@types/testing-library__jest-dom
@@ -1805,7 +1805,7 @@ importers:
         version: 0.24.0
       vite:
         specifier: ^4.1.2
-        version: 4.1.2(@types/node@18.16.16)
+        version: 4.1.2(@types/node@20.10.4)
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1925,8 +1925,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/oauth':
         specifier: ^0.9.1
         version: 0.9.1
@@ -2022,8 +2022,8 @@ importers:
         version: 3.22.4
     devDependencies:
       '@types/node':
-        specifier: ^18.16.16
-        version: 18.16.16
+        specifier: ^20.10.0
+        version: 20.10.4
       '@types/react':
         specifier: ^18.2.33
         version: 18.2.33
@@ -4642,7 +4642,7 @@ packages:
       runtypes: 6.6.0
       superstruct: 1.0.3
       valibot: 0.24.0
-      vite: 4.1.2(@types/node@18.16.16)
+      vite: 4.1.2(@types/node@20.10.4)
       yup: 1.0.0
       zod: 3.22.4
     dev: false
@@ -6082,7 +6082,6 @@ packages:
   /@fastify/busboy@2.0.0:
     resolution: {integrity: sha512-JUFJad5lv7jxj926GPgymrWQxxjPYuJNiNjNMzqT+HiuP6Vl3dk5xzG+8sTX96np0ZAluvaMzPsjhHZ5rNuNQQ==}
     engines: {node: '>=14'}
-    dev: false
 
   /@fastify/deepmerge@1.3.0:
     resolution: {integrity: sha512-J8TOSBq3SoZbDhM9+R/u77hP93gz/rajSA+K2kGyijPpORPWUXHUpTaleoj+92As0S9uPRP7Oi8IqMf0u+ro6A==}
@@ -6447,7 +6446,7 @@ packages:
       '@jest/schemas': 29.4.3
       '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       '@types/yargs': 17.0.14
       chalk: 4.1.2
     dev: false
@@ -7926,7 +7925,7 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       playwright-core: 1.28.1
     dev: true
 
@@ -8656,18 +8655,18 @@ packages:
   /@types/better-sqlite3@7.6.2:
     resolution: {integrity: sha512-RgmaapusqTq6IMAr4McMyAsC6RshYTCjXCnzwVV59WctUxC8bNPyUfT9t5F81lKcU41lLurhjqjoMHfauzfqGg==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/body-parser@1.19.2:
     resolution: {integrity: sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==}
     dependencies:
       '@types/connect': 3.4.35
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/bonjour@3.5.10:
     resolution: {integrity: sha512-p7ienRMiS41Nu2/igbJxxLDWrSZ0WxM8UQgCeO9KhoVF7cOVFkrKsiDr1EsJIla8vV3oEEjGcz11jc5yimhzZw==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: false
 
   /@types/cacheable-request@6.0.3:
@@ -8675,7 +8674,7 @@ packages:
     dependencies:
       '@types/http-cache-semantics': 4.0.1
       '@types/keyv': 3.1.4
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       '@types/responselike': 1.0.0
     dev: true
 
@@ -8691,18 +8690,18 @@ packages:
     resolution: {integrity: sha512-h8QJa8xSb1WD4fpKBDcATDNGXghFj6/3GRWG6dhmRcu0RX1Ubasur2Uvx5aeEwlf0MwblEC2bMzzMQntxnw/Cw==}
     dependencies:
       '@types/express-serve-static-core': 4.17.34
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: false
 
   /@types/connect@3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/cors@2.8.13:
     resolution: {integrity: sha512-RG8AStHlUiV5ysZQKq97copd2UmVYw3/pRMLefISZ3S1hK104Cwm7iLQ3fTKx+lsUH2CE8FlLaYeEA2LSeqYUA==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: true
 
   /@types/d3-hierarchy@1.1.8:
@@ -8734,7 +8733,7 @@ packages:
   /@types/express-serve-static-core@4.17.34:
     resolution: {integrity: sha512-fvr49XlCGoUj2Pp730AItckfjat4WNb0lb3kfrLWffd+RLeoGAMsq7UOy04PAPtoL01uKwcp6u8nhzpgpDYr3w==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
       '@types/send': 0.17.1
@@ -8751,7 +8750,7 @@ packages:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: false
 
   /@types/hash-sum@1.0.0:
@@ -8786,7 +8785,7 @@ packages:
   /@types/http-proxy@1.17.9:
     resolution: {integrity: sha512-QsbSjA/fSk7xB+UXlCT3wHBy5ai9wOcNDWwZAtud+jXhwOM3l+EYZh8Lng4+/6n8uar0J7xILzqftJdJ/Wdfkw==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: false
 
   /@types/is-ci@3.0.0:
@@ -8825,7 +8824,7 @@ packages:
   /@types/keyv@3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/lodash@4.14.190:
     resolution: {integrity: sha512-5iJ3FBJBvQHQ8sFhEhJfjUP+G+LalhavTkYyrAYqz5MEJG+erSv0k9KJLb6q7++17Lafk1scaTIFXcMJlwK8Mw==}
@@ -8862,8 +8861,16 @@ packages:
     resolution: {integrity: sha512-w+tIMs3rq2afQdsPJlODhoUEKzFP1ayaoyl1CcnwtIlsVe7K7bA1NGm4s3PraqTLlXnbIN84zuBlxBWo1u9BLw==}
     dev: false
 
-  /@types/node@18.16.16:
-    resolution: {integrity: sha512-NpaM49IGQQAUlBhHMF82QH80J08os4ZmyF9MkpCzWAGuOHqE4gTEbhzd7L3l5LmWuZ6E0OiC1FweQ4tsiW35+g==}
+  /@types/node@18.19.3:
+    resolution: {integrity: sha512-k5fggr14DwAytoA/t8rPrIz++lXK7/DqckthCmoZOKNsEbJkId4Z//BqgApXBUGrGddrigYa1oqheo/7YmW4rg==}
+    dependencies:
+      undici-types: 5.26.5
+    dev: true
+
+  /@types/node@20.10.4:
+    resolution: {integrity: sha512-D08YG6rr8X90YB56tSIuBaddy/UXAA9RKJoFvrsnogAum/0pmjkgi4+2nx96A330FmioegBWmEYQ+syqCFaveg==}
+    dependencies:
+      undici-types: 5.26.5
 
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
@@ -8872,7 +8879,7 @@ packages:
   /@types/oauth@0.9.1:
     resolution: {integrity: sha512-a1iY62/a3yhZ7qH7cNUsxoI3U/0Fe9+RnuFrpTKr+0WVOzbKlSLojShCKe20aOD1Sppv+i8Zlq0pLDuTJnwS4A==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: true
 
   /@types/parse-json@4.0.0:
@@ -8938,7 +8945,7 @@ packages:
   /@types/responselike@1.0.0:
     resolution: {integrity: sha512-85Y2BjiufFzaMIlvJDvTTB8Fxl2xfLo4HgmHzVBz08w4wDePCTjYw66PdrolO0kzli3yam/YCgRufyo1DdQVTA==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/retry@0.12.0:
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
@@ -8951,7 +8958,7 @@ packages:
   /@types/sax@1.2.4:
     resolution: {integrity: sha512-pSAff4IAxJjfAXUG6tFkO7dsSbTmf8CtUpfhhZ5VhkRpC4628tJhh3+V6H1E+/Gs9piSzYKT5yzHO5M4GG9jkw==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: false
 
   /@types/scheduler@0.16.2:
@@ -8968,7 +8975,7 @@ packages:
     resolution: {integrity: sha512-Cwo8LE/0rnvX7kIIa3QHCkcuF21c05Ayb0ZfxPiv0W8VRiZiNW/WuRupHKpqqGVGf7SUA44QSOUKaEd9lIrd/Q==}
     dependencies:
       '@types/mime': 1.3.2
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/serve-index@1.9.1:
     resolution: {integrity: sha512-d/Hs3nWDxNL2xAczmOVZNj92YZCS6RGxfBPjKzuu/XirCgXdpKEb88dYNbrYGint6IVWLNP+yonwVAuRC0T2Dg==}
@@ -8980,12 +8987,12 @@ packages:
     resolution: {integrity: sha512-z5xyF6uh8CbjAu9760KDKsH2FcDxZ2tFCsA4HIMWE6IkiYMXfVoa+4f9KX+FN0ZLsaMw1WNG2ETLA6N+/YA+cg==}
     dependencies:
       '@types/mime': 3.0.1
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/sockjs@0.3.33:
     resolution: {integrity: sha512-f0KEEe05NvUnat+boPTZ0dgaLZ4SfSouXUgv5noUiefG2ajgKjmETo9ZJyuqsl7dfl2aHlLJUiki6B4ZYldiiw==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
     dev: false
 
   /@types/stack-trace@0.0.29:
@@ -8998,7 +9005,7 @@ packages:
   /@types/ws@8.5.4:
     resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
 
   /@types/yargs-parser@21.0.0:
     resolution: {integrity: sha512-iO9ZQHkZxHn4mSakYV0vFHAVDyEOIJQrV2uZ06HxEPcx+mt8swXoZHIbaaJ2crJYFfErySgktuTZ3BeLz+XmFA==}
@@ -9217,7 +9224,7 @@ packages:
       '@babel/plugin-transform-react-jsx-source': 7.19.6(@babel/core@7.23.2)
       magic-string: 0.27.0
       react-refresh: 0.14.0
-      vite: 4.1.2(@types/node@18.16.16)
+      vite: 4.1.2(@types/node@20.10.4)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -13349,7 +13356,7 @@ packages:
     resolution: {integrity: sha512-EzV94NYKoO09GLXGjXj9JIlXijVck4ONSr5wiCWDvhsvj5jxSrzTmRU/9C1DyB6uToszLs8aifA6NQ7lEQdvFw==}
     engines: {node: '>= 0.8'}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       require-like: 0.1.2
     dev: false
 
@@ -15666,7 +15673,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.3.1
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       chalk: 4.1.2
       ci-info: 3.8.0
       graceful-fs: 4.2.11
@@ -15677,7 +15684,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false
@@ -15686,7 +15693,7 @@ packages:
     resolution: {integrity: sha512-lY4AnnmsEWeiXirAIA0c9SDPbuCBq8IYuDVL8PMm0MZ2PEs2yPvRA/J64QBXuZp7CYKrDM/rmNrc9/i3KJQncw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       jest-util: 29.3.1
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -22524,18 +22531,15 @@ packages:
       through: 2.3.8
     dev: true
 
+  /undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+
   /undici@5.11.0:
     resolution: {integrity: sha512-oWjWJHzFet0Ow4YZBkyiJwiK5vWqEYoH7BINzJAJOLedZ++JpAlCbUktW2GQ2DS2FpKmxD/JMtWUUWl1BtghGw==}
     engines: {node: '>=12.18'}
     dependencies:
       busboy: 1.6.0
     dev: false
-
-  /undici@5.16.0:
-    resolution: {integrity: sha512-KWBOXNv6VX+oJQhchXieUznEmnJMqgXMbs0xxH2t8q/FUAWSJvOSr/rMaZKnX5RIVq7JDn0JbP4BOnKG2SGXLQ==}
-    engines: {node: '>=12.18'}
-    dependencies:
-      busboy: 1.6.0
 
   /undici@5.28.2:
     resolution: {integrity: sha512-wh1pHJHnUeQV5Xa8/kyQhO7WFa8M34l026L5P/+2TYiakvGy5Rdc8jWZVyG7ieht/0WgJLEd3kcU5gKx+6GC8w==}
@@ -22547,6 +22551,12 @@ packages:
   /undici@5.9.1:
     resolution: {integrity: sha512-6fB3a+SNnWEm4CJbgo0/CWR8RGcOCQP68SF4X0mxtYTq2VNN8T88NYrWVBAeSX+zb7bny2dx2iYhP3XHi00omg==}
     engines: {node: '>=12.18'}
+
+  /undici@6.0.1:
+    resolution: {integrity: sha512-eZFYQLeS9BiXpsU0cuFhCwfeda2MnC48EVmmOz/eCjsTgmyTdaHdVsPSC/kwC2GtW2e0uH0HIPbadf3/bRWSxw==}
+    engines: {node: '>=18.0'}
+    dependencies:
+      '@fastify/busboy': 2.0.0
 
   /unherit@1.1.3:
     resolution: {integrity: sha512-Ft16BJcnapDKp0+J/rqFC3Rrk6Y/Ng4nzsC028k2jdDII/rdZ7Wd3pPT/6+vIIxRagwRc9K0IUX0Ra4fKvw+WQ==}
@@ -22954,7 +22964,7 @@ packages:
       vfile-message: 2.0.4
     dev: false
 
-  /vite-node@0.32.0(@types/node@18.16.16):
+  /vite-node@0.32.0(@types/node@20.10.4):
     resolution: {integrity: sha512-220P/y8YacYAU+daOAqiGEFXx2A8AwjadDzQqos6wSukjvvTWNqleJSwoUn0ckyNdjHIKoxn93Nh1vWBqEKr3Q==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -22964,7 +22974,7 @@ packages:
       mlly: 1.3.0
       pathe: 1.1.0
       picocolors: 1.0.0
-      vite: 4.1.2(@types/node@18.16.16)
+      vite: 4.1.2(@types/node@20.10.4)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -22974,7 +22984,7 @@ packages:
       - supports-color
       - terser
 
-  /vite@4.1.2(@types/node@18.16.16):
+  /vite@4.1.2(@types/node@20.10.4):
     resolution: {integrity: sha512-MWDb9Rfy3DI8omDQySbMK93nQqStwbsQWejXRY2EBzEWKmLAXWb1mkI9Yw2IJrc+oCvPCI1Os5xSSIBYY6DEAw==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -22999,7 +23009,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       esbuild: 0.16.17
       postcss: 8.4.21
       resolve: 1.22.2
@@ -23056,7 +23066,7 @@ packages:
     dependencies:
       '@types/chai': 4.3.5
       '@types/chai-subset': 1.3.3
-      '@types/node': 18.16.16
+      '@types/node': 20.10.4
       '@vitest/expect': 0.32.0
       '@vitest/runner': 0.32.0
       '@vitest/snapshot': 0.32.0
@@ -23078,8 +23088,8 @@ packages:
       strip-literal: 1.0.1
       tinybench: 2.5.0
       tinypool: 0.5.0
-      vite: 4.1.2(@types/node@18.16.16)
-      vite-node: 0.32.0(@types/node@18.16.16)
+      vite: 4.1.2(@types/node@20.10.4)
+      vite-node: 0.32.0(@types/node@20.10.4)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
