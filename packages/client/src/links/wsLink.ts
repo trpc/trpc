@@ -27,22 +27,6 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 const exponentialBackoff = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
-interface WebSocketLazyOptions {
-  /**
-   * Enable lazy mode
-   * @default false
-   */
-  enabled: boolean;
-  /**
-   * Close the WebSocket after this many milliseconds
-   * @default 0
-   */
-  closeMs: number;
-}
-const lazyDefaults: Required<WebSocketLazyOptions> = {
-  enabled: false,
-  closeMs: 0,
-};
 export interface WebSocketClientOptions {
   /**
    * The URL to connect to (can be a function that returns a URL)
@@ -68,9 +52,25 @@ export interface WebSocketClientOptions {
   /**
    * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
    */
-  lazy?: WebSocketLazyOptions;
+  lazy?: {
+    /**
+     * Enable lazy mode
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Close the WebSocket after this many milliseconds
+     * @default 0
+     */
+    closeMs: number;
+  };
 }
 
+type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;
+const lazyDefaults: LazyOptions = {
+  enabled: false,
+  closeMs: 0,
+};
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
@@ -79,7 +79,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     onOpen,
     onClose,
   } = opts;
-  const lazyOpts: Required<WebSocketLazyOptions> = {
+  const lazyOpts: LazyOptions = {
     ...lazyDefaults,
     ...opts.lazy,
   };
