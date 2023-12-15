@@ -8,9 +8,6 @@
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
