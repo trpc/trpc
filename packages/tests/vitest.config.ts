@@ -16,7 +16,11 @@ export default defineConfig({
       include: ['*/src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
-    useAtomics: !!process.env.CI,
+    poolOptions: {
+      threads: {
+        useAtomics: !!process.env.CI,
+      },
+    },
   },
   resolve: {
     alias: {
