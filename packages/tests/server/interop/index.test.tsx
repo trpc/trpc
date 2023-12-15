@@ -107,10 +107,10 @@ describe('integration tests', () => {
       TRPCClientError,
     );
     expect(err.message).toMatchInlineSnapshot(
-      `"No \\"query\\"-procedure on path \\"notFound\\""`,
+      `"No "query"-procedure on path "notFound""`,
     );
     expect(err.shape?.message).toMatchInlineSnapshot(
-      `"No \\"query\\"-procedure on path \\"notFound\\""`,
+      `"No "query"-procedure on path "notFound""`,
     );
     await close();
   });
@@ -137,18 +137,18 @@ describe('integration tests', () => {
     );
     expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
     expect(err.shape?.message).toMatchInlineSnapshot(`
-        "[
-          {
-            \\"code\\": \\"invalid_type\\",
-            \\"expected\\": \\"string\\",
-            \\"received\\": \\"number\\",
-            \\"path\\": [
-              \\"who\\"
-            ],
-            \\"message\\": \\"Expected string, received number\\"
-          }
-        ]"
-      `);
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "number",
+          "path": [
+            "who"
+          ],
+          "message": "Expected string, received number"
+        }
+      ]"
+    `);
     await close();
   });
 

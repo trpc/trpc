@@ -13,5 +13,5 @@ test('double errors', async () => {
           return null;
         },
       });
-  }).toThrowErrorMatchingInlineSnapshot(`"Duplicate endpoint(s): dupe"`);
+  }).toThrowErrorMatchingInlineSnapshot(`[Error: Duplicate endpoint(s): dupe]`);
 });

@@ -449,7 +449,7 @@ describe('transformer on router', () => {
     expect(() =>
       trpc.router().transformer(superjson).transformer(superjson),
     ).toThrowErrorMatchingInlineSnapshot(
-      `"You seem to have double \`transformer()\`-calls in your router tree"`,
+      `[Error: You seem to have double \`transformer()\`-calls in your router tree]`,
     );
   });
 

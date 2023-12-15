@@ -41,7 +41,7 @@ test('req as eventemitter', async () => {
   expect((result as any).data).toBeTruthy();
   expect(result).toMatchInlineSnapshot(`
     Object {
-      "data": "{\\"hello\\":\\"there\\"}",
+      "data": "{"hello":"there"}",
       "ok": true,
       "preprocessed": false,
     }

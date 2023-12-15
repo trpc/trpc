@@ -131,11 +131,11 @@ test('bad type', async () => {
         },
         "message": "[
       {
-        \\"code\\": \\"invalid_type\\",
-        \\"expected\\": \\"object\\",
-        \\"received\\": \\"undefined\\",
-        \\"path\\": [],
-        \\"message\\": \\"Required\\"
+        "code": "invalid_type",
+        "expected": "object",
+        "received": "undefined",
+        "path": [],
+        "message": "Required"
       }
     ]",
       },

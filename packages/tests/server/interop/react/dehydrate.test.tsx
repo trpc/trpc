@@ -21,7 +21,7 @@ test('dehydrate', async () => {
 
   const [cache, cache2] = dehydrated;
   expect(cache!.queryHash).toMatchInlineSnapshot(
-    `"[[\\"allPosts\\"],{\\"type\\":\\"query\\"}]"`,
+    `"[["allPosts"],{"type":"query"}]"`,
   );
   expect(cache!.queryKey).toMatchInlineSnapshot(`
     Array [

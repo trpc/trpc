@@ -78,11 +78,11 @@ test('input error', async () => {
   expect(clientError.shape.message).toMatchInlineSnapshot(`
     "[
       {
-        \\"code\\": \\"invalid_type\\",
-        \\"expected\\": \\"string\\",
-        \\"received\\": \\"number\\",
-        \\"path\\": [],
-        \\"message\\": \\"Expected string, received number\\"
+        "code": "invalid_type",
+        "expected": "string",
+        "received": "number",
+        "path": [],
+        "message": "Expected string, received number"
       }
     ]"
   `);
@@ -183,34 +183,34 @@ Object {
 }
 `);
     expect(clientError.shape).toMatchInlineSnapshot(`
-Object {
-  "code": -32600,
-  "data": Object {
-    "code": "BAD_REQUEST",
-    "errors": Array [
       Object {
-        "code": "invalid_type",
-        "expected": "string",
-        "message": "Expected string, received number",
-        "path": Array [],
-        "received": "number",
-      },
-    ],
-    "httpStatus": 400,
-    "path": "err",
-    "type": "zod",
-  },
-  "message": "[
-  {
-    \\"code\\": \\"invalid_type\\",
-    \\"expected\\": \\"string\\",
-    \\"received\\": \\"number\\",
-    \\"path\\": [],
-    \\"message\\": \\"Expected string, received number\\"
-  }
-]",
-}
-`);
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "errors": Array [
+            Object {
+              "code": "invalid_type",
+              "expected": "string",
+              "message": "Expected string, received number",
+              "path": Array [],
+              "received": "number",
+            },
+          ],
+          "httpStatus": 400,
+          "path": "err",
+          "type": "zod",
+        },
+        "message": "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "number",
+          "path": [],
+          "message": "Expected string, received number"
+        }
+      ]",
+      }
+    `);
     expect(onError).toHaveBeenCalledTimes(1);
     const serverError = onError.mock.calls[0]![0]!.error;
 
@@ -230,7 +230,7 @@ Object {
           return shape;
         });
     }).toThrowErrorMatchingInlineSnapshot(
-      `"You seem to have double \`formatError()\`-calls in your router tree"`,
+      `[Error: You seem to have double \`formatError()\`-calls in your router tree]`,
     );
   });
   test('setting custom http response code', async () => {
@@ -313,7 +313,7 @@ test('make sure object is ignoring prototype', async () => {
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(
-    `"No \\"query\\"-procedure on path \\"toString\\""`,
+    `"No "query"-procedure on path "toString""`,
   );
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
   expect(onError).toHaveBeenCalledTimes(1);
