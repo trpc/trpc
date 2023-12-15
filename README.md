@@ -1,3 +1,15 @@
+> [!NOTE]
+>
+> - This the next major of tRPC. For the pending list of changes made, see [`.wip/changes.md`](.wip/changes.md).
+> - We may break some small things between minor versions until we reach `11.0.0`
+> - The packages are published with the `next`-tag on npm
+>
+> To install, you can do something akin to
+>
+> ```
+> npm i --save @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest @tanstack/react-query-devtools@latest
+> ```
+
 <a href="https://trpc.io/" target="_blank" rel="noopener">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://assets.trpc.io/www/trpc-readme-dark.png" />
