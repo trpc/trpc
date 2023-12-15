@@ -48,7 +48,6 @@ jobs:
             .experimental/next-formdata,
             .experimental/next-app-dir,
           ]
-        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
@@ -89,11 +88,6 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
-
       - run: node -v
 
       - name: Run test-dev
@@ -115,7 +109,6 @@ jobs:
     strategy:
       matrix:
         dir: [deno-deploy]
-        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
@@ -152,11 +145,6 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
-
       - run: deno --version
 
       - name: run test
@@ -177,7 +165,6 @@ jobs:
     strategy:
       matrix:
         dir: [bun]
-        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
@@ -213,11 +200,6 @@ jobs:
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
 
       - run: bun --version
 
