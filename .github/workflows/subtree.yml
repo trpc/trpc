@@ -63,11 +63,11 @@ jobs:
           git add .
           git commit -m "chore: sync lockfile"
 
-      # - name: Sync downstream
-      #   uses: nxtlvlsoftware/git-subtree-action@1.1
-      #   with:
-      #     repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'
-      #     path: 'examples/${{ matrix.path }}'
-      #     deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
-      #     force: true # will force push to the downstream repository
-      #     branch: main # will push to the main branch of the downstream repository
+      - name: Sync downstream
+        uses: nxtlvlsoftware/git-subtree-action@1.1
+        with:
+          repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'
+          path: 'examples/${{ matrix.path }}'
+          deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
+          force: true # will force push to the downstream repository
+          branch: main # will push to the main branch of the downstream repository
