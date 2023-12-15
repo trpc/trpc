@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "engines": {
-    "node": "^18.17.0",
+    "node": "^20.0.0",
     "pnpm": ">=8.0.0"
   },
   "packageManager": "pnpm@8.5.1",
