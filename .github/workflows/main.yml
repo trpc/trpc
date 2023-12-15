@@ -70,7 +70,7 @@ jobs:
           directory: ./packages
 
       - name: Upload new bundle analysis
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: github.ref == 'ref/head/main'
         with:
           name: bundle-analysis
