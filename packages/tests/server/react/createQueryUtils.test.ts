@@ -95,7 +95,7 @@ describe('createTRPCQueryUtils()', () => {
     const q = await clientUtils.paginatedPosts.prefetchInfinite(
       { limit: 1 },
       {
-        pages: 3,
+        pages: 1,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
