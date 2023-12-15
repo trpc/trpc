@@ -971,7 +971,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          closeMs: 10,
+          closeMs: 1,
         },
       },
     });
@@ -1024,7 +1024,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          closeMs: 100,
+          closeMs: 1,
         },
       },
     });
