@@ -971,7 +971,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          closeMs: 100,
+          closeMs: 10,
         },
       },
     });
@@ -979,23 +979,43 @@ describe('lazy mode', () => {
     expect(wsClient.connection).toBe(null);
 
     // --- do some queries and wait for the client to disconnect
-    await client.greeting.query();
-    expect(wsClient.connection).not.toBe(null);
-    await client.greeting.query();
+    {
+      const res = await Promise.all([
+        client.greeting.query('query 1'),
+        client.greeting.query('query 2'),
+      ]);
+      expect(res).toMatchInlineSnapshot(`
+        Array [
+          "hello query 1",
+          "hello query 2",
+        ]
+      `);
+      expect(wsClient.connection).not.toBe(null);
 
-    await waitFor(() => {
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
-      expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
-    });
-    expect(wsClient.connection).toBe(null);
+      await waitFor(() => {
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+      });
+      expect(wsClient.connection).toBe(null);
+    }
+    {
+      // --- do some more queries and wait for the client to disconnect again
+      const res = await Promise.all([
+        client.greeting.query('query 3'),
+        client.greeting.query('query 4'),
+      ]);
+      expect(res).toMatchInlineSnapshot(`
+        Array [
+          "hello query 3",
+          "hello query 4",
+        ]
+      `);
 
-    // --- do some more queries and wait for the client to disconnect again
-    await client.greeting.query();
-
-    await waitFor(() => {
-      expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
-    });
+      await waitFor(() => {
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+      });
+    }
 
     await ctx.close();
   });
