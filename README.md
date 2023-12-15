@@ -3,7 +3,7 @@
 > You are looking at the `next`-branch of tRPC which is the current working progress representing version 11.
 >
 > - For the pending list of changes made, see [`.wip/changes.md`](.wip/changes.md).
-> - We may break some small things between minor versions until we reach `11.0.0`
+> - The functionality is stable and can be used in production, but we may break the API minor versions until we reach `11.0.0`
 > - The packages are published with the `next`-tag on npm
 >
 > Install:
