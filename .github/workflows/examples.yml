@@ -261,6 +261,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
+
       - run: node -v
       - name: Install deps (with cache)
         run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
@@ -272,17 +280,6 @@ jobs:
           if grep --silent '"@playwright/test"';
             then pnpm playwright install chromium;
           fi
-
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
-
-      - run: node -v
-
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - name: Run build
