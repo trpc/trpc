@@ -35,13 +35,13 @@ interface WebSocketLazyOptions {
   enabled: boolean;
   /**
    * Close the WebSocket after this many milliseconds
-   * @default 100
+   * @default 0
    */
   closeMs: number;
 }
 const lazyDefaults: Required<WebSocketLazyOptions> = {
   enabled: false,
-  closeMs: 100,
+  closeMs: 0,
 };
 export interface WebSocketClientOptions {
   /**
