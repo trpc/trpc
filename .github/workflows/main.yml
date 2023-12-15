@@ -51,7 +51,7 @@ jobs:
         run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Download previous bundle analysis
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v3
         with:
           name: bundle-analysis
           branch: main
