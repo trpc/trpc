@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 overrides:
   '@examples/trpc-next-prisma-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter
   '@examples/next-websockets-starter>@prisma/client': https://registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter
@@ -122,7 +126,7 @@ importers:
         version: 5.1.3(rollup@2.79.1)
       rollup-plugin-swc3:
         specifier: ^0.10.0
-        version: 0.10.0(@swc/core@1.3.3)(rollup@2.79.1)
+        version: 0.10.4(@swc/core@1.3.3)(rollup@2.79.1)
       rollup-plugin-typescript2:
         specifier: ^0.36.0
         version: 0.36.0(rollup@2.79.1)(typescript@5.1.3)
@@ -134,7 +138,7 @@ importers:
         version: 0.10.3
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       turbo:
         specifier: ^1.10.2
         version: 1.10.2
@@ -152,7 +156,7 @@ importers:
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../../packages/client
@@ -222,7 +226,7 @@ importers:
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../../packages/client
@@ -277,7 +281,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../../packages/client
@@ -317,7 +321,7 @@ importers:
         version: 8.40.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -326,7 +330,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../../packages/client
@@ -366,7 +370,7 @@ importers:
         version: 8.40.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -400,7 +404,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../../packages/client
@@ -455,7 +459,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -554,7 +558,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -603,7 +607,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -652,7 +656,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -707,7 +711,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -725,7 +729,7 @@ importers:
         version: link:../../packages/server
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -768,7 +772,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -795,7 +799,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../../packages/client
@@ -854,7 +858,7 @@ importers:
         version: 8.40.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -889,7 +893,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../packages/client
@@ -929,7 +933,7 @@ importers:
         version: 8.40.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -938,7 +942,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../packages/client
@@ -984,7 +988,7 @@ importers:
     dependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../packages/client
@@ -1033,7 +1037,7 @@ importers:
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../packages/client
@@ -1121,7 +1125,7 @@ importers:
         version: 3.3.0(postcss@8.4.14)
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -1139,7 +1143,7 @@ importers:
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../packages/client
@@ -1191,7 +1195,7 @@ importers:
         version: 1.28.1
       '@tanstack/react-query-devtools':
         specifier: ^5.0.0
-        version: 5.8.4(@tanstack/react-query@5.8.4)(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.5(@tanstack/react-query@5.13.4)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1221,7 +1225,7 @@ importers:
         version: '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplesnext-websockets-starter(prisma@4.14.1)'
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: ^10.44.1
         version: link:../../packages/client
@@ -1254,7 +1258,7 @@ importers:
         version: 1.12.4
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       ws:
         specifier: ^8.0.0
         version: 8.11.0
@@ -1267,7 +1271,7 @@ importers:
         version: 1.28.1
       '@tanstack/react-query-devtools':
         specifier: ^5.0.0
-        version: 5.8.4(@tanstack/react-query@5.8.4)(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.5(@tanstack/react-query@5.13.4)(react@18.2.0)
       '@types/node':
         specifier: ^18.16.16
         version: 18.16.16
@@ -1348,7 +1352,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -1394,7 +1398,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -1428,7 +1432,7 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -1461,7 +1465,7 @@ importers:
         version: 2.79.1
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       undici:
         specifier: ^5.14.0
         version: 5.16.0
@@ -1477,7 +1481,7 @@ importers:
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: 10.44.1
         version: link:../client
@@ -1519,7 +1523,7 @@ importers:
         version: 2.79.1
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -1528,7 +1532,7 @@ importers:
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@trpc/client':
         specifier: 10.44.1
         version: link:../client
@@ -1564,7 +1568,7 @@ importers:
         version: 2.79.1
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -1576,7 +1580,7 @@ importers:
         version: 7.1.2
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
         version: 8.10.115
@@ -1648,13 +1652,13 @@ importers:
         version: 2.5.0
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@21.1.0)
@@ -1675,7 +1679,7 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
         specifier: ^0.49.0
         version: 0.49.0(effect@2.0.0-next.56)(fast-check@3.13.2)
@@ -1690,7 +1694,7 @@ importers:
         version: 2.11.0
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.8.4(react-dom@18.2.0)(react@18.2.0)
+        version: 5.13.4(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
@@ -1789,7 +1793,7 @@ importers:
         version: 1.0.3
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       tupleson:
         specifier: 0.23.1
         version: 0.23.1
@@ -1797,8 +1801,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       vite:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@18.16.16)
@@ -1907,7 +1911,7 @@ importers:
         version: 7.23.2(@babel/core@7.23.2)
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
         specifier: ^0.49.0
         version: 0.49.0(effect@2.0.0-next.56)(fast-check@3.13.2)
@@ -1982,7 +1986,7 @@ importers:
         version: 2.0.0(tailwindcss@3.3.0)
       tsx:
         specifier: ^4.0.0
-        version: 4.0.0
+        version: 4.6.2
       typedoc:
         specifier: ^0.24.7
         version: 0.24.7(typescript@5.1.3)
@@ -1993,8 +1997,8 @@ importers:
         specifier: ^5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.22.0
+        version: 0.22.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -2061,7 +2065,7 @@ packages:
     resolution: {integrity: sha512-q+epW0trjVUUHboliPb4UF9g2msf+w61b32tAkFEwL/IwP0DQWgbCMM0Hbe3e3WXSKz5VcUXbzJQgy8Hkra/Lg==}
     dependencies:
       tunnel: 0.0.6
-      undici: 5.27.2
+      undici: 5.28.2
     dev: false
 
   /@adobe/css-tools@4.0.1:
@@ -4517,7 +4521,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4575,12 +4579,12 @@ packages:
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
-      valibot: 0.21.0
+      valibot: 0.22.0
       yup: 1.0.0
       zod: 3.22.4
     dev: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.21.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.22.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4637,7 +4641,7 @@ packages:
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
-      valibot: 0.21.0
+      valibot: 0.22.0
       vite: 4.1.2(@types/node@18.16.16)
       yup: 1.0.0
       zod: 3.22.4
@@ -7983,6 +7987,21 @@ packages:
       rollup: 2.79.1
     dev: false
 
+  /@rollup/pluginutils@5.1.0(rollup@2.79.1):
+    resolution: {integrity: sha512-XTIWOPPcpvyKI6L1NHo0lFlCyznUEyPmPY1mc3KpPVDYulHSTvyeLNVW00QTLIAFNhR3kYnJTQHeGqU4M3n09g==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      '@types/estree': 1.0.1
+      estree-walker: 2.0.2
+      picomatch: 2.3.1
+      rollup: 2.79.1
+    dev: false
+
   /@rushstack/eslint-patch@1.5.1:
     resolution: {integrity: sha512-6i/8UoL0P5y4leBIGzvkZdS85RDMG9y1ihZzmTZQ5LdHUYmZ7pKFoj8X0236s3lusPs1Fa5HTQUpwI+UfTcmeA==}
     dev: true
@@ -8485,41 +8504,31 @@ packages:
       defer-to-connect: 2.0.1
     dev: true
 
-  /@tanstack/query-core@5.8.3:
-    resolution: {integrity: sha512-SWFMFtcHfttLYif6pevnnMYnBvxKf3C+MHMH7bevyYfpXpTMsLB9O6nNGBdWSoPwnZRXFNyNeVZOw25Wmdasow==}
+  /@tanstack/query-core@5.13.4:
+    resolution: {integrity: sha512-8+rJucXvC/xlr4OrxHhEIob/cTlbT4fgmz1VsvB0D12FRStKaXeLORNGcOhSAynRd2NL74SV/Qq0IIb4DedLcA==}
 
-  /@tanstack/query-devtools@5.8.4:
-    resolution: {integrity: sha512-F1dRbITNt9tMUoM9WCH8WQ2c54116hv52m/PKK8ZiN/pO2wGVzTZtKuLanF8pFpwmNchjIixcMw/a57HY5ivcw==}
+  /@tanstack/query-devtools@5.13.5:
+    resolution: {integrity: sha512-effSYz9AWcZ6sNd+c8LCBYFIuDZApoCTXEpRlEYChBZpMz9QUUVMLToThwCyUY49+T5pANL3XxgZf3HV7hwJlg==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.8.4(@tanstack/react-query@5.8.4)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-mffs51FJqXU/5rwhbwv393DccL6et7uK2pRLwOcmMrWbPyW8vpxr9oidaghHX4cdVeP/7u5owW9yMpBhBAJfcQ==}
+  /@tanstack/react-query-devtools@5.13.5(@tanstack/react-query@5.13.4)(react@18.2.0):
+    resolution: {integrity: sha512-FB17B/yPtwnqg+DAdosAM+rFj3t8Pl121MPLiUGgl6jvG0A+U9XN3n39zVbhurbdSFO5jCMkPBlloW4NH5ojrA==}
     peerDependencies:
-      '@tanstack/react-query': ^5.8.4
+      '@tanstack/react-query': ^5.13.4
       react: ^18.0.0
-      react-dom: ^18.0.0
     dependencies:
-      '@tanstack/query-devtools': 5.8.4
-      '@tanstack/react-query': 5.8.4(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/query-devtools': 5.13.5
+      '@tanstack/react-query': 5.13.4(react@18.2.0)
       react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
     dev: true
 
-  /@tanstack/react-query@5.8.4(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-CD+AkXzg8J72JrE6ocmuBEJfGzEzu/bzkD6sFXFDDB5yji9N20JofXZlN6n0+CaPJuIi+e4YLCbGsyPFKkfNQA==}
+  /@tanstack/react-query@5.13.4(react@18.2.0):
+    resolution: {integrity: sha512-3HjvkFFriEQwffUXtKHPiwkfFXUGbs46YATTzzyK1+Pw6Ekd3kwzS50e45qdamWuEXmXxyo5S1zp534LdFG0Rw==}
     peerDependencies:
       react: ^18.0.0
-      react-dom: ^18.0.0
-      react-native: '*'
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
     dependencies:
-      '@tanstack/query-core': 5.8.3
+      '@tanstack/query-core': 5.13.4
       react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
 
   /@testing-library/dom@9.0.0:
     resolution: {integrity: sha512-+/TLgKNFsYUshOY/zXsQOk+PlFQK+eyJ9T13IDVNJEi+M+Un7xlJK+FZKkbGSnf0+7E1G6PlDhkSYQ/GFiruBQ==}
@@ -14210,12 +14219,6 @@ packages:
     dependencies:
       call-bind: 1.0.5
       get-intrinsic: 1.2.2
-
-  /get-tsconfig@4.6.2:
-    resolution: {integrity: sha512-E5XrT4CbbXcXWy+1jChlZmrmCwd5KGx502kDCXJJ7y898TtWW9FwoG5HfOLVRKmlmDGkWN2HM9Ho+/Y8F0sJDg==}
-    dependencies:
-      resolve-pkg-maps: 1.0.0
-    dev: false
 
   /get-tsconfig@4.7.2:
     resolution: {integrity: sha512-wuMsz4leaj5hbGgg4IvDU0bqJagpftG5l5cXIAvo8uZrqn0NJqwtfupTN00VnkQJPcIRrxYrm1Ue24btpCha2A==}
@@ -20478,19 +20481,19 @@ packages:
       rollup-plugin-inject: 3.0.2
     dev: true
 
-  /rollup-plugin-swc3@0.10.0(@swc/core@1.3.3)(rollup@2.79.1):
-    resolution: {integrity: sha512-bdamtRZtLDT4Ksq+pwqcakcx/ZwhdaJoqCbfRkIyoM8ZUAnFQReWtnCOsFbkXDJ2Bsl5AI0GByRw9b7XPxTh6w==}
+  /rollup-plugin-swc3@0.10.4(@swc/core@1.3.3)(rollup@2.79.1):
+    resolution: {integrity: sha512-ggLdYqAe3fZmhuyavDnuixMcNyK1/7CIlmJatW2UcKveN1GpQeFlaRjtXnK6/UCIt71SVr3Qy6p2iCLIkXq3iQ==}
     engines: {node: '>=12'}
     peerDependencies:
       '@swc/core': '>=1.2.165'
-      rollup: ^2.0.0 || ^3.0.0
+      rollup: ^2.0.0 || ^3.0.0 || ^4.0.0
     dependencies:
       '@fastify/deepmerge': 1.3.0
-      '@rollup/pluginutils': 4.2.1
+      '@rollup/pluginutils': 5.1.0(rollup@2.79.1)
       '@swc/core': 1.3.3
-      get-tsconfig: 4.6.2
+      get-tsconfig: 4.7.2
       rollup: 2.79.1
-      rollup-swc-preserve-directives: 0.3.2(@swc/core@1.3.3)(rollup@2.79.1)
+      rollup-swc-preserve-directives: 0.6.0(@swc/core@1.3.3)(rollup@2.79.1)
     dev: false
 
   /rollup-plugin-typescript2@0.36.0(rollup@2.79.1)(typescript@5.1.3):
@@ -20514,11 +20517,11 @@ packages:
       estree-walker: 0.6.1
     dev: true
 
-  /rollup-swc-preserve-directives@0.3.2(@swc/core@1.3.3)(rollup@2.79.1):
-    resolution: {integrity: sha512-W0zljPCOMFErWUweRvnN9LCNrII2KzjAw9iZUNM1kZdf3rwQGQQiaCPnH4ugu3UIj1b+zEJKee20S8Ozgwh8Wg==}
+  /rollup-swc-preserve-directives@0.6.0(@swc/core@1.3.3)(rollup@2.79.1):
+    resolution: {integrity: sha512-MkKETpYF2ml5p15IxqbvLdFxWV6b99ALT6qL/okXYhaaiK8Mqu95nyk90+m58Ye+jMOpnhQsdK3JGMIPUV7i5g==}
     peerDependencies:
-      '@swc/core': '>=1.2.165'
-      rollup: ^2.0.0 || ^3.0.0
+      '@swc/core': '>=1.3.79'
+      rollup: ^2.0.0 || ^3.0.0 || ^4.0.0
     dependencies:
       '@napi-rs/magic-string': 0.3.4
       '@swc/core': 1.3.3
@@ -22233,14 +22236,13 @@ packages:
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  /tsx@4.0.0:
-    resolution: {integrity: sha512-jd3C5kw9tR68gtvqHUYo/2IwxaA46/CyKvcVQ4DsKRAPb19/vWgl7zF9mYNjFRY6KcGKiwne41RU91ll31IggQ==}
+  /tsx@4.6.2:
+    resolution: {integrity: sha512-QPpBdJo+ZDtqZgAnq86iY/PD2KYCUPSUGIunHdGwyII99GKH+f3z3FZ8XNFLSGQIA4I365ui8wnQpl8OKLqcsg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     dependencies:
       esbuild: 0.18.20
       get-tsconfig: 4.7.2
-      source-map-support: 0.5.21
     optionalDependencies:
       fsevents: 2.3.3
 
@@ -22535,8 +22537,8 @@ packages:
     dependencies:
       busboy: 1.6.0
 
-  /undici@5.27.2:
-    resolution: {integrity: sha512-iS857PdOEy/y3wlM3yRp+6SNQQ6xU0mmZcwRSriqk+et/cwWAtwmIGf6WkoDN2EK/AMdCO/dfXzIwi+rFMrjjQ==}
+  /undici@5.28.2:
+    resolution: {integrity: sha512-wh1pHJHnUeQV5Xa8/kyQhO7WFa8M34l026L5P/+2TYiakvGy5Rdc8jWZVyG7ieht/0WgJLEd3kcU5gKx+6GC8w==}
     engines: {node: '>=14.0'}
     dependencies:
       '@fastify/busboy': 2.0.0
@@ -22887,8 +22889,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.21.0:
-    resolution: {integrity: sha512-XnzpX93b1vQL7CB3fHlhpLg7OutYpc3ke8SKOvp7IXgicRfTdP/w8+bf0DjhVsySq6YdF4Opld05mj6bTobo9g==}
+  /valibot@0.22.0:
+    resolution: {integrity: sha512-tINTvsrvSaN6wN4Hxes1KG7VMM7nysk4zD0Q7CjE8Id7Zx1tKKaF3eGGP84N6nkhqiv0fgyArUeDoRNF0JO4ng==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
@@ -23916,7 +23918,3 @@ packages:
     requiresBuild: true
     dependencies:
       '@prisma/engines': 4.14.1
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
