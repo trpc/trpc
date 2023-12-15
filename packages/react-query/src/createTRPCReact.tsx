@@ -276,6 +276,13 @@ export type CreateTRPCReact<
   >
 >;
 
+export type CreateTRPCQueryUtils<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<
+    TRouter['_def']['_config'],
+    TRouter['_def']['record'],
+    null
+  >;
+
 /**
  * @internal
  */
