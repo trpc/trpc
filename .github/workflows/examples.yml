@@ -202,7 +202,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-start }}
+          node-version: 20.x
           cache: 'pnpm'
 
       - run: bun --version

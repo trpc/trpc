@@ -21,8 +21,7 @@ jobs:
             'next',
             'main',
           ]
-        node-start: ['18.x']
-        os: [ubuntu-latest]
+        os: 'ubuntu-latest'
 
     continue-on-error: false
     runs-on: ${{ matrix.os }}
@@ -75,7 +74,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - name: Download diagnostics results
         uses: actions/download-artifact@v2

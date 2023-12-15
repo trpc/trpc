@@ -11,14 +11,9 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
-    name: Relase canary ${{ matrix.node }} and ${{ matrix.os }}
+    name: Relase canary
 
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        node: ['18.x']
-        os: [ubuntu-latest]
+    runs-on: 'ubuntu-latest'
 
     steps:
       - name: Checkout repo
@@ -28,10 +23,9 @@ jobs:
 
       - uses: pnpm/action-setup@v2
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 20.x
 
       - name: Check version
         run: |
