@@ -155,11 +155,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
       outgoing = [];
     });
   }
-  function tryReconnect() {
+  function tryReconnect(conn: Connection) {
     if (!!connectTimer) {
       return;
     }
 
+    conn.state = 'connecting';
     const timeout = retryDelayFn(connectAttempt++);
     reconnectInMs(timeout);
   }
@@ -228,7 +229,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     const onError = () => {
       self.state = 'closed';
       if (self === activeConnection) {
-        tryReconnect();
+        tryReconnect(self);
       }
     };
     run(async () => {
@@ -313,7 +314,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
         if (activeConnection === self) {
           // connection might have been replaced already
-          tryReconnect();
+          tryReconnect(self);
         }
 
         for (const [key, req] of Object.entries(pendingRequests)) {
