@@ -47,7 +47,6 @@ jobs:
             .experimental/next-formdata,
             .experimental/next-app-dir,
           ]
-        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +57,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -88,11 +87,6 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
-
       - run: node -v
 
       - name: Run test-dev
@@ -114,7 +108,6 @@ jobs:
     strategy:
       matrix:
         dir: [deno-deploy]
-        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
@@ -125,7 +118,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - uses: denoland/setup-deno@v1
         with:
@@ -151,11 +144,6 @@ jobs:
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
-
       - run: deno --version
 
       - name: run test
@@ -176,7 +164,6 @@ jobs:
     strategy:
       matrix:
         dir: [bun]
-        node-start: ['18.x']
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
@@ -187,7 +174,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - uses: oven-sh/setup-bun@v1
         with:
@@ -220,6 +207,82 @@ jobs:
 
       - run: bun --version
 
+      - name: Run test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+
+  e2e-legacy-node:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir:
+          [
+            next-prisma-starter,
+            next-prisma-websockets-starter,
+            next-prisma-todomvc,
+          ]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Install playwright ???
+        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - name: Run build
