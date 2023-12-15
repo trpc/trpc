@@ -3,7 +3,7 @@
   "version": "10.44.1",
   "private": true,
   "engines": {
-    "node": "^18.15.0"
+    "node": ">=18.15.0"
   },
   "scripts": {
     "prebuild": "prisma generate && prisma migrate deploy",
