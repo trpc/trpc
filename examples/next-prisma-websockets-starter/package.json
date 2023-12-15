@@ -59,7 +59,7 @@
   "devDependencies": {
     "@playwright/test": "^1.26.1",
     "@tanstack/react-query-devtools": "^5.0.0",
-    "@types/node": "^18.16.16",
+    "@types/node": "^20.10.0",
     "@types/react": "^18.2.33",
     "@types/ws": "^8.2.0",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
