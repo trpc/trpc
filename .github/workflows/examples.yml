@@ -266,6 +266,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
 
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
