@@ -9,7 +9,7 @@ The error formatting in your router will be inferred all the way to your client 
 
 ## Usage example: Zod validation error
 
-### Serverside
+### Server-side
 
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
