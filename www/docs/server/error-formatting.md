@@ -51,7 +51,7 @@ export function MyComponent() {
 }
 ```
 
-## Usage example-prisma conflict
+## Usage example: Prisma conflict
 
 In this one we even change http status code of the response from 500 to 409
 
