@@ -1,10 +1,12 @@
 > [!NOTE]
 >
-> - This the next major of tRPC. For the pending list of changes made, see [`.wip/changes.md`](.wip/changes.md).
+> You are looking at the `next`-branch of tRPC which is the current working progress representing version 11.
+>
+> - For the pending list of changes made, see [`.wip/changes.md`](.wip/changes.md).
 > - We may break some small things between minor versions until we reach `11.0.0`
 > - The packages are published with the `next`-tag on npm
 >
-> To install, you can do something akin to
+> Install:
 >
 > ```
 > npm i --save @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest @tanstack/react-query-devtools@latest
