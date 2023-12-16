@@ -23,7 +23,7 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "eslint": "^8.40.0",
-    "tsx": "^4.6.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.1.3"
   }
 }
