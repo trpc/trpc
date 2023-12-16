@@ -451,7 +451,7 @@ test(
 );
 
 test(
-  'subscriptions are automatically resumed',
+  'subscriptions are automatically resumed upon explicit reconnect request',
   async () => {
     const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
       factory();
@@ -493,6 +493,93 @@ test(
       expect(onCloseMock).toHaveBeenCalledTimes(0);
     });
     wssHandler.broadcastReconnectNotification();
+    await waitFor(() => {
+      expect(wss.clients.size).toBe(1);
+      expect(onOpenMock).toHaveBeenCalledTimes(2);
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+    });
+    ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await waitFor(() => {
+      expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
+    });
+    expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
+      .toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "id": "1",
+      },
+      Object {
+        "id": "2",
+      },
+    ]
+  `);
+    await waitFor(() => {
+      expect(wss.clients.size).toBe(1);
+    });
+
+    await close();
+
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(2);
+    });
+  },
+  {
+    // retry: 5
+  },
+);
+
+test(
+  'subscriptions are automatically resumed if connection is lost',
+  async () => {
+    const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
+      factory();
+    ee.once('subscription:created', () => {
+      setTimeout(() => {
+        ee.emit('server:msg', {
+          id: '1',
+        });
+      });
+    });
+    function createSub() {
+      const onStartedMock = vi.fn();
+      const onDataMock = vi.fn();
+      const onErrorMock = vi.fn();
+      const onStoppedMock = vi.fn();
+      const onCompleteMock = vi.fn();
+      const unsub = client.onMessage.subscribe(undefined, {
+        onStarted: onStartedMock(),
+        onData: onDataMock,
+        onError: onErrorMock,
+        onStopped: onStoppedMock,
+        onComplete: onCompleteMock,
+      });
+      return {
+        onStartedMock,
+        onDataMock,
+        onErrorMock,
+        onStoppedMock,
+        onCompleteMock,
+        unsub,
+      };
+    }
+    const sub1 = createSub();
+
+    await waitFor(() => {
+      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+      expect(onOpenMock).toHaveBeenCalledTimes(1);
+      expect(onCloseMock).toHaveBeenCalledTimes(0);
+    });
+    // close connections forcefully
+    wss.clients.forEach((ws) => ws.close());
     await waitFor(() => {
       expect(wss.clients.size).toBe(1);
       expect(onOpenMock).toHaveBeenCalledTimes(2);
@@ -971,7 +1058,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          closeMs: 100,
+          closeMs: 1,
         },
       },
     });
@@ -979,23 +1066,43 @@ describe('lazy mode', () => {
     expect(wsClient.connection).toBe(null);
 
     // --- do some queries and wait for the client to disconnect
-    await client.greeting.query();
-    expect(wsClient.connection).not.toBe(null);
-    await client.greeting.query();
+    {
+      const res = await Promise.all([
+        client.greeting.query('query 1'),
+        client.greeting.query('query 2'),
+      ]);
+      expect(res).toMatchInlineSnapshot(`
+        Array [
+          "hello query 1",
+          "hello query 2",
+        ]
+      `);
+      expect(wsClient.connection).not.toBe(null);
 
-    await waitFor(() => {
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
-      expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
-    });
-    expect(wsClient.connection).toBe(null);
+      await waitFor(() => {
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+      });
+      expect(wsClient.connection).toBe(null);
+    }
+    {
+      // --- do some more queries and wait for the client to disconnect again
+      const res = await Promise.all([
+        client.greeting.query('query 3'),
+        client.greeting.query('query 4'),
+      ]);
+      expect(res).toMatchInlineSnapshot(`
+        Array [
+          "hello query 3",
+          "hello query 4",
+        ]
+      `);
 
-    // --- do some more queries and wait for the client to disconnect again
-    await client.greeting.query();
-
-    await waitFor(() => {
-      expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
-    });
+      await waitFor(() => {
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+      });
+    }
 
     await ctx.close();
   });
@@ -1004,7 +1111,7 @@ describe('lazy mode', () => {
       wsClient: {
         lazy: {
           enabled: true,
-          closeMs: 100,
+          closeMs: 1,
         },
       },
     });
@@ -1048,6 +1155,52 @@ describe('lazy mode', () => {
 
     expect(wsClient.connection).toBe(null);
 
+    await ctx.close();
+  });
+
+  // https://github.com/trpc/trpc/pull/5152
+  test('race condition on dispatching / instant close', async () => {
+    const ctx = factory({
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 0,
+        },
+      },
+    });
+    const { client, wsClient } = ctx;
+    expect(wsClient.connection).toBe(null);
+
+    // --- do some queries and wait for the client to disconnect
+    {
+      const res = await client.greeting.query('query 1');
+      expect(res).toMatchInlineSnapshot('"hello query 1"');
+
+      await waitFor(() => {
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+      });
+      expect(wsClient.connection).toBe(null);
+    }
+
+    {
+      // --- do some more queries and wait for the client to disconnect again
+      const res = await Promise.all([
+        client.greeting.query('query 3'),
+        client.greeting.query('query 4'),
+      ]);
+      expect(res).toMatchInlineSnapshot(`
+        Array [
+          "hello query 3",
+          "hello query 4",
+        ]
+      `);
+
+      await waitFor(() => {
+        expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
+        expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+      });
+    }
     await ctx.close();
   });
 });

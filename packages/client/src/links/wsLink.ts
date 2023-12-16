@@ -51,23 +51,26 @@ export interface WebSocketClientOptions {
   onClose?: (cause?: { code?: number }) => void;
   /**
    * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
-   * @default false
    */
-  lazy?:
-    | false
-    | {
-        /**
-         * Enable lazy mode
-         */
-        enabled: true;
-        /**
-         * Close the WebSocket after this many milliseconds
-         * @default 100
-         */
-        closeMs?: number;
-      };
+  lazy?: {
+    /**
+     * Enable lazy mode
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Close the WebSocket after this many milliseconds
+     * @default 0
+     */
+    closeMs: number;
+  };
 }
 
+type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;
+const lazyDefaults: LazyOptions = {
+  enabled: false,
+  closeMs: 0,
+};
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     url,
@@ -75,8 +78,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
     retryDelayMs: retryDelayFn = exponentialBackoff,
     onOpen,
     onClose,
-    lazy = false,
   } = opts;
+  const lazyOpts: LazyOptions = {
+    ...lazyDefaults,
+    ...opts.lazy,
+  };
+
   /* istanbul ignore next -- @preserve */
   if (!WebSocketImpl) {
     throw new Error(
@@ -107,7 +114,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let connectionIndex = 0;
   let lazyDisconnectTimer: ReturnType<typeof setTimeout> | undefined =
     undefined;
-  let activeConnection: null | Connection = lazy ? null : createConnection();
+  let activeConnection: null | Connection = lazyOpts.enabled
+    ? null
+    : createConnection();
 
   type Connection = {
     id: number;
@@ -153,13 +162,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
       // clear
       outgoing = [];
+
+      startLazyDisconnectTimer();
     });
   }
-  function tryReconnect() {
+  function tryReconnect(conn: Connection) {
     if (!!connectTimer) {
       return;
     }
 
+    conn.state = 'connecting';
     const timeout = retryDelayFn(connectAttempt++);
     reconnectInMs(timeout);
   }
@@ -172,7 +184,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   function reconnect() {
-    if (lazy && !hasPendingRequests()) {
+    if (lazyOpts.enabled && !hasPendingRequests()) {
       // Skip reconnecting if there are pending requests and we're in lazy mode
       return;
     }
@@ -201,7 +213,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   }
 
   const startLazyDisconnectTimer = () => {
-    if (!lazy) {
+    if (!lazyOpts.enabled) {
       return;
     }
 
@@ -210,11 +222,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
       if (!activeConnection) {
         return;
       }
+
       if (!hasPendingRequests(activeConnection)) {
         activeConnection.ws?.close();
         activeConnection = null;
       }
-    }, lazy.closeMs ?? 100);
+    }, lazyOpts.closeMs);
   };
 
   function createConnection(): Connection {
@@ -228,7 +241,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     const onError = () => {
       self.state = 'closed';
       if (self === activeConnection) {
-        tryReconnect();
+        tryReconnect(self);
       }
     };
     run(async () => {
@@ -313,7 +326,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
         if (activeConnection === self) {
           // connection might have been replaced already
-          tryReconnect();
+          tryReconnect(self);
         }
 
         for (const [key, req] of Object.entries(pendingRequests)) {
@@ -368,7 +381,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     dispatch();
 
-    startLazyDisconnectTimer();
     return () => {
       const callbacks = pendingRequests[id]?.callbacks;
       delete pendingRequests[id];

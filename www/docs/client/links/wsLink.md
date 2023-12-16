@@ -60,21 +60,19 @@ export interface WebSocketClientOptions {
   onClose?: (cause?: { code?: number }) => void;
   /**
    * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
-   * @default false
    */
-  lazy?:
-    | false
-    | {
-        /**
-         * Enable lazy mode
-         */
-        enabled: true;
-        /**
-         * Close the WebSocket after this many milliseconds
-         * @default 100
-         */
-        closeMs?: number;
-      };
+  lazy?: {
+    /**
+     * Enable lazy mode
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Close the WebSocket after this many milliseconds
+     * @default 0
+     */
+    closeMs: number;
+  };
 }
 ```
 

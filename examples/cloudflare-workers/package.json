@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@types/node": "^18.16.16",
+    "@types/node": "^20.10.0",
     "eslint": "^8.40.0",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.6.0",
