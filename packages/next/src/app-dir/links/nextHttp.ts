@@ -23,7 +23,6 @@ interface NextLinkBatchOptions
   extends NextLinkBaseOptions,
     Omit<HTTPBatchLinkOptions, 'fetch'> {
   batch: true;
-  revalidate?: number | false;
 }
 
 // ts-prune-ignore-next
