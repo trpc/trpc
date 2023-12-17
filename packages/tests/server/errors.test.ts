@@ -446,9 +446,9 @@ describe('links have meta data about http failures', async () => {
     );
 
     expect(meta).not.toBeUndefined();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).toMatchInlineSnapshot(`
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).toMatchInlineSnapshot(`
       Object {
         "__error": Object {
           "foo": "bar",
@@ -488,9 +488,9 @@ describe('links have meta data about http failures', async () => {
     );
 
     expect(meta).not.toBeUndefined();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).toMatchInlineSnapshot(`
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).toMatchInlineSnapshot(`
       Object {
         "__error": Object {
           "foo": "bar",
@@ -520,14 +520,14 @@ describe('links have meta data about http failures', async () => {
           error(err) {
             if (
               err.meta &&
-              isObject(err.meta.responseJSON) &&
-              '__error' in err.meta.responseJSON // <----- you need to modify this
+              isObject(err.meta['responseJSON']) &&
+              '__error' in err.meta['responseJSON'] // <----- you need to modify this
             ) {
               // custom error handling
               observer.error(
                 new MyCustomError(
                   `custom error: ${JSON.stringify(
-                    err.meta.responseJSON.__error,
+                    err.meta['responseJSON']['__error'],
                   )}`,
                 ),
               );

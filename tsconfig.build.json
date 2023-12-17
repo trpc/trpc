@@ -15,7 +15,8 @@
     "moduleResolution": "node",
     "jsx": "react",
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noPropertyAccessFromIndexSignature": true
   },
   "exclude": ["test", "**/*.test.ts", "**/*.test.tsx"]
 }

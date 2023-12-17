@@ -91,7 +91,7 @@ async function startServer(endpoint = '') {
   });
 
   const globalScope = await mf.getGlobalScope();
-  globalScope.addEventListener('fetch', (event: FetchEvent) => {
+  globalScope['addEventListener']('fetch', (event: FetchEvent) => {
     const response = fetchRequestHandler({
       endpoint,
       req: event.request,
