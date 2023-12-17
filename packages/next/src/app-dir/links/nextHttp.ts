@@ -39,6 +39,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
         typeof context.revalidate === 'number' || context.revalidate === false
           ? context.revalidate
           : undefined;
+
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
       const fetch: NonNullable<HTTPLinkOptions['fetch']> = (url, fetchOpts) => {
@@ -53,14 +54,12 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
       };
       const link = opts.batch
         ? httpBatchLink({
+            ...opts,
             fetch,
-            url: opts.url,
-            headers: opts.headers,
           })
         : httpLink({
+            ...opts,
             fetch,
-            url: opts.url,
-            headers: opts.headers,
           });
 
       return link(runtime)(ctx);
