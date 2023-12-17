@@ -37,10 +37,15 @@ const config: Config = {
             transform: 'translateY(-1rem)',
           },
         },
+        'infinite-scroll': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-100%)' },
+        },
       },
       animation: {
         'pop-in': 'pop-in 1s ease-out',
         loader: 'loader 0.6s infinite alternate',
+        'infinite-scroll': 'infinite-scroll 25s linear infinite',
       },
     },
   },
