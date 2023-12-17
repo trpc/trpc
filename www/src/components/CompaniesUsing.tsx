@@ -25,7 +25,7 @@ export const CompaniesUsing = () => {
           >
             {Object.entries(companyLogos).map(([key, value]) => (
               <li key={key}>
-                <img src={value} alt={key} className="max-h-9" />
+                <img src={value} alt={key} className="max-h-9 dark:invert" />
               </li>
             ))}
           </ul>
