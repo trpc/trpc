@@ -10,7 +10,9 @@ import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {
   revalidate?: number | false;
+  batch?: boolean;
 }
+
 interface NextLinkSingleOptions
   extends NextLinkBaseOptions,
     Omit<HTTPLinkOptions, 'fetch'> {
@@ -24,11 +26,9 @@ interface NextLinkBatchOptions
   revalidate?: number | false;
 }
 
-type NextLinkOptions = NextLinkSingleOptions | NextLinkBatchOptions;
-
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(
-  opts: NextLinkOptions,
+  opts: NextLinkSingleOptions | NextLinkBatchOptions,
 ): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
