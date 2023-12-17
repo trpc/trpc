@@ -282,7 +282,7 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   await expect(
     ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[TRPCClientError: fn2 is not a function]`,
+    `"Body exceeded upload size of 100 bytes."`,
   );
 });
 
@@ -301,6 +301,6 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   await expect(
     ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[TRPCClientError: fn2 is not a function]`,
+    `"Body exceeded upload size of 100 bytes."`,
   );
 });
