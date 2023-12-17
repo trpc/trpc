@@ -8,18 +8,28 @@ import {
 import { AnyRouter } from '@trpc/server';
 import { generateCacheTag } from '../shared';
 
-type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
-  ? HTTPBatchLinkOptions
-  : HTTPLinkOptions) & {
-  batch?: TBatch;
+interface NextLinkBaseOptions {
   revalidate?: number | false;
-};
+}
+interface NextLinkSingleOptions
+  extends NextLinkBaseOptions,
+    Omit<HTTPLinkOptions, 'fetch'> {
+  batch?: false;
+}
+
+interface NextLinkBatchOptions
+  extends NextLinkBaseOptions,
+    Omit<HTTPBatchLinkOptions, 'fetch'> {
+  batch: true;
+  revalidate?: number | false;
+}
+
+type NextLinkOptions = NextLinkSingleOptions | NextLinkBatchOptions;
 
 // ts-prune-ignore-next
-export function experimental_nextHttpLink<
-  TRouter extends AnyRouter,
-  TBatch extends boolean,
->(opts: Omit<NextFetchLinkOptions<TBatch>, 'fetch'>): TRPCLink<TRouter> {
+export function experimental_nextHttpLink<TRouter extends AnyRouter>(
+  opts: NextLinkOptions,
+): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;
@@ -32,23 +42,29 @@ export function experimental_nextHttpLink<
           : undefined;
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const linkFactory = opts.batch ? httpBatchLink : httpLink;
-      const link = linkFactory({
-        headers: opts.headers as any,
-        url: opts.url,
-        fetch: (url, fetchOpts) => {
-          return fetch(url, {
-            ...fetchOpts,
-            // cache: 'no-cache',
-            next: {
-              revalidate,
-              tags: [cacheTag],
-            },
+      const fetch: NonNullable<HTTPLinkOptions['fetch']> = (url, fetchOpts) => {
+        return fetch(url, {
+          ...fetchOpts,
+          // cache: 'no-cache',
+          next: {
+            revalidate,
+            tags: [cacheTag],
+          },
+        });
+      };
+      const link = opts.batch
+        ? httpBatchLink({
+            fetch,
+            url: opts.url,
+            headers: opts.headers,
+          })
+        : httpLink({
+            fetch,
+            url: opts.url,
+            headers: opts.headers,
           });
-        },
-      })(runtime);
 
-      return link(ctx);
+      return link(runtime)(ctx);
     };
   };
 }
