@@ -5,6 +5,7 @@
     // https://github.com/tsconfig/bases/blob/main/bases/node18.json
     "lib": ["es2023", "DOM", "DOM.Iterable"],
     "target": "es2022",
-    "module": "node16"
+    "module": "Node16",
+    "moduleResolution": "node16"
   }
 }
