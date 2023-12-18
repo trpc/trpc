@@ -22,11 +22,11 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {
-      if (typeof req.query.trpc === 'string') {
-        return req.query.trpc;
+      if (typeof req.query['trpc'] === 'string') {
+        return req.query['trpc'];
       }
-      if (Array.isArray(req.query.trpc)) {
-        return req.query.trpc.join('/');
+      if (Array.isArray(req.query['trpc'])) {
+        return req.query['trpc'].join('/');
       }
       return null;
     }

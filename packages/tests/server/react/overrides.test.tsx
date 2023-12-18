@@ -32,7 +32,7 @@ describe('mutation override', () => {
         overrides: {
           useMutation: {
             async onSuccess(opts) {
-              if (!opts.meta.skipInvalidate) {
+              if (!opts.meta['skipInvalidate']) {
                 await opts.originalFn();
                 await opts.queryClient.invalidateQueries();
               }

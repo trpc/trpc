@@ -26,9 +26,9 @@ function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
 function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
   return (
     isObject(obj) &&
-    isObject(obj.error) &&
-    typeof obj.error.code === 'number' &&
-    typeof obj.error.message === 'string'
+    isObject(obj['error']) &&
+    typeof obj['error']['code'] === 'number' &&
+    typeof obj['error']['message'] === 'string'
   );
 }
 
