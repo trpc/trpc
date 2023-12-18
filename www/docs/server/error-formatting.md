@@ -55,7 +55,7 @@ export function MyComponent() {
 
 In this one we even change http status code of the response from 500 to 409
 
-### Serverside
+### Server-side
 
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
