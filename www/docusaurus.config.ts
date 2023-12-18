@@ -1,5 +1,6 @@
-// @ts-check
 /* eslint-disable @typescript-eslint/no-var-requires */
+
+import { Config } from '@docusaurus/types';
 
 const { parseEnv } = require('./src/utils/env');
 const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
@@ -22,8 +23,7 @@ const poweredByVercel = `
   </div>
 `.trim();
 
-/** @type {import('@docusaurus/types').Config} */
-module.exports = {
+const config: Config = {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -259,3 +259,5 @@ module.exports = {
     env,
   },
 };
+
+export default config;
