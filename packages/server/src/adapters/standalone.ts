@@ -29,7 +29,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
     const path = new URL(href).pathname.slice(1);
 
     await nodeHTTPRequestHandler({
-      ...opts satisfies CreateHTTPHandlerOptions<AnyRouter>,
+      ...(opts satisfies CreateHTTPHandlerOptions<AnyRouter>),
       req,
       res,
       path,
