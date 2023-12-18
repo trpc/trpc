@@ -5,10 +5,10 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client';
-import ws from 'ws';
+import { WebSocket } from 'ws';
 import type { AppRouter } from './server';
 
-globalThis.WebSocket = ws as any;
+globalThis.WebSocket = WebSocket as any;
 
 const wsClient = createWSClient({
   url: `ws://localhost:2022`,
