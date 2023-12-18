@@ -16,8 +16,8 @@ export function getMessageFromUnknownError(
   if (typeof err === 'string') {
     return err;
   }
-  if (isObject(err) && typeof err.message === 'string') {
-    return err.message;
+  if (isObject(err) && typeof err['message'] === 'string') {
+    return err['message'];
   }
   return fallback;
 }

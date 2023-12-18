@@ -116,7 +116,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     const config: $Config = {
       transformer,
       isDev:
-        runtime?.isDev ?? globalThis.process?.env?.NODE_ENV !== 'production',
+        runtime?.isDev ??
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        globalThis.process?.env?.['NODE_ENV'] !== 'production',
       allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
       errorFormatter,
       isServer: runtime?.isServer ?? isServerDefault,
