@@ -497,11 +497,10 @@ test('omitting ctx in next() does not affect a previous middleware', async () =>
       })
       .query('test', {
         resolve({ ctx }) {
-          expectTypeOf(ctx).toEqualTypeOf<
-            OriginalContext & {
-              user: User;
-            }
-          >();
+          expectTypeOf(ctx).toEqualTypeOf<{
+            user: User;
+            maybeUser?: User | undefined;
+          }>();
           return ctx.user.id;
         },
       }),

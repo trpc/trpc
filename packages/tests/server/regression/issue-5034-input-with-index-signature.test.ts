@@ -60,6 +60,7 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     }>();
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: unknown;
+      [x: number]: unknown;
       name: string;
     }>();
   });
@@ -73,6 +74,7 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     }>();
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: unknown;
+      [x: number]: unknown;
       name: string;
     }>();
   });

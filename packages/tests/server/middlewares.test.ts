@@ -82,7 +82,8 @@ test('standalone middlewares that define the ctx/input they require and can be u
 
   const addFooToCtxMiddleware = experimental_standaloneMiddleware().create(
     (opts) => {
-      expectTypeOf(opts.ctx).toEqualTypeOf<object>();
+      // eslint-disable-next-line @typescript-eslint/ban-types
+      expectTypeOf(opts.ctx).toEqualTypeOf<{}>();
       return opts.next({
         ctx: {
           foo: 'foo' as const,
