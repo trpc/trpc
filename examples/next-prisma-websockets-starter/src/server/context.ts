@@ -2,7 +2,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
 import { IncomingMessage } from 'http';
 import { getSession } from 'next-auth/react';
-import ws from 'ws';
+import { WebSocket } from 'ws';
 
 /**
  * Creates context for an incoming request
@@ -10,7 +10,7 @@ import ws from 'ws';
  */
 export const createContext = async (
   opts:
-    | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>
+    | NodeHTTPCreateContextFnOptions<IncomingMessage, WebSocket>
     | trpcNext.CreateNextContextOptions,
 ) => {
   const session = await getSession(opts);
