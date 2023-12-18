@@ -20,12 +20,12 @@ import {
   WSSHandlerOptions,
 } from '@trpc/server/src/adapters/ws';
 import fetch from 'node-fetch';
-import ws from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import './___packages';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
-globalThis.WebSocket = ws as any;
+globalThis.WebSocket = WebSocket as any;
 
 export type CreateClientCallback = (opts: {
   httpUrl: string;
@@ -61,7 +61,7 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   const httpUrl = `http://localhost:${httpPort}`;
 
   // wss
-  const wss = new ws.Server({ port: 0 });
+  const wss = new WebSocketServer({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     wss,

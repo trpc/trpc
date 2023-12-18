@@ -71,7 +71,7 @@
     "start-server-and-test": "^1.12.0",
     "tailwindcss": "^3.3.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.1.3",
+    "typescript": "^5.3.3",
     "vite": "^4.1.2",
     "vitest": "^0.32.0"
   },

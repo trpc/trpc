@@ -2,10 +2,10 @@
   It's common to have a data interface which is used across multiple routes in an API,
   for instance a shared CSV Export system which can be applied to multiple entities in an application.
 
-  By default this can present a challenge in tRPC clients, because the @trpc/react-query package 
+  By default this can present a challenge in tRPC clients, because the @trpc/react-query package
   produces router interfaces which are not always considered structurally compatible by typescript.
 
-  The polymorphism types can be used to generate abstract types which routers sharing a common 
+  The polymorphism types can be used to generate abstract types which routers sharing a common
   interface are compatible with, and allow you to pass around deep router paths to generic components with ease.
 */
 import { routerToServerAndClientNew } from '../___testHelpers';
@@ -14,7 +14,8 @@ import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { InferQueryLikeData } from '@trpc/react-query/shared';
+import { InferQueryLikeData, QueryLike } from '@trpc/react-query/shared';
+import { AnyProcedure, initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { ReactNode, useState } from 'react';
 import { z } from 'zod';
@@ -451,8 +452,7 @@ function RefreshExportsListButton({
   );
 }
 
-type ExportStatusProps<TStatus extends Factory.ExportRouteLike['status']> = {
-  //                                                             ^?
+type ExportStatusProps<TStatus extends QueryLike<any>> = {
   status: TStatus;
   renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
@@ -475,7 +475,7 @@ function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
     <p>
       Last Export: `{exportStatus.data?.name}` (
       {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
-      {renderAdditionalFields?.(exportStatus.data as any)}
+      {renderAdditionalFields?.(exportStatus.data as unknown as any)}
     </p>
   );
 }
