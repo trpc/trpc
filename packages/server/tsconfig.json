@@ -6,6 +6,6 @@
     "lib": ["es2023", "DOM", "DOM.Iterable"],
     "target": "es2022",
     "module": "Node16",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Node16"
   }
 }
