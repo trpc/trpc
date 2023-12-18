@@ -10,14 +10,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createTRPCUntypedClient, TRPCClientErrorLike } from '@trpc/client';
+import { createUtilityFunctions } from '@trpc/react-query/utils/createUtilityFunctions';
 import type { AnyRouter } from '@trpc/server';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SSRState,
   TRPCContext,
@@ -72,6 +67,16 @@ export function createRootHooks<
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
     const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
+
+    const queryFns = useMemo(
+      () =>
+        createUtilityFunctions({
+          client,
+          queryClient,
+        }),
+      [client, queryClient],
+    );
+
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
       // This makes it so we don't have an unnecessary re-render when opting out of SSR.
@@ -85,145 +90,7 @@ export function createRootHooks<
           client,
           ssrContext: ssrContext ?? null,
           ssrState,
-          fetchQuery: useCallback(
-            (queryKey, opts) => {
-              return queryClient.fetchQuery({
-                ...opts,
-                queryKey,
-                queryFn: () => client.query(...getClientArgs(queryKey, opts)),
-              });
-            },
-            [client, queryClient],
-          ),
-          fetchInfiniteQuery: useCallback(
-            (queryKey, opts) => {
-              return queryClient.fetchInfiniteQuery({
-                ...opts,
-                queryKey,
-                queryFn: ({ pageParam }) => {
-                  return client.query(
-                    ...getClientArgs(queryKey, opts, pageParam),
-                  );
-                },
-                initialPageParam: opts?.initialCursor ?? null,
-              });
-            },
-            [client, queryClient],
-          ),
-          prefetchQuery: useCallback(
-            (queryKey, opts) => {
-              return queryClient.prefetchQuery({
-                ...opts,
-                queryKey,
-                queryFn: () => client.query(...getClientArgs(queryKey, opts)),
-              });
-            },
-            [client, queryClient],
-          ),
-          prefetchInfiniteQuery: useCallback(
-            (queryKey, opts) => {
-              return queryClient.prefetchInfiniteQuery({
-                ...opts,
-                queryKey,
-                queryFn: ({ pageParam }) => {
-                  return client.query(
-                    ...getClientArgs(queryKey, opts, pageParam),
-                  );
-                },
-                initialPageParam: opts?.initialCursor ?? null,
-              });
-            },
-            [client, queryClient],
-          ),
-          ensureQueryData: useCallback(
-            (queryKey, opts) => {
-              return queryClient.ensureQueryData({
-                ...opts,
-                queryKey,
-                queryFn: () => client.query(...getClientArgs(queryKey, opts)),
-              });
-            },
-            [client, queryClient],
-          ),
-          invalidateQueries: useCallback(
-            (queryKey, filters, options) => {
-              return queryClient.invalidateQueries(
-                {
-                  ...filters,
-                  queryKey,
-                },
-                options,
-              );
-            },
-            [queryClient],
-          ),
-          resetQueries: useCallback(
-            (queryKey, filters, options) => {
-              return queryClient.resetQueries(
-                {
-                  ...filters,
-                  queryKey,
-                },
-                options,
-              );
-            },
-            [queryClient],
-          ),
-          refetchQueries: useCallback(
-            (queryKey, filters, options) => {
-              return queryClient.refetchQueries(
-                {
-                  ...filters,
-                  queryKey,
-                },
-                options,
-              );
-            },
-            [queryClient],
-          ),
-          cancelQuery: useCallback(
-            (queryKey, options) => {
-              return queryClient.cancelQueries(
-                {
-                  queryKey,
-                },
-                options,
-              );
-            },
-            [queryClient],
-          ),
-          setQueryData: useCallback(
-            (queryKey, updater, options) => {
-              return queryClient.setQueryData(
-                queryKey,
-                updater as any,
-                options,
-              );
-            },
-            [queryClient],
-          ),
-          getQueryData: useCallback(
-            (queryKey) => {
-              return queryClient.getQueryData(queryKey);
-            },
-            [queryClient],
-          ),
-          setInfiniteQueryData: useCallback(
-            (queryKey, updater, options) => {
-              return queryClient.setQueryData(
-                queryKey,
-                updater as any,
-                options,
-              );
-            },
-            [queryClient],
-          ),
-          getInfiniteQueryData: useCallback(
-            (queryKey) => {
-              return queryClient.getQueryData(queryKey);
-            },
-            [queryClient],
-          ),
+          ...queryFns,
         }}
       >
         {props.children}
