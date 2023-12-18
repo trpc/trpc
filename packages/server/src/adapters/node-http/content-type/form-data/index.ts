@@ -10,6 +10,7 @@
  */
 import * as fs from 'fs/promises';
 import { Readable } from 'node:stream';
+// @ts-expect-error the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
 import { CombinedDataTransformer } from '../../../../transformer';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
