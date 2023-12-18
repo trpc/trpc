@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/server';
-import { createQueryUtils } from './shared';
+import { createQueryUtilsProxy } from './shared';
 import {
   CreateQueryUtilsOptions,
   createUtilityFunctions,
@@ -9,5 +9,5 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   opts: CreateQueryUtilsOptions<TRouter>,
 ) {
   const utils = createUtilityFunctions(opts);
-  return createQueryUtils<TRouter>(utils);
+  return createQueryUtilsProxy<TRouter>(utils);
 }

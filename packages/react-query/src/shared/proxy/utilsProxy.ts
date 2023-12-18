@@ -340,12 +340,12 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 /**
  * @internal
  */
-export function createQueryUtils<TRouter extends AnyRouter>(
+export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
 ) {
-  type CreateQueryUtilsReturnType = CreateQueryUtils<TRouter>;
+  type CreateQueryUtilsProxyReturnType = CreateQueryUtils<TRouter>;
 
-  return createFlatProxy<CreateQueryUtilsReturnType>((key) => {
+  return createFlatProxy<CreateQueryUtilsProxyReturnType>((key) => {
     return createRecursiveProxy((opts) => {
       const path = [key, ...opts.path];
       const utilName = path.pop() as keyof AnyDecoratedProcedure;
