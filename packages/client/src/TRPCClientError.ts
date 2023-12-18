@@ -62,7 +62,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   constructor(
     message: string,
     opts?: {
-      result?: Maybe<inferErrorShape<TRouterOrProcedure>>;
+      result?: Maybe<TRPCErrorResponse<inferErrorShape<TRouterOrProcedure>>>;
       cause?: Error;
       meta?: Record<string, unknown>;
     },
