@@ -458,12 +458,12 @@ function RefreshExportsListButton({
   );
 }
 
-type ExportStatusProps<TStatus extends QueryLike<AnyProcedure>> = {
+type ExportStatusProps<TStatus extends QueryLike<any>> = {
   status: TStatus;
   renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
 };
-function ExportStatus<TStatus extends QueryLike<AnyProcedure>>({
+function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
   status,
   currentExport,
   renderAdditionalFields,
