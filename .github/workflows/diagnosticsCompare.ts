@@ -42,19 +42,17 @@ const readTimings = (branch: string) => {
     path.join(diagnosticsPath, `tsc-times-${branch}.txt`),
     'utf-8',
   );
+  console.log({ content });
   const timings = content
     .split('\n')
     .map((line) => line.trim())
     .map(parseInt);
-
-  const nanoseconds = 1e9;
+  console.log({ timings });
   return {
-    max: Math.max(...timings) / nanoseconds,
-    min: Math.min(...timings) / nanoseconds,
-    avg:
-      timings.reduce((acc, curr) => acc + curr, 0) /
-      nanoseconds /
-      timings.length,
+    'max (ms)': Math.max(...timings) / 1e3,
+    'min (ms)': Math.min(...timings) / 1e3,
+    'avg (ms)':
+      timings.reduce((acc, curr) => acc + curr, 0) / 1e3 / timings.length,
     length: timings.length,
   };
 };
