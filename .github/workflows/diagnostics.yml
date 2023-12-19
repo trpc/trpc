@@ -19,7 +19,7 @@ jobs:
             #
             'current-pr',
             'next',
-            'main',
+            # 'main',
           ]
         node-start: ['18.x']
         os: [ubuntu-latest]
