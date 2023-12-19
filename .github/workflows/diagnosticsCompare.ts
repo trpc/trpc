@@ -60,7 +60,7 @@ function parseNumber(value: string) {
     return null;
   }
 
-  const number = Number(value);
+  const number = parseFloat(value);
   return isNaN(number) ? null : number;
 }
 
