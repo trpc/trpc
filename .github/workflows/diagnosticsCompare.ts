@@ -71,7 +71,7 @@ function printTable(title: string, data: MetricsRecord, description?: string) {
   }
 
   function printRow(row: [string, string, string]) {
-    commentBody += ['|', ...row, '|'].join(' | ') + '\n';
+    commentBody += `| ` + [...row, '|'].join(' | ') + '\n';
   }
 
   printRow(['Metric', 'PR', '`next`']);
