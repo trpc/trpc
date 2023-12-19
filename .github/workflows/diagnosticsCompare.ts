@@ -74,7 +74,7 @@ function printTable(title: string, data: MetricsRecord, description?: string) {
     commentBody += ['|', ...row, '|'].join(' ') + '\n';
   }
 
-  printRow(['Metric', 'PR', 'Next']);
+  printRow(['Metric', 'PR', '`next`']);
   printRow(['------', '--', '------']);
 
   const round = (value: number) => Math.round(value * 100) / 100;
