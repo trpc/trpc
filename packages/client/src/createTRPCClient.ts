@@ -37,7 +37,7 @@ export type Resolver<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
 > = (
-  ...args: ProcedureArgs<TProcedure['_def']>
+  ...args: ProcedureArgs<TProcedure>
 ) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
 type SubscriptionResolver<
@@ -45,14 +45,14 @@ type SubscriptionResolver<
   TProcedure extends AnyProcedure,
 > = (
   ...args: [
-    input: ProcedureArgs<TProcedure['_def']>[0],
+    input: ProcedureArgs<TProcedure>[0],
     opts: Partial<
       TRPCSubscriptionObserver<
         inferTransformedSubscriptionOutput<TConfig, TProcedure>,
         TRPCClientError<TConfig>
       >
     > &
-      ProcedureArgs<TProcedure['_def']>[1],
+      ProcedureArgs<TProcedure>[1],
   ]
 ) => Unsubscribable;
 

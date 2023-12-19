@@ -17,12 +17,12 @@ export interface ProcedureOptions {
 /**
  * @internal
  */
-export type ProcedureArgs<TParams extends AnyProcedure['_def']> =
-  void extends TParams['_input_in']
+export type ProcedureArgs<TProc extends AnyProcedure> =
+  void extends TProc['_def']['_input_in']
     ? [input?: undefined | void, opts?: ProcedureOptions]
-    : undefined extends TParams['_input_in']
-    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
-    : [input: TParams['_input_in'], opts?: ProcedureOptions];
+    : undefined extends TProc['_def']['_input_in']
+    ? [input?: TProc['_def']['_input_in'] | void, opts?: ProcedureOptions]
+    : [input: TProc['_def']['_input_in'], opts?: ProcedureOptions];
 
 interface BuiltProcedureDef {
   input: unknown;

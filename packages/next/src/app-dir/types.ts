@@ -17,7 +17,7 @@ export type DecorateProcedureServer<
   ? {
       query: Resolver<TConfig, TProcedure>;
       revalidate: (
-        input?: ProcedureArgs<TProcedure['_def']>[0],
+        input?: ProcedureArgs<TProcedure>[0],
       ) => Promise<
         { revalidated: false; error: string } | { revalidated: true }
       >;

@@ -29,7 +29,7 @@ export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =
   RouterDef<TConfig, any>;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
-  input: ProcedureArgs<TProcedure['_def']>[0],
+  input: ProcedureArgs<TProcedure>[0],
 ) => Promise<TProcedure['_def']['_output_out']>;
 
 /**
