@@ -112,11 +112,14 @@ for (const [key, value] of Object.entries(currentPrDiagnostics)) {
 }
 
 printTable('Numbers', numbers);
+
+commentBody += `<details><summary>Timings (unreliable)</summary>\n\n`;
 printTable(
   'Timings',
   timings,
   '> Timings are **not** reliable in CI - we need to run the benchmark multiple times to get a good average.',
 );
+commentBody += `\n</details>`;
 
 commentBody += `\n</details>`;
 const { owner, repo } = github.context.repo;
