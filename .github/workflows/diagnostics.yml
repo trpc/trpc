@@ -59,9 +59,11 @@ jobs:
       - name: Capture build times
         run: |
           cd ./examples/.test/diagnostics-big-router
-          for i in {1..11}
+          iters=21
+          for i in {1..21}
           do
             rm -rf ./build
+            echo "Running iteration $i of $iters"
 
             start_time=$(date +%s%N)
             pnpm tsc
