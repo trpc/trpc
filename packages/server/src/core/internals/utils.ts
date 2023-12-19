@@ -1,5 +1,6 @@
 import { Simplify, WithoutIndexSignature } from '../../types';
 import { AnyProcedureBuilderParams } from './builderTypes';
+import { AnyRootConfig } from './config';
 
 /**
  * @internal
@@ -57,13 +58,18 @@ export type UnsetMarker = typeof unsetMarker;
 /**
  * @internal
  */
-export interface ResolveOptions<TParams extends AnyProcedureBuilderParams> {
-  ctx: Simplify<
-    Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
-  >;
-  input: TParams['_input_out'] extends UnsetMarker
-    ? undefined
-    : TParams['_input_out'];
+export interface ResolveOptions<
+  TConfig extends AnyRootConfig,
+  _TMeta extends Record<string, never>,
+  _TContextIn,
+  TContextOut,
+  _TInputIn,
+  TInputOut,
+  _TOutputIn,
+  _TOutputOut,
+> {
+  ctx: Simplify<Overwrite<TConfig['$types']['ctx'], TContextOut>>;
+  input: TInputOut extends UnsetMarker ? undefined : TInputOut;
 }
 
 /**

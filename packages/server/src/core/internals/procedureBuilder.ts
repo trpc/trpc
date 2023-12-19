@@ -66,56 +66,71 @@ export type ProcedureBuilderDef<TParams extends AnyProcedureBuilderParams> = {
 
 export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
-export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
+export interface ProcedureBuilder<
+  TConfig extends AnyRootConfig,
+  TMeta extends Record<string, never>,
+  TContextIn,
+  TContextOut,
+  TInputIn,
+  TInputOut,
+  TOutputIn,
+  TOutputOut,
+> {
   /**
    * Add an input parser to the procedure.
    */
   input<$Parser extends Parser>(
-    schema: TParams['_input_out'] extends UnsetMarker
+    schema: TInputIn extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TParams['_input_out'] extends Record<string, unknown> | undefined
+      ? TInputIn extends Record<string, unknown> | undefined
         ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TParams['_input_out']
+          ? undefined extends TInputIn
             ? $Parser
             : ErrorMessage<'Cannot chain an optional parser to a required parser'>
           : $Parser
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
-  ): ProcedureBuilder<{
-    _config: TParams['_config'];
-    _meta: TParams['_meta'];
-    _ctx_out: TParams['_ctx_out'];
-    _input_in: OverwriteIfDefined<
-      TParams['_input_in'],
-      inferParser<$Parser>['in']
-    >;
-    _input_out: OverwriteIfDefined<
-      TParams['_input_out'],
-      inferParser<$Parser>['out']
-    >;
-
-    _output_in: TParams['_output_in'];
-    _output_out: TParams['_output_out'];
-  }>;
+  ): ProcedureBuilder<
+    TConfig,
+    TMeta,
+    TContextIn,
+    TContextOut,
+    OverwriteIfDefined<TInputIn, inferParser<$Parser>['in']>,
+    OverwriteIfDefined<TInputOut, inferParser<$Parser>['out']>,
+    TOutputIn,
+    TOutputOut
+  >;
   /**
    * Add an output parser to the procedure.
    */
   output<$Parser extends Parser>(
     schema: $Parser,
-  ): ProcedureBuilder<{
-    _config: TParams['_config'];
-    _meta: TParams['_meta'];
-    _ctx_out: TParams['_ctx_out'];
-    _input_in: TParams['_input_in'];
-    _input_out: TParams['_input_out'];
-    _output_in: inferParser<$Parser>['in'];
-    _output_out: inferParser<$Parser>['out'];
-  }>;
+  ): ProcedureBuilder<
+    TConfig,
+    TMeta,
+    TContextIn,
+    TContextOut,
+    TInputIn,
+    TInputOut,
+    OverwriteIfDefined<TOutputIn, inferParser<$Parser>['in']>,
+    OverwriteIfDefined<TOutputOut, inferParser<$Parser>['out']>
+  >;
   /**
    * Add a meta data to the procedure.
    */
-  meta(meta: TParams['_meta']): ProcedureBuilder<TParams>;
+  meta(
+    meta: TMeta,
+  ): ProcedureBuilder<
+    TConfig,
+    TMeta,
+    TContextIn,
+    TContextOut,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut
+  >;
   /**
    * Add a middleware to the procedure.
    */
@@ -132,8 +147,8 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): QueryProcedure<{
-    input: DefaultValue<TParams['_input_in'], void>;
-    output: DefaultValue<TParams['_output_out'], $Output>;
+    input: DefaultValue<TInputIn, void>;
+    output: DefaultValue<TInputOut, $Output>;
   }>;
 
   /**
@@ -144,8 +159,8 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): MutationProcedure<{
-    input: DefaultValue<TParams['_input_in'], void>;
-    output: DefaultValue<TParams['_output_out'], $Output>;
+    input: DefaultValue<TInputIn, void>;
+    output: DefaultValue<TInputOut, $Output>;
   }>;
 
   /**
@@ -156,8 +171,8 @@ export interface ProcedureBuilder<TParams extends AnyProcedureBuilderParams> {
       opts: ResolveOptions<TParams>,
     ) => MaybePromise<DefaultValue<TParams['_output_in'], $Output>>,
   ): SubscriptionProcedure<{
-    input: DefaultValue<TParams['_input_in'], void>;
-    output: DefaultValue<TParams['_output_out'], $Output>;
+    input: DefaultValue<TInputIn, void>;
+    output: DefaultValue<TInputOut, $Output>;
   }>;
   /**
    * @internal
@@ -213,19 +228,19 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       return createNewBuilder(_def, {
         inputs: [input],
         middlewares: [createInputMiddleware(parser)],
-      }) as AnyProcedureBuilder;
+      });
     },
     output(output: Parser) {
       const parseOutput = getParseFn(output);
       return createNewBuilder(_def, {
         output,
         middlewares: [createOutputMiddleware(parseOutput)],
-      }) as AnyProcedureBuilder;
+      });
     },
     meta(meta) {
       return createNewBuilder(_def, {
         meta: meta as Record<string, unknown>,
-      }) as AnyProcedureBuilder;
+      });
     },
     use(middlewareBuilderOrFn) {
       // Distinguish between a middleware builder and a middleware function
@@ -236,7 +251,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 
       return createNewBuilder(_def, {
         middlewares: middlewares as ProcedureBuilderMiddleware[],
-      }) as AnyProcedureBuilder;
+      });
     },
     query(resolver) {
       return createResolver(
