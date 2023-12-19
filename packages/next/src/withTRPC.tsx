@@ -32,7 +32,7 @@ import {
 } from 'next/dist/shared/lib/utils';
 import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
-import ssrPrepass from 'react-ssr-prepass';
+import { renderToPipeableStream } from 'react-dom/server';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
@@ -209,7 +209,12 @@ export function withTRPC<
         // multiple prepass ensures that we can do batching on the server
         while (true) {
           // render full tree
-          await ssrPrepass(createElement(AppTree, prepassProps as any));
+          await new Promise<void>((onAllReady, onError) =>
+            renderToPipeableStream(createElement(AppTree, prepassProps), {
+              onAllReady,
+              onError,
+            }),
+          );
           if (!queryClient.isFetching()) {
             // the render didn't cause the queryClient to fetch anything
             break;
