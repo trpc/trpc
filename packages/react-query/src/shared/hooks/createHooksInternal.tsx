@@ -68,7 +68,7 @@ export function createRootHooks<
     const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
 
-    const queryFns = useMemo(
+    const fns = useMemo(
       () =>
         createUtilityFunctions({
           client,
@@ -77,24 +77,25 @@ export function createRootHooks<
       [client, queryClient],
     );
 
+    const contextValue = useMemo<ProviderContext>(
+      () => ({
+        abortOnUnmount,
+        queryClient,
+        client,
+        ssrContext: ssrContext ?? null,
+        ssrState,
+        ...fns,
+      }),
+      [abortOnUnmount, client, fns, queryClient, ssrContext, ssrState],
+    );
+
     useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
       // This makes it so we don't have an unnecessary re-render when opting out of SSR.
       setSSRState((state) => (state ? 'mounted' : false));
     }, []);
     return (
-      <Context.Provider
-        value={{
-          abortOnUnmount,
-          queryClient,
-          client,
-          ssrContext: ssrContext ?? null,
-          ssrState,
-          ...queryFns,
-        }}
-      >
-        {props.children}
-      </Context.Provider>
+      <Context.Provider value={contextValue}>{props.children}</Context.Provider>
     );
   };
 
