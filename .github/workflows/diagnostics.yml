@@ -66,7 +66,7 @@ jobs:
             start_time=$(date +%s%N)
             pnpm tsc
             end_time=$(date +%s%N)
-            echo "$(($end_time - $start_time))s" >> ./../../../diagnostics-results/tsc-times-${{ matrix.branch }}.txt
+            echo "$(($end_time - $start_time))" >> ./../../../diagnostics-results/tsc-times-${{ matrix.branch }}.txt
             
           done
       - run: cd ./examples/.test/diagnostics-big-router && pnpm tsc --extendedDiagnostics && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
