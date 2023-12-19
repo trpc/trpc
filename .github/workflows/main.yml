@@ -1,0 +1,77 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node: ['18.x', '20.x']
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-trpc-main-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-trpc-main-
+
+      - name: Install deps (with cache)
+        run: pnpm --filter "@trpc/*" --filter root install
+
+      - name: Download previous bundle analysis
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: bundle-analysis
+          branch: main
+          path: ./downloads/previous-bundle-analysis
+          if_no_artifact_found: ignore
+
+      - name: Build
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - name: Test
+        run: pnpm turbo --filter tests test-ci
+
+      - uses: codecov/codecov-action@v3
+        with:
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          directory: ./packages
+
+      - name: Upload new bundle analysis
+        uses: actions/upload-artifact@v4
+        if: github.ref == 'ref/head/main'
+        with:
+          name: bundle-analysis
+          path: packages/**/dist/bundle-analysis.json
