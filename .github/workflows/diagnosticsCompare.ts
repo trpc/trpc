@@ -47,18 +47,15 @@ const readTimings = (branch: string) => {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((it) => parseInt(it))
-    .map(
-      (it) =>
-        // From nanoseconds to milliseconds
-        it / 1e3,
-    );
+    .map((it) => parseInt(it));
   console.log({ timings });
+
   return {
-    'max (ms)': Math.max(...timings),
-    'min (ms)': Math.min(...timings),
-    'avg (ms)': timings.reduce((acc, curr) => acc + curr, 0) / timings.length,
-    'median (ms)': timings[Math.floor(timings.length / 2)],
+    'max (s)': Math.max(...timings) / 1e9,
+    'min (s)': Math.min(...timings) / 1e9,
+    'avg (s)':
+      timings.reduce((acc, curr) => acc + curr, 0) / 1e9 / timings.length,
+    'median (s)': timings[Math.floor(timings.length / 2)] / 1e9,
     length: timings.length,
   };
 };
