@@ -63,9 +63,9 @@ jobs:
           do
             rm -rf ./build
 
-            start_time=$(date +%s)
+            start_time=$(date +%s%N)
             pnpm tsc
-            end_time=$(date +%s)
+            end_time=$(date +%s%N)
             echo "$(($end_time - $start_time))s" >> ./../../../diagnostics-results/tsc-times-${{ matrix.branch }}.txt
             
           done
