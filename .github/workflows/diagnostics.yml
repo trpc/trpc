@@ -45,11 +45,11 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-trpc-diagnostics-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-
+            ${{ runner.os }}-pnpm-store-trpc-diagnostics-
 
-      - run: pnpm install --child-concurrency 3
+      - run: pnpm install
       - run: pnpm build
 
       - run: mkdir diagnostics-results
@@ -91,6 +91,21 @@ jobs:
         with:
           node-version: 18.x
 
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-trpc-diagnostics-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-trpc-diagnostics-
+
+      - run: pnpm install
+
       - name: Download diagnostics results
         uses: actions/download-artifact@v2
         with:
@@ -101,16 +116,6 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: pnpm-store-${{ github.head_ref }}-current-pr-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ github.head_ref }}-current-pr
-
-      - run: pnpm install --child-concurrency 3
 
       - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
         env:
