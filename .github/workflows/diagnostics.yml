@@ -59,7 +59,7 @@ jobs:
       - name: Capture build times
         run: |
           cd ./examples/.test/diagnostics-big-router
-          for i in {1..10}
+          for i in {1..11}
           do
             rm -rf ./build
 
