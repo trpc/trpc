@@ -160,7 +160,7 @@ describe('polymorphism', () => {
 
             <RefreshExportsListButton
               invalidateAll={invalidate.mutate}
-              disabled={invalidate.isLoading}
+              disabled={invalidate.isPending}
             />
 
             <ExportStatus
@@ -430,7 +430,7 @@ function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
 
 function RefreshExportsListButton(props: {
   invalidateAll: () => void;
-  disabled?: boolean;
+  disabled: boolean;
 }) {
   return (
     <button
