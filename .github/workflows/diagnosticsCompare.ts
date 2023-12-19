@@ -47,7 +47,8 @@ const readTimings = (branch: string) => {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((it) => parseInt(it));
+    .map((it) => parseInt(it))
+    .sort();
   console.log({ timings });
 
   return {
