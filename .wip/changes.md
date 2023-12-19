@@ -47,3 +47,7 @@ We exported a bunch of utility functions that we used in tRPC within `@trpc/serv
 If you're making an adapter for tRPC, we're happy to move these to another export and ensure they don't break between minor versions.
 
 Refactor: `inferAsyncReturnType<x>` -> `Awaited<ReturnType<x>>`
+
+## React is now >=18.2.0
+
+Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-guide
