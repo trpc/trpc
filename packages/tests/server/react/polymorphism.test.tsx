@@ -452,19 +452,17 @@ function RefreshExportsListButton({
   );
 }
 
-type ExportStatusProps<TStatus extends QueryLike<any>> = {
+type ExportStatusProps<TStatus extends Factory.ExportRouteLike['status']> = {
   status: TStatus;
   renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
 };
-function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
-  status,
-  currentExport,
-  renderAdditionalFields,
-}: ExportStatusProps<TStatus>) {
-  const exportStatus = status.useQuery(
-    { id: currentExport ?? -1 },
-    { enabled: currentExport !== null },
+function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>(
+  props: ExportStatusProps<TStatus>,
+) {
+  const exportStatus = props.status.useQuery(
+    { id: props.currentExport ?? -1 },
+    { enabled: props.currentExport !== null },
   );
 
   if (!exportStatus.data) {
@@ -475,7 +473,7 @@ function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
     <p>
       Last Export: `{exportStatus.data?.name}` (
       {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
-      {renderAdditionalFields?.(exportStatus.data as unknown as any)}
+      {props.renderAdditionalFields?.(exportStatus.data as unknown as any)}
     </p>
   );
 }
