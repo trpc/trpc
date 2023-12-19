@@ -15,13 +15,15 @@ if (!pr) {
 const diagnosticsPath = 'diagnostics-results';
 const prNumber = github.context.issue.number;
 
+type MetricsRecord = Record<string, number | null>;
+
 const parseDiagnostics = (content: string) => {
   const lines = content.split('\n');
-  const metrics: Record<string, number | string> = {};
+  const metrics: MetricsRecord = {};
   lines.forEach((line) => {
     const [key, value] = line.split(':');
     if (key && value) {
-      metrics[key.trim()] = parseFloat(value.trim()) || value.trim();
+      metrics[key.trim()] = parseNumber(value.trim());
     }
   });
   return metrics;
@@ -37,7 +39,7 @@ const readDiagnostics = (branch: string) => {
 
 // Read diagnostics results for the branches you are interested in
 const currentPrDiagnostics = readDiagnostics('current-pr');
-const mainDiagnostics = readDiagnostics('main');
+// const mainDiagnostics = readDiagnostics('main');
 const nextDiagnostics = readDiagnostics('next');
 
 const commentTitle = 'Diagnostics Comparison';
@@ -46,49 +48,53 @@ let commentBody = `
 
 <details>\n\n`;
 
-function printTable(
-  title: string,
-  data: Record<string, number | string>,
-  description?: string,
-) {
+const fmt = (num: null | number) => {
+  if (num === null) {
+    return 'N/A';
+  }
+
+  return new Intl.NumberFormat('en-US').format(num);
+};
+function parseNumber(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const number = Number(value);
+  return isNaN(number) ? null : number;
+}
+
+function printTable(title: string, data: MetricsRecord, description?: string) {
   commentBody += `### ${title}\n\n`;
 
   if (description) {
     commentBody += `${description}\n\n`;
   }
 
-  commentBody += '| Metric | PR | `next` | `main` |\n';
-  commentBody += '| ------ | -- | ------ | ------ |\n';
+  commentBody += '| Metric | PR | `next` |\n';
+  commentBody += '| ------ | -- | ------ |\n';
 
   const round = (value: number) => Math.round(value * 100) / 100;
 
   // Loop through the metrics and build the comment body
   for (const [metric, currentPrValue] of Object.entries(data)) {
-    const mainValue = mainDiagnostics[metric];
     const nextValue = nextDiagnostics[metric];
 
-    let diffMain: string | number = 'N/A';
-    let emojiMain = '';
-    if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
-      diffMain = round(currentPrValue - mainValue);
-      emojiMain = diffMain > 0 ? '🔺' : diffMain < 0 ? '🔽🟢' : '➖';
-    }
-
-    let diffNext: string | number = 'N/A';
+    let diffNext: number | null = null;
     let emojiNext = '';
     if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
       diffNext = round(currentPrValue - nextValue);
       emojiNext = diffNext > 0 ? '🔺' : diffNext < 0 ? '🔽🟢' : '➖';
     }
 
-    commentBody += `| ${metric} | ${currentPrValue} | ${nextValue} (${emojiNext} ${diffNext}) | ${mainValue} (${emojiMain} ${diffMain}) |\n`;
+    commentBody += `| ${metric} | ${currentPrValue} | ${nextValue} (${emojiNext} ${diffNext}) |\n`;
   }
 
   commentBody += '\n\n';
 }
 
-const numbers: Record<string, number | string> = {};
-const timings: Record<string, number | string> = {};
+const numbers: MetricsRecord = {};
+const timings: MetricsRecord = {};
 
 for (const [key, value] of Object.entries(currentPrDiagnostics)) {
   if (key.toLowerCase().includes('time')) {
