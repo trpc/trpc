@@ -207,6 +207,9 @@ describe('polymorphism', () => {
         const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
 
         return (
           <>
@@ -216,7 +219,10 @@ describe('polymorphism', () => {
               onExportStarted={setCurrentExport}
             />
 
-            <RefreshExportsListButton mutate={() => utils.invalidate()} />
+            <RefreshExportsListButton
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
+            />
 
             <ExportStatus
               status={trpc.github.discussions.export.status}
@@ -268,6 +274,9 @@ describe('polymorphism', () => {
         const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
 
         return (
           <>
@@ -278,7 +287,10 @@ describe('polymorphism', () => {
               onExportStarted={setCurrentExport}
             />
 
-            <RefreshExportsListButton mutate={() => utils.invalidate()} />
+            <RefreshExportsListButton
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
+            />
 
             <RemoveExportButton
               remove={trpc.github.pullRequests.export.delete}
