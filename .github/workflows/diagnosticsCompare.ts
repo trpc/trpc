@@ -58,6 +58,7 @@ const readTimings = (branch: string) => {
     'max (ms)': Math.max(...timings),
     'min (ms)': Math.min(...timings),
     'avg (ms)': timings.reduce((acc, curr) => acc + curr, 0) / timings.length,
+    'median (ms)': timings[Math.floor(timings.length / 2)],
     length: timings.length,
   };
 };
