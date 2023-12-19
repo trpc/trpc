@@ -159,8 +159,8 @@ describe('polymorphism', () => {
             />
 
             <RefreshExportsListButton
-              invalidateAll={invalidate.mutate}
-              disabled={invalidate.isPending}
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
             />
 
             <ExportStatus
@@ -216,9 +216,7 @@ describe('polymorphism', () => {
               onExportStarted={setCurrentExport}
             />
 
-            <RefreshExportsListButton
-              invalidateAll={() => utils.invalidate()}
-            />
+            <RefreshExportsListButton mutate={() => utils.invalidate()} />
 
             <ExportStatus
               status={trpc.github.discussions.export.status}
@@ -280,9 +278,7 @@ describe('polymorphism', () => {
               onExportStarted={setCurrentExport}
             />
 
-            <RefreshExportsListButton
-              invalidateAll={() => utils.invalidate()}
-            />
+            <RefreshExportsListButton mutate={() => utils.invalidate()} />
 
             <RemoveExportButton
               remove={trpc.github.pullRequests.export.delete}
@@ -429,14 +425,14 @@ function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
 }
 
 function RefreshExportsListButton(props: {
-  invalidateAll: () => void;
-  disabled: boolean;
+  mutate: () => void;
+  isPending: boolean;
 }) {
   return (
     <button
       data-testid="refreshBtn"
-      onClick={props.invalidateAll}
-      disabled={props.disabled}
+      onClick={props.mutate}
+      disabled={props.isPending}
     >
       Refresh
     </button>
