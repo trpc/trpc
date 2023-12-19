@@ -112,11 +112,6 @@ jobs:
           name: diagnostics-results
           path: diagnostics-results
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
