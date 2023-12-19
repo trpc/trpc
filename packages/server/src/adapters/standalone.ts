@@ -24,7 +24,8 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
     const path = new URL(req.url!, 'http://127.0.0.1').pathname.slice(1);
 
     await nodeHTTPRequestHandler({
-      ...opts,
+      // FIXME: no typecasting should be needed here
+      ...(opts as CreateHTTPHandlerOptions<AnyRouter>),
       req,
       res,
       path,

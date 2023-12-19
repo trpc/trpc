@@ -162,7 +162,7 @@ async function getOrgGithubSponsors() {
 
 const yearlySponsors = [
   //
-  'flightcontrolhq',
+  // 'flightcontrolhq',
   'ahoylabs',
   'Wyatt-SG',
   'pingdotgg',

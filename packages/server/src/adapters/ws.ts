@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import ws from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { AnyRouter, callProcedure, inferRouterContext } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { BaseHandlerOptions } from '../internals/types';
@@ -20,7 +20,7 @@ import { NodeHTTPCreateContextFnOptions } from './node-http';
  * @public
  */
 export type CreateWSSContextFnOptions = Omit<
-  NodeHTTPCreateContextFnOptions<IncomingMessage, ws>,
+  NodeHTTPCreateContextFnOptions<IncomingMessage, WebSocket>,
   'info'
 >;
 
@@ -51,7 +51,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
          **/
         createContext: CreateWSSContextFn<TRouter>;
       }) & {
-    wss: ws.Server;
+    wss: WebSocketServer;
     process?: NodeJS.Process;
   };
 
