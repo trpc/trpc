@@ -66,13 +66,16 @@ function parseNumber(value: string) {
 
 function printTable(title: string, data: MetricsRecord, description?: string) {
   commentBody += `### ${title}\n\n`;
-
   if (description) {
     commentBody += `${description}\n\n`;
   }
 
-  commentBody += '| Metric | PR | `next` |\n';
-  commentBody += '| ------ | -- | ------ |\n';
+  function printRow(row: [string, string, string]) {
+    commentBody += ['|', ...row, '|'].join(' ') + '\n';
+  }
+
+  printRow(['Metric', 'PR', 'Next']);
+  printRow(['------', '--', '------']);
 
   const round = (value: number) => Math.round(value * 100) / 100;
 
@@ -87,7 +90,11 @@ function printTable(title: string, data: MetricsRecord, description?: string) {
       emojiNext = diffNext > 0 ? '🔺' : diffNext < 0 ? '🔽🟢' : '➖';
     }
 
-    commentBody += `| ${metric} | ${currentPrValue} | ${nextValue} (${emojiNext} ${diffNext}) |\n`;
+    printRow([
+      metric,
+      fmt(currentPrValue),
+      `${fmt(nextValue)} (${emojiNext} ${fmt(diffNext)})`,
+    ]);
   }
 
   commentBody += '\n\n';
