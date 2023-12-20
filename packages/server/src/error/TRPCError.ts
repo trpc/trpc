@@ -55,7 +55,7 @@ function getCauseFromUnknown(cause: unknown): Error | undefined {
 }
 
 export class TRPCError extends Error {
-  public readonly cause?: Error;
+  public override readonly cause?: Error;
   public readonly code;
 
   constructor(opts: {
