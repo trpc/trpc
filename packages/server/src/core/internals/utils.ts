@@ -1,6 +1,4 @@
-import { Simplify, WithoutIndexSignature } from '../../types';
-import { AnyProcedureBuilderParams } from './builderTypes';
-import { AnyRootConfig } from './config';
+import { WithoutIndexSignature } from '../../types';
 
 /**
  * @internal

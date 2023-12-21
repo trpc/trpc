@@ -194,7 +194,9 @@ export type ProcedureBuilderMiddleware = MiddlewareFunction<
   any
 >;
 
-export type ProcedureBuilderResolver = () => Promise<unknown>;
+export type ProcedureBuilderResolver = (
+  opts: ResolverOptions<any, any, any>,
+) => Promise<unknown>;
 
 function createNewBuilder(
   def1: AnyProcedureBuilderDef,
@@ -216,7 +218,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 ): ProcedureBuilder<
   TConfig,
   TConfig['$types']['ctx'],
-  {},
+  Record<string, never>,
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
@@ -259,7 +261,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 
       return createNewBuilder(_def, {
         middlewares: middlewares as ProcedureBuilderMiddleware[],
-      });
+      }) as any;
     },
     query(resolver) {
       return createResolver(
@@ -284,6 +286,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 
 function createResolver(
   _def: AnyProcedureBuilderDef & { type: ProcedureType },
+  resolver: (opts: ResolverOptions<any, any, any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
     resolver,
