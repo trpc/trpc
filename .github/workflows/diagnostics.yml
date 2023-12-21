@@ -50,7 +50,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-trpc-diagnostics-
 
       - run: pnpm install
-      - run: pnpm build
+      - run: pnpm build --no-cache
 
       - run: mkdir diagnostics-results
 
