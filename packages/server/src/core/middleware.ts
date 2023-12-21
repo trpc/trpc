@@ -46,7 +46,7 @@ export type MiddlewareResult<_TContextOverride> =
 //  */
 // export interface MiddlewareBuilder<
 //   TConfig extends AnyRootConfig,
-//   TContextIn,
+//   TConfig['$types']['ctx'],
 //   TContextOverrides,
 //   TInputIn,
 //   TInputOut,
@@ -104,7 +104,6 @@ export type MiddlewareResult<_TContextOverride> =
  */
 export type MiddlewareFunction<
   TConfig extends AnyRootConfig,
-  TContextIn,
   TContextOverrides,
   TInputIn,
   _TInputOut,
@@ -113,14 +112,14 @@ export type MiddlewareFunction<
   $ContextOverride,
 > = {
   (opts: {
-    ctx: Simplify<Overwrite<TContextIn, TContextOverrides>>;
+    ctx: Simplify<Overwrite<TConfig['$types']['ctx'], TContextOverrides>>;
     type: ProcedureType;
     path: string;
     input: TInputIn;
     getRawInput: GetRawInputFn;
     meta: TConfig['$types']['meta'] | undefined;
     next: {
-      (): Promise<MiddlewareResult<TContextIn>>;
+      (): Promise<MiddlewareResult<TConfig['$types']['ctx']>>;
       <$ContextOverride>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
@@ -135,7 +134,6 @@ export type MiddlewareFunction<
 
 export type AnyMiddlewareFunction = MiddlewareFunction<
   AnyRootConfig,
-  any,
   any,
   any,
   any,
