@@ -53,8 +53,8 @@ export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
  * Procedure resolver options
  * @internal
  */
-interface ResolverOptions<TContextOverrides, TInputOut> {
-  ctx: TContextOverrides;
+interface ResolverOptions<TContext, TContextOverrides, TInputOut> {
+  ctx: Simplify<Overwrite<TContext, TContextOverrides>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
 }
 
@@ -130,7 +130,8 @@ export interface ProcedureBuilder<
       TInputIn,
       TInputOut,
       TOutputIn,
-      TOutputOut
+      TOutputOut,
+      $ContextOverrides
     >,
   ): ProcedureBuilder<
     TConfig,
@@ -146,7 +147,7 @@ export interface ProcedureBuilder<
    */
   query<$Output>(
     resolver: (
-      opts: ResolverOptions<TContextOverrides, TInputOut>,
+      opts: ResolverOptions<TContextIn, TContextOverrides, TInputOut>,
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): QueryProcedure<{
     input: DefaultValue<TInputIn, void>;
@@ -158,7 +159,7 @@ export interface ProcedureBuilder<
    */
   mutation<$Output>(
     resolver: (
-      opts: ResolverOptions<TContextOverrides, TInputOut>,
+      opts: ResolverOptions<TContextIn, TContextOverrides, TInputOut>,
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): MutationProcedure<{
     input: DefaultValue<TInputIn, void>;
@@ -170,7 +171,7 @@ export interface ProcedureBuilder<
    */
   subscription<$Output>(
     resolver: (
-      opts: ResolverOptions<TContextOverrides, TInputOut>,
+      opts: ResolverOptions<TContextIn, TContextOverrides, TInputOut>,
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): SubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
@@ -189,12 +190,11 @@ export type ProcedureBuilderMiddleware = MiddlewareFunction<
   any,
   any,
   any,
+  any,
   any
 >;
 
-export type ProcedureBuilderResolver = (
-  opts: ResolverOptions<any, any>,
-) => Promise<unknown>;
+export type ProcedureBuilderResolver = () => Promise<unknown>;
 
 function createNewBuilder(
   def1: AnyProcedureBuilderDef,
@@ -284,7 +284,6 @@ export function createBuilder<TConfig extends AnyRootConfig>(
 
 function createResolver(
   _def: AnyProcedureBuilderDef & { type: ProcedureType },
-  resolver: (opts: ResolverOptions<any, any>) => MaybePromise<any>,
 ) {
   const finalBuilder = createNewBuilder(_def, {
     resolver,

@@ -110,6 +110,7 @@ export type MiddlewareFunction<
   _TInputOut,
   _TOutputIn,
   _TOutputOut,
+  $ContextOverride,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContextIn, TContextOverrides>>;
@@ -128,12 +129,13 @@ export type MiddlewareFunction<
         MiddlewareResult<TContextOverrides>
       >;
     };
-  }): Promise<MiddlewareResult<TContextIn>>;
+  }): Promise<MiddlewareResult<$ContextOverride>>;
   _type?: string | undefined;
 };
 
 export type AnyMiddlewareFunction = MiddlewareFunction<
   AnyRootConfig,
+  any,
   any,
   any,
   any,
