@@ -15,13 +15,15 @@ if (!pr) {
 const diagnosticsPath = 'diagnostics-results';
 const prNumber = github.context.issue.number;
 
+type MetricsRecord = Record<string, number | null>;
+
 const parseDiagnostics = (content: string) => {
   const lines = content.split('\n');
-  const metrics: Record<string, number | string> = {};
+  const metrics: MetricsRecord = {};
   lines.forEach((line) => {
     const [key, value] = line.split(':');
     if (key && value) {
-      metrics[key.trim()] = parseFloat(value.trim()) || value.trim();
+      metrics[key.trim()] = parseNumber(value.trim());
     }
   });
   return metrics;
@@ -35,10 +37,40 @@ const readDiagnostics = (branch: string) => {
   return parseDiagnostics(content);
 };
 
+const readTimings = (branch: string) => {
+  const content = fs.readFileSync(
+    path.join(diagnosticsPath, `tsc-times-${branch}.txt`),
+    'utf-8',
+  );
+  console.log({ content });
+  const timings = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((it) => parseInt(it))
+    .sort();
+  console.log({ timings });
+
+  return {
+    'max (s)': Math.max(...timings) / 1e9,
+    'min (s)': Math.min(...timings) / 1e9,
+    'avg (s)':
+      timings.reduce((acc, curr) => acc + curr, 0) / 1e9 / timings.length,
+    'median (s)': timings[Math.floor(timings.length / 2)] / 1e9,
+    length: timings.length,
+  };
+};
+
 // Read diagnostics results for the branches you are interested in
-const currentPrDiagnostics = readDiagnostics('current-pr');
-const mainDiagnostics = readDiagnostics('main');
-const nextDiagnostics = readDiagnostics('next');
+const diagnostics = {
+  next: readDiagnostics('next'),
+  pr: readDiagnostics('current-pr'),
+} as const;
+
+const timings = {
+  next: readTimings('next'),
+  pr: readTimings('current-pr'),
+} as const;
 
 const commentTitle = 'Diagnostics Comparison';
 let commentBody = `
@@ -46,64 +78,88 @@ let commentBody = `
 
 <details>\n\n`;
 
+const fmt = (num: null | number) => {
+  if (num === null) {
+    return 'N/A';
+  }
+
+  return new Intl.NumberFormat('en-US').format(num);
+};
+
+function parseNumber(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const number = parseFloat(value);
+  return isNaN(number) ? null : number;
+}
+
 function printTable(
+  root: MetricsRecord,
   title: string,
-  data: Record<string, number | string>,
+  data: MetricsRecord,
   description?: string,
 ) {
   commentBody += `### ${title}\n\n`;
-
   if (description) {
     commentBody += `${description}\n\n`;
   }
 
-  commentBody += '| Metric | PR | `next` | `main` |\n';
-  commentBody += '| ------ | -- | ------ | ------ |\n';
+  function printRow(row: [string, string, string]) {
+    commentBody += `| ` + row.join(' | ') + ' |\n';
+  }
+
+  printRow(['Metric', 'PR', '`next`']);
+  printRow(['------', '--', '------']);
 
   const round = (value: number) => Math.round(value * 100) / 100;
 
   // Loop through the metrics and build the comment body
   for (const [metric, currentPrValue] of Object.entries(data)) {
-    const mainValue = mainDiagnostics[metric];
-    const nextValue = nextDiagnostics[metric];
+    const nextValue = root[metric];
 
-    let diffMain: string | number = 'N/A';
-    let emojiMain = '';
-    if (typeof currentPrValue === 'number' && typeof mainValue === 'number') {
-      diffMain = round(currentPrValue - mainValue);
-      emojiMain = diffMain > 0 ? '🔺' : diffMain < 0 ? '🔽🟢' : '➖';
-    }
-
-    let diffNext: string | number = 'N/A';
+    let diffNext: number | null = null;
     let emojiNext = '';
     if (typeof currentPrValue === 'number' && typeof nextValue === 'number') {
       diffNext = round(currentPrValue - nextValue);
       emojiNext = diffNext > 0 ? '🔺' : diffNext < 0 ? '🔽🟢' : '➖';
     }
 
-    commentBody += `| ${metric} | ${currentPrValue} | ${nextValue} (${emojiNext} ${diffNext}) | ${mainValue} (${emojiMain} ${diffMain}) |\n`;
+    printRow([
+      metric,
+      fmt(currentPrValue),
+      `${fmt(nextValue)} (${emojiNext} ${fmt(diffNext)})`,
+    ]);
   }
 
   commentBody += '\n\n';
 }
 
-const numbers: Record<string, number | string> = {};
-const timings: Record<string, number | string> = {};
+const numbers: MetricsRecord = {};
+const unstableTimings: MetricsRecord = {};
 
-for (const [key, value] of Object.entries(currentPrDiagnostics)) {
+for (const [key, value] of Object.entries(diagnostics.pr)) {
   if (key.toLowerCase().includes('time')) {
-    timings[key] = value;
+    unstableTimings[key] = value;
   } else {
     numbers[key] = value;
   }
 }
 
-printTable('Numbers', numbers);
+printTable(diagnostics.next, 'Numbers', numbers);
+
+// print timings pretty
+printTable(timings.next, 'Timings and averages', timings.pr);
+
+commentBody += `<details><summary>unstable timings</summary>\n\n`;
 printTable(
-  'Timings',
-  timings,
-  '> Timings are **not** reliable in CI - we need to run the benchmark multiple times to get a good average.',
+  diagnostics.next,
+  'Unstable',
+  unstableTimings,
+  '> Timings are **not** reliable in here',
 );
+commentBody += `\n</details>`;
 
 commentBody += `\n</details>`;
 const { owner, repo } = github.context.repo;
