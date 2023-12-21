@@ -204,20 +204,13 @@ export function withTRPC<
           trpc: trpcProp,
         };
 
-        const renderToPipeableStream = await import('react-dom/server').then(
-          (v) => v.renderToPipeableStream,
-        );
+        const reactDomServer = await import('react-dom/server');
 
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
         // multiple prepass ensures that we can do batching on the server
         while (true) {
           // render full tree
-          await new Promise<void>((onAllReady, onError) =>
-            renderToPipeableStream(createElement(AppTree, prepassProps), {
-              onAllReady,
-              onError,
-            }),
-          );
+          reactDomServer.renderToString(createElement(AppTree, prepassProps));
           if (!queryClient.isFetching()) {
             // the render didn't cause the queryClient to fetch anything
             break;
