@@ -1,16 +1,8 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
-import { AnyProcedureBuilderParams } from './internals/builderTypes';
-import { AnyRootConfig, RootConfig } from './internals/config';
+import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
-import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
-import {
-  DefaultValue,
-  GetRawInputFn,
-  MiddlewareMarker,
-  Overwrite,
-  UnsetMarker,
-} from './internals/utils';
+import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
 import { ProcedureType } from './types';
 
 /**
@@ -27,8 +19,7 @@ interface MiddlewareResultBase {
 /**
  * @internal
  */
-interface MiddlewareOKResult<_TParams extends AnyProcedureBuilderParams>
-  extends MiddlewareResultBase {
+interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   ok: true;
   data: unknown;
   // this could be extended with `input`/`rawInput` later
@@ -37,7 +28,7 @@ interface MiddlewareOKResult<_TParams extends AnyProcedureBuilderParams>
 /**
  * @internal
  */
-interface MiddlewareErrorResult<_TParams extends AnyProcedureBuilderParams>
+interface MiddlewareErrorResult<_TContextOverride>
   extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
@@ -46,178 +37,166 @@ interface MiddlewareErrorResult<_TParams extends AnyProcedureBuilderParams>
 /**
  * @internal
  */
-export type MiddlewareResult<TParams extends AnyProcedureBuilderParams> =
-  | MiddlewareErrorResult<TParams>
-  | MiddlewareOKResult<TParams>;
+export type MiddlewareResult<_TContextOverride> =
+  | MiddlewareErrorResult<_TContextOverride>
+  | MiddlewareOKResult<_TContextOverride>;
 
-/**
- * @internal
- */
-export interface MiddlewareBuilder<
-  TRoot extends AnyProcedureBuilderParams,
-  TNewParams extends AnyProcedureBuilderParams,
-> {
-  /**
-   * Create a new builder based on the current middleware builder
-   */
-  unstable_pipe<$Params extends AnyProcedureBuilderParams>(
-    fn: {
-      _config: TRoot['_config'];
-      _meta: TRoot['_meta'];
-      _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-      _input_in: DefaultValue<TRoot['_input_in'], TNewParams['_input_in']>;
-      _input_out: DefaultValue<TRoot['_input_out'], TNewParams['_input_out']>;
-      _output_in: DefaultValue<TRoot['_output_in'], TNewParams['_output_in']>;
-      _output_out: DefaultValue<
-        TRoot['_output_out'],
-        TNewParams['_output_out']
-      >;
-    } extends infer OParams extends AnyProcedureBuilderParams
-      ?
-          | MiddlewareBuilder<OParams, $Params>
-          | MiddlewareFunction<OParams, $Params>
-      : never,
-  ): CreateMiddlewareReturnInput<
-    TRoot,
-    TNewParams,
-    Overwrite<TNewParams, $Params>
-  >;
+// /**
+//  * @internal
+//  */
+// export interface MiddlewareBuilder<
+//   TConfig extends AnyRootConfig,
+//   TContextIn,
+//   TContextOverrides,
+//   TInputIn,
+//   TInputOut,
+//   TOutputIn,
+//   TOutputOut,
+// > {
+//   /**
+//    * Create a new builder based on the current middleware builder
+//    */
+//   unstable_pipe<$Params extends AnyProcedureBuilderParams>(
+//     fn: {
+//       _config: TRoot['_config'];
+//       _meta: TRoot['_meta'];
+//       _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
+//       _input_in: DefaultValue<TRoot['_input_in'], TNewParams['_input_in']>;
+//       _input_out: DefaultValue<TRoot['_input_out'], TNewParams['_input_out']>;
+//       _output_in: DefaultValue<TRoot['_output_in'], TNewParams['_output_in']>;
+//       _output_out: DefaultValue<
+//         TRoot['_output_out'],
+//         TNewParams['_output_out']
+//       >;
+//     } extends infer OParams extends AnyProcedureBuilderParams
+//       ? MiddlewareBuilder<OParams, $Params>
+//       : never,
+//   ): CreateMiddlewareReturnInput<
+//     TRoot,
+//     TNewParams,
+//     Overwrite<TNewParams, $Params>
+//   >;
 
-  /**
-   * List of middlewares within this middleware builder
-   */
-  _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
-}
+//   /**
+//    * List of middlewares within this middleware builder
+//    */
+//   _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
+// }
 
-/**
- * @internal
- * FIXME: there must be a nicer way of doing this, it's hard to maintain when we have several structures like this
- */
-type CreateMiddlewareReturnInput<
-  TRoot extends AnyProcedureBuilderParams,
-  TPrev extends AnyProcedureBuilderParams,
-  TNext extends AnyProcedureBuilderParams,
-> = MiddlewareBuilder<
-  TRoot,
-  {
-    _config: TPrev['_config'];
-    _meta: TPrev['_meta'];
-    _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-    _input_in: DefaultValue<TNext['_input_in'], TPrev['_input_in']>;
-    _input_out: DefaultValue<TNext['_input_out'], TPrev['_input_out']>;
-    _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
-    _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
-  }
->;
-
-/**
- * @internal
- */
-type deriveParamsFromConfig<
-  TConfig extends AnyRootConfig,
-  TInputIn = unknown,
-> = {
-  _config: TConfig;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  _ctx_out: {};
-  _input_out: UnsetMarker;
-  _input_in: TInputIn;
-  _output_in: unknown;
-  _output_out: unknown;
-  _meta: TConfig['$types']['meta'];
-};
+// /**
+//  * @internal
+//  */
+// type deriveParamsFromConfig<
+//   TConfig extends AnyRootConfig,
+//   TInputIn = unknown,
+// > = {
+//   _config: TConfig;
+//   // eslint-disable-next-line @typescript-eslint/ban-types
+//   _ctx_out: {};
+//   _input_out: UnsetMarker;
+//   _input_in: TInputIn;
+//   _output_in: unknown;
+//   _output_out: unknown;
+//   _meta: TConfig['$types']['meta'];
+// };
 /**
  * @internal
  */
 export type MiddlewareFunction<
-  TParams extends AnyProcedureBuilderParams,
-  TParamsAfter extends AnyProcedureBuilderParams,
+  TConfig extends AnyRootConfig,
+  TContextIn,
+  TContextOverrides,
+  TInputIn,
+  _TInputOut,
+  _TOutputIn,
+  _TOutputOut,
 > = {
   (opts: {
-    ctx: Simplify<
-      Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
-    >;
+    ctx: Simplify<Overwrite<TContextIn, TContextOverrides>>;
     type: ProcedureType;
     path: string;
-    input: TParams['_input_in'];
+    input: TInputIn;
     getRawInput: GetRawInputFn;
-    meta: TParams['_meta'] | undefined;
+    meta: TConfig['$types']['meta'] | undefined;
     next: {
-      (): Promise<MiddlewareResult<TParams>>;
-      <$Context>(opts: { ctx?: $Context; input?: unknown }): Promise<
-        MiddlewareResult<{
-          _config: TParams['_config'];
-          _ctx_out: $Context;
-          _input_in: TParams['_input_in'];
-          _input_out: TParams['_input_out'];
-          _output_in: TParams['_output_in'];
-          _output_out: TParams['_output_out'];
-          _meta: TParams['_meta'];
-        }>
-      >;
+      (): Promise<MiddlewareResult<TContextIn>>;
+      <$ContextOverride>(opts: {
+        ctx?: $ContextOverride;
+        input?: unknown;
+      }): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: { getRawInput: GetRawInputFn }): Promise<
-        MiddlewareResult<TParams>
+        MiddlewareResult<TContextOverrides>
       >;
     };
-  }): Promise<MiddlewareResult<TParamsAfter>>;
+  }): Promise<MiddlewareResult<TContextIn>>;
   _type?: string | undefined;
 };
 
-/**
- * @internal
- */
-export function createMiddlewareFactory<
-  TConfig extends AnyRootConfig,
-  TInputIn = unknown,
->() {
-  function createMiddlewareInner<TNewParams extends AnyProcedureBuilderParams>(
-    middlewares: MiddlewareFunction<any, any>[],
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
-    return {
-      _middlewares: middlewares,
-      unstable_pipe(middlewareBuilderOrFn) {
-        const pipedMiddleware =
-          '_middlewares' in middlewareBuilderOrFn
-            ? middlewareBuilderOrFn._middlewares
-            : [middlewareBuilderOrFn];
+export type AnyMiddlewareFunction = MiddlewareFunction<
+  AnyRootConfig,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
 
-        return createMiddlewareInner([
-          ...(middlewares as any),
-          ...pipedMiddleware,
-        ]);
-      },
-    };
-  }
+// /**
+//  * @internal
+//  */
+// export function createMiddlewareFactory<
+//   TConfig extends AnyRootConfig,
+//   TInputIn = unknown,
+// >() {
+//   function createMiddlewareInner<TNewParams extends AnyProcedureBuilderParams>(
+//     middlewares: MiddlewareFunction<any, any>[],
+//   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+//     return {
+//       _middlewares: middlewares,
+//       unstable_pipe(middlewareBuilderOrFn) {
+//         const pipedMiddleware =
+//           '_middlewares' in middlewareBuilderOrFn
+//             ? middlewareBuilderOrFn._middlewares
+//             : [middlewareBuilderOrFn];
 
-  function createMiddleware<TNewParams extends AnyProcedureBuilderParams>(
-    fn: MiddlewareFunction<
-      deriveParamsFromConfig<TConfig, TInputIn>,
-      TNewParams
-    >,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
-    return createMiddlewareInner([fn]);
-  }
+//         return createMiddlewareInner([
+//           ...(middlewares as any),
+//           ...pipedMiddleware,
+//         ]);
+//       },
+//     };
+//   }
 
-  return createMiddleware;
-}
+//   function createMiddleware<TNewParams extends AnyProcedureBuilderParams>(
+//     fn: MiddlewareFunction<
+//       deriveParamsFromConfig<TConfig, TInputIn>,
+//       TNewParams
+//     >,
+//   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+//     return createMiddlewareInner([fn]);
+//   }
 
-export const experimental_standaloneMiddleware = <
-  TCtx extends {
-    ctx?: object;
-    meta?: object;
-    input?: unknown;
-  },
->() => ({
-  create: createMiddlewareFactory<
-    RootConfig<{
-      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
-      meta: TCtx extends { meta: infer T extends object } ? T : object;
-      errorShape: object;
-      transformer: object;
-    }>,
-    TCtx extends { input: infer T } ? T : unknown
-  >(),
-});
+//   return createMiddleware;
+// }
+
+// export const experimental_standaloneMiddleware = <
+//   TCtx extends {
+//     ctx?: object;
+//     meta?: object;
+//     input?: unknown;
+//   },
+// >() => ({
+//   create: createMiddlewareFactory<
+//     RootConfig<{
+//       ctx: TCtx extends { ctx: infer T extends object } ? T : object;
+//       meta: TCtx extends { meta: infer T extends object } ? T : object;
+//       errorShape: object;
+//       transformer: object;
+//     }>,
+//     TCtx extends { input: infer T } ? T : unknown
+//   >(),
+// });
 
 function isPlainObject(obj: unknown) {
   return obj && typeof obj === 'object' && !Array.isArray(obj);
@@ -228,7 +207,7 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: ProcedureBuilderMiddleware = async (opts) => {
+  const inputMiddleware: AnyMiddlewareFunction = async (opts) => {
     let parsedInput: ReturnType<typeof parse>;
 
     const rawInput = await opts.getRawInput();
@@ -260,7 +239,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
-  const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
+  const outputMiddleware: AnyMiddlewareFunction = async ({ next }) => {
     const result = await next();
     if (!result.ok) {
       // pass through failures without validating

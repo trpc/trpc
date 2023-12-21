@@ -58,23 +58,6 @@ export type UnsetMarker = typeof unsetMarker;
 /**
  * @internal
  */
-export interface ResolveOptions<
-  TConfig extends AnyRootConfig,
-  _TMeta extends Record<string, never>,
-  _TContextIn,
-  TContextOut,
-  _TInputIn,
-  TInputOut,
-  _TOutputIn,
-  _TOutputOut,
-> {
-  ctx: Simplify<Overwrite<TConfig['$types']['ctx'], TContextOut>>;
-  input: TInputOut extends UnsetMarker ? undefined : TInputOut;
-}
-
-/**
- * @internal
- */
 export type ValidateShape<TActualShape, TExpectedShape> =
   TActualShape extends TExpectedShape
     ? Exclude<keyof TActualShape, keyof TExpectedShape> extends never

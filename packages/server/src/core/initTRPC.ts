@@ -22,7 +22,6 @@ import {
 import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';
 import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
-import { createMiddlewareFactory } from './middleware';
 import { createRouterFactory } from './router';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
@@ -157,7 +156,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Create reusable middlewares
        */
-      middleware: createMiddlewareFactory<$Config>(),
+      // middleware: createMiddlewareFactory<$Config>(),
       /**
        * Create a router
        */

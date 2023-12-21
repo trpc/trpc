@@ -2,6 +2,7 @@ import { AnyRootConfig } from './config';
 
 /**
  * @internal
+ * @deprecated
  */
 export type AnyProcedureBuilderParams = {
   _config: AnyRootConfig;
