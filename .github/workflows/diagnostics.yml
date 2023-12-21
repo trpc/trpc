@@ -58,7 +58,7 @@ jobs:
         run: |
           cd ./examples/.test/diagnostics-big-router
           iters=21
-          for i in {1..21}
+          for i in {1..$iters}
           do
             rm -rf ./build
             echo "Running iteration $i of $iters"
