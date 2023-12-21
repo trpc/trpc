@@ -151,7 +151,7 @@ export interface ProcedureBuilder<
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): QueryProcedure<{
     input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TInputOut, $Output>;
+    output: DefaultValue<TOutputOut, $Output>;
   }>;
 
   /**
@@ -163,7 +163,7 @@ export interface ProcedureBuilder<
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): MutationProcedure<{
     input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TInputOut, $Output>;
+    output: DefaultValue<TOutputOut, $Output>;
   }>;
 
   /**
@@ -175,7 +175,7 @@ export interface ProcedureBuilder<
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): SubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TInputOut, $Output>;
+    output: DefaultValue<TOutputOut, $Output>;
   }>;
   /**
    * @internal
