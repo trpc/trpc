@@ -32,7 +32,6 @@ import {
 } from 'next/dist/shared/lib/utils';
 import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
-import { renderToPipeableStream } from 'react-dom/server';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
@@ -204,6 +203,10 @@ export function withTRPC<
           pageProps,
           trpc: trpcProp,
         };
+
+        const renderToPipeableStream = await import('react-dom/server').then(
+          (v) => v.renderToPipeableStream,
+        );
 
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
         // multiple prepass ensures that we can do batching on the server
