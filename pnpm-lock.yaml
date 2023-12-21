@@ -82,8 +82,8 @@ importers:
         specifier: ^1.9.3
         version: 1.9.3(eslint@8.40.0)
       eslint-plugin-unicorn:
-        specifier: 50.0.0
-        version: 50.0.0(eslint@8.40.0)
+        specifier: 50.0.1
+        version: 50.0.1(eslint@8.40.0)
       express:
         specifier: ^4.17.1
         version: 4.18.2
@@ -13150,8 +13150,8 @@ packages:
       eslint: 8.40.0
     dev: false
 
-  /eslint-plugin-unicorn@50.0.0(eslint@8.40.0):
-    resolution: {integrity: sha512-S830OrmnYzJFMXf2AsPVZE3BlLedAED0a3QNpB+o97eXvJTAdWqc5e+R8ozm1jh8nMV37HykU/h9HMwjZ7Fzbg==}
+  /eslint-plugin-unicorn@50.0.1(eslint@8.40.0):
+    resolution: {integrity: sha512-KxenCZxqSYW0GWHH18okDlOQcpezcitm5aOSz6EnobyJ6BIByiPDviQRjJIUAjG/tMN11958MxaQ+qCoU6lfDA==}
     engines: {node: '>=16'}
     peerDependencies:
       eslint: '>=8.56.0'
