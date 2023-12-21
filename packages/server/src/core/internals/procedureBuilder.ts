@@ -231,12 +231,22 @@ export function createBuilder<TConfig extends AnyRootConfig>(
     ...initDef,
   };
 
-  return {
+  type AnyProcedureBuilder = ProcedureBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >;
+
+  const builder: AnyProcedureBuilder = {
     _def,
     input(input) {
-      const parser = getParseFn(input);
+      const parser = getParseFn(input as Parser);
       return createNewBuilder(_def, {
-        inputs: [input],
+        inputs: [input as Parser],
         middlewares: [createInputMiddleware(parser)],
       });
     },
@@ -282,6 +292,8 @@ export function createBuilder<TConfig extends AnyRootConfig>(
       ) as AnySubscriptionProcedure;
     },
   };
+
+  return builder;
 }
 
 function createResolver(
