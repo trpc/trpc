@@ -9,7 +9,11 @@ class SliceStream extends Transform {
     super();
   }
 
-  _transform(chunk: any, _: BufferEncoding, done: TransformCallback): void {
+  override _transform(
+    chunk: any,
+    _: BufferEncoding,
+    done: TransformCallback,
+  ): void {
     this.indexOffset += chunk.length;
 
     if (!this.emitUp && this.indexOffset >= this.startIndex) {
