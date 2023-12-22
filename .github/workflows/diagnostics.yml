@@ -19,13 +19,11 @@ jobs:
             #
             'current-pr',
             'next',
-            'main',
+            # 'main',
           ]
-        node-start: ['18.x']
-        os: [ubuntu-latest]
 
     continue-on-error: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,14 +45,30 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-trpc-diagnostics-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            pnpm-store-${{github.head_ref}}-${{ matrix.branch }}-
+            ${{ runner.os }}-pnpm-store-trpc-diagnostics-
 
-      - run: pnpm install --child-concurrency 3
+      - run: pnpm install
       - run: pnpm build
 
       - run: mkdir diagnostics-results
+
+      - name: Capture build times
+        run: |
+          cd ./examples/.test/diagnostics-big-router
+          iters=21
+          for i in {1..21}
+          do
+            rm -rf ./build
+            echo "Running iteration $i of $iters"
+
+            start_time=$(date +%s%N)
+            pnpm tsc
+            end_time=$(date +%s%N)
+            echo "$(($end_time - $start_time))" >> ./../../../diagnostics-results/tsc-times-${{ matrix.branch }}.txt
+            
+          done
       - run: cd ./examples/.test/diagnostics-big-router && pnpm tsc --extendedDiagnostics && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
       - run: cat ./diagnostics-results/diagnostics-${{ matrix.branch }}.txt
       - name: Upload diagnostics results
@@ -77,12 +91,6 @@ jobs:
         with:
           node-version: 18.x
 
-      - name: Download diagnostics results
-        uses: actions/download-artifact@v2
-        with:
-          name: diagnostics-results
-          path: diagnostics-results
-
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -92,11 +100,17 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: pnpm-store-${{ github.head_ref }}-current-pr-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-trpc-diagnostics-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            pnpm-store-${{ github.head_ref }}-current-pr
+            ${{ runner.os }}-pnpm-store-trpc-diagnostics-
 
-      - run: pnpm install --child-concurrency 3
+      - run: pnpm install
+
+      - name: Download diagnostics results
+        uses: actions/download-artifact@v2
+        with:
+          name: diagnostics-results
+          path: diagnostics-results
 
       - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
         env:
