@@ -2,7 +2,7 @@ name: Release canary
 
 on:
   push:
-    # branches: [main]
+    branches: [main]
 
 jobs:
   canary:
