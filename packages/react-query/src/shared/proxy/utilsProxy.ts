@@ -329,7 +329,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter, TFaux>(
  * @internal
  */
 export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
-  context: TRPCContextState<AnyRouter, unknown>,
+  context: TRPCContextState<AnyRouter, TSSRContext>,
 ) {
   type CreateReactUtilsReturnType = CreateReactUtils<TRouter, TSSRContext>;
 
@@ -342,10 +342,7 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
       return context[contextName];
     }
 
-    return createRecursiveUtilsProxy<TRouter, CreateReactUtilsReturnType>(
-      context,
-      key,
-    );
+    return createRecursiveUtilsProxy(context, key);
   });
 }
 
