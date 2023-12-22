@@ -82,7 +82,7 @@ module.exports = {
             'client/react/useMutation',
             'client/react/useInfiniteQuery',
             'client/react/useUtils',
-            'client/react/createQueryUtils',
+            'client/react/createTRPCQueryUtils',
             'client/react/useQueries',
             'client/react/suspense',
             'client/react/getQueryKey',
