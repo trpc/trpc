@@ -6,6 +6,7 @@ import {
   Maybe,
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
+import { getCauseFromUnknown } from '@trpc/server/shared';
 import { isObject } from './internals/isObject';
 
 type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
@@ -114,7 +115,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
 
     return new TRPCClientError(cause.message, {
       ...opts,
-      cause,
+      cause: getCauseFromUnknown(cause),
     });
   }
 }
