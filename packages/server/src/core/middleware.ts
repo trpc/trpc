@@ -119,7 +119,7 @@ export type MiddlewareFunction<
     getRawInput: GetRawInputFn;
     meta: TConfig['$types']['meta'] | undefined;
     next: {
-      (): Promise<MiddlewareResult<TConfig['$types']['ctx']>>;
+      (): Promise<MiddlewareResult<TContextOverrides>>;
       <$ContextOverride>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
