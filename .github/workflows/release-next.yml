@@ -2,7 +2,7 @@ name: Release next
 
 on:
   push:
-    branches: [main]
+    branches: [next]
 
 jobs:
   next:
