@@ -26,3 +26,5 @@ export interface ResponseMeta {
   status?: number;
   headers?: HTTPHeaders;
 }
+
+export type TRPCBatchModeHeader = 'stream' | 'tupleson-json';

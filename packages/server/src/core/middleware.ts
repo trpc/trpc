@@ -211,6 +211,7 @@ export const experimental_standaloneMiddleware = <
       meta: TCtx extends { meta: infer T extends object } ? T : object;
       errorShape: object;
       transformer: object;
+      experimental_tuplesonOptions: any;
     }>,
     TCtx extends { input: infer T } ? T : unknown
   >(),

@@ -1,3 +1,5 @@
+import { TsonAsyncOptions } from 'tupleson';
+
 /**
  * @public
  */
@@ -91,4 +93,11 @@ export const defaultTransformer: DefaultDataTransformer = {
   _default: true,
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
+};
+
+/**
+ * @internal
+ */
+export type DefaultTsonConfig = TsonAsyncOptions & {
+  _default: true;
 };

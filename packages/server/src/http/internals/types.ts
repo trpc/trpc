@@ -9,8 +9,28 @@ import { TRPCResponse } from '../../rpc';
 import { Dict } from '../../types';
 import { ResponseMeta } from '../types';
 
+/**
+ * @deprecated use `Headers`
+ */
 export type HTTPHeaders = Dict<string[] | string>;
 
+export function httpHeadersToFetchHeaders(headers: HTTPHeaders): Headers {
+  const newHeaders = new Headers();
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        newHeaders.append(key, v);
+      }
+    } else if (typeof value === 'string') {
+      newHeaders.set(key, value);
+    }
+  }
+  return newHeaders;
+}
+
+/**
+ * @deprecated use `Response`
+ */
 export interface HTTPResponse {
   status: number;
   headers?: HTTPHeaders;

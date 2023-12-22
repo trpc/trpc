@@ -60,6 +60,11 @@
       "require": "./dist/links/wsLink.js",
       "default": "./dist/links/wsLink.js"
     },
+    "./links/httpTuplesonLink": {
+      "import": "./dist/links/httpTuplesonLink.mjs",
+      "require": "./dist/links/httpTuplesonLink.js",
+      "default": "./dist/links/httpTuplesonLink.js"
+    },
     "./shared": {
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
@@ -78,6 +83,9 @@
   "peerDependencies": {
     "@trpc/server": "10.44.1"
   },
+  "dependencies": {
+    "tupleson": "0.23.1"
+  },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
     "@trpc/server": "10.44.1",
@@ -87,6 +95,7 @@
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^2.79.1",
+    "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "undici": "^6.0.1",
     "vitest": "^0.32.0"
