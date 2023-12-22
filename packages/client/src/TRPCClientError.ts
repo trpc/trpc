@@ -6,6 +6,7 @@ import {
   Maybe,
 } from '@trpc/server';
 import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
+import { getCauseFromUnknown } from '@trpc/server/shared';
 import { isObject } from './internals/isObject';
 
 type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
@@ -49,7 +50,9 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
-  public readonly cause;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
+  public override readonly cause;
   public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
   public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
 
@@ -114,7 +117,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
 
     return new TRPCClientError(cause.message, {
       ...opts,
-      cause,
+      cause: getCauseFromUnknown(cause),
     });
   }
 }
