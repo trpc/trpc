@@ -50,6 +50,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
+  // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
   public override readonly cause;
   public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
   public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
