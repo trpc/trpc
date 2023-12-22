@@ -287,9 +287,9 @@ export const getQueryType = (
 /**
  * @internal
  */
-function createRecursiveUtilsProxy<TRouter extends AnyRouter, TFaux>(
+function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
-  key: string & keyof TFaux,
+  key: string,
 ) {
   return createRecursiveProxy((opts) => {
     const path = [key, ...opts.path];
@@ -351,13 +351,8 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
  */
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
-) {
-  type CreateQueryUtilsProxyReturnType = CreateQueryUtils<TRouter>;
-
-  return createFlatProxy<CreateQueryUtilsProxyReturnType>((key) => {
-    return createRecursiveUtilsProxy<TRouter, CreateQueryUtilsProxyReturnType>(
-      context,
-      key,
-    );
+): CreateQueryUtils<TRouter> {
+  return createFlatProxy((key) => {
+    return createRecursiveUtilsProxy(context, key);
   });
 }
