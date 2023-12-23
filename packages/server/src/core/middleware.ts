@@ -1,6 +1,5 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
-import { AnyRootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
 import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
 import { ProcedureType } from './types';
@@ -103,7 +102,8 @@ export type MiddlewareResult<_TContextOverride> =
  * @internal
  */
 export type MiddlewareFunction<
-  TConfig extends AnyRootConfig,
+  TContext,
+  TMeta,
   TContextOverrides,
   TInputIn,
   _TInputOut,
@@ -112,12 +112,12 @@ export type MiddlewareFunction<
   $ContextOverride,
 > = {
   (opts: {
-    ctx: Simplify<Overwrite<TConfig['$types']['ctx'], TContextOverrides>>;
+    ctx: Simplify<Overwrite<TContext, TContextOverrides>>;
     type: ProcedureType;
     path: string;
     input: TInputIn;
     getRawInput: GetRawInputFn;
-    meta: TConfig['$types']['meta'] | undefined;
+    meta: TMeta | undefined;
     next: {
       (): Promise<MiddlewareResult<TContextOverrides>>;
       <$ContextOverride>(opts: {
@@ -133,7 +133,8 @@ export type MiddlewareFunction<
 };
 
 export type AnyMiddlewareFunction = MiddlewareFunction<
-  AnyRootConfig,
+  any,
+  any,
   any,
   any,
   any,

@@ -124,7 +124,8 @@ export interface ProcedureBuilder<
    */
   use<$ContextOverrides>(
     fn: MiddlewareFunction<
-      TConfig,
+      TConfig['$types']['ctx'],
+      TConfig['$types']['meta'],
       TContextOverrides,
       TInputIn,
       TInputOut,
@@ -180,16 +181,6 @@ export interface ProcedureBuilder<
    */
   _def: ProcedureBuilderDef<TConfig>;
 }
-
-export type ProcedureBuilderMiddleware = MiddlewareFunction<
-  AnyRootConfig,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->;
 
 export type ProcedureBuilderResolver = (
   opts: ResolverOptions<any, any, any>,
@@ -258,7 +249,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
           : [middlewareBuilderOrFn];
 
       return createNewBuilder(_def, {
-        middlewares: middlewares as ProcedureBuilderMiddleware[],
+        middlewares: middlewares as AnyMiddlewareFunction[],
       }) as any;
     },
     query(resolver) {
