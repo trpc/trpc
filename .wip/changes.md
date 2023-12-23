@@ -45,3 +45,9 @@ Procedures in your router now only emit their input & output - where before they
 We moved a bunch of utility functions and type helpers that we use within the different tRPC packages from the root entries `@trpc/server`, these have now be moved to `@trpc/server/unstableInternalsExport`.
 
 If you're making an adapter for tRPC, we're happy to move these to another export and ensure they don't break between minor versions.
+
+Refactor: `inferAsyncReturnType<x>` -> `Awaited<ReturnType<x>>`
+
+## React is now >=18.2.0
+
+Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-guide

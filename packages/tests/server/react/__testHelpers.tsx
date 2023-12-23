@@ -73,6 +73,7 @@ export function createAppRouter() {
   const createContext = vi.fn(() => ({}));
   const allPosts = vi.fn();
   const postById = vi.fn();
+  const paginatedPosts = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   const t = initTRPC.create({
@@ -113,6 +114,7 @@ export function createAppRouter() {
           .default({}),
       )
       .query(({ input }) => {
+        paginatedPosts(input);
         const items: typeof db.posts = [];
         const limit = input.limit;
         const { cursor } = input;
@@ -299,6 +301,7 @@ export function createAppRouter() {
     resolvers: {
       postById,
       allPosts,
+      paginatedPosts,
     },
     queryClient,
     createContext,

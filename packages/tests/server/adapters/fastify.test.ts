@@ -27,7 +27,7 @@ const config = {
 };
 
 function createContext({ req, res, info }: CreateFastifyContextOptions) {
-  const user = { name: req.headers.username ?? 'anonymous' };
+  const user = { name: req.headers['username'] ?? 'anonymous' };
   return { req, res, user, info };
 }
 

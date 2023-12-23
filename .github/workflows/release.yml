@@ -2,7 +2,7 @@ name: Release canary
 
 on:
   push:
-    branches: [next]
+    branches: [main]
 
 jobs:
   canary:
@@ -11,14 +11,9 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
-    name: Relase canary ${{ matrix.node }} and ${{ matrix.os }}
+    name: Relase nightly
 
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        node: ['18.x']
-        os: [ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
@@ -28,17 +23,10 @@ jobs:
 
       - uses: pnpm/action-setup@v2
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 20.x
 
-      - name: Check version
-        run: |
-          if [[ $(node -p "require('./packages/server/package.json').version.startsWith('10.')") != true ]]; then
-            echo "Error: The version in packages/server/package.json must start with '10.'"
-            exit 1
-          fi
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -59,4 +47,4 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: pnpm lerna publish --force-publish --canary major --preid alpha-$(pnpm --silent canary-preid) --dist-tag next --yes
+      - run: pnpm lerna publish --force-publish --canary --preid main-$(pnpm --silent commit-date) --dist-tag canary --yes

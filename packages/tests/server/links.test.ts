@@ -67,8 +67,8 @@ test('chainer', async () => {
   });
 
   const result = await observableToPromise(chain).promise;
-  expect(result?.context?.response).toBeTruthy();
-  result.context!.response = '[redacted]' as any;
+  expect(result?.context?.['response']).toBeTruthy();
+  result.context!['response'] = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -172,8 +172,8 @@ describe('batching', () => {
       observableToPromise(chain2).promise,
     ]);
     for (const res of results) {
-      expect(res?.context?.response).toBeTruthy();
-      res.context!.response = '[redacted]';
+      expect(res?.context?.['response']).toBeTruthy();
+      res.context!['response'] = '[redacted]';
     }
     expect(results).toMatchInlineSnapshot(`
       Array [
@@ -290,8 +290,8 @@ describe('batching', () => {
       observableToPromise(chain2).promise,
     ]);
     for (const res of results) {
-      expect(res?.context?.response).toBeTruthy();
-      res.context!.response = '[redacted]';
+      expect(res?.context?.['response']).toBeTruthy();
+      res.context!['response'] = '[redacted]';
     }
     expect(results).toMatchInlineSnapshot(`
       Array [
@@ -519,7 +519,7 @@ describe('loggerLink', () => {
     );
     expect(logger.log.mock.calls[0]![1]!).toMatchInlineSnapshot(`
       "
-          background-color: #72e3ff; 
+          background-color: #72e3ff;
           color: black;
           padding: 2px;
         "
@@ -750,8 +750,8 @@ test('init with URL object', async () => {
   });
 
   const result = await observableToPromise(chain).promise;
-  expect(result?.context?.response).toBeTruthy();
-  result.context!.response = '[redacted]' as any;
+  expect(result?.context?.['response']).toBeTruthy();
+  result.context!['response'] = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {

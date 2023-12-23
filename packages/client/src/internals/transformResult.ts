@@ -71,7 +71,7 @@ export function transformResult<TRouter extends AnyRouter, TOutput>(
   if (
     !result.ok &&
     (!isObject(result.error.error) ||
-      typeof result.error.error.code !== 'number')
+      typeof result.error.error['code'] !== 'number')
   ) {
     throw new TransformResultError();
   }

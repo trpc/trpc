@@ -23,7 +23,7 @@ const sections: Def = {
   silver: [
     //
     'JasonDocton',
-    'flightcontrolhq',
+    // 'flightcontrolhq',
   ],
   bronze: [
     //

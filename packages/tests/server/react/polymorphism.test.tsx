@@ -9,7 +9,11 @@
   interface are compatible with, and allow you to pass around deep router paths to generic components with ease.
 */
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+} from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
@@ -143,6 +147,9 @@ describe('polymorphism', () => {
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
         return (
           <>
             <StartExportButton
@@ -152,7 +159,8 @@ describe('polymorphism', () => {
             />
 
             <RefreshExportsListButton
-              invalidateAll={() => utils.invalidate()}
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
             />
 
             <ExportStatus
@@ -199,6 +207,9 @@ describe('polymorphism', () => {
         const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
 
         return (
           <>
@@ -209,7 +220,8 @@ describe('polymorphism', () => {
             />
 
             <RefreshExportsListButton
-              invalidateAll={() => utils.invalidate()}
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
             />
 
             <ExportStatus
@@ -262,6 +274,9 @@ describe('polymorphism', () => {
         const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
 
         return (
           <>
@@ -273,7 +288,8 @@ describe('polymorphism', () => {
             />
 
             <RefreshExportsListButton
-              invalidateAll={() => utils.invalidate()}
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
             />
 
             <RemoveExportButton
@@ -332,21 +348,16 @@ describe('polymorphism', () => {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
 
-type StartExportButtonProps = {
+function StartExportButton(props: {
   route: Factory.ExportRouteLike;
   utils: Factory.ExportUtilsLike;
   onExportStarted: (id: number) => void;
-};
-function StartExportButton({
-  route,
-  utils,
-  onExportStarted,
-}: StartExportButtonProps) {
-  const exportStarter = route.start.useMutation({
-    onSuccess(data) {
-      onExportStarted(data.id);
+}) {
+  const exportStarter = props.route.start.useMutation({
+    async onSuccess(data) {
+      props.onExportStarted(data.id);
 
-      utils.invalidate();
+      await props.utils.invalidate();
     },
   });
 
@@ -365,23 +376,19 @@ function StartExportButton({
   );
 }
 
-type RemoveExportButtonProps = {
+function RemoveExportButton(props: {
   exportId: number | null;
   remove: SubTypedFactory.ExportSubTypedRouteLike['delete'];
   utils: SubTypedFactory.ExportSubTypesUtilsLike;
-};
-function RemoveExportButton({
-  remove,
-  utils,
-  exportId,
-}: RemoveExportButtonProps) {
-  const exportDeleter = remove.useMutation({
-    onSuccess() {
-      utils.invalidate();
+}) {
+  const exportDeleter = props.remove.useMutation({
+    async onSuccess() {
+      await props.utils.invalidate();
     },
   });
 
-  if (!exportId) {
+  const id = props.exportId;
+  if (!id) {
     return null;
   }
 
@@ -390,7 +397,7 @@ function RemoveExportButton({
       data-testid="removeExportBtn"
       onClick={() => {
         exportDeleter.mutateAsync({
-          id: exportId,
+          id,
         });
       }}
     >
@@ -404,16 +411,12 @@ type SubTypedStartExportButtonProps = {
   utils: SubTypedFactory.ExportSubTypesUtilsLike;
   onExportStarted: (id: number) => void;
 };
-function SubTypedStartExportButton({
-  route,
-  utils,
-  onExportStarted,
-}: SubTypedStartExportButtonProps) {
-  const exportStarter = route.start.useMutation({
+function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
+  const exportStarter = props.route.start.useMutation({
     onSuccess(data) {
-      onExportStarted(data.id);
+      props.onExportStarted(data.id);
 
-      utils.invalidate();
+      props.utils.invalidate();
     },
   });
 
@@ -433,38 +436,31 @@ function SubTypedStartExportButton({
   );
 }
 
-type RefreshExportsListButtonProps = {
-  invalidateAll: () => void;
-};
-function RefreshExportsListButton({
-  invalidateAll,
-}: RefreshExportsListButtonProps) {
+function RefreshExportsListButton(props: {
+  mutate: () => void;
+  isPending: boolean;
+}) {
   return (
     <button
       data-testid="refreshBtn"
-      onClick={() => {
-        invalidateAll();
-      }}
+      onClick={props.mutate}
+      disabled={props.isPending}
     >
       Refresh
     </button>
   );
 }
 
-type ExportStatusProps<TStatus extends Factory.ExportRouteLike['status']> = {
-  //                                                             ^?
+function ExportStatus<
+  TStatus extends Factory.ExportRouteLike['status'],
+>(props: {
   status: TStatus;
   renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
-};
-function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
-  status,
-  currentExport,
-  renderAdditionalFields,
-}: ExportStatusProps<TStatus>) {
-  const exportStatus = status.useQuery(
-    { id: currentExport ?? -1 },
-    { enabled: currentExport !== null },
+}) {
+  const exportStatus = props.status.useQuery(
+    { id: props.currentExport ?? -1 },
+    { enabled: props.currentExport !== null },
   );
 
   if (!exportStatus.data) {
@@ -475,14 +471,13 @@ function ExportStatus<TStatus extends Factory.ExportRouteLike['status']>({
     <p>
       Last Export: `{exportStatus.data?.name}` (
       {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
-      {renderAdditionalFields?.(exportStatus.data as any)}
+      {props.renderAdditionalFields?.(exportStatus.data as unknown as any)}
     </p>
   );
 }
 
-type ExportsListProps = { list: Factory.ExportRouteLike['list'] };
-function ExportsList({ list }: ExportsListProps) {
-  const exportsList = list.useQuery();
+function ExportsList(props: { list: Factory.ExportRouteLike['list'] }) {
+  const exportsList = props.list.useQuery();
 
   return (
     <>

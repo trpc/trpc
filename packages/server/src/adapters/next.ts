@@ -22,11 +22,11 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {
-      if (typeof req.query.trpc === 'string') {
-        return req.query.trpc;
+      if (typeof req.query['trpc'] === 'string') {
+        return req.query['trpc'];
       }
-      if (Array.isArray(req.query.trpc)) {
-        return req.query.trpc.join('/');
+      if (Array.isArray(req.query['trpc'])) {
+        return req.query['trpc'].join('/');
       }
       return null;
     }
@@ -54,7 +54,12 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
     }
 
     await nodeHTTPRequestHandler({
-      ...opts,
+      // FIXME: no typecasting should be needed here
+      ...(opts as NodeHTTPHandlerOptions<
+        AnyRouter,
+        NextApiRequest,
+        NextApiResponse
+      >),
       req,
       res,
       path,

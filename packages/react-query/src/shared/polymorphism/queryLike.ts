@@ -13,8 +13,8 @@ import {
  * Use to request a query route which matches a given query procedure's interface
  */
 export type QueryLike<
-  TConfig extends AnyRootConfig = AnyRootConfig,
-  TProcedure extends AnyProcedure = AnyProcedure,
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
 > = {
   useQuery: (
     variables: inferProcedureInput<TProcedure>,
@@ -25,17 +25,15 @@ export type QueryLike<
 /**
  * Use to unwrap a QueryLike's input
  */
-export type InferQueryLikeInput<
-  TQueryLike extends QueryLike<AnyRootConfig, AnyProcedure>,
-> = TQueryLike extends QueryLike<any, infer TProcedure>
-  ? inferProcedureInput<TProcedure>
-  : never;
+export type InferQueryLikeInput<TQueryLike extends QueryLike<any, any>> =
+  TQueryLike extends QueryLike<any, infer TProcedure>
+    ? inferProcedureInput<TProcedure>
+    : never;
 
 /**
  * Use to unwrap a QueryLike's data output
  */
-export type InferQueryLikeData<
-  TQueryLike extends QueryLike<AnyRootConfig, AnyProcedure>,
-> = TQueryLike extends QueryLike<infer TConfig, infer TProcedure>
-  ? inferTransformedProcedureOutput<TConfig, TProcedure>
-  : never;
+export type InferQueryLikeData<TQueryLike extends QueryLike<any, any>> =
+  TQueryLike extends QueryLike<infer TConfig, infer TProcedure>
+    ? inferTransformedProcedureOutput<TConfig, TProcedure>
+    : never;

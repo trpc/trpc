@@ -107,7 +107,13 @@ export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
-> extends Required<TRPCContextProps<TRouter, TSSRContext>> {
+> extends Required<TRPCContextProps<TRouter, TSSRContext>>,
+    TRPCQueryUtils<TRouter> {}
+
+/**
+ * @internal
+ */
+export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */

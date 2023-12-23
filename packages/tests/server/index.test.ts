@@ -283,7 +283,7 @@ describe('integration tests', () => {
       }
       // auth, should work
       {
-        headers.authorization = 'kattsecret';
+        headers['authorization'] = 'kattsecret';
         const res = await client.whoami.query();
         expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
         expect(res).toEqual({
