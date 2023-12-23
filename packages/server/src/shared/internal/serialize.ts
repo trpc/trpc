@@ -74,7 +74,7 @@ type FilterDefinedKeys<TObj extends object> = Exclude<
  * For an object T, if it has any properties that are a union with `undefined`,
  * make those into optional properties instead.
  *
- * Example: { a: string | undefined} --> { a?: string}
+ * Example: { a: string | undefined } --> { a?: string }
  */
 type UndefinedToOptional<T extends object> =
   // Property is not a union with `undefined`, keep as-is
@@ -82,6 +82,15 @@ type UndefinedToOptional<T extends object> =
     WithoutIndexSignature<T>,
     FilterDefinedKeys<WithoutIndexSignature<T>>
   > & {
-    // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
-    [k in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[k], undefined>;
+    // Property is a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
+    [k in keyof Omit<
+      WithoutIndexSignature<T>,
+      FilterDefinedKeys<WithoutIndexSignature<T>>
+    >]?: Exclude<T[k], undefined>;
+  } & {
+    // Finally add IndexSignature and remove `undefined` from the union
+    [k in keyof Omit<T, keyof WithoutIndexSignature<T>>]: Exclude<
+      T[k],
+      undefined
+    >;
   };
