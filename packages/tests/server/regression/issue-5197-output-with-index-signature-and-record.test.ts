@@ -79,7 +79,7 @@ type AppRouter = typeof appRouter;
 describe('inferRouterOutputs', () => {
   type AppRouterOutputs = inferRouterOutputs<AppRouter>;
 
-  test('outputWithIndexSignature', async () => {
+  test('outputWithIndexSignature', () => {
     type Output = AppRouterOutputs['outputWithIndexSignature'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
@@ -89,7 +89,7 @@ describe('inferRouterOutputs', () => {
     }>();
   });
 
-  test('outputWithRecord', async () => {
+  test('outputWithRecord', () => {
     type Output = AppRouterOutputs['outputWithRecord'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
@@ -98,7 +98,7 @@ describe('inferRouterOutputs', () => {
     }>();
   });
 
-  test('outputWithRecordAndIndexSignature', async () => {
+  test('outputWithRecordAndIndexSignature', () => {
     type Output = AppRouterOutputs['outputWithRecordAndIndexSignature'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
@@ -108,52 +108,35 @@ describe('inferRouterOutputs', () => {
     }>();
   });
 
-  /*
-  With exactOptionalPropertyTypes: false (Default), following tests fail
-  
-  ```ts
-  type output =  {
-      [x: string]: number;
-      a: number;
-      b?: number | undefined;
-    }
-  ```
-  
-  `b?: number | undefined` isn't assignable to `[x: string]: number`
-
-  test('outputWithUndefinedAndUndefinedIndexSignature', async () => {
+  test('outputWithUndefinedAndUndefinedIndexSignature', () => {
     type Output =
       AppRouterOutputs['outputWithUndefinedAndUndefinedIndexSignature'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
       [x: number]: number;
       a: number;
-      b?: number;
     }>();
   });
 
-  test('outputWithUndefinedAndRecord', async () => {
+  test('outputWithUndefinedAndRecord', () => {
     type Output = AppRouterOutputs['outputWithUndefinedAndUndefinedRecord'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
       a: number;
-      b?: number;
     }>();
   });
 
-  test('outputWithUndefinedAndRecordAndIndexSignature', async () => {
+  test('outputWithUndefinedAndRecordAndIndexSignature', () => {
     type Output =
       AppRouterOutputs['outputWithUndefinedAndUndefinedRecordAndUndefinedIndexSignature'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
       [x: number]: number;
       a: number;
-      b?: number;
     }>();
   });
-  */
 
-  test('outputWithUndefinedIndexSignature', async () => {
+  test('outputWithUndefinedIndexSignature', () => {
     type Output = AppRouterOutputs['outputWithUndefinedIndexSignature'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
@@ -163,7 +146,7 @@ describe('inferRouterOutputs', () => {
     }>();
   });
 
-  test('outputWithUndefinedRecord', async () => {
+  test('outputWithUndefinedRecord', () => {
     type Output = AppRouterOutputs['outputWithUndefinedRecord'];
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: number;
@@ -172,7 +155,7 @@ describe('inferRouterOutputs', () => {
     }>();
   });
 
-  test('outputWithUndefinedRecordAndUndefinedIndexSignature', async () => {
+  test('outputWithUndefinedRecordAndUndefinedIndexSignature', () => {
     type Output =
       AppRouterOutputs['outputWithUndefinedRecordAndUndefinedIndexSignature'];
     expectTypeOf<Output>().toEqualTypeOf<{
