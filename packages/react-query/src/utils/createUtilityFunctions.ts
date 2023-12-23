@@ -4,7 +4,7 @@ import {
   getUntypedClient,
   TRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/server/unstableInternalsExport';
 import { getClientArgs } from '../internals/getClientArgs';
 import { TRPCQueryUtils } from '../shared';
 
@@ -122,7 +122,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setQueryData: (queryKey, updater, options) => {
-      return queryClient.setQueryData(queryKey, updater as any, options);
+      return queryClient.setQueryData(queryKey, updater, options);
     },
 
     getQueryData: (queryKey) => {
@@ -130,7 +130,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setInfiniteQueryData: (queryKey, updater, options) => {
-      return queryClient.setQueryData(queryKey, updater as any, options);
+      return queryClient.setQueryData(queryKey, updater, options);
     },
 
     getInfiniteQueryData: (queryKey) => {
