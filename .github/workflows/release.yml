@@ -1,4 +1,4 @@
-name: Release canary
+name: Release "@canary"-tagged packages
 
 on:
   push:
@@ -10,8 +10,6 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
-    name: Relase nightly
 
     runs-on: ubuntu-latest
 
