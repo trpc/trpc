@@ -6,3 +6,4 @@ export * from './transformTRPCResponse';
 export type { SerializeObject, Serialize } from './internal/serialize';
 
 export { getErrorShape } from './getErrorShape';
+export { getCauseFromUnknown } from './getCauseFromUnknown';
