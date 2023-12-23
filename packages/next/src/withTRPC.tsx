@@ -32,7 +32,6 @@ import {
 } from 'next/dist/shared/lib/utils';
 import { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
-import ssrPrepass from 'react-ssr-prepass';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
@@ -205,11 +204,13 @@ export function withTRPC<
           trpc: trpcProp,
         };
 
+        const reactDomServer = await import('react-dom/server');
+
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
         // multiple prepass ensures that we can do batching on the server
         while (true) {
           // render full tree
-          await ssrPrepass(createElement(AppTree, prepassProps as any));
+          reactDomServer.renderToString(createElement(AppTree, prepassProps));
           if (!queryClient.isFetching()) {
             // the render didn't cause the queryClient to fetch anything
             break;
