@@ -138,7 +138,7 @@ export default trpcNext.createNextApiHandler({
       const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
       return {
         headers: {
-          'cache-control': `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          'cache-control': `s-maxage=${ONE_DAY_IN_SECONDS}, stale-while-revalidate=1`,
         },
       };
     }
