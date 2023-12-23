@@ -227,9 +227,12 @@ export function withTRPC<
           });
         }
         const dehydratedCache = dehydrate(queryClient, {
-          shouldDehydrateQuery() {
-            // makes sure errors are also dehydrated
-            return true;
+          shouldDehydrateQuery(query) {
+            // filter out queries that are marked as trpc: { ssr: false } or are not enabled, but make sure errors are dehydrated
+            const isExcludedFromSSr =
+              query.state.fetchStatus === 'idle' &&
+              query.state.status === 'loading';
+            return !isExcludedFromSSr;
           },
         });
         // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects

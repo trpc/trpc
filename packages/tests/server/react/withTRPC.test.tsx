@@ -6,7 +6,7 @@ import { withTRPC } from '@trpc/next/src';
 import { konn } from 'konn';
 import { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
 import React from 'react';
-import { afterEach, beforeEach, expect, vitest } from 'vitest';
+import { expect, vitest } from 'vitest';
 
 const ctx = konn()
   .beforeEach(() => createAppRouter())
@@ -521,7 +521,7 @@ describe('withTRPC()', () => {
 
   describe('`enabled: false` on query during ssr', () => {
     describe('useQuery', () => {
-      test('queryKey does not change', async () => {
+      test('query is not included in serialized state', async () => {
         const { window } = global;
 
         // @ts-ignore
@@ -563,6 +563,53 @@ describe('withTRPC()', () => {
           expect(utils.container).toHaveTextContent('first post');
           expect(utils.container).toHaveTextContent('second post');
         });
+      });
+      test('query is not serialized when disabled or ssr: false', async () => {
+        const { window } = global;
+
+        // @ts-ignore
+        delete global.window;
+        const { trpc, trpcClientOptions } = ctx;
+        const App: AppType = () => {
+          const query1 = trpc.postById.useQuery('1');
+          // query2 depends only on query1 status
+          const query2 = trpc.postById.useQuery('2', {
+            trpc: {
+              ssr: false,
+            },
+          });
+          return (
+            <>
+              <>{JSON.stringify(query1.data)}</>
+              <>{JSON.stringify(query2.data)}</>
+            </>
+          );
+        };
+
+        const Wrapped = withTRPC({
+          config: () => trpcClientOptions,
+          ssr: true,
+        })(App);
+
+        const props = (await Wrapped.getInitialProps!({
+          AppTree: Wrapped,
+          Component: <div />,
+        } as any)) as {
+          pageProps: {
+            trpcState: DehydratedState;
+          };
+        };
+
+        global.window = window;
+
+        const utils = render(<Wrapped {...(props as any)} />);
+
+        // when queryKey does not change query2 only fetched in the browser
+        expect(utils.container).toHaveTextContent('first post');
+        expect(utils.container).not.toHaveTextContent('second post');
+        const dehydratedQueries = props.pageProps.trpcState.queries;
+        expect(dehydratedQueries).toHaveLength(1);
+        expect((dehydratedQueries[0]!.queryKey[1] as any).input).toEqual('1');
       });
 
       test('queryKey changes', async () => {
