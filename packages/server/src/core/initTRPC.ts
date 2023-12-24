@@ -157,7 +157,10 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Create reusable middlewares
        */
-      middleware: createMiddlewareFactory<$Config>(),
+      middleware: createMiddlewareFactory<
+        $Config['$types']['ctx'],
+        $Config['$types']['meta']
+      >(),
       /**
        * Create a router
        */

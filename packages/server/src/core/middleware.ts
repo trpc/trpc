@@ -1,4 +1,4 @@
-import { AnyRootConfig, RootConfig } from '../core/internals/config';
+import { RootConfig } from '../core/internals/config';
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
 import { ParseFn } from './internals/getParseFn';
@@ -124,7 +124,8 @@ type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
  * @internal
  */
 export function createMiddlewareFactory<
-  TConfig extends AnyRootConfig,
+  TContext,
+  TMeta,
   TInputIn = UnsetMarker,
 >() {
   function createMiddlewareInner(
@@ -145,18 +146,13 @@ export function createMiddlewareFactory<
 
   function createMiddleware<$ContextOverrides>(
     fn: MiddlewareFunction<
-      TConfig['$types']['ctx'],
-      TConfig['$types']['meta'],
+      TContext,
+      TMeta,
       object,
       UnsetMarker,
       $ContextOverrides
     >,
-  ): MiddlewareBuilder<
-    TConfig['$types']['ctx'],
-    TConfig['$types']['meta'],
-    $ContextOverrides,
-    TInputIn
-  > {
+  ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputIn> {
     return createMiddlewareInner([fn]);
   }
 
@@ -171,13 +167,9 @@ export const experimental_standaloneMiddleware = <
   },
 >() => ({
   create: createMiddlewareFactory<
-    RootConfig<{
-      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
-      meta: TCtx extends { meta: infer T extends object } ? T : object;
-      errorShape: object;
-      transformer: object;
-    }>,
-    TCtx extends { input: infer T } ? T : unknown
+    TCtx extends { ctx: infer T extends object } ? T : any,
+    TCtx extends { meta: infer T extends object } ? T : object,
+    TCtx extends { input: infer T } ? T : UnsetMarker
   >(),
 });
 
