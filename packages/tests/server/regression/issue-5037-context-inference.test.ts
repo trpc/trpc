@@ -1,5 +1,4 @@
 import {
-  AnyProcedureBuilderParams,
   inferRouterOutputs,
   initTRPC,
   TRPCError,
@@ -65,5 +64,88 @@ describe('context inference w/ middlewares', () => {
       object: { a: string };
       some: 'prop';
     }>();
+  });
+
+  test('using generically constructed tRPC instance should have correctly inferred context', () => {
+    interface CreateInnerContextOptions
+      extends Partial<CreateFastifyContextOptions> {}
+
+    async function createInternalContext<T>(
+      createContextInner: (opts?: CreateInnerContextOptions) => T,
+      opts: any,
+    ) {
+      const contextInner = createContextInner();
+      return {
+        ...contextInner,
+        req: opts.req,
+        res: opts.res,
+      };
+    }
+
+    type LocalContext<T> = Awaited<ReturnType<typeof createInternalContext<T>>>;
+
+    type Context2<T> = T extends infer R ? LocalContext<R> : never;
+
+    function makeTRPC<T extends object>(
+      config?: Parameters<typeof initTRPC.create>[0],
+    ) {
+      const t = initTRPC.context<Context2<T>>().create({
+        errorFormatter(error) {
+          return config?.errorFormatter?.(error) ?? error.shape;
+        },
+      });
+
+      function withAuth2<T extends AnyProcedureBuilderParams>(
+        builder: ProcedureBuilder<T>,
+      ) {
+        return builder.use(async (opts) => {
+          if (!opts.ctx.req) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'missing req object',
+            });
+          }
+          try {
+            return opts.next({
+              ctx: {
+                auth: {
+                  stuff: 'here',
+                },
+              },
+            });
+          } catch (e) {
+            throw new TRPCError({ code: 'UNAUTHORIZED' });
+          }
+        });
+      }
+
+      return {
+        router: t.router,
+        publicProcedure: t.procedure,
+        createProtectedProcedure: () => {
+          const decorated = withAuth2(t.procedure);
+          return decorated;
+        },
+      };
+    }
+
+    const t = makeTRPC<{ mything: string }>();
+    t.publicProcedure.query(({ ctx }) => {
+      expectTypeOf(ctx).toEqualTypeOf<{
+        mything: string;
+        req: any;
+        res: any;
+      }>();
+    });
+    t.createProtectedProcedure().query(({ ctx }) => {
+      expectTypeOf(ctx).toEqualTypeOf<{
+        mything: string;
+        auth: {
+          stuff: string;
+        };
+        req: any;
+        res: any;
+      }>();
+    });
   });
 });
