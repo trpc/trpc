@@ -22,10 +22,6 @@ export {
   createOutputMiddleware,
   experimental_standaloneMiddleware,
 } from './middleware';
-export type {
-  MiddlewareFunction,
-
-  //, MiddlewareBuilder
-} from './middleware';
+export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
 export { initTRPC } from './initTRPC';
 export * from './types';
