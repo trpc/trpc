@@ -31,7 +31,7 @@ import {
 
 type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
-  : Simplify<TType & TWith>;
+  : Overwrite<TType, TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
