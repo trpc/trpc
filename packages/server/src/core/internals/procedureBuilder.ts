@@ -29,9 +29,9 @@ import {
   UnsetMarker,
 } from './utils';
 
-type OverwriteIfDefined<TType, TWith> = UnsetMarker extends TType
+type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
-  : Overwrite<TType, TWith>;
+  : Simplify<TType & TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
@@ -103,8 +103,8 @@ export interface ProcedureBuilder<
     TContext,
     TMeta,
     TContextOverrides,
-    OverwriteIfDefined<TInputIn, inferParser<$Parser>['in']>,
-    OverwriteIfDefined<TInputOut, inferParser<$Parser>['out']>,
+    IntersectIfDefined<TInputIn, inferParser<$Parser>['in']>,
+    IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
     TOutputOut
   >;
@@ -120,8 +120,8 @@ export interface ProcedureBuilder<
     TContextOverrides,
     TInputIn,
     TInputOut,
-    OverwriteIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    OverwriteIfDefined<TOutputOut, inferParser<$Parser>['out']>
+    IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
+    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>
   >;
   /**
    * Add a meta data to the procedure.
