@@ -151,7 +151,10 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       /**
        * Builder object for creating procedures
        */
-      procedure: createBuilder<$Config>({
+      procedure: createBuilder<
+        $Config['$types']['ctx'],
+        $Config['$types']['meta']
+      >({
         meta: runtime?.defaultMeta,
       }),
       /**
