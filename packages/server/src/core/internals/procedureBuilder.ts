@@ -380,7 +380,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     }
 
     // run the middlewares recursively with the resolver as the last one
-    const callRecursive = async (
+    async function callRecursive(
       callOpts: {
         ctx: any;
         index: number;
@@ -390,7 +390,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         index: 0,
         ctx: opts.ctx,
       },
-    ): Promise<MiddlewareResult<any>> => {
+    ): Promise<MiddlewareResult<any>> {
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[callOpts.index]!;
@@ -435,7 +435,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           marker: middlewareMarker,
         };
       }
-    };
+    }
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
     const result = await callRecursive();

@@ -127,7 +127,7 @@ export function createMiddlewareFactory<TContext, TMeta, TInputIn = unknown>() {
     middlewares: AnyMiddlewareFunction[],
   ): AnyMiddlewareBuilder {
     return {
-      _middlewares: middlewares as any,
+      _middlewares: middlewares,
       unstable_pipe(middlewareBuilderOrFn) {
         const pipedMiddleware =
           '_middlewares' in middlewareBuilderOrFn
