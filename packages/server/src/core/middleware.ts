@@ -84,7 +84,7 @@ export interface MiddlewareBuilder<
     TContextOverrides,
     TInputIn,
     object
-  >;
+  >[];
 }
 
 /**
@@ -125,7 +125,7 @@ type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
  */
 export function createMiddlewareFactory<
   TConfig extends AnyRootConfig,
-  TInputIn = unknown,
+  TInputIn = UnsetMarker,
 >() {
   function createMiddlewareInner(
     middlewares: AnyMiddlewareFunction[],
@@ -133,7 +133,7 @@ export function createMiddlewareFactory<
     return {
       _middlewares: middlewares as any,
       unstable_pipe(middlewareBuilderOrFn) {
-        const pipedMiddleware: AnyMiddlewareFunction =
+        const pipedMiddleware =
           '_middlewares' in middlewareBuilderOrFn
             ? middlewareBuilderOrFn._middlewares
             : [middlewareBuilderOrFn];

@@ -128,7 +128,7 @@ export interface ProcedureBuilder<
       | MiddlewareBuilder<
           TConfig['$types']['ctx'],
           TConfig['$types']['meta'],
-          TContextOverrides,
+          $ContextOverrides,
           TInputIn
         >
       | MiddlewareFunction<

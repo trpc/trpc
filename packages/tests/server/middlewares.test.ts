@@ -2,7 +2,7 @@ import {
   experimental_standaloneMiddleware,
   initTRPC,
   TRPCError,
-} from '@trpc/server/src';
+} from '@trpc/server';
 import * as z from 'zod';
 
 test('decorate independently', () => {
@@ -13,7 +13,10 @@ test('decorate independently', () => {
   type Context = {
     user: User;
   };
-  const t = initTRPC.context<Context>().create();
+  type Meta = {
+    // ..
+  };
+  const t = initTRPC.meta<Meta>().context<Context>().create();
 
   const fooMiddleware = t.middleware((opts) => {
     expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
@@ -23,6 +26,13 @@ test('decorate independently', () => {
         foo: 'foo' as const,
       },
     });
+  });
+
+  t.procedure.use(fooMiddleware).query((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
+      user: User;
+      foo: 'foo';
+    }>();
   });
 
   fooMiddleware;
