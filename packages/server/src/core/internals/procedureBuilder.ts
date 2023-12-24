@@ -129,20 +129,13 @@ export interface ProcedureBuilder<
           TConfig['$types']['ctx'],
           TConfig['$types']['meta'],
           TContextOverrides,
-          TInputIn,
-          TInputOut,
-          TOutputIn,
-          TOutputOut,
-          $ContextOverrides
+          TInputIn
         >
       | MiddlewareFunction<
           TConfig['$types']['ctx'],
           TConfig['$types']['meta'],
           TContextOverrides,
           TInputIn,
-          TInputOut,
-          TOutputIn,
-          TOutputOut,
           $ContextOverrides
         >,
   ): ProcedureBuilder<

@@ -54,10 +54,6 @@ export interface MiddlewareBuilder<
   TMeta,
   TContextOverrides,
   TInputIn,
-  _TInputOut,
-  _TOutputIn,
-  _TOutputOut,
-  $ContextOverrides1,
 > {
   /**
    * Create a new builder based on the current middleware builder
@@ -69,30 +65,14 @@ export interface MiddlewareBuilder<
           TMeta,
           TContextOverrides,
           TInputIn,
-          _TInputOut,
-          _TOutputIn,
-          _TOutputOut,
           $ContextOverrides2
         >
-      | MiddlewareBuilder<
-          TContext,
-          TMeta,
-          TContextOverrides,
-          TInputIn,
-          _TInputOut,
-          _TOutputIn,
-          _TOutputOut,
-          $ContextOverrides2
-        >,
+      | MiddlewareBuilder<TContext, TMeta, TContextOverrides, TInputIn>,
   ): MiddlewareBuilder<
     TContext,
     TMeta,
     Overwrite<TContextOverrides, $ContextOverrides2>,
-    TInputIn,
-    _TInputOut,
-    _TOutputIn,
-    _TOutputOut,
-    object
+    TInputIn
   >;
 
   /**
@@ -101,11 +81,8 @@ export interface MiddlewareBuilder<
   _middlewares: MiddlewareFunction<
     TContext,
     TMeta,
-    $ContextOverrides1,
+    TContextOverrides,
     TInputIn,
-    _TInputOut,
-    _TOutputIn,
-    _TOutputOut,
     object
   >;
 }
@@ -118,9 +95,6 @@ export type MiddlewareFunction<
   TMeta,
   TContextOverrides,
   TInputIn,
-  _TInputOut,
-  _TOutputIn,
-  _TOutputOut,
   $ContextOverride,
 > = {
   (opts: {
@@ -144,17 +118,8 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any,
-  any
->;
-
+export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
  */
@@ -164,7 +129,7 @@ export function createMiddlewareFactory<
 >() {
   function createMiddlewareInner(
     middlewares: AnyMiddlewareFunction[],
-  ): MiddlewareBuilder<any, any, any, any, any, any, any, any> {
+  ): AnyMiddlewareBuilder {
     return {
       _middlewares: middlewares as any,
       unstable_pipe(middlewareBuilderOrFn) {
@@ -184,20 +149,13 @@ export function createMiddlewareFactory<
       TConfig['$types']['meta'],
       object,
       UnsetMarker,
-      UnsetMarker,
-      UnsetMarker,
-      UnsetMarker,
       $ContextOverrides
     >,
   ): MiddlewareBuilder<
     TConfig['$types']['ctx'],
     TConfig['$types']['meta'],
     $ContextOverrides,
-    TInputIn,
-    UnsetMarker,
-    UnsetMarker,
-    UnsetMarker,
-    object
+    TInputIn
   > {
     return createMiddlewareInner([fn]);
   }
