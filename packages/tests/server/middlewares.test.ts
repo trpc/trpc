@@ -73,6 +73,108 @@ test('decorate independently', () => {
   });
 });
 
+describe('standalone middleware', () => {
+  type Context = {
+    foo: 'foo';
+  };
+  type User = {
+    id: string;
+  };
+  const t = initTRPC.context<Context>().create();
+
+  test('without ctx', () => {
+    const addBarToCtxMiddleware = experimental_standaloneMiddleware().create(
+      (opts) => {
+        expectTypeOf(opts.ctx).toEqualTypeOf<object>();
+        return opts.next({
+          ctx: {
+            bar: 'bar' as const,
+          },
+        });
+      },
+    );
+
+    t.procedure.use(addBarToCtxMiddleware).query((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        foo: 'foo';
+        bar: 'bar';
+      }>();
+    });
+  });
+
+  test('with context', () => {
+    const barNeedsFoo = experimental_standaloneMiddleware<{
+      ctx: { foo: 'foo' };
+    }>().create((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        foo: 'foo';
+      }>();
+      return opts.next({
+        ctx: {
+          bar: 'bar' as const,
+        },
+      });
+    });
+
+    t.procedure.use(barNeedsFoo).query((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        foo: 'foo';
+        bar: 'bar';
+      }>();
+    });
+  });
+
+  test('mismatching context', () => {
+    const barNeedsSomethingElse = experimental_standaloneMiddleware<{
+      ctx: { notFound: true };
+    }>().create((opts) => {
+      opts.ctx.notFound;
+      //    ^?
+      return opts.next({
+        ctx: {
+          bar: 'bar' as const,
+        },
+      });
+    });
+
+    // @ts-expect-error: notFound is not in context
+    t.procedure.use(barNeedsFoo);
+  });
+
+  test('in middleware chain', () => {
+    const needsUser = experimental_standaloneMiddleware<{
+      ctx: { user: User };
+    }>().create((opts) => {
+      opts.ctx.user.id;
+      //    ^?
+      return opts.next({
+        ctx: {
+          bar: 'bar' as const,
+        },
+      });
+    });
+
+    const withUser = t.procedure.use((opts) => {
+      const user: User = {
+        id: 'id',
+      };
+      return opts.next({
+        ctx: {
+          user,
+        },
+      });
+    });
+
+    withUser.use(needsUser).query((opts) => {
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
+        foo: 'foo';
+        user: User;
+        bar: 'bar';
+      }>();
+    });
+  });
+});
+
 test('standalone middlewares that define the ctx/input they require and can be used in different tRPC instances', () => {
   type Human = {
     id: string;
@@ -200,7 +302,6 @@ test('standalone middlewares that define the ctx/input they require and can be u
     // This is not OK because the requirements of the later middlewares are not met
     // @ts-expect-error: No user in context at this point
     .unstable_pipe(addUserNameLengthToCtxMiddleware)
-    // @ts-expect-error: No user in context at this point
     .unstable_pipe(mapUserToUserTypeMiddleware)
     .unstable_pipe(determineIfUserNameIsLongMiddleware);
 

@@ -1,12 +1,7 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
 import { ParseFn } from './internals/getParseFn';
-import {
-  GetRawInputFn,
-  MiddlewareMarker,
-  Overwrite,
-  UnsetMarker,
-} from './internals/utils';
+import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
 import { ProcedureType } from './types';
 
 /**
@@ -57,20 +52,25 @@ export interface MiddlewareBuilder<
   /**
    * Create a new builder based on the current middleware builder
    */
-  unstable_pipe<$ContextOverrides2>(
+  unstable_pipe<$ContextOverridesOut>(
     fn:
       | MiddlewareFunction<
           TContext,
           TMeta,
           TContextOverrides,
-          $ContextOverrides2,
+          $ContextOverridesOut,
           TInputIn
         >
-      | MiddlewareBuilder<TContext, TMeta, TContextOverrides, TInputIn>,
+      | MiddlewareBuilder<
+          Overwrite<TContext, TContextOverrides>,
+          TMeta,
+          $ContextOverridesOut,
+          TInputIn
+        >,
   ): MiddlewareBuilder<
     TContext,
     TMeta,
-    Overwrite<TContextOverrides, $ContextOverrides2>,
+    Overwrite<TContextOverrides, $ContextOverridesOut>,
     TInputIn
   >;
 
@@ -122,11 +122,7 @@ type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
  */
-export function createMiddlewareFactory<
-  TContext,
-  TMeta,
-  TInputIn = UnsetMarker,
->() {
+export function createMiddlewareFactory<TContext, TMeta, TInputIn = unknown>() {
   function createMiddlewareInner(
     middlewares: AnyMiddlewareFunction[],
   ): AnyMiddlewareBuilder {
@@ -149,7 +145,7 @@ export function createMiddlewareFactory<
       TMeta,
       object,
       $ContextOverrides,
-      UnsetMarker
+      TInputIn
     >,
   ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputIn> {
     return createMiddlewareInner([fn]);
@@ -168,7 +164,7 @@ export const experimental_standaloneMiddleware = <
   create: createMiddlewareFactory<
     TCtx extends { ctx: infer T extends object } ? T : any,
     TCtx extends { meta: infer T extends object } ? T : object,
-    TCtx extends { input: infer T } ? T : UnsetMarker
+    TCtx extends { input: infer T } ? T : unknown
   >(),
 });
 
