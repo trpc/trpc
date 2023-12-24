@@ -4,6 +4,7 @@ import {
   AnyMiddlewareFunction,
   createInputMiddleware,
   createOutputMiddleware,
+  MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
 } from '../middleware';
@@ -123,16 +124,27 @@ export interface ProcedureBuilder<
    * Add a middleware to the procedure.
    */
   use<$ContextOverrides>(
-    fn: MiddlewareFunction<
-      TConfig['$types']['ctx'],
-      TConfig['$types']['meta'],
-      TContextOverrides,
-      TInputIn,
-      TInputOut,
-      TOutputIn,
-      TOutputOut,
-      $ContextOverrides
-    >,
+    fn:
+      | MiddlewareBuilder<
+          TConfig['$types']['ctx'],
+          TConfig['$types']['meta'],
+          TContextOverrides,
+          TInputIn,
+          TInputOut,
+          TOutputIn,
+          TOutputOut,
+          $ContextOverrides
+        >
+      | MiddlewareFunction<
+          TConfig['$types']['ctx'],
+          TConfig['$types']['meta'],
+          TContextOverrides,
+          TInputIn,
+          TInputOut,
+          TOutputIn,
+          TOutputOut,
+          $ContextOverrides
+        >,
   ): ProcedureBuilder<
     TConfig,
     Overwrite<TContextOverrides, $ContextOverrides>,
@@ -205,7 +217,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
   initDef: Partial<AnyProcedureBuilderDef> = {},
 ): ProcedureBuilder<
   TConfig,
-  Record<string, never>,
+  object,
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
@@ -249,7 +261,7 @@ export function createBuilder<TConfig extends AnyRootConfig>(
           : [middlewareBuilderOrFn];
 
       return createNewBuilder(_def, {
-        middlewares: middlewares as AnyMiddlewareFunction[],
+        middlewares: middlewares,
       }) as any;
     },
     query(resolver) {

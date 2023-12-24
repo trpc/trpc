@@ -1,7 +1,13 @@
+import { AnyRootConfig, RootConfig } from '../core/internals/config';
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
 import { ParseFn } from './internals/getParseFn';
-import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
+import {
+  GetRawInputFn,
+  MiddlewareMarker,
+  Overwrite,
+  UnsetMarker,
+} from './internals/utils';
 import { ProcedureType } from './types';
 
 /**
@@ -40,64 +46,70 @@ export type MiddlewareResult<_TContextOverride> =
   | MiddlewareErrorResult<_TContextOverride>
   | MiddlewareOKResult<_TContextOverride>;
 
-// /**
-//  * @internal
-//  */
-// export interface MiddlewareBuilder<
-//   TConfig extends AnyRootConfig,
-//   TConfig['$types']['ctx'],
-//   TContextOverrides,
-//   TInputIn,
-//   TInputOut,
-//   TOutputIn,
-//   TOutputOut,
-// > {
-//   /**
-//    * Create a new builder based on the current middleware builder
-//    */
-//   unstable_pipe<$Params extends AnyProcedureBuilderParams>(
-//     fn: {
-//       _config: TRoot['_config'];
-//       _meta: TRoot['_meta'];
-//       _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-//       _input_in: DefaultValue<TRoot['_input_in'], TNewParams['_input_in']>;
-//       _input_out: DefaultValue<TRoot['_input_out'], TNewParams['_input_out']>;
-//       _output_in: DefaultValue<TRoot['_output_in'], TNewParams['_output_in']>;
-//       _output_out: DefaultValue<
-//         TRoot['_output_out'],
-//         TNewParams['_output_out']
-//       >;
-//     } extends infer OParams extends AnyProcedureBuilderParams
-//       ? MiddlewareBuilder<OParams, $Params>
-//       : never,
-//   ): CreateMiddlewareReturnInput<
-//     TRoot,
-//     TNewParams,
-//     Overwrite<TNewParams, $Params>
-//   >;
+/**
+ * @internal
+ */
+export interface MiddlewareBuilder<
+  TContext,
+  TMeta,
+  TContextOverrides,
+  TInputIn,
+  _TInputOut,
+  _TOutputIn,
+  _TOutputOut,
+  $ContextOverrides1,
+> {
+  /**
+   * Create a new builder based on the current middleware builder
+   */
+  unstable_pipe<$ContextOverrides2>(
+    fn:
+      | MiddlewareFunction<
+          TContext,
+          TMeta,
+          TContextOverrides,
+          TInputIn,
+          _TInputOut,
+          _TOutputIn,
+          _TOutputOut,
+          $ContextOverrides2
+        >
+      | MiddlewareBuilder<
+          TContext,
+          TMeta,
+          TContextOverrides,
+          TInputIn,
+          _TInputOut,
+          _TOutputIn,
+          _TOutputOut,
+          $ContextOverrides2
+        >,
+  ): MiddlewareBuilder<
+    TContext,
+    TMeta,
+    Overwrite<TContextOverrides, $ContextOverrides2>,
+    TInputIn,
+    _TInputOut,
+    _TOutputIn,
+    _TOutputOut,
+    object
+  >;
 
-//   /**
-//    * List of middlewares within this middleware builder
-//    */
-//   _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
-// }
+  /**
+   * List of middlewares within this middleware builder
+   */
+  _middlewares: MiddlewareFunction<
+    TContext,
+    TMeta,
+    $ContextOverrides1,
+    TInputIn,
+    _TInputOut,
+    _TOutputIn,
+    _TOutputOut,
+    object
+  >;
+}
 
-// /**
-//  * @internal
-//  */
-// type deriveParamsFromConfig<
-//   TConfig extends AnyRootConfig,
-//   TInputIn = unknown,
-// > = {
-//   _config: TConfig;
-//   // eslint-disable-next-line @typescript-eslint/ban-types
-//   _ctx_out: {};
-//   _input_out: UnsetMarker;
-//   _input_in: TInputIn;
-//   _output_in: unknown;
-//   _output_out: unknown;
-//   _meta: TConfig['$types']['meta'];
-// };
 /**
  * @internal
  */
@@ -143,61 +155,73 @@ export type AnyMiddlewareFunction = MiddlewareFunction<
   any
 >;
 
-// /**
-//  * @internal
-//  */
-// export function createMiddlewareFactory<
-//   TConfig extends AnyRootConfig,
-//   TInputIn = unknown,
-// >() {
-//   function createMiddlewareInner<TNewParams extends AnyProcedureBuilderParams>(
-//     middlewares: MiddlewareFunction<any, any>[],
-//   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
-//     return {
-//       _middlewares: middlewares,
-//       unstable_pipe(middlewareBuilderOrFn) {
-//         const pipedMiddleware =
-//           '_middlewares' in middlewareBuilderOrFn
-//             ? middlewareBuilderOrFn._middlewares
-//             : [middlewareBuilderOrFn];
+/**
+ * @internal
+ */
+export function createMiddlewareFactory<
+  TConfig extends AnyRootConfig,
+  TInputIn = unknown,
+>() {
+  function createMiddlewareInner(
+    middlewares: AnyMiddlewareFunction[],
+  ): MiddlewareBuilder<any, any, any, any, any, any, any, any> {
+    return {
+      _middlewares: middlewares as any,
+      unstable_pipe(middlewareBuilderOrFn) {
+        const pipedMiddleware: AnyMiddlewareFunction =
+          '_middlewares' in middlewareBuilderOrFn
+            ? middlewareBuilderOrFn._middlewares
+            : [middlewareBuilderOrFn];
 
-//         return createMiddlewareInner([
-//           ...(middlewares as any),
-//           ...pipedMiddleware,
-//         ]);
-//       },
-//     };
-//   }
+        return createMiddlewareInner([...middlewares, ...pipedMiddleware]);
+      },
+    };
+  }
 
-//   function createMiddleware<TNewParams extends AnyProcedureBuilderParams>(
-//     fn: MiddlewareFunction<
-//       deriveParamsFromConfig<TConfig, TInputIn>,
-//       TNewParams
-//     >,
-//   ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
-//     return createMiddlewareInner([fn]);
-//   }
+  function createMiddleware<$ContextOverrides>(
+    fn: MiddlewareFunction<
+      TConfig['$types']['ctx'],
+      TConfig['$types']['meta'],
+      object,
+      UnsetMarker,
+      UnsetMarker,
+      UnsetMarker,
+      UnsetMarker,
+      $ContextOverrides
+    >,
+  ): MiddlewareBuilder<
+    TConfig['$types']['ctx'],
+    TConfig['$types']['meta'],
+    $ContextOverrides,
+    TInputIn,
+    UnsetMarker,
+    UnsetMarker,
+    UnsetMarker,
+    object
+  > {
+    return createMiddlewareInner([fn]);
+  }
 
-//   return createMiddleware;
-// }
+  return createMiddleware;
+}
 
-// export const experimental_standaloneMiddleware = <
-//   TCtx extends {
-//     ctx?: object;
-//     meta?: object;
-//     input?: unknown;
-//   },
-// >() => ({
-//   create: createMiddlewareFactory<
-//     RootConfig<{
-//       ctx: TCtx extends { ctx: infer T extends object } ? T : object;
-//       meta: TCtx extends { meta: infer T extends object } ? T : object;
-//       errorShape: object;
-//       transformer: object;
-//     }>,
-//     TCtx extends { input: infer T } ? T : unknown
-//   >(),
-// });
+export const experimental_standaloneMiddleware = <
+  TCtx extends {
+    ctx?: object;
+    meta?: object;
+    input?: unknown;
+  },
+>() => ({
+  create: createMiddlewareFactory<
+    RootConfig<{
+      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
+      meta: TCtx extends { meta: infer T extends object } ? T : object;
+      errorShape: object;
+      transformer: object;
+    }>,
+    TCtx extends { input: infer T } ? T : unknown
+  >(),
+});
 
 function isPlainObject(obj: unknown) {
   return obj && typeof obj === 'object' && !Array.isArray(obj);

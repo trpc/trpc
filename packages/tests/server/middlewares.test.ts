@@ -25,6 +25,9 @@ test('decorate independently', () => {
     });
   });
 
+  fooMiddleware;
+  // ^?
+
   const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
     expectTypeOf(opts.ctx).toEqualTypeOf<{
       user: User;
