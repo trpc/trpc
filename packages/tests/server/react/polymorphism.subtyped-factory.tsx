@@ -33,7 +33,7 @@ type RouterFactory<TConfig extends AnyRootConfig> = ReturnType<
   typeof createRouterFactory<TConfig>
 >;
 type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createBuilder<TConfig>
+  typeof createBuilder<TConfig['$types']['ctx'], TConfig['$types']['meta']>
 >;
 
 export type SubTypedDataProvider = SubTypedFileExportStatusType[];
