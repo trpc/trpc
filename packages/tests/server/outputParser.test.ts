@@ -17,8 +17,9 @@ test('zod', async () => {
           input: z.string(),
         }),
       )
-      .query(({ input }) => {
-        return { input: input as string };
+      // @ts-expect-error mismatch between input and output
+      .query((opts) => {
+        return { input: opts.input };
       }),
   });
   const { client, close } = routerToServerAndClientNew(router);

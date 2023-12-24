@@ -118,7 +118,7 @@ export type MiddlewareFunction<
 };
 
 export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
-type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
+export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
  */
@@ -177,30 +177,31 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: AnyMiddlewareFunction = async (opts) => {
-    let parsedInput: ReturnType<typeof parse>;
+  const inputMiddleware: AnyMiddlewareFunction =
+    async function inputValidatorMiddleware(opts) {
+      let parsedInput: ReturnType<typeof parse>;
 
-    const rawInput = await opts.getRawInput();
-    try {
-      parsedInput = await parse(rawInput);
-    } catch (cause) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        cause,
-      });
-    }
+      const rawInput = await opts.getRawInput();
+      try {
+        parsedInput = await parse(rawInput);
+      } catch (cause) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          cause,
+        });
+      }
 
-    // Multiple input parsers
-    const combinedInput =
-      isPlainObject(opts.input) && isPlainObject(parsedInput)
-        ? {
-            ...opts.input,
-            ...parsedInput,
-          }
-        : parsedInput;
+      // Multiple input parsers
+      const combinedInput =
+        isPlainObject(opts.input) && isPlainObject(parsedInput)
+          ? {
+              ...opts.input,
+              ...parsedInput,
+            }
+          : parsedInput;
 
-    return opts.next({ input: combinedInput });
-  };
+      return opts.next({ input: combinedInput });
+    };
   inputMiddleware._type = 'input';
   return inputMiddleware;
 }
@@ -209,26 +210,27 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
-  const outputMiddleware: AnyMiddlewareFunction = async ({ next }) => {
-    const result = await next();
-    if (!result.ok) {
-      // pass through failures without validating
-      return result;
-    }
-    try {
-      const data = await parse(result.data);
-      return {
-        ...result,
-        data,
-      };
-    } catch (cause) {
-      throw new TRPCError({
-        message: 'Output validation failed',
-        code: 'INTERNAL_SERVER_ERROR',
-        cause,
-      });
-    }
-  };
+  const outputMiddleware: AnyMiddlewareFunction =
+    async function outputValidatorMiddleware({ next }) {
+      const result = await next();
+      if (!result.ok) {
+        // pass through failures without validating
+        return result;
+      }
+      try {
+        const data = await parse(result.data);
+        return {
+          ...result,
+          data,
+        };
+      } catch (cause) {
+        throw new TRPCError({
+          message: 'Output validation failed',
+          code: 'INTERNAL_SERVER_ERROR',
+          cause,
+        });
+      }
+    };
   outputMiddleware._type = 'output';
   return outputMiddleware;
 }

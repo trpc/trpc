@@ -225,6 +225,7 @@ export interface ProcedureBuilder<
   _def: ProcedureBuilderDef<TMeta>;
 }
 
+type AnyProcedureBuilder = ProcedureBuilder<any, any, any, any, any, any, any>;
 export type ProcedureBuilderResolver = (
   opts: ResolverOptions<any, any, any, any>,
 ) => Promise<unknown>;
@@ -232,7 +233,7 @@ export type ProcedureBuilderResolver = (
 function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
-) {
+): AnyProcedureBuilder {
   const { middlewares = [], inputs, meta, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
@@ -282,15 +283,15 @@ export function createBuilder<TContext, TMeta>(
       });
     },
     output(output: Parser) {
-      const parseOutput = getParseFn(output);
+      const parser = getParseFn(output);
       return createNewBuilder(_def, {
         output,
-        middlewares: [createOutputMiddleware(parseOutput)],
+        middlewares: [createOutputMiddleware(parser)],
       });
     },
     meta(meta) {
       return createNewBuilder(_def, {
-        meta: meta as Record<string, unknown>,
+        meta,
       });
     },
     use(middlewareBuilderOrFn) {
@@ -302,7 +303,7 @@ export function createBuilder<TContext, TMeta>(
 
       return createNewBuilder(_def, {
         middlewares: middlewares,
-      }) as any;
+      });
     },
     query(resolver) {
       return createResolver(
