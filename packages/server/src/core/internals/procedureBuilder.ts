@@ -57,8 +57,23 @@ interface ResolverOptions<TContext, _TMeta, TContextOverridesIn, TInputOut> {
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
 }
-type AnyResolverOptions = ResolverOptions<any, any, any, any>;
 
+/**
+ * A procedure resolver
+ */
+type ProcedureResolver<
+  TContext,
+  _TMeta,
+  TContextOverrides,
+  TInputOut,
+  TOutputIn,
+  TOutputOut,
+> = (opts: {
+  ctx: Simplify<Overwrite<TContext, TContextOverrides>>;
+  input: TInputOut extends UnsetMarker ? undefined : TInputOut;
+}) => MaybePromise<DefaultValue<TOutputIn, TOutputOut>>;
+
+type AnyResolver = ProcedureResolver<any, any, any, any, any, any>;
 export interface ProcedureBuilder<
   TContext,
   TMeta,
@@ -70,6 +85,7 @@ export interface ProcedureBuilder<
 > {
   /**
    * Add an input parser to the procedure.
+   * @see https://trpc.io/docs/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputIn extends UnsetMarker
@@ -94,6 +110,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add an output parser to the procedure.
+   * @see https://trpc.io/docs/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -108,6 +125,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a meta data to the procedure.
+   * @see https://trpc.io/docs/server/metadata
    */
   meta(
     meta: TMeta,
@@ -122,6 +140,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a middleware to the procedure.
+   * @see https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -149,11 +168,17 @@ export interface ProcedureBuilder<
   >;
   /**
    * Query procedure
+   * @see https://trpc.io/docs/concepts#vocabulary
    */
   query<$Output>(
-    resolver: (
-      opts: ResolverOptions<TContext, TMeta, TContextOverrides, TInputOut>,
-    ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
   ): QueryProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: DefaultValue<TOutputOut, $Output>;
@@ -161,23 +186,35 @@ export interface ProcedureBuilder<
 
   /**
    * Mutation procedure
+   * @see https://trpc.io/docs/concepts#vocabulary
    */
   mutation<$Output>(
-    resolver: (
-      opts: ResolverOptions<TContext, TMeta, TContextOverrides, TInputOut>,
-    ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
   ): MutationProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: DefaultValue<TOutputOut, $Output>;
   }>;
 
   /**
-   * Mutation procedure
+   * Subscription procedure
+   * @see https://trpc.io/docs/concepts#vocabulary
    */
   subscription<$Output>(
-    resolver: (
-      opts: ResolverOptions<TContext, TMeta, TContextOverrides, TInputOut>,
-    ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
   ): SubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: DefaultValue<TOutputOut, $Output>;
@@ -292,7 +329,7 @@ export function createBuilder<TContext, TMeta>(
 
 function createResolver(
   _def: AnyProcedureBuilderDef & { type: ProcedureType },
-  resolver: (opts: AnyResolverOptions) => MaybePromise<any>,
+  resolver: AnyResolver,
 ) {
   const finalBuilder = createNewBuilder(_def, {
     resolver,
