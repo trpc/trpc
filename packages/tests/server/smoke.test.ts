@@ -88,11 +88,7 @@ test('middleware', async () => {
           },
         });
       })
-      .query(({ ctx }) => {
-        ctx.foo;
-        //   ^?
-        return `${ctx.prefix} ${ctx.user})`;
-      }),
+      .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
   });
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.greeting.query()).toBe('hello KATT');
