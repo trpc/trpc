@@ -128,7 +128,7 @@ export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
   /**
    * @deprecated use `t.createCalerFactory(router)` instead
-   * @see https://trpc.io/docs/server/server-side-calls#create-caller
+   * @see https://trpc.io/docs/server/server-side-calls
    */
   createCaller: RouterCaller<TDef>;
 

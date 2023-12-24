@@ -5,7 +5,7 @@ sidebar_label: Server Side Calls
 slug: /server/server-side-calls
 ---
 
-You may need to call your procedure(s) directly from the same server they're hosted in, `router.createCaller()` can be used to achieve this.
+You may need to call your procedure(s) directly from the same server they're hosted in, `createCallerFactory()` can be used to achieve this. This is useful for server-side calls and for integration testing of your tRPC procedures.
 
 :::info
 
@@ -19,6 +19,79 @@ You may need to call your procedure(s) directly from the same server they're hos
 :::
 
 ## Create caller
+
+With the `t.createCallerFactory`-function you can create a server-side caller of any router. You first call `createCallerFactory` with an argument of the router you want to call, then this returns a function where you can pass in a `Context` for the following procedure calls.
+
+### Example
+
+We create the router with a query to list posts and a mutation to add posts, and then we a call each method.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+type Context = {
+  foo: string;
+};
+
+const t = initTRPC.context<Context>().create();
+
+const publicProcedure = t.procedure;
+const { createCallerFactory, router } = t;
+
+interface Post {
+  id: string;
+  title: string;
+}
+const posts: Post[] = [
+  {
+    id: '1',
+    title: 'Hello world',
+  },
+];
+const appRouter = router({
+  post: router({
+    add: publicProcedure
+      .input(
+        z.object({
+          title: z.string().min(2),
+        }),
+      )
+      .mutation((opts) => {
+        const post: Post = {
+          ...opts.input,
+          id: `${Math.random()}`,
+        };
+        posts.push(post);
+        return post;
+      }),
+    list: publicProcedure.query(() => posts),
+  }),
+});
+
+// 1. create a caller-function for your router
+const createCaller = createCallerFactory(appRouter);
+
+// 2. create a caller using your `Context`
+const caller = createCaller({
+  foo: 'bar',
+});
+
+// 3. use the caller to add and list posts
+const addedPost = await caller.post.add({
+  title: 'How to make server-side call in tRPC',
+});
+
+const postList = await caller.post.list();
+//     ^?
+```
+
+## `router.createCaller()`
+
+:::caution
+`router.createCaller()` has been deprecated and will be removed in v11 or v12 of tRPC.
+:::
 
 With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
 

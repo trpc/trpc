@@ -170,7 +170,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       mergeRouters,
       /**
        * Create a server-side caller for a router
-       * @see https://trpc.io/docs/server/server-side-calls#create-caller
+       * @see https://trpc.io/docs/server/server-side-calls
        */
       createCallerFactory: createCallerFactory<$Config>(),
     };
