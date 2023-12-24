@@ -1,4 +1,3 @@
-import { RootConfig } from '../core/internals/config';
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
 import { ParseFn } from './internals/getParseFn';
@@ -64,8 +63,8 @@ export interface MiddlewareBuilder<
           TContext,
           TMeta,
           TContextOverrides,
-          TInputIn,
-          $ContextOverrides2
+          $ContextOverrides2,
+          TInputIn
         >
       | MiddlewareBuilder<TContext, TMeta, TContextOverrides, TInputIn>,
   ): MiddlewareBuilder<
@@ -82,8 +81,8 @@ export interface MiddlewareBuilder<
     TContext,
     TMeta,
     TContextOverrides,
-    TInputIn,
-    object
+    object,
+    TInputIn
   >[];
 }
 
@@ -93,28 +92,28 @@ export interface MiddlewareBuilder<
 export type MiddlewareFunction<
   TContext,
   TMeta,
-  TContextOverrides,
+  TContextOverridesIn,
+  $ContextOverridesOut,
   TInputIn,
-  $ContextOverride,
 > = {
   (opts: {
-    ctx: Simplify<Overwrite<TContext, TContextOverrides>>;
+    ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
     type: ProcedureType;
     path: string;
     input: TInputIn;
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
     next: {
-      (): Promise<MiddlewareResult<TContextOverrides>>;
+      (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
       }): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: { getRawInput: GetRawInputFn }): Promise<
-        MiddlewareResult<TContextOverrides>
+        MiddlewareResult<TContextOverridesIn>
       >;
     };
-  }): Promise<MiddlewareResult<$ContextOverride>>;
+  }): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;
 };
 
@@ -149,8 +148,8 @@ export function createMiddlewareFactory<
       TContext,
       TMeta,
       object,
-      UnsetMarker,
-      $ContextOverrides
+      $ContextOverrides,
+      UnsetMarker
     >,
   ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputIn> {
     return createMiddlewareInner([fn]);

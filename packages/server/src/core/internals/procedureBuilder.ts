@@ -56,16 +56,16 @@ export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
  */
 interface ResolverOptions<
   TConfig extends AnyRootConfig,
-  TContextOverrides,
+  TContextOverridesIn,
   TInputOut,
 > {
-  ctx: Simplify<Overwrite<TConfig['$types']['ctx'], TContextOverrides>>;
+  ctx: Simplify<Overwrite<TConfig['$types']['ctx'], TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
 }
 
 export interface ProcedureBuilder<
   TConfig extends AnyRootConfig,
-  TContextOverrides,
+  TContextOverridesIn,
   TInputIn,
   TInputOut,
   TOutputIn,
@@ -88,7 +88,7 @@ export interface ProcedureBuilder<
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TConfig,
-    TContextOverrides,
+    TContextOverridesIn,
     OverwriteIfDefined<TInputIn, inferParser<$Parser>['in']>,
     OverwriteIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
@@ -101,7 +101,7 @@ export interface ProcedureBuilder<
     schema: $Parser,
   ): ProcedureBuilder<
     TConfig,
-    TContextOverrides,
+    TContextOverridesIn,
     TInputIn,
     TInputOut,
     OverwriteIfDefined<TOutputIn, inferParser<$Parser>['in']>,
@@ -114,7 +114,7 @@ export interface ProcedureBuilder<
     meta: TConfig['$types']['meta'],
   ): ProcedureBuilder<
     TConfig,
-    TContextOverrides,
+    TContextOverridesIn,
     TInputIn,
     TInputOut,
     TOutputIn,
@@ -123,24 +123,24 @@ export interface ProcedureBuilder<
   /**
    * Add a middleware to the procedure.
    */
-  use<$ContextOverrides>(
+  use<$ContextOverridesOut>(
     fn:
       | MiddlewareBuilder<
           TConfig['$types']['ctx'],
           TConfig['$types']['meta'],
-          $ContextOverrides,
+          $ContextOverridesOut,
           TInputIn
         >
       | MiddlewareFunction<
           TConfig['$types']['ctx'],
           TConfig['$types']['meta'],
-          TContextOverrides,
-          TInputIn,
-          $ContextOverrides
+          TContextOverridesIn,
+          $ContextOverridesOut,
+          TInputIn
         >,
   ): ProcedureBuilder<
     TConfig,
-    Overwrite<TContextOverrides, $ContextOverrides>,
+    Overwrite<TContextOverridesIn, $ContextOverridesOut>,
     TInputIn,
     TInputOut,
     TOutputIn,
@@ -151,7 +151,7 @@ export interface ProcedureBuilder<
    */
   query<$Output>(
     resolver: (
-      opts: ResolverOptions<TConfig, TContextOverrides, TInputOut>,
+      opts: ResolverOptions<TConfig, TContextOverridesIn, TInputOut>,
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): QueryProcedure<{
     input: DefaultValue<TInputIn, void>;
@@ -163,7 +163,7 @@ export interface ProcedureBuilder<
    */
   mutation<$Output>(
     resolver: (
-      opts: ResolverOptions<TConfig, TContextOverrides, TInputOut>,
+      opts: ResolverOptions<TConfig, TContextOverridesIn, TInputOut>,
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): MutationProcedure<{
     input: DefaultValue<TInputIn, void>;
@@ -175,7 +175,7 @@ export interface ProcedureBuilder<
    */
   subscription<$Output>(
     resolver: (
-      opts: ResolverOptions<TConfig, TContextOverrides, TInputOut>,
+      opts: ResolverOptions<TConfig, TContextOverridesIn, TInputOut>,
     ) => MaybePromise<DefaultValue<TOutputIn, $Output>>,
   ): SubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
