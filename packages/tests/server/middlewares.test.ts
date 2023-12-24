@@ -138,7 +138,7 @@ describe('standalone middleware', () => {
     });
 
     // @ts-expect-error: notFound is not in context
-    t.procedure.use(barNeedsFoo);
+    t.procedure.use(barNeedsSomethingElse);
   });
 
   test('in middleware chain', () => {
