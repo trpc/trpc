@@ -58,7 +58,7 @@ export type DataTransformerOptions = CombinedDataTransformer | DataTransformer;
 /**
  * @internal
  */
-export function getDataTransformer(
+export function getCombinedDataTransformer(
   transformer: DataTransformerOptions,
 ): CombinedDataTransformer {
   if ('input' in transformer) {
@@ -70,15 +70,7 @@ export function getDataTransformer(
 /**
  * @internal
  */
-export type DefaultDataTransformer = CombinedDataTransformer & {
-  _default: true;
-};
-
-/**
- * @internal
- */
-export const defaultTransformer: DefaultDataTransformer = {
-  _default: true,
+export const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };

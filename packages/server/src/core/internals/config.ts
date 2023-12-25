@@ -1,5 +1,6 @@
 import { ErrorFormatter } from '../../error/formatter';
 import type { TRPCErrorShape } from '../../rpc';
+import { CombinedDataTransformer } from '../../transformer';
 
 /**
  * The initial generics that are used in the init function
@@ -8,8 +9,8 @@ import type { TRPCErrorShape } from '../../rpc';
 export interface RootConfigTypes {
   ctx: object;
   meta: object;
-  errorShape: unknown;
-  transformer: unknown;
+  errorShape: TRPCErrorShape;
+  transformer: boolean;
 }
 
 /**
@@ -29,18 +30,14 @@ export const isServerDefault: boolean =
  */
 export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
-   * Use a data transformer
-   * @link https://trpc.io/docs/data-transformers
+   * The resolved transformer
    */
-  transformer: TTypes['transformer'];
+  transformer: CombinedDataTransformer;
   /**
    * Use custom error formatting
    * @link https://trpc.io/docs/error-formatting
    */
-  errorFormatter: ErrorFormatter<
-    TTypes['ctx'],
-    TRPCErrorShape<number> & { [key: string]: any }
-  >;
+  errorFormatter: ErrorFormatter<TTypes['ctx'], RootConfigTypes['errorShape']>;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.

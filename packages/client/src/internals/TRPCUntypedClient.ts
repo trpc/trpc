@@ -2,7 +2,6 @@ import {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
-  DefaultDataTransformer,
 } from '@trpc/server';
 import {
   inferObservableValue,
@@ -20,7 +19,7 @@ import {
 import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+  TRouter['_def']['_config']['transformer'] extends false
     ? {
         /**
          * Data transformer
@@ -30,7 +29,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          **/
         transformer?: 'You must set a transformer on the backend router';
       }
-    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
+    : TRouter['_def']['_config']['transformer'] extends true
     ? {
         /**
          * Data transformer

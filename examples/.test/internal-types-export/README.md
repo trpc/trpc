@@ -18,7 +18,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 ```
 
-Here is the declaration file generated for it:
+Here is the declaration file generated for it (`TODO`: update before publish)
 
 ```ts
 export declare const t: {
