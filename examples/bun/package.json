@@ -14,8 +14,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/client": "canary",
-    "@trpc/server": "canary"
+    "@trpc/client": "10.44.1",
+    "@trpc/server": "10.44.1"
   },
   "devDependencies": {
     "bun-types": "^0.7.3",

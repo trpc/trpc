@@ -14,7 +14,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@trpc/client": "canary",
-    "@trpc/server": "canary"
+    "@trpc/client": "10.44.1",
+    "@trpc/server": "10.44.1"
   }
 }
