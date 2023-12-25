@@ -3,7 +3,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { AnyRouter, callProcedure, inferRouterContext } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { BaseHandlerOptions } from '../internals/types';
-import { isObservable, Unsubscribable } from '../observable';
+import { isObservable, type Unsubscribable } from '../observable';
 import {
   JSONRPC2,
   parseTRPCMessage,
