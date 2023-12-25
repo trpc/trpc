@@ -101,11 +101,3 @@ jobs:
 
       - run: pnpm test-unit
       - run: pnpm tsc
-
-      - name: Upload test results
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: test results
-          path: |
-            playwright/test-results
