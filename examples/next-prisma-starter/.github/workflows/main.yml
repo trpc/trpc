@@ -53,6 +53,9 @@ jobs:
       - name: Build and test
         run: pnpm build && pnpm test-start && pnpm test-dev
 
+      - name: Check types
+        run: pnpm tsc
+
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
