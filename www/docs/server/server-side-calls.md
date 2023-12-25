@@ -22,7 +22,7 @@ You may need to call your procedure(s) directly from the same server they're hos
 
 With the `t.createCallerFactory`-function you can create a server-side caller of any router. You first call `createCallerFactory` with an argument of the router you want to call, then this returns a function where you can pass in a `Context` for the following procedure calls.
 
-### Example
+### Basic example
 
 We create the router with a query to list posts and a mutation to add posts, and then we a call each method.
 
@@ -85,6 +85,31 @@ const addedPost = await caller.post.add({
 
 const postList = await caller.post.list();
 //     ^?
+```
+
+### Example usage in an integration test
+
+> Taken from <https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts>
+
+```ts
+import { inferProcedureInput } from '@trpc/server';
+import { createContextInner } from '../context';
+import { AppRouter, createCaller } from './_app';
+
+test('add and get post', async () => {
+  const ctx = await createContextInner({});
+  const caller = createCaller(ctx);
+
+  const input: inferProcedureInput<AppRouter['post']['add']> = {
+    text: 'hello test',
+    title: 'hello test',
+  };
+
+  const post = await caller.post.add(input);
+  const byId = await caller.post.byId({ id: post.id });
+
+  expect(byId).toMatchObject(input);
+});
 ```
 
 ## `router.createCaller()`
