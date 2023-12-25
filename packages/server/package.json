@@ -105,9 +105,9 @@
       "default": "./dist/rpc/index.js"
     },
     "./observable": {
-      "import": "./dist/observable/index.mjs",
-      "require": "./dist/observable/index.js",
-      "default": "./dist/observable/index.js"
+      "import": "./dist/observable.mjs",
+      "require": "./dist/observable.js",
+      "default": "./dist/observable.js"
     },
     "./subscription": {
       "import": "./dist/subscription.mjs",

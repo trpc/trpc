@@ -64,6 +64,11 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
+    },
+    "./observable": {
+      "import": "./dist/observable.mjs",
+      "require": "./dist/observable.js",
+      "default": "./dist/observable.js"
     }
   },
   "files": [
@@ -73,6 +78,7 @@
     "package.json",
     "links",
     "shared",
+    "observable",
     "!**/*.test.*"
   ],
   "dependencies": {
