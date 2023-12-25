@@ -2,6 +2,7 @@ name: Testing
 on: [push]
 jobs:
   e2e:
+    name: 'Build + E2E tests'
     services:
       postgres:
         image: postgres
@@ -48,9 +49,6 @@ jobs:
       - run: pnpm build
       - run: pnpm test-e2e
 
-      - name: Check types
-        run: pnpm tsc
-
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -60,6 +58,7 @@ jobs:
             playwright/test-results
 
   unit:
+    name: 'Unit tests + typecheck'
     services:
       postgres:
         image: postgres
@@ -100,10 +99,8 @@ jobs:
       - name: Setup Prisma
         run: pnpm prebuild
 
-      - run: test-unit
-
-      - name: Check types
-        run: pnpm tsc
+      - run: pnpm test-unit
+      - run: pnpm tsc
 
       - name: Upload test results
         if: ${{ always() }}
