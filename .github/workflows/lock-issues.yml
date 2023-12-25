@@ -1,0 +1,30 @@
+# Copied from `vercel/next.js` and tweaked.
+
+name: 'Lock Issues & PRs'
+
+on:
+  workflow_dispatch:
+  schedule:
+    # This runs 4 times a day:
+    # https://crontab.guru/#0_0,12_*_*_*
+    - cron: '0 0,6,12,18 * * *'
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: lock-threads
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dessant/lock-threads@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-inactive-days: 1
+          pr-inactive-days: 1
+          log-output: true
+          issue-comment: 'This issue has been locked because we are very unlikely to see comments on closed issues. If you are running into a similar issue, please create a new issue. Thank you.'
+          pr-comment: 'This pull request has been locked because we are very unlikely to see comments on closed issues. If you think, this PR is still necessary, create a new one with the same branch. Thank you.'
