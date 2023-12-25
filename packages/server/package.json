@@ -142,6 +142,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@trpc/core": "10.44.1"
+  },
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
     "@tanstack/react-query": "^5.0.0",

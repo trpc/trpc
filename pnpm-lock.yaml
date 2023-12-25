@@ -1436,6 +1436,10 @@ importers:
         version: 5.3.3
 
   packages/client:
+    dependencies:
+      '@trpc/core':
+        specifier: 10.44.1
+        version: link:../core
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.0.0
@@ -1470,6 +1474,105 @@ importers:
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
+
+  packages/core:
+    devDependencies:
+      '@fastify/websocket':
+        specifier: ^7.1.2
+        version: 7.1.2
+      '@tanstack/react-query':
+        specifier: ^5.0.0
+        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+      '@types/aws-lambda':
+        specifier: ^8.10.97
+        version: 8.10.115
+      '@types/express':
+        specifier: ^4.17.17
+        version: 4.17.17
+      '@types/hash-sum':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.10.4
+      '@types/react':
+        specifier: ^18.2.33
+        version: 18.2.33
+      '@types/react-dom':
+        specifier: ^18.2.14
+        version: 18.2.14
+      '@types/ws':
+        specifier: ^8.2.0
+        version: 8.5.4
+      '@web3-storage/multipart-parser':
+        specifier: ^1.0.0
+        version: 1.0.0
+      aws-lambda:
+        specifier: ^1.0.7
+        version: 1.0.7
+      devalue:
+        specifier: ^4.0.0
+        version: 4.3.0
+      eslint:
+        specifier: ^8.40.0
+        version: 8.40.0
+      express:
+        specifier: ^4.17.1
+        version: 4.18.2
+      fastify:
+        specifier: ^4.13.0
+        version: 4.13.0
+      fastify-plugin:
+        specifier: ^4.5.0
+        version: 4.5.0
+      hash-sum:
+        specifier: ^2.0.0
+        version: 2.0.0
+      myzod:
+        specifier: ^1.3.1
+        version: 1.8.8
+      next:
+        specifier: ^14.0.1
+        version: 14.0.1(@babel/core@7.23.2)(react-dom@18.2.0)(react@18.2.0)
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.2.0(react@18.2.0)
+      rollup:
+        specifier: ^2.79.1
+        version: 2.79.1
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
+      superstruct:
+        specifier: ^1.0.0
+        version: 1.0.3
+      tslib:
+        specifier: ^2.5.0
+        version: 2.5.0
+      tsx:
+        specifier: ^4.0.0
+        version: 4.6.2
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+      valibot:
+        specifier: ^0.24.0
+        version: 0.24.0
+      vitest:
+        specifier: ^0.32.0
+        version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
+      ws:
+        specifier: ^8.0.0
+        version: 8.11.0
+      yup:
+        specifier: ^1.0.0
+        version: 1.0.0
+      zod:
+        specifier: ^3.0.0
+        version: 3.22.4
 
   packages/next:
     devDependencies:
@@ -1568,6 +1671,10 @@ importers:
         version: 3.22.4
 
   packages/server:
+    dependencies:
+      '@trpc/core':
+        specifier: 10.44.1
+        version: link:../core
     devDependencies:
       '@fastify/websocket':
         specifier: ^7.1.2
@@ -4742,7 +4849,7 @@ packages:
       serve-handler: 6.1.5
       shelljs: 0.8.5
       terser-webpack-plugin: 5.3.6(@swc/core@1.3.3)(webpack@5.75.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       update-notifier: 5.1.0
       url-loader: 4.1.1(file-loader@6.2.0)(webpack@5.75.0)
       wait-on: 6.0.1
@@ -4911,7 +5018,7 @@ packages:
       lodash: 4.17.21
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       utility-types: 3.10.0
       webpack: 5.75.0(@swc/core@1.3.3)
     transitivePeerDependencies:
@@ -5216,7 +5323,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-router-dom: 5.3.4(react@18.2.0)
       rtlcss: 3.5.0
-      tslib: 2.5.0
+      tslib: 2.6.2
       utility-types: 3.10.0
     transitivePeerDependencies:
       - '@parcel/css'
@@ -5258,7 +5365,7 @@ packages:
       prism-react-renderer: 1.3.5(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       use-sync-external-store: 1.2.0(react@18.2.0)
       utility-types: 3.10.0
     transitivePeerDependencies:
@@ -6109,7 +6216,7 @@ packages:
     resolution: {integrity: sha512-OBaPR3KVkDmhJpCy+RtM8CwwV67ieRRbvWtpHqRNoMt+AnHLBiNmrTwHs3/DKjmnI1cqdGTaQ+NhKtDtkk1l/Q==}
     dependencies:
       fastify-plugin: 4.5.0
-      ws: 8.11.0
+      ws: 8.15.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -13634,7 +13741,7 @@ packages:
       proxy-addr: 2.0.7
       rfdc: 1.3.0
       secure-json-parse: 2.5.0
-      semver: 7.3.8
+      semver: 7.5.4
       tiny-lru: 10.0.1
     transitivePeerDependencies:
       - supports-color
@@ -14001,7 +14108,7 @@ packages:
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     optionalDependencies:
       '@emotion/is-prop-valid': 0.8.8
     dev: false
@@ -15991,7 +16098,7 @@ packages:
       graphql: 15.8.0
       lodash: 4.17.21
       playwright: 1.28.1
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /language-subtag-registry@0.3.22:
@@ -20749,6 +20856,7 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+    dev: true
 
   /semver@7.5.0:
     resolution: {integrity: sha512-+XC0AD/R7Q2mPSRuy2Id0+CGTZ98+8f+KvwirxOKIEyid+XSx6HbC63p+O4IndTHuX5Z+JxQ0TghCkO5Cg/2HA==}

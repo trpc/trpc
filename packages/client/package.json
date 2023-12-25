@@ -75,6 +75,9 @@
     "shared",
     "!**/*.test.*"
   ],
+  "dependencies": {
+    "@trpc/core": "10.44.1"
+  },
   "peerDependencies": {
     "@trpc/server": "10.45.0"
   },
