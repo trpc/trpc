@@ -55,7 +55,7 @@ jobs:
           echo "link-workspace-packages=false" >> .npmrc
           cp ./pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
           # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
-          sed -i '' 's/"@trpc\/[^"]*": "[^"]*"/"@trpc\/\*": "canary"/g' ./examples/${{ matrix.path }}/package.json
+          sed -i '' 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g' ./examples/${{ matrix.path }}/package.json
 
           pnpm install --no-frozen-lockfile --ignore-scripts
 
