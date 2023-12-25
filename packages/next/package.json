@@ -73,9 +73,7 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {
-    "react-ssr-prepass": "^1.5.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@tanstack/react-query": "^4.18.0",
     "@trpc/client": "10.44.1",

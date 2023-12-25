@@ -1131,6 +1131,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
+      dotenv:
+        specifier: ^16.0.1
+        version: 16.0.3
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -1518,10 +1521,6 @@ importers:
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
 
   packages/next:
-    dependencies:
-      react-ssr-prepass:
-        specifier: ^1.5.0
-        version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
         specifier: 4.18.0
@@ -19893,14 +19892,6 @@ packages:
       react-is: 16.13.1
       tiny-invariant: 1.3.1
       tiny-warning: 1.0.3
-    dev: false
-
-  /react-ssr-prepass@1.5.0(react@18.2.0):
-    resolution: {integrity: sha512-yFNHrlVEReVYKsLI5lF05tZoHveA5pGzjFbFJY/3pOqqjGOmMmqx83N4hIjN2n6E1AOa+eQEUxs3CgRnPmT0RQ==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-    dependencies:
-      react: 18.2.0
     dev: false
 
   /react-textarea-autosize@8.4.0(@types/react@18.2.33)(react@18.2.0):
