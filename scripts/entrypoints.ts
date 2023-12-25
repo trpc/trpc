@@ -46,7 +46,7 @@ export function generateEntrypoints(inputs: string[]) {
    *  src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
    */
   inputs.forEach((str) => {
-    if (str.includes('src/index.ts')) {
+    if (str === 'src/index.ts') {
       pkgJson.exports['.'] = {
         import: './dist/index.mjs',
         require: './dist/index.js',
