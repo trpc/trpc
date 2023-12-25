@@ -25,7 +25,7 @@ jobs:
             echo "skip=false" >> $GITHUB_ENV
           fi
 
-  canary:
+  publish:
     needs: check-changes
     if: needs.check-changes.outputs.skip == 'false'
     timeout-minutes: 10
