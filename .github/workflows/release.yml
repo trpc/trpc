@@ -2,7 +2,7 @@ name: Release "@canary"-tagged packages
 
 on:
   push:
-    branches: [main]
+    # branches: [main]
 
 jobs:
   canary:
@@ -45,4 +45,13 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Check for changes in packages
+        id: check-changes
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ./packages/**; then
+            echo "::set-output name=skip::true"
+          else
+            echo "::set-output name=skip::false"
+          fi
       - run: pnpm lerna publish --force-publish --canary --preid canary --dist-tag canary --yes
+        if: steps.check-changes.outputs.skip == 'false'
