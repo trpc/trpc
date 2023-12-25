@@ -39,11 +39,6 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
     "./observable": {
       "import": "./dist/observable/index.mjs",
       "require": "./dist/observable/index.js",
