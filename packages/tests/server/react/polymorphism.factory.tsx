@@ -31,7 +31,7 @@ export type FileExportStatusType = z.infer<typeof FileExportStatus>;
 //
 
 type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createBuilder<TConfig>
+  typeof createBuilder<TConfig['$types']['ctx'], TConfig['$types']['meta']>
 >;
 
 export type DataProvider = FileExportStatusType[];

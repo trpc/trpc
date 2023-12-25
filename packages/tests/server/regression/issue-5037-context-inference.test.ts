@@ -1,9 +1,4 @@
-import {
-  AnyProcedureBuilderParams,
-  inferRouterOutputs,
-  initTRPC,
-  TRPCError,
-} from '@trpc/server';
+import { inferRouterOutputs, initTRPC, TRPCError } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { ProcedureBuilder } from '@trpc/server/unstableInternalsExport';
 import { z } from 'zod';
@@ -96,11 +91,29 @@ describe('context inference w/ middlewares', () => {
         },
       });
 
-      function withAuth2<T extends AnyProcedureBuilderParams>(
-        builder: ProcedureBuilder<T>,
+      function withAuth2<
+        TContext extends {
+          req?: any;
+        },
+        TMeta,
+        TContextOverrides,
+        TInputIn,
+        TInputOut,
+        TOutputIn,
+        TOutputOut,
+      >(
+        builder: ProcedureBuilder<
+          TContext,
+          TMeta,
+          TContextOverrides,
+          TInputIn,
+          TInputOut,
+          TOutputIn,
+          TOutputOut
+        >,
       ) {
         return builder.use(async (opts) => {
-          if (!(opts.ctx as any).req) {
+          if (!opts.ctx.req) {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
               message: 'missing req object',

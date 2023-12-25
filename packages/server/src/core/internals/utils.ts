@@ -1,5 +1,4 @@
-import { Simplify, WithoutIndexSignature } from '../../types';
-import { AnyProcedureBuilderParams } from './builderTypes';
+import { WithoutIndexSignature } from '../../types';
 
 /**
  * @internal
@@ -53,18 +52,6 @@ export const unsetMarker = Symbol('unsetMarker');
  * @internal
  */
 export type UnsetMarker = typeof unsetMarker;
-
-/**
- * @internal
- */
-export interface ResolveOptions<TParams extends AnyProcedureBuilderParams> {
-  ctx: Simplify<
-    Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
-  >;
-  input: TParams['_input_out'] extends UnsetMarker
-    ? undefined
-    : TParams['_input_out'];
-}
 
 /**
  * @internal
