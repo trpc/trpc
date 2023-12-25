@@ -3,7 +3,7 @@
   "version": "10.44.1",
   "private": true,
   "dependencies": {
-    "@trpc/client": "^10.44.1",
+    "@trpc/client": "canary",
     "undici": "^6.0.1"
   },
   "devDependencies": {

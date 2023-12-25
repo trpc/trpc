@@ -13,8 +13,8 @@
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "^10.44.1",
-    "@trpc/server": "^10.44.1",
+    "@trpc/client": "canary",
+    "@trpc/server": "canary",
     "tsx": "^4.0.0",
     "zod": "^3.0.0"
   },

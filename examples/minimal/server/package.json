@@ -3,7 +3,7 @@
   "version": "10.44.1",
   "private": true,
   "dependencies": {
-    "@trpc/server": "^10.44.1",
+    "@trpc/server": "canary",
     "zod": "^3.0.0"
   },
   "devDependencies": {
