@@ -2,7 +2,7 @@ import { RollupOptions } from 'rollup';
 import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
-  'src/index.ts',
+  // 'src/index.ts',
   // 'src/rpc/index.ts',
   'src/observable/index.ts',
   // 'src/subscription.ts',
