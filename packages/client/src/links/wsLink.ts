@@ -1,5 +1,5 @@
+import { observable, Observer, UnsubscribeFn } from '@trpc/core/observable';
 import { AnyRouter, inferRouterError, ProcedureType } from '@trpc/server';
-import { observable, Observer, UnsubscribeFn } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,

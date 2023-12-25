@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import type { Unsubscribable } from '@trpc/core/observable';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -10,7 +11,6 @@ import type {
   ProcedureRouterRecord,
   ProcedureType,
 } from '@trpc/server';
-import type { Unsubscribable } from '@trpc/server/observable';
 import {
   createFlatProxy,
   createRecursiveProxy,

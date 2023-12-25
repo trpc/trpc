@@ -9,6 +9,7 @@ export const input = [
   'src/links/loggerLink.ts',
   'src/links/wsLink.ts',
   'src/shared/index.ts',
+  'src/observable.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

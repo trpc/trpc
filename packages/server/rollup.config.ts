@@ -15,7 +15,7 @@ export const input = [
   'src/adapters/fetch/index.ts',
   'src/http/index.ts',
   'src/rpc/index.ts',
-  'src/observable/index.ts',
+  'src/observable.ts',
   'src/subscription.ts',
   'src/shared/index.ts',
   'src/unstableInternalsExport.ts',
