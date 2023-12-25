@@ -35,6 +35,11 @@ export function generateEntrypoints(inputs: string[]) {
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
     './package.json': './package.json',
+    '.': {
+      import: './dist/index.mjs',
+      require: './dist/index.js',
+      default: './dist/index.js',
+    },
   };
 
   /** Parse the inputs to get the user-import-paths, e.g.
@@ -45,52 +50,46 @@ export function generateEntrypoints(inputs: string[]) {
    *  src/adapters/aws-lambda/index.ts -> exports['adapters/aws-lambda'] = { import: './dist/adapters/aws-lambda/index.mjs', ... }
    *  src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
    */
-  inputs.forEach((str) => {
-    if (str === 'src/index.ts') {
-      pkgJson.exports['.'] = {
-        import: './dist/index.mjs',
-        require: './dist/index.js',
-        default: './dist/index.js',
+  inputs
+    .filter((i) => i !== 'src/index.ts') // index included by default above
+    .forEach((i) => {
+      // first, exclude 'src' part of the path
+      const parts = i.split('/').slice(1);
+      const pathWithoutSrc = parts.join('/');
+
+      // if filename is index.ts, importPath is path until index.ts,
+      // otherwise, importPath is the path without the file extension
+      const importPath =
+        parts.at(-1) === 'index.ts'
+          ? parts.slice(0, -1).join('/')
+          : pathWithoutSrc.replace(/\.ts$/, '');
+
+      // write this entrypoint to the package.json exports field
+      const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      pkgJson.exports[`./${importPath}`] = {
+        import: esm,
+        require: cjs,
+        default: cjs,
       };
-      return;
-    }
-    // first, exclude 'src' part of the path
-    const parts = str.split('/').slice(1);
-    const pathWithoutSrc = parts.join('/');
 
-    // if filename is index.ts, importPath is path until index.ts,
-    // otherwise, importPath is the path without the file extension
-    const importPath =
-      parts.at(-1) === 'index.ts'
-        ? parts.slice(0, -1).join('/')
-        : pathWithoutSrc.replace(/\.ts$/, '');
+      // create the barrelfile, linking the declared exports to the compiled files in dist
+      const importDepth = importPath.split('/').length || 1;
+      const resolvedImport = path.join(
+        ...Array(importDepth).fill('..'),
+        'dist',
+        importPath,
+      );
+      // index.js
+      const indexFile = path.resolve(importPath, 'index.js');
+      const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
+      writeFileSyncRecursive(indexFile, indexFileContent);
 
-    // write this entrypoint to the package.json exports field
-    const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
-    const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
-    pkgJson.exports[`./${importPath}`] = {
-      import: esm,
-      require: cjs,
-      default: cjs,
-    };
-
-    // create the barrelfile, linking the declared exports to the compiled files in dist
-    const importDepth = importPath.split('/').length || 1;
-    const resolvedImport = path.join(
-      ...Array(importDepth).fill('..'),
-      'dist',
-      importPath,
-    );
-    // index.js
-    const indexFile = path.resolve(importPath, 'index.js');
-    const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
-    writeFileSyncRecursive(indexFile, indexFileContent);
-
-    // index.d.ts
-    const typeFile = path.resolve(importPath, 'index.d.ts');
-    const typeFileContent = `export * from '${resolvedImport}';\n`;
-    writeFileSyncRecursive(typeFile, typeFileContent);
-  });
+      // index.d.ts
+      const typeFile = path.resolve(importPath, 'index.d.ts');
+      const typeFileContent = `export * from '${resolvedImport}';\n`;
+      writeFileSyncRecursive(typeFile, typeFileContent);
+    });
 
   // write top-level directories to package.json 'files' field
   Object.keys(pkgJson.exports).forEach((entrypoint) => {
