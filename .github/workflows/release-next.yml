@@ -1,11 +1,33 @@
-name: Release next
+name: Release "@next"-tagged packages
 
 on:
   push:
     branches: [next]
 
 jobs:
-  next:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check-changes.outputs.skip }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes in packages
+        id: check-changes
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ./packages/**; then
+            echo "skip=true" >> $GITHUB_ENV
+          else
+            echo "skip=false" >> $GITHUB_ENV
+          fi
+
+  publish:
+    needs: check-changes
+    if: needs.check-changes.outputs.skip == 'false'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}

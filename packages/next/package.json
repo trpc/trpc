@@ -71,9 +71,10 @@
     "@trpc/react-query": "10.44.1",
     "@trpc/server": "10.44.1",
     "next": "*",
-    "react": ">=18.2.0",
-    "react-dom": ">=18.2.0"
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
   },
+  "dependencies": {},
   "devDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.44.1",
