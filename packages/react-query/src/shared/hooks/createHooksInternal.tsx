@@ -476,7 +476,7 @@ export function createRootHooks<
 
     const queries = queriesCallback(proxy);
 
-    return __useSuspenseQueries(
+    const hook = __useSuspenseQueries(
       {
         queries: queries.map((query) => ({
           ...query,
@@ -485,6 +485,8 @@ export function createRootHooks<
       },
       queryClient,
     );
+
+    return [hook.map((h) => h.data), hook] as any;
   };
 
   const useDehydratedState: UseDehydratedState<TRouter> = (

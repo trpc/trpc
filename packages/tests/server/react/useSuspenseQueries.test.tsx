@@ -42,7 +42,7 @@ const ctx = konn()
 test('single query', async () => {
   const { client, App } = ctx;
   function MyComponent() {
-    const results = client.useSuspenseQueries((t) => [
+    const [posts] = client.useSuspenseQueries((t) => [
       t.post.byId({ id: '1' }),
       t.post.byId(
         { id: '1' },
@@ -54,12 +54,10 @@ test('single query', async () => {
       ),
     ]);
 
-    expectTypeOf(results[0].data).toEqualTypeOf<`__result${string}`>();
-    expectTypeOf(
-      results[1].data,
-    ).toEqualTypeOf<`__RESULT${Uppercase<string>}`>();
+    expectTypeOf(posts[0]).toEqualTypeOf<`__result${string}`>();
+    expectTypeOf(posts[1]).toEqualTypeOf<`__RESULT${Uppercase<string>}`>();
 
-    return <pre>{JSON.stringify(results[0].data ?? 'n/a', null, 4)}</pre>;
+    return <pre>{JSON.stringify(posts[0] ?? 'n/a', null, 4)}</pre>;
   }
 
   const utils = render(
@@ -75,14 +73,12 @@ test('single query', async () => {
 test('different queries', async () => {
   const { client, App } = ctx;
   function MyComponent() {
-    const results = client.useSuspenseQueries((t) => [t.foo(), t.bar()]);
+    const [posts] = client.useSuspenseQueries((t) => [t.foo(), t.bar()]);
 
-    expectTypeOf(results[0].data).toEqualTypeOf<'foo'>();
-    expectTypeOf(results[1].data).toEqualTypeOf<'bar'>();
+    expectTypeOf(posts[0]).toEqualTypeOf<'foo'>();
+    expectTypeOf(posts[1]).toEqualTypeOf<'bar'>();
 
-    return (
-      <pre>{JSON.stringify(results.map((v) => v.data) ?? 'n/a', null, 4)}</pre>
-    );
+    return <pre>{JSON.stringify(posts ?? 'n/a', null, 4)}</pre>;
   }
 
   const utils = render(
@@ -101,17 +97,13 @@ test('mapping queries', async () => {
 
   const { client, App } = ctx;
   function MyComponent() {
-    const results = client.useSuspenseQueries((t) =>
+    const [posts] = client.useSuspenseQueries((t) =>
       ids.map((id) => t.post.byId({ id })),
     );
 
-    if (results[0]) {
-      expectTypeOf(results[0].data).toEqualTypeOf<`__result${string}`>();
-    }
+    expectTypeOf(posts).toEqualTypeOf<`__result${string}`[]>();
 
-    return (
-      <pre>{JSON.stringify(results.map((v) => v.data) ?? 'n/a', null, 4)}</pre>
-    );
+    return <pre>{JSON.stringify(posts ?? 'n/a', null, 4)}</pre>;
   }
 
   const utils = render(
@@ -131,7 +123,7 @@ test('regression #4802: passes context to links', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const results = client.useSuspenseQueries((t) => [
+    const [posts] = client.useSuspenseQueries((t) => [
       t.post.byId(
         { id: '1' },
         {
@@ -153,11 +145,11 @@ test('regression #4802: passes context to links', async () => {
         },
       ),
     ]);
-    if (results.some((v) => !v.data)) {
+    if (posts.some((v) => !v)) {
       return <>...</>;
     }
 
-    return <pre>{JSON.stringify(results, null, 4)}</pre>;
+    return <pre>{JSON.stringify(posts, null, 4)}</pre>;
   }
 
   const utils = render(
