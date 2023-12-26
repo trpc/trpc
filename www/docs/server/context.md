@@ -52,7 +52,7 @@ The `createContext()` function must be passed to the handler that is mounting yo
 // 1. HTTP request
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { createContext } from './context';
-import { appRouter } from './router';
+import { createCaller } from './router';
 
 const handler = createHTTPHandler({
   router: appRouter,
@@ -63,9 +63,9 @@ const handler = createHTTPHandler({
 ```ts
 // 2. Server-side call
 import { createContext } from './context';
-import { appRouter } from './router';
+import { createCaller } from './router';
 
-const caller = appRouter.createCaller(await createContext());
+const caller = createCaller(await createContext());
 ```
 
 ```ts

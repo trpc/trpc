@@ -4,8 +4,8 @@
  * - We export only the functionality that we use so we can enforce which base procedures should be used
  *
  * Learn how to create protected base procedures and other things below:
- * @see https://trpc.io/docs/v10/router
- * @see https://trpc.io/docs/v10/procedures
+ * @see https://trpc.io/docs/router
+ * @see https://trpc.io/docs/procedures
  */
 import { initTRPC } from '@trpc/server';
 

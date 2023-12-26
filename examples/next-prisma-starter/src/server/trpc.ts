@@ -4,8 +4,8 @@
  * - We export only the functionality that we use so we can enforce which base procedures should be used
  *
  * Learn how to create protected base procedures and other things below:
- * @see https://trpc.io/docs/v10/router
- * @see https://trpc.io/docs/v10/procedures
+ * @see https://trpc.io/docs/router
+ * @see https://trpc.io/docs/procedures
  */
 
 import { initTRPC } from '@trpc/server';
@@ -14,11 +14,11 @@ import { Context } from './context';
 
 const t = initTRPC.context<Context>().create({
   /**
-   * @see https://trpc.io/docs/v10/data-transformers
+   * @see https://trpc.io/docs/data-transformers
    */
   transformer,
   /**
-   * @see https://trpc.io/docs/v10/error-formatting
+   * @see https://trpc.io/docs/error-formatting
    */
   errorFormatter({ shape }) {
     return shape;
@@ -27,22 +27,29 @@ const t = initTRPC.context<Context>().create({
 
 /**
  * Create a router
- * @see https://trpc.io/docs/v10/router
+ * @see https://trpc.io/docs/router
  */
 export const router = t.router;
 
 /**
  * Create an unprotected procedure
- * @see https://trpc.io/docs/v10/procedures
+ * @see https://trpc.io/docs/procedures
  **/
 export const publicProcedure = t.procedure;
 
 /**
- * @see https://trpc.io/docs/v10/middlewares
+ * @see https://trpc.io/docs/middlewares
  */
 export const middleware = t.middleware;
 
 /**
- * @see https://trpc.io/docs/v10/merging-routers
+ * Merge multiple routers together
+ * @see https://trpc.io/docs/merging-routers
  */
 export const mergeRouters = t.mergeRouters;
+
+/**
+ * Create a server-side caller
+ * @see https://trpc.io/docs/server/server-side-calls
+ */
+export const createCallerFactory = t.createCallerFactory;
