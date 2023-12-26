@@ -118,6 +118,41 @@ test('mapping queries', async () => {
   });
 });
 
+test('disallowed options', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const [posts] = client.useSuspenseQueries((t) => [
+      t.post.byId(
+        { id: '1' },
+        {
+          // @ts-expect-error -- can't set suspense to false
+          suspense: false,
+        },
+      ),
+      t.post.byId(
+        { id: '2' },
+        {
+          // @ts-expect-error -- can't set placeholderData
+          placeholderData: '123',
+        },
+      ),
+    ]);
+
+    return <pre>{JSON.stringify(posts ?? 'n/a', null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`__result`);
+  });
+});
+
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
   const { client, App } = ctx;
