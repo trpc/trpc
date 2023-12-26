@@ -2,6 +2,7 @@ import {
   QueryKey,
   UseQueryOptions,
   UseSuspenseQueryOptions,
+  UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 import { AnyRouter } from '@trpc/server';
 import { DistributiveOmit } from '@trpc/server/unstableInternalsExport';
@@ -11,7 +12,6 @@ import {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSuspenseQueryOptions,
-  UseTRPCSuspenseQueryResult,
 } from '../shared';
 
 /**
@@ -85,14 +85,13 @@ export declare type SuspenseQueriesResults<
   {
     [TKey in keyof TQueriesOptions]: TQueriesOptions[TKey] extends UseQueryOptionsForUseSuspenseQueries<
       infer TQueryFnData,
-      infer TError,
+      any,
       infer TData,
       any
     >
-      ? UseTRPCSuspenseQueryResult<
-          unknown extends TData ? TQueryFnData : TData,
-          TError
-        >[0]
+      ? unknown extends TData
+        ? TQueryFnData
+        : TData
       : never;
   },
   {
@@ -102,10 +101,10 @@ export declare type SuspenseQueriesResults<
       infer TData,
       any
     >
-      ? UseTRPCSuspenseQueryResult<
+      ? UseSuspenseQueryResult<
           unknown extends TData ? TQueryFnData : TData,
           TError
-        >[1]
+        >
       : never;
   },
 ];
