@@ -4,6 +4,7 @@ import {
   useQueries as __useQueries,
   useQuery as __useQuery,
   useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
+  useSuspenseQueries as __useSuspenseQueries,
   useSuspenseQuery as __useSuspenseQuery,
   DehydratedState,
   hashKey,
@@ -20,7 +21,10 @@ import {
 import { getClientArgs } from '../../internals/getClientArgs';
 import { getQueryKeyInternal, TRPCQueryKey } from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
-import { TRPCUseQueries } from '../../internals/useQueries';
+import {
+  TRPCUseQueries,
+  TRPCUseSuspenseQueries,
+} from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
@@ -463,6 +467,26 @@ export function createRootHooks<
     );
   };
 
+  const useSuspenseQueries: TRPCUseSuspenseQueries<TRouter> = (
+    queriesCallback,
+  ) => {
+    const { queryClient, client } = useContext();
+
+    const proxy = createUseQueries(client);
+
+    const queries = queriesCallback(proxy);
+
+    return __useSuspenseQueries(
+      {
+        queries: queries.map((query) => ({
+          ...query,
+          queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
+        })),
+      },
+      queryClient,
+    );
+  };
+
   const useDehydratedState: UseDehydratedState<TRouter> = (
     client,
     trpcState,
@@ -485,6 +509,7 @@ export function createRootHooks<
     useQuery,
     useSuspenseQuery,
     useQueries,
+    useSuspenseQueries,
     useMutation,
     useSubscription,
     useDehydratedState,

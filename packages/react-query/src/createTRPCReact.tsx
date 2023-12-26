@@ -16,7 +16,7 @@ import {
 } from '@trpc/server/shared';
 import { ProtectedIntersection } from '@trpc/server/unstableInternalsExport';
 import { useMemo } from 'react';
-import { TRPCUseQueries } from './internals/useQueries';
+import { TRPCUseQueries, TRPCUseSuspenseQueries } from './internals/useQueries';
 import {
   createReactDecoration,
   createReactQueryUtils,
@@ -260,6 +260,7 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
+  useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
   useDehydratedState: UseDehydratedState<TRouter>;
 };
 

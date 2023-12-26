@@ -13,7 +13,10 @@ import {
 } from '@trpc/server/shared';
 import { Filter } from '@trpc/server/unstableInternalsExport';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
-import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
+import {
+  TrpcQueryOptionsForUseQueries,
+  TrpcQueryOptionsForUseSuspenseQueries,
+} from '../../internals/useQueries';
 import { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<
@@ -42,6 +45,37 @@ export type UseQueriesProcedureRecord<TRouter extends AnyRouter> = {
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
     : GetQueryOptions<
+        TRouter['_def']['_config'],
+        TRouter['_def']['record'][TKey]
+      >;
+};
+
+type GetSuspenseQueryOptions<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
+  input: inferProcedureInput<TProcedure>,
+  opts?: TrpcQueryOptionsForUseSuspenseQueries<
+    inferTransformedProcedureOutput<TConfig, TProcedure>,
+    TData,
+    TRPCClientError<TConfig>
+  >,
+) => TrpcQueryOptionsForUseSuspenseQueries<
+  inferTransformedProcedureOutput<TConfig, TProcedure>,
+  TData,
+  TRPCClientError<TConfig>
+>;
+
+/**
+ * @internal
+ */
+export type UseSuspenseQueriesProcedureRecord<TRouter extends AnyRouter> = {
+  [TKey in keyof Filter<
+    TRouter['_def']['record'],
+    AnyQueryProcedure | AnyRouter
+  >]: TRouter['_def']['record'][TKey] extends AnyRouter
+    ? UseSuspenseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
+    : GetSuspenseQueryOptions<
         TRouter['_def']['_config'],
         TRouter['_def']['record'][TKey]
       >;
