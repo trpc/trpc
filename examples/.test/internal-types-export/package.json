@@ -1,6 +1,6 @@
 {
   "name": "@examples/internal-types-export",
-  "version": "10.44.1",
+  "version": "10.45.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@trpc/client": "^10.44.1",
-    "@trpc/server": "^10.44.1"
+    "@trpc/client": "^10.45.0",
+    "@trpc/server": "^10.45.0"
   }
 }
