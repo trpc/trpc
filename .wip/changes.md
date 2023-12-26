@@ -55,3 +55,7 @@ Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-
 ## Refactor internal generics
 
 We have refactored our internal generics and made them more readable (TODO: link procedure builder sauce)
+
+## `useSuspenseQueries()`
+
+https://github.com/trpc/trpc/pull/5226
