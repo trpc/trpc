@@ -40,48 +40,83 @@ export type Serialize<T> =
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {
-  [k in keyof T]: T[k] extends NonJsonPrimitive ? null : Serialize<T[k]>;
+  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
 };
 
 // prettier-ignore
-type SerializeObjectKey<T extends Record<any, any>, TKey> = 
+type SerializeObjectKey<T extends Record<any, any>, K> = 
   // never include entries where the key is a symbol
-  TKey extends symbol ? never : 
+  K extends symbol ? never : 
   // always include entries where the value is any
-  IsAny<T[TKey]> extends true ? TKey :
+  IsAny<T[K]> extends true ? K :
   // always include entries where the value is unknown
-  unknown extends T[TKey] ? TKey : 
+  unknown extends T[K] ? K : 
   // never include entries where the value is a non-JSON primitive
-  T[TKey] extends NonJsonPrimitive ? never : 
+  T[K] extends NonJsonPrimitive ? never : 
   // otherwise serialize the value
-  TKey;
+  K;
 /**
  * JSON serialize objects (not including arrays) and classes
  * @internal
  **/
 export type SerializeObject<T extends object> = {
-  [$Key in keyof T as SerializeObjectKey<T, $Key>]: Serialize<T[$Key]>;
+  [K in keyof T as SerializeObjectKey<T, K>]: Serialize<T[K]>;
 };
 
-type FilterDefinedKeys<TObj extends object> = Exclude<
+/**
+ * Extract keys from T where the value dosen't extend undefined
+ * Note: Can't parse IndexSignature or Record types
+ */
+type FilterDefinedKeys<T extends object> = Exclude<
   {
-    [TKey in keyof TObj]: undefined extends TObj[TKey] ? never : TKey;
-  }[keyof TObj],
+    [K in keyof T]: undefined extends T[K] ? never : K;
+  }[keyof T],
   undefined
 >;
 
-/*
- * For an object T, if it has any properties that are a union with `undefined`,
- * make those into optional properties instead.
- *
- * Example: { a: string | undefined} --> { a?: string}
+/**
+ * Get value of exactOptionalPropertyTypes config
+ */
+type ExactOptionalPropertyTypes = { a?: 0 | undefined } extends {
+  a?: 0;
+}
+  ? false
+  : true;
+
+/**
+ * Check if T has an index signature
+ */
+type HasIndexSignature<T extends object> = string extends keyof T
+  ? true
+  : false;
+
+/**
+ * { [key: string]: number | undefined } --> { [key: string]: number }
+ */
+type HandleIndexSignature<T extends object> = {
+  [K in keyof Omit<T, keyof WithoutIndexSignature<T>>]: Exclude<
+    T[K],
+    undefined
+  >;
+};
+
+/**
+ * { a: number | undefined } --> { a?: number }
+ * Note: Can't parse IndexSignature or Record types
+ */
+type HandleUndefined<T extends object> = {
+  [K in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[K], undefined>;
+};
+
+/**
+ * Handle undefined, index signature and records
  */
 type UndefinedToOptional<T extends object> =
   // Property is not a union with `undefined`, keep as-is
-  Pick<
-    WithoutIndexSignature<T>,
-    FilterDefinedKeys<WithoutIndexSignature<T>>
-  > & {
-    // Property _is_ a union with `defined`. Set as optional (via `?`) and remove `undefined` from the union
-    [k in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[k], undefined>;
-  };
+  Pick<WithoutIndexSignature<T>, FilterDefinedKeys<WithoutIndexSignature<T>>> &
+    // If following is true, don't merge undefined or optional into index signature if any in T
+    (ExactOptionalPropertyTypes extends true
+      ? HandleIndexSignature<T> & HandleUndefined<WithoutIndexSignature<T>>
+      : HasIndexSignature<T> extends true
+      ? HandleIndexSignature<T>
+      : HandleUndefined<T>);

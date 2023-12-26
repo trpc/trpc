@@ -46,12 +46,16 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
 /**
  * @internal
  */
-type RouterCaller<TDef extends AnyRouterDef> = (
+export type RouterCaller<TDef extends AnyRouterDef> = (
   ctx: TDef['_config']['$types']['ctx'],
 ) => DecoratedProcedureRecord<TDef['record']>;
 
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
+  /**
+   * @deprecated use `t.createCallerFactory(router)` instead
+   * @see https://trpc.io/docs/server/server-side-calls
+   */
   createCaller: RouterCaller<TDef>;
 }
 
@@ -164,6 +168,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         return proxy as ReturnType<RouterCaller<any>>;
       },
     };
+
     return router as any;
   };
 }
@@ -189,4 +194,28 @@ export function callProcedure(
   }
 
   return proc(opts);
+}
+
+export function createCallerFactory<TConfig extends AnyRootConfig>() {
+  return function createCallerInner<
+    TRouter extends Router<AnyRouterDef<TConfig>>,
+  >(router: TRouter): RouterCaller<TRouter['_def']> {
+    const _def = router._def;
+
+    return function createCaller(ctx) {
+      const proxy = createRecursiveProxy(({ path, args }) => {
+        const fullPath = path.join('.');
+        const procedure = _def.procedures[fullPath] as AnyProcedure;
+
+        return procedure({
+          path: fullPath,
+          getRawInput: async () => args[0],
+          ctx,
+          type: procedure._def.type,
+        });
+      });
+
+      return proxy as ReturnType<RouterCaller<any>>;
+    };
+  };
 }

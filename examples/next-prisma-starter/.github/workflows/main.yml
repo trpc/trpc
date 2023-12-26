@@ -49,6 +49,9 @@ jobs:
       - run: pnpm build
       - run: pnpm test-e2e
 
+      - name: Check types
+        run: pnpm tsc
+
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
