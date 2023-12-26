@@ -7,6 +7,7 @@ import {
   createRootHooks,
   DecoratedProcedureRecord,
   TRPCUseQueries,
+  TRPCUseSuspenseQueries,
 } from '@trpc/react-query/shared';
 import { AnyRouter } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
@@ -34,6 +35,7 @@ export interface CreateTRPCNextBase<
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
+  useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
 }
 
 /**
@@ -77,6 +79,10 @@ export function createTRPCNext<
 
     if (key === 'useQueries') {
       return hooks.useQueries;
+    }
+
+    if (key === 'useSuspenseQueries') {
+      return hooks.useSuspenseQueries;
     }
 
     if (key === 'withTRPC') {
