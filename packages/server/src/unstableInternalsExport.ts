@@ -10,3 +10,4 @@ export type { MiddlewareFunction, MiddlewareBuilder } from './core/middleware';
 export * from './core/procedure';
 
 export * from './types';
+export * from './core/types';

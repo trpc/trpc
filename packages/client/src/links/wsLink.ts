@@ -1,4 +1,4 @@
-import { AnyRouter, inferRouterError, ProcedureType } from '@trpc/server';
+import { AnyRouter, inferRouterError } from '@trpc/server';
 import { observable, Observer, UnsubscribeFn } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
@@ -7,7 +7,10 @@ import {
   TRPCRequestMessage,
   TRPCResponseMessage,
 } from '@trpc/server/rpc';
-import { MaybePromise } from '@trpc/server/unstableInternalsExport';
+import {
+  MaybePromise,
+  ProcedureType,
+} from '@trpc/server/unstableInternalsExport';
 import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import { Operation, TRPCLink } from './types';
