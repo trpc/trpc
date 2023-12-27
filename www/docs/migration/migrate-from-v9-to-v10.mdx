@@ -206,7 +206,7 @@ const appRouter = trpc
   });
 
 // v10
-export const isAuthed = t.middleware((opts) => {
+const protectedProcedure = t.procedure.use((opts) => {
   const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -220,9 +220,6 @@ export const isAuthed = t.middleware((opts) => {
     },
   });
 });
-
-// Reusable:
-const protectedProcedure = t.procedure.use(isAuthed);
 
 const appRouter = t.router({
   greeting: protectedProcedure.query((opts) => {

@@ -23,7 +23,6 @@ interface Context {
 }
 
 const t = initTRPC.context<Context>().create();
-export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
@@ -75,7 +74,7 @@ In the example below timings for queries are logged automatically.
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
-export const middleware = t.middleware;
+
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
@@ -129,7 +128,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 const t = initTRPC.context<Context>().create();
 const publicProcedure = t.procedure;
 const router = t.router;
-const middleware = t.middleware;
+
 
 // ---cut---
 
@@ -178,7 +177,6 @@ import { initTRPC, TRPCError } from '@trpc/server';
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
-const middleware = t.middleware;
 
 // ---cut---
 
