@@ -42,7 +42,8 @@ interface Meta {
 
 export const t = initTRPC.context<Context>().meta<Meta>().create();
 
-const isAuthed = t.middleware(async (opts) => {
+
+export const authedProcedure = t.procedure.use(async (opts) => {
   const { meta, next, ctx } = opts;
   // only check authorization if enabled
   if (meta?.authRequired && !ctx.user) {
@@ -50,8 +51,6 @@ const isAuthed = t.middleware(async (opts) => {
   }
   return next();
 });
-
-export const authedProcedure = t.procedure.use(isAuthed);
 
 export const appRouter = t.router({
   hello: authedProcedure.meta({ authRequired: false }).query(() => {

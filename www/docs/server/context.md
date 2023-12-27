@@ -113,7 +113,18 @@ import { Context } from './context';
 
 const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware(({ next, ctx }) => {
+export const middleware = t.middleware;
+export const router = t.router;
+
+/**
+ * Unprotected procedure
+ */
+export const publicProcedure = t.procedure;
+
+/**
+ * Protected procedure
+ */
+export const protectedProcedure = t.procedure.use(function isAuthed({ next, ctx }) {
   if (!ctx.session?.user?.email) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
@@ -126,19 +137,6 @@ const isAuthed = t.middleware(({ next, ctx }) => {
     },
   });
 });
-
-export const middleware = t.middleware;
-export const router = t.router;
-
-/**
- * Unprotected procedure
- */
-export const publicProcedure = t.procedure;
-
-/**
- * Protected procedure
- */
-export const protectedProcedure = t.procedure.use(isAuthed);
 ```
 
 <!-- prettier-ignore-end -->

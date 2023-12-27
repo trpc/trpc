@@ -140,7 +140,7 @@ type Context = {
   };
 };
 
-const isAuthed = middleware((opts) => {
+const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
   const { ctx } = opts;
   // `ctx.user` is nullable
   if (!ctx.user) {
@@ -155,9 +155,8 @@ const isAuthed = middleware((opts) => {
       // ^?
     },
   });
-});
+}));
 
-const protectedProcedure = publicProcedure.use(isAuthed);
 protectedProcedure.query(({ ctx }) => ctx.user);
 //                                        ^?
 ```
