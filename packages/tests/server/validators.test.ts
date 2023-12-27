@@ -1,6 +1,7 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { wrap } from '@decs/typeschema';
 import * as S from '@effect/schema/Schema';
+import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server/src';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
@@ -440,4 +441,63 @@ test('async validator fn', async () => {
   );
   expect(res.input).toBe(123);
   await close();
+});
+
+test('input callback', async () => {
+  type Context = {
+    foo: string;
+  };
+  const t = initTRPC.context<Context>().create();
+
+  const router = t.router({
+    num: t.procedure
+      .input((opts) => {
+        const { ctx } = opts;
+        expectTypeOf(ctx).toBeObject<Context>();
+
+        if (ctx.foo !== 'bar') {
+          throw new Error('Not expected context');
+        }
+        return z.object({
+          num: z.number(),
+        });
+      })
+      .query(({ input }) => {
+        expectTypeOf(input.num).toBeNumber();
+        return {
+          input,
+        };
+      }),
+  });
+  {
+    const ctx = routerToServerAndClientNew(router, {
+      server: {
+        createContext() {
+          return {
+            foo: 'bar',
+          };
+        },
+      },
+    });
+    const res = await ctx.client.num.query({ num: 123 });
+
+    expect(res.input).toBe(123);
+    await ctx.close();
+  }
+
+  {
+    const ctx = routerToServerAndClientNew(router, {
+      server: {
+        createContext() {
+          return {
+            foo: 'boo',
+          };
+        },
+      },
+    });
+    const err = await waitError(ctx.client.num.query({ num: 123 }), TRPCClientError);
+
+    expect(err).toMatchInlineSnapshot();
+    
+    await ctx.close();
 });
