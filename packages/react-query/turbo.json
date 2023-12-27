@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "extends": [
+    "//"
+  ],
+  "pipeline": {
+    "codegen-entrypoints": {
+      "outputs": [
+        "package.json",
+        "server/**",
+        "shared/**",
+        "ssg/**"
+      ]
+    }
+  }
+}

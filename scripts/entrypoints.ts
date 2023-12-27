@@ -42,6 +42,10 @@ export function generateEntrypoints(inputs: string[]) {
     },
   };
 
+  // Added to turbo.json pipeline output to ensure cache works
+  const scriptOutputs = new Set<string>();
+  scriptOutputs.add('package.json');
+
   /** Parse the inputs to get the user-import-paths, e.g.
    *  src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
    *  src/adapters/express.ts -> adapters/express
@@ -99,6 +103,8 @@ export function generateEntrypoints(inputs: string[]) {
     if (!topLevel) return;
     if (pkgJson.files.includes(topLevel)) return;
     pkgJson.files.push(topLevel);
+
+    if (topLevel !== 'package.json') scriptOutputs.add(topLevel + '/**');
   });
 
   // Exclude test files in builds
@@ -106,11 +112,26 @@ export function generateEntrypoints(inputs: string[]) {
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];
 
-  // write package.json
-  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
+  const prettierOptions = {
     parser: 'json-stringify',
     printWidth: 80,
     endOfLine: 'auto',
-  });
+  } as const;
+
+  // write package.json
+  const formattedPkgJson = prettier.format(
+    JSON.stringify(pkgJson),
+    prettierOptions,
+  );
   fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
+
+  const turboJson = JSON.parse(
+    fs.readFileSync(path.resolve('turbo.json'), 'utf8'),
+  );
+  turboJson.pipeline['codegen-entrypoints'].outputs = [...scriptOutputs];
+  const formattedTurboJson = prettier.format(
+    JSON.stringify(turboJson),
+    prettierOptions,
+  );
+  fs.writeFileSync(path.resolve('turbo.json'), formattedTurboJson, 'utf8');
 }
