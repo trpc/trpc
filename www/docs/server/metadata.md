@@ -42,7 +42,6 @@ interface Meta {
 
 export const t = initTRPC.context<Context>().meta<Meta>().create();
 
-
 export const authedProcedure = t.procedure.use(async (opts) => {
   const { meta, next, ctx } = opts;
   // only check authorization if enabled
