@@ -443,7 +443,7 @@ test('async validator fn', async () => {
   await close();
 });
 
-test.only('recipe: summon context in input parser', async () => {
+test('recipe: summon context in input parser', async () => {
   type Context = {
     foo: string;
   };
