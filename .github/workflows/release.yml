@@ -10,9 +10,6 @@ on:
       - '!packages/test/**'
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-
   publish:
     timeout-minutes: 10
     env:
