@@ -126,7 +126,6 @@ const t = initTRPC.context<Context>().create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
-
 // ---cut---
 
 type Context = {
@@ -151,7 +150,7 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
       // ^?
     },
   });
-}));
+});
 
 protectedProcedure.query(({ ctx }) => ctx.user);
 //                                        ^?
