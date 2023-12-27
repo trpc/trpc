@@ -2,40 +2,19 @@ name: Release "@next"-tagged packages
 
 on:
   push:
-    branches: [next]
+    branches:
+      - 'next'
+    paths:
+      - 'packages/**'
+      - '!packages/**/package.json'
+      - '!packages/test/**'
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.check.outputs.skip }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check for changes in packages
-        id: check
-        run: |
-          if git diff --quiet "HEAD^" HEAD -- 'packages/**' ':!packages/**/package.json'; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "No changes in packages, skipping release"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "Changes in packages, releasing"
-          fi
-
   publish:
-    needs: check
-    if: ${{needs.check.outputs.skip}} == 'false'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
-    name: Relase @next
 
     runs-on: ubuntu-latest
 
