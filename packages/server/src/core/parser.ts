@@ -32,7 +32,7 @@ export type ParserScaleEsque<TInput> = {
 
 export type ParserWithoutInput<TInput> =
   // if you play with this: try toggling the below on and off
-  // | ParserCustomValidatorEsque<TInput>
+  | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
   | ParserScaleEsque<TInput>
   | ParserSuperstructEsque<TInput>

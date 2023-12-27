@@ -88,17 +88,7 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/validators
    */
   input<$Parser extends Parser>(
-    schema: TInputOut extends UnsetMarker
-      ? $Parser | ParserCallback<TContext, $Parser>
-      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser | ParserCallback<TContext, $Parser>
-            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
-          : $Parser | ParserCallback<TContext, $Parser>
-        : ErrorMessage<'All input parsers did not resolve to an object'>
-      : ErrorMessage<'All input parsers did not resolve to an object'>,
+    schema: $Parser | ParserCallback<TContext, $Parser>
   ): ProcedureBuilder<
     TContext,
     TMeta,
