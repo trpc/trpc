@@ -124,8 +124,8 @@ export const publicProcedure = t.procedure;
 /**
  * Protected procedure
  */
-export const protectedProcedure = t.procedure.use(function isAuthed({ next, ctx }) {
-  if (!ctx.session?.user?.email) {
+export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
+  if (!opts.ctx.session?.user?.email) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
     });
@@ -133,7 +133,7 @@ export const protectedProcedure = t.procedure.use(function isAuthed({ next, ctx 
   return next({
     ctx: {
       // Infers the `session` as non-nullable
-      session: ctx.session,
+      session: opts.ctx.session,
     },
   });
 });

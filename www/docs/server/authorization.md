@@ -71,9 +71,10 @@ import { initTRPC, TRPCError } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 
-
 // you can reuse this for any procedure
-export const protectedProcedure = t.procedure.use(async function isAuthed(opts) {
+export const protectedProcedure = t.procedure.use(async function isAuthed(
+  opts,
+) {
   const { ctx } = opts;
   // `ctx.user` is nullable
   if (!ctx.user) {
@@ -88,7 +89,7 @@ export const protectedProcedure = t.procedure.use(async function isAuthed(opts) 
       // ^?
     },
   });
-}));
+});
 
 t.router({
   // this is accessible for everyone
