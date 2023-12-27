@@ -130,7 +130,7 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
       code: 'UNAUTHORIZED',
     });
   }
-  return next({
+  return opts.next({
     ctx: {
       // Infers the `session` as non-nullable
       session: opts.ctx.session,
