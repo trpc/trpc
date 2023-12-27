@@ -2,7 +2,7 @@ name: Release "@canary"-tagged packages
 
 on:
   push:
-    branches: [main]
+    # branches: [main]
 
 jobs:
   check-changes:
@@ -19,7 +19,7 @@ jobs:
       - name: Check for changes in packages
         id: check-changes
         run: |
-          if git diff --quiet HEAD^ HEAD -- ./packages/**; then
+          if git diff --quiet HEAD^ HEAD -- ./.github/**; then
             echo "skip=true" >> $GITHUB_ENV
             echo "No changes in packages, skipping release"
           else
