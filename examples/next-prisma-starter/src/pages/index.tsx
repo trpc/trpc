@@ -12,7 +12,7 @@ const IndexPage: NextPageWithLayout = () => {
       limit: 5,
     },
     {
-      getPreviousPageParam(lastPage) {
+      getNextPageParam(lastPage) {
         return lastPage.nextCursor;
       },
     },
@@ -61,19 +61,17 @@ const IndexPage: NextPageWithLayout = () => {
         <div className="flex flex-col"></div>
         <h2 className="text-3xl font-semibold">
           Latest Posts
-          {postsQuery.status === 'loading' && '(loading)'}
+          {postsQuery.status === 'pending' && '(loading)'}
         </h2>
 
         <button
           className="bg-gray-900 p-2 rounded-md font-semibold disabled:bg-gray-700 disabled:text-gray-400"
-          onClick={() => postsQuery.fetchPreviousPage()}
-          disabled={
-            !postsQuery.hasPreviousPage || postsQuery.isFetchingPreviousPage
-          }
+          onClick={() => postsQuery.fetchNextPage()}
+          disabled={!postsQuery.hasNextPage || postsQuery.isFetchingNextPage}
         >
-          {postsQuery.isFetchingPreviousPage
+          {postsQuery.isFetchingNextPage
             ? 'Loading more...'
-            : postsQuery.hasPreviousPage
+            : postsQuery.hasNextPage
             ? 'Load More'
             : 'Nothing more to load'}
         </button>
@@ -131,14 +129,14 @@ const IndexPage: NextPageWithLayout = () => {
               name="title"
               type="text"
               placeholder="Title"
-              disabled={addPost.isLoading}
+              disabled={addPost.isPending}
             />
             <textarea
               className="resize-none focus-visible:outline-dashed outline-offset-4 outline-2 outline-gray-700 rounded-xl px-4 py-3 bg-gray-900"
               id="text"
               name="text"
               placeholder="Text"
-              disabled={addPost.isLoading}
+              disabled={addPost.isPending}
               rows={6}
             />
 
@@ -146,7 +144,7 @@ const IndexPage: NextPageWithLayout = () => {
               <input
                 className="cursor-pointer bg-gray-900 p-2 rounded-md px-16"
                 type="submit"
-                disabled={addPost.isLoading}
+                disabled={addPost.isPending}
               />
               {addPost.error && (
                 <p style={{ color: 'red' }}>{addPost.error.message}</p>

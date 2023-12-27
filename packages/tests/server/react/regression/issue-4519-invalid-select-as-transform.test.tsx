@@ -36,10 +36,10 @@ const ctx = konn()
   .done();
 
 test('select as transform', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const result = proxy.greeting.useQuery(
+    const result = client.greeting.useQuery(
       { name: 'foo' },
       {
         select(data) {
@@ -71,10 +71,10 @@ test('select as transform', async () => {
 });
 
 test('select as transform in suspense', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const [data] = proxy.greeting.useSuspenseQuery(
+    const [data] = client.greeting.useSuspenseQuery(
       { name: 'foo' },
       {
         select(data) {
@@ -104,11 +104,11 @@ test('select as transform in suspense', async () => {
 });
 
 test('select as transform with initial data', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
     // @ts-expect-error - initialData must match the procedure output, not the select
-    proxy.greeting.useQuery(
+    client.greeting.useQuery(
       { name: 'foo' },
       {
         select(data) {
@@ -121,7 +121,7 @@ test('select as transform with initial data', async () => {
       },
     );
 
-    const { data } = proxy.greeting.useQuery(
+    const { data } = client.greeting.useQuery(
       { name: 'foo' },
       {
         select(data) {

@@ -37,8 +37,8 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
     arr.map((res) => {
       if ('error' in res) {
         const data = res.error.data;
-        if (typeof data.httpStatus === 'number') {
-          return data.httpStatus;
+        if (typeof data['httpStatus'] === 'number') {
+          return data['httpStatus'];
         }
         const code = TRPC_ERROR_CODES_BY_NUMBER[res.error.code];
         return getStatusCodeFromKey(code);

@@ -5,25 +5,25 @@
 import {
   dehydrate,
   DehydratedState,
-  Hydrate,
+  HydrationBoundary,
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions } from '@trpc/client';
 import {
-  createReactQueryHooks,
-  createTRPCClient,
-  TRPCClient,
-  TRPCClientError,
-  TRPCClientErrorLike,
-} from '@trpc/react-query';
+  CreateTRPCClientOptions,
+  createTRPCUntypedClient,
+  TRPCUntypedClient,
+} from '@trpc/client';
+import { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import {
+  createRootHooks,
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
 } from '@trpc/react-query/shared';
-import type { AnyRouter, Dict, Maybe } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import type { ResponseMeta } from '@trpc/server/http';
+import { Dict, Maybe } from '@trpc/server/unstableInternalsExport';
 import {
   AppContextType,
   AppPropsType,
@@ -88,12 +88,12 @@ export function withTRPC<
   type TRPCPrepassProps = {
     config: WithTRPCConfig<TRouter>;
     queryClient: QueryClient;
-    trpcClient: TRPCClient<TRouter>;
+    trpcClient: TRPCUntypedClient<TRouter>;
     ssrState: 'prepass';
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
+    const trpc = createRootHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
@@ -134,9 +134,9 @@ export function withTRPC<
           ssrContext={ssrContext}
         >
           <QueryClientProvider client={queryClient}>
-            <Hydrate state={hydratedState}>
+            <HydrationBoundary state={hydratedState}>
               <AppOrPage {...props} />
-            </Hydrate>
+            </HydrationBoundary>
           </QueryClientProvider>
         </trpc.Provider>
       );
@@ -189,7 +189,7 @@ export function withTRPC<
         }
 
         const config = getClientConfig({ ctx });
-        const trpcClient = createTRPCClient(config);
+        const trpcClient = createTRPCUntypedClient(config);
         const queryClient = getQueryClient(config);
 
         const trpcProp: TRPCPrepassProps = {
@@ -231,7 +231,7 @@ export function withTRPC<
             // filter out queries that are marked as trpc: { ssr: false } or are not enabled, but make sure errors are dehydrated
             const isExcludedFromSSr =
               query.state.fetchStatus === 'idle' &&
-              query.state.status === 'loading';
+              query.state.status === 'pending';
             return !isExcludedFromSSr;
           },
         });
@@ -247,7 +247,7 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState =
+        pageProps['trpcState'] =
           trpcClient.runtime.combinedTransformer.output.serialize(
             dehydratedCacheWithErrors,
           );

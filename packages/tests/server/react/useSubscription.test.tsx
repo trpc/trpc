@@ -47,13 +47,13 @@ test('useSubscription', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
 
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
 
   function MyComponent() {
     const [isStarted, setIsStarted] = useState(false);
     const [data, setData] = useState<number>();
 
-    proxy.onEvent.useSubscription(10, {
+    client.onEvent.useSubscription(10, {
       enabled: true,
       onStarted: () => {
         setIsStarted(true);

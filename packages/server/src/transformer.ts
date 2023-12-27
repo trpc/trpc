@@ -2,30 +2,30 @@
  * @public
  */
 export interface DataTransformer {
-  serialize(object: any): any;
-  deserialize(object: any): any;
+  serialize: (object: any) => any;
+  deserialize: (object: any) => any;
 }
 
 interface InputDataTransformer extends DataTransformer {
   /**
    * This function runs **on the client** before sending the data to the server.
    */
-  serialize(object: any): any;
+  serialize: (object: any) => any;
   /**
    * This function runs **on the server** to transform the data before it is passed to the resolver
    */
-  deserialize(object: any): any;
+  deserialize: (object: any) => any;
 }
 
 interface OutputDataTransformer extends DataTransformer {
   /**
    * This function runs **on the server** before sending the data to the client.
    */
-  serialize(object: any): any;
+  serialize: (object: any) => any;
   /**
    * This function runs **only on the client** to transform the data sent from the server.
    */
-  deserialize(object: any): any;
+  deserialize: (object: any) => any;
 }
 
 /**
@@ -54,16 +54,6 @@ export type CombinedDataTransformerClient = {
  * @public
  */
 export type DataTransformerOptions = CombinedDataTransformer | DataTransformer;
-
-/**
- * @public
- * @deprecated
- * Deprecated in favor of `CombinedDataTransformerOptions` as this causes issues when doing SSR
- * - https://github.com/trpc/trpc/issues/4130
- */
-export type ClientDataTransformerOptions =
-  | CombinedDataTransformerClient
-  | DataTransformer;
 
 /**
  * @internal

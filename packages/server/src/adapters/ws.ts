@@ -13,10 +13,23 @@ import {
 } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPCreateContextOption,
-} from './node-http';
+import { MaybePromise } from '../types';
+import { NodeHTTPCreateContextFnOptions } from './node-http';
+
+/**
+ * @public
+ */
+export type CreateWSSContextFnOptions = Omit<
+  NodeHTTPCreateContextFnOptions<IncomingMessage, WebSocket>,
+  'info'
+>;
+
+/**
+ * @public
+ */
+export type CreateWSSContextFn<TRouter extends AnyRouter> = (
+  opts: CreateWSSContextFnOptions,
+) => MaybePromise<inferRouterContext<TRouter>>;
 
 /**
  * Web socket server handler
@@ -25,15 +38,22 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
 > &
-  NodeHTTPCreateContextOption<TRouter, IncomingMessage, WebSocket> & {
+  (object extends inferRouterContext<TRouter>
+    ? {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext?: CreateWSSContextFn<TRouter>;
+      }
+    : {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext: CreateWSSContextFn<TRouter>;
+      }) & {
     wss: WebSocketServer;
     process?: NodeJS.Process;
   };
-
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  WebSocket
->;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -95,7 +115,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
-          rawInput: input,
+          getRawInput: async () => input,
           ctx,
           type,
         });

@@ -14,8 +14,3 @@ export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
         opList: NonEmptyArray<Operation>;
       }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
-/**
- * @alias HttpBatchLinkOptions
- * @deprecated use `HTTPBatchLinkOptions` instead
- */
-export interface HttpBatchLinkOptions extends HTTPBatchLinkOptions {}

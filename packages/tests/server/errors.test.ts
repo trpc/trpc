@@ -2,14 +2,13 @@
 import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   TRPCClientError,
   TRPCLink,
 } from '@trpc/client/src';
 import { observable } from '@trpc/server/observable';
-import * as trpc from '@trpc/server/src';
 import { initTRPC } from '@trpc/server/src';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
@@ -35,12 +34,12 @@ test('basic', async () => {
   });
 
   const onError = vi.fn();
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
-  const clientError = await waitError(proxy.err.query(), TRPCClientError);
+  const clientError = await waitError(client.err.query(), TRPCClientError);
   expect(clientError.shape.message).toMatchInlineSnapshot(`"woop"`);
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32603`);
 
@@ -66,13 +65,13 @@ test('input error', async () => {
       return null;
     }),
   });
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
   const clientError = await waitError(
-    proxy.err.mutate(1 as any),
+    client.err.mutate(1 as any),
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(`
@@ -110,12 +109,12 @@ test('unauthorized()', async () => {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }),
   });
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
-  const clientError = await waitError(proxy.err.query(), TRPCClientError);
+  const clientError = await waitError(client.err.query(), TRPCClientError);
   expect(clientError).toMatchInlineSnapshot(`[TRPCClientError: UNAUTHORIZED]`);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0]![0]!.error;
@@ -155,13 +154,13 @@ describe('formatError()', () => {
       }),
     });
 
-    const { close, proxy } = routerToServerAndClientNew(router, {
+    const { close, client } = routerToServerAndClientNew(router, {
       server: {
         onError,
       },
     });
     const clientError = await waitError(
-      proxy.err.mutate(1 as any),
+      client.err.mutate(1 as any),
       TRPCClientError,
     );
     delete clientError.data.stack;
@@ -219,20 +218,6 @@ Object {
     await close();
   });
 
-  test('double errors', async () => {
-    expect(() => {
-      trpc
-        .router()
-        .formatError(({ shape }) => {
-          return shape;
-        })
-        .formatError(({ shape }) => {
-          return shape;
-        });
-    }).toThrowErrorMatchingInlineSnapshot(
-      `"You seem to have double \`formatError()\`-calls in your router tree"`,
-    );
-  });
   test('setting custom http response code', async () => {
     const TEAPOT_ERROR_CODE = 418;
     const onError = vi.fn();
@@ -303,13 +288,13 @@ test('make sure object is ignoring prototype', async () => {
     hello: t.procedure.query(() => 'there'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
   const clientError = await waitError(
-    (proxy as any).toString.query(),
+    (client as any).toString.query(),
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(
@@ -330,10 +315,10 @@ test('allow using built-in Object-properties', async () => {
     hasOwnProperty: t.procedure.query(() => 'hasOwnPropertyValue'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
-  expect(await proxy.toString.query()).toBe('toStringValue');
-  expect(await proxy.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
+  expect(await client.toString.query()).toBe('toStringValue');
+  expect(await client.hasOwnProperty.query()).toBe('hasOwnPropertyValue');
   await close();
 });
 
@@ -362,13 +347,13 @@ test('retain stack trace', async () => {
     }),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router, {
+  const { close, client } = routerToServerAndClientNew(router, {
     server: {
       onError,
     },
   });
 
-  const clientError = await waitError(() => proxy.hello.query());
+  const clientError = await waitError(() => client.hello.query());
   expect(clientError.name).toBe('TRPCClientError');
 
   expect(onError).toHaveBeenCalledTimes(1);
@@ -433,7 +418,7 @@ describe('links have meta data about http failures', async () => {
   test('httpLink', async () => {
     let meta = undefined as Record<string, unknown> | undefined;
 
-    const client: any = createTRPCProxyClient<any>({
+    const client: any = createTRPCClient<any>({
       links: [
         () => {
           return ({ next, op }) => {
@@ -461,9 +446,9 @@ describe('links have meta data about http failures', async () => {
     );
 
     expect(meta).not.toBeUndefined();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).toMatchInlineSnapshot(`
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).toMatchInlineSnapshot(`
       Object {
         "__error": Object {
           "foo": "bar",
@@ -475,7 +460,7 @@ describe('links have meta data about http failures', async () => {
   test('httpBatchLink', async () => {
     let meta = undefined as Record<string, unknown> | undefined;
 
-    const client: any = createTRPCProxyClient<any>({
+    const client: any = createTRPCClient<any>({
       links: [
         () => {
           return ({ next, op }) => {
@@ -503,9 +488,9 @@ describe('links have meta data about http failures', async () => {
     );
 
     expect(meta).not.toBeUndefined();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).not.toBeFalsy();
-    expect(meta?.responseJSON).toMatchInlineSnapshot(`
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).not.toBeFalsy();
+    expect(meta?.['responseJSON']).toMatchInlineSnapshot(`
       Object {
         "__error": Object {
           "foo": "bar",
@@ -535,14 +520,14 @@ describe('links have meta data about http failures', async () => {
           error(err) {
             if (
               err.meta &&
-              isObject(err.meta.responseJSON) &&
-              '__error' in err.meta.responseJSON // <----- you need to modify this
+              isObject(err.meta['responseJSON']) &&
+              '__error' in err.meta['responseJSON'] // <----- you need to modify this
             ) {
               // custom error handling
               observer.error(
                 new MyCustomError(
                   `custom error: ${JSON.stringify(
-                    err.meta.responseJSON.__error,
+                    err.meta['responseJSON']['__error'],
                   )}`,
                 ),
               );
@@ -553,7 +538,7 @@ describe('links have meta data about http failures', async () => {
         return unsubscribe;
       });
 
-    const client: any = createTRPCProxyClient<any>({
+    const client: any = createTRPCClient<any>({
       links: [
         customErrorLink,
         httpLink({

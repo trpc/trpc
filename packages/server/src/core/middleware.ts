@@ -1,15 +1,7 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
-import { AnyRootConfig, RootConfig } from './internals/config';
 import { ParseFn } from './internals/getParseFn';
-import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
-import {
-  DefaultValue,
-  MiddlewareMarker,
-  Overwrite,
-  UnsetMarker,
-} from './internals/utils';
-import { ProcedureParams } from './procedure';
+import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
 import { ProcedureType } from './types';
 
 /**
@@ -26,8 +18,7 @@ interface MiddlewareResultBase {
 /**
  * @internal
  */
-interface MiddlewareOKResult<_TParams extends ProcedureParams>
-  extends MiddlewareResultBase {
+interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   ok: true;
   data: unknown;
   // this could be extended with `input`/`rawInput` later
@@ -36,7 +27,7 @@ interface MiddlewareOKResult<_TParams extends ProcedureParams>
 /**
  * @internal
  */
-interface MiddlewareErrorResult<_TParams extends ProcedureParams>
+interface MiddlewareErrorResult<_TContextOverride>
   extends MiddlewareResultBase {
   ok: false;
   error: TRPCError;
@@ -45,131 +36,96 @@ interface MiddlewareErrorResult<_TParams extends ProcedureParams>
 /**
  * @internal
  */
-export type MiddlewareResult<TParams extends ProcedureParams> =
-  | MiddlewareErrorResult<TParams>
-  | MiddlewareOKResult<TParams>;
+export type MiddlewareResult<_TContextOverride> =
+  | MiddlewareErrorResult<_TContextOverride>
+  | MiddlewareOKResult<_TContextOverride>;
 
 /**
  * @internal
  */
 export interface MiddlewareBuilder<
-  TRoot extends ProcedureParams,
-  TNewParams extends ProcedureParams,
+  TContext,
+  TMeta,
+  TContextOverrides,
+  TInputIn,
 > {
   /**
    * Create a new builder based on the current middleware builder
    */
-  unstable_pipe<$Params extends ProcedureParams>(
-    fn: {
-      _config: TRoot['_config'];
-      _meta: TRoot['_meta'];
-      _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-      _input_in: DefaultValue<TRoot['_input_in'], TNewParams['_input_in']>;
-      _input_out: DefaultValue<TRoot['_input_out'], TNewParams['_input_out']>;
-      _output_in: DefaultValue<TRoot['_output_in'], TNewParams['_output_in']>;
-      _output_out: DefaultValue<
-        TRoot['_output_out'],
-        TNewParams['_output_out']
-      >;
-    } extends infer OParams extends ProcedureParams
-      ?
-          | MiddlewareBuilder<OParams, $Params>
-          | MiddlewareFunction<OParams, $Params>
-      : never,
-  ): CreateMiddlewareReturnInput<
-    TRoot,
-    TNewParams,
-    Overwrite<TNewParams, $Params>
+  unstable_pipe<$ContextOverridesOut>(
+    fn:
+      | MiddlewareFunction<
+          TContext,
+          TMeta,
+          TContextOverrides,
+          $ContextOverridesOut,
+          TInputIn
+        >
+      | MiddlewareBuilder<
+          Overwrite<TContext, TContextOverrides>,
+          TMeta,
+          $ContextOverridesOut,
+          TInputIn
+        >,
+  ): MiddlewareBuilder<
+    TContext,
+    TMeta,
+    Overwrite<TContextOverrides, $ContextOverridesOut>,
+    TInputIn
   >;
 
   /**
    * List of middlewares within this middleware builder
    */
-  _middlewares: MiddlewareFunction<TRoot, TNewParams>[];
+  _middlewares: MiddlewareFunction<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    object,
+    TInputIn
+  >[];
 }
 
 /**
  * @internal
- * FIXME: there must be a nicer way of doing this, it's hard to maintain when we have several structures like this
- */
-type CreateMiddlewareReturnInput<
-  TRoot extends ProcedureParams,
-  TPrev extends ProcedureParams,
-  TNext extends ProcedureParams,
-> = MiddlewareBuilder<
-  TRoot,
-  {
-    _config: TPrev['_config'];
-    _meta: TPrev['_meta'];
-    _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-    _input_in: DefaultValue<TNext['_input_in'], TPrev['_input_in']>;
-    _input_out: DefaultValue<TNext['_input_out'], TPrev['_input_out']>;
-    _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
-    _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
-  }
->;
-
-/**
- * @internal
- */
-type deriveParamsFromConfig<
-  TConfig extends AnyRootConfig,
-  TInputIn = unknown,
-> = {
-  _config: TConfig;
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  _ctx_out: {};
-  _input_out: UnsetMarker;
-  _input_in: TInputIn;
-  _output_in: unknown;
-  _output_out: unknown;
-  _meta: TConfig['$types']['meta'];
-};
-/**
- * @internal
  */
 export type MiddlewareFunction<
-  TParams extends ProcedureParams,
-  TParamsAfter extends ProcedureParams,
+  TContext,
+  TMeta,
+  TContextOverridesIn,
+  $ContextOverridesOut,
+  TInputIn,
 > = {
   (opts: {
-    ctx: Simplify<
-      Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
-    >;
+    ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
     type: ProcedureType;
     path: string;
-    input: TParams['_input_in'];
-    rawInput: unknown;
-    meta: TParams['_meta'] | undefined;
+    input: TInputIn;
+    getRawInput: GetRawInputFn;
+    meta: TMeta | undefined;
     next: {
-      (): Promise<MiddlewareResult<TParams>>;
-      <$Context>(opts: { ctx: $Context }): Promise<
-        MiddlewareResult<{
-          _config: TParams['_config'];
-          _ctx_out: $Context;
-          _input_in: TParams['_input_in'];
-          _input_out: TParams['_input_out'];
-          _output_in: TParams['_output_in'];
-          _output_out: TParams['_output_out'];
-          _meta: TParams['_meta'];
-        }>
+      (): Promise<MiddlewareResult<TContextOverridesIn>>;
+      <$ContextOverride>(opts: {
+        ctx?: $ContextOverride;
+        input?: unknown;
+      }): Promise<MiddlewareResult<$ContextOverride>>;
+      (opts: { getRawInput: GetRawInputFn }): Promise<
+        MiddlewareResult<TContextOverridesIn>
       >;
-      (opts: { rawInput: unknown }): Promise<MiddlewareResult<TParams>>;
     };
-  }): Promise<MiddlewareResult<TParamsAfter>>;
+  }): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;
 };
 
+export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
  */
-export function createMiddlewareFactory<
-  TConfig extends AnyRootConfig,
-  TInputIn = unknown,
->() {
-  function createMiddlewareInner<TNewParams extends ProcedureParams>(
-    middlewares: MiddlewareFunction<any, any>[],
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+export function createMiddlewareFactory<TContext, TMeta, TInputIn = unknown>() {
+  function createMiddlewareInner(
+    middlewares: AnyMiddlewareFunction[],
+  ): AnyMiddlewareBuilder {
     return {
       _middlewares: middlewares,
       unstable_pipe(middlewareBuilderOrFn) {
@@ -178,20 +134,20 @@ export function createMiddlewareFactory<
             ? middlewareBuilderOrFn._middlewares
             : [middlewareBuilderOrFn];
 
-        return createMiddlewareInner([
-          ...(middlewares as any),
-          ...pipedMiddleware,
-        ]);
+        return createMiddlewareInner([...middlewares, ...pipedMiddleware]);
       },
     };
   }
 
-  function createMiddleware<TNewParams extends ProcedureParams>(
+  function createMiddleware<$ContextOverrides>(
     fn: MiddlewareFunction<
-      deriveParamsFromConfig<TConfig, TInputIn>,
-      TNewParams
+      TContext,
+      TMeta,
+      object,
+      $ContextOverrides,
+      TInputIn
     >,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+  ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputIn> {
     return createMiddlewareInner([fn]);
   }
 
@@ -206,12 +162,8 @@ export const experimental_standaloneMiddleware = <
   },
 >() => ({
   create: createMiddlewareFactory<
-    RootConfig<{
-      ctx: TCtx extends { ctx: infer T extends object } ? T : object;
-      meta: TCtx extends { meta: infer T extends object } ? T : object;
-      errorShape: object;
-      transformer: object;
-    }>,
+    TCtx extends { ctx: infer T extends object } ? T : any,
+    TCtx extends { meta: infer T extends object } ? T : object,
     TCtx extends { input: infer T } ? T : unknown
   >(),
 });
@@ -225,33 +177,31 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
-  const inputMiddleware: ProcedureBuilderMiddleware = async ({
-    next,
-    rawInput,
-    input,
-  }) => {
-    let parsedInput: ReturnType<typeof parse>;
-    try {
-      parsedInput = await parse(rawInput);
-    } catch (cause) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        cause,
-      });
-    }
+  const inputMiddleware: AnyMiddlewareFunction =
+    async function inputValidatorMiddleware(opts) {
+      let parsedInput: ReturnType<typeof parse>;
 
-    // Multiple input parsers
-    const combinedInput =
-      isPlainObject(input) && isPlainObject(parsedInput)
-        ? {
-            ...input,
-            ...parsedInput,
-          }
-        : parsedInput;
+      const rawInput = await opts.getRawInput();
+      try {
+        parsedInput = await parse(rawInput);
+      } catch (cause) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          cause,
+        });
+      }
 
-    // TODO fix this typing?
-    return next({ input: combinedInput } as any);
-  };
+      // Multiple input parsers
+      const combinedInput =
+        isPlainObject(opts.input) && isPlainObject(parsedInput)
+          ? {
+              ...opts.input,
+              ...parsedInput,
+            }
+          : parsedInput;
+
+      return opts.next({ input: combinedInput });
+    };
   inputMiddleware._type = 'input';
   return inputMiddleware;
 }
@@ -260,26 +210,27 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
-  const outputMiddleware: ProcedureBuilderMiddleware = async ({ next }) => {
-    const result = await next();
-    if (!result.ok) {
-      // pass through failures without validating
-      return result;
-    }
-    try {
-      const data = await parse(result.data);
-      return {
-        ...result,
-        data,
-      };
-    } catch (cause) {
-      throw new TRPCError({
-        message: 'Output validation failed',
-        code: 'INTERNAL_SERVER_ERROR',
-        cause,
-      });
-    }
-  };
+  const outputMiddleware: AnyMiddlewareFunction =
+    async function outputValidatorMiddleware({ next }) {
+      const result = await next();
+      if (!result.ok) {
+        // pass through failures without validating
+        return result;
+      }
+      try {
+        const data = await parse(result.data);
+        return {
+          ...result,
+          data,
+        };
+      } catch (cause) {
+        throw new TRPCError({
+          message: 'Output validation failed',
+          code: 'INTERNAL_SERVER_ERROR',
+          cause,
+        });
+      }
+    };
   outputMiddleware._type = 'output';
   return outputMiddleware;
 }

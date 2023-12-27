@@ -16,7 +16,12 @@ import {
 } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
-import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
+import {
+  HTTPBaseHandlerOptions,
+  HTTPRequest,
+  ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
+} from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -40,7 +45,7 @@ interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
@@ -145,7 +150,7 @@ async function inputToProcedureCall<
     const data = await callProcedure({
       procedures: opts.router._def.procedures,
       path,
-      rawInput: input,
+      getRawInput: async () => input,
       ctx,
       type,
     });
@@ -287,17 +292,6 @@ export async function resolveHTTPResponse<
     req.headers['trpc-batch-mode'] === 'stream';
 
   try {
-    // we create context first so that (unless `createContext()` throws)
-    // error handler may access context information
-    //
-    // this way even if the client sends malformed input that might cause an exception:
-    //  - `opts.error` has value,
-    //  - batching is not enabled,
-    //  - `type` is unknown,
-    //  - `getInputs` throws because of malformed JSON,
-    // context value is still available to the error handler
-    ctx = await opts.createContext();
-
     if (opts.error) {
       throw opts.error;
     }
@@ -328,6 +322,15 @@ export async function resolveHTTPResponse<
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
+    const info: TRPCRequestInfo = {
+      isBatchCall,
+      calls: paths.map((path, idx) => ({
+        path,
+        type,
+        input: inputs[idx] ?? undefined,
+      })),
+    };
+    ctx = await opts.createContext({ info });
     const promises = paths.map((path, index) =>
       inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
     );

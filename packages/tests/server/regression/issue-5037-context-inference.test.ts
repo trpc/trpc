@@ -1,11 +1,6 @@
-import {
-  inferRouterOutputs,
-  initTRPC,
-  ProcedureBuilder,
-  ProcedureParams,
-  TRPCError,
-} from '@trpc/server';
+import { inferRouterOutputs, initTRPC, TRPCError } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+import { ProcedureBuilder } from '@trpc/server/unstableInternalsExport';
 import { z } from 'zod';
 
 /**
@@ -16,7 +11,6 @@ interface TrpcMiddlewareArguments<T> {
   path: string;
   type: string;
   next: () => T;
-  rawInput: unknown;
 }
 
 /**
@@ -24,16 +18,10 @@ interface TrpcMiddlewareArguments<T> {
  * https://github.com/getsentry/sentry-javascript/blob/6d424571e3cd5e99991b711f4e23d773e321e294/packages/node/src/handlers.ts#L328
  */
 function sentryTrpcMiddleware(_options: any) {
-  return function <T>({
-    path,
-    type,
-    next,
-    rawInput,
-  }: TrpcMiddlewareArguments<T>): T {
+  return function <T>({ path, type, next }: TrpcMiddlewareArguments<T>): T {
     path;
     type;
     next;
-    rawInput;
 
     // This function is effectively what @sentry/node does to provide its trpc middleware.
     return null as any as T;
@@ -103,11 +91,29 @@ describe('context inference w/ middlewares', () => {
         },
       });
 
-      function withAuth2<T extends ProcedureParams>(
-        builder: ProcedureBuilder<T>,
+      function withAuth2<
+        TContext extends {
+          req?: any;
+        },
+        TMeta,
+        TContextOverrides,
+        TInputIn,
+        TInputOut,
+        TOutputIn,
+        TOutputOut,
+      >(
+        builder: ProcedureBuilder<
+          TContext,
+          TMeta,
+          TContextOverrides,
+          TInputIn,
+          TInputOut,
+          TOutputIn,
+          TOutputOut
+        >,
       ) {
         return builder.use(async (opts) => {
-          if (!(opts.ctx as any).req) {
+          if (!opts.ctx.req) {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
               message: 'missing req object',

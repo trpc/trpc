@@ -3,6 +3,7 @@ import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   createWSClient,
+  getUntypedClient,
   httpBatchLink,
   splitLink,
   TRPCWebSocketClient,
@@ -11,8 +12,7 @@ import {
 import { createTRPCReact } from '@trpc/react-query';
 import { OutputWithCursor } from '@trpc/react-query/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { observable } from '@trpc/server/src/observable';
-import { subscriptionPullFactory } from '@trpc/server/src/subscription';
+import { Observable, observable, Observer } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
 import { z, ZodError } from 'zod';
@@ -22,6 +22,43 @@ export type Post = {
   title: string;
   createdAt: number;
 };
+
+function subscriptionPullFactory<TOutput>(opts: {
+  /**
+   * The interval of how often the function should run
+   */
+  intervalMs: number;
+  pull(emit: Observer<TOutput, unknown>): Promise<void> | void;
+}): Observable<TOutput, unknown> {
+  let timer: any;
+  let stopped = false;
+  async function _pull(emit: Observer<TOutput, unknown>) {
+    /* istanbul ignore next */
+    if (stopped) {
+      return;
+    }
+    try {
+      await opts.pull(emit);
+    } catch (err /* istanbul ignore next */) {
+      emit.error(err as Error);
+    }
+
+    /* istanbul ignore else */
+    if (!stopped) {
+      timer = setTimeout(() => _pull(emit), opts.intervalMs);
+    }
+  }
+
+  return observable<TOutput>((emit) => {
+    _pull(emit).catch((err) => {
+      emit.error(err as Error);
+    });
+    return () => {
+      clearTimeout(timer);
+      stopped = true;
+    };
+  });
+}
 
 export function createAppRouter() {
   const db: {
@@ -36,6 +73,7 @@ export function createAppRouter() {
   const createContext = vi.fn(() => ({}));
   const allPosts = vi.fn();
   const postById = vi.fn();
+  const paginatedPosts = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   const t = initTRPC.create({
@@ -76,6 +114,7 @@ export function createAppRouter() {
           .default({}),
       )
       .query(({ input }) => {
+        paginatedPosts(input);
         const items: typeof db.posts = [];
         const limit = input.limit;
         const { cursor } = input;
@@ -243,7 +282,7 @@ export function createAppRouter() {
 
   function App(props: { children: ReactNode }) {
     return (
-      <trpc.Provider {...{ queryClient, client }}>
+      <trpc.Provider {...{ queryClient, client: getUntypedClient(client) }}>
         <QueryClientProvider client={queryClient}>
           {props.children}
         </QueryClientProvider>
@@ -262,6 +301,7 @@ export function createAppRouter() {
     resolvers: {
       postById,
       allPosts,
+      paginatedPosts,
     },
     queryClient,
     createContext,

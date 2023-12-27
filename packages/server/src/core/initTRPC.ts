@@ -116,7 +116,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     const config: $Config = {
       transformer,
       isDev:
-        runtime?.isDev ?? globalThis.process?.env?.NODE_ENV !== 'production',
+        runtime?.isDev ??
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        globalThis.process?.env?.['NODE_ENV'] !== 'production',
       allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
       errorFormatter,
       isServer: runtime?.isServer ?? isServerDefault,
@@ -150,14 +152,20 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
        * Builder object for creating procedures
        * @see https://trpc.io/docs/server/procedures
        */
-      procedure: createBuilder<$Config>({
+      procedure: createBuilder<
+        $Config['$types']['ctx'],
+        $Config['$types']['meta']
+      >({
         meta: runtime?.defaultMeta,
       }),
       /**
        * Create reusable middlewares
        * @see https://trpc.io/docs/server/middlewares
        */
-      middleware: createMiddlewareFactory<$Config>(),
+      middleware: createMiddlewareFactory<
+        $Config['$types']['ctx'],
+        $Config['$types']['meta']
+      >(),
       /**
        * Create a router
        * @see https://trpc.io/docs/server/routers

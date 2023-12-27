@@ -1,42 +1,5 @@
 /**
  * @internal
- * @deprecated
- */
-export type identity<TType> = TType;
-
-/**
- * @deprecated
- */
-export type InferOptional<TType, TKeys extends keyof TType> = Omit<
-  TType,
-  TKeys
-> &
-  Partial<Pick<TType, TKeys>>;
-
-/**
- * @deprecated
- */
-export type UndefinedKeys<TType> = {
-  [K in keyof TType]: undefined extends TType[K] ? K : never;
-}[keyof TType];
-
-/**
- * @internal
- * @deprecated
- */
-export type FlatOverwrite<TType, TWith> = InferOptional<
-  {
-    [TKey in keyof TType | keyof TWith]: TKey extends keyof TWith
-      ? TWith[TKey]
-      : TKey extends keyof TType
-      ? TType[TKey]
-      : never;
-  },
-  UndefinedKeys<TType> | UndefinedKeys<TWith>
->;
-
-/**
- * @internal
  */
 export type IntersectionError<TKey extends string> =
   `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
@@ -53,13 +16,6 @@ export type ProtectedIntersection<TType, TWith> = keyof TType &
  * @public
  */
 export type Maybe<TType> = TType | null | undefined;
-
-/**
- * @internal
- */
-export type ThenArg<TType> = TType extends PromiseLike<infer U>
-  ? ThenArg<U>
-  : TType;
 
 /**
  * @internal
@@ -92,7 +48,7 @@ export type InferLast<TType> = TType & {
  * @public
  */
 export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
-  ThenArg<ReturnType<TFunction>>;
+  Awaited<ReturnType<TFunction>>;
 
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
@@ -111,7 +67,7 @@ export type Filter<TObj extends object, TFilter> = Pick<
  * @internal
  */
 export type Unwrap<TType> = TType extends (...args: any[]) => infer R
-  ? ThenArg<R>
+  ? Awaited<R>
   : TType;
 
 /**
@@ -125,6 +81,14 @@ export type DeepPartial<TObject> = TObject extends object
   : TObject;
 
 /**
+ * Omits the key without removing a potential union
+ * @internal
+ */
+export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
+  ? Omit<TObj, TKey>
+  : never;
+
+/*
  * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
  * Fixes issues with iterating over keys of objects with index signatures.
  * Without this, iterations over keys of objects with index signatures will lose

@@ -19,14 +19,12 @@
         "observable/**",
         "rpc/**",
         "subscription/**",
+        "unstableInternalsExport/**",
         "package.json"
       ]
     },
     "codegen-tests": {
-      "outputs": [
-        "server/__generated__/bigBoi/**",
-        "server/__generated__/bigLegacyRouter/**"
-      ]
+      "outputs": ["server/__generated__/bigBoi/**"]
     },
     "prebuild": {
       "cache": false

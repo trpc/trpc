@@ -59,7 +59,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
           await postMessage();
         }}
       >
-        <fieldset disabled={addPost.isLoading} className="min-w-0">
+        <fieldset disabled={addPost.isPending} className="min-w-0">
           <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
             <textarea
               value={message}
@@ -107,12 +107,11 @@ export default function IndexPage() {
   const postsQuery = trpc.post.infinite.useInfiniteQuery(
     {},
     {
-      getPreviousPageParam: (d) => d.prevCursor,
+      getNextPageParam: (d) => d.nextCursor,
     },
   );
   const utils = trpc.useUtils();
-  const { hasPreviousPage, isFetchingPreviousPage, fetchPreviousPage } =
-    postsQuery;
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -249,13 +248,13 @@ export default function IndexPage() {
             <div className="space-y-4 overflow-y-auto">
               <button
                 data-testid="loadMore"
-                onClick={() => fetchPreviousPage()}
-                disabled={!hasPreviousPage || isFetchingPreviousPage}
+                onClick={() => fetchNextPage()}
+                disabled={!hasNextPage || isFetchingNextPage}
                 className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
               >
-                {isFetchingPreviousPage
+                {isFetchingNextPage
                   ? 'Loading more...'
-                  : hasPreviousPage
+                  : hasNextPage
                   ? 'Load More'
                   : 'Nothing more to load'}
               </button>
@@ -322,7 +321,7 @@ export default function IndexPage() {
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,
 // ) => {
-//   const ssg = createSSGHelpers({
+//   const ssg = createServerSideHelpers({
 //     router: appRouter,
 //     ctx: await createContext(),
 //   });

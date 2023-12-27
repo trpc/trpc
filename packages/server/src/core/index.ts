@@ -14,7 +14,6 @@ export type {
   AnyQueryProcedure,
   AnyMutationProcedure,
   AnySubscriptionProcedure,
-  ProcedureParams,
   ProcedureArgs,
   ProcedureOptions,
 } from './procedure';
