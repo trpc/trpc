@@ -318,7 +318,7 @@ test('myzod', async () => {
 test('arktype schema - [not officially supported]', async () => {
   const t = initTRPC.create();
 
-  const type = arktype.type({ text: 'string' }).assert;
+  const type = arktype.type({ text: 'string' });
   const router = t.router({
     num: t.procedure
       .input(type)

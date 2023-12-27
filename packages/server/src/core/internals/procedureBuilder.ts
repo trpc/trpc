@@ -88,7 +88,7 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/validators
    */
   input<$Parser extends Parser>(
-    schema: $Parser | ParserCallback<TContext, $Parser>
+    schema: $Parser | ParserCallback<TContext, $Parser>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
