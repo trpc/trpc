@@ -2,8 +2,8 @@ name: Release "@canary"-tagged packages
 
 on:
   push:
-    branches:
-      - 'main'
+    # branches:
+    #   - 'main'
     paths:
       - 'packages/**'
       - '!packages/**/package.json'
