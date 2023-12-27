@@ -7,6 +7,7 @@
   },
   "packageManager": "pnpm@8.5.1",
   "scripts": {
+    "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
     "build-www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
