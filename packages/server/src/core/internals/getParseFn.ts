@@ -5,11 +5,6 @@ export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
-  if (typeof parser === 'function') {
-    // ParserCustomValidatorEsque
-    return parser;
-  }
-
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque
     return parser.parseAsync.bind(parser);

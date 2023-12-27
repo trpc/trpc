@@ -133,20 +133,12 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
-    fn:
-      | MiddlewareBuilder<
-          Overwrite<TContext, TContextOverrides>,
-          TMeta,
-          $ContextOverridesOut,
-          TInputIn
-        >
-      | MiddlewareFunction<
-          TContext,
-          TMeta,
-          TContextOverrides,
-          $ContextOverridesOut,
-          TInputIn
-        >,
+    fn: MiddlewareBuilder<
+      Overwrite<TContext, TContextOverrides>,
+      TMeta,
+      $ContextOverridesOut,
+      TInputIn
+    >,
   ): ProcedureBuilder<
     TContext,
     TMeta,
