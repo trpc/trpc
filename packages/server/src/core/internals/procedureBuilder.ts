@@ -8,7 +8,7 @@ import {
   MiddlewareFunction,
   MiddlewareResult,
 } from '../middleware';
-import { inferParser, Parser } from '../parser';
+import { inferParser, Parser, ParserCallback } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -88,17 +88,7 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/validators
    */
   input<$Parser extends Parser>(
-    schema: TInputOut extends UnsetMarker
-      ? $Parser
-      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser
-            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : ErrorMessage<'All input parsers did not resolve to an object'>
-      : ErrorMessage<'All input parsers did not resolve to an object'>,
+    schema: $Parser | ParserCallback<TContext, $Parser>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -143,20 +133,12 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
-    fn:
-      | MiddlewareBuilder<
-          Overwrite<TContext, TContextOverrides>,
-          TMeta,
-          $ContextOverridesOut,
-          TInputIn
-        >
-      | MiddlewareFunction<
-          TContext,
-          TMeta,
-          TContextOverrides,
-          $ContextOverridesOut,
-          TInputIn
-        >,
+    fn: MiddlewareBuilder<
+      Overwrite<TContext, TContextOverrides>,
+      TMeta,
+      $ContextOverridesOut,
+      TInputIn
+    >,
   ): ProcedureBuilder<
     TContext,
     TMeta,
