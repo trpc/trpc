@@ -2,13 +2,11 @@ name: Release "@canary"-tagged packages
 
 on:
   push:
-    branches: [release-paths]
-    paths: ['packages/**']
-    paths-ignore: [
-        #
-        'packages/**/package.json',
-        'packages/test/**',
-      ]
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - '!packages/**/package.json'
+      - '!packages/test/**'
 
 jobs:
   check:
