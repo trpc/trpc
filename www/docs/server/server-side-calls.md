@@ -194,7 +194,7 @@ type Context = {
 };
 const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware((opts) => {
+const protectedProcedure = t.procedure.use((opts) => {
   const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({
@@ -210,8 +210,6 @@ const isAuthed = t.middleware((opts) => {
     },
   });
 });
-
-const protectedProcedure = t.procedure.use(isAuthed);
 
 const router = t.router({
   secret: protectedProcedure.query((opts) => opts.ctx.user),
