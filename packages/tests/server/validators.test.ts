@@ -140,8 +140,9 @@ test('zod transform mixed input/output', async () => {
 test('valibot', async () => {
   const t = initTRPC.create();
 
+  const wrapped = wrap(v.number());
   const router = t.router({
-    num: t.procedure.input(wrap(v.number())).query(({ input }) => {
+    num: t.procedure.input(wrapped).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -317,9 +318,10 @@ test('myzod', async () => {
 test('arktype schema - [not officially supported]', async () => {
   const t = initTRPC.create();
 
+  const type = arktype.type({ text: 'string' }).assert;
   const router = t.router({
     num: t.procedure
-      .input(arktype.type({ text: 'string' }).assert)
+      .input(type)
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
         return {
@@ -347,6 +349,7 @@ test('effect schema - [not officially supported]', async () => {
       .input(S.parseSync(S.struct({ text: S.string })))
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
+        expectTypeOf(input.text).not.toBeAny()
         return {
           input,
         };
@@ -453,7 +456,7 @@ test('input callback', async () => {
     num: t.procedure
       .input((opts) => {
         const { ctx } = opts;
-        expectTypeOf(ctx).toBeObject<Context>();
+        expectTypeOf(ctx).toMatchTypeOf<Context>();
 
         if (ctx.foo !== 'bar') {
           throw new Error('Not expected context');

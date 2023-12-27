@@ -8,7 +8,7 @@ import {
   MiddlewareFunction,
   MiddlewareResult,
 } from '../middleware';
-import { inferParser, Parser } from '../parser';
+import { inferParser, Parser, ParserCallback } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -89,14 +89,14 @@ export interface ProcedureBuilder<
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
-      ? $Parser
+      ? $Parser | ParserCallback<TContext, $Parser>
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
       ? TInputOut extends Record<string, unknown> | undefined
         ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
           ? undefined extends TInputOut
-            ? $Parser
+            ? $Parser | ParserCallback<TContext, $Parser>
             : ErrorMessage<'Cannot chain an optional parser to a required parser'>
-          : $Parser
+          : $Parser | ParserCallback<TContext, $Parser>
         : ErrorMessage<'All input parsers did not resolve to an object'>
       : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<

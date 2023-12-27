@@ -31,7 +31,8 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserWithoutInput<TInput> =
-  | ParserCustomValidatorEsque<TInput>
+  // if you play with this: try toggling the below on and off
+  // | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
   | ParserScaleEsque<TInput>
   | ParserSuperstructEsque<TInput>
@@ -43,7 +44,12 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
-export type inferParser<TParser extends Parser> =
+export type ParserCallback<TContext, TParser extends Parser> = (opts: {
+  input: unknown;
+  ctx: TContext;
+}) => TParser;
+
+type inferParserInner<TParser extends Parser> =
   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
@@ -54,4 +60,11 @@ export type inferParser<TParser extends Parser> =
         in: $InOut;
         out: $InOut;
       }
+    : never;
+
+export type inferParser<TParser extends Parser | ParserCallback<any, any>> =
+  TParser extends ParserCallback<any, infer $Parser>
+    ? inferParserInner<$Parser>
+    : TParser extends Parser
+    ? inferParserInner<TParser>
     : never;
