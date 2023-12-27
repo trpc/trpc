@@ -26,7 +26,7 @@ const t = initTRPC.context<Context>().create();
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
-const isAdmin = middleware(async (opts) => {
+export const adminProcedure = publicProcedure.use(async (opts) => {
   const { ctx } = opts;
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -37,8 +37,6 @@ const isAdmin = middleware(async (opts) => {
     },
   });
 });
-
-export const adminProcedure = publicProcedure.use(isAdmin);
 ```
 
 ```ts twoslash
@@ -80,7 +78,8 @@ export const router = t.router;
 
 declare function logMock(...args: any[]): void;
 // ---cut---
-const loggerMiddleware = middleware(async (opts) => {
+
+export const loggedProcedure = publicProcedure.use(async (opts) => {
   const start = Date.now();
 
   const result = await opts.next();
@@ -94,8 +93,6 @@ const loggerMiddleware = middleware(async (opts) => {
 
   return result;
 });
-
-export const loggedProcedure = publicProcedure.use(loggerMiddleware);
 ```
 
 ```ts twoslash
