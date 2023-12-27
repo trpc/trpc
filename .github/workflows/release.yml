@@ -4,8 +4,11 @@ on:
   push:
     # branches: [main]
     paths: ['packages/**']
-    paths-ignore:
-      - 'packages/**/package.json'
+    paths-ignore: [
+        #
+        'packages/**/package.json',
+        'packages/test/**',
+      ]
 
 jobs:
   check:
