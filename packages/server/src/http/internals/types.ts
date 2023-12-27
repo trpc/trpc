@@ -1,3 +1,4 @@
+import { Dict } from '@trpc/core';
 import {
   AnyRouter,
   inferRouterContext,
@@ -6,7 +7,6 @@ import {
 } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
 import { TRPCResponse } from '../../rpc';
-import { Dict } from '../../types';
 import { ResponseMeta } from '../types';
 
 export type HTTPHeaders = Dict<string[] | string>;

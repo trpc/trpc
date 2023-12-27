@@ -1,4 +1,4 @@
-import { WithoutIndexSignature } from '../../types';
+import { WithoutIndexSignature } from '@trpc/core';
 
 /**
  * @internal

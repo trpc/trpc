@@ -1,4 +1,5 @@
 import { IncomingMessage } from 'http';
+import { MaybePromise } from '@trpc/core';
 import { WebSocket, WebSocketServer } from 'ws';
 import { AnyRouter, callProcedure, inferRouterContext } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
@@ -13,7 +14,6 @@ import {
 } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import { MaybePromise } from '../types';
 import { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**

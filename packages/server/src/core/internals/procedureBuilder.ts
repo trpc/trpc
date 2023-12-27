@@ -1,5 +1,5 @@
+import { MaybePromise, Simplify } from '@trpc/core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../../error/TRPCError';
-import { MaybePromise, Simplify } from '../../types';
 import {
   AnyMiddlewareFunction,
   createInputMiddleware,

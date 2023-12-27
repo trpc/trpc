@@ -1,3 +1,4 @@
+import { Maybe } from '@trpc/core';
 import {
   AnyRouter,
   callProcedure,
@@ -9,7 +10,6 @@ import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import { Maybe } from '../types';
 import {
   BaseContentTypeHandler,
   getJsonContentTypeInputs,

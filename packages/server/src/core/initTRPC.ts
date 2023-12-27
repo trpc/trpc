@@ -1,3 +1,4 @@
+import { Unwrap } from '@trpc/core';
 import {
   DefaultErrorShape,
   defaultFormatter,
@@ -11,7 +12,6 @@ import {
   defaultTransformer,
   getDataTransformer,
 } from '../transformer';
-import { Unwrap } from '../types';
 import {
   CreateRootConfigTypes,
   isServerDefault,

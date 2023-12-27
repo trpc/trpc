@@ -1,3 +1,12 @@
+// <delete me>
+export * from './transformer';
+export * from './error/TRPCError';
+export * from './core';
+export { type DefaultErrorShape } from './error/formatter';
+export type { RootConfig, AnyRootConfig } from './core/internals/config';
+
+// </delete me>
+
 export { TRPCError } from './error/TRPCError';
 export {
   initTRPC,
@@ -15,7 +24,7 @@ export type {
    * Use `Awaited<ReturnType<T>>` instead
    */
   inferAsyncReturnType,
-} from './types';
+} from '@trpc/core';
 
 export type {
   AnyRouter as AnyTRPCRouter,
