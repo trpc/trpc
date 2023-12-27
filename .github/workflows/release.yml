@@ -20,16 +20,16 @@ jobs:
         id: check
         run: |
           if git diff --quiet HEAD^ HEAD -- ./.github/**; then
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "No changes in packages, skipping release"
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "skip=false" >> "$GITHUB_OUTPUT"
             echo "Changes in packages, releasing"
           fi
 
   publish:
     needs: check
-    if: needs.check.outputs.skip == 'true'
+    if: ${{needs.check.outputs.skip}} == 'true'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
