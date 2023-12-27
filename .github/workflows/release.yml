@@ -21,8 +21,10 @@ jobs:
         run: |
           if git diff --quiet HEAD^ HEAD -- ./packages/**; then
             echo "skip=true" >> $GITHUB_ENV
+            echo "No changes in packages, skipping release"
           else
             echo "skip=false" >> $GITHUB_ENV
+            echo "Changes in packages, releasing"
           fi
 
   publish:
