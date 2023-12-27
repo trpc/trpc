@@ -71,20 +71,25 @@ import { initTRPC, TRPCError } from '@trpc/server';
 
 export const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware((opts) => {
+// you can reuse this for any procedure
+export const protectedProcedure = t.procedure.use(async function isAuthed(
+  opts,
+) {
   const { ctx } = opts;
-  if (!ctx.user?.isAdmin) {
+  // `ctx.user` is nullable
+  if (!ctx.user) {
+    //     ^?
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
+
   return opts.next({
     ctx: {
+      // ✅ user value is known to be non-null now
       user: ctx.user,
+      // ^?
     },
   });
 });
-
-// you can reuse this for any procedure
-export const protectedProcedure = t.procedure.use(isAuthed);
 
 t.router({
   // this is accessible for everyone

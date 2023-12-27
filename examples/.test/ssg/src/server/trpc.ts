@@ -28,8 +28,3 @@ export const router = t.router;
  * @see https://trpc.io/docs/procedures
  **/
 export const publicProcedure = t.procedure;
-
-/**
- * @see https://trpc.io/docs/middlewares
- */
-export const middleware = t.middleware;
