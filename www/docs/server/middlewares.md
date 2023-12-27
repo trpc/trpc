@@ -174,10 +174,11 @@ import { initTRPC, TRPCError } from '@trpc/server';
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
+const middleware = t.middleware;
 
 // ---cut---
 
-const fooMiddleware = middleware((opts) => {
+const fooMiddleware = t.middleware((opts) => {
   return opts.next({
     ctx: {
       foo: 'foo' as const,
