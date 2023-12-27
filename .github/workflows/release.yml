@@ -19,7 +19,7 @@ jobs:
       - name: Check for changes in packages
         id: check
         run: |
-          if git diff --quiet HEAD^ HEAD -- ./packages/**; then
+          if git diff --quiet "HEAD^" HEAD -- 'packages/**' ':!packages/**/package.json'; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "No changes in packages, skipping release"
           else
