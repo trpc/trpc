@@ -74,3 +74,7 @@ export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'output',
   TRouter
 >;
+
+export type TRPCRouter = {
+  [key: string]: TRPCRouter | AnyProcedure;
+};
