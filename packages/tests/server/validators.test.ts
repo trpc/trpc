@@ -1,4 +1,5 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { AsyncLocalStorage } from 'async_hooks';
+import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { wrap } from '@decs/typeschema';
 import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server/src';
@@ -440,4 +441,75 @@ test('async validator fn', async () => {
   );
   expect(res.input).toBe(123);
   await close();
+});
+
+test('recipe: summon context in input parser', async () => {
+  type Context = {
+    foo: string;
+  };
+  const t = initTRPC.context<Context>().create();
+
+  // <initialize AsyncLocalStorage>
+  const contextStorage = new AsyncLocalStorage<Context>();
+  const getContext = () => {
+    const ctx = contextStorage.getStore();
+    if (!ctx) {
+      throw new Error('No context found');
+    }
+    return ctx;
+  };
+  // </initialize AsyncLocalStorage>
+
+  const procedureWithContext = t.procedure.use((opts) => {
+    // this middleware adds a context that can be fetched by `getContext()`
+    return contextStorage.run(opts.ctx, async () => {
+      return await opts.next();
+    });
+  });
+
+  const router = t.router({
+    proc: procedureWithContext
+      .input((input) => {
+        // this input parser uses the context
+        const ctx = getContext();
+        expect(ctx.foo).toBe('bar');
+
+        return z.string().parse(input);
+      })
+      .query((opts) => {
+        expectTypeOf(opts.input).toBeString();
+        return opts.input;
+      }),
+  });
+
+  const ctx = routerToServerAndClientNew(router, {
+    server: {
+      createContext() {
+        return { foo: 'bar' };
+      },
+    },
+  });
+  const res = await ctx.proxy.proc.query('123');
+
+  expect(res).toMatchInlineSnapshot('"123"');
+
+  const err = await waitError(
+    ctx.proxy.proc.query(
+      // @ts-expect-error this only accepts a `number`
+      123,
+    ),
+  );
+  expect(err).toMatchInlineSnapshot(`
+    [TRPCClientError: [
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "received": "number",
+        "path": [],
+        "message": "Expected string, received number"
+      }
+    ]]
+  `);
+
+  await ctx.close();
 });
