@@ -209,18 +209,30 @@ export function createCallerFactory<TConfig extends AnyRootConfig>() {
     TRouter extends Router<AnyRouterDef<TConfig>>,
   >(router: TRouter): RouterCaller<TRouter['_def']> {
     const _def = router._def;
+    type Context = TConfig['$types']['ctx'];
 
-    return function createCaller(ctx) {
+    return function createCaller(maybeContext) {
       const proxy = createRecursiveProxy(({ path, args }) => {
         const fullPath = path.join('.');
         const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-        return procedure({
-          path: fullPath,
-          getRawInput: async () => args[0],
-          ctx,
-          type: procedure._def.type,
-        });
+        const callProc = (ctx: Context) =>
+          procedure({
+            path: fullPath,
+            getRawInput: async () => args[0],
+            ctx,
+            type: procedure._def.type,
+          });
+
+        if (typeof maybeContext === 'function') {
+          const context = (maybeContext as () => MaybePromise<Context>)();
+          if (context instanceof Promise) {
+            return context.then(callProc);
+          }
+          return callProc(context);
+        }
+
+        return callProc(maybeContext);
       });
 
       return proxy as ReturnType<RouterCaller<any>>;

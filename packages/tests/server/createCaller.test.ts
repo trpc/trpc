@@ -81,6 +81,12 @@ describe('with async context', () => {
     expect(hello).toEqual('hello world - 1');
     expectTypeOf<`hello ${string} - ${string}`>(hello);
   });
+
+  test('mismatching return type', async () => {
+    const badCreateContext = async () => 'foo' as const;
+    // @ts-expect-error - Type '() => Promise<"foo">' is not assignable to type '() => Promise<{ userId: string; }>'.
+    createCaller(badCreateContext);
+  });
 });
 test('docs', async () => {
   type Context = {
