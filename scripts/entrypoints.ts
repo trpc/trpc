@@ -26,11 +26,10 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export function generateEntrypoints(inputs: string[]) {
+export async function generateEntrypoints(inputs: string[]) {
   // set some defaults for the package.json
-  const pkgJson: PackageJson = JSON.parse(
-    fs.readFileSync(path.resolve('package.json'), 'utf8'),
-  );
+  const pkgJsonPath = path.resolve('package.json');
+  const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
 
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
@@ -112,26 +111,19 @@ export function generateEntrypoints(inputs: string[]) {
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];
 
-  const prettierOptions = {
-    parser: 'json-stringify',
-    printWidth: 80,
-    endOfLine: 'auto',
-  } as const;
-
   // write package.json
-  const formattedPkgJson = prettier.format(
-    JSON.stringify(pkgJson),
-    prettierOptions,
-  );
-  fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
+  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
+    parser: 'json-stringify',
+    ...(await prettier.resolveConfig(pkgJsonPath)),
+  });
+  fs.writeFileSync(pkgJsonPath, formattedPkgJson, 'utf8');
 
-  const turboJson = JSON.parse(
-    fs.readFileSync(path.resolve('turbo.json'), 'utf8'),
-  );
+  const turboPath = path.resolve('turbo.json');
+  const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
   turboJson.pipeline['codegen-entrypoints'].outputs = [...scriptOutputs];
-  const formattedTurboJson = prettier.format(
-    JSON.stringify(turboJson),
-    prettierOptions,
-  );
-  fs.writeFileSync(path.resolve('turbo.json'), formattedTurboJson, 'utf8');
+  const formattedTurboJson = prettier.format(JSON.stringify(turboJson), {
+    parser: 'json',
+    ...(await prettier.resolveConfig(turboPath)),
+  });
+  fs.writeFileSync(turboPath, formattedTurboJson, 'utf8');
 }
