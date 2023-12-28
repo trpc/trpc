@@ -2,6 +2,7 @@ import { defaultFormatter } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
 import { createRecursiveProxy } from '../shared/createProxy';
 import { defaultTransformer } from '../transformer';
+import { MaybePromise } from '../types';
 import { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
 import { ProcedureCallOptions } from './internals/procedureBuilder';
@@ -47,7 +48,14 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
  * @internal
  */
 export type RouterCaller<TDef extends AnyRouterDef> = (
-  ctx: TDef['_config']['$types']['ctx'],
+  /**
+   * @note
+   * If passing a function, we recommend it's a cached function
+   * e.g. wrapped in `React.cache` to avoid invoking it unnecessarily
+   */
+  ctx:
+    | TDef['_config']['$types']['ctx']
+    | (() => MaybePromise<TDef['_config']['$types']['ctx']>),
 ) => DecoratedProcedureRecord<TDef['record']>;
 
 export interface Router<TDef extends AnyRouterDef> {
