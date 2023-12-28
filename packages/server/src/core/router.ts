@@ -51,7 +51,7 @@ export type RouterCaller<TDef extends AnyRouterDef> = (
   /**
    * @note
    * If passing a function, we recommend it's a cached function
-   * e.g. wrapped in `React.cache` to avoid invoking it unnecessarily
+   * e.g. wrapped in `React.cache` to avoid unnecessary computations
    */
   ctx:
     | TDef['_config']['$types']['ctx']
