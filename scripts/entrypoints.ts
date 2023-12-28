@@ -26,11 +26,10 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export function generateEntrypoints(inputs: string[]) {
+export async function generateEntrypoints(inputs: string[]) {
   // set some defaults for the package.json
-  const pkgJson: PackageJson = JSON.parse(
-    fs.readFileSync(path.resolve('package.json'), 'utf8'),
-  );
+  const pkgJsonPath = path.resolve('package.json');
+  const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
 
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
@@ -41,6 +40,10 @@ export function generateEntrypoints(inputs: string[]) {
       default: './dist/index.js',
     },
   };
+
+  // Added to turbo.json pipeline output to ensure cache works
+  const scriptOutputs = new Set<string>();
+  scriptOutputs.add('package.json');
 
   /** Parse the inputs to get the user-import-paths, e.g.
    *  src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
@@ -99,6 +102,8 @@ export function generateEntrypoints(inputs: string[]) {
     if (!topLevel) return;
     if (pkgJson.files.includes(topLevel)) return;
     pkgJson.files.push(topLevel);
+
+    if (topLevel !== 'package.json') scriptOutputs.add(topLevel + '/**');
   });
 
   // Exclude test files in builds
@@ -109,8 +114,16 @@ export function generateEntrypoints(inputs: string[]) {
   // write package.json
   const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
     parser: 'json-stringify',
-    printWidth: 80,
-    endOfLine: 'auto',
+    ...(await prettier.resolveConfig(pkgJsonPath)),
   });
-  fs.writeFileSync(path.resolve('package.json'), formattedPkgJson, 'utf8');
+  fs.writeFileSync(pkgJsonPath, formattedPkgJson, 'utf8');
+
+  const turboPath = path.resolve('turbo.json');
+  const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
+  turboJson.pipeline['codegen-entrypoints'].outputs = [...scriptOutputs];
+  const formattedTurboJson = prettier.format(JSON.stringify(turboJson), {
+    parser: 'json',
+    ...(await prettier.resolveConfig(turboPath)),
+  });
+  fs.writeFileSync(turboPath, formattedTurboJson, 'utf8');
 }
