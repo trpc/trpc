@@ -1131,6 +1131,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
+      dotenv:
+        specifier: ^16.0.1
+        version: 16.0.3
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -1518,10 +1521,6 @@ importers:
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
 
   packages/next:
-    dependencies:
-      react-ssr-prepass:
-        specifier: ^1.5.0
-        version: 1.5.0(react@18.2.0)
     devDependencies:
       '@tanstack/react-query':
         specifier: 4.18.0
@@ -1701,8 +1700,8 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
       valibot:
-        specifier: ^0.24.0
-        version: 0.24.0
+        specifier: ^0.25.0
+        version: 0.25.0
       vitest:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
@@ -1723,7 +1722,7 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.24.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.25.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
         specifier: ^0.49.0
         version: 0.49.0(effect@2.0.0-next.56)(fast-check@3.13.2)
@@ -1845,8 +1844,8 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
       valibot:
-        specifier: ^0.24.0
-        version: 0.24.0
+        specifier: ^0.25.0
+        version: 0.25.0
       vite:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@20.10.4)
@@ -1955,7 +1954,7 @@ importers:
         version: 7.23.2(@babel/core@7.23.2)
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.24.0)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.25.0)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
         specifier: ^0.49.0
         version: 0.49.0(effect@2.0.0-next.56)(fast-check@3.13.2)
@@ -2041,8 +2040,8 @@ importers:
         specifier: npm:typescript@~5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.24.0
-        version: 0.24.0
+        specifier: ^0.25.0
+        version: 0.25.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -4544,7 +4543,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.24.0)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.25.0)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4602,12 +4601,12 @@ packages:
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
-      valibot: 0.24.0
+      valibot: 0.25.0
       yup: 1.0.0
       zod: 3.22.4
     dev: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.24.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.49.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.25.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4664,7 +4663,7 @@ packages:
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
-      valibot: 0.24.0
+      valibot: 0.25.0
       vite: 4.1.2(@types/node@20.10.4)
       yup: 1.0.0
       zod: 3.22.4
@@ -19895,14 +19894,6 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-ssr-prepass@1.5.0(react@18.2.0):
-    resolution: {integrity: sha512-yFNHrlVEReVYKsLI5lF05tZoHveA5pGzjFbFJY/3pOqqjGOmMmqx83N4hIjN2n6E1AOa+eQEUxs3CgRnPmT0RQ==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-    dependencies:
-      react: 18.2.0
-    dev: false
-
   /react-textarea-autosize@8.4.0(@types/react@18.2.33)(react@18.2.0):
     resolution: {integrity: sha512-YrTFaEHLgJsi8sJVYHBzYn+mkP3prGkmP2DKb/tm0t7CLJY5t1Rxix8070LAKb0wby7bl/lf2EeHkuMihMZMwQ==}
     engines: {node: '>=10'}
@@ -22854,8 +22845,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.24.0:
-    resolution: {integrity: sha512-OZq+2RmC4CU93Oxw+hL9L73wA7X0I89g2Fd6RR8wtlRFUinW9/gVl9g9h94EWQBHbEFFVG2Xxt2ndMszF66k0A==}
+  /valibot@0.25.0:
+    resolution: {integrity: sha512-cmD0ca15oyAbT75iYLNW6uU6doAeIwYfOshpXka/E1Bx4frzbkrgb7gvkI7K0YK/DVOksei4FfxWfRoBP3NFTg==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
