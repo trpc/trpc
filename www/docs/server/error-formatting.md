@@ -62,13 +62,13 @@ import { initTRPC } from '@trpc/server';
 import { Prisma } from '@prisma/client'
 
 export const t = initTRPC.context<Context>().create({
-  errorFormatter({ shape, error }) {
+  errorFormatter(opts) {
+    const { shape, error } = opts;
     if (
       error.cause instanceof Prisma.PrismaClientKnownRequestError &&
       error.cause.code === 'P2002' // Unique Constraint failed: https://www.prisma.io/docs/reference/api-reference/error-reference#p2002
     ) {
       return {
-        error,
         ...shape,
         data: {
           ...shape.data,
