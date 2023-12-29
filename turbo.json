@@ -7,22 +7,7 @@
     "scripts/getRollupConfig.ts"
   ],
   "pipeline": {
-    "codegen-entrypoints": {
-      "outputs": [
-        "app-dir/**",
-        "links/**",
-        "shared/**",
-        "server/**",
-        "ssg/**",
-        "adapters/**",
-        "http/**",
-        "observable/**",
-        "rpc/**",
-        "subscription/**",
-        "unstableInternalsExport/**",
-        "package.json"
-      ]
-    },
+    "codegen-entrypoints": {},
     "codegen-tests": {
       "outputs": ["server/__generated__/bigBoi/**"]
     },

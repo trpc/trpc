@@ -1,4 +1,5 @@
 import { generateEntrypoints } from '../../scripts/entrypoints';
 import { input } from './rollup.config.js';
 
-generateEntrypoints(input);
+// eslint-disable-next-line no-console
+generateEntrypoints(input).catch(console.error);

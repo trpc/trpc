@@ -1,13 +1,7 @@
+// zod / @decs/typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
   _output: TParsedInput;
-};
-
-export type ParserValibotEsque<TInput, TParsedInput> = {
-  types?: {
-    input: TInput;
-    output: TParsedInput;
-  };
 };
 
 export type ParserMyZodEsque<TInput> = {
@@ -37,9 +31,10 @@ export type ParserWithoutInput<TInput> =
   | ParserSuperstructEsque<TInput>
   | ParserYupEsque<TInput>;
 
-export type ParserWithInputOutput<TInput, TParsedInput> =
-  | ParserZodEsque<TInput, TParsedInput>
-  | ParserValibotEsque<TInput, TParsedInput>;
+export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
+  TInput,
+  TParsedInput
+>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 

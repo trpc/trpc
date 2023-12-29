@@ -23,11 +23,10 @@ interface Context {
 }
 
 const t = initTRPC.context<Context>().create();
-export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
-const isAdmin = middleware(async (opts) => {
+export const adminProcedure = publicProcedure.use(async (opts) => {
   const { ctx } = opts;
   if (!ctx.user?.isAdmin) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -38,8 +37,6 @@ const isAdmin = middleware(async (opts) => {
     },
   });
 });
-
-export const adminProcedure = publicProcedure.use(isAdmin);
 ```
 
 ```ts twoslash
@@ -75,13 +72,14 @@ In the example below timings for queries are logged automatically.
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
-export const middleware = t.middleware;
+
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
 declare function logMock(...args: any[]): void;
 // ---cut---
-const loggerMiddleware = middleware(async (opts) => {
+
+export const loggedProcedure = publicProcedure.use(async (opts) => {
   const start = Date.now();
 
   const result = await opts.next();
@@ -95,8 +93,6 @@ const loggerMiddleware = middleware(async (opts) => {
 
   return result;
 });
-
-export const loggedProcedure = publicProcedure.use(loggerMiddleware);
 ```
 
 ```ts twoslash
@@ -129,7 +125,6 @@ import { initTRPC, TRPCError } from '@trpc/server';
 const t = initTRPC.context<Context>().create();
 const publicProcedure = t.procedure;
 const router = t.router;
-const middleware = t.middleware;
 
 // ---cut---
 
@@ -140,7 +135,7 @@ type Context = {
   };
 };
 
-const isAuthed = middleware((opts) => {
+const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
   const { ctx } = opts;
   // `ctx.user` is nullable
   if (!ctx.user) {
@@ -157,7 +152,6 @@ const isAuthed = middleware((opts) => {
   });
 });
 
-const protectedProcedure = publicProcedure.use(isAuthed);
 protectedProcedure.query(({ ctx }) => ctx.user);
 //                                        ^?
 ```
@@ -183,7 +177,7 @@ const middleware = t.middleware;
 
 // ---cut---
 
-const fooMiddleware = middleware((opts) => {
+const fooMiddleware = t.middleware((opts) => {
   return opts.next({
     ctx: {
       foo: 'foo' as const,

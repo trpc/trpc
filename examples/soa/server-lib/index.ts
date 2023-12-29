@@ -19,11 +19,6 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 /**
- * @see https://trpc.io/docs/middlewares
- */
-export const middleware = t.middleware;
-
-/**
  * @see https://trpc.io/docs/merging-routers
  */
 export const mergeRouters = t.mergeRouters;
