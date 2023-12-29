@@ -2,7 +2,7 @@ import {
   experimental_standaloneMiddleware,
   initTRPC,
   TRPCError,
-} from '@trpc/server';
+} from '@trpc/core';
 import * as z from 'zod';
 
 test('decorate independently', () => {

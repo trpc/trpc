@@ -1,5 +1,5 @@
 import '../___packages';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/core';
 
 test('middleware next()', async () => {
   const t = initTRPC.create();

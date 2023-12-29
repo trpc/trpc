@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/core';
 
 test('mergeRouters', async () => {
   const t = initTRPC.create();

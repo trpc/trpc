@@ -1,11 +1,11 @@
-import { DefaultErrorShape } from '@trpc/server';
-import { TRPCErrorResponse } from '@trpc/server/rpc';
+import { DefaultErrorShape } from '@trpc/core';
+import { TRPCErrorResponse } from '@trpc/core/rpc';
 import {
   getCauseFromUnknown,
   inferErrorShape,
   TRPCInferrable,
-} from '@trpc/server/shared';
-import { Maybe } from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core/shared';
+import { Maybe } from '@trpc/core/unstableInternalsExport';
 import { isObject } from './internals/isObject';
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {

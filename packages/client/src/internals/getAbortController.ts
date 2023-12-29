@@ -1,4 +1,4 @@
-import { Maybe } from '@trpc/server/unstableInternalsExport';
+import { Maybe } from '@trpc/core/unstableInternalsExport';
 import { AbortControllerEsque } from './types';
 
 export function getAbortController(

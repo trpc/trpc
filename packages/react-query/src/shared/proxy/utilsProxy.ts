@@ -16,17 +16,17 @@ import {
   AnyRootConfig,
   AnyRouter,
   inferProcedureInput,
-} from '@trpc/server';
+} from '@trpc/core';
 import {
   createFlatProxy,
   createRecursiveProxy,
   inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
+} from '@trpc/core/shared';
 import {
   DeepPartial,
   Filter,
   ProtectedIntersection,
-} from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core/unstableInternalsExport';
 import {
   contextProps,
   DecoratedTRPCContextProps,

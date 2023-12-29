@@ -8,13 +8,13 @@ import {
   AnySubscriptionProcedure,
   inferProcedureInput,
   ProcedureRouterRecord,
-} from '@trpc/server';
+} from '@trpc/core';
 import {
   createFlatProxy,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
-} from '@trpc/server/shared';
-import { ProtectedIntersection } from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core/shared';
+import { ProtectedIntersection } from '@trpc/core/unstableInternalsExport';
 import { useMemo } from 'react';
 import { TRPCUseQueries, TRPCUseSuspenseQueries } from './internals/useQueries';
 import {

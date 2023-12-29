@@ -1,5 +1,5 @@
 import '../___packages';
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/core';
 
 test('meta as interface', () => {
   interface Meta {

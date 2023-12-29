@@ -20,17 +20,17 @@ import {
   DataTransformerOptions,
   inferProcedureInput,
   inferRouterContext,
-} from '@trpc/server';
+} from '@trpc/core';
 import {
   createFlatProxy,
   createRecursiveProxy,
   inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
+} from '@trpc/core/shared';
 import {
   Filter,
   Maybe,
   ProtectedIntersection,
-} from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core/unstableInternalsExport';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import {
   CreateTRPCReactQueryClientConfig,

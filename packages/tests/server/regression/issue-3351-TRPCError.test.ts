@@ -1,5 +1,5 @@
 import '../___testHelpers';
-import { TRPCError } from '@trpc/server';
+import { TRPCError } from '@trpc/core';
 
 test('TRPCError cause', async () => {
   const err = new TRPCError({

@@ -2,7 +2,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { useIsMutating, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/core';
 import { konn } from 'konn';
 import React from 'react';
 

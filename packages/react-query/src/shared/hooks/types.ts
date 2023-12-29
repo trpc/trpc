@@ -22,8 +22,8 @@ import {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
-import { DistributiveOmit } from '@trpc/server/unstableInternalsExport';
+import { AnyRouter } from '@trpc/core';
+import { DistributiveOmit } from '@trpc/core/unstableInternalsExport';
 import { ReactNode } from 'react';
 import { TRPCContextProps } from '../../internals/context';
 import { TRPCQueryKey } from '../../internals/getQueryKey';

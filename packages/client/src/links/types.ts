@@ -2,9 +2,9 @@ import {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformer,
-} from '@trpc/server';
-import { Observable, Observer } from '@trpc/server/observable';
-import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
+} from '@trpc/core';
+import { Observable, Observer } from '@trpc/core/observable';
+import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/core/rpc';
 import { ResponseEsque } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 

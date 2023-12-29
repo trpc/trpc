@@ -30,6 +30,7 @@
     "@trpc/next": "10.45.0",
     "@trpc/react-query": "10.45.0",
     "@trpc/server": "10.45.0",
+    "@trpc/core": "10.45.0",
     "@types/node": "^20.10.0",
     "@types/testing-library__jest-dom": "^5.14.5",
     "@vitest/coverage-istanbul": "^0.32.0",

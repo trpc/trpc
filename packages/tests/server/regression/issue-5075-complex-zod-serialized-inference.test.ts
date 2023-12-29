@@ -1,4 +1,4 @@
-import { inferRouterOutputs, initTRPC } from '@trpc/server';
+import { inferRouterOutputs, initTRPC } from '@trpc/core';
 import * as z from 'zod';
 
 describe('Non-records should not erroneously be inferred as Records in serialized types', () => {

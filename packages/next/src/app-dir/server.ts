@@ -11,14 +11,14 @@ import {
   getTRPCErrorFromUnknown,
   inferProcedureInput,
   TRPCError,
-} from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+} from '@trpc/core';
+import { TRPCResponse } from '@trpc/core/rpc';
 import {
   createRecursiveProxy,
   getErrorShape,
   transformTRPCResponse,
-} from '@trpc/server/shared';
-import { MaybePromise, Simplify } from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core/shared';
+import { MaybePromise, Simplify } from '@trpc/core/unstableInternalsExport';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';

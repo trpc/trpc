@@ -9,8 +9,8 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   ProcedureRouterRecord,
-} from '@trpc/server';
-import type { TRPCResponse } from '@trpc/server/rpc';
+} from '@trpc/core';
+import type { TRPCResponse } from '@trpc/core/rpc';
 
 interface ProxyCallbackOptions {
   path: string[];

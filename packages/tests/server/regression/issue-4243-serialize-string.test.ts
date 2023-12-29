@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/core';
 import * as trpcNext from '@trpc/server/src/adapters/next';
 import { z } from 'zod';
 

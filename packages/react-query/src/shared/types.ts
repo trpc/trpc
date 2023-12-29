@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
-import { AnyRouter } from '@trpc/server';
-import { MaybePromise } from '@trpc/server/unstableInternalsExport';
+import { AnyRouter } from '@trpc/core';
+import { MaybePromise } from '@trpc/core/unstableInternalsExport';
 
 /**
  * @internal

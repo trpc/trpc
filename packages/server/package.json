@@ -93,36 +93,6 @@
       "import": "./dist/adapters/fetch/index.mjs",
       "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
-    },
-    "./http": {
-      "import": "./dist/http/index.mjs",
-      "require": "./dist/http/index.js",
-      "default": "./dist/http/index.js"
-    },
-    "./rpc": {
-      "import": "./dist/rpc/index.mjs",
-      "require": "./dist/rpc/index.js",
-      "default": "./dist/rpc/index.js"
-    },
-    "./observable": {
-      "import": "./dist/observable/index.mjs",
-      "require": "./dist/observable/index.js",
-      "default": "./dist/observable/index.js"
-    },
-    "./subscription": {
-      "import": "./dist/subscription.mjs",
-      "require": "./dist/subscription.js",
-      "default": "./dist/subscription.js"
-    },
-    "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
-    },
-    "./unstableInternalsExport": {
-      "import": "./dist/unstableInternalsExport.mjs",
-      "require": "./dist/unstableInternalsExport.js",
-      "default": "./dist/unstableInternalsExport.js"
     }
   },
   "files": [
@@ -131,12 +101,6 @@
     "README.md",
     "package.json",
     "adapters",
-    "http",
-    "rpc",
-    "observable",
-    "subscription",
-    "shared",
-    "unstableInternalsExport",
     "!**/*.test.*"
   ],
   "publishConfig": {
@@ -178,5 +142,8 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "peerDependencies": {
+    "@trpc/core": "^10.45.0"
+  }
 }

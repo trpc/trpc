@@ -1,4 +1,4 @@
-import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
+import { experimental_standaloneMiddleware, initTRPC } from '@trpc/core';
 import * as z from 'zod';
 
 describe('input/context proper narrowing in procedure chain', () => {

@@ -1,4 +1,4 @@
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/core';
 import { createQueryUtilsProxy } from './shared';
 import {
   CreateQueryUtilsOptions,

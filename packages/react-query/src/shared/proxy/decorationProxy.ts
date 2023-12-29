@@ -1,5 +1,5 @@
-import { AnyRouter } from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
+import { AnyRouter } from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core/shared';
 import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 
 /**

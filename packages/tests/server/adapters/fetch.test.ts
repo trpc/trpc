@@ -9,12 +9,12 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/core';
+import { observable, tap } from '@trpc/core/observable';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
 } from '@trpc/server/adapters/fetch';
-import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';
 
@@ -172,7 +172,7 @@ describe('with default server', () => {
         return observable((observer) => {
           const unsubscribe = next(op).subscribe({
             next(value) {
-              orderedResults.push((value.result as any).data);
+              orderedResults.push(value.result.data);
               observer.next(value);
             },
             error: observer.error,

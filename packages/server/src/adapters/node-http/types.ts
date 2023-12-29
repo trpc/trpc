@@ -1,7 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions, TRPCRequestInfo } from '../../http';
-import { MaybePromise } from '../../types';
+import { AnyRouter, inferRouterContext, MaybePromise } from '@trpc/core';
+import { HTTPBaseHandlerOptions, TRPCRequestInfo } from '@trpc/core/http';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {

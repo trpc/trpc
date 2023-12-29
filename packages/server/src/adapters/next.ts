@@ -1,11 +1,10 @@
+import { AnyRouter, TRPCError } from '@trpc/core';
+import { getErrorShape } from '@trpc/core/shared';
 import type {
   NextApiHandler,
   NextApiRequest,
   NextApiResponse,
 } from 'next/types';
-import { AnyRouter } from '../core';
-import { TRPCError } from '../error/TRPCError';
-import { getErrorShape } from '../shared/getErrorShape';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,

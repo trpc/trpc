@@ -1,14 +1,15 @@
 import { Readable } from 'node:stream';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { AnyRouter } from '../../core';
+import { AnyRouter } from '@trpc/core';
 import {
   getBatchStreamFormatter,
   HTTPBaseHandlerOptions,
   HTTPRequest,
+  HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-} from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
+  resolveHTTPResponse,
+  ResponseChunk,
+} from '@trpc/core/http';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { NodeHTTPCreateContextOption } from '../node-http';
 
 export type FastifyHandlerOptions<

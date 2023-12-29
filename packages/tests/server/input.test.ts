@@ -4,8 +4,7 @@ import {
   inferProcedureInput,
   inferProcedureParams,
   initTRPC,
-} from '@trpc/server';
-import { UnsetMarker } from '@trpc/server/core/internals/utils';
+} from '@trpc/core';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 
@@ -95,7 +94,7 @@ describe('double input validator', () => {
         TRPCClientError,
       );
       expect(error.data).toHaveProperty('zod');
-      expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
+      expect(error.data.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "text": Array [
             "Required",
@@ -113,7 +112,7 @@ describe('double input validator', () => {
         ctx.client.sendMessage.mutate(input),
         TRPCClientError,
       );
-      expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
+      expect(error.data.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "roomId": Array [
             "Required",

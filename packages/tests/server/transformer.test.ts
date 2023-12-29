@@ -12,8 +12,8 @@ import {
   DataTransformer,
   initTRPC,
   TRPCError,
-} from '@trpc/server';
-import { observable } from '@trpc/server/src/observable';
+} from '@trpc/core';
+import { observable } from '@trpc/core/observable';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
 import { createTson, tsonDate } from 'tupleson';

@@ -9,12 +9,12 @@ import {
   AnyRootConfig,
   AnyRouter,
   inferHandlerInput,
-} from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
+} from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core/shared';
 import {
   Filter,
   ProtectedIntersection,
-} from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core/unstableInternalsExport';
 
 /**
  * @internal

@@ -2,9 +2,9 @@
 
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { DehydratedState } from '@tanstack/react-query';
+import type { CombinedDataTransformer } from '@trpc/core';
+import { initTRPC } from '@trpc/core';
 import { createTRPCNext } from '@trpc/next';
-import type { CombinedDataTransformer } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import { AppType } from 'next/dist/shared/lib/utils';
@@ -69,10 +69,10 @@ test('withTRPC - SSR', async () => {
 
   const Wrapped = trpc.withTRPC(App);
 
-  const props = (await Wrapped.getInitialProps!({
+  const props = await Wrapped.getInitialProps!({
     AppTree: Wrapped,
     Component: <div />,
-  } as any)) as any;
+  } as any);
 
   const trpcState: DehydratedState = transformer.output.deserialize(
     props.pageProps.trpcState,

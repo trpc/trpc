@@ -1,4 +1,4 @@
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/core';
 import './___packages';
 import { waitError } from './___testHelpers';
 

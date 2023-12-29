@@ -4,8 +4,8 @@ import { createAppRouter, Post } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { inferProcedureInput } from '@trpc/core';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { inferProcedureInput } from '@trpc/server';
 import React, { Fragment, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;

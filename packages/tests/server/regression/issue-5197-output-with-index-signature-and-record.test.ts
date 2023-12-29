@@ -1,4 +1,4 @@
-import { inferRouterOutputs, initTRPC } from '@trpc/server';
+import { inferRouterOutputs, initTRPC } from '@trpc/core';
 
 const t = initTRPC.create();
 
