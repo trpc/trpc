@@ -62,24 +62,25 @@ import { initTRPC } from '@trpc/server';
 import { Prisma } from '@prisma/client'
 
 export const t = initTRPC.context<Context>().create({
-  errorFormatter(opts) {
-    const { shape, error } = opts;
-      const prismaError = error.cause as Prisma.PrismaClientKnownRequestError;
-      if (prismaError && prismaError.code === 'P2002' && prismaError.meta) {
-        // https://www.prisma.io/docs/reference/api-reference/error-reference#p2002
-        return {
-          error,
-          ...shape,
-          data: {
-            ...shape.data,
-            httpStatus: 409
-          },
-          code: 409,
-          message: `Operation ${shape.data.path} failed: same value already exists for field "${prismaError.meta.target}"`
-        };
-      }
+  errorFormatter({ shape, error }) {
+    if (
+      error.cause instanceof Prisma.PrismaClientKnownRequestError &&
+      error.cause.code === 'P2002' // Unique Constraint failed: https://www.prisma.io/docs/reference/api-reference/error-reference#p2002
+    ) {
+      return {
+        error,
+        ...shape,
+        data: {
+          ...shape.data,
+          httpStatus: 409,
+        },
+        code: 409,
+        message: `Operation ${shape.data.path} failed: same value already exists for field "${error.cause.meta?.target}"`,
+      };
+    }
 
-      // rest of your formatter for all other cases
+    // rest of your formatter for all other cases
+    return shape;
   },
 });
 ```
