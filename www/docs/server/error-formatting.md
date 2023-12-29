@@ -85,7 +85,6 @@ export const t = initTRPC.context<Context>().create({
 });
 ```
 
-
 ## All properties sent to `errorFormatter()`
 
 > Since `v8.x` tRPC is compliant with [JSON-RPC 2.0](https://www.jsonrpc.org/specification)
