@@ -1,7 +1,7 @@
 {
   "name": "@examples/bun",
   "private": true,
-  "version": "10.44.1",
+  "version": "10.45.0",
   "scripts": {
     "build": "bun build src/index.ts --outdir ./dist && bun build src/client.ts --outdir ./dist",
     "dev:server": "bun run src/index.ts --watch",
@@ -14,14 +14,14 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/client": "^10.44.1",
-    "@trpc/server": "^10.44.1"
+    "@trpc/client": "^10.45.0",
+    "@trpc/server": "^10.45.0"
   },
   "devDependencies": {
     "bun-types": "^0.7.3",
     "eslint": "^8.40.0",
     "start-server-and-test": "^1.12.0",
-    "typescript": "^5.1.3",
+    "typescript": "^5.3.3",
     "wait-port": "^1.0.1"
   }
 }

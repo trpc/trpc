@@ -107,7 +107,7 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
 /**
  * @internal
  */
-type RouterCaller<TDef extends AnyRouterDef> = (
+export type RouterCaller<TDef extends AnyRouterDef> = (
   ctx: TDef['_config']['$types']['ctx'],
 ) => DecoratedProcedureRecord<TDef['record']> & {
   /**
@@ -126,6 +126,10 @@ type RouterCaller<TDef extends AnyRouterDef> = (
 
 export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
+  /**
+   * @deprecated use `t.createCallerFactory(router)` instead
+   * @see https://trpc.io/docs/server/server-side-calls
+   */
   createCaller: RouterCaller<TDef>;
 
   /**
@@ -243,41 +247,8 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     const router: AnyRouter = {
       ...procedures,
       _def,
-      createCaller(ctx) {
-        const proxy = createRecursiveProxy(({ path, args }) => {
-          // interop mode
-          if (
-            path.length === 1 &&
-            procedureTypes.includes(path[0] as ProcedureType)
-          ) {
-            return callProcedure({
-              procedures: _def.procedures,
-              path: args[0] as string,
-              rawInput: args[1],
-              ctx,
-              type: path[0] as ProcedureType,
-            });
-          }
-
-          const fullPath = path.join('.');
-          const procedure = _def.procedures[fullPath] as AnyProcedure;
-
-          let type: ProcedureType = 'query';
-          if (procedure._def.mutation) {
-            type = 'mutation';
-          } else if (procedure._def.subscription) {
-            type = 'subscription';
-          }
-
-          return procedure({
-            path: fullPath,
-            rawInput: args[0],
-            ctx,
-            type,
-          });
-        });
-
-        return proxy as ReturnType<RouterCaller<any>>;
+      createCaller(ctx: TConfig['$types']['ctx']) {
+        return createCallerFactory<TConfig>()(router as any)(ctx);
       },
       getErrorShape(opts) {
         const { path, error } = opts;
@@ -299,6 +270,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
         return this._def._config.errorFormatter({ ...opts, shape });
       },
     };
+
     return router as any;
   };
 }
@@ -321,4 +293,49 @@ export function callProcedure(
   const procedure = opts.procedures[path] as AnyProcedure;
 
   return procedure(opts);
+}
+
+export function createCallerFactory<TConfig extends AnyRootConfig>() {
+  return function createCallerInner<
+    TRouter extends Router<AnyRouterDef<TConfig>>,
+  >(router: TRouter): RouterCaller<TRouter['_def']> {
+    const def = router._def;
+
+    return function createCaller(ctx) {
+      const proxy = createRecursiveProxy(({ path, args }) => {
+        // interop mode
+        if (
+          path.length === 1 &&
+          procedureTypes.includes(path[0] as ProcedureType)
+        ) {
+          return callProcedure({
+            procedures: def.procedures,
+            path: args[0] as string,
+            rawInput: args[1],
+            ctx,
+            type: path[0] as ProcedureType,
+          });
+        }
+
+        const fullPath = path.join('.');
+        const procedure = def.procedures[fullPath] as AnyProcedure;
+
+        let type: ProcedureType = 'query';
+        if (procedure._def.mutation) {
+          type = 'mutation';
+        } else if (procedure._def.subscription) {
+          type = 'subscription';
+        }
+
+        return procedure({
+          path: fullPath,
+          rawInput: args[0],
+          ctx,
+          type,
+        });
+      });
+
+      return proxy as ReturnType<RouterCaller<any>>;
+    };
+  };
 }

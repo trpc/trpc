@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-starter",
-  "version": "10.44.1",
+  "version": "10.45.0",
   "private": true,
   "scripts": {
     "generate": "prisma generate",
@@ -18,15 +18,10 @@
     "lint-fix": "pnpm lint --fix",
     "migrate-dev": "prisma migrate dev",
     "migrate": "prisma migrate deploy",
-    "test": "run-s test:*",
-    "test:unit": "vitest",
-    "test:e2e": "playwright test",
-    "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test",
-    "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
+    "test-unit": "vitest",
+    "test-e2e": "playwright test",
+    "test-start": "run-s test-unit test-e2e",
     "postinstall": "pnpm generate"
-  },
-  "engines": {
-    "node": ">=16.8"
   },
   "packageManager": "pnpm@8.5.0",
   "prisma": {
@@ -40,10 +35,10 @@
   "dependencies": {
     "@prisma/client": "^4.14.1",
     "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.44.1",
-    "@trpc/next": "^10.44.1",
-    "@trpc/react-query": "^10.44.1",
-    "@trpc/server": "^10.44.1",
+    "@trpc/client": "^10.45.0",
+    "@trpc/next": "^10.45.0",
+    "@trpc/react-query": "^10.45.0",
+    "@trpc/server": "^10.45.0",
     "clsx": "^2.0.0",
     "next": "^14.0.1",
     "react": "^18.2.0",
@@ -53,11 +48,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
-    "@types/node": "^18.16.16",
+    "@types/node": "^20.10.0",
     "@types/react": "^18.2.33",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
     "autoprefixer": "^10.4.7",
+    "dotenv": "^16.0.1",
     "eslint": "^8.40.0",
     "eslint-config-next": "^14.0.1",
     "eslint-config-prettier": "^8.8.0",
@@ -71,7 +67,7 @@
     "start-server-and-test": "^1.12.0",
     "tailwindcss": "^3.3.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.1.3",
+    "typescript": "^5.3.3",
     "vite": "^4.1.2",
     "vitest": "^0.32.0"
   },

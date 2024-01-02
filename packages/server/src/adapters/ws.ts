@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import ws from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { AnyRouter, callProcedure, inferRouterContext } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import { BaseHandlerOptions } from '../internals/types';
@@ -25,15 +25,15 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
 > &
-  NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws> & {
-    wss: ws.Server;
+  NodeHTTPCreateContextOption<TRouter, IncomingMessage, WebSocket> & {
+    wss: WebSocketServer;
     process?: NodeJS.Process;
     prefix?: string;
   };
 
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
-  ws
+  WebSocket
 >;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(

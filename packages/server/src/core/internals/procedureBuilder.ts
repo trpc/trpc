@@ -316,14 +316,8 @@ export interface ProcedureCallOptions {
 }
 
 const codeblock = `
-If you want to call this function on the server, you do the following:
 This is a client-only function.
-
-const caller = appRouter.createCaller({
-  /* ... your context */
-});
-
-const result = await caller.call('myProcedure', input);
+If you want to call this function on the server, see https://trpc.io/docs/server/server-side-calls
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
