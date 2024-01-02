@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "10.44.1",
+  "version": "10.45.0",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -164,7 +164,7 @@
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "typescript": "^5.3.3",
-    "valibot": "^0.24.0",
+    "valibot": "^0.25.0",
     "vitest": "^0.32.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",

@@ -45,9 +45,9 @@ pnpm db-reset   # resets local db
 pnpm dev        # starts next.js
 pnpm dx         # starts postgres db + runs migrations + seeds + starts next.js
 pnpm test-dev   # runs e2e tests on dev
-pnpm test-start # runs e2e tests on `next start` - build required before
-pnpm test:unit  # runs normal Vitest unit tests
-pnpm test:e2e   # runs e2e tests
+pnpm test-start # runs e2e + unit tests
+pnpm test-unit  # runs normal Vitest unit tests
+pnpm test-e2e   # runs e2e tests
 ```
 
 ## Deployment

@@ -112,4 +112,4 @@ Sometimes it can be confusing to determine if an issue or feature is React Query
 
 ### `@trpc/next`
 
-This is where SSR magic for Next.js happens. If SSR is enabled in the config, all `@trpc/react-query` queries are fetched on the server using a [prepass render](https://github.com/FormidableLabs/react-ssr-prepass) of the component tree. We wrap [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/get-initial-props) to hook into the response process and perform a prepass render of the app. This package is subject to change in the future as Next.js improves their page and routing system.
+This is where SSR magic for Next.js happens. If SSR is enabled in the config, all `@trpc/react-query` queries are fetched on the server using a prepass render of the component tree. We wrap [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/get-initial-props) to hook into the response process and perform a prepass render of the app. This package is subject to change in the future as Next.js improves their page and routing system.

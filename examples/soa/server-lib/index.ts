@@ -8,22 +8,17 @@ const t = initTRPC.context<Context>().create();
 
 /**
  * Create a router
- * @see https://trpc.io/docs/v10/router
+ * @see https://trpc.io/docs/router
  */
 export const router = t.router;
 
 /**
  * Create an unprotected procedure
- * @see https://trpc.io/docs/v10/procedures
+ * @see https://trpc.io/docs/procedures
  **/
 export const publicProcedure = t.procedure;
 
 /**
- * @see https://trpc.io/docs/v10/middlewares
- */
-export const middleware = t.middleware;
-
-/**
- * @see https://trpc.io/docs/v10/merging-routers
+ * @see https://trpc.io/docs/merging-routers
  */
 export const mergeRouters = t.mergeRouters;

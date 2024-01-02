@@ -23,7 +23,7 @@ import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';
 import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
-import { createRouterFactory } from './router';
+import { createCallerFactory, createRouterFactory } from './router';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
@@ -148,22 +148,31 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       _config: config,
       /**
        * Builder object for creating procedures
+       * @see https://trpc.io/docs/server/procedures
        */
       procedure: createBuilder<$Config>({
         meta: runtime?.defaultMeta,
       }),
       /**
        * Create reusable middlewares
+       * @see https://trpc.io/docs/server/middlewares
        */
       middleware: createMiddlewareFactory<$Config>(),
       /**
        * Create a router
+       * @see https://trpc.io/docs/server/routers
        */
       router: createRouterFactory<$Config>(config),
       /**
        * Merge Routers
+       * @see https://trpc.io/docs/server/merging-routers
        */
       mergeRouters,
+      /**
+       * Create a server-side caller for a router
+       * @see https://trpc.io/docs/server/server-side-calls
+       */
+      createCallerFactory: createCallerFactory<$Config>(),
     };
   };
 }
