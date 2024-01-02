@@ -43,7 +43,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
   const { transformer } = router._def._config;
   wss.on('connection', async (client, req) => {
-    if (prefix && req.url !== prefix) {
+    if (prefix && !req.url?.startsWith(prefix)) {
       return;
     }
 
