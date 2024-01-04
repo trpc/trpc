@@ -63,6 +63,12 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^6.2.1
         version: 6.2.1(eslint@8.40.0)(typescript@5.3.3)
+      '@vitest/coverage-istanbul':
+        specifier: ^0.32.0
+        version: 0.32.0(vitest@0.32.0)
+      '@vitest/ui':
+        specifier: ^0.32.0
+        version: 0.32.0(vitest@0.32.0)
       eslint:
         specifier: ^8.40.0
         version: 8.40.0
@@ -1768,12 +1774,6 @@ importers:
       '@types/testing-library__jest-dom':
         specifier: link:vendor/@types/testing-library__jest-dom
         version: link:vendor/@types/testing-library__jest-dom
-      '@vitest/coverage-istanbul':
-        specifier: ^0.32.0
-        version: 0.32.0(vitest@0.32.0)
-      '@vitest/ui':
-        specifier: ^0.32.0
-        version: 0.32.0(vitest@0.32.0)
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1849,9 +1849,6 @@ importers:
       vite:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@20.10.4)
-      vitest:
-        specifier: ^0.32.0
-        version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
       vitest-environment-miniflare:
         specifier: ^2.12.0
         version: 2.12.0(vitest@0.32.0)

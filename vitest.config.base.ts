@@ -2,28 +2,30 @@ import { join } from 'path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  root: '../',
+  //   root: '../',
   clearScreen: false,
+
   test: {
     environment: 'jsdom',
     globals: true,
     snapshotFormat: {
       printBasicPrototype: true,
     },
-    setupFiles: ['./tests/setupTests.ts'],
+    // include: ['tests/**/*.{browser}.test.{ts,js}'],
+    setupFiles: ['./setupTests.ts'],
     coverage: {
       provider: 'istanbul',
-      include: ['*/src/**/*.{ts,tsx,js,jsx}'],
+      include: ['src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
-    useAtomics: !!process.env.CI,
+    useAtomics: !!process.env['CI'],
   },
   resolve: {
     alias: {
-      '@trpc/server/src/': join(__dirname, '../server/src/'),
-      '@trpc/client/src/': join(__dirname, '../client/src/'),
-      '@trpc/react-query/src/': join(__dirname, '../react-query/src/'),
-      '@trpc/next/src/': join(__dirname, '../next/src/'),
+      '@trpc/server/src/': join(__dirname, 'packages/server/src/'),
+      '@trpc/client/src/': join(__dirname, 'packages/client/src/'),
+      '@trpc/react-query/src/': join(__dirname, 'packages/react-query/src/'),
+      '@trpc/next/src/': join(__dirname, 'packages/next/src/'),
       'vitest-environment-miniflare': join(
         __dirname,
         'node_modules/vitest-environment-miniflare',
