@@ -93,6 +93,16 @@
       "import": "./dist/adapters/fetch/index.mjs",
       "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
+    },
+    "./observable": {
+      "import": "./dist/observable.mjs",
+      "require": "./dist/observable.js",
+      "default": "./dist/observable.js"
+    },
+    "./shared": {
+      "import": "./dist/shared.mjs",
+      "require": "./dist/shared.js",
+      "default": "./dist/shared.js"
     }
   },
   "files": [
@@ -101,6 +111,8 @@
     "README.md",
     "package.json",
     "adapters",
+    "observable",
+    "shared",
     "!**/*.test.*"
   ],
   "publishConfig": {

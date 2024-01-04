@@ -44,3 +44,5 @@ export type {
    */
   inferAsyncReturnType,
 } from './types';
+
+export { type OnErrorFunction } from './internals/types';
