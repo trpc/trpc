@@ -1,3 +1,4 @@
+import { RequestInitEsque } from '../internals/types';
 import { httpLinkFactory } from './httpLink';
 import { GetBody, httpRequest, Requester } from './internals/httpUtils';
 
@@ -8,7 +9,7 @@ const getBody: GetBody = (opts) => {
   if (!(opts.input instanceof FormData)) {
     throw new Error('Input is not FormData');
   }
-  return opts.input;
+  return opts.input as RequestInitEsque['body'];
 };
 
 const formDataRequester: Requester = (opts) => {
