@@ -37,10 +37,16 @@ export type Operation<TInput = unknown> = {
   context: OperationContext;
 };
 
+interface HeadersInitEsque {
+  [Symbol.iterator](): IterableIterator<[string, string]>;
+}
+
 /**
  * @internal
  */
-export type HTTPHeaders = Record<string, string[] | string | undefined>;
+export type HTTPHeaders =
+  | HeadersInitEsque
+  | Record<string, string[] | string | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
