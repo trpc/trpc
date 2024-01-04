@@ -151,7 +151,13 @@ export async function fetchHTTPResponse(
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const resolvedHeaders = await opts.headers();
+  const resolvedHeaders = await (async () => {
+    const heads = await opts.headers();
+    if (Symbol.iterator in heads) {
+      return Object.fromEntries(heads);
+    }
+    return heads;
+  })();
   /* istanbul ignore if -- @preserve */
   if (type === 'subscription') {
     throw new Error('Subscriptions should use wsLink');

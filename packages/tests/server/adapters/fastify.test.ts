@@ -14,8 +14,9 @@ import { initTRPC } from '@trpc/core';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
+  FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/src/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
@@ -149,7 +150,15 @@ function createServer(opts: ServerOptions) {
   instance.register(plugin, {
     useWSS: true,
     prefix: config.prefix,
-    trpcOptions: { router, createContext },
+    trpcOptions: {
+      router,
+      createContext,
+      onError(data) {
+        // report to error monitoring
+        data;
+        // ^?
+      },
+    } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
   });
 
   instance.get('/hello', async () => {
@@ -176,7 +185,7 @@ const linkSpy: TRPCLink<AppRouter> = () => {
     return observable((observer) => {
       const unsubscribe = next(op).subscribe({
         next(value) {
-          orderedResults.push((value.result ).data);
+          orderedResults.push(value.result.data);
           observer.next(value);
         },
         error: observer.error,

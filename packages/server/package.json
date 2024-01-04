@@ -59,25 +59,30 @@
       "require": "./dist/adapters/fastify/index.js",
       "default": "./dist/adapters/fastify/index.js"
     },
+    "./adapters/fetch": {
+      "import": "./dist/adapters/fetch/index.mjs",
+      "require": "./dist/adapters/fetch/index.js",
+      "default": "./dist/adapters/fetch/index.js"
+    },
     "./adapters/next": {
       "import": "./dist/adapters/next.mjs",
       "require": "./dist/adapters/next.js",
       "default": "./dist/adapters/next.js"
     },
-    "./adapters/node-http": {
-      "import": "./dist/adapters/node-http/index.mjs",
-      "require": "./dist/adapters/node-http/index.js",
-      "default": "./dist/adapters/node-http/index.js"
+    "./adapters/node-http/content-type/form-data": {
+      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
+      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
+      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
     },
     "./adapters/node-http/content-type/json": {
       "import": "./dist/adapters/node-http/content-type/json/index.mjs",
       "require": "./dist/adapters/node-http/content-type/json/index.js",
       "default": "./dist/adapters/node-http/content-type/json/index.js"
     },
-    "./adapters/node-http/content-type/form-data": {
-      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
-      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
-      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
+    "./adapters/node-http": {
+      "import": "./dist/adapters/node-http/index.mjs",
+      "require": "./dist/adapters/node-http/index.js",
+      "default": "./dist/adapters/node-http/index.js"
     },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
@@ -88,11 +93,6 @@
       "import": "./dist/adapters/ws.mjs",
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
-    },
-    "./adapters/fetch": {
-      "import": "./dist/adapters/fetch/index.mjs",
-      "require": "./dist/adapters/fetch/index.js",
-      "default": "./dist/adapters/fetch/index.js"
     },
     "./observable": {
       "import": "./dist/observable.mjs",

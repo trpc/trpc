@@ -153,4 +153,43 @@ Object {
       }
     `);
   });
+
+  test('custom headers with Headers class - httpBatchLink', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: httpUrl,
+          headers() {
+            const heads = new Headers();
+            heads.append('x-special', 'special header');
+            return heads;
+          },
+        }),
+      ],
+    });
+    expect(await client.hello.query()).toMatchInlineSnapshot(`
+      Object {
+        "x-special": "special header",
+      }
+    `);
+  });
+
+  test('custom headers with Headers class - httpLink', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        httpLink({
+          url: httpUrl,
+          headers() {
+            // return { foo: 'bar' };
+            return new Headers([['x-special', 'special header']]);
+          },
+        }),
+      ],
+    });
+    expect(await client.hello.query()).toMatchInlineSnapshot(`
+      Object {
+        "x-special": "special header",
+      }
+    `);
+  });
 });

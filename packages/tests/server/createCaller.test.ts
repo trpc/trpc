@@ -46,6 +46,48 @@ describe('with context', () => {
     });
   });
 });
+describe('with async context', () => {
+  const createContext = async () => {
+    return {
+      userId: '1',
+    };
+  };
+  const t = initTRPC.context<typeof createContext>().create();
+
+  const appRouter = t.router({
+    hello: t.procedure
+      .input(
+        z.object({
+          who: z.string(),
+        }),
+      )
+      .query((opts) => `hello ${opts.input.who} - ${opts.ctx.userId}` as const),
+  });
+
+  const createCaller = t.createCallerFactory(appRouter);
+
+  test('ugly RSC caller requires nested awaits', async () => {
+    const trpc = async () => createCaller(await createContext());
+
+    const hello = await (await trpc()).hello({ who: 'world' });
+    expect(hello).toEqual('hello world - 1');
+    expectTypeOf<`hello ${string} - ${string}`>(hello);
+  });
+
+  test('nicer RSC caller by passing fn', async () => {
+    const trpc = createCaller(createContext);
+
+    const hello = await trpc.hello({ who: 'world' });
+    expect(hello).toEqual('hello world - 1');
+    expectTypeOf<`hello ${string} - ${string}`>(hello);
+  });
+
+  test('mismatching return type', async () => {
+    const badCreateContext = async () => 'foo' as const;
+    // @ts-expect-error - Type '() => Promise<"foo">' is not assignable to type '() => Promise<{ userId: string; }>'.
+    createCaller(badCreateContext);
+  });
+});
 test('docs', async () => {
   type Context = {
     foo: string;
