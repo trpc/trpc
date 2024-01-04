@@ -14,6 +14,7 @@ import { initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
+  FastifyTRPCPluginOptions,
 } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
 import fastify from 'fastify';
@@ -149,7 +150,15 @@ function createServer(opts: ServerOptions) {
   instance.register(plugin, {
     useWSS: true,
     prefix: config.prefix,
-    trpcOptions: { router, createContext },
+    trpcOptions: {
+      router,
+      createContext,
+      onError(data) {
+        // report to error monitoring
+        data;
+        // ^?
+      },
+    } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
   });
 
   instance.get('/hello', async () => {
