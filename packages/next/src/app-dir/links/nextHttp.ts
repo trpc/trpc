@@ -11,6 +11,7 @@ import { generateCacheTag } from '../shared';
 interface NextLinkBaseOptions {
   revalidate?: number | false;
   batch?: boolean;
+  fetchOptions?: RequestInit;
 }
 
 interface NextLinkSingleOptions
@@ -48,6 +49,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
       ) => {
         return fetch(url, {
           ...fetchOpts,
+          ...opts.fetchOptions,
           // cache: 'no-cache',
           next: {
             revalidate,
