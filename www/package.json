@@ -62,7 +62,7 @@
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
     "@decs/typeschema": "^0.12.0",
-    "@effect/schema": "^0.49.0",
+    "@effect/schema": "^0.57.0",
     "@octokit/graphql": "^7.0.0",
     "@octokit/graphql-schema": "^14.0.0",
     "@tsconfig/docusaurus": "^2.0.0",

@@ -359,9 +359,9 @@ test('effect schema - [not officially supported]', async () => {
 
   // @ts-expect-error this only accepts a `number`
   await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-	[TRPCClientError: error(s) found
-	└─ Expected a generic object, actual "13"]
-`);
+    [TRPCClientError: error(s) found
+    └─ Expected <anonymous type literal schema>, actual "13"]
+  `);
   await close();
 });
 
