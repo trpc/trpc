@@ -15,6 +15,15 @@ export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
+export type {
+  NextApiHandler,
+  NextApiRequest,
+  NextApiResponse,
+} from 'next/types';
+// export * from '@trpc/core/http';
+// export * from '@trpc/core/shared';
+// export * from '@trpc/core';
+// export * from './node-http';
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
