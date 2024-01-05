@@ -42,6 +42,9 @@ describe('no custom error formatter', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
+    assert(err.data);
+    assert(err.shape);
+
     expectTypeOf(err.data).toMatchTypeOf<DefaultErrorData>();
     expectTypeOf(err.shape).toMatchTypeOf<DefaultErrorShape>();
   });
@@ -88,6 +91,9 @@ describe('with custom error formatter', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
+    assert(err.data);
+    assert(err.shape);
+
     expectTypeOf(err.data).toMatchTypeOf<DefaultErrorData>();
     expectTypeOf(err.shape).toMatchTypeOf<DefaultErrorShape>();
     expectTypeOf(err.data.foo).toEqualTypeOf<'bar'>();
@@ -179,6 +185,9 @@ describe('custom error sub-classes', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
+    assert(err.data);
+    assert(err.shape);
+
     expectTypeOf(err.data).toMatchTypeOf<DefaultErrorData>();
     expectTypeOf(err.shape).toMatchTypeOf<DefaultErrorShape>();
     expectTypeOf(err.data.reason).toEqualTypeOf<

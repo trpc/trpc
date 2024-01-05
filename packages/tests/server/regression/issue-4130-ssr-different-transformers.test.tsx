@@ -69,13 +69,13 @@ test('withTRPC - SSR', async () => {
 
   const Wrapped = trpc.withTRPC(App);
 
-  const props = await Wrapped.getInitialProps!({
+  const props = (await Wrapped.getInitialProps!({
     AppTree: Wrapped,
     Component: <div />,
-  } as any);
+  } as any)) as Record<string, any>;
 
   const trpcState: DehydratedState = transformer.output.deserialize(
-    props.pageProps.trpcState,
+    props['pageProps'].trpcState,
   );
 
   const relevantData = trpcState.queries.map((it) => ({

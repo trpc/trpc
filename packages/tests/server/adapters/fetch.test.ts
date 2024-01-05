@@ -172,7 +172,7 @@ describe('with default server', () => {
         return observable((observer) => {
           const unsubscribe = next(op).subscribe({
             next(value) {
-              orderedResults.push(value.result.data);
+              orderedResults.push(value.result.data as number);
               observer.next(value);
             },
             error: observer.error,

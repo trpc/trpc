@@ -93,6 +93,7 @@ describe('double input validator', () => {
         ctx.client.sendMessage.mutate(input),
         TRPCClientError,
       );
+      assert(error.data);
       expect(error.data).toHaveProperty('zod');
       expect(error.data.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
@@ -112,7 +113,7 @@ describe('double input validator', () => {
         ctx.client.sendMessage.mutate(input),
         TRPCClientError,
       );
-      expect(error.data.zod!.fieldErrors).toMatchInlineSnapshot(`
+      expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "roomId": Array [
             "Required",
