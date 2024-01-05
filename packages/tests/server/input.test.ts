@@ -93,9 +93,8 @@ describe('double input validator', () => {
         ctx.client.sendMessage.mutate(input),
         TRPCClientError,
       );
-      assert(error.data);
       expect(error.data).toHaveProperty('zod');
-      expect(error.data.zod!.fieldErrors).toMatchInlineSnapshot(`
+      expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`
         Object {
           "text": Array [
             "Required",
