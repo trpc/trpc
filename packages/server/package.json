@@ -99,6 +99,11 @@
       "require": "./dist/observable.js",
       "default": "./dist/observable.js"
     },
+    "./rpc": {
+      "import": "./dist/rpc.mjs",
+      "require": "./dist/rpc.js",
+      "default": "./dist/rpc.js"
+    },
     "./shared": {
       "import": "./dist/shared.mjs",
       "require": "./dist/shared.js",
@@ -112,6 +117,7 @@
     "package.json",
     "adapters",
     "observable",
+    "rpc",
     "shared",
     "!**/*.test.*"
   ],

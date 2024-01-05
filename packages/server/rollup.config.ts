@@ -14,6 +14,7 @@ export const input = [
   'src/adapters/ws.ts',
   'src/index.ts',
   'src/observable.ts',
+  'src/rpc.ts',
   'src/shared.ts',
 ];
 
