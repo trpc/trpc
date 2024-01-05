@@ -8,6 +8,7 @@ import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from '@trpc/client/src';
+import { OnErrorFunction } from '@trpc/core';
 import { WithTRPCConfig } from '@trpc/next/src';
 import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
 import {
@@ -21,7 +22,6 @@ import {
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 import './___packages';
-import { OnErrorFunction } from '@trpc/core';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;

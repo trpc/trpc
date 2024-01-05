@@ -10,7 +10,7 @@ import {
   wsLink,
 } from '@trpc/client/src';
 import { initTRPC, Maybe, TRPCError } from '@trpc/core';
-import { observable } from '@trpc/core/src/observable';
+import { observable } from '@trpc/server/observable';
 import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { z } from 'zod';
 

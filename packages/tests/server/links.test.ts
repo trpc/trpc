@@ -11,8 +11,8 @@ import {
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/internals/retryLink';
+import { observable, observableToPromise } from '@trpc/server/observable';
 import { AnyRouter, initTRPC } from '@trpc/server/src';
-import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
 const mockRuntime: TRPCClientRuntime = {

@@ -1,6 +1,6 @@
 import { ignoreErrors } from './___testHelpers';
 import { createTRPCUntypedClient } from '@trpc/client/src';
-import { Unsubscribable } from '@trpc/server/src/observable';
+import { Unsubscribable } from '@trpc/server/observable';
 
 test('loosely typed parameters', () => {
   const client = createTRPCUntypedClient({

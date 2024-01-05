@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
+import { observable } from '@trpc/server/observable';
 import { initTRPC } from '@trpc/server/src';
-import { observable } from '@trpc/server/src/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
