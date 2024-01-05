@@ -1,10 +1,10 @@
-// FIXME: this file should only export
-// - `initTRPC`
-// - `TRPCError`
-// - (maybe something else?)
+/**
+ * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
+ */
 
 export * from './transformer';
 export * from './error/TRPCError';
+export * from './error/utils';
 export type {
   AnyRouter,
   ProcedureRecord,
@@ -46,3 +46,9 @@ export type {
 } from './types';
 
 export { type OnErrorFunction } from './internals/types';
+export { mergeRouters } from './internals/mergeRouters';
+export * from './internals/procedureBuilder';
+export * from './internals/utils';
+export * from './procedure';
+
+export * from './types';
