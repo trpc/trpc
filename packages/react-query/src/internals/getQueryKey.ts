@@ -3,9 +3,9 @@ import {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
+  DeepPartial,
   inferProcedureInput,
 } from '@trpc/core';
-import { DeepPartial } from '@trpc/core/unstableInternalsExport';
 import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 export type QueryType = 'any' | 'infinite' | 'query';

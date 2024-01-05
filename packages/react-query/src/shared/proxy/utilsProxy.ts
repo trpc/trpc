@@ -15,18 +15,16 @@ import {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
+  DeepPartial,
+  Filter,
   inferProcedureInput,
+  ProtectedIntersection,
 } from '@trpc/core';
 import {
   createFlatProxy,
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/core/shared';
-import {
-  DeepPartial,
-  Filter,
-  ProtectedIntersection,
-} from '@trpc/core/unstableInternalsExport';
 import {
   contextProps,
   DecoratedTRPCContextProps,

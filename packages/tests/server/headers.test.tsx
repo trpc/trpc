@@ -1,7 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client/src';
-import { initTRPC } from '@trpc/core';
-import { Dict } from '@trpc/core/unstableInternalsExport';
+import { Dict, initTRPC } from '@trpc/core';
 
 describe('pass headers', () => {
   type Context = {

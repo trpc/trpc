@@ -68,11 +68,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./unstableInternalsExport": {
-      "import": "./dist/unstableInternalsExport.mjs",
-      "require": "./dist/unstableInternalsExport.js",
-      "default": "./dist/unstableInternalsExport.js"
     }
   },
   "files": [
@@ -85,7 +80,6 @@
     "observable",
     "internals",
     "shared",
-    "unstableInternalsExport",
     "!**/*.test.*"
   ],
   "publishConfig": {

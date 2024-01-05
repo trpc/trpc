@@ -6,9 +6,13 @@ import {
   TRPCRequestOptions,
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
-import { AnyRouter, ProcedureOptions } from '@trpc/core';
+import {
+  AnyRouter,
+  MaybePromise,
+  ProcedureOptions,
+  Simplify,
+} from '@trpc/core';
 import { observable } from '@trpc/core/observable';
-import { MaybePromise, Simplify } from '@trpc/core/unstableInternalsExport';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TRPCActionHandler } from './server';
 import { ActionHandlerDef, isFormData } from './shared';

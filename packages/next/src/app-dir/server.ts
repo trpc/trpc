@@ -10,6 +10,8 @@ import {
   CombinedDataTransformer,
   getTRPCErrorFromUnknown,
   inferProcedureInput,
+  MaybePromise,
+  Simplify,
   TRPCError,
 } from '@trpc/core';
 import { TRPCResponse } from '@trpc/core/rpc';
@@ -18,7 +20,6 @@ import {
   getErrorShape,
   transformTRPCResponse,
 } from '@trpc/core/shared';
-import { MaybePromise, Simplify } from '@trpc/core/unstableInternalsExport';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';

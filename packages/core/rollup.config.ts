@@ -8,7 +8,6 @@ export const input = [
   'src/observable/index.ts',
   'src/internals/index.ts',
   'src/shared/index.ts',
-  'src/unstableInternalsExport.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

@@ -15,8 +15,8 @@ import {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type { AnyRouter } from '@trpc/core';
+import { Dict, Maybe } from '@trpc/core';
 import type { ResponseMeta } from '@trpc/core/http';
-import { Dict, Maybe } from '@trpc/core/unstableInternalsExport';
 import { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import {
   createRootHooks,

@@ -5,13 +5,13 @@ import {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
+  Filter,
   inferProcedureInput,
 } from '@trpc/core';
 import {
   createRecursiveProxy,
   inferTransformedProcedureOutput,
 } from '@trpc/core/shared';
-import { Filter } from '@trpc/core/unstableInternalsExport';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import {
   TrpcQueryOptionsForUseQueries,

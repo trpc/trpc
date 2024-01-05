@@ -1,5 +1,9 @@
-import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/core';
-import { Overwrite } from '@trpc/core/unstableInternalsExport';
+import {
+  inferRouterInputs,
+  inferRouterOutputs,
+  initTRPC,
+  Overwrite,
+} from '@trpc/core';
 import * as z from 'zod';
 
 export function hardcodedExample() {

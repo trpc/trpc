@@ -4,8 +4,7 @@ import {
   UseSuspenseQueryOptions,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import { AnyRouter } from '@trpc/core';
-import { DistributiveOmit } from '@trpc/core/unstableInternalsExport';
+import { AnyRouter, DistributiveOmit } from '@trpc/core';
 import {
   UseQueriesProcedureRecord,
   UseSuspenseQueriesProcedureRecord,

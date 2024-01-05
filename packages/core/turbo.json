@@ -9,8 +9,7 @@
         "rpc/**",
         "observable/**",
         "internals/**",
-        "shared/**",
-        "unstableInternalsExport/**"
+        "shared/**"
       ]
     }
   }
