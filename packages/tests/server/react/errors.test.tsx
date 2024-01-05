@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client/src';
+import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { DefaultErrorData } from '@trpc/server/error/formatter';
 import { Maybe } from '@trpc/server/unstableInternalsExport';

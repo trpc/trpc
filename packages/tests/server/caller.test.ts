@@ -1,5 +1,5 @@
 import { waitError } from './___testHelpers';
-import { initTRPC, TRPCError } from '@trpc/server/src';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 const t = initTRPC

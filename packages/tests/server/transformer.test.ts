@@ -13,7 +13,7 @@ import {
   initTRPC,
   TRPCError,
 } from '@trpc/server';
-import { observable } from '@trpc/server/src/observable';
+import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
 import { createTson, tsonDate } from 'tupleson';
