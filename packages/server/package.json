@@ -124,6 +124,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@trpc/core": "10.45.0"
+  },
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
     "@tanstack/react-query": "^5.0.0",
@@ -160,8 +163,5 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ],
-  "dependencies": {
-    "@trpc/core": "^10.45.0"
-  }
+  ]
 }

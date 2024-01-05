@@ -1603,7 +1603,7 @@ importers:
   packages/server:
     dependencies:
       '@trpc/core':
-        specifier: ^10.45.0
+        specifier: 10.45.0
         version: link:../core
     devDependencies:
       '@fastify/websocket':
