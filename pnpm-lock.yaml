@@ -280,9 +280,6 @@ importers:
       '@trpc/client':
         specifier: ^10.45.0
         version: link:../../../packages/client
-      '@trpc/core':
-        specifier: ^10.45.0
-        version: link:../../../packages/core
       '@trpc/next':
         specifier: ^10.45.0
         version: link:../../../packages/next
@@ -378,9 +375,18 @@ importers:
       '@trpc/client':
         specifier: ^10.45.0
         version: link:../../../packages/client
+      '@trpc/next':
+        specifier: ^10.45.0
+        version: link:../../../packages/next
+      '@trpc/react-query':
+        specifier: ^10.45.0
+        version: link:../../../packages/react-query
       '@trpc/server':
         specifier: ^10.45.0
         version: link:../../../packages/server
+      next:
+        specifier: ^14.0.1
+        version: 14.0.1(@babel/core@7.23.2)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@tsconfig/esm':
         specifier: ^1.0.3
