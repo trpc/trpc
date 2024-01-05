@@ -23,10 +23,15 @@ export type {
 
 export type {
   AnyRouter as AnyTRPCRouter,
+  AnyProcedure as AnyTRPCProcedure,
   /**
    * @deprecated use `AnyTRPCRouter` instead
    */
   AnyRouter,
+  /**
+   * @deprecated use `AnyTRPCProcedure` instead
+   */
+  AnyProcedure,
 } from '@trpc/core';
 
 export const foo = 'bar';
