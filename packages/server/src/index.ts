@@ -33,5 +33,3 @@ export type {
    */
   AnyProcedure,
 } from '@trpc/core';
-
-export const foo = 'bar';

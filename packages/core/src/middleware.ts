@@ -153,6 +153,10 @@ export function createMiddlewareFactory<TContext, TMeta, TInputIn = unknown>() {
   return createMiddleware;
 }
 
+/**
+ * Create a standalone middleware
+ * @see https://trpc.io/docs/server/middlewares#experimental-standalone-middlewares
+ */
 export const experimental_standaloneMiddleware = <
   TCtx extends {
     ctx?: object;
