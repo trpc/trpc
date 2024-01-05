@@ -280,6 +280,9 @@ importers:
       '@trpc/client':
         specifier: ^10.45.0
         version: link:../../../packages/client
+      '@trpc/core':
+        specifier: ^10.45.0
+        version: link:../../../packages/core
       '@trpc/next':
         specifier: ^10.45.0
         version: link:../../../packages/next
@@ -1436,14 +1439,13 @@ importers:
         version: 5.3.3
 
   packages/client:
-    dependencies:
-      '@trpc/core':
-        specifier: 10.45.0
-        version: link:../core
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
       '@trpc/server':
         specifier: 10.45.0
         version: link:../server
@@ -1497,10 +1499,6 @@ importers:
         version: 5.3.3
 
   packages/next:
-    dependencies:
-      '@trpc/core':
-        specifier: 10.45.0
-        version: link:../core
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
@@ -1508,6 +1506,9 @@ importers:
       '@trpc/client':
         specifier: 10.45.0
         version: link:../client
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
       '@trpc/react-query':
         specifier: 10.45.0
         version: link:../react-query
@@ -1552,10 +1553,6 @@ importers:
         version: 3.22.4
 
   packages/react-query:
-    dependencies:
-      '@trpc/core':
-        specifier: 10.45.0
-        version: link:../core
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
@@ -1563,6 +1560,9 @@ importers:
       '@trpc/client':
         specifier: 10.45.0
         version: link:../client
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
       '@trpc/server':
         specifier: 10.45.0
         version: link:../server
