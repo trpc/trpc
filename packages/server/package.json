@@ -146,7 +146,6 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "@types/ws": "^8.2.0",
-    "@web3-storage/multipart-parser": "^1.0.0",
     "aws-lambda": "^1.0.7",
     "devalue": "^4.0.0",
     "eslint": "^8.40.0",

@@ -247,9 +247,6 @@ importers:
       react-hook-form:
         specifier: ^7.43.3
         version: 7.43.3(react@18.2.0)
-      undici:
-        specifier: ^6.0.1
-        version: 6.0.1
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -1645,9 +1642,6 @@ importers:
       '@types/ws':
         specifier: ^8.2.0
         version: 8.5.4
-      '@web3-storage/multipart-parser':
-        specifier: ^1.0.0
-        version: 1.0.0
       aws-lambda:
         specifier: ^1.0.7
         version: 1.0.7
@@ -9357,10 +9351,6 @@ packages:
       diff-sequences: 29.6.3
       loupe: 2.3.7
       pretty-format: 29.7.0
-
-  /@web3-storage/multipart-parser@1.0.0:
-    resolution: {integrity: sha512-BEO6al7BYqcnfX15W2cnGR+Q566ACXAT9UQykORCWW80lmkpWsnEob6zJS1ZVBKsSJC8+7vJkHwlp+lXG1UCdw==}
-    dev: true
 
   /@webassemblyjs/ast@1.11.1:
     resolution: {integrity: sha512-ukBh14qFLjxTQNTXocdyksN5QdM28S1CxHt2rdskFyL+xFV7VremuBLVbmCePj+URalXBENx/9Lm7lnhihtCSw==}

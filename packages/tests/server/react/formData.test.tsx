@@ -30,6 +30,12 @@ function formDataOrObject<T extends z.ZodRawShape>(input: T) {
 }
 
 const ctx = konn()
+  .beforeAll(async () => {
+    const { FormData, File, Blob } = await import('node-fetch');
+    globalThis.FormData = FormData;
+    globalThis.File = File;
+    globalThis.Blob = Blob;
+  })
   .beforeEach(() => {
     const t = initTRPC.context<CreateHTTPContextOptions>().create();
 
@@ -122,10 +128,6 @@ const ctx = konn()
 
     type TRouter = typeof appRouter;
 
-    const loggerLinkConsole = {
-      log: vi.fn(),
-      error: vi.fn(),
-    };
     const opts = routerToServerAndClientNew(appRouter, {
       server: {
         experimental_contentTypeHandlers: [
@@ -173,7 +175,6 @@ const ctx = konn()
       close: opts.close,
       queryClient,
       App,
-      loggerLinkConsole,
     };
   })
   .afterEach(async (ctx) => {
@@ -181,7 +182,7 @@ const ctx = konn()
   })
   .done();
 
-test.skip('upload file', async () => {
+test('upload file', async () => {
   const form = new FormData();
   form.append(
     'file',
@@ -203,7 +204,7 @@ test.skip('upload file', async () => {
   `);
 });
 
-test.skip('polymorphic - accept both JSON and FormData', async () => {
+test('polymorphic - accept both JSON and FormData', async () => {
   const form = new FormData();
   form.set('text', 'foo');
 
@@ -214,7 +215,7 @@ test.skip('polymorphic - accept both JSON and FormData', async () => {
   expect(formDataRes).toEqual(jsonRes);
 });
 
-test.skip('upload a combination of files and non-file text fields', async () => {
+test('upload a combination of files and non-file text fields', async () => {
   const form = new FormData();
   form.append(
     'files',
@@ -254,7 +255,7 @@ test.skip('upload a combination of files and non-file text fields', async () => 
   });
 });
 
-test.skip('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - files too large', async () => {
+test('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - files too large', async () => {
   const form = new FormData();
   form.append(
     'files',
@@ -274,11 +275,11 @@ test.skip('Throws when aggregate size of uploaded files and non-file text fields
   await expect(
     ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `"Body exceeded upload size of 100 bytes."`,
+    `[TRPCClientError: Body exceeded upload size of 100 bytes.]`,
   );
 });
 
-test.skip('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - text fields too large', async () => {
+test('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - text fields too large', async () => {
   const form = new FormData();
   form.append(
     'files',
@@ -293,6 +294,6 @@ test.skip('Throws when aggregate size of uploaded files and non-file text fields
   await expect(
     ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `"Body exceeded upload size of 100 bytes."`,
+    `[TRPCClientError: Body exceeded upload size of 100 bytes.]`,
   );
 });
