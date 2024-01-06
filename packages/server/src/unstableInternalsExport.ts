@@ -1,3 +1,4 @@
+// ts-prune-ignore-next
 /**
  * These types have to be exported so users can generate their own types definitions files
  *
