@@ -1,17 +1,17 @@
-export { TRPCError } from '@trpc/core';
 export {
   initTRPC,
+  TRPCError,
   /**
    * @deprecated use `experimental_trpcMiddleware` instead
    */
   experimental_standaloneMiddleware,
   experimental_standaloneMiddleware as experimental_trpcMiddleware,
-  type inferRouterInputs,
-  type inferRouterOutputs,
   type inferProcedureInput,
   type inferProcedureOutput,
   type inferRouterError,
-} from '@trpc/core';
+  type inferRouterInputs,
+  type inferRouterOutputs,
+} from './index.core';
 
 export type {
   /**
@@ -19,22 +19,17 @@ export type {
    * Use `Awaited<ReturnType<T>>` instead
    */
   inferAsyncReturnType,
-} from '@trpc/core';
+} from './index.core';
 
 export type {
-  AnyRouter as AnyTRPCRouter,
-  AnyProcedure as AnyTRPCProcedure,
-  /**
-   * @deprecated use `AnyTRPCRouter` instead
-   */
-  AnyRouter,
   /**
    * @deprecated use `AnyTRPCProcedure` instead
    */
   AnyProcedure,
-} from '@trpc/core';
-
-/**
- * @deprecated don't use internals from `@trpc/core
- */
-export * as __unstable_do_not_import from '@trpc/core';
+  /**
+   * @deprecated use `AnyTRPCRouter` instead
+   */
+  AnyRouter,
+  AnyProcedure as AnyTRPCProcedure,
+  AnyRouter as AnyTRPCRouter,
+} from './index.core';
