@@ -1,15 +1,17 @@
 /**
  * @see https://trpc.io/blog/tinyrpc-client
  */
+import {
+  AnyMutationProcedure,
+  AnyQueryProcedure,
+  ProcedureRouterRecord,
+} from '@trpc/core';
 import type { TRPCResponse } from '@trpc/core/rpc';
 import type {
-  AnyMutationProcedure,
   AnyProcedure,
-  AnyQueryProcedure,
   AnyRouter,
   inferProcedureInput,
   inferProcedureOutput,
-  ProcedureRouterRecord,
 } from '@trpc/server';
 
 interface ProxyCallbackOptions {
