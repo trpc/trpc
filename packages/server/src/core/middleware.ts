@@ -2,7 +2,7 @@ import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
 import { getParseFn, getParseFnInner } from './internals/getParseFn';
 import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
-import { Parser, ParserCallback } from './parser';
+import { InputParserCallback, OutputParserCallback, Parser } from './parser';
 import { ProcedureType } from './types';
 
 /**
@@ -178,7 +178,7 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware(
-  parserOrCb: Parser | ParserCallback<any, any>,
+  parserOrCb: Parser | InputParserCallback<any, any>,
 ) {
   const inputMiddleware: AnyMiddlewareFunction =
     async function inputValidatorMiddleware(opts) {
@@ -226,7 +226,7 @@ export function createInputMiddleware(
  * @internal
  */
 export function createOutputMiddleware(
-  parserOrCb: Parser | ParserCallback<any, any>,
+  parserOrCb: Parser | OutputParserCallback<any, any>,
 ) {
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware(opts) {
@@ -241,7 +241,7 @@ export function createOutputMiddleware(
         if (typeof parserOrCb === 'function') {
           const cbResult = await parserOrCb({
             ctx: opts.ctx,
-            input: result.data,
+            output: result.data,
           });
 
           const parse = getParseFnInner(cbResult);

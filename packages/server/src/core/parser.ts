@@ -42,19 +42,33 @@ export type inferParserInner<TParser extends Parser> =
       }
     : never;
 
-export type ParserCallback<TContext, TCallbackResult> = (opts: {
-  input: unknown;
-  ctx: TContext;
-}) => TCallbackResult;
+export type ParserCallback<TParam, TContext, TCallbackResult> = (
+  opts: {
+    ctx: TContext;
+  } & TParam,
+) => TCallbackResult;
 
-export type inferParser<TParser extends Parser | ParserCallback<any, any>> =
-  TParser extends ParserCallback<any, infer $CallbackResult>
-    ? Awaited<$CallbackResult> extends Parser
-      ? inferParserInner<Awaited<$CallbackResult>>
-      : {
-          in: Awaited<$CallbackResult>;
-          out: Awaited<$CallbackResult>;
-        }
-    : TParser extends Parser
-    ? inferParserInner<TParser>
-    : never;
+export type InputParserCallback<TContext, TCallbackResult> = ParserCallback<
+  { input: unknown },
+  TContext,
+  TCallbackResult
+>;
+
+export type OutputParserCallback<TContext, TCallbackResult> = ParserCallback<
+  { output: unknown },
+  TContext,
+  TCallbackResult
+>;
+
+export type inferParser<
+  TParser extends Parser | ParserCallback<any, any, any>,
+> = TParser extends ParserCallback<any, any, infer $CallbackResult>
+  ? Awaited<$CallbackResult> extends Parser
+    ? inferParserInner<Awaited<$CallbackResult>>
+    : {
+        in: Awaited<$CallbackResult>;
+        out: Awaited<$CallbackResult>;
+      }
+  : TParser extends Parser
+  ? inferParserInner<TParser>
+  : never;

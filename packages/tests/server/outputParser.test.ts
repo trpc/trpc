@@ -312,7 +312,7 @@ test('validator fn', async () => {
   const router = trpc.router({
     q: trpc.procedure
       .input(({ input: value }) => value as number | string)
-      .output(({ input: value }) => {
+      .output(({ output: value }) => {
         if (typeof (value as any).input === 'string') {
           return value as { input: string };
         }
@@ -345,8 +345,8 @@ test('async validator fn', async () => {
   const router = trpc.router({
     q: trpc.procedure
       .input(({ input: value }) => value as number | string)
-      .output(async ({ input }): Promise<{ input: string }> => {
-        const value: any = input;
+      .output(async ({ output }): Promise<{ input: string }> => {
+        const value: any = output;
         if (value && typeof value.input === 'string') {
           return { input: value.input };
         }

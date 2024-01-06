@@ -8,7 +8,12 @@ import {
   MiddlewareFunction,
   MiddlewareResult,
 } from '../middleware';
-import { inferParser, Parser, ParserCallback } from '../parser';
+import {
+  inferParser,
+  InputParserCallback,
+  OutputParserCallback,
+  Parser,
+} from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -34,8 +39,8 @@ type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
 
 export type ProcedureBuilderDef<TMeta> = {
   procedure: true;
-  inputs: (Parser | ParserCallback<any, any>)[];
-  output?: Parser | ParserCallback<any, any>;
+  inputs: (Parser | InputParserCallback<any, any>)[];
+  output?: Parser | OutputParserCallback<any, any>;
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
@@ -84,7 +89,7 @@ export interface ProcedureBuilder<
    * Add an input parser to the procedure.
    * @see https://trpc.io/docs/server/validators
    */
-  input<$Parser extends Parser | ParserCallback<TContext, any>>(
+  input<$Parser extends Parser | InputParserCallback<TContext, any>>(
     schema: $Parser,
   ): ProcedureBuilder<
     TContext,
@@ -99,7 +104,7 @@ export interface ProcedureBuilder<
    * Add an output parser to the procedure.
    * @see https://trpc.io/docs/server/validators
    */
-  output<$Parser extends Parser | ParserCallback<TContext, any>>(
+  output<$Parser extends Parser | OutputParserCallback<TContext, any>>(
     schema: $Parser,
   ): ProcedureBuilder<
     TContext,
