@@ -1,3 +1,14 @@
+import * as mock_trpcCore from '../../core/src';
+vi.mock('@trpc/core', () => mock_trpcCore);
+import * as mock_trpcCore__observable from '../../core/src/observable';
+vi.mock('@trpc/core/observable', () => mock_trpcCore__observable);
+import * as mock_trpcCore__shared from '../../core/src/shared';
+vi.mock('@trpc/core/shared', () => mock_trpcCore__shared);
+import * as mock_trpcCore__rpc from '../../core/src/rpc';
+vi.mock('@trpc/core/rpc', () => mock_trpcCore__rpc);
+import * as mock_trpcCore__http from '../../core/src/http';
+vi.mock('@trpc/core/http', () => mock_trpcCore__http);
+
 import * as mock_trpcServer from '../../server/src';
 vi.mock('@trpc/server', () => mock_trpcServer);
 import * as mock_trpcServer__observable from '../../server/src/observable';
