@@ -1,4 +1,4 @@
-# Changes in v11
+# Changes in v11 in reverse chronological order
 
 ## 2023-01-06 created a `@trpc/core`-package
 
