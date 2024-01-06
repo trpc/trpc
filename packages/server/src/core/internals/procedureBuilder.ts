@@ -8,7 +8,7 @@ import {
   MiddlewareFunction,
   MiddlewareResult,
 } from '../middleware';
-import { inferParser, Parser } from '../parser';
+import { inferParser, Parser, ParserCallback } from '../parser';
 import {
   AnyMutationProcedure,
   AnyProcedure,
@@ -19,7 +19,6 @@ import {
   SubscriptionProcedure,
 } from '../procedure';
 import { ProcedureType } from '../types';
-import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import {
   DefaultValue,
@@ -37,8 +36,8 @@ type ErrorMessage<TMessage extends string> = TMessage;
 
 export type ProcedureBuilderDef<TMeta> = {
   procedure: true;
-  inputs: Parser[];
-  output?: Parser;
+  inputs: (Parser | ParserCallback<any, any>)[];
+  output?: Parser | ParserCallback<any, any>;
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
@@ -87,18 +86,8 @@ export interface ProcedureBuilder<
    * Add an input parser to the procedure.
    * @see https://trpc.io/docs/server/validators
    */
-  input<$Parser extends Parser>(
-    schema: TInputOut extends UnsetMarker
-      ? $Parser
-      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser
-            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : ErrorMessage<'All input parsers did not resolve to an object'>
-      : ErrorMessage<'All input parsers did not resolve to an object'>,
+  input<$Parser extends Parser | ParserCallback<TContext, any>>(
+    schema: $Parser,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -112,7 +101,7 @@ export interface ProcedureBuilder<
    * Add an output parser to the procedure.
    * @see https://trpc.io/docs/server/validators
    */
-  output<$Parser extends Parser>(
+  output<$Parser extends Parser | ParserCallback<TContext, any>>(
     schema: $Parser,
   ): ProcedureBuilder<
     TContext,
@@ -275,18 +264,16 @@ export function createBuilder<TContext, TMeta>(
 
   const builder: AnyProcedureBuilder = {
     _def,
-    input(input) {
-      const parser = getParseFn(input as Parser);
+    input(inputParserOrCb) {
       return createNewBuilder(_def, {
-        inputs: [input as Parser],
-        middlewares: [createInputMiddleware(parser)],
+        inputs: [inputParserOrCb],
+        middlewares: [createInputMiddleware(inputParserOrCb)],
       });
     },
-    output(output: Parser) {
-      const parser = getParseFn(output);
+    output(outputParserOrCb) {
       return createNewBuilder(_def, {
-        output,
-        middlewares: [createOutputMiddleware(parser)],
+        output: outputParserOrCb,
+        middlewares: [createOutputMiddleware(outputParserOrCb)],
       });
     },
     meta(meta) {

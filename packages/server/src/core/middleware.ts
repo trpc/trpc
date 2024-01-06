@@ -1,7 +1,8 @@
 import { TRPCError } from '../error/TRPCError';
 import { Simplify } from '../types';
-import { ParseFn } from './internals/getParseFn';
+import { getParseFn, getParseFnInner } from './internals/getParseFn';
 import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
+import { Parser, ParserCallback } from './parser';
 import { ProcedureType } from './types';
 
 /**
@@ -176,14 +177,29 @@ function isPlainObject(obj: unknown) {
  * @internal
  * Please note, `trpc-openapi` uses this function.
  */
-export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
+export function createInputMiddleware(
+  parserOrCb: Parser | ParserCallback<any, any>,
+) {
   const inputMiddleware: AnyMiddlewareFunction =
     async function inputValidatorMiddleware(opts) {
-      let parsedInput: ReturnType<typeof parse>;
+      let parsedInput: any;
 
       const rawInput = await opts.getRawInput();
       try {
-        parsedInput = await parse(rawInput);
+        if (typeof parserOrCb === 'function') {
+          const cbResult = await parserOrCb({ ctx: opts.ctx, input: rawInput });
+
+          const parse = getParseFnInner(cbResult);
+
+          if (parse !== null) {
+            parsedInput = await parse(rawInput);
+          } else {
+            parsedInput = cbResult;
+          }
+        } else {
+          const parser = parserOrCb;
+          parsedInput = await getParseFn(parser)(rawInput);
+        }
       } catch (cause) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -209,16 +225,37 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
 /**
  * @internal
  */
-export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
+export function createOutputMiddleware(
+  parserOrCb: Parser | ParserCallback<any, any>,
+) {
   const outputMiddleware: AnyMiddlewareFunction =
-    async function outputValidatorMiddleware({ next }) {
-      const result = await next();
+    async function outputValidatorMiddleware(opts) {
+      const result = await opts.next();
       if (!result.ok) {
         // pass through failures without validating
         return result;
       }
       try {
-        const data = await parse(result.data);
+        let data: any;
+
+        if (typeof parserOrCb === 'function') {
+          const cbResult = await parserOrCb({
+            ctx: opts.ctx,
+            input: result.data,
+          });
+
+          const parse = getParseFnInner(cbResult);
+
+          if (parse !== null) {
+            data = await parse(result.data);
+          } else {
+            data = cbResult;
+          }
+        } else {
+          const parser = parserOrCb;
+          data = await getParseFn(parser)(result.data);
+        }
+
         return {
           ...result,
           data,

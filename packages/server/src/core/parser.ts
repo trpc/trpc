@@ -11,11 +11,6 @@ export type ParserMyZodEsque<TInput> = {
 export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
-
-export type ParserCustomValidatorEsque<TInput> = (
-  input: unknown,
-) => Promise<TInput> | TInput;
-
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
@@ -25,7 +20,6 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserWithoutInput<TInput> =
-  | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
   | ParserScaleEsque<TInput>
   | ParserSuperstructEsque<TInput>
@@ -38,15 +32,29 @@ export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
-export type inferParser<TParser extends Parser> =
+export type inferParserInner<TParser extends Parser> =
   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
-    ? {
-        in: $TIn;
-        out: $TOut;
-      }
+    ? { in: Awaited<$TIn>; out: Awaited<$TOut> }
     : TParser extends ParserWithoutInput<infer $InOut>
     ? {
-        in: $InOut;
-        out: $InOut;
+        in: Awaited<$InOut>;
+        out: Awaited<$InOut>;
       }
+    : never;
+
+export type ParserCallback<TContext, TCallbackResult> = (opts: {
+  input: unknown;
+  ctx: TContext;
+}) => TCallbackResult;
+
+export type inferParser<TParser extends Parser | ParserCallback<any, any>> =
+  TParser extends ParserCallback<any, infer $CallbackResult>
+    ? Awaited<$CallbackResult> extends Parser
+      ? inferParserInner<Awaited<$CallbackResult>>
+      : {
+          in: Awaited<$CallbackResult>;
+          out: Awaited<$CallbackResult>;
+        }
+    : TParser extends Parser
+    ? inferParserInner<TParser>
     : never;

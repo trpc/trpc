@@ -319,7 +319,7 @@ test('arktype schema - [not officially supported]', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(arktype.type({ text: 'string' }).assert)
+      .input(({ input }) => arktype.type({ text: 'string' }).assert(input))
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
         return {
@@ -344,7 +344,7 @@ test('effect schema - [not officially supported]', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(S.parseSync(S.struct({ text: S.string })))
+      .input(({ input }) => S.parseSync(S.struct({ text: S.string }))(input))
       .query(({ input }) => {
         expectTypeOf(input).toMatchTypeOf<{ text: string }>();
         return {
@@ -399,12 +399,14 @@ test('validator fn', async () => {
   };
 
   const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
-      expectTypeOf(input).toBeNumber();
-      return {
-        input,
-      };
-    }),
+    num: t.procedure
+      .input(({ input }) => numParser(input))
+      .query(({ input }) => {
+        expectTypeOf(input).toBeNumber();
+        return {
+          input,
+        };
+      }),
   });
 
   const { close, client } = routerToServerAndClientNew(router);
@@ -426,12 +428,14 @@ test('async validator fn', async () => {
   }
 
   const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
-      expectTypeOf(input).toBeNumber();
-      return {
-        input,
-      };
-    }),
+    num: t.procedure
+      .input(({ input }) => numParser(input))
+      .query(({ input }) => {
+        expectTypeOf(input).toBeNumber();
+        return {
+          input,
+        };
+      }),
   });
 
   const { close, client } = routerToServerAndClientNew(router);
@@ -469,9 +473,130 @@ test('recipe: summon context in input parser', async () => {
 
   const router = t.router({
     proc: procedureWithContext
-      .input((input) => {
+      .input(({ input }) => {
         // this input parser uses the context
         const ctx = getContext();
+        expect(ctx.foo).toBe('bar');
+
+        return z.string().parse(input);
+      })
+      .query((opts) => {
+        expectTypeOf(opts.input).toBeString();
+        return opts.input;
+      }),
+  });
+
+  const ctx = routerToServerAndClientNew(router, {
+    server: {
+      createContext() {
+        return { foo: 'bar' };
+      },
+    },
+  });
+  const res = await ctx.client.proc.query('123');
+
+  expect(res).toMatchInlineSnapshot('"123"');
+
+  const err = await waitError(
+    ctx.client.proc.query(
+      // @ts-expect-error this only accepts a `number`
+      123,
+    ),
+  );
+  expect(err).toMatchInlineSnapshot(`
+    [TRPCClientError: [
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "received": "number",
+        "path": [],
+        "message": "Expected string, received number"
+      }
+    ]]
+  `);
+
+  await ctx.close();
+});
+
+test('cb zod', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure
+      .input(() => z.number())
+      .query(({ input }) => {
+        expectTypeOf(input).toBeNumber();
+        return {
+          input,
+        };
+      }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+  const res = await client.num.query(123);
+
+  await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(`
+            [TRPCClientError: [
+              {
+                "code": "invalid_type",
+                "expected": "number",
+                "received": "string",
+                "path": [],
+                "message": "Expected number, received string"
+              }
+            ]]
+          `);
+  expect(res.input).toBe(123);
+  await close();
+});
+
+test('cb zod async', async () => {
+  const t = initTRPC.create();
+  const input = z.string().refine(async (value) => value === 'foo');
+
+  const router = t.router({
+    q: t.procedure
+      .input(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return input;
+      })
+      .query(({ input }) => {
+        expectTypeOf(input).toBeString();
+        return {
+          input,
+        };
+      }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+
+  await expect(client.q.query('bar')).rejects.toMatchInlineSnapshot(`
+            [TRPCClientError: [
+              {
+                "code": "custom",
+                "message": "Invalid input",
+                "path": []
+              }
+            ]]
+          `);
+  const res = await client.q.query('foo');
+  expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": "foo",
+      }
+    `);
+  await close();
+});
+
+test('cb access ctx', async () => {
+  type Context = {
+    foo: string;
+  };
+  const t = initTRPC.context<Context>().create();
+
+  const router = t.router({
+    proc: t.procedure
+      .input(({ ctx, input }) => {
         expect(ctx.foo).toBe('bar');
 
         return z.string().parse(input);

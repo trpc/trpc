@@ -2,13 +2,10 @@ import { Parser } from '../parser';
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export function getParseFnInner<TType>(
+  procedureParser: Parser,
+): ParseFn<TType> | null {
   const parser = procedureParser as any;
-
-  if (typeof parser === 'function') {
-    // ParserCustomValidatorEsque
-    return parser;
-  }
 
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque
@@ -37,6 +34,16 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
       parser.assert(value);
       return value as TType;
     };
+  }
+
+  return null;
+}
+
+export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+  const parse = getParseFnInner<TType>(procedureParser);
+
+  if (parse !== null) {
+    return parse;
   }
 
   throw new Error('Could not find a validator fn');
