@@ -9,8 +9,8 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { initTRPC } from '@trpc/core';
 import { observable, tap } from '@trpc/core/observable';
+import { initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,

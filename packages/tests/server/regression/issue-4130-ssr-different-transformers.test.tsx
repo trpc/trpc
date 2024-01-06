@@ -3,8 +3,8 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { DehydratedState } from '@tanstack/react-query';
 import type { CombinedDataTransformer } from '@trpc/core';
-import { initTRPC } from '@trpc/core';
 import { createTRPCNext } from '@trpc/next';
+import { initTRPC } from '@trpc/server';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import { AppType } from 'next/dist/shared/lib/utils';

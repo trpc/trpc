@@ -1,5 +1,5 @@
-import { initTRPC } from '@trpc/core';
 import { createServerSideHelpers } from '@trpc/react-query/server';
+import { initTRPC } from '@trpc/server';
 
 test('createSSGPromise', async () => {
   const t = initTRPC.create();

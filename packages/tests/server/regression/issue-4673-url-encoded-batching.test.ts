@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { initTRPC } from '@trpc/core';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z } from 'zod';
 

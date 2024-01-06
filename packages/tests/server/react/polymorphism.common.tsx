@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/core';
+import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 

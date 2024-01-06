@@ -1,4 +1,4 @@
-import { initTRPC } from '@trpc/core';
+import { initTRPC } from '@trpc/server';
 
 // FIXME: should we deprecate this?
 test('call proc directly', async () => {
