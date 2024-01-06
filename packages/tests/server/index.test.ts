@@ -9,7 +9,8 @@ import {
   TRPCClientError,
   wsLink,
 } from '@trpc/client';
-import { initTRPC, Maybe, TRPCError } from '@trpc/core';
+import { Maybe } from '@trpc/core';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';

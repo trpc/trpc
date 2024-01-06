@@ -1,7 +1,7 @@
 import { AddressInfo } from 'net';
 import { networkInterfaces } from 'os';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/core';
+import { initTRPC, TRPCError } from '@trpc/server';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,

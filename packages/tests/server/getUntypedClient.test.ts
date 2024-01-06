@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
-import { AnyRouter, initTRPC } from '@trpc/core';
+import { AnyRouter, initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 
 const ctx = konn()

@@ -3,7 +3,7 @@ import {
   initTRPC,
   ProcedureBuilder,
   TRPCError,
-} from '@trpc/core';
+} from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import { z } from 'zod';
 

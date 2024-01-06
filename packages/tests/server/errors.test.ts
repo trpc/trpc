@@ -10,10 +10,10 @@ import {
 } from '@trpc/client';
 import {
   getMessageFromUnknownError,
+  initTRPC,
   OnErrorFunction,
   TRPCError,
-} from '@trpc/core';
-import { initTRPC } from '@trpc/server';
+} from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';

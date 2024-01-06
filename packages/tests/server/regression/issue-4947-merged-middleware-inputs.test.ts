@@ -1,9 +1,9 @@
+import { createTRPCProxyClient } from '@trpc/react-query';
 import {
   experimental_standaloneMiddleware,
   inferRouterInputs,
   initTRPC,
-} from '@trpc/core';
-import { createTRPCProxyClient } from '@trpc/react-query';
+} from '@trpc/server';
 import * as z from 'zod';
 
 test('Fix #4947: standalone middlewares -- inputs are merged properly when using multiple standalone middlewares', async () => {

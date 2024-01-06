@@ -7,9 +7,9 @@ import {
   WebSocketClientOptions,
   wsLink,
 } from '@trpc/client';
-import { AnyRouter, initTRPC, TRPCError } from '@trpc/core';
 import { observable, Observer } from '@trpc/core/observable';
 import { TRPCClientOutgoingMessage, TRPCRequestMessage } from '@trpc/core/rpc';
+import { AnyRouter, initTRPC, TRPCError } from '@trpc/server';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';

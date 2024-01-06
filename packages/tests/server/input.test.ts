@@ -4,7 +4,7 @@ import {
   inferProcedureInput,
   inferProcedureParams,
   initTRPC,
-} from '@trpc/core';
+} from '@trpc/server';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 

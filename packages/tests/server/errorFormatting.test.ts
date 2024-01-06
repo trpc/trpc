@@ -1,7 +1,10 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
-import { AnyRouter, DefaultErrorShape, initTRPC, TRPCError } from '@trpc/core';
-import { DefaultErrorData } from '@trpc/core/error/formatter';
+import {
+  DefaultErrorData,
+  DefaultErrorShape,
+} from '@trpc/core/error/formatter';
+import { AnyRouter, initTRPC, TRPCError } from '@trpc/server';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 
@@ -42,8 +45,8 @@ describe('no custom error formatter', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
-    expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
-    expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data).toMatchTypeOf<DefaultErrorData>();
+    expectTypeOf(err.shape).toMatchTypeOf<DefaultErrorShape>();
   });
 });
 
@@ -88,11 +91,11 @@ describe('with custom error formatter', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
-    expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
-    expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
-    expectTypeOf(err.data!.foo).toEqualTypeOf<'bar'>();
+    expectTypeOf(err.data).toMatchTypeOf<DefaultErrorData>();
+    expectTypeOf(err.shape).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data.foo).toEqualTypeOf<'bar'>();
 
-    err.data!.stack = '[redacted]';
+    err.data.stack = '[redacted]';
 
     expect(err.data).toMatchInlineSnapshot(`
       Object {
@@ -179,16 +182,16 @@ describe('custom error sub-classes', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
-    expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
-    expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
-    expectTypeOf(err.data!.reason).toEqualTypeOf<
+    expectTypeOf(err.data).toMatchTypeOf<DefaultErrorData>();
+    expectTypeOf(err.shape).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data.reason).toEqualTypeOf<
       'BAD_PHONE' | 'INVALID_AREA_CODE' | null
     >();
 
-    err.data!.stack = '[redacted]';
+    err.data.stack = '[redacted]';
 
-    expect(err.shape!.data.httpStatus).toBe(401);
-    expect(err.shape!.data.reason).toBe('BAD_PHONE');
+    expect(err.shape.data.httpStatus).toBe(401);
+    expect(err.shape.data.reason).toBe('BAD_PHONE');
 
     expect(err.shape).toMatchInlineSnapshot(`
       Object {

@@ -1,5 +1,9 @@
-import { inferProcedureOutput, inferRouterOutputs, initTRPC } from '@trpc/core';
 import { inferTransformedProcedureOutput } from '@trpc/core/shared';
+import {
+  inferProcedureOutput,
+  inferRouterOutputs,
+  initTRPC,
+} from '@trpc/server';
 import SuperJSON from 'superjson';
 import { z } from 'zod';
 
