@@ -11,6 +11,8 @@ import {
   nodeHTTPRequestHandler,
 } from './node-http';
 
+export * from '../http';
+
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
