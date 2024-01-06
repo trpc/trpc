@@ -33,3 +33,8 @@ export type {
    */
   AnyProcedure,
 } from '@trpc/core';
+
+/**
+ * @deprecated don't use internals from `@trpc/core
+ */
+export * as __unstable_do_not_import from '@trpc/core';

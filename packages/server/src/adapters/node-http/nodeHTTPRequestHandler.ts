@@ -7,7 +7,7 @@ import {
   ResolveHTTPRequestOptionsContextFn,
   resolveHTTPResponse,
   ResponseChunk,
-} from '@trpc/core/http';
+} from '../../http';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { NodeHTTPContentTypeHandler } from './internals/contentType';
 import {
