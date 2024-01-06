@@ -28,4 +28,8 @@ module.exports = getConfig({
   },
   /** We run eslint as a separate task in CI */
   eslint: { ignoreDuringBuilds: !!process.env.CI },
+  /** We run typechecking as a separate task in CI */
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 });

@@ -4,8 +4,10 @@ export type {
   ProcedureRouterRecord,
   CreateRouterInner,
   Router,
+  RouterCaller,
+  AnyRouterDef,
 } from './router';
-export { callProcedure } from './router';
+export { callProcedure, createCallerFactory } from './router';
 export type {
   Procedure,
   AnyProcedure,
