@@ -6,6 +6,7 @@
       "outputs": [
         "package.json",
         "adapters/**",
+        "http/**",
         "observable/**",
         "rpc/**",
         "shared/**"

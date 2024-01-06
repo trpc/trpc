@@ -94,6 +94,11 @@
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
     },
+    "./http": {
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.js",
+      "default": "./dist/http.js"
+    },
     "./observable": {
       "import": "./dist/observable.mjs",
       "require": "./dist/observable.js",
@@ -116,6 +121,7 @@
     "README.md",
     "package.json",
     "adapters",
+    "http",
     "observable",
     "rpc",
     "shared",

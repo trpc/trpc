@@ -12,6 +12,7 @@ export const input = [
   'src/adapters/node-http/index.ts',
   'src/adapters/standalone.ts',
   'src/adapters/ws.ts',
+  'src/http.ts',
   'src/index.ts',
   'src/observable.ts',
   'src/rpc.ts',
