@@ -25,17 +25,18 @@ import React, { ReactNode } from 'react';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
+beforeAll(async () => {
+  const { FormData, File, Blob } = await import('node-fetch');
+  globalThis.FormData = FormData;
+  globalThis.File = File;
+  globalThis.Blob = Blob;
+});
+
 function formDataOrObject<T extends z.ZodRawShape>(input: T) {
   return zfd.formData(input).or(z.object(input));
 }
 
 const ctx = konn()
-  .beforeAll(async () => {
-    const { FormData, File, Blob } = await import('node-fetch');
-    globalThis.FormData = FormData;
-    globalThis.File = File;
-    globalThis.Blob = Blob;
-  })
   .beforeEach(() => {
     const t = initTRPC.context<CreateHTTPContextOptions>().create();
 
