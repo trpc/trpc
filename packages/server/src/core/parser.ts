@@ -48,17 +48,15 @@ export type ParserCallback<TParam, TContext, TCallbackResult> = (
   } & TParam,
 ) => TCallbackResult;
 
-export type InputParserCallback<TContext, TCallbackResult> = ParserCallback<
-  { input: unknown },
-  TContext,
-  TCallbackResult
->;
+export type InputParserCallback<
+  TContext = any,
+  TCallbackResult = any,
+> = ParserCallback<{ input: unknown }, TContext, TCallbackResult>;
 
-export type OutputParserCallback<TContext, TCallbackResult> = ParserCallback<
-  { output: unknown },
-  TContext,
-  TCallbackResult
->;
+export type OutputParserCallback<
+  TContext = any,
+  TCallbackResult = any,
+> = ParserCallback<{ output: unknown }, TContext, TCallbackResult>;
 
 export type inferParser<
   TParser extends Parser | ParserCallback<any, any, any>,

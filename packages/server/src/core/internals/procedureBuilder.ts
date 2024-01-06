@@ -39,8 +39,8 @@ type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
 
 export type ProcedureBuilderDef<TMeta> = {
   procedure: true;
-  inputs: (Parser | InputParserCallback<any, any>)[];
-  output?: Parser | OutputParserCallback<any, any>;
+  inputs: (Parser | InputParserCallback)[];
+  output?: Parser | OutputParserCallback;
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];

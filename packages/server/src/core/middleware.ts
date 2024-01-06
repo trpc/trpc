@@ -178,7 +178,7 @@ function isPlainObject(obj: unknown) {
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware(
-  parserOrCb: Parser | InputParserCallback<any, any>,
+  parserOrCb: Parser | InputParserCallback,
 ) {
   const inputMiddleware: AnyMiddlewareFunction =
     async function inputValidatorMiddleware(opts) {
@@ -226,7 +226,7 @@ export function createInputMiddleware(
  * @internal
  */
 export function createOutputMiddleware(
-  parserOrCb: Parser | OutputParserCallback<any, any>,
+  parserOrCb: Parser | OutputParserCallback,
 ) {
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware(opts) {
