@@ -32,8 +32,6 @@ type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
   : Simplify<TType & TWith>;
 
-type ErrorMessage<TMessage extends string> = TMessage;
-
 export type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: (Parser | ParserCallback<any, any>)[];
