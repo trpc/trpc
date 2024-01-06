@@ -1,4 +1,4 @@
-import { getJsonContentTypeInputs } from '@trpc/core/http';
+import { getJsonContentTypeInputs } from '../../../../http';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { getPostBody } from './getPostBody';
 

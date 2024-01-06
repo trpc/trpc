@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/core';
-import { BodyResult } from '@trpc/core/http';
+import { BodyResult } from '../../../../http';
 import { NodeHTTPRequest } from '../../types';
 
 export async function getPostBody(opts: {

@@ -1,27 +1,17 @@
 import { AnyRouter, TRPCError } from '@trpc/core';
 import { getErrorShape } from '@trpc/core/shared';
-import type {
-  NextApiHandler,
-  NextApiRequest,
-  NextApiResponse,
-} from 'next/types';
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
   nodeHTTPRequestHandler,
 } from './node-http';
 
-export * from '../http';
-
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
-export type {
-  NextApiHandler,
-  NextApiRequest,
-  NextApiResponse,
-} from 'next/types';
+export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,

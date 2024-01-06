@@ -6,7 +6,7 @@ import {
   ResolveHTTPRequestOptionsContextFn,
   resolveHTTPResponse,
   ResponseChunk,
-} from '@trpc/core/http';
+} from '../../http';
 import { FetchHandlerOptions } from './types';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
