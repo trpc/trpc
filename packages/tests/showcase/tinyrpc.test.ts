@@ -1,7 +1,7 @@
 /**
  * @see https://trpc.io/blog/tinyrpc-client
  */
-import '../server/___packages';
+
 import '@trpc/server';
 import { AddressInfo } from 'net';
 import { initTRPC, TRPCError } from '@trpc/core';

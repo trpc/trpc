@@ -8,10 +8,10 @@ import {
   HTTPHeaders,
   TRPCClientError,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC, Maybe, TRPCError } from '@trpc/core';
+import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
-import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { z } from 'zod';
 
 test('smoke test', async () => {

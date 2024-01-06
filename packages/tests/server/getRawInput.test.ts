@@ -1,6 +1,5 @@
-import { initTRPC, TRPCError } from '@trpc/core';
-import './___packages';
 import { waitError } from './___testHelpers';
+import { initTRPC, TRPCError } from '@trpc/core';
 
 test('middleware swap', async () => {
   const t = initTRPC.create();

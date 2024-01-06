@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { Dict, initTRPC } from '@trpc/core';
 
 describe('pass headers', () => {

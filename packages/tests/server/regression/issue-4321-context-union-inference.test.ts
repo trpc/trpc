@@ -1,4 +1,3 @@
-import '../___packages';
 import { initTRPC, TRPCError } from '@trpc/core';
 
 test('context union type is inferred correctly', async () => {

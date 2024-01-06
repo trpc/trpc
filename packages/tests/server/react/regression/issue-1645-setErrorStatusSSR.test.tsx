@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from '../__testHelpers';
-import { withTRPC } from '@trpc/next/src';
+import { withTRPC } from '@trpc/next';
 import { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 

@@ -1,4 +1,3 @@
-import '../___packages';
 import { initTRPC, TRPCError } from '@trpc/core';
 
 test('middleware next()', async () => {

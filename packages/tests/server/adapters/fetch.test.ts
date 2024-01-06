@@ -1,6 +1,6 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
-import '../___packages';
+
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import {

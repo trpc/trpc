@@ -8,11 +8,11 @@ import {
   TRPCClientError,
   TRPCClientRuntime,
   unstable_httpBatchStreamLink,
-} from '@trpc/client/src';
-import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { retryLink } from '@trpc/client/src/links/internals/retryLink';
+} from '@trpc/client';
+import { createChain } from '@trpc/client/links/internals/createChain';
+import { retryLink } from '@trpc/client/links/internals/retryLink';
+import { AnyRouter, initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
-import { AnyRouter, initTRPC } from '@trpc/server/src';
 import { z } from 'zod';
 
 const mockRuntime: TRPCClientRuntime = {

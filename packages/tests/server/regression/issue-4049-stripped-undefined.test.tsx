@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { httpLink } from '@trpc/client/src';
+import { httpLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 
 describe('undefined on server response is inferred on the client', () => {

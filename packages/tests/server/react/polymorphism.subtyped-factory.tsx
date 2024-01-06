@@ -3,8 +3,8 @@
 //  which can be used with existing components, but has extra data for other use cases
 //
 import { AnyRootConfig, TRPCError } from '@trpc/core';
-import { createBuilder } from '@trpc/core/src/internals/procedureBuilder';
-import { createRouterFactory } from '@trpc/core/src/router';
+import { createBuilder } from '@trpc/core/internals/procedureBuilder';
+import { createRouterFactory } from '@trpc/core/router';
 import { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import z from 'zod';
 import { t } from './polymorphism.common';

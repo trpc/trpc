@@ -7,15 +7,15 @@ import {
   httpLink,
   TRPCClientError,
   TRPCLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import {
   getMessageFromUnknownError,
   OnErrorFunction,
   TRPCError,
 } from '@trpc/core';
+import { initTRPC } from '@trpc/server';
+import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
-import { initTRPC } from '@trpc/server/src';
-import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';

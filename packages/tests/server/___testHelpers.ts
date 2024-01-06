@@ -7,21 +7,17 @@ import {
   httpBatchLink,
   TRPCWebSocketClient,
   WebSocketClientOptions,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { OnErrorFunction } from '@trpc/core';
-import { WithTRPCConfig } from '@trpc/next/src';
-import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
+import { WithTRPCConfig } from '@trpc/next';
+import { AnyRouter as AnyNewRouter } from '@trpc/server';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,
-} from '@trpc/server/src/adapters/standalone';
-import {
-  applyWSSHandler,
-  WSSHandlerOptions,
-} from '@trpc/server/src/adapters/ws';
+} from '@trpc/server/adapters/standalone';
+import { applyWSSHandler, WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
-import './___packages';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
