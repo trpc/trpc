@@ -1,5 +1,5 @@
 import { AnyRouter, ProcedureType } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/observable';
 import { dataLoader } from '../../internals/dataLoader';
 import { transformResult } from '../../shared/transformResult';
 import { TRPCClientError } from '../../TRPCClientError';

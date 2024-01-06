@@ -4,14 +4,14 @@ import {
   MaybePromise,
   ProcedureType,
 } from '@trpc/core';
-import { observable, Observer, UnsubscribeFn } from '@trpc/core/observable';
+import { observable, Observer, UnsubscribeFn } from '@trpc/server/observable';
 import {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
   TRPCResponseMessage,
-} from '@trpc/core/rpc';
+} from '@trpc/server/rpc';
 import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import { Operation, TRPCLink } from './types';

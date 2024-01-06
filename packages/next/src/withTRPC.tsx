@@ -16,7 +16,6 @@ import {
 } from '@trpc/client';
 import type { AnyRouter } from '@trpc/core';
 import { Dict, Maybe } from '@trpc/core';
-import type { ResponseMeta } from '@trpc/core/http';
 import { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import {
   createRootHooks,
@@ -24,6 +23,7 @@ import {
   CreateTRPCReactQueryClientConfig,
   getQueryClient,
 } from '@trpc/react-query/shared';
+import type { ResponseMeta } from '@trpc/server/http';
 import {
   AppContextType,
   AppPropsType,

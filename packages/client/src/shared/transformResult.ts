@@ -3,7 +3,7 @@ import type {
   TRPCResponse,
   TRPCResponseMessage,
   TRPCResultMessage,
-} from '@trpc/core/rpc';
+} from '@trpc/server/rpc';
 import { isObject } from '../internals/isObject';
 import type { TRPCClientRuntime } from '../links';
 

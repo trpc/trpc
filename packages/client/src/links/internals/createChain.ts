@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/observable';
 import { Operation, OperationLink, OperationResultObservable } from '../types';
 
 /** @internal */
