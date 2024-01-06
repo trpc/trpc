@@ -1,9 +1,11 @@
+import * as trpcNext from '@trpc/server/adapters/next';
+
 export interface Session {
   id: string;
   firstName: string;
   lastName: string;
 }
-interface CreateContextOptions  {
+interface CreateContextOptions extends Partial<trpcNext.CreateNextContextOptions> {
   session: Session | null
 }
 
@@ -24,9 +26,7 @@ export type Context = Awaited<ReturnType<typeof createContextInner>>;
  * @link https://trpc.io/docs/context
  */
 export async function createContext(
-  opts: {
-    // ...
-  }
+  opts: trpcNext.CreateNextContextOptions,
 ): Promise<Context> {
   return await createContextInner({
     ...opts,
