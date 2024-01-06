@@ -1,4 +1,3 @@
-import './___packages';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 
 global.fetch = vi.fn() as any;

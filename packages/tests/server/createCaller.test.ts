@@ -1,7 +1,6 @@
-import { z } from 'zod';
-import './___packages';
 import { ignoreErrors } from './___testHelpers';
 import { initTRPC } from '@trpc/server/core';
+import { z } from 'zod';
 
 describe('with context', () => {
   const t = initTRPC.context<{ foo: 'foo' }>().create();

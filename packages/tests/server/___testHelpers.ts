@@ -18,7 +18,6 @@ import { applyWSSHandler, WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { OnErrorFunction } from '@trpc/server/internals/types';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
-import './___packages';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
