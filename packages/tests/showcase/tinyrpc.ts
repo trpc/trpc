@@ -6,13 +6,13 @@ import {
   AnyQueryProcedure,
   ProcedureRouterRecord,
 } from '@trpc/core';
-import type { TRPCResponse } from '@trpc/core/rpc';
 import type {
   AnyProcedure,
   AnyRouter,
   inferProcedureInput,
   inferProcedureOutput,
 } from '@trpc/server';
+import type { TRPCResponse } from '@trpc/server/rpc';
 
 interface ProxyCallbackOptions {
   path: string[];
