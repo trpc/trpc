@@ -55,6 +55,7 @@ export async function generateEntrypoints(inputs: string[]) {
    */
   inputs
     .filter((i) => i !== 'src/index.ts') // index included by default above
+    .sort()
     .forEach((i) => {
       // first, exclude 'src' part of the path
       const parts = i.split('/').slice(1);

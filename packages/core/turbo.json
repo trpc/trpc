@@ -6,9 +6,9 @@
       "outputs": [
         "package.json",
         "http/**",
-        "rpc/**",
-        "observable/**",
         "internals/**",
+        "observable/**",
+        "rpc/**",
         "shared/**"
       ]
     }
