@@ -8,7 +8,6 @@ import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/
 import { roomRouter } from '~/server/routers/room';
 import { createContext, router } from '~/server/trpc';
 import { NextApiRequest, NextApiResponse } from 'next';
-import * as undici from 'undici';
 
 const appRouter = router({
   room: roomRouter,
