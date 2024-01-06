@@ -1,11 +1,7 @@
 import http from 'http';
 import { Context, router } from './__router';
-import {
-  createTRPCClient,
-  httpBatchLink,
-  TRPCClientError,
-} from '@trpc/client/src';
-import * as trpcExpress from '@trpc/server/src/adapters/express';
+import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import fetch from 'node-fetch';
 

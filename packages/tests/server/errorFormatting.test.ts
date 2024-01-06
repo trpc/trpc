@@ -6,7 +6,7 @@ import {
   initTRPC,
   TRPCError,
 } from '@trpc/server';
-import { DefaultErrorData } from '@trpc/server/src/error/formatter';
+import { DefaultErrorData } from '@trpc/server/error/formatter';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 

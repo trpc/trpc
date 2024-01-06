@@ -9,14 +9,14 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import {
   CreateFastifyContextOptions,
   fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
-} from '@trpc/server/src/adapters/fastify';
-import { observable } from '@trpc/server/src/observable';
+} from '@trpc/server/adapters/fastify';
+import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';

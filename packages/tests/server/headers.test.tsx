@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { Dict } from '@trpc/server/unstableInternalsExport';
 

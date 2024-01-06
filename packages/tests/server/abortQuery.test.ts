@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
-import { initTRPC } from '@trpc/server/src/core';
+import { initTRPC } from '@trpc/server/core';
 
 const t = initTRPC.create();
 
