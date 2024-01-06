@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { TRPCLink, unstable_httpBatchStreamLink } from '@trpc/client';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/observable';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { konn } from 'konn';
 import superjson from 'superjson';

@@ -9,10 +9,10 @@ import {
   TRPCWebSocketClient,
   wsLink,
 } from '@trpc/client';
-import { Observable, observable, Observer } from '@trpc/core/observable';
 import { createTRPCReact } from '@trpc/react-query';
 import { OutputWithCursor } from '@trpc/react-query/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { Observable, observable, Observer } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import React, { ReactNode } from 'react';
 import { z, ZodError } from 'zod';
