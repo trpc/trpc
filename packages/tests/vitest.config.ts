@@ -1,5 +1,32 @@
-import { join } from 'path';
+import fs from 'fs';
+import path from 'path';
 import { defineConfig } from 'vitest/config';
+
+const aliases: Record<string, string> = {};
+
+for (const pkg of [
+  // 'core',
+  'server',
+  'client',
+  'react-query',
+  'next',
+].sort()) {
+  const pkgJson = path.join(__dirname, `/../${pkg}/package.json`);
+
+  const json = JSON.parse(fs.readFileSync(pkgJson, 'utf-8').toString());
+  const exports = json.exports;
+  for (const key of Object.keys(exports).sort()) {
+    if (key.includes('.json')) {
+      continue;
+    }
+    // trim first './'
+    const trimmed = key.slice(1);
+    aliases[`@trpc/${pkg}${trimmed}`] = path.join(
+      __dirname,
+      `../${pkg}/src${key.slice(1)}`,
+    );
+  }
+}
 
 export default defineConfig({
   root: '../',
@@ -20,15 +47,12 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@trpc/server/src/': join(__dirname, '../server/src/'),
-      '@trpc/client/src/': join(__dirname, '../client/src/'),
-      '@trpc/react-query/src/': join(__dirname, '../react-query/src/'),
-      '@trpc/next/src/': join(__dirname, '../next/src/'),
-      'vitest-environment-miniflare': join(
+      ...aliases,
+      'vitest-environment-miniflare': path.join(
         __dirname,
         'node_modules/vitest-environment-miniflare',
       ),
-      '@vitest/coverage-istanbul': join(
+      '@vitest/coverage-istanbul': path.join(
         __dirname,
         'node_modules/@vitest/coverage-istanbul',
       ),
