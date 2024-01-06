@@ -1,10 +1,11 @@
+import { IncomingHttpHeaders } from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 
 describe('pass headers', () => {
   type Context = {
-    headers: Record<string, string[] | string>;
+    headers: IncomingHttpHeaders;
   };
 
   const t = initTRPC.context<Context>().create();
