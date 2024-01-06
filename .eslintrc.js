@@ -80,7 +80,7 @@ const config = {
       {
         patterns: [
           {
-            group: ['@trpc/*'],
+            group: ['@trpc/*/src'],
             message: 'Remove the "`/src`" part of this import',
             allowTypeImports: false,
           },
