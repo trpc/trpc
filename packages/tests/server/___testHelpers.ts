@@ -8,8 +8,9 @@ import {
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from '@trpc/client';
+import { OnErrorFunction } from '@trpc/core';
 import { WithTRPCConfig } from '@trpc/next';
-import { AnyRouter as AnyNewRouter, OnErrorFunction } from '@trpc/server';
+import { AnyRouter as AnyNewRouter } from '@trpc/server';
 import {
   CreateHTTPHandlerOptions,
   createHTTPServer,

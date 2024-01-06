@@ -1,6 +1,5 @@
 import type { AnyRouter, inferRouterContext } from '@trpc/core';
-import { TRPCError } from '@trpc/core';
-import { OnErrorFunction } from '@trpc/core/internals';
+import { OnErrorFunction, TRPCError } from '@trpc/core';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
