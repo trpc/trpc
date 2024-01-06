@@ -1,4 +1,3 @@
-import '../___packages';
 import http from 'http';
 import { waitError } from '../___testHelpers';
 import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';

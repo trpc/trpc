@@ -10,7 +10,7 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
+import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { initTRPC } from '@trpc/server';
 import {
   experimental_createFileUploadHandler,

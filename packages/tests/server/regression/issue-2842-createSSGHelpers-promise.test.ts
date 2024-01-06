@@ -1,4 +1,3 @@
-import '../___packages';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 

@@ -1,4 +1,3 @@
-import '../___packages';
 import { initTRPC } from '@trpc/server';
 
 test('meta as interface', () => {

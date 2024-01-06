@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client/src';
-import { inferProcedureOutput, initTRPC } from '@trpc/server/src';
-import { observable, Unsubscribable } from '@trpc/server/src/observable';
+import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
+import { inferProcedureOutput, initTRPC } from '@trpc/server';
+import { observable, Unsubscribable } from '@trpc/server/observable';
 import { z } from 'zod';
 
 const t = initTRPC

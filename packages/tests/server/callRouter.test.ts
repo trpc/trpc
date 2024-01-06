@@ -1,4 +1,3 @@
-import './___packages';
 import { initTRPC } from '@trpc/server';
 
 // FIXME: should we deprecate this?

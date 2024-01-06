@@ -1,4 +1,4 @@
-import { initTRPC, TRPCError } from '@trpc/server/src';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 test('root context override on nested middlewares', () => {

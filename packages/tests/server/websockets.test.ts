@@ -8,12 +8,12 @@ import {
   wsLink,
 } from '@trpc/client';
 import { AnyRouter, initTRPC, TRPCError } from '@trpc/server';
-import { applyWSSHandler } from '@trpc/server/src/adapters/ws';
-import { observable, Observer } from '@trpc/server/src/observable';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { observable, Observer } from '@trpc/server/observable';
 import {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
-} from '@trpc/server/src/rpc';
+} from '@trpc/server/rpc';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
