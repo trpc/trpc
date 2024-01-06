@@ -9,12 +9,12 @@ import {
   TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { observable, tap } from '@trpc/core/observable';
 import { initTRPC } from '@trpc/server';
 import {
   FetchCreateContextFnOptions,
   fetchRequestHandler,
 } from '@trpc/server/adapters/fetch';
+import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';
 
