@@ -1,9 +1,9 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client';
+import { Maybe } from '@trpc/core';
+import { DefaultErrorData } from '@trpc/core/error/formatter';
 import { initTRPC } from '@trpc/server';
-import { DefaultErrorData } from '@trpc/server/error/formatter';
-import { Maybe } from '@trpc/server/unstableInternalsExport';
 import { konn } from 'konn';
 import React from 'react';
 import { z, ZodError } from 'zod';

@@ -1,5 +1,5 @@
 import { ignoreErrors } from './___testHelpers';
-import { initTRPC } from '@trpc/server/core';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 describe('with context', () => {

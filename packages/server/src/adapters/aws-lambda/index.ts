@@ -1,3 +1,4 @@
+import { AnyRouter, TRPCError } from '@trpc/core';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -5,14 +6,12 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import { TRPCError } from '../..';
-import { AnyRouter } from '../../core';
+import type { HTTPResponse } from '../../http';
 import {
   HTTPRequest,
   ResolveHTTPRequestOptionsContextFn,
   resolveHTTPResponse,
 } from '../../http';
-import type { HTTPResponse } from '../../http/internals/types';
 import {
   APIGatewayEvent,
   APIGatewayResult,

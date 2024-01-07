@@ -4,7 +4,7 @@ import {
   getUntypedClient,
   TRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/core';
 import { getClientArgs } from '../internals/getClientArgs';
 import { TRPCQueryUtils } from '../shared';
 

@@ -1,4 +1,4 @@
-import { getJsonContentTypeInputs } from '../../../../http/contentType';
+import { getJsonContentTypeInputs } from '../../../../http';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { getPostBody } from './getPostBody';
 

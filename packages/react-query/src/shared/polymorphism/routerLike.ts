@@ -4,7 +4,7 @@ import {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-} from '@trpc/server';
+} from '@trpc/core';
 import { MutationLike } from './mutationLike';
 import { QueryLike } from './queryLike';
 

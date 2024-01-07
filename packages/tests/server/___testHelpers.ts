@@ -2,12 +2,12 @@ import { IncomingMessage } from 'http';
 import { AddressInfo } from 'net';
 import {
   createTRPCClient,
-  createTRPCUntypedClient,
   createWSClient,
   httpBatchLink,
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from '@trpc/client';
+import { OnErrorFunction } from '@trpc/core/http';
 import { WithTRPCConfig } from '@trpc/next';
 import { AnyRouter as AnyNewRouter } from '@trpc/server';
 import {
@@ -15,7 +15,6 @@ import {
   createHTTPServer,
 } from '@trpc/server/adapters/standalone';
 import { applyWSSHandler, WSSHandlerOptions } from '@trpc/server/adapters/ws';
-import { OnErrorFunction } from '@trpc/server/internals/types';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 

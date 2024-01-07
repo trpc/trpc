@@ -7,12 +7,8 @@ import {
   TRPCClientError,
   wsLink,
 } from '@trpc/client';
-import {
-  CombinedDataTransformer,
-  DataTransformer,
-  initTRPC,
-  TRPCError,
-} from '@trpc/server';
+import { CombinedDataTransformer, DataTransformer } from '@trpc/core';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import superjson from 'superjson';

@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -10,7 +9,6 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { initTRPC } from '@trpc/server';
 import {
   experimental_createFileUploadHandler,

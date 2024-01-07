@@ -1,5 +1,6 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
+import { AnyRouter, createFlatProxy, ProtectedIntersection } from '@trpc/core';
 import {
   createReactDecoration,
   createReactQueryUtils,
@@ -9,9 +10,6 @@ import {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
 } from '@trpc/react-query/shared';
-import { AnyRouter } from '@trpc/server';
-import { createFlatProxy } from '@trpc/server/shared';
-import { ProtectedIntersection } from '@trpc/server/unstableInternalsExport';
 import { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
 import { withTRPC, WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';

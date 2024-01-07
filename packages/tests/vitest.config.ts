@@ -5,7 +5,8 @@ import { defineConfig } from 'vitest/config';
 const aliases: Record<string, string> = {};
 
 for (const pkg of [
-  // 'core',
+  //
+  'core',
   'server',
   'client',
   'react-query',

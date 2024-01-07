@@ -1,5 +1,5 @@
-import { ProcedureType } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+import { ProcedureType } from '@trpc/core';
+import { TRPCResponse } from '@trpc/core/rpc';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
 import {
@@ -85,11 +85,8 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     path: string;
   };
 
-export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-export type GetBody = (
-  opts: HTTPBaseRequestOptions,
-) => RequestInitEsque['body'];
-
+type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;

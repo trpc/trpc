@@ -7,11 +7,9 @@
         "package.json",
         "adapters/**",
         "http/**",
-        "rpc/**",
         "observable/**",
-        "subscription/**",
-        "shared/**",
-        "unstableInternalsExport/**"
+        "rpc/**",
+        "shared/**"
       ]
     }
   }

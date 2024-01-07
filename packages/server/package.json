@@ -59,25 +59,30 @@
       "require": "./dist/adapters/fastify/index.js",
       "default": "./dist/adapters/fastify/index.js"
     },
+    "./adapters/fetch": {
+      "import": "./dist/adapters/fetch/index.mjs",
+      "require": "./dist/adapters/fetch/index.js",
+      "default": "./dist/adapters/fetch/index.js"
+    },
     "./adapters/next": {
       "import": "./dist/adapters/next.mjs",
       "require": "./dist/adapters/next.js",
       "default": "./dist/adapters/next.js"
     },
-    "./adapters/node-http": {
-      "import": "./dist/adapters/node-http/index.mjs",
-      "require": "./dist/adapters/node-http/index.js",
-      "default": "./dist/adapters/node-http/index.js"
+    "./adapters/node-http/content-type/form-data": {
+      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
+      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
+      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
     },
     "./adapters/node-http/content-type/json": {
       "import": "./dist/adapters/node-http/content-type/json/index.mjs",
       "require": "./dist/adapters/node-http/content-type/json/index.js",
       "default": "./dist/adapters/node-http/content-type/json/index.js"
     },
-    "./adapters/node-http/content-type/form-data": {
-      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
-      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
-      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
+    "./adapters/node-http": {
+      "import": "./dist/adapters/node-http/index.mjs",
+      "require": "./dist/adapters/node-http/index.js",
+      "default": "./dist/adapters/node-http/index.js"
     },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
@@ -89,40 +94,25 @@
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
     },
-    "./adapters/fetch": {
-      "import": "./dist/adapters/fetch/index.mjs",
-      "require": "./dist/adapters/fetch/index.js",
-      "default": "./dist/adapters/fetch/index.js"
-    },
     "./http": {
-      "import": "./dist/http/index.mjs",
-      "require": "./dist/http/index.js",
-      "default": "./dist/http/index.js"
-    },
-    "./rpc": {
-      "import": "./dist/rpc/index.mjs",
-      "require": "./dist/rpc/index.js",
-      "default": "./dist/rpc/index.js"
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.js",
+      "default": "./dist/http.js"
     },
     "./observable": {
-      "import": "./dist/observable/index.mjs",
-      "require": "./dist/observable/index.js",
-      "default": "./dist/observable/index.js"
+      "import": "./dist/observable.mjs",
+      "require": "./dist/observable.js",
+      "default": "./dist/observable.js"
     },
-    "./subscription": {
-      "import": "./dist/subscription.mjs",
-      "require": "./dist/subscription.js",
-      "default": "./dist/subscription.js"
+    "./rpc": {
+      "import": "./dist/rpc.mjs",
+      "require": "./dist/rpc.js",
+      "default": "./dist/rpc.js"
     },
     "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
-    },
-    "./unstableInternalsExport": {
-      "import": "./dist/unstableInternalsExport.mjs",
-      "require": "./dist/unstableInternalsExport.js",
-      "default": "./dist/unstableInternalsExport.js"
+      "import": "./dist/shared.mjs",
+      "require": "./dist/shared.js",
+      "default": "./dist/shared.js"
     }
   },
   "files": [
@@ -132,15 +122,16 @@
     "package.json",
     "adapters",
     "http",
-    "rpc",
     "observable",
-    "subscription",
+    "rpc",
     "shared",
-    "unstableInternalsExport",
     "!**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@trpc/core": "10.45.0"
   },
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",

@@ -8,7 +8,7 @@ import {
   AnySubscriptionProcedure,
   ProcedureArgs,
   ProcedureRouterRecord,
-} from '@trpc/server';
+} from '@trpc/core';
 
 export type DecorateProcedureServer<
   TConfig extends AnyRootConfig,

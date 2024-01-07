@@ -1,15 +1,5 @@
 import { httpLinkFactory } from './httpLink';
-import { GetBody, httpRequest, Requester } from './internals/httpUtils';
-
-const getBody: GetBody = (opts) => {
-  if (!('input' in opts)) {
-    return undefined;
-  }
-  if (!(opts.input instanceof FormData)) {
-    throw new Error('Input is not FormData');
-  }
-  return opts.input;
-};
+import { httpRequest, Requester } from './internals/httpUtils';
 
 const formDataRequester: Requester = (opts) => {
   if (opts.type !== 'mutation') {
@@ -21,7 +11,15 @@ const formDataRequester: Requester = (opts) => {
     getUrl() {
       return `${opts.url}/${opts.path}`;
     },
-    getBody,
+    getBody(opts) {
+      if (!('input' in opts)) {
+        return undefined;
+      }
+      if (!(opts.input instanceof FormData)) {
+        throw new Error('Input is not FormData');
+      }
+      return opts.input;
+    },
   });
 };
 

@@ -5,7 +5,7 @@ import {
   HTTPLinkOptions,
   TRPCLink,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { AnyRouter } from '@trpc/core';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {

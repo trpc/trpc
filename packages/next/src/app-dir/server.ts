@@ -8,17 +8,16 @@ import {
   AnyRootConfig,
   AnyRouter,
   CombinedDataTransformer,
-  getTRPCErrorFromUnknown,
-  inferProcedureInput,
-  TRPCError,
-} from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
-import {
   createRecursiveProxy,
   getErrorShape,
+  getTRPCErrorFromUnknown,
+  inferProcedureInput,
+  MaybePromise,
+  Simplify,
   transformTRPCResponse,
-} from '@trpc/server/shared';
-import { MaybePromise, Simplify } from '@trpc/server/unstableInternalsExport';
+  TRPCError,
+} from '@trpc/core';
+import { TRPCResponse } from '@trpc/core/rpc';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';

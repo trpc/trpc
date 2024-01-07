@@ -11,7 +11,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createTRPCUntypedClient, TRPCClientErrorLike } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter } from '@trpc/core';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SSRState,

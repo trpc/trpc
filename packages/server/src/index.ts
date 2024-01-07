@@ -1,18 +1,34 @@
-// FIXME: this file should only export
-// - `initTRPC`
-// - `TRPCError`
-// - (maybe something else?)
-
-export * from './transformer';
-export * from './error/TRPCError';
-export * from './core';
-export { type DefaultErrorShape } from './error/formatter';
-export type { RootConfig, AnyRootConfig } from './core/internals/config';
+export {
+  TRPCError,
+  /**
+   * @deprecated use `experimental_trpcMiddleware` instead
+   */
+  experimental_standaloneMiddleware,
+  experimental_standaloneMiddleware as experimental_trpcMiddleware,
+  initTRPC,
+  type inferProcedureInput,
+  type inferProcedureOutput,
+  type inferRouterError,
+  type inferRouterInputs,
+  type inferRouterOutputs,
+  type AnyProcedure as AnyTRPCProcedure,
+  type AnyRouter as AnyTRPCRouter,
+} from './unstableDoNotImportThis';
 
 export type {
   /**
-   * @deprecated
-   * Use `Awaited<ReturnType<T>>` instead
+   * @deprecated use `AnyTRPCProcedure` instead
    */
-  inferAsyncReturnType,
-} from './types';
+  AnyProcedure,
+  /**
+   * @deprecated use `AnyTRPCRouter` instead
+   */
+  AnyRouter,
+} from '@trpc/core';
+
+/**
+ * @deprecated
+ * Use `Awaited<ReturnType<typeof myFunction>>` instead
+ */
+export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
+  Awaited<ReturnType<TFunction>>;

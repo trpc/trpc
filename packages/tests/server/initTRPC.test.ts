@@ -1,8 +1,5 @@
-import {
-  DataTransformerOptions,
-  DefaultDataTransformer,
-  initTRPC,
-} from '@trpc/server';
+import { DataTransformerOptions, DefaultDataTransformer } from '@trpc/core';
+import { initTRPC } from '@trpc/server';
 
 test('default transformer', () => {
   const t = initTRPC

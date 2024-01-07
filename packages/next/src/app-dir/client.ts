@@ -3,8 +3,7 @@ import {
   CreateTRPCClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
+import { AnyRouter, createRecursiveProxy } from '@trpc/core';
 import { CreateTRPCNextAppRouterOptions } from './shared';
 
 export {

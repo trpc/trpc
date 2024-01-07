@@ -5,7 +5,7 @@ export interface Session {
   firstName: string;
   lastName: string;
 }
-interface CreateContextOptions extends Partial<trpcNext.CreateNextContextOptions> {
+export interface CreateContextOptions extends Partial<trpcNext.CreateNextContextOptions> {
   session: Session | null
 }
 
