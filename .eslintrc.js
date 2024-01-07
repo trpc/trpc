@@ -81,7 +81,13 @@ const config = {
         patterns: [
           {
             group: ['@trpc/*/src'],
-            message: 'Remove the "`/src`" part of this import',
+            message: 'Remove the "/src" part of this import',
+            allowTypeImports: false,
+          },
+          {
+            group: ['_export'],
+            message:
+              'Do not import from "_export"-files, they are only for package.json entrypoints',
             allowTypeImports: false,
           },
         ],

@@ -4,7 +4,7 @@ import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
   nodeHTTPRequestHandler,
-} from './node-http';
+} from './node-http/_export';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,

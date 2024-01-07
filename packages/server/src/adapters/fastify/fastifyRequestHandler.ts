@@ -10,7 +10,7 @@ import {
   resolveHTTPResponse,
   ResponseChunk,
 } from '../../http';
-import { NodeHTTPCreateContextOption } from '../node-http';
+import { NodeHTTPCreateContextOption } from '../node-http/types';
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,

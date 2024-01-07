@@ -69,6 +69,11 @@
       "require": "./dist/adapters/next.js",
       "default": "./dist/adapters/next.js"
     },
+    "./adapters/node-http": {
+      "import": "./dist/adapters/node-http/_export.mjs",
+      "require": "./dist/adapters/node-http/_export.js",
+      "default": "./dist/adapters/node-http/_export.js"
+    },
     "./adapters/node-http/content-type/form-data": {
       "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
       "require": "./dist/adapters/node-http/content-type/form-data/index.js",
@@ -78,11 +83,6 @@
       "import": "./dist/adapters/node-http/content-type/json/index.mjs",
       "require": "./dist/adapters/node-http/content-type/json/index.js",
       "default": "./dist/adapters/node-http/content-type/json/index.js"
-    },
-    "./adapters/node-http": {
-      "import": "./dist/adapters/node-http/index.mjs",
-      "require": "./dist/adapters/node-http/index.js",
-      "default": "./dist/adapters/node-http/index.js"
     },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",

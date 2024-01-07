@@ -79,19 +79,28 @@ export async function generateEntrypoints(rawInputs: string[]) {
    *  src/adapters/express.ts -> exports['adapters/express'] = { import: './dist/adapters/express.mjs', ... }
    */
   inputs
-    .filter((i) => i !== 'src/index.ts') // index included by default above
-    .sort()
-    .forEach((i) => {
+    .filter((str) => str !== 'src/index.ts') // index included by default above
+    .map((str) => {
       // first, exclude 'src' part of the path
-      const parts = i.split('/').slice(1);
+      const parts = str.split('/').slice(1);
       const pathWithoutSrc = parts.join('/');
 
       // if filename is index.ts, importPath is path until index.ts,
       // otherwise, importPath is the path without the file extension
-      const importPath =
-        parts.at(-1) === 'index.ts'
-          ? parts.slice(0, -1).join('/')
-          : pathWithoutSrc.replace(/\.ts$/, '');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const importPath = ['index.ts', '_export.ts'].includes(parts.at(-1)!)
+        ? parts.slice(0, -1).join('/')
+        : pathWithoutSrc.replace(/\.ts$/, '');
+
+      return {
+        pathWithoutSrc,
+        importPath,
+      };
+    })
+    // sort them alphabetically
+    .sort((a, b) => a.importPath.localeCompare(b.importPath))
+    .forEach((paths) => {
+      const { pathWithoutSrc, importPath } = paths;
 
       // write this entrypoint to the package.json exports field
       const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');

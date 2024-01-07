@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 import { AnyRouter } from '@trpc/core';
+import { nodeHTTPRequestHandler } from './node-http/nodeHTTPRequestHandler';
 import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
-} from './node-http';
+} from './node-http/types';
 
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;

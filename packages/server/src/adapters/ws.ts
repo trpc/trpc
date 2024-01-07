@@ -19,7 +19,7 @@ import {
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
 import { WebSocket, WebSocketServer } from 'ws';
-import { NodeHTTPCreateContextFnOptions } from './node-http';
+import { NodeHTTPCreateContextFnOptions } from './node-http/types';
 
 /**
  * @public

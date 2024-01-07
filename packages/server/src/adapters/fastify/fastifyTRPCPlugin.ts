@@ -2,7 +2,7 @@
 import { AnyRouter } from '@trpc/core';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { FastifyHandlerOptions } from '.';
-import { NodeHTTPCreateContextFnOptions } from '../node-http';
+import { NodeHTTPCreateContextFnOptions } from '../node-http/_export';
 import { applyWSSHandler, WSSHandlerOptions } from '../ws';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
