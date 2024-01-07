@@ -49,11 +49,6 @@
       "require": "./dist/http/index.js",
       "default": "./dist/http/index.js"
     },
-    "./internals": {
-      "import": "./dist/internals/index.mjs",
-      "require": "./dist/internals/index.js",
-      "default": "./dist/internals/index.js"
-    },
     "./observable": {
       "import": "./dist/observable/index.mjs",
       "require": "./dist/observable/index.js",
@@ -71,7 +66,6 @@
     "README.md",
     "package.json",
     "http",
-    "internals",
     "observable",
     "rpc",
     "!**/*.test.*"

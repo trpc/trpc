@@ -1,6 +1,6 @@
 import { AnyProcedure, ProcedureArgs } from './procedure';
 import { AnyRouter, AnyRouterDef, Router } from './router';
-import { inferTransformedProcedureOutput } from './shared';
+import { inferTransformedProcedureOutput } from './shared/jsonify';
 
 export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   infer TParams

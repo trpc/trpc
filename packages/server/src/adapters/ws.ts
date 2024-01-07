@@ -1,7 +1,6 @@
 import { IncomingMessage } from 'http';
 import {
   AnyRouter,
-  BaseHandlerOptions,
   callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
@@ -10,6 +9,7 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '@trpc/core';
+import { BaseHandlerOptions } from '@trpc/core/http';
 import { isObservable, Unsubscribable } from '@trpc/core/observable';
 import {
   JSONRPC2,

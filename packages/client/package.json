@@ -76,8 +76,10 @@
     "!**/*.test.*"
   ],
   "peerDependencies": {
-    "@trpc/core": "10.45.0",
     "@trpc/server": "10.45.0"
+  },
+  "dependencies": {
+    "@trpc/core": "10.45.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",

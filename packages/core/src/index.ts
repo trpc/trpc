@@ -45,11 +45,9 @@ export type {
   inferAsyncReturnType,
 } from './types';
 
-export { type OnErrorFunction } from './internals/types';
 export { mergeRouters } from './internals/mergeRouters';
 export * from './internals/procedureBuilder';
 export * from './internals/utils';
-export * from './internals/types';
 export * from './internals/config';
 
 export * from './procedure';

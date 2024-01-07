@@ -1,5 +1,5 @@
 import type { AnyRouter, inferRouterContext } from '@trpc/core';
-import { OnErrorFunction, TRPCError } from '@trpc/core';
+import { TRPCError } from '@trpc/core';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -8,7 +8,7 @@ import type {
   Context as APIGWContext,
 } from 'aws-lambda';
 import { TRPCRequestInfo } from '../../http';
-import type { HTTPHeaders, ResponseMetaFn } from '../../http';
+import type { HTTPHeaders, OnErrorFunction, ResponseMetaFn } from '../../http';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =

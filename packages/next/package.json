@@ -68,14 +68,15 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
-    "@trpc/core": "10.45.0",
     "@trpc/react-query": "10.45.0",
     "@trpc/server": "10.45.0",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@trpc/core": "10.45.0"
+  },
   "devDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",

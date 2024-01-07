@@ -12,7 +12,7 @@
     "test-watch": "vitest",
     "test-ci": "concurrently \"CI=true vitest --coverage\" npm:test-run:tsc",
     "test-ui": "vitest --ui",
-    "ts-watch-test": "tsc --watch"
+    "ts-watch": "tsc --watch"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
