@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     # wait for to finish before running autofix and only autofix if there are errors
     needs: [lint-packages, other-checks, lint-examples]
-    if: github.event.pull_request.base.ref == 'main' && failure()
+    if: failure() && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'next')
     steps:
       - uses: actions/checkout@v4
         with:
