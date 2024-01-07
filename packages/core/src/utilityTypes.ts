@@ -1,4 +1,8 @@
 /**
+ * Useful utility types that doesn't have anything to do with tRPC in particular
+ */
+
+/**
  * @public
  */
 export type Maybe<TType> = TType | null | undefined;
