@@ -3,7 +3,8 @@ name: Release "@tmp"-tagged packages
 on:
   push:
     branches:
-      - 'ahmed/core-package'
+      # Replace this with the branch you want to release from
+      - 'issues/5210-core-package-'
     paths:
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
