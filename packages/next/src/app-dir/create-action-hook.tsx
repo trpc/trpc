@@ -1,12 +1,13 @@
-import {
+import type {
   CreateTRPCClientOptions,
-  createTRPCUntypedClient,
-  TRPCClientError,
   TRPCLink,
-  TRPCRequestOptions,
+  TRPCRequestOptions} from '@trpc/client';
+import {
+  createTRPCUntypedClient,
+  TRPCClientError
 } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
-import {
+import type {
   AnyRouter,
   MaybePromise,
   ProcedureOptions,
@@ -14,8 +15,9 @@ import {
 } from '@trpc/core';
 import { observable } from '@trpc/core/observable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TRPCActionHandler } from './server';
-import { ActionHandlerDef, isFormData } from './shared';
+import type { TRPCActionHandler } from './server';
+import type { ActionHandlerDef} from './shared';
+import { isFormData } from './shared';
 
 type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: ProcedureOptions]

@@ -1,11 +1,13 @@
 import { initTRPC } from '@trpc/server';
+import type {
+  CreateHTTPContextOptions} from '@trpc/server/adapters/standalone';
 import {
-  CreateHTTPContextOptions,
   createHTTPServer,
 } from '@trpc/server/adapters/standalone';
+import type {
+  CreateWSSContextFnOptions} from '@trpc/server/adapters/ws';
 import {
-  applyWSSHandler,
-  CreateWSSContextFnOptions,
+  applyWSSHandler
 } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import { WebSocketServer } from 'ws';
