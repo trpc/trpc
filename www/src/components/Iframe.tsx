@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import React, { ComponentPropsWithoutRef, useState } from 'react';
+import type { ComponentPropsWithoutRef} from 'react';
+import React, { useState } from 'react';
 
 export const Iframe = (
   props: Omit<ComponentPropsWithoutRef<'iframe'>, 'className'>,
