@@ -8,7 +8,8 @@ import {
   TRPCClientError,
   TRPCLink,
 } from '@trpc/client';
-import { getMessageFromUnknownError, OnErrorFunction } from '@trpc/core';
+import { getMessageFromUnknownError } from '@trpc/core';
+import { OnErrorFunction } from '@trpc/core/http';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
