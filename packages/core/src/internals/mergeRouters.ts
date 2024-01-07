@@ -7,7 +7,7 @@ import {
   RouterDef,
 } from '../router';
 import { CombinedDataTransformer, defaultTransformer } from '../transformer';
-import { mergeWithoutOverrides } from './mergeWithoutOverrides';
+import { mergeWithoutOverrides } from '../utilityFunctions';
 
 /**
  * @internal

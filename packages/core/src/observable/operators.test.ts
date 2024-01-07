@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { map } from '.';
 import { observable } from '../observable';
+import { map, share } from './operators';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;
@@ -25,6 +25,7 @@ declare interface CustomEventEmitter<TOutput> {
 class CustomEventEmitter<TOutput>
   extends EventEmitter
   implements CustomEventEmitter<TOutput> {}
+
 test('map', () => {
   type EventShape = { num: number };
   const ee = new CustomEventEmitter<EventShape>();
@@ -88,4 +89,64 @@ test('map', () => {
   expect(ee.listeners('data')).toHaveLength(1);
   subscription.unsubscribe();
   expect(ee.listeners('data')).toHaveLength(0);
+});
+
+test('share', () => {
+  const obs = share()(
+    observable<number, Error>((observer) => {
+      observer.next(1);
+    }),
+  );
+
+  {
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
+
+    // eslint-disable-next-line no-var
+    var subscription1 = obs.subscribe({
+      next,
+      error,
+      complete,
+    });
+    expect(next.mock.calls).toHaveLength(1);
+    expect(complete.mock.calls).toHaveLength(0);
+    expect(error.mock.calls).toHaveLength(0);
+    expect(next.mock.calls[0]![0]!).toBe(1);
+  }
+
+  {
+    // subscribe again - it's shared so should not propagate any results
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
+    // eslint-disable-next-line no-var
+    var subscription2 = obs.subscribe({
+      next,
+      error,
+      complete,
+    });
+    expect(next.mock.calls).toHaveLength(0);
+    expect(complete.mock.calls).toHaveLength(0);
+    expect(error.mock.calls).toHaveLength(0);
+  }
+
+  subscription1.unsubscribe();
+  subscription2.unsubscribe();
+  // now it should be reset so we can do a new subscription
+  {
+    const next = vi.fn();
+    const error = vi.fn();
+    const complete = vi.fn();
+    const subscription3 = obs.subscribe({
+      next,
+      error,
+      complete,
+    });
+    expect(next.mock.calls).toHaveLength(1);
+    expect(complete.mock.calls).toHaveLength(0);
+    expect(error.mock.calls).toHaveLength(0);
+    expect(next.mock.calls[0]![0]!).toBe(1);
+    subscription3.unsubscribe();
+  }
 });

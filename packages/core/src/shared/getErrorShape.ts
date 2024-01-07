@@ -1,9 +1,9 @@
 import { DefaultErrorShape } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
-import { AnyRootConfig } from '../internals/config';
+import { ProcedureType } from '../procedure';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import { ProcedureType } from '../types';
+import { AnyRootConfig } from '../trpcConfig';
 
 /**
  * @internal

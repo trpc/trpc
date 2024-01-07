@@ -1,3 +1,5 @@
+import { UnaryFunction } from '../utilityTypes';
+
 export interface Unsubscribable {
   unsubscribe(): void;
 }
@@ -59,8 +61,6 @@ export interface Observer<TValue, TError> {
 export type TeardownLogic =
   // | SubscriptionLike
   Unsubscribable | UnsubscribeFn | void;
-
-export type UnaryFunction<TSource, TReturn> = (source: TSource) => TReturn;
 
 export type OperatorFunction<
   TValueBefore,

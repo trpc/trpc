@@ -5,6 +5,7 @@ import {
   createOutputMiddleware,
   MiddlewareBuilder,
   MiddlewareFunction,
+  middlewareMarker,
   MiddlewareResult,
 } from '../middleware';
 import { inferParser, Parser } from '../parser';
@@ -14,19 +15,20 @@ import {
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   MutationProcedure,
+  ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
-import { MaybePromise, ProcedureType, Simplify } from '../types';
-import { getParseFn } from './getParseFn';
-import { mergeWithoutOverrides } from './mergeWithoutOverrides';
+import { GetRawInputFn } from '../types';
+import { mergeWithoutOverrides } from '../utilityFunctions';
 import {
   DefaultValue,
-  GetRawInputFn,
-  middlewareMarker,
+  MaybePromise,
   Overwrite,
+  Simplify,
   UnsetMarker,
-} from './utils';
+} from '../utilityTypes';
+import { getParseFn } from './getParseFn';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
