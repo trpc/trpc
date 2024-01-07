@@ -2,8 +2,20 @@
  * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
  */
 
-export * from './transformer';
-export * from './error/TRPCError';
+export {
+  CombinedDataTransformer,
+  CombinedDataTransformerClient,
+  DataTransformer,
+  DataTransformerOptions,
+  DefaultDataTransformer,
+  defaultTransformer,
+  getDataTransformer,
+} from './transformer';
+export {
+  TRPCError,
+  getCauseFromUnknown,
+  getTRPCErrorFromUnknown,
+} from './error/TRPCError';
 export type {
   AnyRouter,
   ProcedureRecord,
@@ -22,6 +34,9 @@ export type {
   AnySubscriptionProcedure,
   ProcedureArgs,
   ProcedureOptions,
+  MutationProcedure,
+  QueryProcedure,
+  SubscriptionProcedure,
 } from './procedure';
 export type { inferParser } from './parser';
 export {
@@ -31,26 +46,77 @@ export {
 } from './middleware';
 export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
 export { initTRPC } from './initTRPC';
-export * from './types';
+export {
+  DeepPartial,
+  Dict,
+  DistributiveOmit,
+  Filter,
+  FilterKeys,
+  InferLast,
+  IntersectionError,
+  Maybe,
+  MaybePromise,
+  ProcedureType,
+  ProtectedIntersection,
+  Simplify,
+  Unwrap,
+  WithoutIndexSignature,
+  inferHandlerInput,
+  inferProcedureInput,
+  inferProcedureOutput,
+  inferProcedureParams,
+  inferRouterConfig,
+  inferRouterContext,
+  inferRouterDef,
+  inferRouterError,
+  inferRouterInputs,
+  inferRouterMeta,
+  inferRouterOutputs,
+  procedureTypes,
+} from './types';
 export { type DefaultErrorShape } from './error/formatter';
-export type { RootConfig, AnyRootConfig } from './internals/config';
 export * from './transformer';
 
 export { mergeRouters } from './internals/mergeRouters';
-export * from './internals/procedureBuilder';
-export * from './internals/utils';
-export * from './internals/config';
+export {
+  AnyProcedureBuilderDef,
+  ProcedureBuilder,
+  ProcedureBuilderDef,
+  ProcedureBuilderResolver,
+  ProcedureCallOptions,
+  createBuilder,
+} from './internals/procedureBuilder';
+export {
+  DefaultValue,
+  GetRawInputFn,
+  MiddlewareMarker,
+  Overwrite,
+  PickFirstDefined,
+  UnsetMarker,
+  ValidateShape,
+  isObject,
+  middlewareMarker,
+  unsetMarker,
+} from './internals/utils';
+export {
+  AnyRootConfig,
+  CreateRootConfigTypes,
+  RootConfig,
+  RootConfigTypes,
+  RuntimeConfig,
+  isServerDefault,
+} from './internals/config';
 
-export * from './procedure';
-
-export * from './types';
-export * from './shared/createProxy';
-export * from './shared/jsonify';
-export * from './shared/transformTRPCResponse';
+export { createFlatProxy, createRecursiveProxy } from './shared/createProxy';
+export {
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+} from './shared/jsonify';
+export { transformTRPCResponse } from './shared/transformTRPCResponse';
 
 // For `.d.ts` files https://github.com/trpc/trpc/issues/3943
 export type { SerializeObject, Serialize } from './shared/serialize';
 
-export * from './shared/getErrorShape';
+export { getErrorShape } from './shared/getErrorShape';
 
-export * from './shared/types';
+export { TRPCInferrable, inferConfig, inferErrorShape } from './shared/types';
