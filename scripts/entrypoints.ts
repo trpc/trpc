@@ -26,9 +26,25 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export async function generateEntrypoints(inputs: string[]) {
+const coreSnippet = `
+/**
+ * This file is here to make TypeScript happy.
+ *
+ * If you need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
+ */
+
+export * from '@trpc/core';
+export * from '@trpc/core/http';
+export * from '@trpc/core/rpc';
+`.trimStart();
+
+export async function generateEntrypoints(rawInputs: string[]) {
+  const inputs = [...rawInputs];
   // set some defaults for the package.json
+
   const pkgJsonPath = path.resolve('package.json');
+
+  const dirname = path.basename(path.dirname(pkgJsonPath));
   const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
 
   pkgJson.files = ['dist', 'src', 'README.md'];
@@ -40,6 +56,15 @@ export async function generateEntrypoints(inputs: string[]) {
       default: './dist/index.js',
     },
   };
+
+  if (dirname !== 'core') {
+    // Adds a re-export of `@trpc/core` to all packages except `core`
+    inputs.push('unstableDoNotImportThis.ts');
+    writeFileSyncRecursive(
+      path.resolve('src/unstableDoNotImportThis.ts'),
+      coreSnippet,
+    );
+  }
 
   // Added to turbo.json pipeline output to ensure cache works
   const scriptOutputs = new Set<string>();
