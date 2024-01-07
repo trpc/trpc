@@ -5,9 +5,9 @@ import type {
   RouterDef,
 } from '../core/router';
 import { createRouterFactory } from '../core/router';
+import type { CombinedDataTransformer } from '../core/transformer';
+import { defaultTransformer } from '../core/transformer';
 import { defaultFormatter } from '../error/formatter';
-import type { CombinedDataTransformer } from '../transformer';
-import { defaultTransformer } from '../transformer';
 import { mergeWithoutOverrides } from '../utilityFunctions';
 
 /**

@@ -1,8 +1,8 @@
-import type { AnyProcedure, ProcedureArgs } from './core/procedure';
-import type { AnyRootConfig } from './core/rootConfig';
-import type { AnyRouter, AnyRouterDef, Router } from './core/router';
-import type { inferObservableValue } from './observable';
-import type { Serialize } from './serialize';
+import type { inferObservableValue } from '../../observable';
+import type { Serialize } from '../serialize';
+import type { AnyProcedure, ProcedureArgs } from './procedure';
+import type { AnyRootConfig } from './rootConfig';
+import type { AnyRouter, AnyRouterDef, Router } from './router';
 import type { DefaultDataTransformer } from './transformer';
 
 export type TRPCInferrable = AnyRouter | AnyRootConfig;

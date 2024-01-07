@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { AnyRouter } from '../core/router';
+import type { CombinedDataTransformer } from '../core/transformer';
 import { TRPCError } from '../error/TRPCError';
-import type { CombinedDataTransformer } from '../transformer';
 import type { MaybePromise } from '../utilityTypes';
 import type { HTTPRequest } from './types';
 

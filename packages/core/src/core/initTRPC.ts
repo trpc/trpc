@@ -16,18 +16,18 @@ import {
 } from '../error/formatter';
 import { mergeRouters } from '../internals/mergeRouters';
 import { createBuilder } from '../internals/procedureBuilder';
-import {
-  defaultTransformer,
-  getDataTransformer,
-  type DataTransformerOptions,
-  type DefaultDataTransformer,
-} from '../transformer';
 import type {
   Overwrite,
   PickFirstDefined,
   Unwrap,
   ValidateShape,
 } from '../utilityTypes';
+import {
+  defaultTransformer,
+  getDataTransformer,
+  type DataTransformerOptions,
+  type DefaultDataTransformer,
+} from './transformer';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 

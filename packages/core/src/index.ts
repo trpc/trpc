@@ -8,13 +8,13 @@ export type {
   DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-} from './transformer';
+} from './core/transformer';
 export {
   defaultTransformer,
   getDataTransformer,
   transformResult,
   transformTRPCResponse,
-} from './transformer';
+} from './core/transformer';
 export {
   TRPCError,
   getCauseFromUnknown,
@@ -93,7 +93,7 @@ export type {
   TRPCInferrable,
   inferConfig,
   inferErrorShape,
-} from './inference';
+} from './core/inference';
 export type { DefaultErrorShape } from './error/formatter';
 
 export { mergeRouters } from './internals/mergeRouters';
