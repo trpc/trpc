@@ -85,11 +85,8 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     path: string;
   };
 
-export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-export type GetBody = (
-  opts: HTTPBaseRequestOptions,
-) => RequestInitEsque['body'];
-
+type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;
