@@ -5,7 +5,7 @@ import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import type { inferRouterContext, inferRouterError } from '../types';
+import type { inferRouterContext, inferRouterError } from '../inference';
 import type { Maybe } from '../utilityTypes';
 import type { BaseContentTypeHandler } from './contentType';
 import { getJsonContentTypeInputs } from './contentType';

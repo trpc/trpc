@@ -70,9 +70,8 @@ export type {
   ValidateShape,
   DefaultValue,
 } from './utilityTypes';
+export type { IntersectionError, ProtectedIntersection } from './types';
 export type {
-  IntersectionError,
-  ProtectedIntersection,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -84,7 +83,12 @@ export type {
   inferRouterInputs,
   inferRouterMeta,
   inferRouterOutputs,
-} from './types';
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+  TRPCInferrable,
+  inferConfig,
+  inferErrorShape,
+} from './inference';
 export type { DefaultErrorShape } from './error/formatter';
 
 export { mergeRouters } from './internals/mergeRouters';
@@ -109,19 +113,9 @@ export type {
 export { isServerDefault } from './rootConfig';
 
 export { createFlatProxy, createRecursiveProxy } from './shared/createProxy';
-export type {
-  inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
-} from './shared/jsonify';
 export { transformTRPCResponse } from './shared/transformTRPCResponse';
 
 // For `.d.ts` files https://github.com/trpc/trpc/issues/3943
 export type { SerializeObject, Serialize } from './shared/serialize';
 
 export { getErrorShape } from './shared/getErrorShape';
-
-export type {
-  TRPCInferrable,
-  inferConfig,
-  inferErrorShape,
-} from './shared/types';
