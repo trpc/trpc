@@ -1,5 +1,5 @@
-import type { ProcedureType } from '../';
 import type { CombinedDataTransformer } from '../transformer';
+import type { ProcedureType } from '../types';
 import type { TRPCClientOutgoingMessage } from './envelopes';
 
 /* istanbul ignore next -- @preserve */

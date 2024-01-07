@@ -1,15 +1,14 @@
-import {
-  AnyRouter,
-  callProcedure,
-  inferRouterContext,
-  inferRouterError,
-  ProcedureType,
-} from '../';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
+import { AnyRouter, callProcedure } from '../router';
 import { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import { Maybe } from '../types';
+import {
+  inferRouterContext,
+  inferRouterError,
+  Maybe,
+  ProcedureType,
+} from '../types';
 import {
   BaseContentTypeHandler,
   getJsonContentTypeInputs,
