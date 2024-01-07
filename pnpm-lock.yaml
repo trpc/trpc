@@ -1453,9 +1453,6 @@ importers:
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
-      '@trpc/server':
-        specifier: 10.45.0
-        version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -1520,9 +1517,6 @@ importers:
       '@trpc/react-query':
         specifier: 10.45.0
         version: link:../react-query
-      '@trpc/server':
-        specifier: 10.45.0
-        version: link:../server
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
@@ -1572,9 +1566,6 @@ importers:
       '@trpc/client':
         specifier: 10.45.0
         version: link:../client
-      '@trpc/server':
-        specifier: 10.45.0
-        version: link:../server
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
