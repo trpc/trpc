@@ -9,7 +9,7 @@ import {
   observableToPromise,
   share,
   Unsubscribable,
-} from '@trpc/server/observable';
+} from '@trpc/core/observable';
 import { createChain } from '../links/internals/createChain';
 import {
   OperationContext,

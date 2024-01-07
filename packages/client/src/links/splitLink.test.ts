@@ -1,5 +1,5 @@
 import { AnyRouter } from '@trpc/core';
-import { observable } from '@trpc/server/observable';
+import { observable } from '@trpc/core/observable';
 import { OperationLink, splitLink, TRPCLink } from '../';
 import { createChain } from '../links/internals/createChain';
 

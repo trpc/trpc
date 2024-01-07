@@ -17,7 +17,7 @@ import {
   inferTransformedSubscriptionOutput,
   IntersectionError,
 } from '@trpc/core';
-import type { Unsubscribable } from '@trpc/server/observable';
+import type { Unsubscribable } from '@trpc/core/observable';
 import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {
   TRPCSubscriptionObserver,

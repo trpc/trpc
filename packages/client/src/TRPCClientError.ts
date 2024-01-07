@@ -5,7 +5,7 @@ import {
   Maybe,
   TRPCInferrable,
 } from '@trpc/core';
-import { TRPCErrorResponse } from '@trpc/server/rpc';
+import { TRPCErrorResponse } from '@trpc/core/rpc';
 import { isObject } from './internals/isObject';
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
