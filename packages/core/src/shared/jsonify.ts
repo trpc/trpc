@@ -2,7 +2,7 @@ import { AnyProcedure } from '../';
 import { AnyRootConfig } from '../internals/config';
 import { inferObservableValue } from '../observable';
 import { DefaultDataTransformer } from '../transformer';
-import type { Serialize } from './internal/serialize';
+import type { Serialize } from './serialize';
 
 /**
  * @internal
