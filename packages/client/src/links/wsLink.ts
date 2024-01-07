@@ -12,7 +12,7 @@ import {
   TRPCRequestMessage,
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
-import { transformResult } from '../internals/transformResult';
+import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import { Operation, TRPCLink } from './types';
 
