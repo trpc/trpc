@@ -8,8 +8,7 @@
         "http/**",
         "internals/**",
         "observable/**",
-        "rpc/**",
-        "shared/**"
+        "rpc/**"
       ]
     }
   }

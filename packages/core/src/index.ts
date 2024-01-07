@@ -49,6 +49,20 @@ export { type OnErrorFunction } from './internals/types';
 export { mergeRouters } from './internals/mergeRouters';
 export * from './internals/procedureBuilder';
 export * from './internals/utils';
+export * from './internals/types';
+export * from './internals/config';
+
 export * from './procedure';
 
 export * from './types';
+export * from './shared/createProxy';
+export * from './shared/jsonify';
+export * from './shared/transformTRPCResponse';
+
+// For `.d.ts` files https://github.com/trpc/trpc/issues/3943
+export type { SerializeObject, Serialize } from './shared/internal/serialize';
+
+export * from './shared/getErrorShape';
+
+export * from './shared/types';
+export * from './shared/getCauseFromUnknown';

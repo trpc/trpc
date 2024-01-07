@@ -1,13 +1,15 @@
 import { IncomingMessage } from 'http';
 import {
   AnyRouter,
+  BaseHandlerOptions,
   callProcedure,
+  getErrorShape,
   getTRPCErrorFromUnknown,
   inferRouterContext,
   MaybePromise,
+  transformTRPCResponse,
   TRPCError,
 } from '@trpc/core';
-import { BaseHandlerOptions } from '@trpc/core/internals';
 import { isObservable, Unsubscribable } from '@trpc/core/observable';
 import {
   JSONRPC2,
@@ -16,7 +18,6 @@ import {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
-import { getErrorShape, transformTRPCResponse } from '@trpc/core/shared';
 import { WebSocket, WebSocketServer } from 'ws';
 import { NodeHTTPCreateContextFnOptions } from './node-http';
 

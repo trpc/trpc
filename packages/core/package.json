@@ -63,11 +63,6 @@
       "import": "./dist/rpc/index.mjs",
       "require": "./dist/rpc/index.js",
       "default": "./dist/rpc/index.js"
-    },
-    "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -79,7 +74,6 @@
     "internals",
     "observable",
     "rpc",
-    "shared",
     "!**/*.test.*"
   ],
   "publishConfig": {
