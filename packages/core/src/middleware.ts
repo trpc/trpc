@@ -1,7 +1,7 @@
 import { TRPCError } from './error/TRPCError';
-import { ParseFn } from './internals/getParseFn';
-import { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
-import { ProcedureType, Simplify } from './types';
+import type { ParseFn } from './internals/getParseFn';
+import type { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
+import type { ProcedureType, Simplify } from './types';
 
 /**
  * @internal

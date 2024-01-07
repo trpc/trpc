@@ -1,4 +1,4 @@
-import { WithoutIndexSignature } from '../types';
+import type { WithoutIndexSignature } from '../types';
 
 /**
  * @internal

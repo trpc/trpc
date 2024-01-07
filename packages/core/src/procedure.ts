@@ -1,5 +1,5 @@
-import { ProcedureCallOptions } from './internals/procedureBuilder';
-import { ProcedureType } from './types';
+import type { ProcedureCallOptions } from './internals/procedureBuilder';
+import type { ProcedureType } from './types';
 
 type ClientContext = Record<string, unknown>;
 

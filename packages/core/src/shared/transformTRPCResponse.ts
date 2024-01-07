@@ -1,5 +1,5 @@
-import { AnyRootConfig } from '../internals/config';
-import { TRPCResponse, TRPCResponseMessage } from '../rpc';
+import type { AnyRootConfig } from '../internals/config';
+import type { TRPCResponse, TRPCResponseMessage } from '../rpc';
 
 function transformTRPCResponseItem<
   TResponseItem extends TRPCResponse | TRPCResponseMessage,

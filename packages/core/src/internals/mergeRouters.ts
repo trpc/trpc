@@ -1,12 +1,14 @@
 import { defaultFormatter } from '../error/formatter';
-import {
+import type {
   AnyRouter,
   AnyRouterDef,
-  createRouterFactory,
   Router,
-  RouterDef,
+  RouterDef} from '../router';
+import {
+  createRouterFactory
 } from '../router';
-import { CombinedDataTransformer, defaultTransformer } from '../transformer';
+import type { CombinedDataTransformer} from '../transformer';
+import { defaultTransformer } from '../transformer';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 
 /**

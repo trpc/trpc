@@ -1,14 +1,15 @@
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import {
+import type {
   AnyMiddlewareFunction,
-  createInputMiddleware,
-  createOutputMiddleware,
   MiddlewareBuilder,
   MiddlewareFunction,
-  MiddlewareResult,
-} from '../middleware';
-import { inferParser, Parser } from '../parser';
+  MiddlewareResult} from '../middleware';
 import {
+  createInputMiddleware,
+  createOutputMiddleware
+} from '../middleware';
+import type { inferParser, Parser } from '../parser';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
@@ -17,15 +18,16 @@ import {
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
-import { MaybePromise, ProcedureType, Simplify } from '../types';
+import type { MaybePromise, ProcedureType, Simplify } from '../types';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
-import {
+import type {
   DefaultValue,
   GetRawInputFn,
-  middlewareMarker,
   Overwrite,
-  UnsetMarker,
+  UnsetMarker} from './utils';
+import {
+  middlewareMarker
 } from './utils';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType

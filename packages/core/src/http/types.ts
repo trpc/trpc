@@ -1,7 +1,7 @@
-import { TRPCError } from '../error/TRPCError';
-import { AnyRouter } from '../router';
-import { TRPCResponse } from '../rpc';
-import {
+import type { TRPCError } from '../error/TRPCError';
+import type { AnyRouter } from '../router';
+import type { TRPCResponse } from '../rpc';
+import type {
   Dict,
   inferRouterContext,
   inferRouterError,
