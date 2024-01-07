@@ -3,7 +3,7 @@ export {
   getHTTPStatusCodeFromError,
 } from './getHTTPStatusCode';
 export { resolveHTTPResponse } from './resolveHTTPResponse';
-export {
+export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
   HTTPHeaders,
@@ -17,9 +17,7 @@ export {
   ResponseMetaFn,
   TRPCRequestInfo,
 } from './types';
+
 export { getBatchStreamFormatter } from './batchStreamFormatter';
-export {
-  BaseContentTypeHandler,
-  BodyResult,
-  getJsonContentTypeInputs,
-} from './contentType';
+export type { BaseContentTypeHandler, BodyResult } from './contentType';
+export { getJsonContentTypeInputs } from './contentType';

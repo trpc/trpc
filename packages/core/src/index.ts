@@ -2,15 +2,14 @@
  * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
  */
 
-export {
+export type {
   CombinedDataTransformer,
   CombinedDataTransformerClient,
   DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-  defaultTransformer,
-  getDataTransformer,
 } from './transformer';
+export { defaultTransformer, getDataTransformer } from './transformer';
 export {
   TRPCError,
   getCauseFromUnknown,
@@ -46,7 +45,7 @@ export {
 } from './middleware';
 export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
 export { initTRPC } from './initTRPC';
-export {
+export type {
   DeepPartial,
   Dict,
   DistributiveOmit,
@@ -72,20 +71,20 @@ export {
   inferRouterInputs,
   inferRouterMeta,
   inferRouterOutputs,
-  procedureTypes,
 } from './types';
-export { type DefaultErrorShape } from './error/formatter';
+export { procedureTypes } from './types';
+export type { DefaultErrorShape } from './error/formatter';
 
 export { mergeRouters } from './internals/mergeRouters';
-export {
+export type {
   AnyProcedureBuilderDef,
   ProcedureBuilder,
   ProcedureBuilderDef,
   ProcedureBuilderResolver,
   ProcedureCallOptions,
-  createBuilder,
 } from './internals/procedureBuilder';
-export {
+export { createBuilder } from './internals/procedureBuilder';
+export type {
   DefaultValue,
   GetRawInputFn,
   MiddlewareMarker,
@@ -93,21 +92,19 @@ export {
   PickFirstDefined,
   UnsetMarker,
   ValidateShape,
-  isObject,
-  middlewareMarker,
-  unsetMarker,
 } from './internals/utils';
-export {
+export { isObject, middlewareMarker, unsetMarker } from './internals/utils';
+export type {
   AnyRootConfig,
   CreateRootConfigTypes,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-  isServerDefault,
 } from './internals/config';
+export { isServerDefault } from './internals/config';
 
 export { createFlatProxy, createRecursiveProxy } from './shared/createProxy';
-export {
+export type {
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
 } from './shared/jsonify';
@@ -118,4 +115,8 @@ export type { SerializeObject, Serialize } from './shared/serialize';
 
 export { getErrorShape } from './shared/getErrorShape';
 
-export { TRPCInferrable, inferConfig, inferErrorShape } from './shared/types';
+export type {
+  TRPCInferrable,
+  inferConfig,
+  inferErrorShape,
+} from './shared/types';

@@ -1,5 +1,6 @@
-export { inferObservableValue, isObservable, observable } from './observable';
-export {
+export { isObservable, observable } from './observable';
+export type { inferObservableValue } from './observable';
+export type {
   MonoTypeOperatorFunction,
   Observable,
   Observer,
