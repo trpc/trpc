@@ -2,11 +2,11 @@ import {
   DefaultErrorShape,
   getCauseFromUnknown,
   inferErrorShape,
+  isObject,
   Maybe,
   TRPCInferrable,
 } from '@trpc/core';
 import { TRPCErrorResponse } from '@trpc/core/rpc';
-import { isObject } from './internals/isObject';
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;

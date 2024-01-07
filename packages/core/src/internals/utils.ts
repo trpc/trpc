@@ -77,3 +77,11 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
  * Returns the raw input type of a procedure
  */
 export type GetRawInputFn = () => Promise<unknown>;
+
+/**
+ * Check that value is object
+ * @internal
+ */
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return !!value && !Array.isArray(value) && typeof value === 'object';
+}

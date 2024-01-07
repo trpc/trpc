@@ -1,10 +1,9 @@
-import type { AnyRouter, inferRouterError } from '@trpc/core';
+import { isObject, type AnyRouter, type inferRouterError } from '@trpc/core';
 import type {
   TRPCResponse,
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '@trpc/core/rpc';
-import { isObject } from '../internals/isObject';
 import type { TRPCClientRuntime } from '../links';
 
 // FIXME:

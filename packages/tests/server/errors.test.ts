@@ -8,7 +8,7 @@ import {
   TRPCClientError,
   TRPCLink,
 } from '@trpc/client';
-import { getMessageFromUnknownError } from '@trpc/core';
+import { getMessageFromUnknownError, isObject } from '@trpc/core';
 import { OnErrorFunction } from '@trpc/core/http';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -506,11 +506,6 @@ describe('links have meta data about http failures', async () => {
 
         Object.setPrototypeOf(this, new.target.prototype);
       }
-    }
-
-    function isObject(value: unknown): value is Record<string, unknown> {
-      // check that value is object
-      return !!value && !Array.isArray(value) && typeof value === 'object';
     }
 
     const customErrorLink: TRPCLink<AppRouter> = (_runtime) => (opts) =>

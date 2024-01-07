@@ -1,4 +1,4 @@
-import { isObject } from '../error/utils';
+import { isObject } from '../internals/utils';
 
 class UnknownCauseError extends Error {
   [key: string]: unknown;
