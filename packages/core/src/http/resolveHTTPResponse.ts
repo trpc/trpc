@@ -15,11 +15,13 @@ import {
   getJsonContentTypeInputs,
 } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
-import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
 import {
   HTTPBaseHandlerOptions,
+  HTTPHeaders,
   HTTPRequest,
+  HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
+  ResponseChunk,
   TRPCRequestInfo,
 } from './types';
 

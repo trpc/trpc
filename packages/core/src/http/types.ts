@@ -1,7 +1,42 @@
 import { TRPCError } from '../error/TRPCError';
 import { AnyRouter } from '../router';
-import { inferRouterContext, ProcedureType } from '../types';
-import { HTTPHeaders, ResponseMetaFn } from './internals/types';
+import { TRPCResponse } from '../rpc';
+import {
+  Dict,
+  inferRouterContext,
+  inferRouterError,
+  ProcedureType,
+} from '../types';
+
+export type HTTPHeaders = Dict<string[] | string>;
+
+export interface HTTPResponse {
+  status: number;
+  headers?: HTTPHeaders;
+  body?: string;
+}
+
+export type ResponseChunk = [procedureIndex: number, responseBody: string];
+
+/**
+ * @internal
+ */
+export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
+  data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+  ctx?: inferRouterContext<TRouter>;
+  /**
+   * The different tRPC paths requested
+   **/
+  paths?: string[];
+  type: ProcedureType | 'unknown';
+  errors: TRPCError[];
+  /**
+   * `true` if the `ResponseMeta` are being
+   * generated without knowing the response data
+   * (e.g. for streaming requests).
+   */
+  eagerGeneration?: boolean;
+}) => ResponseMeta;
 
 export interface HTTPRequest {
   method: string;
