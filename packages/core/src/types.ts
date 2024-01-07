@@ -112,12 +112,6 @@ export type InferLast<TType> = TType & {
   [KeyType in keyof TType]: TType[KeyType];
 };
 
-/**
- * @public
- */
-export type inferAsyncReturnType<TFunction extends (...args: any) => any> =
-  Awaited<ReturnType<TFunction>>;
-
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];

@@ -37,14 +37,6 @@ export { type DefaultErrorShape } from './error/formatter';
 export type { RootConfig, AnyRootConfig } from './internals/config';
 export * from './transformer';
 
-export type {
-  /**
-   * @deprecated
-   * Use `Awaited<ReturnType<T>>` instead
-   */
-  inferAsyncReturnType,
-} from './types';
-
 export { mergeRouters } from './internals/mergeRouters';
 export * from './internals/procedureBuilder';
 export * from './internals/utils';

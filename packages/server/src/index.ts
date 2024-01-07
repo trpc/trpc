@@ -17,11 +17,6 @@ export {
 
 export type {
   /**
-   * @deprecated
-   * Use `Awaited<ReturnType<T>>` instead
-   */
-  inferAsyncReturnType,
-  /**
    * @deprecated use `AnyTRPCProcedure` instead
    */
   AnyProcedure,
@@ -30,3 +25,10 @@ export type {
    */
   AnyRouter,
 } from '@trpc/core';
+
+/**
+ * @deprecated
+ * Use `Awaited<ReturnType<typeof myFunction>>` instead
+ */
+export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
+  Awaited<ReturnType<TFunction>>;
