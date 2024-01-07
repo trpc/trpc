@@ -1,5 +1,10 @@
 import type { ProcedureCallOptions } from './internals/procedureBuilder';
-import type { ProcedureType } from './types';
+
+export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
+/**
+ * @public
+ */
+export type ProcedureType = (typeof procedureTypes)[number];
 
 type ClientContext = Record<string, unknown>;
 

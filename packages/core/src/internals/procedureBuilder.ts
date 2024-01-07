@@ -5,7 +5,11 @@ import type {
   MiddlewareFunction,
   MiddlewareResult,
 } from '../middleware';
-import { createInputMiddleware, createOutputMiddleware } from '../middleware';
+import {
+  createInputMiddleware,
+  createOutputMiddleware,
+  middlewareMarker,
+} from '../middleware';
 import type { inferParser, Parser } from '../parser';
 import type {
   AnyMutationProcedure,
@@ -13,10 +17,11 @@ import type {
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   MutationProcedure,
+  ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
-import type { MaybePromise, ProcedureType, Simplify } from '../types';
+import type { MaybePromise, Simplify } from '../types';
 import { getParseFn } from './getParseFn';
 import { mergeWithoutOverrides } from './mergeWithoutOverrides';
 import type {
@@ -25,7 +30,6 @@ import type {
   Overwrite,
   UnsetMarker,
 } from './utils';
-import { middlewareMarker } from './utils';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith

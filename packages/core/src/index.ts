@@ -27,6 +27,7 @@ export type {
 export { callProcedure, createCallerFactory } from './router';
 export type {
   Procedure,
+  ProcedureType,
   AnyProcedure,
   AnyQueryProcedure,
   AnyMutationProcedure,
@@ -37,13 +38,19 @@ export type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+export { procedureTypes } from './procedure';
 export type { inferParser } from './parser';
 export {
   createInputMiddleware,
   createOutputMiddleware,
   experimental_standaloneMiddleware,
+  middlewareMarker,
 } from './middleware';
-export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
+export type {
+  MiddlewareFunction,
+  MiddlewareBuilder,
+  MiddlewareMarker,
+} from './middleware';
 export { initTRPC } from './initTRPC';
 export type {
   DeepPartial,
@@ -55,7 +62,6 @@ export type {
   IntersectionError,
   Maybe,
   MaybePromise,
-  ProcedureType,
   ProtectedIntersection,
   Simplify,
   Unwrap,
@@ -72,7 +78,6 @@ export type {
   inferRouterMeta,
   inferRouterOutputs,
 } from './types';
-export { procedureTypes } from './types';
 export type { DefaultErrorShape } from './error/formatter';
 
 export { mergeRouters } from './internals/mergeRouters';
@@ -87,13 +92,12 @@ export { createBuilder } from './internals/procedureBuilder';
 export type {
   DefaultValue,
   GetRawInputFn,
-  MiddlewareMarker,
   Overwrite,
   PickFirstDefined,
   UnsetMarker,
   ValidateShape,
 } from './internals/utils';
-export { isObject, middlewareMarker, unsetMarker } from './internals/utils';
+export { isObject, unsetMarker } from './internals/utils';
 export type {
   AnyRootConfig,
   CreateRootConfigTypes,

@@ -35,18 +35,6 @@ export type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
 /**
  * @internal
  */
-export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
-  __brand: 'middlewareMarker';
-};
-
-/**
- * @internal
- */
-export type MiddlewareMarker = typeof middlewareMarker;
-
-/**
- * @internal
- */
 export const unsetMarker = Symbol('unsetMarker');
 /**
  * @internal

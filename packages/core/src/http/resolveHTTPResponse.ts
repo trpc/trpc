@@ -1,15 +1,11 @@
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
+import type { ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
 import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import type {
-  inferRouterContext,
-  inferRouterError,
-  Maybe,
-  ProcedureType,
-} from '../types';
+import type { inferRouterContext, inferRouterError, Maybe } from '../types';
 import type { BaseContentTypeHandler } from './contentType';
 import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
