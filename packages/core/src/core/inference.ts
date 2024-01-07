@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../../observable';
+import type { inferObservableValue } from '../observable';
 import type { Serialize } from '../serialize';
 import type { AnyProcedure, ProcedureArgs } from './procedure';
 import type { AnyRootConfig } from './rootConfig';

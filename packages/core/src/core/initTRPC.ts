@@ -14,14 +14,14 @@ import {
   type ErrorFormatter,
   type ErrorFormatterShape,
 } from '../error/formatter';
-import { mergeRouters } from '../internals/mergeRouters';
-import { createBuilder } from '../internals/procedureBuilder';
 import type {
   Overwrite,
   PickFirstDefined,
   Unwrap,
   ValidateShape,
 } from '../utilityTypes';
+import { createBuilder } from './procedureBuilder';
+import { mergeRouters } from './router';
 import {
   defaultTransformer,
   getDataTransformer,

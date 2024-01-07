@@ -1,26 +1,3 @@
-import type {
-  AnyMiddlewareFunction,
-  MiddlewareBuilder,
-  MiddlewareFunction,
-  MiddlewareResult,
-} from '../core/middleware';
-import {
-  createInputMiddleware,
-  createOutputMiddleware,
-  middlewareMarker,
-} from '../core/middleware';
-import { getParseFn } from '../core/parser';
-import type { inferParser, Parser } from '../core/parser';
-import type {
-  AnyMutationProcedure,
-  AnyProcedure,
-  AnyQueryProcedure,
-  AnySubscriptionProcedure,
-  MutationProcedure,
-  ProcedureType,
-  QueryProcedure,
-  SubscriptionProcedure,
-} from '../core/procedure';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { GetRawInputFn } from '../types';
 import { mergeWithoutOverrides } from '../utilityFunctions';
@@ -31,6 +8,29 @@ import type {
   Simplify,
   UnsetMarker,
 } from '../utilityTypes';
+import type {
+  AnyMiddlewareFunction,
+  MiddlewareBuilder,
+  MiddlewareFunction,
+  MiddlewareResult,
+} from './middleware';
+import {
+  createInputMiddleware,
+  createOutputMiddleware,
+  middlewareMarker,
+} from './middleware';
+import { getParseFn } from './parser';
+import type { inferParser, Parser } from './parser';
+import type {
+  AnyMutationProcedure,
+  AnyProcedure,
+  AnyQueryProcedure,
+  AnySubscriptionProcedure,
+  MutationProcedure,
+  ProcedureType,
+  QueryProcedure,
+  SubscriptionProcedure,
+} from './procedure';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith

@@ -29,7 +29,11 @@ export type {
   RouterCaller,
   AnyRouterDef,
 } from './core/router';
-export { callProcedure, createCallerFactory } from './core/router';
+export {
+  callProcedure,
+  createCallerFactory,
+  mergeRouters,
+} from './core/router';
 export type {
   Procedure,
   ProcedureType,
@@ -96,15 +100,14 @@ export type {
 } from './core/inference';
 export type { DefaultErrorShape } from './error/formatter';
 
-export { mergeRouters } from './internals/mergeRouters';
 export type {
   AnyProcedureBuilderDef,
   ProcedureBuilder,
   ProcedureBuilderDef,
   ProcedureBuilderResolver,
   ProcedureCallOptions,
-} from './internals/procedureBuilder';
-export { createBuilder } from './internals/procedureBuilder';
+} from './core/procedureBuilder';
+export { createBuilder } from './core/procedureBuilder';
 export type { GetRawInputFn } from './types';
 export { unsetMarker } from './utilityTypes';
 export { isObject } from './utilityFunctions';
