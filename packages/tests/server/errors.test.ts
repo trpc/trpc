@@ -8,7 +8,7 @@ import {
   TRPCClientError,
   TRPCLink,
 } from '@trpc/client';
-import { getMessageFromUnknownError, isObject } from '@trpc/core';
+import { isObject } from '@trpc/core';
 import { OnErrorFunction } from '@trpc/core/http';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -16,6 +16,16 @@ import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
+
+function getMessageFromUnknownError(err: unknown, fallback: string): string {
+  if (typeof err === 'string') {
+    return err;
+  }
+  if (isObject(err) && typeof err['message'] === 'string') {
+    return err['message'];
+  }
+  return fallback;
+}
 
 test('basic', async () => {
   class MyError extends Error {

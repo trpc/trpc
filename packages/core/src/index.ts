@@ -4,7 +4,6 @@
 
 export * from './transformer';
 export * from './error/TRPCError';
-export * from './error/utils';
 export type {
   AnyRouter,
   ProcedureRecord,
