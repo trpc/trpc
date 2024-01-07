@@ -54,4 +54,3 @@ export type { SerializeObject, Serialize } from './shared/serialize';
 export * from './shared/getErrorShape';
 
 export * from './shared/types';
-export * from './shared/getCauseFromUnknown';
