@@ -1,7 +1,7 @@
+import type { ProcedureType } from '../core/procedure';
+import type { AnyRouter } from '../core/router';
 import type { TRPCError } from '../error/TRPCError';
 import type { inferRouterContext, inferRouterError } from '../inference';
-import type { ProcedureType } from '../procedure';
-import type { AnyRouter } from '../router';
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../utilityTypes';
 

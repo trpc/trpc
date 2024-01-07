@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import type { ProcedureType } from '../procedure';
+import type { ProcedureType } from '../core/procedure';
 import type { TRPC_ERROR_CODE_NUMBER } from './codes';
 
 /**

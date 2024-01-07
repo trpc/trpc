@@ -1,3 +1,13 @@
+import type { AnyRootConfig } from './core/rootConfig';
+import type { AnyRouter } from './core/router';
+import type { inferRouterError } from './inference';
+import type {
+  TRPCResponse,
+  TRPCResponseMessage,
+  TRPCResultMessage,
+} from './rpc';
+import { isObject } from './utilityFunctions';
+
 /**
  * @public
  */
@@ -82,3 +92,112 @@ export const defaultTransformer: DefaultDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
+
+function transformTRPCResponseItem<
+  TResponseItem extends TRPCResponse | TRPCResponseMessage,
+>(config: AnyRootConfig, item: TResponseItem): TResponseItem {
+  if ('error' in item) {
+    return {
+      ...item,
+      error: config.transformer.output.serialize(item.error),
+    };
+  }
+
+  if ('data' in item.result) {
+    return {
+      ...item,
+      result: {
+        ...item.result,
+        data: config.transformer.output.serialize(item.result.data),
+      },
+    };
+  }
+
+  return item;
+}
+
+/**
+ * Takes a unserialized `TRPCResponse` and serializes it with the router's transformers
+ **/
+export function transformTRPCResponse<
+  TResponse extends
+    | TRPCResponse
+    | TRPCResponse[]
+    | TRPCResponseMessage
+    | TRPCResponseMessage[],
+>(config: AnyRootConfig, itemOrItems: TResponse) {
+  return Array.isArray(itemOrItems)
+    ? itemOrItems.map((item) => transformTRPCResponseItem(config, item))
+    : transformTRPCResponseItem(config, itemOrItems);
+}
+
+// FIXME:
+// - the generics here are probably unnecessary
+// - the RPC-spec could probably be simplified to combine HTTP + WS
+/** @internal */
+function transformResultInner<TRouter extends AnyRouter, TOutput>(
+  response:
+    | TRPCResponse<TOutput, inferRouterError<TRouter>>
+    | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>,
+  transformer: DataTransformer,
+) {
+  if ('error' in response) {
+    const error = transformer.deserialize(
+      response.error,
+    ) as inferRouterError<TRouter>;
+    return {
+      ok: false,
+      error: {
+        ...response,
+        error,
+      },
+    } as const;
+  }
+
+  const result = {
+    ...response.result,
+    ...((!response.result.type || response.result.type === 'data') && {
+      type: 'data',
+      data: transformer.deserialize(response.result.data),
+    }),
+  } as TRPCResultMessage<TOutput>['result'];
+  return { ok: true, result } as const;
+}
+
+class TransformResultError extends Error {
+  constructor() {
+    super('Unable to transform response from server');
+  }
+}
+
+/**
+ * Transforms and validates that the result is a valid TRPCResponse
+ * @internal
+ */
+export function transformResult<TRouter extends AnyRouter, TOutput>(
+  response:
+    | TRPCResponse<TOutput, inferRouterError<TRouter>>
+    | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>,
+  transformer: DataTransformer,
+): ReturnType<typeof transformResultInner> {
+  let result: ReturnType<typeof transformResultInner>;
+  try {
+    // Use the data transformers on the JSON-response
+    result = transformResultInner(response, transformer);
+  } catch (err) {
+    throw new TransformResultError();
+  }
+
+  // check that output of the transformers is a valid TRPCResponse
+  if (
+    !result.ok &&
+    (!isObject(result.error.error) ||
+      typeof result.error.error['code'] !== 'number')
+  ) {
+    throw new TransformResultError();
+  }
+  if (result.ok && !isObject(result.result)) {
+    throw new TransformResultError();
+  }
+  return result;
+}

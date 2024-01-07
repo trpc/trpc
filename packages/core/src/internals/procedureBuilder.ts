@@ -1,17 +1,16 @@
-import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
-} from '../middleware';
+} from '../core/middleware';
 import {
   createInputMiddleware,
   createOutputMiddleware,
   middlewareMarker,
-} from '../middleware';
-import { getParseFn } from '../parser';
-import type { inferParser, Parser } from '../parser';
+} from '../core/middleware';
+import { getParseFn } from '../core/parser';
+import type { inferParser, Parser } from '../core/parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -21,7 +20,8 @@ import type {
   ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
-} from '../procedure';
+} from '../core/procedure';
+import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { GetRawInputFn } from '../types';
 import { mergeWithoutOverrides } from '../utilityFunctions';
 import type {

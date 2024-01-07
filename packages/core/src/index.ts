@@ -9,7 +9,12 @@ export type {
   DataTransformerOptions,
   DefaultDataTransformer,
 } from './transformer';
-export { defaultTransformer, getDataTransformer } from './transformer';
+export {
+  defaultTransformer,
+  getDataTransformer,
+  transformResult,
+  transformTRPCResponse,
+} from './transformer';
 export {
   TRPCError,
   getCauseFromUnknown,
@@ -23,8 +28,8 @@ export type {
   Router,
   RouterCaller,
   AnyRouterDef,
-} from './router';
-export { callProcedure, createCallerFactory } from './router';
+} from './core/router';
+export { callProcedure, createCallerFactory } from './core/router';
 export type {
   Procedure,
   ProcedureType,
@@ -37,21 +42,21 @@ export type {
   MutationProcedure,
   QueryProcedure,
   SubscriptionProcedure,
-} from './procedure';
-export { procedureTypes } from './procedure';
-export type { inferParser } from './parser';
+} from './core/procedure';
+export { procedureTypes } from './core/procedure';
+export type { inferParser } from './core/parser';
 export {
   createInputMiddleware,
   createOutputMiddleware,
   experimental_standaloneMiddleware,
   middlewareMarker,
-} from './middleware';
+} from './core/middleware';
 export type {
   MiddlewareFunction,
   MiddlewareBuilder,
   MiddlewareMarker,
-} from './middleware';
-export { initTRPC } from './initTRPC';
+} from './core/middleware';
+export { initTRPC } from './core/initTRPC';
 export type {
   DeepPartial,
   Dict,
@@ -109,13 +114,12 @@ export type {
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-} from './rootConfig';
-export { isServerDefault } from './rootConfig';
+} from './core/rootConfig';
+export { isServerDefault } from './core/rootConfig';
 
-export { createFlatProxy, createRecursiveProxy } from './shared/createProxy';
-export { transformTRPCResponse } from './shared/transformTRPCResponse';
+export { createFlatProxy, createRecursiveProxy } from './createProxy';
 
 // For `.d.ts` files https://github.com/trpc/trpc/issues/3943
-export type { SerializeObject, Serialize } from './shared/serialize';
+export type { SerializeObject, Serialize } from './serialize';
 
-export { getErrorShape } from './shared/getErrorShape';
+export { getErrorShape } from './error/getErrorShape';

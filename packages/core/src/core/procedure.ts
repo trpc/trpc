@@ -1,4 +1,4 @@
-import type { ProcedureCallOptions } from './internals/procedureBuilder';
+import type { ProcedureCallOptions } from '../internals/procedureBuilder';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**

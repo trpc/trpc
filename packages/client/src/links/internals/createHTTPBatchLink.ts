@@ -1,7 +1,7 @@
 import type { AnyRouter, ProcedureType } from '@trpc/core';
+import { transformResult } from '@trpc/core';
 import { observable } from '@trpc/core/observable';
 import { dataLoader } from '../../internals/dataLoader';
-import { transformResult } from '../../shared/transformResult';
 import { TRPCClientError } from '../../TRPCClientError';
 import type { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
 import type {
@@ -92,7 +92,10 @@ export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
           promise
             .then((res) => {
               _res = res;
-              const transformed = transformResult(res.json, runtime);
+              const transformed = transformResult(
+                res.json,
+                runtime.transformer,
+              );
 
               if (!transformed.ok) {
                 observer.error(

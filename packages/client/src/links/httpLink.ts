@@ -1,6 +1,6 @@
 import type { AnyRouter } from '@trpc/core';
+import { transformResult } from '@trpc/core';
 import { observable } from '@trpc/core/observable';
-import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
@@ -55,7 +55,10 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
           promise
             .then((res) => {
               meta = res.meta;
-              const transformed = transformResult(res.json, runtime);
+              const transformed = transformResult(
+                res.json,
+                runtime.transformer,
+              );
 
               if (!transformed.ok) {
                 observer.error(
