@@ -1,7 +1,8 @@
 import { AnyRouter } from '@trpc/core';
 import { observable } from '@trpc/core/observable';
-import { OperationLink, splitLink, TRPCLink } from '../';
-import { createChain } from '../links/internals/createChain';
+import { createChain } from './internals/createChain';
+import { splitLink } from './splitLink';
+import { OperationLink, TRPCLink } from './types';
 
 test('splitLink', () => {
   const wsLinkSpy = vi.fn();
