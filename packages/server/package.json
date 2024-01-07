@@ -113,11 +113,6 @@
       "import": "./dist/shared.mjs",
       "require": "./dist/shared.js",
       "default": "./dist/shared.js"
-    },
-    "./unstableDoNotImportThis": {
-      "import": "./dist/unstableDoNotImportThis.mjs",
-      "require": "./dist/unstableDoNotImportThis.js",
-      "default": "./dist/unstableDoNotImportThis.js"
     }
   },
   "files": [
@@ -130,7 +125,6 @@
     "observable",
     "rpc",
     "shared",
-    "unstableDoNotImportThis",
     "!**/*.test.*"
   ],
   "publishConfig": {

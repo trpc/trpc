@@ -9,8 +9,7 @@
         "http/**",
         "observable/**",
         "rpc/**",
-        "shared/**",
-        "unstableDoNotImportThis/**"
+        "shared/**"
       ]
     }
   }

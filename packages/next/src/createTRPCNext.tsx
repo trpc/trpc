@@ -1,7 +1,6 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
-import { AnyRouter, ProtectedIntersection } from '@trpc/core';
-import { createFlatProxy } from '@trpc/core/shared';
+import { AnyRouter, createFlatProxy, ProtectedIntersection } from '@trpc/core';
 import {
   createReactDecoration,
   createReactQueryUtils,

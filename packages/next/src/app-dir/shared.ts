@@ -8,11 +8,11 @@ import {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
+  createRecursiveProxy,
   Filter,
   inferHandlerInput,
   ProtectedIntersection,
 } from '@trpc/core';
-import { createRecursiveProxy } from '@trpc/core/shared';
 
 /**
  * @internal

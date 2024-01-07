@@ -1,5 +1,9 @@
-import { AnyProcedure, AnyRootConfig, inferProcedureInput } from '@trpc/core';
-import { inferTransformedProcedureOutput } from '@trpc/core/shared';
+import {
+  AnyProcedure,
+  AnyRootConfig,
+  inferProcedureInput,
+  inferTransformedProcedureOutput,
+} from '@trpc/core';
 import {
   InferQueryOptions,
   InferQueryResult,

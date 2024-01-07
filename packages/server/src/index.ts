@@ -11,7 +11,9 @@ export {
   type inferRouterError,
   type inferRouterInputs,
   type inferRouterOutputs,
-} from '@trpc/core';
+  AnyProcedure as AnyTRPCProcedure,
+  AnyRouter as AnyTRPCRouter,
+} from './unstableDoNotImportThis';
 
 export type {
   /**
@@ -19,9 +21,6 @@ export type {
    * Use `Awaited<ReturnType<T>>` instead
    */
   inferAsyncReturnType,
-} from '@trpc/core';
-
-export type {
   /**
    * @deprecated use `AnyTRPCProcedure` instead
    */
@@ -30,6 +29,4 @@ export type {
    * @deprecated use `AnyTRPCRouter` instead
    */
   AnyRouter,
-  AnyProcedure as AnyTRPCProcedure,
-  AnyRouter as AnyTRPCRouter,
 } from '@trpc/core';

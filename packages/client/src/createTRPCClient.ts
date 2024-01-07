@@ -10,13 +10,13 @@ import type {
   ProcedureRouterRecord,
   ProcedureType,
 } from '@trpc/core';
-import { IntersectionError } from '@trpc/core';
 import {
   createFlatProxy,
   createRecursiveProxy,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
-} from '@trpc/core/shared';
+  IntersectionError,
+} from '@trpc/core';
 import type { Unsubscribable } from '@trpc/server/observable';
 import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import {

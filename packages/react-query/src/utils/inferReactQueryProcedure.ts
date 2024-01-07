@@ -6,8 +6,8 @@ import {
   AnyRootConfig,
   AnyRouter,
   inferProcedureInput,
+  inferTransformedProcedureOutput,
 } from '@trpc/core';
-import { inferTransformedProcedureOutput } from '@trpc/core/shared';
 import {
   UseTRPCMutationOptions,
   UseTRPCMutationResult,

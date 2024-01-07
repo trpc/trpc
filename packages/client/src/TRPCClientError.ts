@@ -1,9 +1,10 @@
-import { DefaultErrorShape, Maybe } from '@trpc/core';
 import {
+  DefaultErrorShape,
   getCauseFromUnknown,
   inferErrorShape,
+  Maybe,
   TRPCInferrable,
-} from '@trpc/core/shared';
+} from '@trpc/core';
 import { TRPCErrorResponse } from '@trpc/server/rpc';
 import { isObject } from './internals/isObject';
 
