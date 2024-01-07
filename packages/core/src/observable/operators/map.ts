@@ -1,4 +1,4 @@
-import { OperatorFunction } from '../types';
+import type { OperatorFunction } from '../types';
 
 export function map<TValueBefore, TError, TValueAfter>(
   project: (value: TValueBefore, index: number) => TValueAfter,

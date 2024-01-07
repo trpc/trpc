@@ -1,4 +1,4 @@
-import { RollupOptions } from 'rollup';
+import type { RollupOptions } from 'rollup';
 import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [

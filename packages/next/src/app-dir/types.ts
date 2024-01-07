@@ -1,5 +1,5 @@
-import { Resolver } from '@trpc/client';
-import {
+import type { Resolver } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,

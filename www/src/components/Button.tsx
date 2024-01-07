@@ -1,4 +1,5 @@
-import Link, { Props as LinkProps } from '@docusaurus/Link';
+import type { Props as LinkProps } from '@docusaurus/Link';
+import Link from '@docusaurus/Link';
 import { clsx } from 'clsx';
 import React from 'react';
 

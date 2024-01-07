@@ -1,4 +1,4 @@
-import { Observable } from '../types';
+import type { Observable } from '../types';
 
 export class ObservableAbortError extends Error {
   constructor(message: string) {

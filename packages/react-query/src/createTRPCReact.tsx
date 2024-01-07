@@ -1,30 +1,28 @@
-import { TRPCClientErrorLike } from '@trpc/client';
-import {
+import type { TRPCClientErrorLike } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
-  createFlatProxy,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
   ProcedureRouterRecord,
   ProtectedIntersection,
 } from '@trpc/core';
+import { createFlatProxy } from '@trpc/core';
 import { useMemo } from 'react';
-import { TRPCUseQueries, TRPCUseSuspenseQueries } from './internals/useQueries';
-import {
-  createReactDecoration,
-  createReactQueryUtils,
-  CreateReactUtils,
-} from './shared';
-import {
-  CreateReactQueryHooks,
-  createRootHooks,
-} from './shared/hooks/createHooksInternal';
-import {
+import type {
+  TRPCUseQueries,
+  TRPCUseSuspenseQueries,
+} from './internals/useQueries';
+import type { CreateReactUtils } from './shared';
+import { createReactDecoration, createReactQueryUtils } from './shared';
+import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
+import { createRootHooks } from './shared/hooks/createHooksInternal';
+import type {
   CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
@@ -42,7 +40,7 @@ import {
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
 } from './shared/hooks/types';
-import { CreateTRPCReactOptions } from './shared/types';
+import type { CreateTRPCReactOptions } from './shared/types';
 
 /**
  * @internal

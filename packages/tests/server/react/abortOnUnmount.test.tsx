@@ -7,7 +7,8 @@ import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React, { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 
 const ctx = konn()

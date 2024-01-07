@@ -1,11 +1,9 @@
-import { AddressInfo } from 'net';
+import type { AddressInfo } from 'net';
 import { networkInterfaces } from 'os';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import {
-  CreateHTTPHandlerOptions,
-  createHTTPServer,
-} from '@trpc/server/adapters/standalone';
+import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 

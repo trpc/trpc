@@ -1,6 +1,6 @@
 import { createAppRouter } from './__testHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { DefaultErrorShape } from '@trpc/core';
+import type { DefaultErrorShape } from '@trpc/core';
 import React, { useEffect } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;

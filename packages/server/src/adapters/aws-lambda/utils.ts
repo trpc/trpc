@@ -7,8 +7,12 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import { TRPCRequestInfo } from '../../http';
-import type { HTTPHeaders, OnErrorFunction, ResponseMetaFn } from '../../http';
+import type {
+  HTTPHeaders,
+  OnErrorFunction,
+  ResponseMetaFn,
+  TRPCRequestInfo,
+} from '../../http';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =

@@ -1,4 +1,4 @@
-import {
+import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
@@ -6,7 +6,7 @@ import {
   DeepPartial,
   inferProcedureInput,
 } from '@trpc/core';
-import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
+import type { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 export type QueryType = 'any' | 'infinite' | 'query';
 

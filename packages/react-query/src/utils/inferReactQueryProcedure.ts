@@ -1,5 +1,5 @@
-import { TRPCClientErrorLike } from '@trpc/client';
-import {
+import type { TRPCClientErrorLike } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
@@ -8,7 +8,7 @@ import {
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/core';
-import {
+import type {
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
   UseTRPCQueryOptions,

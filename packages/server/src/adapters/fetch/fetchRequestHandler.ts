@@ -1,13 +1,12 @@
-import { AnyRouter } from '@trpc/core';
-import {
-  getBatchStreamFormatter,
+import type { AnyRouter } from '@trpc/core';
+import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-  resolveHTTPResponse,
   ResponseChunk,
 } from '../../http';
-import { FetchHandlerOptions } from './types';
+import { getBatchStreamFormatter, resolveHTTPResponse } from '../../http';
+import type { FetchHandlerOptions } from './types';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   FetchHandlerOptions<TRouter> & {

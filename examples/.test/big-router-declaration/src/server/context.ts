@@ -1,4 +1,4 @@
-import * as trpcNext from '@trpc/server/adapters/next';
+import type * as trpcNext from '@trpc/server/adapters/next';
 
 export interface Session {
   id: string;

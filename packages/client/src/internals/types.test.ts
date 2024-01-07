@@ -5,7 +5,7 @@ import { createTRPCClient } from '../createTRPCClient';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links/httpBatchLink';
 import { getAbortController } from './getAbortController';
-import {
+import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,

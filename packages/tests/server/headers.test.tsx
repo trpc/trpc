@@ -1,4 +1,4 @@
-import { IncomingHttpHeaders } from 'http';
+import type { IncomingHttpHeaders } from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';

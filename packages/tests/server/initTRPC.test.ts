@@ -1,4 +1,7 @@
-import { DataTransformerOptions, DefaultDataTransformer } from '@trpc/core';
+import type {
+  DataTransformerOptions,
+  DefaultDataTransformer,
+} from '@trpc/core';
 import { initTRPC } from '@trpc/server';
 
 test('default transformer', () => {

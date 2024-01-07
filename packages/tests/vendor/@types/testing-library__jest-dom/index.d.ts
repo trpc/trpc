@@ -7,7 +7,7 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // Minimum TypeScript Version: 4.3
 
-import { TestingLibraryMatchers } from './matchers';
+import type { TestingLibraryMatchers } from './matchers';
 
 declare global {
     namespace jest {
