@@ -1,5 +1,6 @@
-import { AnyRouter, createRecursiveProxy } from '@trpc/core';
-import { CreateReactQueryHooks } from '../hooks/createHooksInternal';
+import type { AnyRouter } from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core';
+import type { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 
 /**
  * Create proxy for decorating procedures

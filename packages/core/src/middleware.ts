@@ -1,6 +1,10 @@
 import { TRPCError } from './error/TRPCError';
 import type { ParseFn } from './internals/getParseFn';
-import type { GetRawInputFn, MiddlewareMarker, Overwrite } from './internals/utils';
+import type {
+  GetRawInputFn,
+  MiddlewareMarker,
+  Overwrite,
+} from './internals/utils';
 import type { ProcedureType, Simplify } from './types';
 
 /**

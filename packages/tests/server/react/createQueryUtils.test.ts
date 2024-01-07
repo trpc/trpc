@@ -1,5 +1,6 @@
 import { createQueryClient } from '../__queryClient';
-import { createAppRouter, Post } from './__testHelpers';
+import type { Post } from './__testHelpers';
+import { createAppRouter } from './__testHelpers';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 
 let factory: ReturnType<typeof createAppRouter>;

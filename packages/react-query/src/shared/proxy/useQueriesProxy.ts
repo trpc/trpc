@@ -1,21 +1,21 @@
-import { QueryOptions } from '@tanstack/react-query';
-import { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
-import {
+import type { QueryOptions } from '@tanstack/react-query';
+import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-  createRecursiveProxy,
   Filter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
-import {
+import type {
   TrpcQueryOptionsForUseQueries,
   TrpcQueryOptionsForUseSuspenseQueries,
 } from '../../internals/useQueries';
-import { TRPCUseQueryBaseOptions } from '../hooks/types';
+import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<
   TConfig extends AnyRootConfig,

@@ -6,11 +6,12 @@ import type {
   CreateReactUtils,
   DecoratedProcedureRecord,
   TRPCUseQueries,
-  TRPCUseSuspenseQueries} from '@trpc/react-query/shared';
+  TRPCUseSuspenseQueries,
+} from '@trpc/react-query/shared';
 import {
   createReactDecoration,
   createReactQueryUtils,
-  createRootHooks
+  createRootHooks,
 } from '@trpc/react-query/shared';
 import type { NextPageContext } from 'next/types';
 import { useMemo } from 'react';

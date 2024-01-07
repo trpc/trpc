@@ -1,10 +1,9 @@
-import type {
-  CreateTRPCClient} from '@trpc/client';
+import type { CreateTRPCClient } from '@trpc/client';
 import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter} from '@trpc/core';
+import type { AnyRouter } from '@trpc/core';
 import { createRecursiveProxy } from '@trpc/core';
 import type { CreateTRPCNextAppRouterOptions } from './shared';
 

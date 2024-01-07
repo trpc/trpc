@@ -6,25 +6,22 @@ import type {
   AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+  IntersectionError,
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
 } from '@trpc/core';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
-  IntersectionError,
-} from '@trpc/core';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/core';
 import type { Unsubscribable } from '@trpc/core/observable';
-import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import {
+import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
+import type {
   TRPCSubscriptionObserver,
-  TRPCUntypedClient,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
-import { TRPCClientError } from './TRPCClientError';
+import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public

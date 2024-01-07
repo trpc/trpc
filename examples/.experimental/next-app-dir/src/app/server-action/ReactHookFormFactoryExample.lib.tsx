@@ -11,9 +11,7 @@ import type { TRPCActionHandler } from '@trpc/next/app-dir/server';
 import type { ActionHandlerDef } from '@trpc/next/dist/app-dir/shared';
 import { useAction } from '~/trpc/client';
 import { useRef } from 'react';
-import type {
-  UseFormProps,
-  UseFormReturn} from 'react-hook-form';
+import type { UseFormProps, UseFormReturn } from 'react-hook-form';
 import {
   FormProvider,
   useForm,

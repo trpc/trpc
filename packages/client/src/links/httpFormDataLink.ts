@@ -1,5 +1,6 @@
 import { httpLinkFactory } from './httpLink';
-import { httpRequest, Requester } from './internals/httpUtils';
+import type { Requester } from './internals/httpUtils';
+import { httpRequest } from './internals/httpUtils';
 
 const formDataRequester: Requester = (opts) => {
   if (opts.type !== 'mutation') {

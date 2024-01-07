@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   httpBatchLink,
   httpLink,
   TRPCClientError,
-  TRPCLink,
 } from '@trpc/client';
 import { isObject } from '@trpc/core';
-import { OnErrorFunction } from '@trpc/core/http';
+import type { OnErrorFunction } from '@trpc/core/http';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import fetch from 'node-fetch';

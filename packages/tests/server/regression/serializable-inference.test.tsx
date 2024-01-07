@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { httpLink } from '@trpc/client';
-import { inferRouterOutputs, initTRPC } from '@trpc/server';
+import type { inferRouterOutputs } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import superjson from 'superjson';
 

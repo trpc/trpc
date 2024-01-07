@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { AnyRouter } from '@trpc/core';
-import {
-  getBatchStreamFormatter,
+import type { AnyRouter } from '@trpc/core';
+import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-  resolveHTTPResponse,
   ResponseChunk,
 } from '../../http';
+import { getBatchStreamFormatter, resolveHTTPResponse } from '../../http';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import { NodeHTTPContentTypeHandler } from './internals/contentType';
-import {
+import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,

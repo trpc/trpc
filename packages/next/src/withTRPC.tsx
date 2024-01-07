@@ -2,31 +2,22 @@
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
-import type {
-  DehydratedState,
-  QueryClient} from '@tanstack/react-query';
+import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import {
   dehydrate,
   HydrationBoundary,
   QueryClientProvider,
 } from '@tanstack/react-query';
-import type {
-  CreateTRPCClientOptions,
-  TRPCUntypedClient} from '@trpc/client';
-import {
-  createTRPCUntypedClient
-} from '@trpc/client';
-import type { AnyRouter } from '@trpc/core';
-import type { Dict, Maybe } from '@trpc/core';
+import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
+import { createTRPCUntypedClient } from '@trpc/client';
+import type { AnyRouter, Dict, Maybe } from '@trpc/core';
 import type { ResponseMeta } from '@trpc/core/http';
 import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import type {
   CreateTRPCReactOptions,
-  CreateTRPCReactQueryClientConfig} from '@trpc/react-query/shared';
-import {
-  createRootHooks,
-  getQueryClient,
+  CreateTRPCReactQueryClientConfig,
 } from '@trpc/react-query/shared';
+import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
 import type {
   AppContextType,
   AppPropsType,

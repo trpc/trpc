@@ -3,11 +3,9 @@ import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
   MiddlewareFunction,
-  MiddlewareResult} from '../middleware';
-import {
-  createInputMiddleware,
-  createOutputMiddleware
+  MiddlewareResult,
 } from '../middleware';
+import { createInputMiddleware, createOutputMiddleware } from '../middleware';
 import type { inferParser, Parser } from '../parser';
 import type {
   AnyMutationProcedure,
@@ -25,10 +23,9 @@ import type {
   DefaultValue,
   GetRawInputFn,
   Overwrite,
-  UnsetMarker} from './utils';
-import {
-  middlewareMarker
+  UnsetMarker,
 } from './utils';
+import { middlewareMarker } from './utils';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith

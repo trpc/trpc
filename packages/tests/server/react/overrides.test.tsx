@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event';
 import { createTRPCReact, getUntypedClient } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React from 'react';
 import { z } from 'zod';
 
 describe('mutation override', () => {

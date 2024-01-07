@@ -3,7 +3,7 @@
  */
 
 import '@trpc/server';
-import { AddressInfo } from 'net';
+import type { AddressInfo } from 'net';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import fetch from 'node-fetch';

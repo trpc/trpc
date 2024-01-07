@@ -1,15 +1,10 @@
 // Stream parsing adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
-import { TRPCResponse } from '@trpc/core/rpc';
-import { WebReadableStreamEsque } from '../../internals/types';
-import { HTTPHeaders } from '../types';
-import {
-  fetchHTTPResponse,
-  getBody,
-  getUrl,
-  HTTPBaseRequestOptions,
-  HTTPResult,
-} from './httpUtils';
-import { TextDecoderEsque } from './streamingUtils';
+import type { TRPCResponse } from '@trpc/core/rpc';
+import type { WebReadableStreamEsque } from '../../internals/types';
+import type { HTTPHeaders } from '../types';
+import type { HTTPBaseRequestOptions, HTTPResult } from './httpUtils';
+import { fetchHTTPResponse, getBody, getUrl } from './httpUtils';
+import type { TextDecoderEsque } from './streamingUtils';
 
 /**
  * @internal

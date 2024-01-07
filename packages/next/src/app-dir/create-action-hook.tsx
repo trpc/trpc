@@ -1,11 +1,9 @@
 import type {
   CreateTRPCClientOptions,
   TRPCLink,
-  TRPCRequestOptions} from '@trpc/client';
-import {
-  createTRPCUntypedClient,
-  TRPCClientError
+  TRPCRequestOptions,
 } from '@trpc/client';
+import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
 import { transformResult } from '@trpc/client/shared';
 import type {
   AnyRouter,
@@ -16,7 +14,7 @@ import type {
 import { observable } from '@trpc/core/observable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TRPCActionHandler } from './server';
-import type { ActionHandlerDef} from './shared';
+import type { ActionHandlerDef } from './shared';
 import { isFormData } from './shared';
 
 type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void

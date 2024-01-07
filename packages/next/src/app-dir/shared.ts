@@ -10,10 +10,9 @@ import type {
   AnyRouter,
   Filter,
   inferHandlerInput,
-  ProtectedIntersection} from '@trpc/core';
-import {
-  createRecursiveProxy
+  ProtectedIntersection,
 } from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core';
 
 /**
  * @internal

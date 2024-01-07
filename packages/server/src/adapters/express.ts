@@ -1,10 +1,10 @@
-import { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '@trpc/core';
 import type * as express from 'express';
-import {
+import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
 } from './node-http';
+import { nodeHTTPRequestHandler } from './node-http';
 
 export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
   express.Request,

@@ -1,11 +1,9 @@
 import type {
   HTTPBatchLinkOptions,
   HTTPLinkOptions,
-  TRPCLink} from '@trpc/client';
-import {
-  httpBatchLink,
-  httpLink
+  TRPCLink,
 } from '@trpc/client';
+import { httpBatchLink, httpLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/core';
 import { generateCacheTag } from '../shared';
 

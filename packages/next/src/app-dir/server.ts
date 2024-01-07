@@ -10,7 +10,8 @@ import type {
   CombinedDataTransformer,
   inferProcedureInput,
   MaybePromise,
-  Simplify} from '@trpc/core';
+  Simplify,
+} from '@trpc/core';
 import {
   createRecursiveProxy,
   getErrorShape,
@@ -25,11 +26,9 @@ import { formDataToObject } from './formDataToObject';
 import type {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
-  inferActionDef} from './shared';
-import {
-  generateCacheTag,
-  isFormData,
+  inferActionDef,
 } from './shared';
+import { generateCacheTag, isFormData } from './shared';
 import type { NextAppDirDecoratedProcedureRecord } from './types';
 
 // ts-prune-ignore-next

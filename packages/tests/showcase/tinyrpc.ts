@@ -1,7 +1,7 @@
 /**
  * @see https://trpc.io/blog/tinyrpc-client
  */
-import {
+import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
   ProcedureRouterRecord,

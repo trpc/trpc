@@ -1,8 +1,6 @@
-import { AnyRouter } from '@trpc/core';
-import {
-  CreateTRPCClientOptions,
-  TRPCUntypedClient,
-} from './internals/TRPCUntypedClient';
+import type { AnyRouter } from '@trpc/core';
+import type { CreateTRPCClientOptions } from './internals/TRPCUntypedClient';
+import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 
 export function createTRPCUntypedClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,

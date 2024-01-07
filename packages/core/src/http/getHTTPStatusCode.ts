@@ -1,10 +1,6 @@
 import type { TRPCError } from '../error/TRPCError';
-import type {
-  TRPC_ERROR_CODES_BY_KEY,
-  TRPCResponse} from '../rpc';
-import {
-  TRPC_ERROR_CODES_BY_NUMBER
-} from '../rpc';
+import type { TRPC_ERROR_CODES_BY_KEY, TRPCResponse } from '../rpc';
+import { TRPC_ERROR_CODES_BY_NUMBER } from '../rpc';
 
 const JSONRPC2_TO_HTTP_CODE: Record<
   keyof typeof TRPC_ERROR_CODES_BY_KEY,
