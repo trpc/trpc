@@ -11,8 +11,8 @@ export {
   type inferRouterError,
   type inferRouterInputs,
   type inferRouterOutputs,
-  AnyProcedure as AnyTRPCProcedure,
-  AnyRouter as AnyTRPCRouter,
+  type AnyProcedure as AnyTRPCProcedure,
+  type AnyRouter as AnyTRPCRouter,
 } from './unstableDoNotImportThis';
 
 export type {
