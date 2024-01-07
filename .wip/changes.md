@@ -1,6 +1,6 @@
 # Changes in v11 in reverse chronological order
 
-## 2023-01-06 created a `@trpc/core`-package
+## 2024-01: created a `@trpc/core`-package
 
 We moved a bunch of internals of `@trpc/server` to a new package called `@trpc/core` that is **not meant for public consumption**
 
