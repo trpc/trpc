@@ -1,4 +1,7 @@
 /**
+ * FIXME: some leftover types i didn't find a better place for
+ */
+/**
  * @internal
  */
 export type IntersectionError<TKey extends string> =
