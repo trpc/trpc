@@ -75,7 +75,6 @@ export {
   procedureTypes,
 } from './types';
 export { type DefaultErrorShape } from './error/formatter';
-export * from './transformer';
 
 export { mergeRouters } from './internals/mergeRouters';
 export {
