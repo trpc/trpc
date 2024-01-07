@@ -1,12 +1,12 @@
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
-import type { AnyRootConfig } from './internals/config';
-import { omitPrototype } from './internals/omitPrototype';
 import type { ProcedureCallOptions } from './internals/procedureBuilder';
 import type { AnyProcedure, ProcedureArgs } from './procedure';
+import type { AnyRootConfig } from './rootConfig';
 import { createRecursiveProxy } from './shared/createProxy';
 import { defaultTransformer } from './transformer';
-import type { MaybePromise } from './types';
+import { omitPrototype } from './utilityFunctions';
+import type { MaybePromise } from './utilityTypes';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;

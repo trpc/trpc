@@ -1,8 +1,8 @@
 import { TRPCError } from './error/TRPCError';
-import type { ParseFn } from './internals/getParseFn';
-import type { GetRawInputFn, Overwrite } from './internals/utils';
+import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
-import type { Simplify } from './types';
+import type { GetRawInputFn } from './types';
+import type { Overwrite, Simplify } from './utilityTypes';
 
 /**
  * @internal

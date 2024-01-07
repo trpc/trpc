@@ -10,6 +10,7 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from '../middleware';
+import { getParseFn } from '../parser';
 import type { inferParser, Parser } from '../parser';
 import type {
   AnyMutationProcedure,
@@ -21,15 +22,15 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from '../procedure';
-import type { MaybePromise, Simplify } from '../types';
-import { getParseFn } from './getParseFn';
-import { mergeWithoutOverrides } from './mergeWithoutOverrides';
+import type { GetRawInputFn } from '../types';
+import { mergeWithoutOverrides } from '../utilityFunctions';
 import type {
   DefaultValue,
-  GetRawInputFn,
+  MaybePromise,
   Overwrite,
+  Simplify,
   UnsetMarker,
-} from './utils';
+} from '../utilityTypes';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith

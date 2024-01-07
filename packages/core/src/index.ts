@@ -59,13 +59,20 @@ export type {
   Filter,
   FilterKeys,
   InferLast,
-  IntersectionError,
   Maybe,
   MaybePromise,
-  ProtectedIntersection,
   Simplify,
   Unwrap,
   WithoutIndexSignature,
+  Overwrite,
+  PickFirstDefined,
+  UnsetMarker,
+  ValidateShape,
+  DefaultValue,
+} from './utilityTypes';
+export type {
+  IntersectionError,
+  ProtectedIntersection,
   inferHandlerInput,
   inferProcedureInput,
   inferProcedureOutput,
@@ -89,23 +96,17 @@ export type {
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
 export { createBuilder } from './internals/procedureBuilder';
-export type {
-  DefaultValue,
-  GetRawInputFn,
-  Overwrite,
-  PickFirstDefined,
-  UnsetMarker,
-  ValidateShape,
-} from './internals/utils';
-export { isObject, unsetMarker } from './internals/utils';
+export type { GetRawInputFn } from './types';
+export { unsetMarker } from './utilityTypes';
+export { isObject } from './utilityFunctions';
 export type {
   AnyRootConfig,
   CreateRootConfigTypes,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-} from './internals/config';
-export { isServerDefault } from './internals/config';
+} from './rootConfig';
+export { isServerDefault } from './rootConfig';
 
 export { createFlatProxy, createRecursiveProxy } from './shared/createProxy';
 export type {

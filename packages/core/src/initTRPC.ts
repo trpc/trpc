@@ -3,30 +3,27 @@ import type {
   ErrorFormatter,
   ErrorFormatterShape,
 } from './error/formatter';
-import { defaultFormatter } from './error/formatter';
+import { mergeRouters } from './internals/mergeRouters';
+import { createBuilder } from './internals/procedureBuilder';
+import { createMiddlewareFactory } from './middleware';
 import type {
   CreateRootConfigTypes,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
-} from './internals/config';
-import { isServerDefault } from './internals/config';
-import { mergeRouters } from './internals/mergeRouters';
-import { createBuilder } from './internals/procedureBuilder';
-import type {
-  Overwrite,
-  PickFirstDefined,
-  ValidateShape,
-} from './internals/utils';
-import { createMiddlewareFactory } from './middleware';
+} from './rootConfig';
 import { createCallerFactory, createRouterFactory } from './router';
 import { createFlatProxy } from './shared/createProxy';
 import type {
   DataTransformerOptions,
   DefaultDataTransformer,
 } from './transformer';
-import { defaultTransformer, getDataTransformer } from './transformer';
-import type { Unwrap } from './types';
+import type {
+  Overwrite,
+  PickFirstDefined,
+  Unwrap,
+  ValidateShape,
+} from './utilityTypes';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 

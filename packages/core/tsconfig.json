@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src"],
+  "include": ["src", "src/utilityFunctions.ts"],
   "compilerOptions": {
     // https://github.com/tsconfig/bases/blob/main/bases/node18.json
     "lib": ["es2023", "DOM", "DOM.Iterable"],

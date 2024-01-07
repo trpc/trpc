@@ -1,5 +1,5 @@
+import { identity } from '../../utilityFunctions';
 import type { UnaryFunction } from '../types';
-import { identity } from './identity';
 
 /** @internal */
 export function pipeFromArray<TSource, TReturn>(
