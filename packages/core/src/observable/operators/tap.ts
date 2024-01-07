@@ -1,4 +1,4 @@
-import { MonoTypeOperatorFunction, Observer } from '../types';
+import type { MonoTypeOperatorFunction, Observer } from '../types';
 
 export function tap<TValue, TError>(
   observer: Partial<Observer<TValue, TError>>,

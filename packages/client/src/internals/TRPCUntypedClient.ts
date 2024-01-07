@@ -1,17 +1,16 @@
-import {
+import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
 } from '@trpc/core';
-import {
+import type {
   inferObservableValue,
-  observableToPromise,
-  share,
   Unsubscribable,
 } from '@trpc/core/observable';
+import { observableToPromise, share } from '@trpc/core/observable';
 import { createChain } from '../links/internals/createChain';
-import {
+import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,

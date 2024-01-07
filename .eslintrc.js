@@ -75,6 +75,8 @@ const config = {
       },
     ],
     'max-params': ['error', 3],
+    '@typescript-eslint/consistent-type-imports': 'error',
+    '@typescript-eslint/consistent-type-exports': 'error',
     '@typescript-eslint/no-restricted-imports': [
       'error',
       {

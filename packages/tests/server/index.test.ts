@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
+import type { HTTPHeaders } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
-  HTTPHeaders,
   TRPCClientError,
   wsLink,
 } from '@trpc/client';
-import { Maybe } from '@trpc/core';
+import type { Maybe } from '@trpc/core';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 

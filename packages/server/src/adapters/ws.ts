@@ -1,25 +1,24 @@
-import { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'http';
+import type { AnyRouter, inferRouterContext, MaybePromise } from '@trpc/core';
 import {
-  AnyRouter,
   callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
-  inferRouterContext,
-  MaybePromise,
   transformTRPCResponse,
   TRPCError,
 } from '@trpc/core';
-import { BaseHandlerOptions } from '@trpc/core/http';
-import { isObservable, Unsubscribable } from '@trpc/core/observable';
-import {
+import type { BaseHandlerOptions } from '@trpc/core/http';
+import type { Unsubscribable } from '@trpc/core/observable';
+import { isObservable } from '@trpc/core/observable';
+import type {
   JSONRPC2,
-  parseTRPCMessage,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
-import { WebSocket, WebSocketServer } from 'ws';
-import { NodeHTTPCreateContextFnOptions } from './node-http';
+import { parseTRPCMessage } from '@trpc/core/rpc';
+import type { WebSocket, WebSocketServer } from 'ws';
+import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * @public

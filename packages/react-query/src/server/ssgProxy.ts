@@ -1,24 +1,17 @@
-import {
-  dehydrate,
+import type {
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
-import {
-  getUntypedClient,
-  inferRouterClient,
-  TRPCClientError,
-  TRPCUntypedClient,
-} from '@trpc/client';
-import {
+import { dehydrate } from '@tanstack/react-query';
+import type { inferRouterClient, TRPCClientError } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-  callProcedure,
-  createFlatProxy,
-  createRecursiveProxy,
   DataTransformerOptions,
   Filter,
   inferProcedureInput,
@@ -27,15 +20,19 @@ import {
   Maybe,
   ProtectedIntersection,
 } from '@trpc/core';
-import { getQueryKeyInternal } from '../internals/getQueryKey';
 import {
+  callProcedure,
+  createFlatProxy,
+  createRecursiveProxy,
+} from '@trpc/core';
+import { getQueryKeyInternal } from '../internals/getQueryKey';
+import type {
   CreateTRPCReactQueryClientConfig,
   ExtractCursorType,
-  getQueryClient,
-  getQueryType,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
 } from '../shared';
+import { getQueryClient, getQueryType } from '../shared';
 
 interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
   router: TRouter;

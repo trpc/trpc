@@ -1,4 +1,4 @@
-import { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '@trpc/core';
 import { observable } from '@trpc/core/observable';
 import { createChain } from './createChain';
 

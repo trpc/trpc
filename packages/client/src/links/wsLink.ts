@@ -1,11 +1,12 @@
-import {
+import type {
   AnyRouter,
   inferRouterError,
   MaybePromise,
   ProcedureType,
 } from '@trpc/core';
-import { observable, Observer, UnsubscribeFn } from '@trpc/core/observable';
-import {
+import type { Observer, UnsubscribeFn } from '@trpc/core/observable';
+import { observable } from '@trpc/core/observable';
+import type {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
@@ -14,7 +15,7 @@ import {
 } from '@trpc/core/rpc';
 import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
-import { Operation, TRPCLink } from './types';
+import type { Operation, TRPCLink } from './types';
 
 const run = <TResult>(fn: () => TResult): TResult => fn();
 

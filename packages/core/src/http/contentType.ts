@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { TRPCError } from '../error/TRPCError';
-import { AnyRouter } from '../router';
-import { CombinedDataTransformer } from '../transformer';
-import { MaybePromise } from '../types';
-import { HTTPRequest } from './types';
+import type { AnyRouter } from '../router';
+import type { CombinedDataTransformer } from '../transformer';
+import type { MaybePromise } from '../types';
+import type { HTTPRequest } from './types';
 
 type GetInputs = (opts: {
   req: HTTPRequest;

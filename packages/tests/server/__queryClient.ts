@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientConfig } from '@tanstack/react-query';
+import type { QueryClientConfig } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 
 type Config = Omit<Partial<QueryClientConfig>, 'logger'>;
 export function createQueryClientConfig(config: Config | undefined) {

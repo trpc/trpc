@@ -1,10 +1,10 @@
-import {
+import type {
   AnyProcedure,
   AnyRootConfig,
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/core';
-import {
+import type {
   InferMutationOptions,
   InferMutationResult,
 } from '../../utils/inferReactQueryProcedure';

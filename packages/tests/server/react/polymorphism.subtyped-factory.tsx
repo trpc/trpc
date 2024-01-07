@@ -2,9 +2,9 @@
 // This file extends polymorphism.factory.tsx into a sub-typed router,
 //  which can be used with existing components, but has extra data for other use cases
 //
-import { AnyRootConfig, createBuilder } from '@trpc/core';
-import { createRouterFactory } from '@trpc/core/router';
-import { RouterLike, UtilsLike } from '@trpc/react-query/shared';
+import type { AnyRootConfig, createBuilder } from '@trpc/core';
+import type { createRouterFactory } from '@trpc/core/router';
+import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
 import z from 'zod';
 import { t } from './polymorphism.common';

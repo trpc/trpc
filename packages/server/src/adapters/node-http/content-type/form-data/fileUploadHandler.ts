@@ -18,7 +18,8 @@ import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
 import { finished, Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import { streamSlice } from './streamSlice';
-import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
+import type { UploadHandler } from './uploadHandler';
+import { MaxPartSizeExceededError } from './uploadHandler';
 
 export async function readableStreamToString(
   stream: ReadableStream<Uint8Array>,
