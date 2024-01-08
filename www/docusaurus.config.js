@@ -197,19 +197,19 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          lastVersion: 'current',
+          lastVersion: '10.x',
           // disableVersioning: true,
           // onlyIncludeVersions: ['9.x'],
           versions: {
-            '10.x': {
+            current: {
               label: '11.x',
               path: 'v11',
               badge: true,
               className: 'v11',
               banner: 'unreleased',
             },
-            current: {
-              label: '11.x',
+            '10.x': {
+              label: '10.x',
               // path: 'v10',
               badge: true,
               className: 'v10',

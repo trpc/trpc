@@ -168,10 +168,6 @@ module.exports = {
       ],
     },
     {
-      type: 'doc',
-      id: 'migration/migrate-from-v9-to-v10',
-    },
-    {
       type: 'category',
       label: 'Community',
       collapsed: true,
