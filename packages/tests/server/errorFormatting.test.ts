@@ -1,9 +1,6 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
-import type {
-  DefaultErrorData,
-  DefaultErrorShape,
-} from '@trpc/core/error/formatter';
+import type { DefaultErrorData, DefaultErrorShape } from '@trpc/core';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { konn } from 'konn';

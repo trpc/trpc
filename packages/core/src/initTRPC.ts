@@ -1,32 +1,36 @@
-import type {
-  DefaultErrorShape,
-  ErrorFormatter,
-  ErrorFormatterShape,
+import { createFlatProxy } from './createProxy';
+import {
+  defaultFormatter,
+  type DefaultErrorShape,
+  type ErrorFormatter,
+  type ErrorFormatterShape,
 } from './error/formatter';
-import { defaultFormatter } from './error/formatter';
-import type {
-  CreateRootConfigTypes,
-  RootConfig,
-  RootConfigTypes,
-  RuntimeConfig,
-} from './internals/config';
-import { isServerDefault } from './internals/config';
-import { mergeRouters } from './internals/mergeRouters';
-import { createBuilder } from './internals/procedureBuilder';
+import { createMiddlewareFactory } from './middleware';
+import { createBuilder } from './procedureBuilder';
+import {
+  isServerDefault,
+  type CreateRootConfigTypes,
+  type RootConfig,
+  type RootConfigTypes,
+  type RuntimeConfig,
+} from './rootConfig';
+import {
+  createCallerFactory,
+  createRouterFactory,
+  mergeRouters,
+} from './router';
+import {
+  defaultTransformer,
+  getDataTransformer,
+  type DataTransformerOptions,
+  type DefaultDataTransformer,
+} from './transformer';
 import type {
   Overwrite,
   PickFirstDefined,
+  Unwrap,
   ValidateShape,
-} from './internals/utils';
-import { createMiddlewareFactory } from './middleware';
-import { createCallerFactory, createRouterFactory } from './router';
-import { createFlatProxy } from './shared/createProxy';
-import type {
-  DataTransformerOptions,
-  DefaultDataTransformer,
-} from './transformer';
-import { defaultTransformer, getDataTransformer } from './transformer';
-import type { Unwrap } from './types';
+} from './types';
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 

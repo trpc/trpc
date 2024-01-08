@@ -1,31 +1,29 @@
-import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
-} from '../middleware';
-import { createInputMiddleware, createOutputMiddleware } from '../middleware';
-import type { inferParser, Parser } from '../parser';
+} from './middleware';
+import {
+  createInputMiddleware,
+  createOutputMiddleware,
+  middlewareMarker,
+} from './middleware';
+import { getParseFn } from './parser';
+import type { inferParser, Parser } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   MutationProcedure,
+  ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
-} from '../procedure';
-import type { MaybePromise, ProcedureType, Simplify } from '../types';
-import { getParseFn } from './getParseFn';
-import { mergeWithoutOverrides } from './mergeWithoutOverrides';
-import type {
-  DefaultValue,
-  GetRawInputFn,
-  Overwrite,
-  UnsetMarker,
-} from './utils';
-import { middlewareMarker } from './utils';
+} from './procedure';
+import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
+import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
@@ -33,7 +31,14 @@ type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-export type ProcedureBuilderDef<TMeta> = {
+/** @internal */
+export const unsetMarker = Symbol('unsetMarker');
+type UnsetMarker = typeof unsetMarker;
+type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
+  ? TFallback
+  : TValue;
+
+type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
   output?: Parser;
@@ -45,7 +50,7 @@ export type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
 };
 
-export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
+type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 /**
  * Procedure resolver options
@@ -224,7 +229,7 @@ export interface ProcedureBuilder<
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any, any, any, any, any, any, any>;
-export type ProcedureBuilderResolver = (
+type ProcedureBuilderResolver = (
   opts: ResolverOptions<any, any, any, any>,
 ) => Promise<unknown>;
 

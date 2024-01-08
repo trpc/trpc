@@ -1,11 +1,13 @@
-import { pipeFromArray } from './internals/pipe';
+import { identity } from '../utils';
 import type {
   Observable,
   Observer,
   OperatorFunction,
   TeardownLogic,
+  UnaryFunction,
 } from './types';
 
+/** @public */
 export type inferObservableValue<TObservable> = TObservable extends Observable<
   infer TValue,
   unknown
@@ -13,10 +15,12 @@ export type inferObservableValue<TObservable> = TObservable extends Observable<
   ? TValue
   : never;
 
+/** @public */
 export function isObservable(x: unknown): x is Observable<unknown, unknown> {
   return typeof x === 'object' && x !== null && 'subscribe' in x;
 }
 
+/** @public */
 export function observable<TValue, TError = unknown>(
   subscribe: (observer: Observer<TValue, TError>) => TeardownLogic,
 ): Observable<TValue, TError> {
@@ -80,4 +84,72 @@ export function observable<TValue, TError = unknown>(
     },
   };
   return self;
+}
+
+function pipeFromArray<TSource, TReturn>(
+  fns: UnaryFunction<TSource, TReturn>[],
+): UnaryFunction<TSource, TReturn> {
+  if (fns.length === 0) {
+    return identity as UnaryFunction<any, any>;
+  }
+
+  if (fns.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return fns[0]!;
+  }
+
+  return function piped(input: TSource): TReturn {
+    return fns.reduce(
+      (prev: any, fn: UnaryFunction<TSource, TReturn>) => fn(prev),
+      input as any,
+    );
+  };
+}
+
+class ObservableAbortError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ObservableAbortError';
+    Object.setPrototypeOf(this, ObservableAbortError.prototype);
+  }
+}
+
+/** @internal */
+export function observableToPromise<TValue>(
+  observable: Observable<TValue, unknown>,
+) {
+  let abort: () => void;
+  const promise = new Promise<TValue>((resolve, reject) => {
+    let isDone = false;
+    function onDone() {
+      if (isDone) {
+        return;
+      }
+      isDone = true;
+      reject(new ObservableAbortError('This operation was aborted.'));
+      obs$.unsubscribe();
+    }
+    const obs$ = observable.subscribe({
+      next(data) {
+        isDone = true;
+        resolve(data);
+        onDone();
+      },
+      error(data) {
+        isDone = true;
+        reject(data);
+        onDone();
+      },
+      complete() {
+        isDone = true;
+        onDone();
+      },
+    });
+    abort = onDone;
+  });
+  return {
+    promise,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    abort: abort!,
+  };
 }

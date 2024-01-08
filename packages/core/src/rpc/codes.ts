@@ -1,4 +1,4 @@
-import { invert } from '../internals/invert';
+import { invert } from '../utils';
 
 // reference: https://www.jsonrpc.org/specification
 
@@ -38,7 +38,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 } as const;
 
 export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
-type ValueOf<TObj> = TObj[keyof TObj];
 
+type ValueOf<TObj> = TObj[keyof TObj];
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
 export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;

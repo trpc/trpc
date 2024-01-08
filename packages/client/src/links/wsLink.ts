@@ -4,6 +4,7 @@ import type {
   MaybePromise,
   ProcedureType,
 } from '@trpc/core';
+import { transformResult } from '@trpc/core';
 import type { Observer, UnsubscribeFn } from '@trpc/core/observable';
 import { observable } from '@trpc/core/observable';
 import type {
@@ -13,7 +14,6 @@ import type {
   TRPCRequestMessage,
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
-import { transformResult } from '../shared/transformResult';
 import { TRPCClientError } from '../TRPCClientError';
 import type { Operation, TRPCLink } from './types';
 
@@ -467,7 +467,7 @@ export function wsLink<TRouter extends AnyRouter>(
               observer.complete();
             },
             next(message) {
-              const transformed = transformResult(message, runtime);
+              const transformed = transformResult(message, runtime.transformer);
 
               if (!transformed.ok) {
                 observer.error(TRPCClientError.from(transformed.error));

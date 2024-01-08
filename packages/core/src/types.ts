@@ -1,84 +1,8 @@
-import type { AnyProcedure, ProcedureArgs } from './procedure';
-import type { AnyRouter, AnyRouterDef, Router } from './router';
-import type { inferTransformedProcedureOutput } from './shared/jsonify';
-
-export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
-  infer TParams
->
-  ? TParams extends AnyRouterDef<any>
-    ? TParams
-    : never
-  : never;
-
-export type inferRouterConfig<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config'];
-export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['ctx'];
-export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['errorShape'];
-export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['meta'];
-
-export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
- * @public
+ * ================================
+ * Useful utility types that doesn't have anything to do with tRPC in particular
+ * ================================
  */
-export type ProcedureType = (typeof procedureTypes)[number];
-
-export type inferHandlerInput<TProcedure extends AnyProcedure> = ProcedureArgs<
-  inferProcedureParams<TProcedure>
->;
-
-export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  inferProcedureParams<TProcedure>['_input_in'];
-
-export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
-  ? TProcedure['_def']
-  : never;
-export type inferProcedureOutput<TProcedure> =
-  inferProcedureParams<TProcedure>['_output_out'];
-
-type GetInferenceHelpers<
-  TType extends 'input' | 'output',
-  TRouter extends AnyRouter,
-> = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
-    ? TRouterOrProcedure extends AnyRouter
-      ? GetInferenceHelpers<TType, TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyProcedure
-      ? TType extends 'input'
-        ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<
-            TRouter['_def']['_config'],
-            TRouterOrProcedure
-          >
-      : never
-    : never;
-};
-
-export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
-  'input',
-  TRouter
->;
-
-export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
-  'output',
-  TRouter
->;
-
-/**
- * @internal
- */
-export type IntersectionError<TKey extends string> =
-  `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
-
-/**
- * @internal
- */
-export type ProtectedIntersection<TType, TWith> = keyof TType &
-  keyof TWith extends never
-  ? TType & TWith
-  : IntersectionError<string & keyof TType & keyof TWith>;
 
 /**
  * @public
@@ -92,6 +16,7 @@ export type Maybe<TType> = TType | null | undefined;
 export type Simplify<TType> = TType extends any[] | Date
   ? TType
   : { [K in keyof TType]: TType[K] };
+
 /**
  * @public
  */
@@ -101,16 +26,6 @@ export type Dict<TType> = Record<string, TType | undefined>;
  * @public
  */
 export type MaybePromise<TType> = Promise<TType> | TType;
-
-/**
- * @internal
- *
- * Creates a "lower-priority" type inference.
- * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-322267089
- */
-export type InferLast<TType> = TType & {
-  [KeyType in keyof TType]: TType[KeyType];
-};
 
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
@@ -150,7 +65,7 @@ export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
   ? Omit<TObj, TKey>
   : never;
 
-/*
+/**
  * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
  * Fixes issues with iterating over keys of objects with index signatures.
  * Without this, iterations over keys of objects with index signatures will lose
@@ -164,3 +79,73 @@ export type WithoutIndexSignature<TObj> = {
     ? never
     : K]: TObj[K];
 };
+
+/**
+ * @internal
+ * Overwrite properties in `TType` with properties in `TWith`
+ * Only overwrites properties when the type to be overwritten
+ * is an object. Otherwise it will just use the type from `TWith`.
+ */
+export type Overwrite<TType, TWith> = TWith extends any
+  ? TType extends object
+    ? {
+        [K in  // Exclude index signature from keys
+          | keyof WithoutIndexSignature<TType>
+          | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
+          ? TWith[K]
+          : K extends keyof TType
+          ? TType[K]
+          : never;
+      } & (string extends keyof TWith // Handle cases with an index signature
+        ? { [key: string]: TWith[string] }
+        : number extends keyof TWith
+        ? { [key: number]: TWith[number] }
+        : // eslint-disable-next-line @typescript-eslint/ban-types
+          {})
+    : TWith
+  : never;
+
+/**
+ * @internal
+ */
+export type ValidateShape<TActualShape, TExpectedShape> =
+  TActualShape extends TExpectedShape
+    ? Exclude<keyof TActualShape, keyof TExpectedShape> extends never
+      ? TActualShape
+      : TExpectedShape
+    : never;
+
+/**
+ * @internal
+ */
+export type PickFirstDefined<TType, TPick> = undefined extends TType
+  ? undefined extends TPick
+    ? never
+    : TPick
+  : TType;
+
+/**
+ * ================================
+ * tRPC specific types
+ * ================================
+ */
+
+/**
+ * @internal
+ */
+export type IntersectionError<TKey extends string> =
+  `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
+
+/**
+ * @internal
+ */
+export type ProtectedIntersection<TType, TWith> = keyof TType &
+  keyof TWith extends never
+  ? TType & TWith
+  : IntersectionError<string & keyof TType & keyof TWith>;
+
+/**
+ * @internal
+ * Returns the raw input type of a procedure
+ */
+export type GetRawInputFn = () => Promise<unknown>;

@@ -1,17 +1,18 @@
+import { procedureTypes, type ProcedureType } from '../procedure';
 import type { CombinedDataTransformer } from '../transformer';
-import type { ProcedureType } from '../types';
+import { isObject } from '../utils';
 import type { TRPCClientOutgoingMessage } from './envelopes';
 
 /* istanbul ignore next -- @preserve */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
-  if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
+  if (!isObject(obj)) {
     throw new Error('Not an object');
   }
 }
 
 /* istanbul ignore next -- @preserve */
 function assertIsProcedureType(obj: unknown): asserts obj is ProcedureType {
-  if (obj !== 'query' && obj !== 'subscription' && obj !== 'mutation') {
+  if (!procedureTypes.includes(obj as any)) {
     throw new Error('Invalid procedure type');
   }
 }

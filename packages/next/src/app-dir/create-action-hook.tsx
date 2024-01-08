@@ -4,7 +4,7 @@ import type {
   TRPCRequestOptions,
 } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
-import { transformResult } from '@trpc/client/shared';
+import { transformResult } from '@trpc/core';
 import type {
   AnyRouter,
   MaybePromise,
@@ -81,7 +81,7 @@ export function experimental_serverActionLink<
               : runtime.transformer.serialize(op.input),
           )
           .then((data) => {
-            const transformed = transformResult(data, runtime);
+            const transformed = transformResult(data, runtime.transformer);
 
             if (!transformed.ok) {
               observer.error(TRPCClientError.from(transformed.error, {}));
