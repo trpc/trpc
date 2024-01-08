@@ -17,14 +17,20 @@ import type {
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
 import { parseTRPCMessage } from '@trpc/core/rpc';
-import type { WebSocket, WebSocketServer } from 'ws';
+import type ws from 'ws';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
+
+/**
+ * Importing ws causes a build error
+ * @see https://github.com/trpc/trpc/pull/5279
+ */
+const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
 /**
  * @public
  */
 export type CreateWSSContextFnOptions = Omit<
-  NodeHTTPCreateContextFnOptions<IncomingMessage, WebSocket>,
+  NodeHTTPCreateContextFnOptions<IncomingMessage, ws.WebSocket>,
   'info'
 >;
 
@@ -55,7 +61,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
          **/
         createContext: CreateWSSContextFn<TRouter>;
       }) & {
-    wss: WebSocketServer;
+    wss: ws.WebSocketServer;
     process?: NodeJS.Process;
   };
 
@@ -183,7 +189,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         /* istanbul ignore next -- @preserve */
-        if (client.readyState !== client.OPEN) {
+        if (client.readyState !== WEBSOCKET_OPEN) {
           // if the client got disconnected whilst initializing the subscription
           // no need to send stopped message if the client is disconnected
           sub.unsubscribe();
@@ -318,7 +324,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {
-        if (client.readyState === 1 /* ws.OPEN */) {
+        if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }
       }
