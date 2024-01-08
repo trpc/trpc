@@ -75,11 +75,7 @@
       "type": "category",
       "label": "Extra information",
       "collapsed": false,
-      "items": [
-        "further/rpc",
-        "further/subscriptions",
-        "further/further-reading"
-      ]
+      "items": ["further/rpc", "further/subscriptions"]
     }
   ]
 }

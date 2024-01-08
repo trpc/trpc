@@ -5,6 +5,8 @@ sidebar_label: Further Reading
 slug: /further-reading
 ---
 
+<!-- FIXME: delete me and add redirect -->
+
 ## Who is this for?
 
 - tRPC is for full-stack typescripters. It makes it dead easy to write "endpoints", which you can safely use in your app.
