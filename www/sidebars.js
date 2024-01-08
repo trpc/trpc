@@ -170,6 +170,10 @@ module.exports = {
     },
     {
       type: 'doc',
+      id: 'migration/migrate-from-v10-to-v11',
+    },
+    {
+      type: 'doc',
       id: 'migration/migrate-from-v9-to-v10',
     },
     {
