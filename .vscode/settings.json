@@ -17,7 +17,7 @@
     "packages/server/{adapters,http,observable,rpc,shared,subscription}": true
   },
   "search.exclude": {
-    // "/www/versioned_*": true,
+    "/www/versioned_*": true,
     "/www/.docusaurus": true,
     "/www/build": true
   },
