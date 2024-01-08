@@ -17,19 +17,19 @@ import type {
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
 import { parseTRPCMessage } from '@trpc/core/rpc';
-import type { WebSocket, WebSocketServer } from 'ws';
+import type ws from 'ws';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * @see https://github.com/trpc/trpc/pull/5279
  */
-const WEBSOCKET_OPEN = 1; /* WebSocket.OPEN */
+const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
 /**
  * @public
  */
 export type CreateWSSContextFnOptions = Omit<
-  NodeHTTPCreateContextFnOptions<IncomingMessage, WebSocket>,
+  NodeHTTPCreateContextFnOptions<IncomingMessage, ws.WebSocket>,
   'info'
 >;
 
@@ -60,7 +60,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
          **/
         createContext: CreateWSSContextFn<TRouter>;
       }) & {
-    wss: WebSocketServer;
+    wss: ws.WebSocketServer;
     process?: NodeJS.Process;
   };
 
@@ -260,9 +260,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       }
     });
 
-    // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
+    // ws.WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
     // This line was introduced after the following error brought down production systems:
-    // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
+    // "RangeError: Invalid ws.WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
     client.on('error', (cause) => {
       opts.onError?.({
