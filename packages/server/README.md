@@ -24,16 +24,16 @@ Full documentation for `@trpc/server` can be found [here](https://trpc.io/docs/r
 
 ```bash
 # npm
-npm install @trpc/server
+npm install @trpc/server@next
 
 # Yarn
-yarn add @trpc/server
+yarn add @trpc/server@next
 
 # pnpm
-pnpm add @trpc/server
+pnpm add @trpc/server@next
 
 # Bun
-bun add @trpc/server
+bun add @trpc/server@next
 ```
 
 We also recommend installing `zod` to validate procedure inputs.
