@@ -501,11 +501,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/v9/further-reading",
-      "destination": "/docs/further-reading",
-      "permanent": true
-    },
-    {
       "source": "/docs/v10/:path*",
       "destination": "/docs/:path*",
       "permanent": true
