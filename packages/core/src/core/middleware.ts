@@ -1,20 +1,16 @@
 import { TRPCError } from '../error/TRPCError';
 import type { GetRawInputFn } from '../types';
+import { isObject } from '../utilityFunctions';
 import type { Overwrite, Simplify } from '../utilityTypes';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 
-/**
- * @internal
- */
+/** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
   __brand: 'middlewareMarker';
 };
 type MiddlewareMarker = typeof middlewareMarker;
 
-/**
- * @internal
- */
 interface MiddlewareResultBase {
   /**
    * All middlewares should pass through their `next()`'s output.
@@ -23,18 +19,12 @@ interface MiddlewareResultBase {
   readonly marker: MiddlewareMarker;
 }
 
-/**
- * @internal
- */
 interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   ok: true;
   data: unknown;
   // this could be extended with `input`/`rawInput` later
 }
 
-/**
- * @internal
- */
 interface MiddlewareErrorResult<_TContextOverride>
   extends MiddlewareResultBase {
   ok: false;
@@ -180,10 +170,6 @@ export const experimental_standaloneMiddleware = <
   >(),
 });
 
-function isPlainObject(obj: unknown) {
-  return obj && typeof obj === 'object' && !Array.isArray(obj);
-}
-
 /**
  * @internal
  * Please note, `trpc-openapi` uses this function.
@@ -205,7 +191,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
 
       // Multiple input parsers
       const combinedInput =
-        isPlainObject(opts.input) && isPlainObject(parsedInput)
+        isObject(opts.input) && isObject(parsedInput)
           ? {
               ...opts.input,
               ...parsedInput,
