@@ -17,9 +17,13 @@ import type {
   TRPCResponseMessage,
 } from '@trpc/core/rpc';
 import { parseTRPCMessage } from '@trpc/core/rpc';
-import { WebSocket } from 'ws';
-import type { WebSocketServer } from 'ws';
+import type { WebSocket, WebSocketServer } from 'ws';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
+
+/**
+ * @see https://github.com/trpc/trpc/pull/5279
+ */
+const WEBSOCKET_OPEN = 1; /* WebSocket.OPEN */
 
 /**
  * @public
@@ -184,7 +188,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         /* istanbul ignore next -- @preserve */
-        if (client.readyState !== WebSocket.OPEN) {
+        if (client.readyState !== WEBSOCKET_OPEN) {
           // if the client got disconnected whilst initializing the subscription
           // no need to send stopped message if the client is disconnected
           sub.unsubscribe();
@@ -319,7 +323,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }
       }
