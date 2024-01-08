@@ -48,14 +48,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    announcementBar: {
-      id: 'drift',
-      content:
-        "🚀 We've just released a beta version of <strong>tRPC Drift</strong> which helps you keep track of changes in your tRPC API. Check it out at <a href='https://drift.trpc.io'><strong>drift.trpc.io</strong></a>.",
-      backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: '#ffffff',
-      isCloseable: true,
-    },
+    // announcementBar: {
+    //   id: 'drift',
+    //   content:
+    //     "🚀 We've just released a beta version of <strong>tRPC Drift</strong> which helps you keep track of changes in your tRPC API. Check it out at <a href='https://drift.trpc.io'><strong>drift.trpc.io</strong></a>.",
+    //   backgroundColor: 'var(--ifm-color-primary-dark)',
+    //   textColor: '#ffffff',
+    //   isCloseable: true,
+    // },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -201,8 +201,15 @@ module.exports = {
           // disableVersioning: true,
           // onlyIncludeVersions: ['9.x'],
           versions: {
+            '10.x': {
+              label: '11.x',
+              path: 'v11',
+              badge: true,
+              className: 'v11',
+              banner: 'unreleased',
+            },
             current: {
-              label: '10.x',
+              label: '11.x',
               // path: 'v10',
               badge: true,
               className: 'v10',

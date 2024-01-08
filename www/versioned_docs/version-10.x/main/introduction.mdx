@@ -1,0 +1,102 @@
+---
+id: introduction
+title: tRPC
+hide_title: true
+sidebar_label: Introduction
+slug: /
+author: Alex / KATT 🐱
+author_url: https://twitter.com/alexdotjs
+author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
+---
+
+<div align="center">
+  <svg width="429" height="100" viewBox="0 0 429 128" fill="none" xmlns="http://www.w3.org/2000/svg" className="max-w-full">
+    <g clip-path="url(#clip0_3_2)">
+      <path d="M90.5 0H37.5C16.7893 0 0 16.7893 0 37.5V90.5C0 111.211 16.7893 128 37.5 128H90.5C111.211 128 128 111.211 128 90.5V37.5C128 16.7893 111.211 0 90.5 0Z" fill="#398CCB"/>
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M63.8615 18.75L81.6307 29.002V34.639L103.138 47.0595V68.306L108.908 71.6365V92.152L91.15 102.404L83.2662 97.8445L64.098 108.912L45.0445 97.9085L37.2713 102.404L19.5135 92.1345V71.6365L25.0578 68.4358V47.0595L46.1038 34.9095L46.1155 34.909V29.002L63.8615 18.75ZM81.6307 39.9698V49.5058L63.873 59.7578L46.1155 49.5058V40.234L46.1038 40.2345L29.673 49.725V65.771L37.2713 61.3845L55.0288 71.6365V92.1345L49.6565 95.2413L64.098 103.581L78.6545 95.178L73.3922 92.1345V71.6365L91.15 61.3845L98.523 65.6413V49.725L81.6307 39.9698ZM78.0077 89.4923V76.9788L88.8422 83.2328V95.7463L78.0077 89.4923ZM104.292 76.9615L93.4577 83.2155V95.7463L104.292 89.475V76.9615ZM24.1289 89.475V76.9615L34.9635 83.2155V95.7288L24.1289 89.475ZM50.4135 76.9615L39.5788 83.2155V95.7288L50.4135 89.475V76.9615ZM80.3155 72.9808L91.15 66.727L101.984 72.9808L91.15 79.2405L80.3155 72.9808ZM37.2713 66.7095L26.4365 72.9808L37.2713 79.223L48.1058 72.9808L37.2713 66.7095ZM50.7308 46.8405V34.327L61.5537 40.5865V53.0943L50.7308 46.8405ZM77.0038 34.327L66.1807 40.5865V53.0885L77.0038 46.8405V34.327ZM53.0385 30.3345L63.8615 24.0808L74.6962 30.3345L63.8615 36.5885L53.0385 30.3345Z" fill="white"/>
+    </g>
+    <path class="fill-black dark:fill-white" fill="currentFill" d="M186.695 107.848C191.031 107.848 194.137 107.496 196.422 107.086V92.3203C195.25 92.4961 194.195 92.6133 192.555 92.6133C187.457 92.6133 184.996 90.5625 184.996 85.0547V57.9258H196.422V42.6914H184.996V27.9844H164.195V42.6914H155.523V57.9258H164.195V87.8672C164.195 102.281 171.227 107.848 186.695 107.848ZM201.641 106.5H223.145V77.3789H234.102L248.634 106.5H272.774L255.841 74.1562C264.63 70.3477 270.255 60.9727 270.255 50.1328V50.0156C270.255 32.0859 258.712 21.9492 238.263 21.9492H201.641V106.5ZM223.145 61.793V38.1797H235.743C243.302 38.1797 248.341 42.8672 248.341 49.957V50.0742C248.341 57.2227 243.477 61.793 235.86 61.793H223.145ZM276.295 106.5H297.798V81.7148H312.33C331.197 81.7148 343.384 70.1133 343.384 52.0078V51.8906C343.384 33.7852 331.197 21.9492 312.33 21.9492H276.295V106.5ZM307.173 38.4141C316.255 38.4141 321.646 43.1016 321.646 51.8906V52.0078C321.646 60.7969 316.255 65.543 307.173 65.543H297.798V38.4141H307.173ZM386.924 108.023C408.897 108.023 424.366 93.9023 425.127 74.9766L425.186 74.332H404.502L404.385 74.9766C402.92 84.4102 396.299 90.2109 386.983 90.2109C375.205 90.2109 367.705 80.4844 367.705 64.1367V64.0781C367.705 47.9062 375.147 38.2383 386.924 38.2383C396.768 38.2383 402.92 44.4492 404.268 53.2383L404.385 54.1172H425.069V53.5312C424.307 34.6055 409.014 20.4258 386.924 20.4258C361.67 20.4258 345.791 36.5391 345.791 64.1367V64.1953C345.791 91.793 361.553 108.023 386.924 108.023Z" fill="white"/>
+    <defs>
+      <clipPath id="clip0_3_2">
+        <rect width="128" height="128" fill="white"/>
+      </clipPath>
+    </defs>
+  </svg>
+
+  <p>End-to-end typesafe APIs made easy</p>
+  <p>
+    <a href="https://codecov.io/gh/trpc/trpc">
+      <img
+        src="https://codecov.io/gh/trpc/trpc/branch/main/graph/badge.svg?token=KPPS918B0G"
+        alt="codecov"
+        className="inline-block"
+      />
+    </a>{' '}
+    <a href="https://npmcharts.com/compare/@trpc/server?interval=30">
+      <img alt="weekly downloads" src="https://img.shields.io/npm/dm/%40trpc/server.svg" />
+    </a>{' '}
+    <a href="https://github.com/trpc/trpc">
+      <img
+        src="https://img.shields.io/github/license/trpc/trpc.svg?label=license&style=flat"
+        alt="GitHub License"
+        className="inline-block"
+      />
+    </a>{' '}
+    <a href="https://github.com/trpc/trpc">
+      <img
+        src="https://img.shields.io/github/stars/trpc/trpc.svg?label=🌟%20stars&style=flat"
+        alt="GitHub Stars"
+        className="inline-block"
+      />
+    </a>
+  </p>
+  {/* Commented out as code in video is out-of-date */}
+  {/*
+  <h2>Watch Video</h2>
+  <figure>
+    <iframe loading="lazy" src="https://www.youtube.com/embed/-_GZJ3xwYOw" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{maxWidth: '100%', width: '560px', height: '315px'}}></iframe>
+    <figcaption style={{ fontSize: '0.7rem' }} className="pt-2"><a href="https://twitter.com/alexdotjs">Alex / KATT</a> and Prisma's Mahmoud Abdelwahab doing a deep dive into tRPC.</figcaption>
+  </figure>
+  */}
+</div>
+
+## Introduction
+
+<p>
+  <abbr title="TypeScript Remote Procedure Call">tRPC</abbr> allows you to
+  easily build & consume fully typesafe APIs without schemas or code generation.
+</p>
+
+As TypeScript and static typing increasingly becomes a best practice in web development, API contracts present a major pain point. We need better ways to **statically type** our API endpoints and **share those types** between our client and server (or server-to-server). We set out to build a simple library for building typesafe APIs that leverages the full power of modern TypeScript.
+
+### An alternative to traditional REST or GraphQL
+
+Currently, GraphQL is the dominant way to implement typesafe APIs in TypeScript ([and it's amazing!](../further/further-reading.md#relationship-to-graphql)). Since GraphQL is designed as a language-agnostic specification for implementing APIs, it doesn't take full advantage of the power of a language like TypeScript.
+
+If your project is built with full-stack TypeScript, you can share types **directly** between your client and server, without relying on code generation.
+
+<!--
+### tRPC explained from a REST API background
+
+tRPC can co-exist with a REST API, as it uses a single endpoint. On this specific endpoint tRPC will itself function as a router, meaning tRPC will redirect internally to the right handler on every incoming request.
+
+Like an Express router, tRPC also supports middleware and registering handlers. Unlike Express, tRPC embraces TypeScript to its fullest, providing built-in input and output validation.
+
+On the frontend, `@trpc/client` provides developers typesafety and autocompletion for the available endpoints. It shows what input is required and infers the output type of the endpoint. This ensures that in the case you make breaking changes to an endpoint on the server, TypeScript will warn you in the frontend.
+-->
+
+### Who is tRPC for?
+
+tRPC is for full-stack TypeScript developers. It makes it easy to write endpoints that you can safely use in both the front and backend of your app. Type errors with your API contracts will be caught at build time, reducing the surface for bugs in your application at runtime.
+
+## Features
+
+- ✅&nbsp; Well-tested and production ready.
+- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs, and errors.
+- 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
+- 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
+- 🐻&nbsp; For new and old projects - Easy to start with or add to your existing brownfield project.
+- 🔋&nbsp; Framework agnostic - The tRPC community has built [adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for all of the most popular frameworks.
+- 🥃&nbsp; Subscriptions support - Add typesafe observability to your application.
+- ⚡️&nbsp; Request batching - Requests made at the same time can be automatically combined into one.
+- 👀&nbsp; Examples - Check out an [example](example-apps.mdx) to learn with or use as a starting point.
