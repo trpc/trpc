@@ -43,14 +43,6 @@ We have refactored our internal generics and made them more readable (TODO: link
 
 Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-guide
 
-### Moved internal types to `@trpc/server/unstableInternalTypesExport`
-
-We exported a bunch of utility functions that we used in tRPC within `@trpc/server`, these have now be moved to `@trpc/server/unstableInternalTypesExport`. Needless to say, you should not use those.
-
-If you're making an adapter for tRPC, we're happy to move these to another export and ensure they don't break between minor versions.
-
-Refactor: `inferAsyncReturnType<x>` -> `Awaited<ReturnType<x>>`
-
 ### `wsLink` improvements
 
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
