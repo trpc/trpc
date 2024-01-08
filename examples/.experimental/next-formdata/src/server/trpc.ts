@@ -8,7 +8,7 @@
  * @see https://trpc.io/docs/procedures
  */
 import { initTRPC } from '@trpc/server';
-import * as trpcNext from '@trpc/server/adapters/next';
+import type * as trpcNext from '@trpc/server/adapters/next';
 import { ZodError } from 'zod';
 
 /**

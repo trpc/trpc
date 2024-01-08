@@ -1,11 +1,11 @@
 import isomorphicFetch from 'isomorphic-fetch';
 import nodeFetch from 'node-fetch';
 import type { fetch as undiciFetch } from 'undici';
-import { createTRPCProxyClient } from '../createTRPCClientProxy';
+import { createTRPCClient } from '../createTRPCClient';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links/httpBatchLink';
 import { getAbortController } from './getAbortController';
-import {
+import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,
@@ -27,7 +27,7 @@ describe('AbortController', () => {
 
 describe('fetch', () => {
   test('parameters', () => {
-    createTRPCProxyClient({
+    createTRPCClient({
       links: [
         httpBatchLink({
           url: 'YOUR_SERVER_URL',

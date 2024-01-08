@@ -1,5 +1,5 @@
-import { AnyRouter } from '@trpc/server';
-import { DecoratedProcedureUtilsRecord } from '../proxy/utilsProxy';
+import type { AnyRouter } from '@trpc/core';
+import type { DecoratedProcedureUtilsRecord } from '../proxy/utilsProxy';
 
 /**
  * Use to describe a Utils/Context path which matches the given route's interface

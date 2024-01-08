@@ -12,14 +12,14 @@ slug: /client/links/wsLink
 To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
 const wsClient = createWSClient({
   url: 'ws://localhost:3000',
 });
 
-const trpcClient = createTRPCProxyClient<AppRouter>({
+const trpcClient = createTRPCClient<AppRouter>({
   links: [wsLink<AppRouter>({ client: wsClient })],
 });
 ```
@@ -35,12 +35,44 @@ export interface WebSocketLinkOptions {
 
 function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient
 
+
 export interface WebSocketClientOptions {
-  url: string;
+  /**
+   * The URL to connect to (can be a function that returns a URL)
+   */
+  url: string | (() => MaybePromise<string>);
+  /**
+   * Ponyfill which WebSocket implementation to use
+   */
   WebSocket?: typeof WebSocket;
-  retryDelayMs?: typeof retryDelay;
+  /**
+   * The number of milliseconds before a reconnect is attempted.
+   * @default {@link exponentialBackoff}
+   */
+  retryDelayMs?: typeof exponentialBackoff;
+  /**
+   * Triggered when a WebSocket connection is established
+   */
   onOpen?: () => void;
+  /**
+   * Triggered when a WebSocket connection is closed
+   */
   onClose?: (cause?: { code?: number }) => void;
+  /**
+   * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
+   */
+  lazy?: {
+    /**
+     * Enable lazy mode
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Close the WebSocket after this many milliseconds
+     * @default 0
+     */
+    closeMs: number;
+  };
 }
 ```
 

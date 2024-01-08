@@ -1,3 +1,5 @@
+import type { AnyRouter } from '@trpc/core';
+import { TRPCError } from '@trpc/core';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -5,14 +7,18 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import { TRPCError } from '../..';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPRequest, resolveHTTPResponse } from '../../http';
-import { HTTPResponse } from '../../http/internals/types';
-import {
+import type {
+  HTTPRequest,
+  HTTPResponse,
+  ResolveHTTPRequestOptionsContextFn,
+} from '../../http';
+import { resolveHTTPResponse } from '../../http';
+import type {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
+} from './utils';
+import {
   getHTTPMethod,
   getPath,
   isPayloadV1,
@@ -92,10 +98,10 @@ export function awsLambdaRequestHandler<
   return async (event, context) => {
     const req = lambdaEventToHTTPRequest(event);
     const path = getPath(event);
-    const createContext = async function _createContext(): Promise<
-      inferRouterContext<TRouter>
-    > {
-      return await opts.createContext?.({ event, context });
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({ event, context, ...innerOpts });
     };
 
     const response = await resolveHTTPResponse({

@@ -1,7 +1,7 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import { NextPageContext } from 'next';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { NextPageContext } from 'next';
 // ℹ️ Type-only import:
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export
 import type { AppRouter } from '~/server/routers/_app';
@@ -88,7 +88,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
         }),
       ],
       /**
-       * @link https://tanstack.com/query/v4/docs/react/reference/QueryClient
+       * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };

@@ -1,11 +1,10 @@
-import {
-  httpBatchLink,
+import type {
   HTTPBatchLinkOptions,
-  httpLink,
   HTTPLinkOptions,
   TRPCLink,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { httpBatchLink, httpLink } from '@trpc/client';
+import type { AnyRouter } from '@trpc/core';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {
@@ -36,8 +35,9 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
-        typeof context.revalidate === 'number' || context.revalidate === false
-          ? context.revalidate
+        typeof context['revalidate'] === 'number' ||
+        context['revalidate'] === false
+          ? context['revalidate']
           : undefined;
 
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;

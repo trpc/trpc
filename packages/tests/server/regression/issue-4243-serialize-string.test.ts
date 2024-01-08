@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import { initTRPC } from '@trpc/server';
-import * as trpcNext from '@trpc/server/src/adapters/next';
+import * as trpcNext from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
 function mockReq(opts: {

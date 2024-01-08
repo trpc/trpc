@@ -5,7 +5,10 @@ export type {
   DecoratedProcedureRecord,
   DecorateProcedure,
 } from '../createTRPCReact';
-export type { TRPCUseQueries } from '../internals/useQueries';
+export type {
+  TRPCUseQueries,
+  TRPCUseSuspenseQueries,
+} from '../internals/useQueries';
 export * from './hooks/createRootHooks';
 export * from './queryClient';
 export * from './types';

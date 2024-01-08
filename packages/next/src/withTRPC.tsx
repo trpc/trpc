@@ -2,35 +2,29 @@
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
+import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import {
   dehydrate,
-  DehydratedState,
-  Hydrate,
-  QueryClient,
+  HydrationBoundary,
   QueryClientProvider,
 } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions } from '@trpc/client';
-import {
-  createReactQueryHooks,
-  createTRPCClient,
-  TRPCClient,
-  TRPCClientError,
-  TRPCClientErrorLike,
-} from '@trpc/react-query';
-import {
+import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
+import { createTRPCUntypedClient } from '@trpc/client';
+import type { AnyRouter, Dict, Maybe } from '@trpc/core';
+import type { ResponseMeta } from '@trpc/core/http';
+import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
+import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
-  getQueryClient,
 } from '@trpc/react-query/shared';
-import type { AnyRouter, Dict, Maybe } from '@trpc/server';
-import type { ResponseMeta } from '@trpc/server/http';
-import {
+import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
+import type {
   AppContextType,
   AppPropsType,
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
-import { NextRouter } from 'next/router';
+import type { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
 
 function transformQueryOrMutationCacheErrors<
@@ -88,12 +82,12 @@ export function withTRPC<
   type TRPCPrepassProps = {
     config: WithTRPCConfig<TRouter>;
     queryClient: QueryClient;
-    trpcClient: TRPCClient<TRouter>;
+    trpcClient: TRPCUntypedClient<TRouter>;
     ssrState: 'prepass';
     ssrContext: TSSRContext;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
-    const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
+    const trpc = createRootHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
@@ -134,9 +128,9 @@ export function withTRPC<
           ssrContext={ssrContext}
         >
           <QueryClientProvider client={queryClient}>
-            <Hydrate state={hydratedState}>
+            <HydrationBoundary state={hydratedState}>
               <AppOrPage {...props} />
-            </Hydrate>
+            </HydrationBoundary>
           </QueryClientProvider>
         </trpc.Provider>
       );
@@ -189,7 +183,7 @@ export function withTRPC<
         }
 
         const config = getClientConfig({ ctx });
-        const trpcClient = createTRPCClient(config);
+        const trpcClient = createTRPCUntypedClient(config);
         const queryClient = getQueryClient(config);
 
         const trpcProp: TRPCPrepassProps = {
@@ -231,7 +225,7 @@ export function withTRPC<
             // filter out queries that are marked as trpc: { ssr: false } or are not enabled, but make sure errors are dehydrated
             const isExcludedFromSSr =
               query.state.fetchStatus === 'idle' &&
-              query.state.status === 'loading';
+              query.state.status === 'pending';
             return !isExcludedFromSSr;
           },
         });
@@ -247,7 +241,7 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps.trpcState =
+        pageProps['trpcState'] =
           trpcClient.runtime.combinedTransformer.output.serialize(
             dehydratedCacheWithErrors,
           );

@@ -1,4 +1,5 @@
-import { Transform, TransformCallback } from 'node:stream';
+import type { TransformCallback } from 'node:stream';
+import { Transform } from 'node:stream';
 
 class SliceStream extends Transform {
   private indexOffset = 0;

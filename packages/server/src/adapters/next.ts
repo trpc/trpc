@@ -1,32 +1,28 @@
+import type { AnyRouter } from '@trpc/core';
+import { getErrorShape, TRPCError } from '@trpc/core';
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import type {
-  NextApiHandler,
-  NextApiRequest,
-  NextApiResponse,
-} from 'next/types';
-import { AnyRouter } from '../core';
-import { TRPCError } from '../error/TRPCError';
-import { getErrorShape } from '../shared/getErrorShape';
-import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
 } from './node-http';
+import { nodeHTTPRequestHandler } from './node-http';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
+export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {
-      if (typeof req.query.trpc === 'string') {
-        return req.query.trpc;
+      if (typeof req.query['trpc'] === 'string') {
+        return req.query['trpc'];
       }
-      if (Array.isArray(req.query.trpc)) {
-        return req.query.trpc.join('/');
+      if (Array.isArray(req.query['trpc'])) {
+        return req.query['trpc'].join('/');
       }
       return null;
     }

@@ -1,4 +1,4 @@
-import { RollupOptions } from 'rollup';
+import type { RollupOptions } from 'rollup';
 import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
@@ -8,7 +8,6 @@ export const input = [
   'src/links/splitLink.ts',
   'src/links/loggerLink.ts',
   'src/links/wsLink.ts',
-  'src/shared/index.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

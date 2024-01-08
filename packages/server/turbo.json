@@ -7,9 +7,8 @@
         "package.json",
         "adapters/**",
         "http/**",
-        "rpc/**",
         "observable/**",
-        "subscription/**",
+        "rpc/**",
         "shared/**"
       ]
     }

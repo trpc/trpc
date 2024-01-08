@@ -1,6 +1,6 @@
-import { NonEmptyArray } from '../internals/types';
-import { HTTPLinkBaseOptions } from './internals/httpUtils';
-import { HTTPHeaders, Operation } from './types';
+import type { NonEmptyArray } from '../internals/types';
+import type { HTTPLinkBaseOptions } from './internals/httpUtils';
+import type { HTTPHeaders, Operation } from './types';
 
 export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
   maxURLLength?: number;
@@ -14,8 +14,3 @@ export interface HTTPBatchLinkOptions extends HTTPLinkBaseOptions {
         opList: NonEmptyArray<Operation>;
       }) => HTTPHeaders | Promise<HTTPHeaders>);
 }
-/**
- * @alias HttpBatchLinkOptions
- * @deprecated use `HTTPBatchLinkOptions` instead
- */
-export interface HttpBatchLinkOptions extends HTTPBatchLinkOptions {}

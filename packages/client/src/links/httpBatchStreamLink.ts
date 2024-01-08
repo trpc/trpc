@@ -1,13 +1,11 @@
-import { NonEmptyArray } from '../internals/types';
-import { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
-import {
-  createHTTPBatchLink,
-  RequesterFn,
-} from './internals/createHTTPBatchLink';
+import type { NonEmptyArray } from '../internals/types';
+import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
+import type { RequesterFn } from './internals/createHTTPBatchLink';
+import { createHTTPBatchLink } from './internals/createHTTPBatchLink';
 import { getTextDecoder } from './internals/getTextDecoder';
 import { streamingJsonHttpRequester } from './internals/parseJSONStream';
-import { TextDecoderEsque } from './internals/streamingUtils';
-import { Operation } from './types';
+import type { TextDecoderEsque } from './internals/streamingUtils';
+import type { Operation } from './types';
 
 export interface HTTPBatchStreamLinkOptions extends HTTPBatchLinkOptions {
   /**

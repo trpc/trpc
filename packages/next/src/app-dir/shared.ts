@@ -1,18 +1,18 @@
-import {
+import type {
   CreateTRPCClientOptions,
   Resolver,
   TRPCUntypedClient,
 } from '@trpc/client';
-import {
+import type {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
   Filter,
   inferHandlerInput,
   ProtectedIntersection,
-  ThenArg,
-} from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
+} from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core';
 
 /**
  * @internal
@@ -23,7 +23,7 @@ export type UseProcedureRecord<TRouter extends AnyRouter> = {
     AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
-    : Resolver<TRouter['_def']['record'][TKey]>;
+    : Resolver<TRouter['_def']['_config'], TRouter['_def']['record'][TKey]>;
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(
@@ -40,11 +40,11 @@ type NextAppRouterUse<TRouter extends AnyRouter> = {
   <TData extends Promise<unknown>[]>(
     cb: (t: UseProcedureRecord<TRouter>) => [...TData],
   ): {
-    [TKey in keyof TData]: ThenArg<TData[TKey]>;
+    [TKey in keyof TData]: Awaited<TData[TKey]>;
   };
   <TData extends Promise<unknown>>(
     cb: (t: UseProcedureRecord<TRouter>) => TData,
-  ): ThenArg<TData>;
+  ): Awaited<TData>;
 };
 type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
   use: NextAppRouterUse<TRouter>;
@@ -92,8 +92,11 @@ export interface ActionHandlerDef {
 /**
  * @internal
  */
-export type inferActionDef<TProc extends AnyProcedure> = {
+export type inferActionDef<
+  TConfig extends AnyRootConfig,
+  TProc extends AnyProcedure,
+> = {
   input: inferHandlerInput<TProc>[0];
   output: TProc['_def']['_output_out'];
-  errorShape: TProc['_def']['_config']['$types']['errorShape'];
+  errorShape: TConfig['$types']['errorShape'];
 };

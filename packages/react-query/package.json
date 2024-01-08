@@ -36,11 +36,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./ssg": {
-      "import": "./dist/ssg/index.mjs",
-      "require": "./dist/ssg/index.js",
-      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
@@ -50,7 +45,6 @@
     "package.json",
     "server",
     "shared",
-    "ssg",
     "!**/*.test.*"
   ],
   "eslintConfig": {
@@ -62,17 +56,18 @@
       ]
     }
   },
+  "dependencies": {
+    "@trpc/core": "10.45.0"
+  },
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
-    "@trpc/server": "10.45.0",
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
-    "@trpc/server": "10.45.0",
     "@types/express": "^4.17.17",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.33",
