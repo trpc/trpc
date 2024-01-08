@@ -17,7 +17,6 @@ export type {
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
   TRPCInferrable,
-  inferConfig,
   inferErrorShape,
 } from './core/inference';
 export { initTRPC } from './core/initTRPC';
@@ -43,22 +42,9 @@ export type {
   SubscriptionProcedure,
 } from './core/procedure';
 export { procedureTypes } from './core/procedure';
-export type {
-  AnyProcedureBuilderDef,
-  ProcedureBuilder,
-  ProcedureBuilderDef,
-  ProcedureBuilderResolver,
-  ProcedureCallOptions,
-} from './core/procedureBuilder';
-export { unsetMarker, createBuilder } from './core/procedureBuilder';
-export type {
-  AnyRootConfig,
-  CreateRootConfigTypes,
-  RootConfig,
-  RootConfigTypes,
-  RuntimeConfig,
-} from './core/rootConfig';
-export { isServerDefault } from './core/rootConfig';
+export type { ProcedureBuilder } from './core/procedureBuilder';
+export { unsetMarker } from './core/procedureBuilder';
+export type { AnyRootConfig, RootConfig } from './core/rootConfig';
 export type {
   AnyRouter,
   ProcedureRecord,
@@ -68,11 +54,7 @@ export type {
   RouterCaller,
   AnyRouterDef,
 } from './core/router';
-export {
-  callProcedure,
-  createCallerFactory,
-  mergeRouters,
-} from './core/router';
+export { callProcedure, mergeRouters } from './core/router';
 export type {
   CombinedDataTransformer,
   CombinedDataTransformerClient,
@@ -80,12 +62,7 @@ export type {
   DataTransformerOptions,
   DefaultDataTransformer,
 } from './core/transformer';
-export {
-  defaultTransformer,
-  getDataTransformer,
-  transformResult,
-  transformTRPCResponse,
-} from './core/transformer';
+export { transformResult, transformTRPCResponse } from './core/transformer';
 
 export { getErrorShape } from './error/getErrorShape';
 export type { DefaultErrorShape } from './error/formatter';
@@ -100,11 +77,7 @@ export { createFlatProxy, createRecursiveProxy } from './createProxy';
 // For `.d.ts` files https://github.com/trpc/trpc/issues/3943
 export type { SerializeObject, Serialize } from './serialize';
 
-export type {
-  IntersectionError,
-  ProtectedIntersection,
-  GetRawInputFn,
-} from './types';
+export type { ProtectedIntersection } from './types';
 
 export { isObject } from './utilityFunctions';
 export type {
