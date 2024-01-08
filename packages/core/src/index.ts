@@ -49,6 +49,7 @@ export type {
   inferRouterOutputs,
   TRPCInferrable,
   inferErrorShape,
+  createRouterFactory,
 } from './router';
 export { callProcedure, mergeRouters } from './router';
 export type {
