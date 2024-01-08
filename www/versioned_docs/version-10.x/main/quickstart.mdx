@@ -76,15 +76,15 @@ server.listen(3000);
 
 tRPC combines concepts from [REST](https://www.sitepoint.com/rest-api/) and [GraphQL](https://graphql.org/). If you are unfamiliar with either, take a look at the key [Concepts](./concepts.mdx).
 
-
 ## Installation
 
 tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/client/react/setup) and [usage with Next.js](/docs/client/nextjs/setup).
 
 :::info Requirements
+
 - tRPC requires TypeScript >= 4.7.0
 - We strongly recommend you using `"strict": true` in your `tsconfig.json` as we don't officially support non-strict mode.
-:::
+  :::
 
 Start off by installing the `@trpc/server` and `@trpc/client` packages:
 
@@ -133,7 +133,7 @@ userCreate: (data: { name: string }) => User;
 
 ### 1. Create a router instance
 
-First, let's initialize the tRPC backend. It's good convention to do this in a separate file and export reusable helper functions instead of the entire tRPC object. 
+First, let's initialize the tRPC backend. It's good convention to do this in a separate file and export reusable helper functions instead of the entire tRPC object.
 
 ```ts twoslash title='server/trpc.ts'
 import { initTRPC } from '@trpc/server';
@@ -187,13 +187,12 @@ import { db } from './db';
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
-  userList: publicProcedure
-    .query(async () => {
-      // Retrieve users from a datasource, this is an imaginary database
-      const users = await db.user.findMany();
-      //    ^?
-      return users;
-    }),
+  userList: publicProcedure.query(async () => {
+    // Retrieve users from a datasource, this is an imaginary database
+    const users = await db.user.findMany();
+    //    ^?
+    return users;
+  }),
 });
 ```
 
@@ -258,23 +257,22 @@ const appRouter = router({
 // @filename: db.ts
 // @include: db
 // @filename: server.ts
-import { db } from './db';
-import { publicProcedure, router } from './trpc';
+
 // ---cut---
 import { z } from 'zod';
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   // ...
-  userById: publicProcedure
-    .input(z.string())
-    .query(async (opts) => {
-      const { input } = opts;
-      //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      //    ^?
-      return user;
-    }),
+  userById: publicProcedure.input(z.string()).query(async (opts) => {
+    const { input } = opts;
+    //      ^?
+    // Retrieve the user with the given ID
+    const user = await db.user.findById(input);
+    //    ^?
+    return user;
+  }),
 });
 ```
 
@@ -291,10 +289,11 @@ const appRouter = router({
 // @filename: db.ts
 // @include: db
 // @filename: server.ts
-import { db } from './db';
-import { publicProcedure, router } from './trpc';
+
 // ---cut---
 import * as yup from 'yup';
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   // ...
@@ -324,24 +323,23 @@ const appRouter = router({
 // @filename: db.ts
 // @include: db
 // @filename: server.ts
-import { db } from './db';
-import { publicProcedure, router } from './trpc';
+
 // ---cut---
 import { wrap } from '@decs/typeschema';
 import { string } from 'valibot';
+import { db } from './db';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   // ...
-  userById: publicProcedure
-    .input(wrap(string()))
-    .query(async (opts) => {
-      const { input } = opts;
-      //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      //    ^?
-      return user;
-    }),
+  userById: publicProcedure.input(wrap(string())).query(async (opts) => {
+    const { input } = opts;
+    //      ^?
+    // Retrieve the user with the given ID
+    const user = await db.user.findById(input);
+    //    ^?
+    return user;
+  }),
 });
 ```
 
@@ -369,6 +367,7 @@ Let's add a `userCreate` mutation by adding it as a new property on our router o
 import { z } from 'zod';
 import { db } from './db';
 import { publicProcedure, router } from './trpc';
+
 // ---cut---
 
 const appRouter = router({
@@ -394,9 +393,10 @@ Now that we have defined our router, we can serve it. tRPC has many [adapters](/
 // @filename: trpc.ts
 // @include: trpc
 // @filename: server.ts
-import { router } from './trpc';
+
 // ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { router } from './trpc';
 
 const appRouter = router({
   // ...
@@ -416,13 +416,13 @@ server.listen(3000);
 // @include: db
 ```
 
-<br/>
+<br />
 
 ```ts twoslash title="server/trpc.ts"
 // @include: trpc
 ```
 
-<br/>
+<br />
 
 ```ts twoslash title='server/index.ts'
 // @filename: db.ts
@@ -454,6 +454,7 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // ---cut---
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
+
 //     👆 **type-only** import
 
 // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
@@ -541,7 +542,7 @@ import clsx from 'clsx';
 
 <div
   className={clsx(
-    'h-[800px] w-full rounded-xl overflow-hidden z-10 relative my-0 md:my-4 lg:my-8',
+    'relative z-10 my-0 h-[800px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
   )}
 >
   <Iframe
