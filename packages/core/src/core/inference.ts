@@ -6,7 +6,7 @@ import type { AnyRouter, AnyRouterDef, Router } from './router';
 import type { DefaultDataTransformer } from './transformer';
 
 export type TRPCInferrable = AnyRouter | AnyRootConfig;
-export type inferConfig<TInferrable extends TRPCInferrable> =
+type inferConfig<TInferrable extends TRPCInferrable> =
   TInferrable extends AnyRouter ? TInferrable['_def']['_config'] : TInferrable;
 
 export type inferErrorShape<TInferrable extends TRPCInferrable> =
@@ -22,6 +22,7 @@ export type inferTransformedProcedureOutput<
   ? Serialize<TProcedure['_def']['_output_out']>
   : TProcedure['_def']['_output_out'];
 
+/** @internal */
 export type inferTransformedSubscriptionOutput<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
@@ -29,16 +30,16 @@ export type inferTransformedSubscriptionOutput<
   ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
   : inferObservableValue<TProcedure['_def']['_output_out']>;
 
-export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
+type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   infer TParams
 >
   ? TParams extends AnyRouterDef<any>
     ? TParams
     : never
   : never;
-
-export type inferRouterConfig<TRouter extends AnyRouter> =
+type inferRouterConfig<TRouter extends AnyRouter> =
   inferRouterDef<TRouter>['_config'];
+  
 export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterConfig<TRouter>['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =

@@ -241,10 +241,8 @@ export function createCallerFactory<TConfig extends AnyRootConfig>() {
   };
 }
 
-/**
- * @internal
- */
-export type MergeRouters<
+/** @internal */
+type MergeRouters<
   TRouters extends AnyRouter[],
   TRouterDef extends AnyRouterDef = RouterDef<
     TRouters[0]['_def']['_config'],

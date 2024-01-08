@@ -43,7 +43,7 @@ type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
   ? TFallback
   : TValue;
 
-export type ProcedureBuilderDef<TMeta> = {
+type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
   output?: Parser;
@@ -55,7 +55,7 @@ export type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
 };
 
-export type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
+type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 /**
  * Procedure resolver options
@@ -234,7 +234,7 @@ export interface ProcedureBuilder<
 }
 
 type AnyProcedureBuilder = ProcedureBuilder<any, any, any, any, any, any, any>;
-export type ProcedureBuilderResolver = (
+type ProcedureBuilderResolver = (
   opts: ResolverOptions<any, any, any, any>,
 ) => Promise<unknown>;
 
