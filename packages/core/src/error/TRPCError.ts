@@ -1,5 +1,5 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
-import { isObject } from '../utilityFunctions';
+import { isObject } from '../utils';
 
 class UnknownCauseError extends Error {
   [key: string]: unknown;

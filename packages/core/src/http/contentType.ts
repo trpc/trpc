@@ -2,7 +2,7 @@
 import type { AnyRouter } from '../core/router';
 import type { CombinedDataTransformer } from '../core/transformer';
 import { TRPCError } from '../error/TRPCError';
-import type { MaybePromise } from '../utilityTypes';
+import type { MaybePromise } from '../types';
 import type { HTTPRequest } from './types';
 
 type GetInputs = (opts: {

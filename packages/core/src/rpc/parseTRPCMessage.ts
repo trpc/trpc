@@ -1,6 +1,6 @@
 import { procedureTypes, type ProcedureType } from '../core/procedure';
 import type { CombinedDataTransformer } from '../core/transformer';
-import { isObject } from '../utilityFunctions';
+import { isObject } from '../utils';
 import type { TRPCClientOutgoingMessage } from './envelopes';
 
 /* istanbul ignore next -- @preserve */

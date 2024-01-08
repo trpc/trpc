@@ -6,7 +6,7 @@ import { transformTRPCResponse } from '../core/transformer';
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { TRPCResponse } from '../rpc';
-import type { Maybe } from '../utilityTypes';
+import type { Maybe } from '../types';
 import type { BaseContentTypeHandler } from './contentType';
 import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';

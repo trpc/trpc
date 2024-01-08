@@ -1,8 +1,8 @@
 import { createRecursiveProxy } from '../createProxy';
 import { defaultFormatter } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
-import { mergeWithoutOverrides, omitPrototype } from '../utilityFunctions';
-import type { MaybePromise } from '../utilityTypes';
+import type { MaybePromise } from '../types';
+import { mergeWithoutOverrides, omitPrototype } from '../utils';
 import type { AnyProcedure, ProcedureArgs } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootConfig } from './rootConfig';

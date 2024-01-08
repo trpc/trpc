@@ -1,4 +1,4 @@
-import { identity } from '../utilityFunctions';
+import { identity } from '../utils';
 import type {
   Observable,
   Observer,

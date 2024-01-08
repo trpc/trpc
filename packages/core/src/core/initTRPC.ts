@@ -19,7 +19,7 @@ import type {
   PickFirstDefined,
   Unwrap,
   ValidateShape,
-} from '../utilityTypes';
+} from '../types';
 import { createBuilder } from './procedureBuilder';
 import { mergeRouters } from './router';
 import {

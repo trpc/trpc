@@ -1,7 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
-import type { GetRawInputFn } from '../types';
-import { isObject } from '../utilityFunctions';
-import type { Overwrite, Simplify } from '../utilityTypes';
+import type { GetRawInputFn, Overwrite, Simplify } from '../types';
+import { isObject } from '../utils';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 

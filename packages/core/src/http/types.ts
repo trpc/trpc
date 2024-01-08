@@ -3,7 +3,7 @@ import type { ProcedureType } from '../core/procedure';
 import type { AnyRouter } from '../core/router';
 import type { TRPCError } from '../error/TRPCError';
 import type { TRPCResponse } from '../rpc';
-import type { Dict } from '../utilityTypes';
+import type { Dict } from '../types';
 
 export type HTTPHeaders = Dict<string[] | string>;
 

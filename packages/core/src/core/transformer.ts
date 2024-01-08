@@ -3,7 +3,7 @@ import type {
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '../rpc';
-import { isObject } from '../utilityFunctions';
+import { isObject } from '../utils';
 import type { inferRouterError } from './inference';
 import type { AnyRootConfig } from './rootConfig';
 import type { AnyRouter } from './router';

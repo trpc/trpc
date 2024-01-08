@@ -1,4 +1,4 @@
-import { invert } from '../utilityFunctions';
+import { invert } from '../utils';
 
 // reference: https://www.jsonrpc.org/specification
 

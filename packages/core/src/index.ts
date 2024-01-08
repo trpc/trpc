@@ -77,9 +77,6 @@ export { createFlatProxy, createRecursiveProxy } from './createProxy';
 // For `.d.ts` files https://github.com/trpc/trpc/issues/3943
 export type { SerializeObject, Serialize } from './serialize';
 
-export type { IntersectionError, ProtectedIntersection } from './types';
-
-export { isObject } from './utilityFunctions';
 export type {
   DeepPartial,
   Dict,
@@ -94,4 +91,7 @@ export type {
   Overwrite,
   PickFirstDefined,
   ValidateShape,
-} from './utilityTypes';
+  IntersectionError,
+  ProtectedIntersection,
+} from './types';
+export { isObject } from './utils';
