@@ -10,11 +10,7 @@ import type { ProcedureType } from './procedure';
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
   __brand: 'middlewareMarker';
 };
-
-/**
- * @internal
- */
-export type MiddlewareMarker = typeof middlewareMarker;
+type MiddlewareMarker = typeof middlewareMarker;
 
 /**
  * @internal
