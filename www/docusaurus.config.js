@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const { parseEnv } = require('./src/utils/env');
-// const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
+const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
 
 const env = parseEnv(process.env);
 
@@ -169,12 +169,12 @@ module.exports = {
   },
   plugins: [
     // Sidebar order is decided by the position in the array below
-    // ...generateTypedocDocusaurusPlugins([
-    //   'client',
-    //   'server',
-    //   'next',
-    //   'react-query',
-    // ]),
+    ...generateTypedocDocusaurusPlugins([
+      'client',
+      'server',
+      'next',
+      'react-query',
+    ]),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',
