@@ -1,4 +1,3 @@
-import React from 'react';
 import { companyLogos } from './companies';
 import { SectionTitle } from './SectionTitle';
 

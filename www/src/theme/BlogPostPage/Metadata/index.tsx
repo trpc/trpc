@@ -1,6 +1,5 @@
 import { PageMetadata } from '@docusaurus/theme-common';
 import { useBlogPost } from '@docusaurus/theme-common/internal';
-import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
 import { useEnv } from '../../../utils/useEnv';
 

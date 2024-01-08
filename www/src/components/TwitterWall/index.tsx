@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import React from 'react';
 import { popIn } from '../../animations/popIn';
 import { tweets } from './script.output';
 

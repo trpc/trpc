@@ -1,7 +1,7 @@
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 
-const darkTheme = 'dark';
-const lightTheme = 'light';
+const lightTheme = themes.github;
+const darkTheme = themes.dracula;
 
 if (ExecutionEnvironment.canUseDOM) {
   const storedPreference = localStorage.getItem('theme');

@@ -1,5 +1,4 @@
 import Link from '@docusaurus/Link';
-import React from 'react';
 import { FiArrowRightCircle } from 'react-icons/fi';
 import { allSponsors, topSponsors } from './script.output';
 

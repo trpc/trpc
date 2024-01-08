@@ -85,7 +85,6 @@ export const trpc = createTRPCReact<AppRouter>();
 // @include: server
 // ---cut---
 // @filename: pages/index.tsx
-import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {
@@ -100,7 +99,6 @@ function PostView() {
 
 ```tsx
 // @filename: pages/index.tsx
-import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {

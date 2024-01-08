@@ -1,4 +1,3 @@
-import React from 'react';
 import { handleSmoothScrollToSection } from '../utils/handleSmoothScrollToSection';
 
 export const Preview = () => {

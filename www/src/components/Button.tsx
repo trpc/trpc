@@ -1,6 +1,5 @@
 import Link, { Props as LinkProps } from '@docusaurus/Link';
 import { clsx } from 'clsx';
-import React from 'react';
 
 type AnchorProps = LinkProps & { href: string };
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &

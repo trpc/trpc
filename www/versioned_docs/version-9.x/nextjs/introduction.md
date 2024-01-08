@@ -83,7 +83,8 @@ If strict mode is too much, at least enable `strictNullChecks`:
 
 Implement your tRPC router in `./pages/api/trpc/[trpc].ts`. If you need to split your router into several subrouters, implement them in a top-level `server` directory in your project root, then import them into `./pages/api/trpc/[trpc].ts` and [merge them](merging-routers) into a single root `appRouter`.
 
-<details><summary>View sample router</summary>
+<details>
+<summary>View sample router</summary>
 
 ```ts title='./pages/api/trpc/[trpc].ts'
 import * as trpc from '@trpc/server';
