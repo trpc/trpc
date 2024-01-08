@@ -7,4 +7,3 @@
  */
 
 export * from '@trpc/core';
-export * from '@trpc/core/error';

@@ -2,6 +2,14 @@
  * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
  */
 
+export type { DefaultErrorShape, DefaultErrorData } from './error/formatter';
+export { getErrorShape } from './error/getErrorShape';
+export {
+  TRPCError,
+  getCauseFromUnknown,
+  getTRPCErrorFromUnknown,
+} from './error/TRPCError';
+
 export { initTRPC } from './initTRPC';
 export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
 export {

@@ -44,11 +44,6 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./error": {
-      "import": "./dist/error/index.mjs",
-      "require": "./dist/error/index.js",
-      "default": "./dist/error/index.js"
-    },
     "./http": {
       "import": "./dist/http/index.mjs",
       "require": "./dist/http/index.js",
@@ -70,7 +65,6 @@
     "src",
     "README.md",
     "package.json",
-    "error",
     "http",
     "observable",
     "rpc",

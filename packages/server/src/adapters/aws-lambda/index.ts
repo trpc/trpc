@@ -1,5 +1,5 @@
 import type { AnyRouter } from '@trpc/core';
-import { TRPCError } from '@trpc/core/error';
+import { TRPCError } from '@trpc/core';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,

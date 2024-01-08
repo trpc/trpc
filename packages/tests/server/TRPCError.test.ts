@@ -1,4 +1,4 @@
-import { getTRPCErrorFromUnknown } from '@trpc/core/error';
+import { getTRPCErrorFromUnknown } from '@trpc/core';
 import { TRPCError } from '@trpc/server';
 
 test('should extend original Error class', () => {
