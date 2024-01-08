@@ -331,11 +331,6 @@
       "permanent": true
     },
     {
-      "source": "/docs/v10/:path*",
-      "destination": "/docs/:path*",
-      "permanent": true
-    },
-    {
       "source": "/docs/nextjs/ssg-helpers",
       "destination": "/docs/client/nextjs/server-side-helpers",
       "permanent": true
@@ -503,6 +498,11 @@
     {
       "source": "/docs/reactjs/:path",
       "destination": "/docs/client/react/:path",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v10/:path*",
+      "destination": "/docs/:path*",
       "permanent": true
     }
   ]
