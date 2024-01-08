@@ -43,7 +43,7 @@ export type {
 } from './core/procedure';
 export { procedureTypes } from './core/procedure';
 export type { ProcedureBuilder } from './core/procedureBuilder';
-export { unsetMarker } from './core/procedureBuilder';
+export { unsetMarker, createBuilder } from './core/procedureBuilder';
 export type { AnyRootConfig, RootConfig } from './core/rootConfig';
 export type {
   AnyRouter,

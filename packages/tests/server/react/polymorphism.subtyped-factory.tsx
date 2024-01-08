@@ -3,7 +3,7 @@
 //  which can be used with existing components, but has extra data for other use cases
 //
 import type { AnyRootConfig, createBuilder } from '@trpc/core';
-import type { createRouterFactory } from '@trpc/core/router';
+import type { createRouterFactory } from '@trpc/core/core/router';
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
 import z from 'zod';
