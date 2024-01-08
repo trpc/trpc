@@ -1,18 +1,16 @@
-import {
+import type {
   AnyRouter,
-  ClientDataTransformerOptions,
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-} from '@trpc/server';
-import {
+} from '@trpc/core';
+import type {
   inferObservableValue,
-  observableToPromise,
-  share,
   Unsubscribable,
-} from '@trpc/server/observable';
+} from '@trpc/core/observable';
+import { observableToPromise, share } from '@trpc/core/observable';
 import { createChain } from '../links/internals/createChain';
-import {
+import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
@@ -50,9 +48,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/data-transformers
          **/
-        transformer?:
-          | /** @deprecated **/ ClientDataTransformerOptions
-          | CombinedDataTransformer;
+        transformer?: CombinedDataTransformer;
       };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';

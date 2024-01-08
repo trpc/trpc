@@ -82,6 +82,7 @@ module.exports = {
             'client/react/useMutation',
             'client/react/useInfiniteQuery',
             'client/react/useUtils',
+            'client/react/createTRPCQueryUtils',
             'client/react/useQueries',
             'client/react/suspense',
             'client/react/getQueryKey',
@@ -169,7 +170,7 @@ module.exports = {
     },
     {
       type: 'doc',
-      id: 'migration/migrate-from-v9-to-v10',
+      id: 'migration/migrate-from-v10-to-v11',
     },
     {
       type: 'category',

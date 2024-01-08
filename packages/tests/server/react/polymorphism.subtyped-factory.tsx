@@ -2,11 +2,12 @@
 // This file extends polymorphism.factory.tsx into a sub-typed router,
 //  which can be used with existing components, but has extra data for other use cases
 //
-import { RouterLike, UtilsLike } from '@trpc/react-query/shared';
-import { AnyRootConfig, TRPCError } from '@trpc/server';
-import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
-import { createRouterFactory } from '@trpc/server/core/router';
+import type { AnyRootConfig, createBuilder } from '@trpc/core';
+import type { createRouterFactory } from '@trpc/core/router';
+import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
+import { TRPCError } from '@trpc/server';
 import z from 'zod';
+import { t } from './polymorphism.common';
 import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
 
 //
@@ -32,7 +33,7 @@ type RouterFactory<TConfig extends AnyRootConfig> = ReturnType<
   typeof createRouterFactory<TConfig>
 >;
 type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createBuilder<TConfig>
+  typeof createBuilder<TConfig['$types']['ctx'], TConfig['$types']['meta']>
 >;
 
 export type SubTypedDataProvider = SubTypedFileExportStatusType[];
@@ -45,15 +46,9 @@ export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 let COUNTER = 1;
 
 export function createSubTypedExportRoute<
-  TConfig extends AnyRootConfig,
-  TRouterFactory extends RouterFactory<TConfig>,
-  TBaseProcedure extends BaseProcedure<TConfig>,
->(
-  createRouter: TRouterFactory,
-  baseProcedure: TBaseProcedure,
-  dataProvider: SubTypedDataProvider,
-) {
-  return createRouter({
+  TBaseProcedure extends BaseProcedure<(typeof t)['_config']>,
+>(baseProcedure: TBaseProcedure, dataProvider: SubTypedDataProvider) {
+  return t.router({
     start: baseProcedure
       .input(SubTypedFileExportRequest)
       .output(SubTypedFileExportStatus)

@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { httpLink } from '@trpc/client/src';
+import { httpLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 
 describe('undefined on server response is inferred on the client', () => {
@@ -44,14 +44,14 @@ describe('undefined on server response is inferred on the client', () => {
     .done();
 
   test('using vanilla client', async () => {
-    const num = await ctx.proxy.num.query();
+    const num = await ctx.client.num.query();
     expectTypeOf(num).toEqualTypeOf<number | undefined>();
 
-    const obj = await ctx.proxy.obj.query();
+    const obj = await ctx.client.obj.query();
     // key might be stripped entirely   👇, or value should be defined
     expectTypeOf(obj).toEqualTypeOf<{ id?: number } | undefined>();
 
-    const und = await ctx.proxy.und.query();
+    const und = await ctx.client.und.query();
     expectTypeOf(und).toEqualTypeOf<undefined>();
   });
 

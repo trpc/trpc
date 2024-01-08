@@ -16,7 +16,7 @@ Use your preferred package manager to install the `@trpc/client` library, and al
   <TabItem value="npm" label="npm" default>
 
 ```bash
-npm install @trpc/client @trpc/server
+npm install @trpc/client@next @trpc/server@next
 ```
 
   </TabItem>
@@ -24,7 +24,7 @@ npm install @trpc/client @trpc/server
   <TabItem value="yarn" label="yarn">
 
 ```bash
-yarn add @trpc/client @trpc/server
+yarn add @trpc/client@next @trpc/server@next
 ```
 
   </TabItem>
@@ -32,7 +32,7 @@ yarn add @trpc/client @trpc/server
   <TabItem value="pnpm" label="pnpm">
 
 ```bash
-pnpm add @trpc/client @trpc/server
+pnpm add @trpc/client@next @trpc/server@next
 ```
 
   </TabItem>
@@ -40,7 +40,7 @@ pnpm add @trpc/client @trpc/server
   <TabItem value="bun" label="bun">
 
 ```bash
-bun add @trpc/client @trpc/server
+bun add @trpc/client@next @trpc/server@next
 ```
 
   </TabItem>
@@ -54,13 +54,13 @@ import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 ### 3. Initialize the tRPC client
 
-Create a tRPC client with the `createTRPCProxyClient` method, and add a `links` array with a [terminating link](../links/overview.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../links/overview.md).
+Create a tRPC client with the `createTRPCClient` method, and add a `links` array with a [terminating link](../links/overview.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../links/overview.md).
 
 ```ts title='client.ts'
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/trpc',

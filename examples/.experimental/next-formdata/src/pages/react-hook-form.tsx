@@ -2,8 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { uploadFileSchema } from '~/utils/schemas';
 import { trpc } from '~/utils/trpc';
 import { useRef, useState } from 'react';
-import { FormProvider, useForm, UseFormProps } from 'react-hook-form';
-import { z } from 'zod';
+import type { UseFormProps } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
+import type { z } from 'zod';
 
 /**
  * zod-form-data wraps zod in an effect where the original type is a `FormData`
@@ -114,7 +115,7 @@ export default function Page() {
               />
             </div>
             <div>
-              <button type="submit" disabled={mutation.status === 'loading'}>
+              <button type="submit" disabled={mutation.status === 'pending'}>
                 submit
               </button>
             </div>

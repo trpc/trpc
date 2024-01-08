@@ -1,4 +1,4 @@
-import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/server/observable';
 import type { AppRouter } from './server';
 
@@ -7,7 +7,7 @@ const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 async function main() {
   const url = `http://localhost:2021/trpc`;
 
-  const trpc = createTRPCProxyClient<AppRouter>({
+  const trpc = createTRPCClient<AppRouter>({
     links: [
       () =>
         ({ op, next }) => {
@@ -51,7 +51,7 @@ async function main() {
   }
   await sleep();
 
-  const authedClient = createTRPCProxyClient<AppRouter>({
+  const authedClient = createTRPCClient<AppRouter>({
     links: [
       loggerLink(),
       httpBatchLink({

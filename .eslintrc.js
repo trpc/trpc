@@ -75,6 +75,20 @@ const config = {
       },
     ],
     'max-params': ['error', 3],
+    '@typescript-eslint/consistent-type-imports': 'error',
+    '@typescript-eslint/consistent-type-exports': 'error',
+    '@typescript-eslint/no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['@trpc/*/src'],
+            message: 'Remove the "`/src`" part of this import',
+            allowTypeImports: false,
+          },
+        ],
+      },
+    ],
   },
   overrides: [
     // {

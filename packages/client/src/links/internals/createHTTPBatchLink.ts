@@ -1,16 +1,17 @@
-import { AnyRouter, ProcedureType } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+import type { AnyRouter, ProcedureType } from '@trpc/core';
+import { observable } from '@trpc/core/observable';
 import { dataLoader } from '../../internals/dataLoader';
 import { transformResult } from '../../shared/transformResult';
 import { TRPCClientError } from '../../TRPCClientError';
-import { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
-import { CancelFn, Operation, TRPCClientRuntime, TRPCLink } from '../types';
-import {
-  getUrl,
-  HTTPResult,
-  ResolvedHTTPLinkOptions,
-  resolveHTTPLinkOptions,
-} from './httpUtils';
+import type { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
+import type {
+  CancelFn,
+  Operation,
+  TRPCClientRuntime,
+  TRPCLink,
+} from '../types';
+import type { HTTPResult, ResolvedHTTPLinkOptions } from './httpUtils';
+import { getUrl, resolveHTTPLinkOptions } from './httpUtils';
 
 /**
  * @internal

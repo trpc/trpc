@@ -1,22 +1,45 @@
-import { IncomingMessage } from 'http';
-import { WebSocket, WebSocketServer } from 'ws';
-import { AnyRouter, callProcedure, inferRouterContext } from '../core';
-import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import { BaseHandlerOptions } from '../internals/types';
-import { isObservable, Unsubscribable } from '../observable';
+import type { IncomingMessage } from 'http';
+import type { AnyRouter, inferRouterContext, MaybePromise } from '@trpc/core';
 import {
+  callProcedure,
+  getErrorShape,
+  getTRPCErrorFromUnknown,
+  transformTRPCResponse,
+  TRPCError,
+} from '@trpc/core';
+import type { BaseHandlerOptions } from '@trpc/core/http';
+import type { Unsubscribable } from '@trpc/core/observable';
+import { isObservable } from '@trpc/core/observable';
+import type {
   JSONRPC2,
-  parseTRPCMessage,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
-} from '../rpc';
-import { getErrorShape } from '../shared/getErrorShape';
-import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPCreateContextOption,
-} from './node-http';
+} from '@trpc/core/rpc';
+import { parseTRPCMessage } from '@trpc/core/rpc';
+import type ws from 'ws';
+import type { NodeHTTPCreateContextFnOptions } from './node-http';
+
+/**
+ * Importing ws causes a build error
+ * @see https://github.com/trpc/trpc/pull/5279
+ */
+const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
+
+/**
+ * @public
+ */
+export type CreateWSSContextFnOptions = Omit<
+  NodeHTTPCreateContextFnOptions<IncomingMessage, ws.WebSocket>,
+  'info'
+>;
+
+/**
+ * @public
+ */
+export type CreateWSSContextFn<TRouter extends AnyRouter> = (
+  opts: CreateWSSContextFnOptions,
+) => MaybePromise<inferRouterContext<TRouter>>;
 
 /**
  * Web socket server handler
@@ -25,15 +48,22 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   TRouter,
   IncomingMessage
 > &
-  NodeHTTPCreateContextOption<TRouter, IncomingMessage, WebSocket> & {
-    wss: WebSocketServer;
+  (object extends inferRouterContext<TRouter>
+    ? {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext?: CreateWSSContextFn<TRouter>;
+      }
+    : {
+        /**
+         * @link https://trpc.io/docs/context
+         **/
+        createContext: CreateWSSContextFn<TRouter>;
+      }) & {
+    wss: ws.WebSocketServer;
     process?: NodeJS.Process;
   };
-
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  WebSocket
->;
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -95,7 +125,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
-          rawInput: input,
+          getRawInput: async () => input,
           ctx,
           type,
         });
@@ -159,7 +189,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         /* istanbul ignore next -- @preserve */
-        if (client.readyState !== client.OPEN) {
+        if (client.readyState !== WEBSOCKET_OPEN) {
           // if the client got disconnected whilst initializing the subscription
           // no need to send stopped message if the client is disconnected
           sub.unsubscribe();
@@ -294,7 +324,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {
-        if (client.readyState === 1 /* ws.OPEN */) {
+        if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }
       }

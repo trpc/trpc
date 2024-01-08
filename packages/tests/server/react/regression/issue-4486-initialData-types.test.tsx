@@ -1,6 +1,6 @@
 import { ignoreErrors } from '../../___testHelpers';
 import { getServerAndReactClient } from '../__reactHelpers';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 
 /**
@@ -32,10 +32,10 @@ const ctx = konn()
 
 describe('placeholderData', async () => {
   test('invalid placeholderData should typeerror', () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData() {
           return {
@@ -44,7 +44,7 @@ describe('placeholderData', async () => {
         },
       });
 
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData() {
           return {
@@ -55,13 +55,13 @@ describe('placeholderData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData() {
           return 123;
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData() {
           return 123;
@@ -70,13 +70,7 @@ describe('placeholderData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
-        placeholderData: {
-          // @ts-expect-error can't return data that doesn't match the output type
-          barbaz: null,
-        },
-      });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         placeholderData: {
           // @ts-expect-error can't return data that doesn't match the output type
           barbaz: null,
@@ -85,11 +79,11 @@ describe('placeholderData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData: 123,
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         placeholderData: 123,
       });
@@ -97,18 +91,10 @@ describe('placeholderData', async () => {
   });
 
   test('good placeholderData does not typeerror', () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
-        placeholderData() {
-          return {
-            posts: [],
-            foo: 'bar',
-          };
-        },
-      });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         placeholderData() {
           return {
             posts: [],
@@ -119,13 +105,7 @@ describe('placeholderData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
-        placeholderData: {
-          posts: [],
-          foo: 'bar',
-        },
-      });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         placeholderData: {
           posts: [],
           foo: 'bar',
@@ -137,10 +117,10 @@ describe('placeholderData', async () => {
 
 describe('initialData', async () => {
   test('invalid initialData should typeerror', () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData() {
           return {
@@ -148,7 +128,7 @@ describe('initialData', async () => {
           };
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData() {
           return {
@@ -159,13 +139,13 @@ describe('initialData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData() {
           return 123;
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData() {
           return 123;
@@ -174,13 +154,13 @@ describe('initialData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         initialData: {
           // @ts-expect-error can't return data that doesn't match the output type
           barbaz: null,
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         initialData: {
           // @ts-expect-error can't return data that doesn't match the output type
           barbaz: null,
@@ -189,11 +169,11 @@ describe('initialData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData: 123,
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         // @ts-expect-error can't return data that doesn't match the output type
         initialData: 123,
       });
@@ -201,10 +181,10 @@ describe('initialData', async () => {
   });
 
   test('good initialData does not typeerror', () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         initialData() {
           return {
             posts: [],
@@ -212,7 +192,7 @@ describe('initialData', async () => {
           };
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         initialData() {
           return {
             posts: [],
@@ -223,13 +203,13 @@ describe('initialData', async () => {
     });
 
     ignoreErrors(() => {
-      proxy.post.list.useQuery(undefined, {
+      client.post.list.useQuery(undefined, {
         initialData: {
           posts: [],
           foo: 'bar',
         },
       });
-      proxy.post.list.useSuspenseQuery(undefined, {
+      client.post.list.useSuspenseQuery(undefined, {
         initialData: {
           posts: [],
           foo: 'bar',

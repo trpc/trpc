@@ -4,13 +4,14 @@ import { i18n } from 'next-i18next.config';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import SuperJSON from 'superjson';
 import { createInnerTRPCContext } from './context';
-import { AppRouter, appRouter } from './routers/_app';
+import type { AppRouter } from './routers/_app';
+import { appRouter } from './routers/_app';
 
 export async function ssgInit<TParams extends { locale?: string }>(
   opts: GetStaticPropsContext<TParams>,
 ) {
   // Using an external TRPC app
-  // const client = createTRPCProxyClient<AppRouter>({
+  // const client = createTRPCClient<AppRouter>({
   //   links: [
   //     httpBatchLink({
   //       url: 'http://localhost:3000/api/trpc',

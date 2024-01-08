@@ -1,8 +1,12 @@
-import { AnyRouter } from '../../core';
-import { getBatchStreamFormatter, HTTPRequest } from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { FetchHandlerOptions } from './types';
+import type { AnyRouter } from '@trpc/core';
+import type {
+  HTTPRequest,
+  HTTPResponse,
+  ResolveHTTPRequestOptionsContextFn,
+  ResponseChunk,
+} from '../../http';
+import { getBatchStreamFormatter, resolveHTTPResponse } from '../../http';
+import type { FetchHandlerOptions } from './types';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   FetchHandlerOptions<TRouter> & {
@@ -22,8 +26,10 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 ): Promise<Response> {
   const resHeaders = new Headers();
 
-  const createContext = async () => {
-    return opts.createContext?.({ req: opts.req, resHeaders });
+  const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+    innerOpts,
+  ) => {
+    return opts.createContext?.({ req: opts.req, resHeaders, ...innerOpts });
   };
 
   const url = new URL(opts.req.url);

@@ -1,15 +1,14 @@
-import * as fs from 'fs';
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   experimental_formDataLink,
+  getUntypedClient,
   httpBatchLink,
   loggerLink,
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
 import { initTRPC } from '@trpc/server';
 import {
   experimental_createFileUploadHandler,
@@ -20,9 +19,10 @@ import {
   nodeHTTPFormDataContentTypeHandler,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React from 'react';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
@@ -53,7 +53,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: async () => formData,
           });
         })
         .input(
@@ -72,7 +72,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: async () => formData,
           });
         })
         .input(
@@ -99,7 +99,7 @@ const ctx = konn()
           );
 
           return opts.next({
-            rawInput: formData,
+            getRawInput: async () => formData,
           });
         })
         .input(
@@ -161,18 +161,17 @@ const ctx = konn()
     });
 
     const queryClient = createQueryClient();
-    const proxy = createTRPCReact<TRouter, unknown>();
-    const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
+    const trpc = createTRPCReact<TRouter, unknown>();
 
     const client = opts.client;
 
     function App(props: { children: ReactNode }) {
       return (
-        <baseProxy.Provider {...{ queryClient, client }}>
+        <trpc.Provider {...{ queryClient, client: getUntypedClient(client) }}>
           <QueryClientProvider client={queryClient}>
             {props.children}
           </QueryClientProvider>
-        </baseProxy.Provider>
+        </trpc.Provider>
       );
     }
 
@@ -198,7 +197,7 @@ test('upload file', async () => {
     }),
   );
 
-  const fileContents = await ctx.proxy.uploadFile.mutate(form);
+  const fileContents = await ctx.client.uploadFile.mutate(form);
 
   expect(fileContents).toMatchInlineSnapshot(`
     Object {
@@ -215,8 +214,8 @@ test('polymorphic - accept both JSON and FormData', async () => {
   const form = new FormData();
   form.set('text', 'foo');
 
-  const formDataRes = await ctx.proxy.polymorphic.mutate(form);
-  const jsonRes = await ctx.proxy.polymorphic.mutate({
+  const formDataRes = await ctx.client.polymorphic.mutate(form);
+  const jsonRes = await ctx.client.polymorphic.mutate({
     text: 'foo',
   });
   expect(formDataRes).toEqual(jsonRes);
@@ -240,7 +239,7 @@ test('upload a combination of files and non-file text fields', async () => {
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   const fileContents =
-    await ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form);
+    await ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form);
 
   expect(fileContents).toEqual({
     files: [
@@ -280,7 +279,7 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   await expect(
-    ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
+    ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
     `"Body exceeded upload size of 100 bytes."`,
   );
@@ -299,7 +298,7 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   await expect(
-    ctx.proxy.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
+    ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
     `"Body exceeded upload size of 100 bytes."`,
   );

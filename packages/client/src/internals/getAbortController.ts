@@ -1,5 +1,5 @@
-import { Maybe } from '@trpc/server';
-import { AbortControllerEsque } from './types';
+import type { Maybe } from '@trpc/core';
+import type { AbortControllerEsque } from './types';
 
 export function getAbortController(
   customAbortControllerImpl: Maybe<AbortControllerEsque>,

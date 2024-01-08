@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server/src';
-import { observable } from '@trpc/server/src/observable';
+import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -47,13 +47,13 @@ test('useSubscription', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
 
-  const { App, proxy } = ctx;
+  const { App, client } = ctx;
 
   function MyComponent() {
     const [isStarted, setIsStarted] = useState(false);
     const [data, setData] = useState<number>();
 
-    proxy.onEvent.useSubscription(10, {
+    client.onEvent.useSubscription(10, {
       enabled: true,
       onStarted: () => {
         setIsStarted(true);

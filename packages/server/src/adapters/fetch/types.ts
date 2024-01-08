@@ -1,9 +1,10 @@
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http';
+import type { AnyRouter, inferRouterContext } from '@trpc/core';
+import type { HTTPBaseHandlerOptions, TRPCRequestInfo } from '../../http';
 
 export type FetchCreateContextFnOptions = {
   req: Request;
   resHeaders: Headers;
+  info: TRPCRequestInfo;
 };
 
 export type FetchCreateContextFn<TRouter extends AnyRouter> = (

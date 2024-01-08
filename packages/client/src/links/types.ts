@@ -1,12 +1,12 @@
-import {
+import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformer,
-} from '@trpc/server';
-import { Observable, Observer } from '@trpc/server/observable';
-import { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
-import { ResponseEsque } from '../internals/types';
-import { TRPCClientError } from '../TRPCClientError';
+} from '@trpc/core';
+import type { Observable, Observer } from '@trpc/core/observable';
+import type { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/core/rpc';
+import type { ResponseEsque } from '../internals/types';
+import type { TRPCClientError } from '../TRPCClientError';
 
 /**
  * @internal
@@ -37,10 +37,16 @@ export type Operation<TInput = unknown> = {
   context: OperationContext;
 };
 
+interface HeadersInitEsque {
+  [Symbol.iterator](): IterableIterator<[string, string]>;
+}
+
 /**
  * @internal
  */
-export type HTTPHeaders = Record<string, string[] | string | undefined>;
+export type HTTPHeaders =
+  | HeadersInitEsque
+  | Record<string, string[] | string | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library

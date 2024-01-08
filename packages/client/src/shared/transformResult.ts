@@ -1,10 +1,9 @@
-import type { AnyRouter, inferRouterError } from '@trpc/server';
+import { isObject, type AnyRouter, type inferRouterError } from '@trpc/core';
 import type {
   TRPCResponse,
   TRPCResponseMessage,
   TRPCResultMessage,
-} from '@trpc/server/rpc';
-import { isObject } from '../internals/isObject';
+} from '@trpc/core/rpc';
 import type { TRPCClientRuntime } from '../links';
 
 // FIXME:
@@ -68,7 +67,7 @@ export function transformResult<TRouter extends AnyRouter, TOutput>(
   if (
     !result.ok &&
     (!isObject(result.error.error) ||
-      typeof result.error.error.code !== 'number')
+      typeof result.error.error['code'] !== 'number')
   ) {
     throw new TransformResultError();
   }

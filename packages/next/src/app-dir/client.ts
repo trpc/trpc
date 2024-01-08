@@ -1,11 +1,11 @@
+import type { CreateTRPCClient } from '@trpc/client';
 import {
   clientCallTypeToProcedureType,
-  CreateTRPCProxyClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
-import { CreateTRPCNextAppRouterOptions } from './shared';
+import type { AnyRouter } from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core';
+import type { CreateTRPCNextAppRouterOptions } from './shared';
 
 export {
   // ts-prune-ignore-next
@@ -14,8 +14,6 @@ export {
   experimental_serverActionLink,
   // ts-prune-ignore-next
   type UseTRPCActionResult,
-  // ts-prune-ignore-next
-  type inferActionResultProps,
 } from './create-action-hook';
 
 type QueryResult = {
@@ -65,6 +63,6 @@ export function experimental_createTRPCNextAppDirClient<
     });
 
     return promise;
-  }) as CreateTRPCProxyClient<TRouter>;
+  }) as CreateTRPCClient<TRouter>;
   // });
 }
