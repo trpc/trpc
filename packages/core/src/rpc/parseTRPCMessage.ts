@@ -1,5 +1,5 @@
-import { procedureTypes, type ProcedureType } from '../core/procedure';
-import type { CombinedDataTransformer } from '../core/transformer';
+import { procedureTypes, type ProcedureType } from '../procedure';
+import type { CombinedDataTransformer } from '../transformer';
 import { isObject } from '../utils';
 import type { TRPCClientOutgoingMessage } from './envelopes';
 

@@ -1,8 +1,8 @@
-import { TRPCError } from '../error/TRPCError';
-import type { GetRawInputFn, Overwrite, Simplify } from '../types';
-import { isObject } from '../utils';
+import { TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
+import type { GetRawInputFn, Overwrite, Simplify } from './types';
+import { isObject } from './utils';
 
 /** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {

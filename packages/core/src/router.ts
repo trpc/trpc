@@ -1,13 +1,18 @@
-import { createRecursiveProxy } from '../createProxy';
-import { defaultFormatter } from '../error/formatter';
-import { TRPCError } from '../error/TRPCError';
-import type { MaybePromise } from '../types';
-import { mergeWithoutOverrides, omitPrototype } from '../utils';
-import type { AnyProcedure, ProcedureArgs } from './procedure';
+import { createRecursiveProxy } from './createProxy';
+import { defaultFormatter } from './error/formatter';
+import { TRPCError } from './error/TRPCError';
+import type {
+  AnyProcedure,
+  inferProcedureInput,
+  inferTransformedProcedureOutput,
+  ProcedureArgs,
+} from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootConfig } from './rootConfig';
 import type { CombinedDataTransformer } from './transformer';
 import { defaultTransformer } from './transformer';
+import type { MaybePromise } from './types';
+import { mergeWithoutOverrides, omitPrototype } from './utils';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;
@@ -69,6 +74,58 @@ export interface Router<TDef extends AnyRouterDef> {
 }
 
 export type AnyRouter = Router<AnyRouterDef>;
+
+type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
+  infer TParams
+>
+  ? TParams extends AnyRouterDef<any>
+    ? TParams
+    : never
+  : never;
+type inferRouterConfig<TRouter extends AnyRouter> =
+  inferRouterDef<TRouter>['_config'];
+
+export type inferRouterContext<TRouter extends AnyRouter> =
+  inferRouterConfig<TRouter>['$types']['ctx'];
+export type inferRouterError<TRouter extends AnyRouter> =
+  inferRouterConfig<TRouter>['$types']['errorShape'];
+export type inferRouterMeta<TRouter extends AnyRouter> =
+  inferRouterConfig<TRouter>['$types']['meta'];
+
+export type TRPCInferrable = AnyRouter | AnyRootConfig;
+type inferConfig<TInferrable extends TRPCInferrable> =
+  TInferrable extends AnyRouter ? TInferrable['_def']['_config'] : TInferrable;
+
+export type inferErrorShape<TInferrable extends TRPCInferrable> =
+  inferConfig<TInferrable>['$types']['errorShape'];
+
+type GetInferenceHelpers<
+  TType extends 'input' | 'output',
+  TRouter extends AnyRouter,
+> = {
+  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
+    ? TRouterOrProcedure extends AnyRouter
+      ? GetInferenceHelpers<TType, TRouterOrProcedure>
+      : TRouterOrProcedure extends AnyProcedure
+      ? TType extends 'input'
+        ? inferProcedureInput<TRouterOrProcedure>
+        : inferTransformedProcedureOutput<
+            TRouter['_def']['_config'],
+            TRouterOrProcedure
+          >
+      : never
+    : never;
+};
+
+export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
+  'input',
+  TRouter
+>;
+
+export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
+  'output',
+  TRouter
+>;
 
 function isRouter(
   procedureOrRouter: AnyProcedure | AnyRouter,

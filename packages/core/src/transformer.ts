@@ -1,12 +1,11 @@
+import type { AnyRootConfig } from './rootConfig';
+import type { AnyRouter, inferRouterError } from './router';
 import type {
   TRPCResponse,
   TRPCResponseMessage,
   TRPCResultMessage,
-} from '../rpc';
-import { isObject } from '../utils';
-import type { inferRouterError } from './inference';
-import type { AnyRootConfig } from './rootConfig';
-import type { AnyRouter } from './router';
+} from './rpc';
+import { isObject } from './utils';
 
 /**
  * @public

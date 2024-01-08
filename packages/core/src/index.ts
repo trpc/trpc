@@ -2,30 +2,15 @@
  * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
  */
 
-export type {
-  inferHandlerInput,
-  inferProcedureInput,
-  inferProcedureOutput,
-  inferProcedureParams,
-  inferRouterContext,
-  inferRouterError,
-  inferRouterInputs,
-  inferRouterMeta,
-  inferRouterOutputs,
-  inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
-  TRPCInferrable,
-  inferErrorShape,
-} from './core/inference';
-export { initTRPC } from './core/initTRPC';
-export type { MiddlewareFunction, MiddlewareBuilder } from './core/middleware';
+export { initTRPC } from './initTRPC';
+export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
 export {
   createInputMiddleware,
   createOutputMiddleware,
   experimental_standaloneMiddleware,
   middlewareMarker,
-} from './core/middleware';
-export type { inferParser } from './core/parser';
+} from './middleware';
+export type { inferParser } from './parser';
 export type {
   Procedure,
   ProcedureType,
@@ -36,13 +21,19 @@ export type {
   ProcedureArgs,
   ProcedureOptions,
   MutationProcedure,
+  inferHandlerInput,
+  inferProcedureInput,
+  inferProcedureOutput,
+  inferTransformedProcedureOutput,
+  inferTransformedSubscriptionOutput,
+  inferProcedureParams,
   QueryProcedure,
   SubscriptionProcedure,
-} from './core/procedure';
-export { procedureTypes } from './core/procedure';
-export type { ProcedureBuilder } from './core/procedureBuilder';
-export { unsetMarker, createBuilder } from './core/procedureBuilder';
-export type { AnyRootConfig, RootConfig } from './core/rootConfig';
+} from './procedure';
+export { procedureTypes } from './procedure';
+export type { ProcedureBuilder } from './procedureBuilder';
+export { unsetMarker, createBuilder } from './procedureBuilder';
+export type { AnyRootConfig, RootConfig } from './rootConfig';
 export type {
   AnyRouter,
   ProcedureRecord,
@@ -51,16 +42,23 @@ export type {
   Router,
   RouterCaller,
   AnyRouterDef,
-} from './core/router';
-export { callProcedure, mergeRouters } from './core/router';
+  inferRouterContext,
+  inferRouterError,
+  inferRouterInputs,
+  inferRouterMeta,
+  inferRouterOutputs,
+  TRPCInferrable,
+  inferErrorShape,
+} from './router';
+export { callProcedure, mergeRouters } from './router';
 export type {
   CombinedDataTransformer,
   CombinedDataTransformerClient,
   DataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-} from './core/transformer';
-export { transformResult, transformTRPCResponse } from './core/transformer';
+} from './transformer';
+export { transformResult, transformTRPCResponse } from './transformer';
 
 export { createFlatProxy, createRecursiveProxy } from './createProxy';
 

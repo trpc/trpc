@@ -1,6 +1,6 @@
-import type { ProcedureType } from '../core/procedure';
-import type { AnyRootConfig } from '../core/rootConfig';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
+import type { ProcedureType } from '../procedure';
+import type { AnyRootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
 import type { TRPCError } from './TRPCError';

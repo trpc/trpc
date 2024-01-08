@@ -1,4 +1,4 @@
-import type { ProcedureType } from '../core/procedure';
+import type { ProcedureType } from '../procedure';
 import type {
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,

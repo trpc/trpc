@@ -1,11 +1,4 @@
-import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import type {
-  GetRawInputFn,
-  MaybePromise,
-  Overwrite,
-  Simplify,
-} from '../types';
-import { mergeWithoutOverrides } from '../utils';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
@@ -29,6 +22,8 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
+import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
