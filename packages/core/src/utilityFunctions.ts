@@ -5,7 +5,6 @@ type KeyFromValue<TValue, TType extends Record<PropertyKey, PropertyKey>> = {
 type Invert<TType extends Record<PropertyKey, PropertyKey>> = {
   [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
 };
-
 /**
  * @internal
  */

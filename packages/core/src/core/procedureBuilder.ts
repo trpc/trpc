@@ -1,13 +1,7 @@
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { GetRawInputFn } from '../types';
 import { mergeWithoutOverrides } from '../utilityFunctions';
-import type {
-  DefaultValue,
-  MaybePromise,
-  Overwrite,
-  Simplify,
-  UnsetMarker,
-} from '../utilityTypes';
+import type { MaybePromise, Overwrite, Simplify } from '../utilityTypes';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
@@ -37,6 +31,13 @@ type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   : Simplify<TType & TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
+
+/** @internal */
+export const unsetMarker = Symbol('unsetMarker');
+type UnsetMarker = typeof unsetMarker;
+type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
+  ? TFallback
+  : TValue;
 
 export type ProcedureBuilderDef<TMeta> = {
   procedure: true;

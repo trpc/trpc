@@ -14,6 +14,7 @@ export type Maybe<TType> = TType | null | undefined;
 export type Simplify<TType> = TType extends any[] | Date
   ? TType
   : { [K in keyof TType]: TType[K] };
+
 /**
  * @public
  */
@@ -23,16 +24,6 @@ export type Dict<TType> = Record<string, TType | undefined>;
  * @public
  */
 export type MaybePromise<TType> = Promise<TType> | TType;
-
-/**
- * @internal
- *
- * Creates a "lower-priority" type inference.
- * https://github.com/microsoft/TypeScript/issues/14829#issuecomment-322267089
- */
-export type InferLast<TType> = TType & {
-  [KeyType in keyof TType]: TType[KeyType];
-};
 
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
@@ -72,7 +63,7 @@ export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
   ? Omit<TObj, TKey>
   : never;
 
-/*
+/**
  * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
  * Fixes issues with iterating over keys of objects with index signatures.
  * Without this, iterations over keys of objects with index signatures will lose
@@ -111,22 +102,6 @@ export type Overwrite<TType, TWith> = TWith extends any
           {})
     : TWith
   : never;
-
-/**
- * @internal
- */
-export type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
-  ? TFallback
-  : TValue;
-
-/**
- * @internal
- */
-export const unsetMarker = Symbol('unsetMarker');
-/**
- * @internal
- */
-export type UnsetMarker = typeof unsetMarker;
 
 /**
  * @internal

@@ -67,7 +67,6 @@ export type {
   DistributiveOmit,
   Filter,
   FilterKeys,
-  InferLast,
   Maybe,
   MaybePromise,
   Simplify,
@@ -75,9 +74,7 @@ export type {
   WithoutIndexSignature,
   Overwrite,
   PickFirstDefined,
-  UnsetMarker,
   ValidateShape,
-  DefaultValue,
 } from './utilityTypes';
 export type { IntersectionError, ProtectedIntersection } from './types';
 export type {
@@ -99,7 +96,7 @@ export type {
   inferErrorShape,
 } from './core/inference';
 export type { DefaultErrorShape } from './error/formatter';
-
+export { unsetMarker } from './core/procedureBuilder';
 export type {
   AnyProcedureBuilderDef,
   ProcedureBuilder,
@@ -109,7 +106,6 @@ export type {
 } from './core/procedureBuilder';
 export { createBuilder } from './core/procedureBuilder';
 export type { GetRawInputFn } from './types';
-export { unsetMarker } from './utilityTypes';
 export { isObject } from './utilityFunctions';
 export type {
   AnyRootConfig,
