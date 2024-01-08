@@ -265,7 +265,7 @@ h5 {
   --ifm-link-hover-decoration: none;
 }
 
-/* https://github.com/shikijs/twoslash/tree/next/packages/docusaurus-preset-shiki-twoslash */
+/* https://github.com/shikijs/twoslash/tree/main/packages/docusaurus-preset-shiki-twoslash */
 [data-theme='light'] .shiki.github-dark {
   display: none;
 }
