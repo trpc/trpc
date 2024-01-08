@@ -260,9 +260,9 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       }
     });
 
-    // ws.WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
+    // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
     // This line was introduced after the following error brought down production systems:
-    // "RangeError: Invalid ws.WebSocket frame: RSV2 and RSV3 must be clear"
+    // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
     client.on('error', (cause) => {
       opts.onError?.({
