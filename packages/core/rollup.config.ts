@@ -3,6 +3,7 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
+  'src/error/index.ts',
   'src/http/index.ts',
   'src/rpc/index.ts',
   'src/observable/index.ts',

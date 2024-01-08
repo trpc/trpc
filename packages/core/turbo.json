@@ -3,7 +3,13 @@
   "extends": ["//"],
   "pipeline": {
     "codegen-entrypoints": {
-      "outputs": ["package.json", "http/**", "observable/**", "rpc/**"]
+      "outputs": [
+        "package.json",
+        "error/**",
+        "http/**",
+        "observable/**",
+        "rpc/**"
+      ]
     }
   }
 }

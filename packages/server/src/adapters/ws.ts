@@ -1,12 +1,11 @@
 import type { IncomingMessage } from 'http';
 import type { AnyRouter, inferRouterContext, MaybePromise } from '@trpc/core';
+import { callProcedure, transformTRPCResponse } from '@trpc/core';
 import {
-  callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
-  transformTRPCResponse,
   TRPCError,
-} from '@trpc/core';
+} from '@trpc/core/error';
 import type { BaseHandlerOptions } from '@trpc/core/http';
 import type { Unsubscribable } from '@trpc/core/observable';
 import { isObservable } from '@trpc/core/observable';

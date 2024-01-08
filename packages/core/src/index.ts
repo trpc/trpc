@@ -7,7 +7,6 @@ export type {
   inferProcedureInput,
   inferProcedureOutput,
   inferProcedureParams,
-  // inferRouterConfig,
   inferRouterContext,
   inferRouterError,
   inferRouterInputs,
@@ -62,14 +61,6 @@ export type {
   DefaultDataTransformer,
 } from './core/transformer';
 export { transformResult, transformTRPCResponse } from './core/transformer';
-
-export { getErrorShape } from './error/getErrorShape';
-export type { DefaultErrorShape } from './error/formatter';
-export {
-  TRPCError,
-  getCauseFromUnknown,
-  getTRPCErrorFromUnknown,
-} from './error/TRPCError';
 
 export { createFlatProxy, createRecursiveProxy } from './createProxy';
 

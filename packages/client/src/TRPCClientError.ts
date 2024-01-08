@@ -1,10 +1,6 @@
-import type {
-  DefaultErrorShape,
-  inferErrorShape,
-  Maybe,
-  TRPCInferrable,
-} from '@trpc/core';
-import { getCauseFromUnknown, isObject } from '@trpc/core';
+import type { inferErrorShape, Maybe, TRPCInferrable } from '@trpc/core';
+import { isObject } from '@trpc/core';
+import { getCauseFromUnknown, type DefaultErrorShape } from '@trpc/core/error';
 import type { TRPCErrorResponse } from '@trpc/core/rpc';
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
