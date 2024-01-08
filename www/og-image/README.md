@@ -5,7 +5,7 @@ description: Compute and generate dynamic social card images with React componen
 framework: Next.js
 useCase: Edge Functions
 css: Tailwind
-deployUrl: https://vercel.com/new/clone?repository-url=https://github.com/vercel/examples/tree/main/edge-functions/vercel-og-nextjs&project-name=vercel-og-nextjs&repository-name=vercel-og-nextjs
+deployUrl: https://vercel.com/new/clone?repository-url=https://github.com/vercel/examples/tree/next/edge-functions/vercel-og-nextjs&project-name=vercel-og-nextjs&repository-name=vercel-og-nextjs
 demoUrl: https://og-image.trpc.io/api/_ref/static
 relatedTemplates:
   - nextjs-boilerplate
