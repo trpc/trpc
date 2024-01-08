@@ -169,6 +169,10 @@ module.exports = {
       ],
     },
     {
+      type: 'doc',
+      id: 'migration/migrate-from-v10-to-v11',
+    },
+    {
       type: 'category',
       label: 'Community',
       collapsed: true,
