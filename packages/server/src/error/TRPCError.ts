@@ -45,7 +45,7 @@ export class TRPCError extends Error {
     this.name = 'TRPCError';
 
     if (!this.cause) {
-      // idk why this is needed, but it is
+      // < ES2022 / < Node 16.9.0 compatability
       this.cause = cause;
     }
   }
