@@ -39,7 +39,7 @@ type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   : never;
 type inferRouterConfig<TRouter extends AnyRouter> =
   inferRouterDef<TRouter>['_config'];
-  
+
 export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterConfig<TRouter>['$types']['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
