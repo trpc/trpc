@@ -20,18 +20,19 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@trpc/server/src/': join(__dirname, '../server/src/'),
-      '@trpc/client/src/': join(__dirname, '../client/src/'),
-      '@trpc/react-query/src/': join(__dirname, '../react-query/src/'),
-      '@trpc/next/src/': join(__dirname, '../next/src/'),
-      'vitest-environment-miniflare': join(
+      // in windows, "path.join" uses backslashes, it leads escape characters
+      '@trpc/server/src/': [__dirname, '../server/src/'].join('/'),
+      '@trpc/client/src/': [__dirname, '../client/src/'].join('/'),
+      '@trpc/react-query/src/': [__dirname, '../react-query/src/'].join('/'),
+      '@trpc/next/src/': [__dirname, '../next/src/'].join('/'),
+      'vitest-environment-miniflare': [
         __dirname,
         'node_modules/vitest-environment-miniflare',
-      ),
-      '@vitest/coverage-istanbul': join(
+      ].join('/'),
+      '@vitest/coverage-istanbul': [
         __dirname,
         'node_modules/@vitest/coverage-istanbul',
-      ),
+      ].join('/'),
     },
   },
 });
