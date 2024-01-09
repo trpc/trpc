@@ -3,8 +3,17 @@ import { db } from './db';
 import { authProcedure, publicProcedure, router } from './trpc';
 
 const appRouter = router({
-  healthcheck: publicProcedure.query(() => 'OK'),
-  userList: authProcedure.query(async () => {
+  healthcheck: publicProcedure.query((opts) => {
+    // No user on context
+    opts.ctx;
+    //   ^?
+
+    return 'OK';
+  }),
+  userList: authProcedure.query(async (opts) => {
+    // user on context
+    console.log('Authed as', opts.ctx.user.name);
+    //                                 ^?
     return await db.user.findMany();
   }),
 });
