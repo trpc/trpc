@@ -23,8 +23,8 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
       <td>Next.js Minimal Starter</td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-minimal-starter">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-minimal-starter">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/next/examples/next-minimal-starter">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/next-minimal-starter">Source</a></li>
         </ul>
       </td>
     </tr>
