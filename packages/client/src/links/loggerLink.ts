@@ -5,10 +5,10 @@
 // Using triple-slash directive makes sure that it will be available,
 // even if end-user `tsconfig.json` omits it in the `lib` array.
 
-import { AnyRouter } from '@trpc/server';
-import { observable, tap } from '@trpc/server/observable';
-import { TRPCClientError } from '..';
-import { Operation, OperationResultEnvelope, TRPCLink } from './types';
+import type { AnyRouter } from '@trpc/core';
+import { observable, tap } from '@trpc/core/observable';
+import type { TRPCClientError } from '../TRPCClientError';
+import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;

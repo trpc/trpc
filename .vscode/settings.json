@@ -11,12 +11,15 @@
   ],
   "files.exclude": {
     "packages/client/{links,shared}": true,
+    "packages/core/{error,http,observable,rpc}": true,
     "packages/next/{app-dir}": true,
     "packages/react-query/{shared,ssg}": true,
     "packages/server/{adapters,http,observable,rpc,shared,subscription}": true
   },
   "search.exclude": {
-    "/www/versioned_*": true
+    // "/www/versioned_docs": true,
+    "/www/.docusaurus": true,
+    "/www/build": true
   },
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#2596be",

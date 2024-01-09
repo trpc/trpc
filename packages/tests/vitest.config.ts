@@ -1,5 +1,32 @@
-import { join } from 'path';
+import fs from 'fs';
+import path from 'path';
 import { defineConfig } from 'vitest/config';
+
+const aliases: Record<string, string> = {};
+
+for (const pkg of [
+  //
+  'core',
+  'server',
+  'client',
+  'react-query',
+  'next',
+].sort()) {
+  const pkgJson = path.join(__dirname, `/../${pkg}/package.json`);
+
+  const json = JSON.parse(fs.readFileSync(pkgJson, 'utf-8').toString());
+  const exports = json.exports;
+  for (const key of Object.keys(exports).sort()) {
+    if (key.includes('.json')) {
+      continue;
+    }
+    // trim first './'
+    const trimmed = key.slice(1);
+    aliases[`@trpc/${pkg}${trimmed}`] = path
+      .join(__dirname, `../${pkg}/src${key.slice(1)}`)
+      .replace(/\\/g, '/');
+  }
+}
 
 export default defineConfig({
   root: '../',
@@ -20,11 +47,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // in windows, "path.join" uses backslashes, it leads escape characters
-      '@trpc/server/src/': [__dirname, '../server/src/'].join('/'),
-      '@trpc/client/src/': [__dirname, '../client/src/'].join('/'),
-      '@trpc/react-query/src/': [__dirname, '../react-query/src/'].join('/'),
-      '@trpc/next/src/': [__dirname, '../next/src/'].join('/'),
+      ...aliases,
       'vitest-environment-miniflare': [
         __dirname,
         'node_modules/vitest-environment-miniflare',

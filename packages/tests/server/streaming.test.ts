@@ -1,5 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { TRPCLink, unstable_httpBatchStreamLink } from '@trpc/client';
+import type { TRPCLink } from '@trpc/client';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
@@ -39,7 +40,7 @@ describe('no transformer', () => {
           return observable((observer) => {
             const unsubscribe = next(op).subscribe({
               next(value) {
-                orderedResults.push((value.result as any).data);
+                orderedResults.push(value.result.data as number);
                 observer.next(value);
               },
               error: observer.error,
@@ -141,7 +142,7 @@ describe('with transformer', () => {
           return observable((observer) => {
             const unsubscribe = next(op).subscribe({
               next(value) {
-                orderedResults.push((value.result as any).data);
+                orderedResults.push(value.result.data as number);
                 observer.next(value);
               },
               error: observer.error,

@@ -1,12 +1,12 @@
-import {
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-} from '@trpc/server';
-import { MutationLike } from './mutationLike';
-import { QueryLike } from './queryLike';
+} from '@trpc/core';
+import type { MutationLike } from './mutationLike';
+import type { QueryLike } from './queryLike';
 
 /**
  * Use to describe a route path which matches a given route's interface

@@ -375,9 +375,18 @@ importers:
       '@trpc/client':
         specifier: ^10.45.0
         version: link:../../../packages/client
+      '@trpc/next':
+        specifier: ^10.45.0
+        version: link:../../../packages/next
+      '@trpc/react-query':
+        specifier: ^10.45.0
+        version: link:../../../packages/react-query
       '@trpc/server':
         specifier: ^10.45.0
         version: link:../../../packages/server
+      next:
+        specifier: ^14.0.1
+        version: 14.0.1(@babel/core@7.23.2)(react-dom@18.2.0)(react@18.2.0)
     devDependencies:
       '@tsconfig/esm':
         specifier: ^1.0.3
@@ -681,7 +690,7 @@ importers:
         version: 2.5.0
       ws:
         specifier: ^8.0.0
-        version: 8.11.0
+        version: 8.16.0
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -691,7 +700,7 @@ importers:
         version: 20.10.4
       '@types/ws':
         specifier: ^8.2.0
-        version: 8.5.4
+        version: 8.5.10
       esbuild:
         specifier: ^0.17.10
         version: 0.17.10
@@ -1259,7 +1268,7 @@ importers:
         version: 4.6.2
       ws:
         specifier: ^8.0.0
-        version: 8.11.0
+        version: 8.16.0
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -1278,7 +1287,7 @@ importers:
         version: 18.2.33
       '@types/ws':
         specifier: ^8.2.0
-        version: 8.5.4
+        version: 8.5.10
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.2.1
         version: 6.2.1(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)(typescript@5.3.3)
@@ -1371,7 +1380,7 @@ importers:
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
-        version: 8.11.0
+        version: 8.16.0
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -1381,7 +1390,7 @@ importers:
         version: 20.10.4
       '@types/ws':
         specifier: ^8.2.0
-        version: 8.5.4
+        version: 8.5.10
       esbuild:
         specifier: ^0.17.10
         version: 0.17.10
@@ -1436,13 +1445,14 @@ importers:
         version: 5.3.3
 
   packages/client:
+    dependencies:
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
     devDependencies:
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
-      '@trpc/server':
-        specifier: 10.45.0
-        version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -1471,7 +1481,32 @@ importers:
         specifier: ^0.32.0
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
 
+  packages/core:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.10.4
+      eslint:
+        specifier: ^8.40.0
+        version: 8.40.0
+      rollup:
+        specifier: ^2.79.1
+        version: 2.79.1
+      tslib:
+        specifier: ^2.5.0
+        version: 2.5.0
+      tsx:
+        specifier: ^4.0.0
+        version: 4.6.2
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+
   packages/next:
+    dependencies:
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
@@ -1482,9 +1517,6 @@ importers:
       '@trpc/react-query':
         specifier: 10.45.0
         version: link:../react-query
-      '@trpc/server':
-        specifier: 10.45.0
-        version: link:../server
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
@@ -1523,6 +1555,10 @@ importers:
         version: 3.22.4
 
   packages/react-query:
+    dependencies:
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.0.0
@@ -1530,9 +1566,6 @@ importers:
       '@trpc/client':
         specifier: 10.45.0
         version: link:../client
-      '@trpc/server':
-        specifier: 10.45.0
-        version: link:../server
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
@@ -1568,6 +1601,10 @@ importers:
         version: 3.22.4
 
   packages/server:
+    dependencies:
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
     devDependencies:
       '@fastify/websocket':
         specifier: ^7.1.2
@@ -1595,7 +1632,7 @@ importers:
         version: 18.2.14
       '@types/ws':
         specifier: ^8.2.0
-        version: 8.5.4
+        version: 8.5.10
       '@web3-storage/multipart-parser':
         specifier: ^1.0.0
         version: 1.0.0
@@ -1658,7 +1695,7 @@ importers:
         version: 0.32.0(@vitest/ui@0.32.0)(jsdom@23.0.0)
       ws:
         specifier: ^8.0.0
-        version: 8.11.0
+        version: 8.16.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -1704,6 +1741,9 @@ importers:
       '@trpc/client':
         specifier: 10.45.0
         version: link:../client
+      '@trpc/core':
+        specifier: 10.45.0
+        version: link:../core
       '@trpc/next':
         specifier: 10.45.0
         version: link:../next
@@ -1808,7 +1848,7 @@ importers:
         version: 2.12.0(vitest@0.32.0)
       ws:
         specifier: ^8.0.0
-        version: 8.11.0
+        version: 8.16.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -4742,7 +4782,7 @@ packages:
       serve-handler: 6.1.5
       shelljs: 0.8.5
       terser-webpack-plugin: 5.3.6(@swc/core@1.3.3)(webpack@5.75.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       update-notifier: 5.1.0
       url-loader: 4.1.1(file-loader@6.2.0)(webpack@5.75.0)
       wait-on: 6.0.1
@@ -4911,7 +4951,7 @@ packages:
       lodash: 4.17.21
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       utility-types: 3.10.0
       webpack: 5.75.0(@swc/core@1.3.3)
     transitivePeerDependencies:
@@ -5216,7 +5256,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-router-dom: 5.3.4(react@18.2.0)
       rtlcss: 3.5.0
-      tslib: 2.5.0
+      tslib: 2.6.2
       utility-types: 3.10.0
     transitivePeerDependencies:
       - '@parcel/css'
@@ -5258,7 +5298,7 @@ packages:
       prism-react-renderer: 1.3.5(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
       use-sync-external-store: 1.2.0(react@18.2.0)
       utility-types: 3.10.0
     transitivePeerDependencies:
@@ -6109,7 +6149,7 @@ packages:
     resolution: {integrity: sha512-OBaPR3KVkDmhJpCy+RtM8CwwV67ieRRbvWtpHqRNoMt+AnHLBiNmrTwHs3/DKjmnI1cqdGTaQ+NhKtDtkk1l/Q==}
     dependencies:
       fastify-plugin: 4.5.0
-      ws: 8.11.0
+      ws: 8.16.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -6888,7 +6928,7 @@ packages:
       kleur: 4.1.5
       selfsigned: 2.1.1
       undici: 5.9.1
-      ws: 8.15.1
+      ws: 8.16.0
       youch: 2.2.2
     transitivePeerDependencies:
       - bufferutil
@@ -6905,7 +6945,7 @@ packages:
       kleur: 4.1.5
       selfsigned: 2.1.1
       undici: 5.9.1
-      ws: 8.15.1
+      ws: 8.16.0
       youch: 2.2.2
     transitivePeerDependencies:
       - bufferutil
@@ -7169,7 +7209,7 @@ packages:
       '@miniflare/core': 2.10.0
       '@miniflare/shared': 2.10.0
       undici: 5.9.1
-      ws: 8.15.1
+      ws: 8.16.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -7182,7 +7222,7 @@ packages:
       '@miniflare/core': 2.11.0
       '@miniflare/shared': 2.11.0
       undici: 5.9.1
-      ws: 8.15.1
+      ws: 8.16.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -7195,7 +7235,7 @@ packages:
       '@miniflare/core': 2.12.0
       '@miniflare/shared': 2.12.0
       undici: 5.11.0
-      ws: 8.15.1
+      ws: 8.16.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -9004,8 +9044,8 @@ packages:
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
     dev: false
 
-  /@types/ws@8.5.4:
-    resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
+  /@types/ws@8.5.10:
+    resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
     dependencies:
       '@types/node': 20.10.4
 
@@ -13968,7 +14008,7 @@ packages:
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.6.2
     optionalDependencies:
       '@emotion/is-prop-valid': 0.8.8
     dev: false
@@ -15752,7 +15792,7 @@ packages:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.0.0
-      ws: 8.15.1
+      ws: 8.16.0
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -15937,7 +15977,7 @@ packages:
       graphql: 15.8.0
       lodash: 4.17.21
       playwright: 1.28.1
-      tslib: 2.5.0
+      tslib: 2.6.2
     dev: false
 
   /language-subtag-registry@0.3.22:
@@ -20819,7 +20859,7 @@ packages:
       p-retry: 5.1.2
       serverless: 3.25.0
       velocityjs: 2.0.6
-      ws: 8.11.0
+      ws: 8.16.0
     transitivePeerDependencies:
       - aws-crt
       - bufferutil
@@ -23160,7 +23200,7 @@ packages:
       '@types/serve-index': 1.9.1
       '@types/serve-static': 1.15.0
       '@types/sockjs': 0.3.33
-      '@types/ws': 8.5.4
+      '@types/ws': 8.5.10
       ansi-html-community: 0.0.8
       bonjour-service: 1.0.14
       chokidar: 3.5.3
@@ -23183,7 +23223,7 @@ packages:
       spdy: 4.0.2
       webpack: 5.75.0(@swc/core@1.3.3)
       webpack-dev-middleware: 5.3.3(webpack@5.75.0)
-      ws: 8.15.1
+      ws: 8.16.0
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -23543,20 +23583,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  /ws@8.11.0:
-    resolution: {integrity: sha512-HPG3wQd9sNQoT9xHyNCXoDUa+Xw/VevmY9FoHyQ+g+rrMn4j6FB4np7Z0OhdTgjx6MgQLK7jwSy1YecU1+4Asg==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: ^5.0.2
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
-  /ws@8.15.1:
-    resolution: {integrity: sha512-W5OZiCjXEmk0yZ66ZN82beM5Sz7l7coYxpRkzS+p9PP+ToQry8szKh+61eNktr7EA9DOwvFGhfC605jDHbP6QQ==}
+  /ws@8.16.0:
+    resolution: {integrity: sha512-HS0c//TP7Ina87TfiPUz1rQzMhHrl/SG2guqRcTOIUYD2q8uhUdNHZYJUaQ8aTGPzCh+c6oawMKW35nFl1dxyQ==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1

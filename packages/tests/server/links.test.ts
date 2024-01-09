@@ -1,18 +1,18 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import type { OperationLink, TRPCClientRuntime } from '@trpc/client';
 import {
   createTRPCClient,
   httpBatchLink,
   httpLink,
   loggerLink,
-  OperationLink,
   TRPCClientError,
-  TRPCClientRuntime,
   unstable_httpBatchStreamLink,
-} from '@trpc/client/src';
-import { createChain } from '@trpc/client/src/links/internals/createChain';
-import { retryLink } from '@trpc/client/src/links/internals/retryLink';
-import { AnyRouter, initTRPC } from '@trpc/server/src';
-import { observable, observableToPromise } from '@trpc/server/src/observable';
+} from '@trpc/client';
+import { createChain } from '@trpc/client/links/internals/createChain';
+import { retryLink } from '@trpc/client/links/internals/retryLink';
+import type { AnyRouter } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+import { observable, observableToPromise } from '@trpc/server/observable';
 import { z } from 'zod';
 
 const mockRuntime: TRPCClientRuntime = {

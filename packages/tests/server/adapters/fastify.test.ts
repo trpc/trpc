@@ -1,22 +1,21 @@
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
+import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
-  HTTPHeaders,
   splitLink,
-  TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import {
+import type {
   CreateFastifyContextOptions,
-  fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
-} from '@trpc/server/src/adapters/fastify';
-import { observable } from '@trpc/server/src/observable';
+} from '@trpc/server/adapters/fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
@@ -185,7 +184,7 @@ const linkSpy: TRPCLink<AppRouter> = () => {
     return observable((observer) => {
       const unsubscribe = next(op).subscribe({
         next(value) {
-          orderedResults.push((value.result as any).data);
+          orderedResults.push(value.result.data as number);
           observer.next(value);
         },
         error: observer.error,

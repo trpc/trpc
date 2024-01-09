@@ -1,12 +1,11 @@
-import {
+import type {
   QueryKey,
   UseQueryOptions,
   UseSuspenseQueryOptions,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import { AnyRouter } from '@trpc/server';
-import { DistributiveOmit } from '@trpc/server/unstableInternalsExport';
-import {
+import type { AnyRouter, DistributiveOmit } from '@trpc/core';
+import type {
   UseQueriesProcedureRecord,
   UseSuspenseQueriesProcedureRecord,
   UseTRPCQueryOptions,

@@ -1,11 +1,8 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { createTRPCClient, TRPCClientError } from '@trpc/client';
-import {
-  inferProcedureInput,
-  inferProcedureParams,
-  initTRPC,
-} from '@trpc/server';
-import { UnsetMarker } from '@trpc/server/core/internals/utils';
+import type { inferProcedureParams } from '@trpc/core';
+import type { inferProcedureInput } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 

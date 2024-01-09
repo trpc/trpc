@@ -1,8 +1,8 @@
-import { ProcedureType } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+import type { ProcedureType } from '@trpc/core';
+import type { TRPCResponse } from '@trpc/core/rpc';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
-import {
+import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,
@@ -10,8 +10,12 @@ import {
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
-import { TextDecoderEsque } from '../internals/streamingUtils';
-import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
+import type { TextDecoderEsque } from '../internals/streamingUtils';
+import type {
+  HTTPHeaders,
+  PromiseAndCancel,
+  TRPCClientRuntime,
+} from '../types';
 
 /**
  * @internal
@@ -85,11 +89,8 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     path: string;
   };
 
-export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-export type GetBody = (
-  opts: HTTPBaseRequestOptions,
-) => RequestInitEsque['body'];
-
+type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;

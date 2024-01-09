@@ -1,4 +1,4 @@
-import {
+import type {
   CancelOptions,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
@@ -13,17 +13,16 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import {
+import type {
   CreateTRPCClient,
   TRPCClientError,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { DistributiveOmit } from '@trpc/server/unstableInternalsExport';
+import type { AnyRouter, DistributiveOmit } from '@trpc/core';
 import { createContext } from 'react';
-import { ExtractCursorType } from '../shared';
-import { TRPCQueryKey } from './getQueryKey';
+import type { ExtractCursorType } from '../shared';
+import type { TRPCQueryKey } from './getQueryKey';
 
 export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
   FetchQueryOptions<TOutput, TError>,

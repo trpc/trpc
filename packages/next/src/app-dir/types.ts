@@ -1,5 +1,5 @@
-import { Resolver } from '@trpc/client';
-import {
+import type { Resolver } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
@@ -8,7 +8,7 @@ import {
   AnySubscriptionProcedure,
   ProcedureArgs,
   ProcedureRouterRecord,
-} from '@trpc/server';
+} from '@trpc/core';
 
 export type DecorateProcedureServer<
   TConfig extends AnyRootConfig,

@@ -1,3 +1,4 @@
+import type { DehydratedState } from '@tanstack/react-query';
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
@@ -6,29 +7,27 @@ import {
   useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
   useSuspenseQueries as __useSuspenseQueries,
   useSuspenseQuery as __useSuspenseQuery,
-  DehydratedState,
   hashKey,
   useQueryClient,
 } from '@tanstack/react-query';
-import { createTRPCUntypedClient, TRPCClientErrorLike } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
+import type { TRPCClientErrorLike } from '@trpc/client';
+import { createTRPCUntypedClient } from '@trpc/client';
+import type { AnyRouter } from '@trpc/core';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  SSRState,
-  TRPCContext,
-  TRPCContextState,
-} from '../../internals/context';
+import type { SSRState, TRPCContextState } from '../../internals/context';
+import { TRPCContext } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
-import { getQueryKeyInternal, TRPCQueryKey } from '../../internals/getQueryKey';
+import type { TRPCQueryKey } from '../../internals/getQueryKey';
+import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
-import {
+import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
 } from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
-import { CreateTRPCReactOptions, UseMutationOverride } from '../types';
-import {
+import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
+import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,

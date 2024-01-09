@@ -1,4 +1,4 @@
-import {
+import type {
   CancelOptions,
   InfiniteData,
   InvalidateOptions,
@@ -10,37 +10,30 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
-import {
+import type { TRPCClientError } from '@trpc/client';
+import { createTRPCClientProxy } from '@trpc/client';
+import type {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-  inferProcedureInput,
-} from '@trpc/server';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
-import {
   DeepPartial,
   Filter,
+  inferProcedureInput,
+  inferTransformedProcedureOutput,
   ProtectedIntersection,
-} from '@trpc/server/unstableInternalsExport';
-import {
-  contextProps,
+} from '@trpc/core';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/core';
+import type {
   DecoratedTRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   TRPCQueryUtils,
 } from '../../internals/context';
-import {
-  getQueryKeyInternal,
-  QueryKeyKnown,
-  QueryType,
-} from '../../internals/getQueryKey';
-import { ExtractCursorType } from '../hooks/types';
+import { contextProps } from '../../internals/context';
+import type { QueryKeyKnown, QueryType } from '../../internals/getQueryKey';
+import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
   TConfig extends AnyRootConfig,

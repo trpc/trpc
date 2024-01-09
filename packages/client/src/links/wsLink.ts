@@ -1,16 +1,21 @@
-import { AnyRouter, inferRouterError, ProcedureType } from '@trpc/server';
-import { observable, Observer, UnsubscribeFn } from '@trpc/server/observable';
-import {
+import type {
+  AnyRouter,
+  inferRouterError,
+  MaybePromise,
+  ProcedureType,
+} from '@trpc/core';
+import { transformResult } from '@trpc/core';
+import type { Observer, UnsubscribeFn } from '@trpc/core/observable';
+import { observable } from '@trpc/core/observable';
+import type {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
   TRPCResponseMessage,
-} from '@trpc/server/rpc';
-import { MaybePromise } from '@trpc/server/unstableInternalsExport';
-import { transformResult } from '../shared/transformResult';
+} from '@trpc/core/rpc';
 import { TRPCClientError } from '../TRPCClientError';
-import { Operation, TRPCLink } from './types';
+import type { Operation, TRPCLink } from './types';
 
 const run = <TResult>(fn: () => TResult): TResult => fn();
 
@@ -462,7 +467,7 @@ export function wsLink<TRouter extends AnyRouter>(
               observer.complete();
             },
             next(message) {
-              const transformed = transformResult(message, runtime);
+              const transformed = transformResult(message, runtime.transformer);
 
               if (!transformed.ok) {
                 observer.error(TRPCClientError.from(transformed.error));

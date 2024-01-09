@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -10,7 +9,6 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { CreateTRPCReactBase } from '@trpc/react-query/src/createTRPCReact';
 import { initTRPC } from '@trpc/server';
 import {
   experimental_createFileUploadHandler,
@@ -21,9 +19,10 @@ import {
   nodeHTTPFormDataContentTypeHandler,
 } from '@trpc/server/adapters/node-http/content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React from 'react';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 

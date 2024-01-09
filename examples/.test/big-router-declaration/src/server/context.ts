@@ -1,11 +1,11 @@
-import * as trpcNext from '@trpc/server/adapters/next';
+import type * as trpcNext from '@trpc/server/adapters/next';
 
 export interface Session {
   id: string;
   firstName: string;
   lastName: string;
 }
-interface CreateContextOptions extends Partial<trpcNext.CreateNextContextOptions> {
+export interface CreateContextOptions extends Partial<trpcNext.CreateNextContextOptions> {
   session: Session | null
 }
 

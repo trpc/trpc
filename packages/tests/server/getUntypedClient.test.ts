@@ -1,8 +1,9 @@
-import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
-import { AnyRouter, initTRPC } from '@trpc/server';
-import { konn } from 'konn';
-import './___packages';
 import { routerToServerAndClientNew } from './___testHelpers';
+import type { TRPCUntypedClient } from '@trpc/client';
+import { getUntypedClient } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+import { konn } from 'konn';
 
 const ctx = konn()
   .beforeEach(() => {

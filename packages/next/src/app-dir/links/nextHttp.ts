@@ -1,11 +1,10 @@
-import {
-  httpBatchLink,
+import type {
   HTTPBatchLinkOptions,
-  httpLink,
   HTTPLinkOptions,
   TRPCLink,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { httpBatchLink, httpLink } from '@trpc/client';
+import type { AnyRouter } from '@trpc/core';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {

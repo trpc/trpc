@@ -1,5 +1,5 @@
-import { initTRPC } from '@trpc/server/src';
-import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
+import { initTRPC } from '@trpc/server';
+import * as trpcLambda from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import {

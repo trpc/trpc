@@ -1,27 +1,16 @@
-import { IncomingMessage } from 'http';
-import { AddressInfo } from 'net';
-import {
-  createTRPCClient,
-  createTRPCUntypedClient,
-  createWSClient,
-  httpBatchLink,
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-} from '@trpc/client/src';
-import { WithTRPCConfig } from '@trpc/next/src';
-import { OnErrorFunction } from '@trpc/server/internals/types';
-import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
-import {
-  CreateHTTPHandlerOptions,
-  createHTTPServer,
-} from '@trpc/server/src/adapters/standalone';
-import {
-  applyWSSHandler,
-  WSSHandlerOptions,
-} from '@trpc/server/src/adapters/ws';
+import type { IncomingMessage } from 'http';
+import type { AddressInfo } from 'net';
+import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
+import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
+import type { OnErrorFunction } from '@trpc/core/http';
+import type { WithTRPCConfig } from '@trpc/next';
+import type { AnyRouter as AnyNewRouter } from '@trpc/server';
+import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
-import './___packages';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;

@@ -1,8 +1,4 @@
-import {
-  experimental_standaloneMiddleware,
-  initTRPC,
-  TRPCError,
-} from '@trpc/server';
+import { experimental_trpcMiddleware, initTRPC, TRPCError } from '@trpc/server';
 import * as z from 'zod';
 
 test('decorate independently', () => {
@@ -83,7 +79,7 @@ describe('standalone middleware', () => {
   const t = initTRPC.context<Context>().create();
 
   test('without ctx', () => {
-    const addBarToCtxMiddleware = experimental_standaloneMiddleware().create(
+    const addBarToCtxMiddleware = experimental_trpcMiddleware().create(
       (opts) => {
         expectTypeOf(opts.ctx).toEqualTypeOf<object>();
         return opts.next({
@@ -103,7 +99,7 @@ describe('standalone middleware', () => {
   });
 
   test('with context', () => {
-    const barNeedsFoo = experimental_standaloneMiddleware<{
+    const barNeedsFoo = experimental_trpcMiddleware<{
       ctx: { foo: 'foo' };
     }>().create((opts) => {
       expectTypeOf(opts.ctx).toEqualTypeOf<{
@@ -125,7 +121,7 @@ describe('standalone middleware', () => {
   });
 
   test('mismatching context', () => {
-    const barNeedsSomethingElse = experimental_standaloneMiddleware<{
+    const barNeedsSomethingElse = experimental_trpcMiddleware<{
       ctx: { notFound: true };
     }>().create((opts) => {
       opts.ctx.notFound;
@@ -142,7 +138,7 @@ describe('standalone middleware', () => {
   });
 
   test('in middleware chain', () => {
-    const needsUser = experimental_standaloneMiddleware<{
+    const needsUser = experimental_trpcMiddleware<{
       ctx: { user: User };
     }>().create((opts) => {
       opts.ctx.user.id;
@@ -175,7 +171,7 @@ describe('standalone middleware', () => {
   });
 
   test('in pipe', () => {
-    const needsUser = experimental_standaloneMiddleware<{
+    const needsUser = experimental_trpcMiddleware<{
       ctx: { user: User };
     }>().create((opts) => {
       opts.ctx.user.id;

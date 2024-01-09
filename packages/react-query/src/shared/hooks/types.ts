@@ -1,4 +1,4 @@
-import {
+import type {
   DefinedUseQueryResult,
   DehydratedState,
   InfiniteData,
@@ -17,17 +17,16 @@ import {
   UseSuspenseQueryOptions,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import {
+import type {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
-import { DistributiveOmit } from '@trpc/server/unstableInternalsExport';
-import { ReactNode } from 'react';
-import { TRPCContextProps } from '../../internals/context';
-import { TRPCQueryKey } from '../../internals/getQueryKey';
-import { TRPCHookResult } from '../../internals/useHookResult';
+import type { AnyRouter, DistributiveOmit } from '@trpc/core';
+import type { ReactNode } from 'react';
+import type { TRPCContextProps } from '../../internals/context';
+import type { TRPCQueryKey } from '../../internals/getQueryKey';
+import type { TRPCHookResult } from '../../internals/useHookResult';
 
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;

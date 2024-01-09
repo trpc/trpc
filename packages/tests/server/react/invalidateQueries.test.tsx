@@ -4,7 +4,7 @@ import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
-import { TRPCQueryKey } from '@trpc/react-query/src/internals/getQueryKey';
+import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;

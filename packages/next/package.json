@@ -36,11 +36,6 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./app-dir/server": {
-      "import": "./dist/app-dir/server.mjs",
-      "require": "./dist/app-dir/server.js",
-      "default": "./dist/app-dir/server.js"
-    },
     "./app-dir/client": {
       "import": "./dist/app-dir/client.mjs",
       "require": "./dist/app-dir/client.js",
@@ -55,6 +50,11 @@
       "import": "./dist/app-dir/links/nextHttp.mjs",
       "require": "./dist/app-dir/links/nextHttp.js",
       "default": "./dist/app-dir/links/nextHttp.js"
+    },
+    "./app-dir/server": {
+      "import": "./dist/app-dir/server.mjs",
+      "require": "./dist/app-dir/server.js",
+      "default": "./dist/app-dir/server.js"
     }
   },
   "files": [
@@ -65,21 +65,21 @@
     "app-dir",
     "!**/*.test.*"
   ],
+  "dependencies": {
+    "@trpc/core": "10.45.0"
+  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
     "@trpc/react-query": "10.45.0",
-    "@trpc/server": "10.45.0",
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "dependencies": {},
   "devDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
     "@trpc/react-query": "10.45.0",
-    "@trpc/server": "10.45.0",
     "@types/express": "^4.17.17",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.33",

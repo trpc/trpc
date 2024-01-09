@@ -1,20 +1,18 @@
-import {
+import type {
   CreateTRPCClientOptions,
   Resolver,
   TRPCUntypedClient,
 } from '@trpc/client';
-import {
+import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-  inferHandlerInput,
-} from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
-import {
   Filter,
+  inferHandlerInput,
   ProtectedIntersection,
-} from '@trpc/server/unstableInternalsExport';
+} from '@trpc/core';
+import { createRecursiveProxy } from '@trpc/core';
 
 /**
  * @internal

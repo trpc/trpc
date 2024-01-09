@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
+import type { HTTPHeaders } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
-  HTTPHeaders,
   TRPCClientError,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
+import type { Maybe } from '@trpc/core';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
-import { observable } from '@trpc/server/src/observable';
-import { Maybe } from '@trpc/server/unstableInternalsExport';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 
 test('smoke test', async () => {

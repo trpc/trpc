@@ -1,11 +1,11 @@
+import type { IncomingHttpHeaders } from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
-import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client/src';
+import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import { Dict } from '@trpc/server/unstableInternalsExport';
 
 describe('pass headers', () => {
   type Context = {
-    headers: Dict<string[] | string>;
+    headers: IncomingHttpHeaders;
   };
 
   const t = initTRPC.context<Context>().create();
@@ -86,7 +86,7 @@ Object {
 
   test('custom headers with context using httpBatchLink', async () => {
     type LinkContext = {
-      headers: Dict<string[] | string>;
+      headers: Record<string, string[] | string>;
     };
     const client = createTRPCClient<AppRouter>({
       links: [
@@ -122,7 +122,7 @@ Object {
 
   test('custom headers with context using httpLink', async () => {
     type LinkContext = {
-      headers: Dict<string[] | string>;
+      headers: Record<string, string[] | string>;
     };
     const client = createTRPCClient<AppRouter>({
       links: [

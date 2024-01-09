@@ -1,22 +1,31 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   httpBatchLink,
   httpLink,
   TRPCClientError,
-  TRPCLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
+import { isObject } from '@trpc/core';
+import type { OnErrorFunction } from '@trpc/core/http';
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
-import { initTRPC } from '@trpc/server/src';
-import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
-import { TRPCError } from '@trpc/server/src/error/TRPCError';
-import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';
-import { OnErrorFunction } from '@trpc/server/src/internals/types';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
+
+function getMessageFromUnknownError(err: unknown, fallback: string): string {
+  if (typeof err === 'string') {
+    return err;
+  }
+  if (isObject(err) && typeof err['message'] === 'string') {
+    return err['message'];
+  }
+  return fallback;
+}
 
 test('basic', async () => {
   class MyError extends Error {
@@ -507,11 +516,6 @@ describe('links have meta data about http failures', async () => {
 
         Object.setPrototypeOf(this, new.target.prototype);
       }
-    }
-
-    function isObject(value: unknown): value is Record<string, unknown> {
-      // check that value is object
-      return !!value && !Array.isArray(value) && typeof value === 'object';
     }
 
     const customErrorLink: TRPCLink<AppRouter> = (_runtime) => (opts) =>

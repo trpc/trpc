@@ -1,5 +1,4 @@
-import './___packages';
-import { initTRPC } from '@trpc/server/src/core';
+import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
