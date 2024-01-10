@@ -19,6 +19,7 @@ import { observable } from '@trpc/server/src/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
+import { WebSocket } from 'ws';
 import { z } from 'zod';
 
 const config = {
@@ -145,6 +146,14 @@ function createServer(opts: ServerOptions) {
     useWSS: true,
     prefix: config.prefix,
     trpcOptions: { router, createContext },
+  });
+
+  instance.register(async function (fastify) {
+    fastify.get('/ws', { websocket: true }, (connection) => {
+      connection.socket.on('message', (message) => {
+        connection.socket.send(message);
+      });
+    });
   });
 
   instance.get('/hello', async () => {
@@ -292,6 +301,29 @@ describe('anonymous user', () => {
         "error": "Unauthorized user",
       }
     `);
+  });
+
+  test('does not bind other websocket connection', async () => {
+    const client = new WebSocket(`ws://localhost:${app.url.port}/ws`);
+
+    await new Promise<void>((resolve, reject) => {
+      client.once('open', () => {
+        client.send('hello');
+        resolve();
+      });
+
+      client.once('error', reject);
+    });
+
+    const promise = new Promise<string>((resolve) => {
+      client.once('message', resolve);
+    });
+
+    const message = await promise;
+
+    expect(message.toString()).toBe('hello');
+
+    client.close();
   });
 
   test('subscription', async () => {

@@ -32,6 +32,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   );
 
   let prefix = opts.prefix ?? '';
+  const websocketPrefix = prefix;
 
   // https://github.com/fastify/fastify-plugin/blob/fe079bef6557a83794bf437e14b9b9edb8a74104/plugin.js#L11
   // @ts-expect-error property 'default' does not exists on type ...
@@ -47,7 +48,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   if (opts.useWSS) {
     applyWSSHandler<TRouter>({
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
-      prefix,
+      prefix: websocketPrefix,
       wss: fastify.websocketServer,
     });
     // eslint-disable-next-line @typescript-eslint/no-empty-function
