@@ -42,7 +42,7 @@ describe('Serialization of Record types', () => {
         input: {
           description?: string | undefined;
         };
-        output: { input: { description: string } };
+        output: { input: { description?: string | undefined } };
       }>
     >(appRouter.maybeDescriptionKey);
   });
