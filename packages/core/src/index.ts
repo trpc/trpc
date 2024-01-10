@@ -11,7 +11,11 @@ export {
 } from './error/TRPCError';
 
 export { initTRPC } from './initTRPC';
-export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
+export type {
+  AnyMiddlewareFunction,
+  MiddlewareFunction,
+  MiddlewareBuilder,
+} from './middleware';
 export {
   createInputMiddleware,
   createOutputMiddleware,
