@@ -25,15 +25,16 @@ import type {
 import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
 import { mergeWithoutOverrides } from './utils';
 
+/** @internal */
+export const unsetMarker = '__trpc_unset_marker__' as const; //Symbol('unsetMarker');
+type UnsetMarker = typeof unsetMarker;
+
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
   ? TWith
   : Simplify<TType & TWith>;
 
 type ErrorMessage<TMessage extends string> = TMessage;
 
-/** @internal */
-export const unsetMarker = Symbol('unsetMarker');
-type UnsetMarker = typeof unsetMarker;
 type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
   ? TFallback
   : TValue;
