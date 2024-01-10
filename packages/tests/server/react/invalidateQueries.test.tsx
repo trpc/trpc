@@ -3,7 +3,7 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
+import type { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;

@@ -1,6 +1,6 @@
-import { AnyProcedure } from '../core';
-import { inferObservableValue } from '../observable';
-import { DefaultDataTransformer } from '../transformer';
+import type { AnyProcedure } from '../core';
+import type { inferObservableValue } from '../observable';
+import type { DefaultDataTransformer } from '../transformer';
 import type { Serialize } from './internal/serialize';
 
 /**

@@ -1,11 +1,10 @@
 // interop:
-import { AnyRouter } from '@trpc/server';
-import { createHooksInternalProxy, CreateTRPCReact } from './createTRPCReact';
-import { CreateTRPCReactOptions } from './shared';
-import {
-  createHooksInternal,
-  CreateReactQueryHooks,
-} from './shared/hooks/createRootHooks';
+import type { AnyRouter } from '@trpc/server';
+import type { CreateTRPCReact } from './createTRPCReact';
+import { createHooksInternalProxy } from './createTRPCReact';
+import type { CreateTRPCReactOptions } from './shared';
+import type { CreateReactQueryHooks } from './shared/hooks/createRootHooks';
+import { createHooksInternal } from './shared/hooks/createRootHooks';
 
 /**
  * @deprecated use `createTRPCReact` instead

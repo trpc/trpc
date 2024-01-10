@@ -3,17 +3,15 @@
 import '../___packages';
 import { ReadableStream as MiniflareReadableStream } from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
+import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCProxyClient,
   httpBatchLink,
-  TRPCLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import {
-  FetchCreateContextFnOptions,
-  fetchRequestHandler,
-} from '@trpc/server/adapters/fetch';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
 import { Miniflare } from 'miniflare';
 import { z } from 'zod';

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-non-null-assertion, @typescript-eslint/consistent-type-imports */
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
 export function useEnv() {

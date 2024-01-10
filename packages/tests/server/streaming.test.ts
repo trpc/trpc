@@ -1,5 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { TRPCLink, unstable_httpBatchStreamLink } from '@trpc/client';
+import type { TRPCLink } from '@trpc/client';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';

@@ -11,20 +11,19 @@ import type {
   ProcedureType,
 } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
+import type {
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
-import { TRPCClient } from './createTRPCClient';
-import { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import {
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import type { TRPCClient } from './createTRPCClient';
+import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
+import type {
   TRPCSubscriptionObserver,
-  TRPCUntypedClient,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
-import { TRPCClientError } from './TRPCClientError';
+import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public

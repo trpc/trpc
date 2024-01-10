@@ -1,11 +1,11 @@
-import {
+import type {
   AnyProcedure,
   AnyRouter,
   DefaultErrorShape,
   inferRouterError,
   Maybe,
 } from '@trpc/server';
-import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
+import type { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
 import { getCauseFromUnknown } from '@trpc/server/shared';
 import { isObject } from './internals/isObject';
 

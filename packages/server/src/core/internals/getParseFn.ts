@@ -1,4 +1,4 @@
-import { Parser } from '../parser';
+import type { Parser } from '../parser';
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 

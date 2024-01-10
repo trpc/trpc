@@ -1,14 +1,11 @@
 import { Readable } from 'node:stream';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { AnyRouter, inferRouterContext } from '../../core';
-import {
-  getBatchStreamFormatter,
-  HTTPBaseHandlerOptions,
-  HTTPRequest,
-} from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { AnyRouter, inferRouterContext } from '../../core';
+import type { HTTPBaseHandlerOptions, HTTPRequest } from '../../http';
+import { getBatchStreamFormatter } from '../../http';
+import type { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { NodeHTTPCreateContextOption } from '../node-http';
+import type { NodeHTTPCreateContextOption } from '../node-http';
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,

@@ -1,6 +1,6 @@
-import { AnyProcedure, inferProcedureInput } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import {
+import type { AnyProcedure, inferProcedureInput } from '@trpc/server';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import type {
   InferQueryOptions,
   InferQueryResult,
 } from '../../utils/inferReactQueryProcedure';

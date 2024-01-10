@@ -8,7 +8,7 @@ import type {
 import type { AnyRouter, inferRouterContext } from '../../core';
 import { TRPCError } from '../../error/TRPCError';
 import type { HTTPHeaders, ResponseMetaFn } from '../../http/internals/types';
-import { OnErrorFunction } from '../../internals/types';
+import type { OnErrorFunction } from '../../internals/types';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =

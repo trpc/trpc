@@ -4,16 +4,16 @@ import type {
   inferProcedureOutput,
   inferSubscriptionOutput,
 } from '@trpc/server';
-import { Unsubscribable } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import {
+import type { Unsubscribable } from '@trpc/server/observable';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import type {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCSubscriptionObserver,
-  TRPCUntypedClient,
 } from './internals/TRPCUntypedClient';
-import { TRPCClientRuntime } from './links';
-import { TRPCClientError } from './TRPCClientError';
+import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCClientRuntime } from './links';
+import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @deprecated

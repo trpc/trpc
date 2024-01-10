@@ -1,6 +1,6 @@
-import { inferRouterContext, ProcedureType } from '../core';
-import { AnyRouter } from '../core/router';
-import { TRPCError } from '../error/TRPCError';
+import type { inferRouterContext, ProcedureType } from '../core';
+import type { AnyRouter } from '../core/router';
+import type { TRPCError } from '../error/TRPCError';
 
 /**
  * Base interface for any response handler

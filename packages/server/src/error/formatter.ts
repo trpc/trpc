@@ -1,10 +1,10 @@
-import { ProcedureType } from '../core';
-import {
+import type { ProcedureType } from '../core';
+import type {
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
   TRPCErrorShape,
 } from '../rpc';
-import { TRPCError } from './TRPCError';
+import type { TRPCError } from './TRPCError';
 
 /**
  * @internal

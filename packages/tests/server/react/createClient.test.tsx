@@ -6,7 +6,8 @@ import { createServerSideHelpers } from '@trpc/react-query/server';
 import { createTRPCReact, httpBatchLink } from '@trpc/react-query/src';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
-import React, { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import React, { useState } from 'react';
 
 const ctx = konn()
   .beforeEach(() => {

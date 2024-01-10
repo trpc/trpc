@@ -35,6 +35,9 @@ const config = {
     // Todo: do we want these?
     '@typescript-eslint/no-explicit-any': 'off',
 
+    '@typescript-eslint/consistent-type-imports': 'error',
+    '@typescript-eslint/consistent-type-exports': 'error',
+
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
     'no-only-tests/no-only-tests': 'error',

@@ -2,10 +2,11 @@
 // This file contains a useful pattern in tRPC,
 //  building factories which can produce common functionality over a homologous data source.
 //
-import { RouterLike, UtilsLike } from '@trpc/react-query/shared';
-import { AnyRootConfig, TRPCError } from '@trpc/server';
-import { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
-import { createRouterFactory } from '@trpc/server/core/router';
+import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
+import type { AnyRootConfig } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
+import type { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
+import type { createRouterFactory } from '@trpc/server/core/router';
 import z from 'zod';
 
 //

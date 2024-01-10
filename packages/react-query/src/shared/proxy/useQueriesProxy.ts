@@ -1,19 +1,17 @@
-import { QueryOptions } from '@tanstack/react-query';
-import { TRPCClient, TRPCClientError } from '@trpc/client';
-import {
+import type { QueryOptions } from '@tanstack/react-query';
+import type { TRPCClient, TRPCClientError } from '@trpc/client';
+import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
   Filter,
   inferProcedureInput,
 } from '@trpc/server';
-import {
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { createRecursiveProxy } from '@trpc/server/shared';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
-import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
-import { TRPCReactRequestOptions } from '../hooks/types';
+import type { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
+import type { TRPCReactRequestOptions } from '../hooks/types';
 
 type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
   TData = inferTransformedProcedureOutput<TProcedure>,

@@ -1,25 +1,26 @@
-import { DefaultErrorShape, defaultFormatter } from '../error/formatter';
+import type { DefaultErrorShape } from '../error/formatter';
+import { defaultFormatter } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { createRecursiveProxy } from '../shared/createProxy';
 import { defaultTransformer } from '../transformer';
-import { AnyRootConfig } from './internals/config';
+import type { AnyRootConfig } from './internals/config';
 import { omitPrototype } from './internals/omitPrototype';
-import { ProcedureCallOptions } from './internals/procedureBuilder';
-import {
+import type { ProcedureCallOptions } from './internals/procedureBuilder';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnySubscriptionProcedure,
   ProcedureArgs,
 } from './procedure';
-import {
+import type {
   inferHandlerInput,
   inferProcedureOutput,
   ProcedureType,
-  procedureTypes,
 } from './types';
+import { procedureTypes } from './types';
 
 /** @internal **/
 export type ProcedureRecord = Record<string, AnyProcedure>;

@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew, waitMs } from '../___testHelpers';
 import { httpBatchLink, httpLink } from '@trpc/client';
-import { AbortControllerEsque } from '@trpc/client/internals/types';
+import type { AbortControllerEsque } from '@trpc/client/internals/types';
 import { initTRPC } from '@trpc/server/src/core';
 
 const t = initTRPC.create();

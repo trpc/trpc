@@ -1,4 +1,4 @@
-import {
+import type {
   CancelOptions,
   InfiniteData,
   InvalidateOptions,
@@ -10,8 +10,9 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import { createTRPCClientProxy, TRPCClientError } from '@trpc/client';
-import {
+import type { TRPCClientError } from '@trpc/client';
+import { createTRPCClientProxy } from '@trpc/client';
+import type {
   AnyQueryProcedure,
   AnyRouter,
   DeepPartial,
@@ -19,19 +20,16 @@ import {
   inferProcedureInput,
   ProtectedIntersection,
 } from '@trpc/server';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
-import {
-  contextProps,
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
+import type {
   DecoratedProxyTRPCContextProps,
   TRPCContextState,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
 } from '../../internals/context';
-import { QueryKeyKnown } from '../../internals/getArrayQueryKey';
+import { contextProps } from '../../internals/context';
+import type { QueryKeyKnown } from '../../internals/getArrayQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
 
 type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {

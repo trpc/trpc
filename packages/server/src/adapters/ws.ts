@@ -1,19 +1,21 @@
-import { IncomingMessage } from 'http';
-import { WebSocket, WebSocketServer } from 'ws';
-import { AnyRouter, callProcedure, inferRouterContext } from '../core';
+import type { IncomingMessage } from 'http';
+import type { WebSocket, WebSocketServer } from 'ws';
+import type { AnyRouter, inferRouterContext } from '../core';
+import { callProcedure } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import { BaseHandlerOptions } from '../internals/types';
-import { isObservable, Unsubscribable } from '../observable';
-import {
+import type { BaseHandlerOptions } from '../internals/types';
+import type { Unsubscribable } from '../observable';
+import { isObservable } from '../observable';
+import type {
   JSONRPC2,
-  parseTRPCMessage,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
+import { parseTRPCMessage } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import {
+import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPCreateContextOption,
 } from './node-http';

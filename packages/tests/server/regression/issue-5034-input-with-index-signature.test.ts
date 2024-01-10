@@ -1,10 +1,9 @@
-import {
+import type {
   inferRouterInputs,
   inferRouterOutputs,
-  initTRPC,
   Overwrite,
-  Simplify,
 } from '@trpc/server';
+import { initTRPC, Simplify } from '@trpc/server';
 import * as z from 'zod';
 
 export function hardcodedExample() {

@@ -1,8 +1,8 @@
-import * as trpcNext from '@trpc/server/adapters/next';
-import { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
-import { IncomingMessage } from 'http';
+import type * as trpcNext from '@trpc/server/adapters/next';
+import type { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
+import type { IncomingMessage } from 'http';
 import { getSession } from 'next-auth/react';
-import { WebSocket } from 'ws';
+import type { WebSocket } from 'ws';
 
 /**
  * Creates context for an incoming request

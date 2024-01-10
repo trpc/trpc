@@ -1,5 +1,6 @@
 import { createQueryClient } from '../../__queryClient';
-import { createLegacyAppRouter, Post } from './__testHelpers';
+import type { Post } from './__testHelpers';
+import { createLegacyAppRouter } from './__testHelpers';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

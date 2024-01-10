@@ -1,5 +1,6 @@
 import { getTRPCErrorFromUnknown } from './error/TRPCError';
-import { Observable, observable, Observer } from './observable';
+import type { Observable, Observer } from './observable';
+import { observable } from './observable';
 
 /**
  * @deprecated

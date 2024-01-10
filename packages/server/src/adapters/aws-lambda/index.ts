@@ -6,13 +6,16 @@ import type {
   Context as APIGWContext,
 } from 'aws-lambda';
 import { TRPCError } from '../..';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPRequest, resolveHTTPResponse } from '../../http';
-import { HTTPResponse } from '../../http/internals/types';
-import {
+import type { AnyRouter, inferRouterContext } from '../../core';
+import type { HTTPRequest } from '../../http';
+import { resolveHTTPResponse } from '../../http';
+import type { HTTPResponse } from '../../http/internals/types';
+import type {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
+} from './utils';
+import {
   getHTTPMethod,
   getPath,
   isPayloadV1,

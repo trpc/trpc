@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import type { TRPCLink } from '@trpc/client/src';
 import {
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
   TRPCClientError,
-  TRPCLink,
 } from '@trpc/client/src';
 import { observable } from '@trpc/server/observable';
 import * as trpc from '@trpc/server/src';
 import { initTRPC } from '@trpc/server/src';
-import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
 import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';
-import { OnErrorFunction } from '@trpc/server/src/internals/types';
+import type { OnErrorFunction } from '@trpc/server/src/internals/types';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';

@@ -2,7 +2,7 @@
 import { createLegacyAppRouter } from './__testHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { withTRPC } from '@trpc/next/src';
-import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 
 let factory: ReturnType<typeof createLegacyAppRouter>;

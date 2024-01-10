@@ -1,11 +1,9 @@
-import { NonEmptyArray } from '../internals/types';
-import { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
-import {
-  createHTTPBatchLink,
-  RequesterFn,
-} from './internals/createHTTPBatchLink';
+import type { NonEmptyArray } from '../internals/types';
+import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
+import type { RequesterFn } from './internals/createHTTPBatchLink';
+import { createHTTPBatchLink } from './internals/createHTTPBatchLink';
 import { jsonHttpRequester } from './internals/httpUtils';
-import { Operation } from './types';
+import type { Operation } from './types';
 
 const batchRequester: RequesterFn<HTTPBatchLinkOptions> = (requesterOpts) => {
   return (batchOps) => {

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { CancelFn, PromiseAndCancel } from '../links/types';
+import type { CancelFn, PromiseAndCancel } from '../links/types';
 
 type BatchItem<TKey, TValue> = {
   aborted: boolean;

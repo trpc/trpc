@@ -1,5 +1,5 @@
-import { Simplify, WithoutIndexSignature } from '../../types';
-import { ProcedureParams } from '../procedure';
+import type { Simplify, WithoutIndexSignature } from '../../types';
+import type { ProcedureParams } from '../procedure';
 
 /**
  * @internal

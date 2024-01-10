@@ -13,15 +13,12 @@ import { Readable } from 'node:stream';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
-import { CombinedDataTransformer } from '../../../../transformer';
+import type { CombinedDataTransformer } from '../../../../transformer';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import { NodeHTTPRequest } from '../../types';
+import type { NodeHTTPRequest } from '../../types';
 import { NodeOnDiskFile } from './fileUploadHandler';
-import {
-  MaxBodySizeExceededError,
-  UploadHandler,
-  UploadHandlerPart,
-} from './uploadHandler';
+import type { UploadHandler, UploadHandlerPart } from './uploadHandler';
+import { MaxBodySizeExceededError } from './uploadHandler';
 
 const utfTextDecoder = new TextDecoder('utf-8');
 

@@ -1,8 +1,8 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http';
-import { MaybePromise } from '../../types';
-import { NodeHTTPContentTypeHandler } from './internals/contentType';
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { AnyRouter, inferRouterContext } from '../../core';
+import type { HTTPBaseHandlerOptions } from '../../http';
+import type { MaybePromise } from '../../types';
+import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
   [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;

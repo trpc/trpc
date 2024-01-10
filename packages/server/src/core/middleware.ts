@@ -1,16 +1,16 @@
 import { TRPCError } from '../error/TRPCError';
-import { Simplify } from '../types';
-import { AnyRootConfig, RootConfig } from './internals/config';
-import { ParseFn } from './internals/getParseFn';
-import { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
-import {
+import type { Simplify } from '../types';
+import type { AnyRootConfig, RootConfig } from './internals/config';
+import type { ParseFn } from './internals/getParseFn';
+import type { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
+import type {
   DefaultValue,
   MiddlewareMarker,
   Overwrite,
   UnsetMarker,
 } from './internals/utils';
-import { ProcedureParams } from './procedure';
-import { ProcedureType } from './types';
+import type { ProcedureParams } from './procedure';
+import type { ProcedureType } from './types';
 
 /**
  * @internal

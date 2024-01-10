@@ -5,21 +5,22 @@ import {
   createQueryClientConfig,
 } from '../../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
+import type { TRPCWebSocketClient } from '@trpc/client/src';
 import {
   createWSClient,
   httpBatchLink,
   splitLink,
-  TRPCWebSocketClient,
   wsLink,
 } from '@trpc/client/src';
-import { OutputWithCursor } from '@trpc/react-query/shared';
+import type { OutputWithCursor } from '@trpc/react-query/shared';
 import { createReactQueryHooks } from '@trpc/react-query/src/interop';
 import { TRPCError } from '@trpc/server/src';
 import * as trpcServer from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React from 'react';
 import { z, ZodError } from 'zod';
 
 type Context = {};

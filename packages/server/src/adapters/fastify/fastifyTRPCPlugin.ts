@@ -1,9 +1,10 @@
 /// <reference types="@fastify/websocket" />
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { FastifyHandlerOptions } from '.';
-import { AnyRouter } from '../../core';
-import { NodeHTTPCreateContextFnOptions } from '../node-http';
-import { applyWSSHandler, WSSHandlerOptions } from '../ws';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyHandlerOptions } from '.';
+import type { AnyRouter } from '../../core';
+import type { NodeHTTPCreateContextFnOptions } from '../node-http';
+import type { WSSHandlerOptions } from '../ws';
+import { applyWSSHandler } from '../ws';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {

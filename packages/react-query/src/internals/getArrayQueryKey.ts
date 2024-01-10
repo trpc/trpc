@@ -1,4 +1,4 @@
-import { GetQueryProcedureInput } from './getQueryKey';
+import type { GetQueryProcedureInput } from './getQueryKey';
 
 export type QueryType = 'any' | 'infinite' | 'query';
 
