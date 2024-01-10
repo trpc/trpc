@@ -1928,8 +1928,8 @@ importers:
         specifier: ^1.3.0
         version: 1.4.0(react@18.2.0)
       react-icons:
-        specifier: ^4.4.0
-        version: 4.6.0(react@18.2.0)
+        specifier: ^5.0.0
+        version: 5.0.0(react@18.2.0)
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.0.0
@@ -19801,8 +19801,8 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /react-icons@4.6.0(react@18.2.0):
-    resolution: {integrity: sha512-rR/L9m9340yO8yv1QT1QurxWQvWpbNHqVX0fzMln2HEb9TEIrQRGsqiNFQfiv9/JEUbyHmHPlNTB2LWm2Ttz0g==}
+  /react-icons@5.0.0(react@18.2.0):
+    resolution: {integrity: sha512-8gBBjYRrO14BU9RuMEVptG5aB1gwNPAAgsKOuPggx2hg332pTky/r8FidEJW95cL6IG2mYCEHaYuAxw74wLefw==}
     peerDependencies:
       react: '*'
     dependencies:
