@@ -26,7 +26,7 @@ import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
 import { mergeWithoutOverrides } from './utils';
 
 /** @internal */
-export const unsetMarker = '__trpc_unset_marker__' as const; //Symbol('unsetMarker');
+export const unsetMarker = { __trpc_unset_marker__: true } as const;
 type UnsetMarker = typeof unsetMarker;
 
 type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
