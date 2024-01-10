@@ -32,10 +32,8 @@ type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
 type ErrorMessage<TMessage extends string> = TMessage;
 
 /** @internal */
-export const unsetMarker = 'unsetMarker' as 'unsetMarker' & {
-  __brand: 'unsetMarker';
-};
-type UnsetMarker = typeof unsetMarker;
+export const unsetMarker = Symbol('unset');
+type UnsetMarker = Omit<typeof unsetMarker, 'description'>;
 type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
   ? TFallback
   : TValue;
