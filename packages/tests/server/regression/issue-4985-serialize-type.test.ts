@@ -1,3 +1,4 @@
+import type { QueryProcedure } from '@trpc/core';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import * as z from 'zod';
@@ -36,6 +37,28 @@ describe('Serialization of Record types', () => {
         ),
       )
       .query(({ input }) => input),
+    withDescriptionKey: t.procedure
+      .input(
+        z.object({
+          description: z.string(),
+        }),
+      )
+      .query(({ input }) => {
+        expectTypeOf<{ description: string }>(input);
+        return { input };
+      }),
+  });
+
+  test("Description key doesn't get matched on unsetMarker", async () => {
+    type Proc = (typeof appRouter)['withDescriptionKey'];
+    expectTypeOf<Proc>().toEqualTypeOf<
+      QueryProcedure<{
+        input: {
+          description: string;
+        };
+        output: { input: { description: string } };
+      }>
+    >();
   });
 
   test('Record<string, any> gets inferred on the client as { [x: string]: any }', async () => {
