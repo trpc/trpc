@@ -47,18 +47,36 @@ describe('Serialization of Record types', () => {
         expectTypeOf<{ description: string }>(input);
         return { input };
       }),
+    maybeDescriptionKey: t.procedure
+      .input(
+        z.object({
+          description: z.string().optional(),
+        }),
+      )
+      .query(({ input }) => {
+        expectTypeOf<{ description: string }>(input);
+        return { input };
+      }),
   });
 
   test("Description key doesn't get matched on unsetMarker", async () => {
-    type Proc = (typeof appRouter)['withDescriptionKey'];
-    expectTypeOf<Proc>().toEqualTypeOf<
+    expectTypeOf<
       QueryProcedure<{
         input: {
           description: string;
         };
         output: { input: { description: string } };
       }>
-    >();
+    >(appRouter.withDescriptionKey);
+
+    expectTypeOf<
+      QueryProcedure<{
+        input: {
+          description: string;
+        };
+        output: { input: { description: string } };
+      }>
+    >(appRouter.maybeDescriptionKey);
   });
 
   test('Record<string, any> gets inferred on the client as { [x: string]: any }', async () => {
