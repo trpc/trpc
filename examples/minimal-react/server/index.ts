@@ -20,6 +20,7 @@ const appRouter = router({
       z
         .object({
           name: z.string().nullish(),
+          description: z.string().default(''),
         })
         .nullish(),
     )
