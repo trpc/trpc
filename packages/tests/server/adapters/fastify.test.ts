@@ -1,21 +1,20 @@
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
+import type { HTTPHeaders, TRPCLink } from '@trpc/client/src';
 import {
   createTRPCProxyClient,
   createWSClient,
-  HTTPHeaders,
   splitLink,
-  TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client/src';
 import { initTRPC } from '@trpc/server';
-import {
+import type {
   CreateFastifyContextOptions,
-  fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
 } from '@trpc/server/src/adapters/fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/src/adapters/fastify';
 import { observable } from '@trpc/server/src/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';

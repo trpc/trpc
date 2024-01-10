@@ -3,18 +3,17 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import {
+import type {
   AnyProcedure,
   AnyRootConfig,
   AnyRouter,
   CombinedDataTransformer,
-  getTRPCErrorFromUnknown,
   inferProcedureInput,
   MaybePromise,
   Simplify,
-  TRPCError,
 } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+import { getTRPCErrorFromUnknown, TRPCError } from '@trpc/server';
+import type { TRPCResponse } from '@trpc/server/rpc';
 import {
   createRecursiveProxy,
   getErrorShape,
@@ -23,14 +22,13 @@ import {
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
-import {
+import type {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
-  generateCacheTag,
   inferActionDef,
-  isFormData,
 } from './shared';
-import { NextAppDirDecoratedProcedureRecord } from './types';
+import { generateCacheTag, isFormData } from './shared';
+import type { NextAppDirDecoratedProcedureRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<

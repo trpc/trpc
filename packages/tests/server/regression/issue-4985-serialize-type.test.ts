@@ -1,8 +1,5 @@
-import {
-  inferRouterInputs,
-  inferRouterOutputs,
-  initTRPC,
-} from '@trpc/server/src';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src';
 import * as z from 'zod';
 
 describe('Serialization of Record types', () => {

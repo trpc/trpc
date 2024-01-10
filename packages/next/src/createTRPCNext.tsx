@@ -1,18 +1,21 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
-import {
-  createHooksInternal,
-  createReactProxyDecoration,
-  createReactQueryUtilsProxy,
+import type {
   CreateReactUtilsProxy,
   DecoratedProcedureRecord,
   TRPCUseQueries,
 } from '@trpc/react-query/shared';
-import { AnyRouter, ProtectedIntersection } from '@trpc/server';
+import {
+  createHooksInternal,
+  createReactProxyDecoration,
+  createReactQueryUtilsProxy,
+} from '@trpc/react-query/shared';
+import type { AnyRouter, ProtectedIntersection } from '@trpc/server';
 import { createFlatProxy } from '@trpc/server/shared';
-import { NextPageContext } from 'next/types';
+import type { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
-import { withTRPC, WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
+import type { WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
+import { withTRPC } from './withTRPC';
 
 /**
  * @internal

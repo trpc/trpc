@@ -3,10 +3,10 @@ import { waitError } from '../___testHelpers';
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import { TRPCClientError } from '@trpc/client/src';
 import * as trpc from '@trpc/server/src';
-import { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/src/adapters/standalone';
 import { TRPCError } from '@trpc/server/src/error/TRPCError';
 import { getMessageFromUnknownError } from '@trpc/server/src/error/utils';
-import { OnErrorFunction } from '@trpc/server/src/internals/types';
+import type { OnErrorFunction } from '@trpc/server/src/internals/types';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
 

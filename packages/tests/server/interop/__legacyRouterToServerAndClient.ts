@@ -1,10 +1,13 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client/src';
-import { WithTRPCConfig } from '@trpc/next';
-import { CreateHTTPHandlerOptions } from '@trpc/server/src/adapters/standalone';
-import { WSSHandlerOptions } from '@trpc/server/src/adapters/ws';
-import { MigrateOldRouter } from '@trpc/server/src/deprecated/interop';
-import { AnyRouter as OldRouter } from '@trpc/server/src/deprecated/router';
+import type {
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+} from '@trpc/client/src';
+import type { WithTRPCConfig } from '@trpc/next';
+import type { CreateHTTPHandlerOptions } from '@trpc/server/src/adapters/standalone';
+import type { WSSHandlerOptions } from '@trpc/server/src/adapters/ws';
+import type { MigrateOldRouter } from '@trpc/server/src/deprecated/interop';
+import type { AnyRouter as OldRouter } from '@trpc/server/src/deprecated/router';
 
 /**
  * @deprecated v9 router

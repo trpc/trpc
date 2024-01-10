@@ -1,22 +1,24 @@
-import {
+import type {
   AnyRouter,
-  callProcedure,
   inferRouterContext,
   inferRouterError,
   ProcedureType,
 } from '../core';
+import { callProcedure } from '../core';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import { TRPCResponse } from '../rpc';
+import type { TRPCResponse } from '../rpc';
 import { getErrorShape } from '../shared/getErrorShape';
 import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import { Maybe } from '../types';
-import {
-  BaseContentTypeHandler,
-  getJsonContentTypeInputs,
-} from './contentType';
+import type { Maybe } from '../types';
+import type { BaseContentTypeHandler } from './contentType';
+import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
-import { HTTPHeaders, HTTPResponse, ResponseChunk } from './internals/types';
-import { HTTPBaseHandlerOptions, HTTPRequest } from './types';
+import type {
+  HTTPHeaders,
+  HTTPResponse,
+  ResponseChunk,
+} from './internals/types';
+import type { HTTPBaseHandlerOptions, HTTPRequest } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,

@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { DehydratedState } from '@tanstack/react-query';
+import type { DehydratedState } from '@tanstack/react-query';
 import { createTRPCNext } from '@trpc/next';
 import type { CombinedDataTransformer } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
-import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 import superjson from 'superjson';
 

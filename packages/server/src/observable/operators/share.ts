@@ -1,4 +1,8 @@
-import { MonoTypeOperatorFunction, Observer, Unsubscribable } from '../types';
+import type {
+  MonoTypeOperatorFunction,
+  Observer,
+  Unsubscribable,
+} from '../types';
 
 interface ShareConfig {}
 export function share<TValue, TError>(

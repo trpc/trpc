@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import type { DehydratedState } from '@tanstack/react-query';
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
   useQueries as __useQueries,
   useQuery as __useQuery,
-  DehydratedState,
   hashQueryKey,
   useQueryClient,
 } from '@tanstack/react-query';
-import { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
+import type { TRPCClientErrorLike } from '@trpc/client';
+import { createTRPCClient } from '@trpc/client';
 import type {
   AnyRouter,
   inferHandlerInput,
@@ -18,25 +19,20 @@ import type {
   inferSubscriptionOutput,
   ProcedureRecord,
 } from '@trpc/server';
-import { inferObservableValue } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import type { inferObservableValue } from '@trpc/server/observable';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  SSRState,
-  TRPCContext,
-  TRPCContextState,
-} from '../../../internals/context';
-import {
-  getArrayQueryKey,
-  QueryType,
-} from '../../../internals/getArrayQueryKey';
+import type { SSRState, TRPCContextState } from '../../../internals/context';
+import { TRPCContext } from '../../../internals/context';
+import type { QueryType } from '../../../internals/getArrayQueryKey';
+import { getArrayQueryKey } from '../../../internals/getArrayQueryKey';
 import { getClientArgs } from '../../../internals/getClientArgs';
 import { useHookResult } from '../../../internals/useHookResult';
-import { TRPCUseQueries } from '../../../internals/useQueries';
+import type { TRPCUseQueries } from '../../../internals/useQueries';
 import { createUseQueriesProxy } from '../../proxy/useQueriesProxy';
-import { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
+import type { CreateTRPCReactOptions, UseMutationOverride } from '../../types';
 import { createRootHooks } from '../createHooksInternal';
-import {
+import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,

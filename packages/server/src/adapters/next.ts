@@ -3,14 +3,14 @@ import type {
   NextApiRequest,
   NextApiResponse,
 } from 'next/types';
-import { AnyRouter } from '../core';
+import type { AnyRouter } from '../core';
 import { TRPCError } from '../error/TRPCError';
 import { getErrorShape } from '../shared/getErrorShape';
-import {
+import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
 } from './node-http';
+import { nodeHTTPRequestHandler } from './node-http';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,

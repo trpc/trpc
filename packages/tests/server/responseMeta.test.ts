@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from 'http';
+import type { IncomingMessage, ServerResponse } from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server/src';
 import fetch from 'node-fetch';

@@ -2,23 +2,22 @@
 import { defaultFormatter } from '../error/formatter';
 import { TRPCError } from '../error/TRPCError';
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
-import { inferObservableValue, Observable } from '../observable';
-import {
+import type { inferObservableValue, Observable } from '../observable';
+import type {
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
-  TRPC_ERROR_CODES_BY_KEY,
   TRPCErrorShape,
 } from '../rpc';
-import {
+import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
+import type {
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-  defaultTransformer,
 } from '../transformer';
-import { FlatOverwrite, ThenArg } from '../types';
-import { MiddlewareFunction } from './internals/middlewares';
-import {
-  createProcedure,
+import { defaultTransformer } from '../transformer';
+import type { FlatOverwrite, ThenArg } from '../types';
+import type { MiddlewareFunction } from './internals/middlewares';
+import type {
   CreateProcedureOptions,
   CreateProcedureWithInput,
   CreateProcedureWithInputOutputParser,
@@ -27,7 +26,9 @@ import {
   Procedure,
   ProcedureCallOptions,
 } from './internals/procedure';
-import { MigrateRouter, migrateRouter } from './interop';
+import { createProcedure } from './internals/procedure';
+import type { MigrateRouter } from './interop';
+import { migrateRouter } from './interop';
 
 export type { Procedure } from './internals/procedure';
 

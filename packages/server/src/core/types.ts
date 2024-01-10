@@ -1,7 +1,7 @@
-import { inferObservableValue } from '../observable';
-import { inferTransformedProcedureOutput } from '../shared/jsonify';
-import { AnyProcedure, ProcedureArgs } from './procedure';
-import { AnyRouter, AnyRouterDef, Router } from './router';
+import type { inferObservableValue } from '../observable';
+import type { inferTransformedProcedureOutput } from '../shared/jsonify';
+import type { AnyProcedure, ProcedureArgs } from './procedure';
+import type { AnyRouter, AnyRouterDef, Router } from './router';
 
 export type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   infer TParams

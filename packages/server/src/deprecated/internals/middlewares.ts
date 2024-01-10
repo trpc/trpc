@@ -1,5 +1,5 @@
-import { TRPCError } from '../../error/TRPCError';
-import { ProcedureType } from '../router';
+import type { TRPCError } from '../../error/TRPCError';
+import type { ProcedureType } from '../router';
 
 /**
  * @deprecated

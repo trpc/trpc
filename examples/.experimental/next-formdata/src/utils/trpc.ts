@@ -5,8 +5,8 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import { AppRouter } from '../pages/api/trpc/[trpc]';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '../pages/api/trpc/[trpc]';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {

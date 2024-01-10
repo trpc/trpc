@@ -1,6 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client/src';
+import type { TRPCClientErrorLike } from '@trpc/client/src';
+import { TRPCClientError } from '@trpc/client/src';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React from 'react';

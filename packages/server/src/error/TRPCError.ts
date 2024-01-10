@@ -1,4 +1,4 @@
-import { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
+import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 import { getCauseFromUnknown } from '../shared/getCauseFromUnknown';
 
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {

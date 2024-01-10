@@ -1,27 +1,30 @@
-import {
+import type {
   DefaultErrorShape,
-  defaultFormatter,
   ErrorFormatter,
   ErrorFormatterShape,
 } from '../error/formatter';
+import { defaultFormatter } from '../error/formatter';
 import { createFlatProxy } from '../shared/createProxy';
-import {
+import type {
   DataTransformerOptions,
   DefaultDataTransformer,
-  defaultTransformer,
-  getDataTransformer,
 } from '../transformer';
-import { Unwrap } from '../types';
-import {
+import { defaultTransformer, getDataTransformer } from '../transformer';
+import type { Unwrap } from '../types';
+import type {
   CreateRootConfigTypes,
-  isServerDefault,
   RootConfig,
   RootConfigTypes,
   RuntimeConfig,
 } from './internals/config';
+import { isServerDefault } from './internals/config';
 import { mergeRouters } from './internals/mergeRouters';
 import { createBuilder } from './internals/procedureBuilder';
-import { Overwrite, PickFirstDefined, ValidateShape } from './internals/utils';
+import type {
+  Overwrite,
+  PickFirstDefined,
+  ValidateShape,
+} from './internals/utils';
 import { createMiddlewareFactory } from './middleware';
 import { createCallerFactory, createRouterFactory } from './router';
 

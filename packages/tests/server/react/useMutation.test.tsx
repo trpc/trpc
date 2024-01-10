@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { inferReactQueryProcedureOptions } from '@trpc/react-query';
+import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';

@@ -1,10 +1,10 @@
-import {
+import type {
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
-import {
+import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
@@ -12,13 +12,10 @@ import {
   inferHandlerInput,
   ProtectedIntersection,
 } from '@trpc/server';
-import {
-  createFlatProxy,
-  createRecursiveProxy,
-  inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { createFlatProxy, createRecursiveProxy } from '@trpc/server/shared';
 import { createSSGHelpers } from '../ssg/ssg';
-import { CreateServerSideHelpersOptions } from './types';
+import type { CreateServerSideHelpersOptions } from './types';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**

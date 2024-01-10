@@ -1,14 +1,14 @@
-import {
+import type {
   inferRouterProxyClient,
   TRPCClient,
   TRPCUntypedClient,
 } from '@trpc/client';
-import {
+import type {
   AnyRouter,
   ClientDataTransformerOptions,
   inferRouterContext,
 } from '@trpc/server';
-import { CreateTRPCReactQueryClientConfig } from '../shared';
+import type { CreateTRPCReactQueryClientConfig } from '../shared';
 
 interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
   router: TRouter;

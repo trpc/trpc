@@ -1,20 +1,16 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
-import {
-  createWSClient,
-  httpBatchLink,
-  splitLink,
-  TRPCWebSocketClient,
-  wsLink,
-} from '@trpc/client';
+import type { TRPCWebSocketClient } from '@trpc/client';
+import { createWSClient, httpBatchLink, splitLink, wsLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { OutputWithCursor } from '@trpc/react-query/shared';
+import type { OutputWithCursor } from '@trpc/react-query/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/src/observable';
 import { subscriptionPullFactory } from '@trpc/server/src/subscription';
 import hash from 'hash-sum';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React from 'react';
 import { z, ZodError } from 'zod';
 
 export type Post = {

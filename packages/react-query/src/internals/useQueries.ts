@@ -1,6 +1,6 @@
-import { QueryKey, UseQueryOptions } from '@tanstack/react-query';
-import { AnyRouter } from '@trpc/server';
-import {
+import type { QueryKey, UseQueryOptions } from '@tanstack/react-query';
+import type { AnyRouter } from '@trpc/server';
+import type {
   UseQueriesProcedureRecord,
   UseTRPCQueryOptions,
   UseTRPCQueryResult,

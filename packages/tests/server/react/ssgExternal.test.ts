@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import { InfiniteData } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server/src';
 import { konn } from 'konn';

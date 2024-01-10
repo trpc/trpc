@@ -1,8 +1,6 @@
-import {
-  awsLambdaRequestHandler,
-  CreateAWSLambdaContextOptions,
-} from '../aws-lambda';
-import { APIGatewayEvent } from '../aws-lambda/utils';
+import type { CreateAWSLambdaContextOptions } from '../aws-lambda';
+import { awsLambdaRequestHandler } from '../aws-lambda';
+import type { APIGatewayEvent } from '../aws-lambda/utils';
 
 export * from '../aws-lambda';
 

@@ -1,4 +1,4 @@
-import { UnaryFunction } from '../types';
+import type { UnaryFunction } from '../types';
 import { identity } from './identity';
 
 /** @internal */

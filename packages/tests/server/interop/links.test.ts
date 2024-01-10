@@ -1,17 +1,16 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
+import type { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
 import {
   createTRPCClient,
   httpBatchLink,
   httpLink,
   loggerLink,
-  OperationLink,
   TRPCClientError,
-  TRPCClientRuntime,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/internals/retryLink';
 import * as trpc from '@trpc/server/src';
-import { AnyRouter } from '@trpc/server/src';
+import type { AnyRouter } from '@trpc/server/src';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
 

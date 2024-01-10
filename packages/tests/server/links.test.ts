@@ -1,17 +1,17 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import type { OperationLink, TRPCClientRuntime } from '@trpc/client/src';
 import {
   createTRPCProxyClient,
   httpBatchLink,
   httpLink,
   loggerLink,
-  OperationLink,
   TRPCClientError,
-  TRPCClientRuntime,
   unstable_httpBatchStreamLink,
 } from '@trpc/client/src';
 import { createChain } from '@trpc/client/src/links/internals/createChain';
 import { retryLink } from '@trpc/client/src/links/internals/retryLink';
-import { AnyRouter, initTRPC } from '@trpc/server/src';
+import type { AnyRouter } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src';
 import { observable, observableToPromise } from '@trpc/server/src/observable';
 import { z } from 'zod';
 

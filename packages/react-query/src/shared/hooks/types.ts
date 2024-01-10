@@ -1,4 +1,4 @@
-import {
+import type {
   DefinedUseQueryResult,
   DehydratedState,
   InfiniteQueryObserverSuccessResult,
@@ -12,15 +12,15 @@ import {
   UseMutationResult,
   UseQueryResult,
 } from '@tanstack/react-query';
-import {
+import type {
   CreateTRPCClientOptions,
   TRPCClient,
   TRPCRequestOptions,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
-import { ReactNode } from 'react';
-import { TRPCContextProps } from '../../internals/context';
-import { TRPCHookResult } from '../../internals/useHookResult';
+import type { AnyRouter } from '@trpc/server';
+import type { ReactNode } from 'react';
+import type { TRPCContextProps } from '../../internals/context';
+import type { TRPCHookResult } from '../../internals/useHookResult';
 
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;

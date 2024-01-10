@@ -2,10 +2,11 @@
  * @vitest-environment miniflare
  */
 /// <reference types="@cloudflare/workers-types" />
-import { Context, router } from './__router';
+import type { Context } from './__router';
+import { router } from './__router';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import { createTRPCClient, httpBatchLink } from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
+import type * as trpc from '@trpc/server/src';
 import * as trpcFetch from '@trpc/server/src/adapters/fetch';
 import { Miniflare } from 'miniflare';
 

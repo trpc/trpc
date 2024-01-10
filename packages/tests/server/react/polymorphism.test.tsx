@@ -13,10 +13,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createTRPCReact } from '@trpc/react-query';
-import { InferQueryLikeData, QueryLike } from '@trpc/react-query/shared';
+import type { InferQueryLikeData, QueryLike } from '@trpc/react-query/shared';
 import { AnyProcedure, initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import React, { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 /**
  * We define a router factory which can be used many times.

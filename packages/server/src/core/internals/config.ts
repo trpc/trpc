@@ -1,4 +1,4 @@
-import { ErrorFormatter } from '../../error/formatter';
+import type { ErrorFormatter } from '../../error/formatter';
 import type { TRPCErrorShape } from '../../rpc';
 
 /**

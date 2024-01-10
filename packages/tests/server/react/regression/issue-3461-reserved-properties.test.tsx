@@ -2,7 +2,7 @@ import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
 import { createTRPCProxyClient } from '@trpc/client';
 import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
-import { IntersectionError } from '@trpc/server';
+import type { IntersectionError } from '@trpc/server';
 import { initTRPC } from '@trpc/server/src/core';
 import React from 'react';
 import { z } from 'zod';

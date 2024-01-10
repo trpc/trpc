@@ -2,35 +2,29 @@
  * Heavily based on urql's ssr
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
-import {
-  dehydrate,
-  DehydratedState,
-  Hydrate,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query';
+import type { DehydratedState, QueryClient } from '@tanstack/react-query';
+import { dehydrate, Hydrate, QueryClientProvider } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions } from '@trpc/client';
-import {
-  createReactQueryHooks,
-  createTRPCClient,
+import type {
   TRPCClient,
   TRPCClientError,
   TRPCClientErrorLike,
 } from '@trpc/react-query';
-import {
+import { createReactQueryHooks, createTRPCClient } from '@trpc/react-query';
+import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
-  getQueryClient,
 } from '@trpc/react-query/shared';
+import { getQueryClient } from '@trpc/react-query/shared';
 import type { AnyRouter, Dict, Maybe } from '@trpc/server';
 import type { ResponseMeta } from '@trpc/server/http';
-import {
+import type {
   AppContextType,
   AppPropsType,
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
-import { NextRouter } from 'next/router';
+import type { NextRouter } from 'next/router';
 import React, { createElement, useState } from 'react';
 
 function transformQueryOrMutationCacheErrors<

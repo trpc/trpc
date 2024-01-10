@@ -4,7 +4,8 @@ import {
   httpBatchLink,
   httpLink,
 } from '@trpc/client/src';
-import { Dict, initTRPC } from '@trpc/server/src';
+import type { Dict } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server/src';
 
 describe('pass headers', () => {
   type Context = {

@@ -1,11 +1,11 @@
+import type { CreateTRPCProxyClient } from '@trpc/client';
 import {
   clientCallTypeToProcedureType,
-  CreateTRPCProxyClient,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/shared';
-import { CreateTRPCNextAppRouterOptions } from './shared';
+import type { CreateTRPCNextAppRouterOptions } from './shared';
 
 export {
   // ts-prune-ignore-next

@@ -1,6 +1,10 @@
 import * as trpc from '@trpc/server/src';
-import { inferProcedureInput, inferProcedureOutput } from '@trpc/server/src';
-import { Observable, observable } from '@trpc/server/src/observable';
+import type {
+  inferProcedureInput,
+  inferProcedureOutput,
+} from '@trpc/server/src';
+import type { Observable } from '@trpc/server/src/observable';
+import { observable } from '@trpc/server/src/observable';
 import { z } from 'zod';
 
 describe('infer query input & output', () => {

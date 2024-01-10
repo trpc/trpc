@@ -1,6 +1,7 @@
 import { observable } from '@trpc/server/observable';
-import { OperationLink, splitLink, TRPCLink } from '../';
-import { AnyRouter } from '../../../server/src';
+import type { OperationLink, TRPCLink } from '../';
+import { splitLink } from '../';
+import type { AnyRouter } from '../../../server/src';
 import { createChain } from '../links/internals/createChain';
 
 test('splitLink', () => {

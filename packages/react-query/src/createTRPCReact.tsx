@@ -1,6 +1,6 @@
-import { InfiniteData } from '@tanstack/react-query';
-import { TRPCClientErrorLike } from '@trpc/client';
-import {
+import type { InfiniteData } from '@tanstack/react-query';
+import type { TRPCClientErrorLike } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
@@ -10,24 +10,22 @@ import {
   ProcedureRouterRecord,
   ProtectedIntersection,
 } from '@trpc/server';
-import {
-  createFlatProxy,
+import type {
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/shared';
+import { createFlatProxy } from '@trpc/server/shared';
 import { useMemo } from 'react';
-import { QueryKey, QueryType } from './internals/getArrayQueryKey';
-import { TRPCUseQueries } from './internals/useQueries';
+import type { QueryKey, QueryType } from './internals/getArrayQueryKey';
+import type { TRPCUseQueries } from './internals/useQueries';
+import type { CreateReactUtilsProxy } from './shared';
 import {
   createReactProxyDecoration,
   createReactQueryUtilsProxy,
-  CreateReactUtilsProxy,
 } from './shared';
-import {
-  createHooksInternal,
-  CreateReactQueryHooks,
-} from './shared/hooks/createRootHooks';
-import {
+import type { CreateReactQueryHooks } from './shared/hooks/createRootHooks';
+import { createHooksInternal } from './shared/hooks/createRootHooks';
+import type {
   CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
@@ -43,7 +41,7 @@ import {
   UseTRPCQuerySuccessResult,
   UseTRPCSubscriptionOptions,
 } from './shared/hooks/types';
-import { CreateTRPCReactOptions } from './shared/types';
+import type { CreateTRPCReactOptions } from './shared/types';
 
 /**
  * @internal

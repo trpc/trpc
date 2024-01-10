@@ -1,4 +1,4 @@
-import {
+import type {
   CancelOptions,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
@@ -13,15 +13,18 @@ import {
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query';
-import {
+import type {
   CreateTRPCProxyClient,
   TRPCClient,
   TRPCClientError,
   TRPCRequestOptions,
 } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { inferHandlerInput, inferProcedureInput } from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+import type {
+  AnyRouter,
+  inferHandlerInput,
+  inferProcedureInput,
+} from '@trpc/server';
+import type { inferTransformedProcedureOutput } from '@trpc/server/shared';
 import { createContext } from 'react';
 
 export interface TRPCFetchQueryOptions<TInput, TError, TOutput>

@@ -1,6 +1,6 @@
-import { AnyRouter } from '../../../core';
-import { BaseContentTypeHandler } from '../../../http/contentType';
-import {
+import type { AnyRouter } from '../../../core';
+import type { BaseContentTypeHandler } from '../../../http/contentType';
+import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,

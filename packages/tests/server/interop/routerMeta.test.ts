@@ -1,6 +1,6 @@
 import { legacyRouterToServerAndClient } from './__legacyRouterToServerAndClient';
 import * as trpc from '@trpc/server/src';
-import { inferRouterMeta } from '@trpc/server/src';
+import type { inferRouterMeta } from '@trpc/server/src';
 import { observable } from '@trpc/server/src/observable';
 
 test('route meta types', async () => {

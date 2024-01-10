@@ -1,7 +1,9 @@
 // import "server-only";
 
-import { TRPCClientError, TRPCLink } from '@trpc/client';
-import { AnyRouter, callProcedure, inferRouterContext } from '@trpc/server';
+import type { TRPCLink } from '@trpc/client';
+import { TRPCClientError } from '@trpc/client';
+import type { AnyRouter, inferRouterContext } from '@trpc/server';
+import { callProcedure } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';

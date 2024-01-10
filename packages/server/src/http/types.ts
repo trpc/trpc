@@ -1,6 +1,6 @@
-import { AnyRouter } from '../core';
-import { BaseHandlerOptions } from '../internals/types';
-import { HTTPHeaders, ResponseMetaFn } from './internals/types';
+import type { AnyRouter } from '../core';
+import type { BaseHandlerOptions } from '../internals/types';
+import type { HTTPHeaders, ResponseMetaFn } from './internals/types';
 
 export interface HTTPRequest {
   method: string;

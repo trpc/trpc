@@ -1,8 +1,9 @@
-import { AnyRouter } from '../../core';
-import { getBatchStreamFormatter, HTTPRequest } from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
+import type { AnyRouter } from '../../core';
+import type { HTTPRequest } from '../../http';
+import { getBatchStreamFormatter } from '../../http';
+import type { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { FetchHandlerOptions } from './types';
+import type { FetchHandlerOptions } from './types';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   FetchHandlerOptions<TRouter> & {

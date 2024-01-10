@@ -1,12 +1,13 @@
-import {
+import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
 } from '@trpc/server';
-import { getArrayQueryKey, QueryType } from '../internals/getArrayQueryKey';
-import { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
+import type { QueryType } from '../internals/getArrayQueryKey';
+import { getArrayQueryKey } from '../internals/getArrayQueryKey';
+import type { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 /**
  * We treat `undefined` as an input the same as omitting an `input`

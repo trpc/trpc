@@ -1,5 +1,6 @@
 import { httpLinkFactory } from './httpLink';
-import { GetBody, httpRequest, Requester } from './internals/httpUtils';
+import type { GetBody, Requester } from './internals/httpUtils';
+import { httpRequest } from './internals/httpUtils';
 
 const getBody: GetBody = (opts) => {
   if (!('input' in opts)) {

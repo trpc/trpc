@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from '../server/___testHelpers';
 import { initTRPC } from '@trpc/server';
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import DataLoader from 'dataloader';
 import { konn } from 'konn';
 import { z } from 'zod';

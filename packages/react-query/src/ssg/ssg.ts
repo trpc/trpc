@@ -1,18 +1,18 @@
-import {
-  dehydrate,
+import type {
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
 } from '@tanstack/react-query';
+import { dehydrate } from '@tanstack/react-query';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
-import {
+import type {
   AnyRouter,
-  callProcedure,
   inferHandlerInput,
   inferProcedureOutput,
 } from '@trpc/server';
+import { callProcedure } from '@trpc/server';
 import { getArrayQueryKey } from '../internals/getArrayQueryKey';
-import { CreateServerSideHelpersOptions } from '../server/types';
+import type { CreateServerSideHelpersOptions } from '../server/types';
 import { getQueryClient } from '../shared';
 
 /**

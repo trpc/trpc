@@ -1,9 +1,9 @@
-import {
+import type {
   CreateTRPCClientOptions,
   Resolver,
   TRPCUntypedClient,
 } from '@trpc/client';
-import {
+import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,

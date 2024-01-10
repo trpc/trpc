@@ -1,5 +1,10 @@
 import { pipeFromArray } from './internals/pipe';
-import { Observable, Observer, OperatorFunction, TeardownLogic } from './types';
+import type {
+  Observable,
+  Observer,
+  OperatorFunction,
+  TeardownLogic,
+} from './types';
 
 export type inferObservableValue<TObservable> = TObservable extends Observable<
   infer TValue,
