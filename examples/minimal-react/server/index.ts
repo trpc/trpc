@@ -20,6 +20,8 @@ const appRouter = router({
       z
         .object({
           name: z.string().nullish(),
+          description: z.string().default(''),
+          definiteString: z.string(),
         })
         .nullish(),
     )
@@ -27,6 +29,17 @@ const appRouter = router({
       // This is what you're returning to your client
       return {
         text: `hello ${input?.name ?? 'world'}`,
+        // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
+      };
+    }),
+  greeting2: publicProcedure
+    // This is the input schema of your procedure
+    // 💡 Tip: Try changing this and see type errors on the client straight away
+    .input(z.string())
+    .query(({ input }) => {
+      // This is what you're returning to your client
+      return {
+        text: `hello ${input ?? 'world'}`,
         // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
       };
     }),

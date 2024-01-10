@@ -1,13 +1,16 @@
+import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootConfig,
   inferProcedureInput,
+  inferProcedureOutput,
   inferTransformedProcedureOutput,
 } from '@trpc/core';
 import type {
   InferQueryOptions,
   InferQueryResult,
 } from '../../utils/inferReactQueryProcedure';
+import type { UseTRPCSuspenseQueryResult } from '../hooks/types';
 
 /**
  * Use to request a query route which matches a given query procedure's interface
@@ -20,6 +23,14 @@ export type QueryLike<
     variables: inferProcedureInput<TProcedure>,
     opts?: InferQueryOptions<TConfig, TProcedure, any>,
   ) => InferQueryResult<TConfig, TProcedure>;
+
+  useSuspenseQuery: (
+    variables: inferProcedureInput<TProcedure>,
+    opts?: InferQueryOptions<TConfig, TProcedure, any>,
+  ) => UseTRPCSuspenseQueryResult<
+    inferProcedureOutput<TProcedure>,
+    TRPCClientErrorLike<TConfig>
+  >;
 };
 
 /**

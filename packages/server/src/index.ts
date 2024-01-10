@@ -24,6 +24,8 @@ export type {
    * @deprecated use `AnyTRPCRouter` instead
    */
   AnyRouter,
+  AnyMiddlewareFunction,
+  MiddlewareFunction,
 } from '@trpc/core';
 
 /**
