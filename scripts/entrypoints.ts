@@ -104,11 +104,14 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
       // create the barrelfile, linking the declared exports to the compiled files in dist
       const importDepth = importPath.split('/').length || 1;
-      const resolvedImport = path.join(
+
+      // in windows, "path.join" uses backslashes, it leads escape characters
+      const resolvedImport = [
         ...Array(importDepth).fill('..'),
         'dist',
         importPath,
-      );
+      ].join('/');
+
       // index.js
       const indexFile = path.resolve(importPath, 'index.js');
       const indexFileContent = `module.exports = require('${resolvedImport}');\n`;

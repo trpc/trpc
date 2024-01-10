@@ -22,10 +22,9 @@ for (const pkg of [
     }
     // trim first './'
     const trimmed = key.slice(1);
-    aliases[`@trpc/${pkg}${trimmed}`] = path.join(
-      __dirname,
-      `../${pkg}/src${key.slice(1)}`,
-    );
+    aliases[`@trpc/${pkg}${trimmed}`] = path
+      .join(__dirname, `../${pkg}/src${key.slice(1)}`)
+      .replace(/\\/g, '/');
   }
 }
 
@@ -49,14 +48,14 @@ export default defineConfig({
   resolve: {
     alias: {
       ...aliases,
-      'vitest-environment-miniflare': path.join(
+      'vitest-environment-miniflare': [
         __dirname,
         'node_modules/vitest-environment-miniflare',
-      ),
-      '@vitest/coverage-istanbul': path.join(
+      ].join('/'),
+      '@vitest/coverage-istanbul': [
         __dirname,
         'node_modules/@vitest/coverage-istanbul',
-      ),
+      ].join('/'),
     },
   },
 });
