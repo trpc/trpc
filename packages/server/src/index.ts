@@ -25,7 +25,6 @@ export type {
    */
   AnyRouter,
   AnyMiddlewareFunction,
-  MiddlewareFunction,
 } from '@trpc/core';
 
 /**
