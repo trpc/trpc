@@ -40,7 +40,7 @@ describe('Serialization of Record types', () => {
     expectTypeOf<
       QueryProcedure<{
         input: {
-          description: string;
+          description?: string | undefined;
         };
         output: { input: { description: string } };
       }>
