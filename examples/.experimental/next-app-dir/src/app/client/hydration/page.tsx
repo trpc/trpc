@@ -2,7 +2,6 @@ import { dehydrate } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { appRouter } from '~/server/routers/_app';
 
-
 export default async function Page(props: { children: React.ReactNode }) {
   // THIS THROWS useContext error
   const helpers = createServerSideHelpers({
