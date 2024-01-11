@@ -1887,6 +1887,9 @@ importers:
       '@trpc/client':
         specifier: ^10.45.0
         version: link:../packages/client
+      '@trpc/core':
+        specifier: ^10.45.0
+        version: link:../packages/core
       '@trpc/next':
         specifier: ^10.45.0
         version: link:../packages/next
