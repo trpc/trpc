@@ -18,8 +18,8 @@
     "server"
   ],
   "dependencies": {
-    "@trpc/server": "^10.45.0",
-    "@trpc/client": "^10.45.0"
+    "@trpc/client": "^10.45.0",
+    "@trpc/server": "^10.45.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
