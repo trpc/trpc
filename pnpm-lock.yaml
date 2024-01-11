@@ -152,16 +152,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       '@types/node':
         specifier: ^20.10.0
@@ -222,16 +222,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -277,16 +277,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -326,16 +326,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -372,16 +372,16 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -409,16 +409,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -513,10 +513,10 @@ importers:
   examples/bun:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
     devDependencies:
       bun-types:
@@ -538,10 +538,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -572,13 +572,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -621,13 +621,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -673,10 +673,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -725,10 +725,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       tsx:
         specifier: ^4.0.0
@@ -804,13 +804,13 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -841,7 +841,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -869,7 +869,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../../packages/client
       undici:
         specifier: ^6.0.1
@@ -882,7 +882,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -898,16 +898,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       next:
         specifier: ^14.0.1
@@ -947,16 +947,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       next:
         specifier: ^14.0.1
@@ -993,16 +993,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       next:
         specifier: ^14.0.1
@@ -1042,16 +1042,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1151,16 +1151,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1233,16 +1233,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next@next
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1342,10 +1342,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       '@types/node':
         specifier: ^20.10.0
@@ -1369,13 +1369,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1415,10 +1415,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client@next
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server@next
+        specifier: next
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
