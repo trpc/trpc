@@ -2,9 +2,9 @@
 >
 > You are looking at the `next`-branch of tRPC which is the current work in progress representing **version 11**.
 >
-> - For the pending list of changes made, see https://trpc.io/docs/v11/migrate-from-v10-to-v11
 > - The functionality is **stable and can be used in production**, but we may do small breaking API-changes between patches until we reach `11.0.0`
 > - The packages are published with the `next`-tag on npm
+> - For the list of changes made, see https://trpc.io/docs/v11/migrate-from-v10-to-v11
 
 <a href="https://trpc.io/" target="_blank" rel="noopener">
   <picture>
