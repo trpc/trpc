@@ -2,7 +2,7 @@ name: subtree-matrix
 on:
   push:
     branches:
-      - next
+      - notes
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
