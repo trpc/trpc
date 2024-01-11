@@ -63,7 +63,8 @@ jobs:
           PWD_ROOT=${PWD}
           cd ./examples/${{ matrix.path }}
           cp ${PWD_ROOT}/pnpm-lock.yaml .
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "next"/g'
+          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
+          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "*"/\1: "next"/g'
           pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Sync downstream
