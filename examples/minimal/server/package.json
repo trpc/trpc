@@ -3,7 +3,7 @@
   "version": "10.45.0",
   "private": true,
   "dependencies": {
-    "@trpc/server": "next",
+    "@trpc/server": "10.45.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
