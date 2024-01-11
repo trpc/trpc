@@ -2,6 +2,7 @@
   "name": "@examples/minimal",
   "private": true,
   "version": "10.45.0",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "dev:server": "tsx watch server",
