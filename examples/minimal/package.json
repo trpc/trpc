@@ -8,7 +8,7 @@
     "dev:client": "wait-port 3000 && tsx watch client",
     "dev": "run-p dev:* --print-label",
     "start": "node dist/server",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives */*.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\" */*.ts",
     "test-dev": "start-server-and-test 'tsx server' 3000 'tsx client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
