@@ -53,13 +53,13 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   (object extends inferRouterContext<TRouter>
     ? {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext?: CreateWSSContextFn<TRouter>;
       }
     : {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext: CreateWSSContextFn<TRouter>;
       }) & {

@@ -93,7 +93,7 @@ import { getSession } from 'next-auth/react';
 
 /**
  * Creates context for an incoming request
- * @link https://trpc.io/docs/context
+ * @link https://trpc.io/docs/v11/context
  */
 export async function createContext(opts: CreateNextContextOptions) {
   const session = await getSession({ req: opts.req });
@@ -170,7 +170,7 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  * - testing, so you don't have to mock Next.js' `req`/`res`
  * - tRPC's `createServerSideHelpers` where we don't have `req`/`res`
  *
- * @link https://trpc.io/docs/context#inner-and-outer-context
+ * @link https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
@@ -182,7 +182,7 @@ export async function createContextInner(opts?: CreateInnerContextOptions) {
 /**
  * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
  *
- * @link https://trpc.io/docs/context#inner-and-outer-context
+ * @link https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export async function createContext(opts: CreateNextContextOptions) {
   const session = getSessionFromCookie(opts.req);

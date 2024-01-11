@@ -32,7 +32,7 @@ export const postRouter = router({
     .query(async ({ input }) => {
       /**
        * For pagination docs you can have a look here
-       * @link https://trpc.io/docs/useInfiniteQuery
+       * @link https://trpc.io/docs/v11/useInfiniteQuery
        * @link https://www.prisma.io/docs/concepts/components/prisma-client/pagination
        */
 

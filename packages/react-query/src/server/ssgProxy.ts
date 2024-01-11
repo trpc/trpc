@@ -124,7 +124,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @link https://trpc.io/docs/client/nextjs/server-side-helpers
+ * @link https://trpc.io/docs/v11/client/nextjs/server-side-helpers
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,

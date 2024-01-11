@@ -86,6 +86,6 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
 }
 
 /**
- * @link https://trpc.io/docs/client/links/httpLink
+ * @link https://trpc.io/docs/v11/client/links/httpLink
  */
 export const httpLink = httpLinkFactory({ requester: jsonHttpRequester });

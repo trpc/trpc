@@ -28,11 +28,11 @@ export interface CreateTRPCNextBase<
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @link https://trpc.io/docs/client/react/useUtils
+   * @link https://trpc.io/docs/v11/client/react/useUtils
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @link https://trpc.io/docs/client/react/useUtils
+   * @link https://trpc.io/docs/v11/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;

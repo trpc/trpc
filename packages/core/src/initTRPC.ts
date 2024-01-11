@@ -52,6 +52,10 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  */
 
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
+  /**
+   *
+   * @link https://trpc.io/docs/v11/server/context
+   */
   context<
     TNewContext extends
       | RootConfigTypes['ctx']
@@ -85,7 +89,8 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
 }
 
 /**
- * Initialize tRPC - done exactly once per backend
+ * Builder to initialize the tRPC root object - use this exactly once per backend
+ * @link https://trpc.io/docs/v11/quickstart
  */
 export const initTRPC = new TRPCBuilder();
 
@@ -157,7 +162,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       _config: config,
       /**
        * Builder object for creating procedures
-       * @link https://trpc.io/docs/server/procedures
+       * @link https://trpc.io/docs/v11/server/procedures
        */
       procedure: createBuilder<
         $Config['$types']['ctx'],
@@ -167,7 +172,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       }),
       /**
        * Create reusable middlewares
-       * @link https://trpc.io/docs/server/middlewares
+       * @link https://trpc.io/docs/v11/server/middlewares
        */
       middleware: createMiddlewareFactory<
         $Config['$types']['ctx'],
@@ -175,17 +180,17 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       >(),
       /**
        * Create a router
-       * @link https://trpc.io/docs/server/routers
+       * @link https://trpc.io/docs/v11/server/routers
        */
       router: createRouterFactory<$Config>(config),
       /**
        * Merge Routers
-       * @link https://trpc.io/docs/server/merging-routers
+       * @link https://trpc.io/docs/v11/server/merging-routers
        */
       mergeRouters,
       /**
        * Create a server-side caller for a router
-       * @link https://trpc.io/docs/server/server-side-calls
+       * @link https://trpc.io/docs/v11/server/server-side-calls
        */
       createCallerFactory: createCallerFactory<$Config>(),
     };
