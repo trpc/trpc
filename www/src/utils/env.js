@@ -2,6 +2,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { z } = require('zod');
 
+const booleanSchema = z
+  .enum(['1', '0', 'true', 'false'])
+  .transform((str) => ['1', 'true'].includes(str.toLowerCase()));
+
 /**
  * @param {unknown} input
  */
@@ -18,9 +22,14 @@ function parseEnv(input) {
       .string()
       .default('n/a')
       .transform((ref) => ref.replace('/', '-')),
+    TYPEDOC: booleanSchema.default('1'),
   });
 
   const env = envSchema.parse(input);
+
+  if (!env.TYPEDOC) {
+    console.log('Skipping typedoc');
+  }
 
   function getOG_URL() {
     switch (env.VERCEL_ENV) {

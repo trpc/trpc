@@ -169,12 +169,14 @@ module.exports = {
   },
   plugins: [
     // Sidebar order is decided by the position in the array below
-    ...generateTypedocDocusaurusPlugins([
-      'client',
-      'server',
-      'next',
-      'react-query',
-    ]),
+    ...(!env.TYPEDOC
+      ? generateTypedocDocusaurusPlugins([
+          'client',
+          'server',
+          'next',
+          'react-query',
+        ])
+      : []),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',
