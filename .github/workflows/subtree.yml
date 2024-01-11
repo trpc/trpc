@@ -51,6 +51,7 @@ jobs:
 
       - name: Install dependencies and create separate lockfile
         run: |
+          cd ./examples/${{ matrix.path }}
           # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
           find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "next"/g'
           pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
