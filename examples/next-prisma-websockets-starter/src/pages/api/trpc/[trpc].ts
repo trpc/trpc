@@ -9,11 +9,11 @@ import { appRouter } from 'server/routers/_app';
 export default trpcNext.createNextApiHandler<AppRouter>({
   router: appRouter,
   /**
-   * @link https://trpc.io/docs/context
+   * @link https://trpc.io/docs/v11/context
    */
   createContext,
   /**
-   * @link https://trpc.io/docs/error-handling
+   * @link https://trpc.io/docs/v11/error-handling
    */
   onError({ error }) {
     if (error.code === 'INTERNAL_SERVER_ERROR') {

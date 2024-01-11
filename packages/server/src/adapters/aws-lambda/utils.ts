@@ -61,13 +61,13 @@ export type AWSLambdaOptions<
     } & (
       | {
           /**
-           * @link https://trpc.io/docs/context
+           * @link https://trpc.io/docs/v11/context
            **/
           createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }
       | {
           /**
-           * @link https://trpc.io/docs/context
+           * @link https://trpc.io/docs/v11/context
            **/
           createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }

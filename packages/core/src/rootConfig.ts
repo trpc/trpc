@@ -30,12 +30,12 @@ export const isServerDefault: boolean =
 export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
    * Use a data transformer
-   * @link https://trpc.io/docs/data-transformers
+   * @link https://trpc.io/docs/v11/data-transformers
    */
   transformer: TTypes['transformer'];
   /**
    * Use custom error formatting
-   * @link https://trpc.io/docs/error-formatting
+   * @link https://trpc.io/docs/v11/error-formatting
    */
   errorFormatter: ErrorFormatter<
     TTypes['ctx'],
