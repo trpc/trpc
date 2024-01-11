@@ -501,7 +501,7 @@
       "permanent": true
     },
     {
-      "source": "/docs/v10/:path*",
+      "source": "/docs/v11/:path*",
       "destination": "/docs/:path*",
       "permanent": true
     }
