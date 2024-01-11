@@ -42,21 +42,21 @@ export interface SSRContext extends NextPageContext {
 
 /**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
- * @link https://trpc.io/docs/react#3-create-trpc-hooks
+ * @link https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
 export const trpc = createTRPCNext<AppRouter, SSRContext>({
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
-     * @link https://trpc.io/docs/ssr
+     * @link https://trpc.io/docs/v11/ssr
      */
     return {
       /**
-       * @link https://trpc.io/docs/data-transformers
+       * @link https://trpc.io/docs/v11/data-transformers
        */
       transformer,
       /**
-       * @link https://trpc.io/docs/client/links
+       * @link https://trpc.io/docs/v11/client/links
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
@@ -69,7 +69,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC
-           * @link https://trpc.io/docs/ssr
+           * @link https://trpc.io/docs/v11/ssr
            */
           headers() {
             if (!ctx?.req?.headers) {
@@ -94,7 +94,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
     };
   },
   /**
-   * @link https://trpc.io/docs/ssr
+   * @link https://trpc.io/docs/v11/ssr
    */
   ssr: true,
   /**
@@ -118,7 +118,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
       };
     }
 
-    // for app caching with SSR see https://trpc.io/docs/caching
+    // for app caching with SSR see https://trpc.io/docs/v11/caching
 
     return {};
   },

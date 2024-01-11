@@ -24,7 +24,7 @@ import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * Importing ws causes a build error
- * @see https://github.com/trpc/trpc/pull/5279
+ * @link https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
@@ -53,13 +53,13 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   (object extends inferRouterContext<TRouter>
     ? {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext?: CreateWSSContextFn<TRouter>;
       }
     : {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext: CreateWSSContextFn<TRouter>;
       }) & {

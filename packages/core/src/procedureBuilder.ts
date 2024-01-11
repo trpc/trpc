@@ -88,7 +88,7 @@ export interface ProcedureBuilder<
 > {
   /**
    * Add an input parser to the procedure.
-   * @see https://trpc.io/docs/server/validators
+   * @link https://trpc.io/docs/v11/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
@@ -113,7 +113,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add an output parser to the procedure.
-   * @see https://trpc.io/docs/server/validators
+   * @link https://trpc.io/docs/v11/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -128,7 +128,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a meta data to the procedure.
-   * @see https://trpc.io/docs/server/metadata
+   * @link https://trpc.io/docs/v11/server/metadata
    */
   meta(
     meta: TMeta,
@@ -143,7 +143,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a middleware to the procedure.
-   * @see https://trpc.io/docs/server/middlewares
+   * @link https://trpc.io/docs/v11/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -171,7 +171,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Query procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * @link https://trpc.io/docs/v11/concepts#vocabulary
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -189,7 +189,7 @@ export interface ProcedureBuilder<
 
   /**
    * Mutation procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * @link https://trpc.io/docs/v11/concepts#vocabulary
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -207,7 +207,7 @@ export interface ProcedureBuilder<
 
   /**
    * Subscription procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * @link https://trpc.io/docs/v11/concepts#vocabulary
    */
   subscription<$Output>(
     resolver: ProcedureResolver<
@@ -366,7 +366,7 @@ export interface ProcedureCallOptions {
 
 const codeblock = `
 This is a client-only function.
-If you want to call this function on the server, see https://trpc.io/docs/server/server-side-calls
+If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
