@@ -3,30 +3,28 @@ import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
 import React from 'react';
 
-export function InstallSnippet() {
+export function InstallSnippet(props: { pkgs: string[] | string }) {
+  const pkgs = Array.isArray(props.pkgs) ? props.pkgs.join(' ') : props.pkgs;
+
+  const snippets: Record<string, string> = {
+    npm: `npm install ${pkgs}`,
+    yarn: `yarn add ${pkgs}`,
+    pnpm: `pnpm add ${pkgs}`,
+    bun: `bun add ${pkgs}`,
+  };
   return (
     <Tabs>
-      <TabItem value="npm" label="npm" default>
-        <CodeBlock language="bash">
-          npm install @trpc/server@next @trpc/client@next @trpc/react-query@next
-          @trpc/next@next @tanstack/react-query zod
-        </CodeBlock>
-      </TabItem>
-
-      <TabItem value="yarn" label="yarn">
-        ```sh yarn add @trpc/server@next @trpc/client@next
-        @trpc/react-query@next @trpc/next@next @tanstack/react-query zod ```
-      </TabItem>
-
-      <TabItem value="pnpm" label="pnpm">
-        ```sh pnpm add @trpc/server@next @trpc/client@next
-        @trpc/react-query@next @trpc/next@next @tanstack/react-query zod ```
-      </TabItem>
-
-      <TabItem value="bun" label="bun">
-        ```sh bun add @trpc/server@next @trpc/client@next @trpc/react-query@next
-        @trpc/next@next @tanstack/react-query zod ```
-      </TabItem>
+      {Object.entries(snippets).map(([key, value]) => (
+        <TabItem key={key} value={key} label={key}>
+          <CodeBlock
+            language="bash"
+            title="shell"
+            className="InstallationSnippet__CodeBlock"
+          >
+            {value}
+          </CodeBlock>
+        </TabItem>
+      ))}
     </Tabs>
   );
 }

@@ -12,39 +12,9 @@ import Tabs from '@theme/Tabs';
 
 Use your preferred package manager to install the `@trpc/client` library, and also install `@trpc/server` which contains some required types.
 
-<Tabs>
-  <TabItem value="npm" label="npm" default>
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-```bash
-npm install @trpc/client@next @trpc/server@next
-```
-
-  </TabItem>
-
-  <TabItem value="yarn" label="yarn">
-
-```bash
-yarn add @trpc/client@next @trpc/server@next
-```
-
-  </TabItem>
-
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-pnpm add @trpc/client@next @trpc/server@next
-```
-
-  </TabItem>
-
-  <TabItem value="bun" label="bun">
-
-```bash
-bun add @trpc/client@next @trpc/server@next
-```
-
-  </TabItem>
-</Tabs>
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next" />
 
 ### 2. Import your App Router
 

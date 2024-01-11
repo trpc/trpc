@@ -169,7 +169,7 @@ module.exports = {
   },
   plugins: [
     // Sidebar order is decided by the position in the array below
-    ...(!env.TYPEDOC
+    ...(env.TYPEDOC
       ? generateTypedocDocusaurusPlugins([
           'client',
           'server',

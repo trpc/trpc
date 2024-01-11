@@ -28,7 +28,7 @@ function parseEnv(input) {
   const env = envSchema.parse(input);
 
   if (!env.TYPEDOC) {
-    console.log('Skipping typedoc');
+    console.log('ℹ️ℹ️ℹ️ℹ️ℹ️ Skipping typedoc');
   }
 
   function getOG_URL() {
