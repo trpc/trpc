@@ -501,8 +501,13 @@
       "permanent": true
     },
     {
-      "source": "/docs/v10/:path*",
+      "source": "/docs/v11/:path*",
       "destination": "/docs/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/docs/migrate-from-v9-to-v10",
+      "destination": "/docs/v10/migrate-from-v9-to-v10",
       "permanent": true
     }
   ]
