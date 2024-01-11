@@ -1,6 +1,5 @@
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server';
-import './polyfill';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [

@@ -9,13 +9,17 @@
     "dev": "run-p dev:* --print-label",
     "start": "node dist/server",
     "lint": "eslint --ext \".js,.ts,.tsx\" */*.ts",
-    "test-dev": "start-server-and-test 'tsx server' 3000 'tsx client'",
+    "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "workspaces": [
     "client",
     "server"
   ],
+  "dependencies": {
+    "@trpc/server": "^10.45.0",
+    "@trpc/client": "^10.45.0"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "eslint": "^8.40.0",

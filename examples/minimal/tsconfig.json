@@ -7,5 +7,5 @@
     "strict": true,
     "outDir": "dist"
   },
-  "include": ["server", "client"]
+  "include": ["src"]
 }

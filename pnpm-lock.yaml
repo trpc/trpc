@@ -760,6 +760,13 @@ importers:
         version: 5.3.3
 
   examples/minimal:
+    dependencies:
+      '@trpc/client':
+        specifier: ^10.45.0
+        version: link:../../packages/client
+      '@trpc/server':
+        specifier: ^10.45.0
+        version: link:../../packages/server
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -865,32 +872,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
-
-  examples/minimal/client:
-    dependencies:
-      '@trpc/client':
-        specifier: ^10.45.0
-        version: link:../../../packages/client
-      undici:
-        specifier: ^6.0.1
-        version: 6.0.1
-    devDependencies:
-      '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
-
-  examples/minimal/server:
-    dependencies:
-      '@trpc/server':
-        specifier: ^10.45.0
-        version: link:../../../packages/server
-      zod:
-        specifier: ^3.0.0
-        version: 3.22.4
-    devDependencies:
-      '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
 
   examples/next-big-router:
     dependencies:
