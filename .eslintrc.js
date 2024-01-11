@@ -145,6 +145,22 @@ const config = {
         'no-console': 'error',
       },
     },
+    {
+      files: ['packages/server/src/adapters/**/*'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            name: '@trpc/server',
+          },
+          {
+            name: '@trpc/core',
+            message:
+              'Use e.g. `../http` instead - avoiding importing core helps us ensure third party adapters can be made',
+          },
+        ],
+      },
+    },
   ],
   settings: {
     react: {
