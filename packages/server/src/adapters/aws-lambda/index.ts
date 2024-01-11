@@ -4,7 +4,7 @@
  * Do **not** import from `@trpc/core`
  * @example
  * ```ts
- * import type { AnyRouter } from '@trpc/server'
+ * import type { AnyTRPCRouter } from '@trpc/server'
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
