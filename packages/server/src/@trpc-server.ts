@@ -11,10 +11,9 @@ export {
   type inferRouterError,
   type inferRouterInputs,
   type inferRouterOutputs,
-  type inferRouterContext,
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
-  getErrorShape as getTRPCErrorShape,
+  type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
 } from './@trpc-core-unstable-do-not-import-this-please';
 
 export type {
@@ -26,6 +25,9 @@ export type {
    * @deprecated use `AnyTRPCRouter` instead
    */
   AnyRouter,
+  /**
+   * @deprecated use `AnyTRPCMiddlewareFunction` instead
+   */
   AnyMiddlewareFunction,
 } from '@trpc/core';
 
@@ -35,6 +37,7 @@ export {
    */
   getErrorShape,
 } from '@trpc/core';
+
 /**
  * @deprecated
  * Use `Awaited<ReturnType<typeof myFunction>>` instead
