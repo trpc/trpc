@@ -8,7 +8,7 @@
     "dev:client": "wait-port 3000 && bun run src/client.ts --watch",
     "start:server": "bun run dist/index.js",
     "start:client": "wait-port 3000 && bun run dist/client.js",
-    "lint": "eslint --ext \".js,.ts,.tsx\" --report-unused-disable-directives */*.ts",
+    "lint": "eslint --ext \".js,.ts,.tsx\" */*.ts",
     "test-dev": "start-server-and-test 'bun run src/index.ts' 3000 'bun run src/client.ts'",
     "test-start": "start-server-and-test 'bun run dist/index.js' 3000 'bun run dist/client.js'",
     "type-check": "tsc --noEmit"

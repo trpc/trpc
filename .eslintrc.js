@@ -10,6 +10,7 @@ const config = {
     'plugin:react-hooks/recommended',
     'prettier',
   ],
+  reportUnusedDisableDirectives: true,
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of import
