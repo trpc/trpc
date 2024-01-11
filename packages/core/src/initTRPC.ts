@@ -53,7 +53,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
 
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   /**
-   *
+   * Add a context shape as a generic to the root object
    * @link https://trpc.io/docs/v11/server/context
    */
   context<
@@ -66,12 +66,20 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
     return new TRPCBuilder<NextParams>();
   }
 
+  /**
+   * Add a meta shape as a generic to the root object
+   * @link https://trpc.io/docs/v11/quickstart
+   */
   meta<TNewMeta extends RootConfigTypes['meta']>() {
     type NextParams = Overwrite<TParams, { meta: TNewMeta }>;
 
     return new TRPCBuilder<NextParams>();
   }
 
+  /**
+   * Create the root object
+   * @link https://trpc.io/docs/v11/server/routers#initialize-trpc
+   */
   create<
     TOptions extends Partial<
       RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>
