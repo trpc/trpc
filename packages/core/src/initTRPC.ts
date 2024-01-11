@@ -157,7 +157,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       _config: config,
       /**
        * Builder object for creating procedures
-       * @see https://trpc.io/docs/server/procedures
+       * @link https://trpc.io/docs/server/procedures
        */
       procedure: createBuilder<
         $Config['$types']['ctx'],
@@ -167,7 +167,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       }),
       /**
        * Create reusable middlewares
-       * @see https://trpc.io/docs/server/middlewares
+       * @link https://trpc.io/docs/server/middlewares
        */
       middleware: createMiddlewareFactory<
         $Config['$types']['ctx'],
@@ -175,17 +175,17 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       >(),
       /**
        * Create a router
-       * @see https://trpc.io/docs/server/routers
+       * @link https://trpc.io/docs/server/routers
        */
       router: createRouterFactory<$Config>(config),
       /**
        * Merge Routers
-       * @see https://trpc.io/docs/server/merging-routers
+       * @link https://trpc.io/docs/server/merging-routers
        */
       mergeRouters,
       /**
        * Create a server-side caller for a router
-       * @see https://trpc.io/docs/server/server-side-calls
+       * @link https://trpc.io/docs/server/server-side-calls
        */
       createCallerFactory: createCallerFactory<$Config>(),
     };

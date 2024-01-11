@@ -101,8 +101,8 @@ const IndexPage: NextPageWithLayout = () => {
             /**
              * In a real app you probably don't want to use this manually
              * Checkout React Hook Form - it works great with tRPC
-             * @see https://react-hook-form.com/
-             * @see https://kitchen-sink.trpc.io/react-hook-form
+             * @link https://react-hook-form.com/
+             * @link https://kitchen-sink.trpc.io/react-hook-form
              */
             e.preventDefault();
             const $form = e.currentTarget;

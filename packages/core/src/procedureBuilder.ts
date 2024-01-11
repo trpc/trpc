@@ -88,7 +88,7 @@ export interface ProcedureBuilder<
 > {
   /**
    * Add an input parser to the procedure.
-   * @see https://trpc.io/docs/server/validators
+   * @link https://trpc.io/docs/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
@@ -113,7 +113,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add an output parser to the procedure.
-   * @see https://trpc.io/docs/server/validators
+   * @link https://trpc.io/docs/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -128,7 +128,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a meta data to the procedure.
-   * @see https://trpc.io/docs/server/metadata
+   * @link https://trpc.io/docs/server/metadata
    */
   meta(
     meta: TMeta,
@@ -143,7 +143,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a middleware to the procedure.
-   * @see https://trpc.io/docs/server/middlewares
+   * @link https://trpc.io/docs/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -171,7 +171,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Query procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * @link https://trpc.io/docs/concepts#vocabulary
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -189,7 +189,7 @@ export interface ProcedureBuilder<
 
   /**
    * Mutation procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * @link https://trpc.io/docs/concepts#vocabulary
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -207,7 +207,7 @@ export interface ProcedureBuilder<
 
   /**
    * Subscription procedure
-   * @see https://trpc.io/docs/concepts#vocabulary
+   * @link https://trpc.io/docs/concepts#vocabulary
    */
   subscription<$Output>(
     resolver: ProcedureResolver<
