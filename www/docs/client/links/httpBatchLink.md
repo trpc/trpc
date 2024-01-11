@@ -55,7 +55,7 @@ export interface HTTPLinkOptions {
   AbortController?: typeof AbortController | null;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/v10/header
+   * @link http://trpc.io/docs/header
    */
   headers?:
     | HTTPHeaders
