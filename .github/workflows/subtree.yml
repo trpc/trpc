@@ -2,10 +2,10 @@ name: subtree-matrix
 on:
   push:
     branches:
-      - notes
+      - next
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # cancel-in-progress: true
+  cancel-in-progress: true
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest
