@@ -9,8 +9,8 @@
     "test-dev": "start-server-and-test 'pnpm dev' http://127.0.0.1:3000 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "10.45.0",
-    "@trpc/server": "10.45.0",
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/server": "npm:@trpc/server@next",
     "zod": "^3.0.0"
   },
   "devDependencies": {
