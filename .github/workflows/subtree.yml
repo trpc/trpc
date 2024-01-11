@@ -53,6 +53,12 @@ jobs:
         run: |
           echo "shared-workspace-lockfile=false" >> .npmrc
           echo "link-workspace-packages=false" >> .npmrc
+          PWD_ROOT=${PWD}
+          cd ./examples/${{ matrix.path }}
+          cp ${PWD_ROOT}/pnpm-lock.yaml .
+          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
+          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "(/\1)": "next"/g'
+          pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Commit changes
         run: |
@@ -60,12 +66,6 @@ jobs:
           git config --global user.name "trpc-bot"
           git add .
           git commit -m "chore: sync lockfile"
-          PWD_ROOT=${PWD}
-          cd ./examples/${{ matrix.path }}
-          cp ${PWD_ROOT}/pnpm-lock.yaml .
-          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "(/\1)": "next"/g'
-          pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
