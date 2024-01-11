@@ -43,7 +43,7 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^5.1.1",
-    "@changesets/changelog-github": "^0.4.8",
+    "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.26.1",
     "@ianvs/prettier-plugin-sort-imports": "^4.0.0",
     "@manypkg/cli": "^0.21.1",
