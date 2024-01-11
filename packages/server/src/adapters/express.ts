@@ -1,6 +1,6 @@
 import type * as express from 'express';
-import type { AnyRouter } from '../@trpc-server'; // @trpc/server
-
+// @trpc/server
+import type { AnyRouter } from '../@trpc-server';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,

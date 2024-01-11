@@ -1,5 +1,5 @@
-import type { AnyRouter, inferRouterContext } from '../../@trpc-server'; // @trpc/server
-
+// @trpc/server
+import type { AnyRouter, inferRouterContext } from '../../@trpc-server';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,

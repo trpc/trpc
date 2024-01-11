@@ -6,7 +6,9 @@ import type {
   Context as APIGWContext,
 } from 'aws-lambda';
 import type { AnyRouter, inferRouterContext } from '../../@trpc-server'; // import @trpc/server
-import { TRPCError } from '../../@trpc-server'; // @trpc/server
+
+// @trpc/server
+import { TRPCError } from '../../@trpc-server';
 import type {
   HTTPHeaders,
   OnErrorFunction,

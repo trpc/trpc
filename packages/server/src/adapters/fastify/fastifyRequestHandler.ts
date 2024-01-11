@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { AnyRouter } from '../../@trpc-server'; // @trpc/server
+// @trpc/server
+import type { AnyRouter } from '../../@trpc-server';
 import type {
   HTTPBaseHandlerOptions,
   HTTPRequest,

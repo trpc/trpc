@@ -5,9 +5,10 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import type { AnyRouter } from '../../@trpc-server'; // @trpc/server
-import { TRPCError } from '../../@trpc-server'; // @trpc/server
-
+// @trpc/server
+import type { AnyRouter } from '../../@trpc-server';
+// @trpc/server
+import { TRPCError } from '../../@trpc-server';
 import type {
   HTTPRequest,
   HTTPResponse,
