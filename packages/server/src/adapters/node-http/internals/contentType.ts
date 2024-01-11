@@ -1,5 +1,6 @@
-import type { AnyRouter } from '@trpc/core';
-import type { BaseContentTypeHandler } from '../../../http';
+import type { AnyRouter } from '../../../@trpc-server'; // @trpc/server
+import type { BaseContentTypeHandler } from '../../../@trpc-server/http'; // @trpc/server/http
+
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,

@@ -51,6 +51,7 @@ const config = {
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',
           '\\.(t|j)sx$',
+          '@trpc/*',
         ],
       },
     ],
