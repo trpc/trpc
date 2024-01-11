@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
-import type { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '../@trpc-server'; // @trpc/server
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,

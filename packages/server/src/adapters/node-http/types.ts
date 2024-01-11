@@ -1,12 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '@trpc/core';
-import type { AnyRouter, inferRouterContext } from '../../@trpc-server'; // @trpc/server
+// @trpc/server
+import type { AnyRouter, inferRouterContext } from '../../@trpc-server';
+// @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc-server/http';
-// @trpc/server/http
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
