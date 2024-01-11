@@ -1,7 +1,8 @@
 /// <reference types="@fastify/websocket" />
-import type { AnyRouter } from '@trpc/core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { FastifyHandlerOptions } from '.';
+import type { AnyRouter } from '../../@trpc-server'; // @trpc/server
+
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 import type { WSSHandlerOptions } from '../ws';
 import { applyWSSHandler } from '../ws';
