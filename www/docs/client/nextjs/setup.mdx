@@ -39,39 +39,9 @@ We recommend a file structure like this one, although it is not enforced by tRPC
 
 ### 1. Install deps
 
-<Tabs>
-  <TabItem value="npm" label="npm" default>
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-```sh
-npm install @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
-```
-
-  </TabItem>
-
-<TabItem value="yarn" label="yarn">
-
-```sh
-yarn add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
-```
-
-</TabItem>
-
-<TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpm add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
-```
-
-</TabItem>
-
-<TabItem value="bun" label="bun">
-
-```sh
-bun add @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query zod
-```
-
-</TabItem>
-</Tabs>
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest zod" />
 
 The Next.js integration is actually a combination of our [React Query Integration](../react/introduction.mdx) and some Next.js specific integrations.
 
