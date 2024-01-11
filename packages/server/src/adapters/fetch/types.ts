@@ -2,7 +2,9 @@ import type { AnyRouter, inferRouterContext } from '../../@trpc-server'; // @trp
 import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
-} from '../../@trpc-server/http'; // @trpc/server/http
+} from '../../@trpc-server/http';
+
+// @trpc/server/http
 
 export type FetchCreateContextFnOptions = {
   req: Request;
