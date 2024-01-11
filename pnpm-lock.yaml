@@ -29,8 +29,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(prettier@2.8.8)
       '@manypkg/cli':
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.21.1
+        version: 0.21.1
       '@rollup/plugin-node-resolve':
         specifier: ^15.0.2
         version: 15.0.2(rollup@2.79.1)
@@ -152,16 +152,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       '@types/node':
         specifier: ^20.10.0
@@ -222,16 +222,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -277,16 +277,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -326,16 +326,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -372,16 +372,16 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -409,16 +409,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       next:
         specifier: ^14.0.1
@@ -513,10 +513,10 @@ importers:
   examples/bun:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
     devDependencies:
       bun-types:
@@ -538,10 +538,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -572,13 +572,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -621,13 +621,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       express:
         specifier: ^4.17.1
@@ -673,10 +673,10 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       fastify:
         specifier: ^4.13.0
@@ -725,10 +725,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       tsx:
         specifier: ^4.0.0
@@ -804,13 +804,13 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       react:
         specifier: ^18.2.0
@@ -841,7 +841,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -869,7 +869,7 @@ importers:
   examples/minimal/client:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/client
       undici:
         specifier: ^6.0.1
@@ -882,7 +882,7 @@ importers:
   examples/minimal/server:
     dependencies:
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../../packages/server
       zod:
         specifier: ^3.0.0
@@ -898,16 +898,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       next:
         specifier: ^14.0.1
@@ -947,16 +947,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       next:
         specifier: ^14.0.1
@@ -993,16 +993,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       next:
         specifier: ^14.0.1
@@ -1042,16 +1042,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1151,16 +1151,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1233,16 +1233,16 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1342,10 +1342,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       '@types/node':
         specifier: ^20.10.0
@@ -1369,13 +1369,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1415,10 +1415,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: next
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
@@ -6633,8 +6633,8 @@ packages:
       - supports-color
     dev: false
 
-  /@manypkg/cli@0.21.0:
-    resolution: {integrity: sha512-q/JF25il2EXtyPpc5U/Pp7TMgJot/WmFkyh7M9FiutQkliHp58UqUxIPeUObLu9EtoAp/uP21t+TMDsq1DMbeg==}
+  /@manypkg/cli@0.21.1:
+    resolution: {integrity: sha512-v9Orok25sBcFfTSniDLx1FsRRXsn2qz7EiC3cPMKtTNDTwSE2Teq/nXUPX73xNd1NIjMwTXfio1QWsQ9O36Atg==}
     engines: {node: '>=14.18.0'}
     hasBin: true
     dependencies:
@@ -6645,10 +6645,10 @@ packages:
       fs-extra: 8.1.0
       normalize-path: 3.0.0
       p-limit: 2.3.0
-      package-json: 6.5.0
+      package-json: 8.1.1
       parse-github-url: 1.0.2
       sembear: 0.5.2
-      semver: 6.3.0
+      semver: 6.3.1
       spawndamnit: 2.0.0
       validate-npm-package-name: 3.0.0
     dev: false
@@ -7980,6 +7980,27 @@ packages:
       playwright-core: 1.28.1
     dev: true
 
+  /@pnpm/config.env-replace@1.1.0:
+    resolution: {integrity: sha512-htyl8TWnKL7K/ESFa1oW2UB5lVDxuF5DpM7tBi6Hu2LNL3mWkIzNLG6N4zoCUP1lCKNxWy/3iu8mS8MvToGd6w==}
+    engines: {node: '>=12.22.0'}
+    dev: false
+
+  /@pnpm/network.ca-file@1.0.2:
+    resolution: {integrity: sha512-YcPQ8a0jwYU9bTdJDpXjMi7Brhkr1mXsXrUJvjqM2mQDgkRiz8jFaQGOdaLxgjtUfQgZhKy/O3cG/YwmgKaxLA==}
+    engines: {node: '>=12.22.0'}
+    dependencies:
+      graceful-fs: 4.2.10
+    dev: false
+
+  /@pnpm/npm-conf@2.2.2:
+    resolution: {integrity: sha512-UA91GwWPhFExt3IizW6bOeY/pQ0BkuNwKjk9iQW9KqxluGCrg4VenZ0/L+2Y0+ZOtme72EVvg6v0zo3AMQRCeA==}
+    engines: {node: '>=12'}
+    dependencies:
+      '@pnpm/config.env-replace': 1.1.0
+      '@pnpm/network.ca-file': 1.0.2
+      config-chain: 1.1.13
+    dev: false
+
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
 
@@ -8195,6 +8216,11 @@ packages:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
     dev: true
+
+  /@sindresorhus/is@5.6.0:
+    resolution: {integrity: sha512-TV7t8GKYaJWsn00tFDqBw8+Uqmr8A0fRU1tvTQhyZzGv0sJCGRQL3JGMI3ucuKo3XIZdUP+Lx7/gh2t3lewy7g==}
+    engines: {node: '>=14.16'}
+    dev: false
 
   /@slorber/static-site-generator-webpack-plugin@4.0.7:
     resolution: {integrity: sha512-Ug7x6z5lwrz0WqdnNFOMYrDQNTPAprvHLSh6+/fmml3qUiz6l5eq+2MzLKWtn/q5K5NpSiFsZTP/fck/3vjSxA==}
@@ -8539,6 +8565,13 @@ packages:
       defer-to-connect: 2.0.1
     dev: true
 
+  /@szmarczak/http-timer@5.0.1:
+    resolution: {integrity: sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw==}
+    engines: {node: '>=14.16'}
+    dependencies:
+      defer-to-connect: 2.0.1
+    dev: false
+
   /@tanstack/query-core@5.0.0:
     resolution: {integrity: sha512-Y1BpiA6BblJd/UlVqxEVeAG7IACn568YJuTTItAiecBI7En+33g780kg+/8lhgl+BzcUPN7o+NjBrSRGJoemyQ==}
 
@@ -8719,7 +8752,7 @@ packages:
   /@types/cacheable-request@6.0.3:
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
     dependencies:
-      '@types/http-cache-semantics': 4.0.1
+      '@types/http-cache-semantics': 4.0.4
       '@types/keyv': 3.1.4
       '@types/node': 20.10.4
       '@types/responselike': 1.0.0
@@ -8825,9 +8858,8 @@ packages:
     resolution: {integrity: sha512-oh/6byDPnL1zeNXFrDXFLyZjkr1MsBG667IM792caf1L2UPOOMf65NFzjUH/ltyfwjAGfs1rsX1eftK0jC/KIg==}
     dev: false
 
-  /@types/http-cache-semantics@4.0.1:
-    resolution: {integrity: sha512-SZs7ekbP8CN0txVG2xVRH6EgKmEm31BOxA07vkFaETzZz1xh+cbt8BcI0slpymvwhx5dlFnQG2rTlPVQn+iRPQ==}
-    dev: true
+  /@types/http-cache-semantics@4.0.4:
+    resolution: {integrity: sha512-1m0bIFVc7eJWyve9S0RnuRgcQqF/Xd5QsUZAZeQFr1Q3/p9JWoQQEqmVy+DPTNpGXwhgIetAoYF8JSc33q29QA==}
 
   /@types/http-proxy@1.17.9:
     resolution: {integrity: sha512-QsbSjA/fSk7xB+UXlCT3wHBy5ai9wOcNDWwZAtud+jXhwOM3l+EYZh8Lng4+/6n8uar0J7xILzqftJdJ/Wdfkw==}
@@ -10476,6 +10508,24 @@ packages:
     engines: {node: '>=10.6.0'}
     dev: true
 
+  /cacheable-lookup@7.0.0:
+    resolution: {integrity: sha512-+qJyx4xiKra8mZrcwhjMRMUhD5NR1R8esPkzIYxX96JiecFoxAXFuz/GpR3+ev4PE1WamHip78wV0vcmPQtp8w==}
+    engines: {node: '>=14.16'}
+    dev: false
+
+  /cacheable-request@10.2.14:
+    resolution: {integrity: sha512-zkDT5WAF4hSSoUgyfg5tFIxz8XQK+25W/TLVojJTMKBaxevLBBtLxgqguAuVQB8PVW79FVjHcU+GJ9tVbDZ9mQ==}
+    engines: {node: '>=14.16'}
+    dependencies:
+      '@types/http-cache-semantics': 4.0.4
+      get-stream: 6.0.1
+      http-cache-semantics: 4.1.1
+      keyv: 4.5.4
+      mimic-response: 4.0.0
+      normalize-url: 8.0.0
+      responselike: 3.0.0
+    dev: false
+
   /cacheable-request@6.1.0:
     resolution: {integrity: sha512-Oj3cAGPCqOZX7Rz64Uny2GYAZNliQSqfbePrgAQ1wKAihYmCUnraBtJtKcGR4xz7wF+LoJC+ssFZvv5BgF9Igg==}
     engines: {node: '>=8'}
@@ -10496,7 +10546,7 @@ packages:
       clone-response: 1.0.3
       get-stream: 5.2.0
       http-cache-semantics: 4.1.1
-      keyv: 4.5.2
+      keyv: 4.5.4
       lowercase-keys: 2.0.0
       normalize-url: 6.1.0
       responselike: 2.0.1
@@ -11066,6 +11116,13 @@ packages:
       supports-color: 8.1.1
       tree-kill: 1.2.2
       yargs: 17.6.2
+    dev: false
+
+  /config-chain@1.1.13:
+    resolution: {integrity: sha512-qj+f8APARXHrM0hraqXYb2/bOVSV4PvJQlNZ/DVj0QrmNM2q2euizkeuVckQ57J+W0mRH6Hvi+k50M4Jul2VRQ==}
+    dependencies:
+      ini: 1.3.8
+      proto-list: 1.2.4
     dev: false
 
   /configstore@5.0.1:
@@ -11896,7 +11953,6 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       mimic-response: 3.1.0
-    dev: true
 
   /decompress-tar@4.1.1:
     resolution: {integrity: sha512-JdJMaCrGpB5fESVyxwpCx4Jdj2AagLmv3y58Qy4GE6HMVjWz1FeVQk1Ct4Kye7PftcdOo/7U7UKzYBJgqnGeUQ==}
@@ -12012,7 +12068,6 @@ packages:
   /defer-to-connect@2.0.1:
     resolution: {integrity: sha512-4tvttepXG1VaYGrRibk5EwJd1t4udunSOVMdLSAL6mId1ix438oPwPZMALY41FCijukO1L0twNcGsdzS7dHgDg==}
     engines: {node: '>=10'}
-    dev: true
 
   /deferred@0.7.11:
     resolution: {integrity: sha512-8eluCl/Blx4YOGwMapBvXRKxHXhA8ejDXYzEaK8+/gtcm8hRMhSLmXSqDmNUKNc/C8HNSmuyyp/hflhqDAvK2A==}
@@ -13965,6 +14020,11 @@ packages:
       webpack: 5.75.0(@swc/core@1.3.3)
     dev: false
 
+  /form-data-encoder@2.1.4:
+    resolution: {integrity: sha512-yDYSgNMraqvnxiEXO4hi88+YZxaHC6QKzb5N84iRCTDeRO7ZALpir/lVmf/uXUhnwUr2O4HU8s/n6x+yNjQkHw==}
+    engines: {node: '>= 14.17'}
+    dev: false
+
   /form-data@4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
     engines: {node: '>= 6'}
@@ -14487,6 +14547,23 @@ packages:
       responselike: 2.0.1
     dev: true
 
+  /got@12.6.1:
+    resolution: {integrity: sha512-mThBblvlAF1d4O5oqyvN+ZxLAYwIJK7bpMxgYqPD9okW0C3qm5FFn7k811QrcuEBwaogR3ngOFoCfs6mRv7teQ==}
+    engines: {node: '>=14.16'}
+    dependencies:
+      '@sindresorhus/is': 5.6.0
+      '@szmarczak/http-timer': 5.0.1
+      cacheable-lookup: 7.0.0
+      cacheable-request: 10.2.14
+      decompress-response: 6.0.0
+      form-data-encoder: 2.1.4
+      get-stream: 6.0.1
+      http2-wrapper: 2.2.1
+      lowercase-keys: 3.0.0
+      p-cancelable: 3.0.0
+      responselike: 3.0.0
+    dev: false
+
   /got@9.6.0:
     resolution: {integrity: sha512-R7eWptXuGYxwijs0eV+v3o6+XH1IqVK8dJOEecQfTmkncw9AV4dcw/Dhxi8MdlqPthxxpZyizMzyg8RTmEsG+Q==}
     engines: {node: '>=8.6'}
@@ -14508,7 +14585,6 @@ packages:
 
   /graceful-fs@4.2.10:
     resolution: {integrity: sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==}
-    dev: true
 
   /graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
@@ -14936,6 +15012,14 @@ packages:
       quick-lru: 5.1.1
       resolve-alpn: 1.2.1
     dev: true
+
+  /http2-wrapper@2.2.1:
+    resolution: {integrity: sha512-V5nVw1PAOgfI3Lmeaj2Exmeg7fenjhRUgz1lPSezy1CuhPYbgQtbQj4jZfEAEMlaL+vupsvhjqCyjzob0yxsmQ==}
+    engines: {node: '>=10.19.0'}
+    dependencies:
+      quick-lru: 5.1.1
+      resolve-alpn: 1.2.1
+    dev: false
 
   /https-proxy-agent@5.0.1(supports-color@8.1.1):
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
@@ -15829,7 +15913,6 @@ packages:
 
   /json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
-    dev: true
 
   /json-cycle@1.3.0:
     resolution: {integrity: sha512-FD/SedD78LCdSvJaOUQAXseT8oQBb5z6IVYaQaCrVUlu9zOAr1BDdKyVYQaSD/GDsAMrXpKcOyBD4LIl8nfjHw==}
@@ -15950,11 +16033,10 @@ packages:
       json-buffer: 3.0.0
     dev: false
 
-  /keyv@4.5.2:
-    resolution: {integrity: sha512-5MHbFaKn8cNSmVW7BYnijeAVlE4cYA/SVkifVgrh7yotnfhKmjuXpDKjrABLnT0SfHWV21P8ow07OGfRrNDg8g==}
+  /keyv@4.5.4:
+    resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
     dependencies:
       json-buffer: 3.0.1
-    dev: true
 
   /kind-of@6.0.3:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
@@ -16370,6 +16452,11 @@ packages:
     resolution: {integrity: sha512-tqNXrS78oMOE73NMxK4EMLQsQowWf8jKooH9g7xPavRT706R6bkQJ6DY2Te7QukaZsulxa30wQ7bk0pm4XiHmA==}
     engines: {node: '>=8'}
 
+  /lowercase-keys@3.0.0:
+    resolution: {integrity: sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dev: false
+
   /lru-cache@4.1.5:
     resolution: {integrity: sha512-sWZlbEP2OsHNkXrMl5GYk/jKk70MBng6UU4YI/qGDYbgf6YbP4EvmqISbXCoJiRKs+1bSpFHVgQxvJ17F2li5g==}
     dependencies:
@@ -16728,7 +16815,11 @@ packages:
   /mimic-response@3.1.0:
     resolution: {integrity: sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==}
     engines: {node: '>=10'}
-    dev: true
+
+  /mimic-response@4.0.0:
+    resolution: {integrity: sha512-e5ISH9xMYU0DzrT+jl8q2ze9D6eWBto+I8CNpe+VI+K2J/F/k3PdkdTdz4wvGVH4NTpo+NRYTVIuMQEMMcsLqg==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dev: false
 
   /min-indent@1.0.1:
     resolution: {integrity: sha512-I9jwMn07Sy/IwOj3zVkVik2JTvgpaykDZEigL6Rx6N9LbMywwUSMtxET+7lVoDLLd3O3IXwJwvuuns8UB/HeAg==}
@@ -17318,6 +17409,11 @@ packages:
     resolution: {integrity: sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==}
     engines: {node: '>=10'}
 
+  /normalize-url@8.0.0:
+    resolution: {integrity: sha512-uVFpKhj5MheNBJRTiMZ9pE/7hD1QTeEvugSJW/OmLzAp78PB5O6adfMNTvmfKhXBkvCzC+rqifWcVYpGFwTjnw==}
+    engines: {node: '>=14.16'}
+    dev: false
+
   /npm-bundled@1.1.2:
     resolution: {integrity: sha512-x5DHup0SuyQcmL3s7Rx/YQ8sbw/Hzg0rj48eN0dV7hf5cmQq5PXIeioroH3raV1QC1yh3uTYuMThvEQF3iKgGQ==}
     dependencies:
@@ -17752,6 +17848,11 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
+  /p-cancelable@3.0.0:
+    resolution: {integrity: sha512-mlVgR3PGuzlo0MmTdk4cXqXWlwQDLnONTAg6sm62XkMJEiRxN3GL3SffkYvqwonbkJBcrI7Uvv5Zh9yjvn2iUw==}
+    engines: {node: '>=12.20'}
+    dev: false
+
   /p-event@4.2.0:
     resolution: {integrity: sha512-KXatOjCRXXkSePPb1Nbi0p0m+gQAwdlbhi4wQKJPI1HsMQS9g+Sqp2o+QHziPr7eYJyOZet836KoHEVM1mwOrQ==}
     engines: {node: '>=8'}
@@ -17919,6 +18020,16 @@ packages:
       registry-auth-token: 4.2.2
       registry-url: 5.1.0
       semver: 6.3.1
+    dev: false
+
+  /package-json@8.1.1:
+    resolution: {integrity: sha512-cbH9IAIJHNj9uXi196JVsRlt7cHKak6u/e6AkL/bkRelZ7rlL3X1YKxsZwa36xipOEKAsdtmaG6aAJoM1fx2zA==}
+    engines: {node: '>=14.16'}
+    dependencies:
+      got: 12.6.1
+      registry-auth-token: 5.0.2
+      registry-url: 6.0.1
+      semver: 7.5.4
     dev: false
 
   /pacote@15.2.0:
@@ -19541,6 +19652,10 @@ packages:
       xtend: 4.0.2
     dev: false
 
+  /proto-list@1.2.4:
+    resolution: {integrity: sha512-vtK/94akxsTMhe0/cbfpR+syPuszcuwhqVjJq26CuNDgFGj682oRBXOP5MJpv2r7JtE8MsiepGIqvvOTBwn2vA==}
+    dev: false
+
   /protocols@2.0.1:
     resolution: {integrity: sha512-/XJ368cyBJ7fzLMwLKv1e4vLxOju2MNAIokcr7meSaNcVbWz/CPcW22cP04mwxOErdA5mwjA8Q6w/cdAQxVn7Q==}
     dev: false
@@ -19649,7 +19764,6 @@ packages:
   /quick-lru@5.1.1:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
     engines: {node: '>=10'}
-    dev: true
 
   /ramda@0.28.0:
     resolution: {integrity: sha512-9QnLuG/kPVgWvMQ4aODhsBUFKOUmnbUnsSXACv+NCQZcHbeb+v8Lodp8OVxtRULN1/xOyYLLaL6npE6dMq5QTA==}
@@ -20161,9 +20275,23 @@ packages:
       rc: 1.2.8
     dev: false
 
+  /registry-auth-token@5.0.2:
+    resolution: {integrity: sha512-o/3ikDxtXaA59BmZuZrJZDJv8NMDGSj+6j6XaeBmHw8eY1i1qd9+6H+LjVvQXx3HN6aRCGa1cUdJ9RaJZUugnQ==}
+    engines: {node: '>=14'}
+    dependencies:
+      '@pnpm/npm-conf': 2.2.2
+    dev: false
+
   /registry-url@5.1.0:
     resolution: {integrity: sha512-8acYXXTI0AkQv6RAOjE3vOaIXZkT9wo4LOFbBKYQEEnnMNBpKqdUrI6S4NT0KPIo/WVvJ5tE/X5LF/TQUf0ekw==}
     engines: {node: '>=8'}
+    dependencies:
+      rc: 1.2.8
+    dev: false
+
+  /registry-url@6.0.1:
+    resolution: {integrity: sha512-+crtS5QjFRqFCoQmvGduwYWEBng99ZvmFvF+cUJkGYF1L1BfU8C6Zp9T7f5vPAwyLkUExpvK+ANVZmGU49qi4Q==}
+    engines: {node: '>=12'}
     dependencies:
       rc: 1.2.8
     dev: false
@@ -20298,7 +20426,6 @@ packages:
 
   /resolve-alpn@1.2.1:
     resolution: {integrity: sha512-0a1F4l73/ZFZOakJnQ3FvkJ2+gSTQWz/r2KE5OdDY0TxPm5h4GkqkWWfM47T7HsbnOtcJVEF4epCVy6u7Q3K+g==}
-    dev: true
 
   /resolve-cwd@3.0.0:
     resolution: {integrity: sha512-OrZaX2Mb+rJCpH/6CpSqt9xFVpN++x01XnN2ie9g6P5/3xelLAkXWVADpdz1IHD/KFfEXyE6V0U01OQ3UO2rEg==}
@@ -20358,6 +20485,13 @@ packages:
     dependencies:
       lowercase-keys: 2.0.0
     dev: true
+
+  /responselike@3.0.0:
+    resolution: {integrity: sha512-40yHxbNcl2+rzXvZuVkrYohathsSJlMTXKryG5y8uciHv1+xDLHQpgjG64JUO9nrEq2jGLH6IZ8BcZyw3wrweg==}
+    engines: {node: '>=14.16'}
+    dependencies:
+      lowercase-keys: 3.0.0
+    dev: false
 
   /restore-cursor@3.1.0:
     resolution: {integrity: sha512-l+sSefzHpj5qimhFSE5a8nufZYAM3sBSVMAPtYkmC+4EH2anSGaEMXSD0izRQbu9nfyQ9y5JrVmp7E8oZrUjvA==}
@@ -20705,11 +20839,6 @@ packages:
   /semver@5.7.1:
     resolution: {integrity: sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==}
     hasBin: true
-
-  /semver@6.3.0:
-    resolution: {integrity: sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==}
-    hasBin: true
-    dev: false
 
   /semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
