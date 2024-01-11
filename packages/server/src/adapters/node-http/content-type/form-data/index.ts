@@ -13,7 +13,7 @@ import { Readable } from 'node:stream';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
-import type { CombinedDataTransformer } from '../../../../@trpc-server'; // '../../../../@trpc/server
+import type { CombinedDataTransformer } from '../../../../@trpc-server'; // @trpc/server
 
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import type { NodeHTTPRequest } from '../../types';
