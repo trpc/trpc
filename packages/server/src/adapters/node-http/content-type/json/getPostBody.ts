@@ -1,4 +1,5 @@
-import { TRPCError } from '@trpc/core';
+// @trpc/server
+import { TRPCError } from '../../../../@trpc-server';
 import type { BodyResult } from '../../../../http';
 import type { NodeHTTPRequest } from '../../types';
 
