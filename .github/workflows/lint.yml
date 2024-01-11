@@ -46,8 +46,9 @@ jobs:
 
       - run: pnpm turbo lint -- --fix
         continue-on-error: true
-      - run: pnpm manypkg fix
-        continue-on-error: true
+      # TODO: revert me
+      # - run: pnpm manypkg fix
+      #   continue-on-error: true
       - run: pnpm format-fix
         continue-on-error: true
 
