@@ -13,6 +13,7 @@ export {
   type inferRouterOutputs,
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
+  type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
 } from './unstableDoNotImportThis';
 
 export type {
@@ -24,6 +25,9 @@ export type {
    * @deprecated use `AnyTRPCRouter` instead
    */
   AnyRouter,
+  /**
+   * @deprecated use `AnyTRPCMiddlewareFunction` instead
+   */
   AnyMiddlewareFunction,
 } from '@trpc/core';
 
