@@ -205,7 +205,7 @@ module.exports = {
           versions: {
             current: {
               label: '11.x',
-              path: 'v11',
+              // path: 'v11',
               badge: true,
               className: 'v11',
               banner: 'unreleased',
