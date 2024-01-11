@@ -1,4 +1,4 @@
-> [!TIP]
+> [!NOTE]
 >
 > You are looking at the `next`-branch of tRPC which is the current work in progress representing **version 11**.
 >
