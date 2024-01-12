@@ -59,10 +59,10 @@ export type {
   inferRouterInputs,
   inferRouterMeta,
   inferRouterOutputs,
-  TRPCInferrable,
-  inferErrorShape,
   createRouterFactory,
 } from './router';
+
+export type { TRPCInferrable, inferErrorShape } from './TRPCInferrable';
 export { callProcedure, mergeRouters } from './router';
 export type {
   CombinedDataTransformer,
