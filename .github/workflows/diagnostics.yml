@@ -107,7 +107,7 @@ jobs:
       - run: pnpm install
 
       - name: Download diagnostics results
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: diagnostics-results
           path: diagnostics-results
