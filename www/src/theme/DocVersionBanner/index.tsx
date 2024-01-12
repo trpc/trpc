@@ -1,9 +1,6 @@
 import Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
-import {
-  ThemeClassNames,
-  useDocsPreferredVersion,
-} from '@docusaurus/theme-common';
+import { ThemeClassNames } from '@docusaurus/theme-common';
 import useGlobalData from '@docusaurus/useGlobalData';
 import DocVersionBanner from '@theme-original/DocVersionBanner';
 import clsx from 'clsx';
@@ -42,8 +39,7 @@ interface Link {
 }
 
 function useTypedVersion() {
-  const preferred = useDocsPreferredVersion();
-  const preferredVersion = preferred.preferredVersion as Version;
+  const location = useLocation();
 
   const globalData = useGlobalData();
 
@@ -51,12 +47,17 @@ function useTypedVersion() {
     globalData['docusaurus-plugin-content-docs'] as any
   ).default.versions;
 
-  const currentVersion: Version = preferredVersion ?? versions[0];
-
   const byLabel = {} as Record<VersionLabel, Version>;
   for (const version of versions) {
     byLabel[version.label] = version;
   }
+
+  const currentVersion: Version =
+    versions
+      .filter((it) => it.path !== '/docs')
+      .find((it) => location.pathname.startsWith(it.path)) ??
+    versions.find((it) => it.isLast) ??
+    versions[0];
 
   return {
     currentVersion,
