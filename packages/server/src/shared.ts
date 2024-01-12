@@ -1,7 +1,3 @@
-// export type {
-//   inferTransformedProcedureInput,
-//   inferTransformedProcedureOutput,
-
 export {
   /**
    * @deprecated `import from '@trpc/server'` instead
