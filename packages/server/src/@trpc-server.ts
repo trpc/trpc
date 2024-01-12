@@ -19,6 +19,7 @@ export {
   type AnyRouter as AnyTRPCRouter,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
+  type ProcedureType as TRPCProcedureType,
 } from './@trpc-core-unstable-do-not-import-this-please';
 
 export type {
@@ -38,6 +39,16 @@ export type {
    * @deprecated use `TRPCCombinedDataTransformer` instead
    */
   CombinedDataTransformer,
+
+  /**
+   * @deprecated This is a utility type that is being removed
+   */
+  Dict,
+
+  /**
+   * @deprecated use `TRPCProcedureType` instead
+   */
+  ProcedureType,
 } from '@trpc/core';
 
 export {
