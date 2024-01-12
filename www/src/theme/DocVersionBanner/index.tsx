@@ -10,11 +10,6 @@ import clsx from 'clsx';
 import React from 'react';
 
 type VersionLabel = '11.x' | '9.x' | '10.x';
-interface DocsData {
-  path: string;
-  versions: Version[];
-  breadcrumbs: boolean;
-}
 
 interface Version {
   name: string;
@@ -77,18 +72,18 @@ function useTypedVersion() {
 export default function DocVersionBannerWrapper(
   props: React.ComponentProps<typeof DocVersionBanner>,
 ) {
-  const { pathname } = useLocation();
+  const location = useLocation();
 
   const versions = useTypedVersion();
 
   switch (versions.currentVersion.label) {
     case '11.x': {
-      const href = pathname.replace('/docs', '/docs/v10');
+      const href = location.pathname.replace('/docs', '/docs/v10');
       const v10Doc = versions.versionDict['10.x'].docs.find(
         (x) => x.path === href,
       );
 
-      if (pathname.startsWith('/docs/migrate-from')) {
+      if (location.pathname.startsWith('/docs/migrate-from')) {
         // skip blob on migration page
         return null;
       }
