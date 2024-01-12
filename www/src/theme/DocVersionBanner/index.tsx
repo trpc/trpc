@@ -100,14 +100,14 @@ export default function DocVersionBannerWrapper(
           )}
           role="alert"
         >
-          <p>You are looking at the tRPC version 11 which is in beta.</p>
+          <p>You are looking at the tRPC version 11.</p>
           <ul className="list-inside list-disc">
             <li>
               To go to v10 the documentation,{' '}
               <Link href={v10Doc ? v10Doc.path : '/docs/v10'}>click here</Link>.
             </li>
             <li>
-              To see the pending list of changes for v11,{' '}
+              To see the list of changes for v11,{' '}
               <Link href="/docs/migrate-from-v10-to-v11">click here</Link>.
             </li>
           </ul>
