@@ -17,6 +17,7 @@ export const input = [
   'src/observable.ts',
   'src/rpc.ts',
   'src/shared.ts',
+  'src/@trpc-core-unstable-do-not-import-this-please.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
