@@ -15,11 +15,18 @@ export {
   type inferRouterInputs,
   type inferRouterOutputs,
   type inferRouterContext,
+  type inferTransformedProcedureOutput,
+  type inferTransformedSubscriptionOutput,
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
   type ProcedureType as TRPCProcedureType,
+  type AnyMutationProcedure as AnyTRPCMutationProcedure,
+  type AnyQueryProcedure as AnyTRPCQueryProcedure,
+  type ProcedureRouterRecord as TRPCProcedureRouterRecord,
+  type ProcedureArgs as TRPCProcedureArgs,
+  type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
 } from './@trpc-core-unstable-do-not-import-this-please';
 
 export type {
@@ -46,9 +53,34 @@ export type {
   Dict,
 
   /**
+   * @deprecated This is a utility type will be removed in v12
+   */
+  DeepPartial,
+  /**
    * @deprecated use `TRPCProcedureType` instead
    */
   ProcedureType,
+  /**
+   * @deprecated use `AnyTRPCMutationProcedure` instead
+   */
+  AnyMutationProcedure,
+
+  /**
+   * @deprecated use `AnyTRPCQueryProcedure` instead
+   */
+  AnyQueryProcedure,
+  /**
+   * @deprecated use `TRPCProcedureRouterRecord` instead
+   */
+  ProcedureRouterRecord,
+  /**
+   * @deprecated use `TRPCProcedureArgs` instead
+   */
+  ProcedureArgs,
+  /**
+   * @deprecated use `AnyTRPCSubscriptionProcedure` instead
+   */
+  AnySubscriptionProcedure,
 } from '@trpc/core';
 
 export {
@@ -61,6 +93,10 @@ export {
    * @deprecated use `callTRPCProcedure` instead
    */
   callProcedure,
+  /**
+   * @deprecated use `getTRPCErrorFromUnknown` instead
+   */
+  createFlatProxy,
 } from '@trpc/core';
 
 /**
