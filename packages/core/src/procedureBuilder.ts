@@ -25,7 +25,7 @@ import type {
 import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
 import { mergeWithoutOverrides } from './utils';
 
-type IntersectIfDefined<TType, TWith> = UnsetMarker extends TType
+type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : Simplify<TType & TWith>;
 
