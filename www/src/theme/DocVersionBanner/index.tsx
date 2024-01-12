@@ -93,7 +93,7 @@ export default function DocVersionBannerWrapper(
           <ul className="list-inside list-disc">
             <li>
               To go to the v10 documentation{' '}
-              {Boolean(v10Doc) && 'of this document'},
+              {Boolean(v10Doc) && 'of this document '}
               <Link href={v10Doc ? v10Doc.path : '/docs/v10'}>click here</Link>.
             </li>
             <li>
