@@ -504,6 +504,19 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
 
+  examples/.test/ut-cant-infer-type-repro:
+    dependencies:
+      '@trpc/server':
+        specifier: ^10.45.0
+        version: link:../../../packages/server
+      zod:
+        specifier: ^3.22.4
+        version: 3.22.4
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+
   examples/bun:
     dependencies:
       '@trpc/client':
