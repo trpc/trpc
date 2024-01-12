@@ -55,7 +55,6 @@ function useTypedVersion() {
 
   const byLabel = {} as Record<VersionLabel, Version>;
   for (const version of versions) {
-    console.log(version);
     byLabel[version.label] = version;
   }
 
