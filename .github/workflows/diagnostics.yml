@@ -70,7 +70,7 @@ jobs:
             
           done
       - run: cd ./examples/.test/diagnostics-big-router && pnpm tsc --extendedDiagnostics && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics.txt
-      - run: cat ./diagnostics-results/diagnostics-.txt
+      - run: cat ./diagnostics-results/diagnostics.txt
       - name: Upload diagnostics results
         uses: actions/upload-artifact@v4
         with:
