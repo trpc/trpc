@@ -66,15 +66,15 @@ jobs:
             start_time=$(date +%s%N)
             pnpm tsc
             end_time=$(date +%s%N)
-            echo "$(($end_time - $start_time))" >> ./../../../diagnostics-results/tsc-times-${{ matrix.branch }}.txt
+            echo "$(($end_time - $start_time))" >> ./../../../diagnostics-results/tsc-times.txt
             
           done
-      - run: cd ./examples/.test/diagnostics-big-router && pnpm tsc --extendedDiagnostics && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics-${{ matrix.branch }}.txt
-      - run: cat ./diagnostics-results/diagnostics-${{ matrix.branch }}.txt
+      - run: cd ./examples/.test/diagnostics-big-router && pnpm tsc --extendedDiagnostics && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics.txt
+      - run: cat ./diagnostics-results/diagnostics-.txt
       - name: Upload diagnostics results
         uses: actions/upload-artifact@v4
         with:
-          name: diagnostics-results
+          name: diagnostics-results-${{ matrix.branch }}
           path: ./diagnostics-results
 
   comment:
@@ -106,11 +106,14 @@ jobs:
 
       - run: pnpm install
 
-      - name: Download diagnostics results
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: diagnostics-results
-          path: diagnostics-results
+          name: diagnostics-results-next
+          path: diagnostics-results-next
+      - uses: actions/download-artifact@v4
+        with:
+          name: diagnostics-results-current-pr
+          path: diagnostics-results-current-pr
 
       - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
         env:

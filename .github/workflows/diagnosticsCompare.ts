@@ -29,20 +29,21 @@ const parseDiagnostics = (content: string) => {
   return metrics;
 };
 
-const readDiagnostics = (branch: string) => {
+const readFile = (branch: string, fileName: string) => {
   const content = fs.readFileSync(
-    path.join(diagnosticsPath, `diagnostics-${branch}.txt`),
+    path.join(`${diagnosticsPath}-${branch}`, fileName),
     'utf-8',
   );
+  return content;
+};
+
+const readDiagnostics = (branch: string) => {
+  const content = readFile(branch, 'diagnostics.txt');
   return parseDiagnostics(content);
 };
 
 const readTimings = (branch: string) => {
-  const content = fs.readFileSync(
-    path.join(diagnosticsPath, `tsc-times-${branch}.txt`),
-    'utf-8',
-  );
-  console.log({ content });
+  const content = readFile(branch, 'tsc-times.txt');
   const timings = content
     .split('\n')
     .map((line) => line.trim())
