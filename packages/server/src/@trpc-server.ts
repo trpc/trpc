@@ -41,7 +41,7 @@ export type {
   CombinedDataTransformer,
 
   /**
-   * @deprecated This is a utility type that is being removed
+   * @deprecated This is a utility type will be removed in v12
    */
   Dict,
 
