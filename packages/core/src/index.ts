@@ -11,7 +11,11 @@ export {
 } from './error/TRPCError';
 
 export { initTRPC } from './initTRPC';
-export type { MiddlewareFunction, MiddlewareBuilder } from './middleware';
+export type {
+  AnyMiddlewareFunction,
+  MiddlewareFunction,
+  MiddlewareBuilder,
+} from './middleware';
 export {
   createInputMiddleware,
   createOutputMiddleware,
@@ -55,10 +59,10 @@ export type {
   inferRouterInputs,
   inferRouterMeta,
   inferRouterOutputs,
-  TRPCInferrable,
-  inferErrorShape,
   createRouterFactory,
 } from './router';
+
+export type { TRPCInferrable, inferErrorShape } from './TRPCInferrable';
 export { callProcedure, mergeRouters } from './router';
 export type {
   CombinedDataTransformer,

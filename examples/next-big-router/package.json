@@ -5,16 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "start": "next start",
     "postinstall": "tsx scripts/codegen"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@trpc/client": "^10.45.0",
-    "@trpc/next": "^10.45.0",
-    "@trpc/react-query": "^10.45.0",
-    "@trpc/server": "^10.45.0",
+    "@trpc/client": "next",
+    "@trpc/next": "next",
+    "@trpc/react-query": "next",
+    "@trpc/server": "next",
     "next": "^14.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

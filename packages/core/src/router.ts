@@ -68,7 +68,7 @@ export interface Router<TDef extends AnyRouterDef> {
   _def: TDef;
   /**
    * @deprecated use `t.createCallerFactory(router)` instead
-   * @see https://trpc.io/docs/server/server-side-calls
+   * @link https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TDef>;
 }
@@ -91,13 +91,6 @@ export type inferRouterError<TRouter extends AnyRouter> =
   inferRouterConfig<TRouter>['$types']['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterConfig<TRouter>['$types']['meta'];
-
-export type TRPCInferrable = AnyRouter | AnyRootConfig;
-type inferConfig<TInferrable extends TRPCInferrable> =
-  TInferrable extends AnyRouter ? TInferrable['_def']['_config'] : TInferrable;
-
-export type inferErrorShape<TInferrable extends TRPCInferrable> =
-  inferConfig<TInferrable>['$types']['errorShape'];
 
 type GetInferenceHelpers<
   TType extends 'input' | 'output',

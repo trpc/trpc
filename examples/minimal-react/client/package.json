@@ -6,14 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "start": "vite preview"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@trpc/client": "^10.45.0",
-    "@trpc/react-query": "^10.45.0",
-    "@trpc/server": "^10.45.0",
+    "@trpc/client": "next",
+    "@trpc/react-query": "next",
+    "@trpc/server": "next",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

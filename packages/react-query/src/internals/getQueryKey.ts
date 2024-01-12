@@ -104,7 +104,7 @@ type GetQueryKeyParams<
  * @param procedureOrRouter - procedure or AnyRouter
  * @param input - input to procedureOrRouter
  * @param type - defaults to `any`
- * @link https://trpc.io/docs/getQueryKey
+ * @link https://trpc.io/docs/v11/getQueryKey
  */
 export function getQueryKey<
   TConfig extends AnyRootConfig,

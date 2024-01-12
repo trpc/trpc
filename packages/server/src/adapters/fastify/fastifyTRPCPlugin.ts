@@ -1,7 +1,18 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * Do **not** import from `@trpc/core`
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 /// <reference types="@fastify/websocket" />
-import type { AnyRouter } from '@trpc/core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { FastifyHandlerOptions } from '.';
+// @trpc/server
+import type { AnyRouter } from '../../@trpc-server';
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 import type { WSSHandlerOptions } from '../ws';
 import { applyWSSHandler } from '../ws';

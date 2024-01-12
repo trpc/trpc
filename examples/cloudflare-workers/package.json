@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "^10.45.0",
-    "@trpc/server": "^10.45.0",
+    "@trpc/client": "next",
+    "@trpc/server": "next",
     "zod": "^3.0.0"
   },
   "devDependencies": {

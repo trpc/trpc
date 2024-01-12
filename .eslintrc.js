@@ -10,6 +10,7 @@ const config = {
     'plugin:react-hooks/recommended',
     'prettier',
   ],
+  reportUnusedDisableDirectives: true,
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of import
@@ -51,6 +52,7 @@ const config = {
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',
           '\\.(t|j)sx$',
+          '@trpc/*',
         ],
       },
     ],
@@ -143,6 +145,22 @@ const config = {
       files: ['packages/**/*'],
       rules: {
         'no-console': 'error',
+      },
+    },
+    {
+      files: ['packages/server/src/adapters/**/*'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            name: '@trpc/server',
+          },
+          {
+            name: '@trpc/core',
+            message:
+              'Use e.g. `../http` instead - avoiding importing core helps us ensure third party adapters can be made',
+          },
+        ],
       },
     },
   ],

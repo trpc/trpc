@@ -1,12 +1,6 @@
 import type { IncomingMessage } from 'http';
-import type { AnyRouter, inferRouterContext, MaybePromise } from '@trpc/core';
-import {
-  callProcedure,
-  getErrorShape,
-  getTRPCErrorFromUnknown,
-  transformTRPCResponse,
-  TRPCError,
-} from '@trpc/core';
+// eslint-disable-next-line no-restricted-imports
+import type { MaybePromise } from '@trpc/core';
 import type { BaseHandlerOptions } from '@trpc/core/http';
 import type { Unsubscribable } from '@trpc/core/observable';
 import { isObservable } from '@trpc/core/observable';
@@ -18,11 +12,19 @@ import type {
 } from '@trpc/core/rpc';
 import { parseTRPCMessage } from '@trpc/core/rpc';
 import type ws from 'ws';
+import type { AnyRouter, inferRouterContext } from '../@trpc-server';
+import {
+  callProcedure,
+  getErrorShape,
+  getTRPCErrorFromUnknown,
+  transformTRPCResponse,
+  TRPCError,
+} from '../@trpc-server';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * Importing ws causes a build error
- * @see https://github.com/trpc/trpc/pull/5279
+ * @link https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
@@ -51,13 +53,13 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
   (object extends inferRouterContext<TRouter>
     ? {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext?: CreateWSSContextFn<TRouter>;
       }
     : {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext: CreateWSSContextFn<TRouter>;
       }) & {
