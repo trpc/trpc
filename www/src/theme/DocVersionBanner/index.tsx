@@ -44,7 +44,6 @@ interface Link {
 function useTypedVersion() {
   const preferred = useDocsPreferredVersion();
   const preferredVersion = preferred.preferredVersion as Version;
-  const location = useLocation();
 
   const globalData = useGlobalData();
 
@@ -52,20 +51,17 @@ function useTypedVersion() {
     globalData['docusaurus-plugin-content-docs'] as any
   ).default.versions;
 
-  // HACK
-  const currentVersion: Version =
-    versions
-      .filter((it) => it.label !== preferredVersion?.label)
-      .find((it) => location.pathname.startsWith(it.path)) ?? preferredVersion;
+  const currentVersion: Version = preferredVersion ?? versions[0];
 
-  const versionDict = {} as Record<VersionLabel, Version>;
+  const byLabel = {} as Record<VersionLabel, Version>;
   for (const version of versions) {
-    versionDict[version.label] = version;
+    console.log(version);
+    byLabel[version.label] = version;
   }
 
   return {
     currentVersion,
-    versionDict,
+    byLabel,
   };
 }
 
@@ -79,9 +75,7 @@ export default function DocVersionBannerWrapper(
   switch (versions.currentVersion.label) {
     case '11.x': {
       const href = location.pathname.replace('/docs', '/docs/v10');
-      const v10Doc = versions.versionDict['10.x'].docs.find(
-        (x) => x.path === href,
-      );
+      const v10Doc = versions.byLabel['10.x'].docs.find((x) => x.path === href);
 
       if (location.pathname.startsWith('/docs/migrate-from')) {
         // skip blob on migration page
@@ -114,27 +108,4 @@ export default function DocVersionBannerWrapper(
       return <DocVersionBanner {...props} />;
     }
   }
-
-  return (
-    <>
-      <div
-        className={clsx(
-          ThemeClassNames.docs.docVersionBanner,
-          'alert alert--warning margin-bottom--md space-y-2',
-        )}
-        role="alert"
-      >
-        <p className="mb-2">
-          You are looking at the tRPC version 10 <strong>beta</strong>.
-        </p>
-        <p>
-          For documentation about version 9,{' '}
-          <Link href={pathname.replace('/v10/', '/v9/')} className="font-bold">
-            click here
-          </Link>
-        </p>
-      </div>
-      <DocVersionBanner {...props} />
-    </>
-  );
 }
