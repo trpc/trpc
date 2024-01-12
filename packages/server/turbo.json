@@ -5,6 +5,7 @@
     "codegen-entrypoints": {
       "outputs": [
         "package.json",
+        "@trpc-core-unstable-do-not-import-this-please/**",
         "adapters/**",
         "http/**",
         "observable/**",

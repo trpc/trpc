@@ -28,6 +28,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./@trpc-core-unstable-do-not-import-this-please": {
+      "import": "./dist/@trpc-core-unstable-do-not-import-this-please.mjs",
+      "require": "./dist/@trpc-core-unstable-do-not-import-this-please.js",
+      "default": "./dist/@trpc-core-unstable-do-not-import-this-please.js"
+    },
     "./adapters/aws-lambda": {
       "import": "./dist/adapters/aws-lambda/index.mjs",
       "require": "./dist/adapters/aws-lambda/index.js",
@@ -104,6 +109,7 @@
     "src",
     "README.md",
     "package.json",
+    "@trpc-core-unstable-do-not-import-this-please",
     "adapters",
     "http",
     "observable",
