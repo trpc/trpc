@@ -6,9 +6,11 @@ export {
   experimental_standaloneMiddleware,
   experimental_standaloneMiddleware as experimental_trpcMiddleware,
   initTRPC,
+  // --- FIXME a bunch of these exports are only useful for plugins - move them somewhere else? ----
   callProcedure as callTRPCProcedure,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
+  createFlatProxy as createTRPCFlatProxy,
   type inferProcedureInput,
   type inferProcedureOutput,
   type inferRouterError,
@@ -93,10 +95,6 @@ export {
    * @deprecated use `callTRPCProcedure` instead
    */
   callProcedure,
-  /**
-   * @deprecated use `getTRPCErrorFromUnknown` instead
-   */
-  createFlatProxy,
 } from '@trpc/core';
 
 /**

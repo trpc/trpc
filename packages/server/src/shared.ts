@@ -24,7 +24,7 @@ export {
    */
   getErrorShape,
   /**
-   * @deprecated `import from '@trpc/server'` instead
+   * @deprecated `import { createTRPCFlatProxy } from '@trpc/server'` instead
    */
-  createFlatProxy,
+  createTRPCFlatProxy as createFlatProxy,
 } from './@trpc-server';
