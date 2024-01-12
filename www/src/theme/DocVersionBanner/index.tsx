@@ -89,7 +89,9 @@ export default function DocVersionBannerWrapper(
           )}
           role="alert"
         >
-          <p>You are looking at the tRPC version 11.</p>
+          <p>
+            You are looking at tRPC version <strong>11</strong>.
+          </p>
           <ul className="list-inside list-disc">
             <li>
               To go to the v10 documentation
