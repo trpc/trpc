@@ -92,7 +92,8 @@ export default function DocVersionBannerWrapper(
           <p>You are looking at the tRPC version 11.</p>
           <ul className="list-inside list-disc">
             <li>
-              To go to v10 the documentation,{' '}
+              To go to the v10 documentation{' '}
+              {Boolean(v10Doc) && 'of this document'},
               <Link href={v10Doc ? v10Doc.path : '/docs/v10'}>click here</Link>.
             </li>
             <li>
