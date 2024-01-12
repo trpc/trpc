@@ -11,9 +11,14 @@ describe('Serialization of Record types', () => {
           description: z.string(),
         }),
       )
+      .output(
+        z.object({
+          description: z.string(),
+        }),
+      )
       .query(({ input }) => {
         expectTypeOf<{ description: string }>(input);
-        return { input };
+        return input;
       }),
     maybeDescriptionKey: t.procedure
       .input(
@@ -21,9 +26,14 @@ describe('Serialization of Record types', () => {
           description: z.string().optional(),
         }),
       )
+      .output(
+        z.object({
+          description: z.string().optional(),
+        }),
+      )
       .query(({ input }) => {
         expectTypeOf<{ description?: string }>(input);
-        return { input };
+        return input;
       }),
   });
 
@@ -33,7 +43,7 @@ describe('Serialization of Record types', () => {
         input: {
           description: string;
         };
-        output: { input: { description: string } };
+        output: { description: string };
       }>
     >(appRouter.withDescriptionKey);
 
@@ -42,7 +52,7 @@ describe('Serialization of Record types', () => {
         input: {
           description?: string | undefined;
         };
-        output: { input: { description?: string | undefined } };
+        output: { description?: string | undefined };
       }>
     >(appRouter.maybeDescriptionKey);
   });
