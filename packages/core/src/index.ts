@@ -44,7 +44,7 @@ export type {
 } from './procedure';
 export { procedureTypes } from './procedure';
 export type { ProcedureBuilder } from './procedureBuilder';
-export { type UnsetMarker, createBuilder } from './procedureBuilder';
+export { unsetMarker, createBuilder } from './procedureBuilder';
 export type { AnyRootConfig, RootConfig } from './rootConfig';
 export type {
   AnyRouter,

@@ -33,7 +33,7 @@ type ErrorMessage<TMessage extends string> = TMessage;
 
 /** @internal */
 export const unsetMarker = Symbol('unsetMarker');
-export type UnsetMarker = typeof unsetMarker;
+type UnsetMarker = typeof unsetMarker;
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;

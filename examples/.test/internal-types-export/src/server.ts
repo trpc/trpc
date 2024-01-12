@@ -16,11 +16,12 @@ const someMiddleware = t.middleware(({ next }) => {
   return next();
 });
 
-export function genericRouter<TSchema extends (value: any) => unknown>(schema: TSchema) {
-  return t.router({
-    foo: t.procedure.output(schema).query(() => 'bar'),
-  });
-}
+// Note, this is not valid in v11: https://github.com/trpc/trpc/pull/3831#discussion_r1450437174
+// export function genericRouter<TSchema extends (value: any) => unknown>(schema: TSchema) {
+//   return t.router({
+//     foo: t.procedure.output(schema).query(() => 'bar'),
+//   });
+// }
 
 export type Foo = { x: Foo | number };
 
@@ -34,7 +35,7 @@ const routerB = t.router({
 const appRouter = t.router({
   foo: t.procedure.query(() => 'bar'),
   hello: t.procedure.use(someMiddleware).query(() => 'hello'),
-  generic: genericRouter((value: string) => value.toUpperCase()),
+  // generic: genericRouter((value: string) => value.toUpperCase()),
   merged: t.mergeRouters(routerA, routerB),
   recursive: t.procedure.query(() => {
     return {
