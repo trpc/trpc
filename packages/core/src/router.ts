@@ -92,13 +92,6 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterConfig<TRouter>['$types']['meta'];
 
-export type TRPCInferrable = AnyRouter | AnyRootConfig;
-type inferConfig<TInferrable extends TRPCInferrable> =
-  TInferrable extends AnyRouter ? TInferrable['_def']['_config'] : TInferrable;
-
-export type inferErrorShape<TInferrable extends TRPCInferrable> =
-  inferConfig<TInferrable>['$types']['errorShape'];
-
 type GetInferenceHelpers<
   TType extends 'input' | 'output',
   TRouter extends AnyRouter,
