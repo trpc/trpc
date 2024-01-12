@@ -1,7 +1,7 @@
+import type { AnyTRPCMiddlewareFunction } from '@trpc/server';
 import { TRPCError } from '@trpc/server';
-//
-// Utility helpers for creating middlewares
-import type { Next } from '@trpc/server';
+
+type Next = Parameters<AnyTRPCMiddlewareFunction>[0]['next'];
 
 //
 // An isolated auth middleware which takes some config to create a re-usable applier,
