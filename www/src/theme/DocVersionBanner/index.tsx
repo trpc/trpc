@@ -1,19 +1,13 @@
 import Link from '@docusaurus/Link';
-import {
-  useActivePlugin,
-  useDocsData,
-} from '@docusaurus/plugin-content-docs/client';
 import { useLocation } from '@docusaurus/router';
 import {
   ThemeClassNames,
   useDocsPreferredVersion,
 } from '@docusaurus/theme-common';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useGlobalData from '@docusaurus/useGlobalData';
-import useRouteContext from '@docusaurus/useRouteContext';
 import DocVersionBanner from '@theme-original/DocVersionBanner';
 import clsx from 'clsx';
-import React, { useCallback } from 'react';
+import React from 'react';
 
 type VersionLabel = '11.x' | '9.x' | '10.x';
 interface DocsData {
@@ -66,7 +60,7 @@ function useTypedVersion() {
   // HACK
   const currentVersion: Version =
     versions
-      .filter((x) => x.label !== preferredVersion?.label)
+      .filter((it) => it.label !== preferredVersion?.label)
       .find((it) => location.pathname.startsWith(it.path)) ?? preferredVersion;
 
   const versionDict = {} as Record<VersionLabel, Version>;
@@ -83,19 +77,9 @@ function useTypedVersion() {
 export default function DocVersionBannerWrapper(
   props: React.ComponentProps<typeof DocVersionBanner>,
 ) {
-  const { pluginId } = useActivePlugin({ failfast: true });
-
-  const data: DocsData = useDocsData(pluginId);
   const { pathname } = useLocation();
 
   const versions = useTypedVersion();
-  console.log({
-    useRouteContext: useRouteContext(),
-    data,
-    useDocusaurusContext: useDocusaurusContext(),
-  });
-
-  console.log(versions);
 
   switch (versions.currentVersion.label) {
     case '11.x': {
@@ -104,6 +88,10 @@ export default function DocVersionBannerWrapper(
         (x) => x.path === href,
       );
 
+      if (pathname.startsWith('/docs/migrate-from')) {
+        // skip blob on migration page
+        return null;
+      }
       return (
         <div
           className={clsx(
@@ -115,14 +103,8 @@ export default function DocVersionBannerWrapper(
           <p>You are looking at the tRPC version 11 which is in beta.</p>
           <ul className="list-inside list-disc">
             <li>
-              To go to v10 documentation,{' '}
-              <Link
-                href={v10Doc ? v10Doc.path : '/docs/v10'}
-                className="font-bold"
-              >
-                click here
-              </Link>
-              .
+              To go to v10 the documentation,{' '}
+              <Link href={v10Doc ? v10Doc.path : '/docs/v10'}>click here</Link>.
             </li>
             <li>
               To see the pending list of changes for v11,{' '}
@@ -138,29 +120,6 @@ export default function DocVersionBannerWrapper(
     }
   }
 
-  // if (!isV10) {
-  // return null;
-  // return (
-  //   <div
-  //     className={clsx(
-  //       ThemeClassNames.docs.docVersionBanner,
-  //       'alert alert--success margin-bottom--md space-y-2',
-  //     )}
-  //     role="alert"
-  //   >
-  //     <p className="mb-2">You are looking at the tRPC version 9.</p>
-  //     <p>
-  //       We have recently released a version 10 beta{' '}
-  //       <Link href={pathname.replace('/v9/', '/v10/')} className="font-bold">
-  //         click here
-  //       </Link>{' '}
-  //       to have a look.
-  //     </p>
-  //   </div>
-  // );
-  // }
-
-  // TODO - make sure that a v9 version exists of this doc before linking
   return (
     <>
       <div
