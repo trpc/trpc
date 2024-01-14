@@ -1,5 +1,5 @@
 import type { AnyRouter } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/core';
 import type {
   Operation,
   OperationLink,

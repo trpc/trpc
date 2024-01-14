@@ -1,5 +1,4 @@
-import type { ProcedureType } from '@trpc/core';
-import type { TRPCResponse } from '@trpc/core/rpc';
+import type { ProcedureType, TRPCResponse } from '@trpc/core';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
 import type {

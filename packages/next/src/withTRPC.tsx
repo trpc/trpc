@@ -10,8 +10,7 @@ import {
 } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
-import type { AnyRouter, Dict, Maybe } from '@trpc/core';
-import type { ResponseMeta } from '@trpc/core/http';
+import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/core';
 import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import type {
   CreateTRPCReactOptions,

@@ -102,3 +102,4 @@ export { isObject } from './utils';
  */
 export * from './observable';
 export * from './rpc';
+export * from './http';

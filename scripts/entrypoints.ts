@@ -36,8 +36,8 @@ function writeFileSyncRecursive(filePath: string, content: string) {
 //  */
 
 // export * from '@trpc/core';
-// export * from '@trpc/core/http';
-// export * from '@trpc/core/rpc';
+// export * from '@trpc/core';
+// export * from '@trpc/core';
 // `.trimStart();
 
 export async function generateEntrypoints(rawInputs: string[]) {

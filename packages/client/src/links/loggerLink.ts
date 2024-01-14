@@ -6,7 +6,7 @@
 // even if end-user `tsconfig.json` omits it in the `lib` array.
 
 import type { AnyRouter } from '@trpc/core';
-import { observable, tap } from '@trpc/core/observable';
+import { observable, tap } from '@trpc/core';
 import type { TRPCClientError } from '../TRPCClientError';
 import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 

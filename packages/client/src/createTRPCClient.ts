@@ -12,9 +12,9 @@ import type {
   ProcedureArgs,
   ProcedureRouterRecord,
   ProcedureType,
+  Unsubscribable,
 } from '@trpc/core';
 import { createFlatProxy, createRecursiveProxy } from '@trpc/core';
-import type { Unsubscribable } from '@trpc/core/observable';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
   TRPCSubscriptionObserver,

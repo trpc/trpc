@@ -3,8 +3,7 @@
 import type { TRPCLink } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
 import type { AnyRouter, inferRouterContext } from '@trpc/core';
-import { callProcedure } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { callProcedure, observable } from '@trpc/core';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 

@@ -11,6 +11,7 @@ import type {
   inferProcedureInput,
   MaybePromise,
   Simplify,
+  TRPCResponse,
 } from '@trpc/core';
 import {
   createRecursiveProxy,
@@ -19,7 +20,6 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '@trpc/core';
-import type { TRPCResponse } from '@trpc/core/rpc';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';

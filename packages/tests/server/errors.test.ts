@@ -9,7 +9,7 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import { isObject } from '@trpc/core';
-import type { OnErrorFunction } from '@trpc/core/http';
+import type { OnErrorFunction } from '@trpc/core';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';

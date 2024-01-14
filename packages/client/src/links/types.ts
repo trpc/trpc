@@ -2,9 +2,11 @@ import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformer,
+  Observable,
+  Observer,
+  TRPCResultMessage,
+  TRPCSuccessResponse,
 } from '@trpc/core';
-import type { Observable, Observer } from '@trpc/core/observable';
-import type { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/core/rpc';
 import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
 

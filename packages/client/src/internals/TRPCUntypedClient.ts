@@ -3,12 +3,10 @@ import type {
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-} from '@trpc/core';
-import type {
   inferObservableValue,
   Unsubscribable,
-} from '@trpc/core/observable';
-import { observableToPromise, share } from '@trpc/core/observable';
+} from '@trpc/core';
+import { observableToPromise, share } from '@trpc/core';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
