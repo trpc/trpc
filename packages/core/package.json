@@ -43,21 +43,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./http": {
-      "import": "./dist/http/index.mjs",
-      "require": "./dist/http/index.js",
-      "default": "./dist/http/index.js"
-    },
-    "./observable": {
-      "import": "./dist/observable/index.mjs",
-      "require": "./dist/observable/index.js",
-      "default": "./dist/observable/index.js"
-    },
-    "./rpc": {
-      "import": "./dist/rpc/index.mjs",
-      "require": "./dist/rpc/index.js",
-      "default": "./dist/rpc/index.js"
     }
   },
   "files": [
@@ -65,9 +50,6 @@
     "src",
     "README.md",
     "package.json",
-    "http",
-    "observable",
-    "rpc",
     "!**/*.test.*"
   ],
   "publishConfig": {
