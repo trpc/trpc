@@ -1,6 +1,6 @@
 import type { AnyRouter } from '@trpc/core';
 import { transformResult } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/observable';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
