@@ -4,7 +4,7 @@ on:
   push:
     branches:
       # Replace this with the branch you want to release from
-      - 'v11-trpc-sveltekit'
+      - 'export-from-main'
     paths:
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
