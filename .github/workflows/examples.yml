@@ -31,6 +31,7 @@ jobs:
           [
             .test/ssg,
             .test/internal-types-export,
+            .test/ut-cant-infer-type-repro
             express-server,
             express-minimal,
             next-minimal-starter,
