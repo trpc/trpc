@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'http';
 import type { AddressInfo } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
-import type { OnErrorFunction } from '@trpc/core/http';
+import type { OnErrorFunction } from '@trpc/core';
 import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyRouter as AnyNewRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';

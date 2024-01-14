@@ -2,18 +2,16 @@ import type {
   AnyRouter,
   inferRouterError,
   MaybePromise,
+  Observer,
   ProcedureType,
-} from '@trpc/core';
-import { transformResult } from '@trpc/core';
-import type { Observer, UnsubscribeFn } from '@trpc/core/observable';
-import { observable } from '@trpc/core/observable';
-import type {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
   TRPCResponseMessage,
-} from '@trpc/core/rpc';
+  UnsubscribeFn,
+} from '@trpc/core';
+import { observable, transformResult } from '@trpc/core';
 import { TRPCClientError } from '../TRPCClientError';
 import type { Operation, TRPCLink } from './types';
 
