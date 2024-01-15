@@ -3,7 +3,6 @@ name: Release "@tmp"-tagged packages
 on:
   push:
     branches:
-      # trigger release
       # Replace this with the branch you want to release from
       - 'export-from-main'
     paths:
