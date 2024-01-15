@@ -46,9 +46,8 @@ jobs:
 
       - run: pnpm turbo lint -- --fix
         continue-on-error: true
-      # Temporarily disabled: https://github.com/Thinkmill/manypkg/issues/193
-      # - run: pnpm manypkg fix
-      #   continue-on-error: true
+      - run: pnpm manypkg fix
+        continue-on-error: true
       - run: pnpm format-fix
         continue-on-error: true
 
@@ -120,9 +119,8 @@ jobs:
       - name: Run ts-prune
         run: pnpm lint-prune
 
-      # Temporarily disabled: https://github.com/Thinkmill/manypkg/issues/193
-      # - name: Run Manypkg
-      #   run: pnpm manypkg check
+      - name: Run Manypkg
+        run: pnpm manypkg check
 
       - name: Run Prettier
         run: pnpm format --list-different
