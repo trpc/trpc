@@ -30,13 +30,13 @@ export type FetchCreateContextOption<TRouter extends AnyRouter> =
   unknown extends inferRouterContext<TRouter>
     ? {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext?: FetchCreateContextFn<TRouter>;
       }
     : {
         /**
-         * @link https://trpc.io/docs/context
+         * @link https://trpc.io/docs/v11/context
          **/
         createContext: FetchCreateContextFn<TRouter>;
       };

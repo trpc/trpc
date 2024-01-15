@@ -11,7 +11,7 @@ export type Maybe<TType> = TType | null | undefined;
 
 /**
  * @internal
- * @see https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
+ * @link https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
  */
 export type Simplify<TType> = TType extends any[] | Date
   ? TType

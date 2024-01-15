@@ -6,7 +6,7 @@ const animationRow = Array(2).fill(0) as [number, number];
 
 /**
  * An animated logo carousel to show companies using tRPC. Tailwind code taken from Cruip
- * @see https://cruip.com/create-an-infinite-horizontal-scroll-animation-with-tailwind-css/
+ * @link https://cruip.com/create-an-infinite-horizontal-scroll-animation-with-tailwind-css/
  */
 export const CompaniesUsing = () => {
   return (
