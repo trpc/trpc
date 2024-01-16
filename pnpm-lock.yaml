@@ -24,8 +24,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       '@ianvs/prettier-plugin-sort-imports':
-        specifier: ^4.0.0
-        version: 4.0.0(prettier@2.8.8)
+        specifier: ^4.1.1
+        version: 4.1.1(prettier@3.2.2)
       '@manypkg/cli':
         specifier: ^0.21.2
         version: 0.21.2
@@ -48,11 +48,8 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
-      '@types/prettier':
-        specifier: ^2.7.2
-        version: 2.7.2
+        specifier: ^20.11.4
+        version: 20.11.4
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.2.1
         version: 6.2.1(@typescript-eslint/parser@6.2.1)(eslint@8.40.0)(typescript@5.3.3)
@@ -96,11 +93,11 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.2.2
+        version: 3.2.2
       prettier-plugin-tailwindcss:
-        specifier: ^0.4.0
-        version: 0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8)
+        specifier: ^0.5.11
+        version: 0.5.11(@ianvs/prettier-plugin-sort-imports@4.1.1)(prettier@3.2.2)
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
@@ -834,7 +831,7 @@ importers:
         version: 5.3.3
       vite:
         specifier: ^4.1.2
-        version: 4.1.2(@types/node@20.10.4)
+        version: 4.1.2(@types/node@20.11.4)
 
   examples/minimal-react/server:
     dependencies:
@@ -1120,7 +1117,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1214,7 +1211,7 @@ importers:
         version: 4.1.5
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-todomvc'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1326,7 +1323,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplesnext-websockets-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -3267,14 +3264,6 @@ packages:
       chalk: 2.4.2
       js-tokens: 4.0.0
 
-  /@babel/parser@7.21.8:
-    resolution: {integrity: sha512-6zavDGdzG3gUqAdWvlLFfk+36RilI+Pwyuuh7HItyeScCWP3k6i8vKclAQ0bM/0y/Kz/xiwvxhMv9MgTJP5gmA==}
-    engines: {node: '>=6.0.0'}
-    hasBin: true
-    dependencies:
-      '@babel/types': 7.23.0
-    dev: false
-
   /@babel/parser@7.23.0:
     resolution: {integrity: sha512-vvPKKdMemU85V9WE/l5wZEmImpCtLqbnTvqDS2U1fJ96KrxoW7KrXhNsNCblQlg8Ck4b85yxdTyelsMUgFUXiw==}
     engines: {node: '>=6.0.0'}
@@ -4313,15 +4302,6 @@ packages:
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
-
-  /@babel/types@7.21.5:
-    resolution: {integrity: sha512-m4AfNvVF2mVC/F7fDEdH2El3HzUg9It/XsCxZiOTTA3m3qYfcSVSbTfM6Q9xG+hYDniZssYhlXKKUMD5m8tF4Q==}
-    engines: {node: '>=6.9.0'}
-    dependencies:
-      '@babel/helper-string-parser': 7.22.5
-      '@babel/helper-validator-identifier': 7.22.20
-      to-fast-properties: 2.0.0
-    dev: false
 
   /@babel/types@7.23.0:
     resolution: {integrity: sha512-0oIyUfKoI3mSqMvsxBdclDwxXKXAUA8v/apZbc+iSyARYou1o8ZGDxbUYyLFoW2arqS2jDGqJuZvv1d/io1axg==}
@@ -6235,22 +6215,22 @@ packages:
     engines: {node: '>=6.9.0'}
     dev: false
 
-  /@ianvs/prettier-plugin-sort-imports@4.0.0(prettier@2.8.8):
-    resolution: {integrity: sha512-56wYZhq/Ezt5o4Lzc+CEUV+sqTPEV2WcTFJSSLBOhe15yfIkrUheGeRvC3lg30VQ8K0J1kvWjXIY5lxeOlW2Tg==}
+  /@ianvs/prettier-plugin-sort-imports@4.1.1(prettier@3.2.2):
+    resolution: {integrity: sha512-kJhXq63ngpTQ2dxgf5GasbPJWsJA3LgoOdd7WGhpUSzLgLgI4IsIzYkbJf9kmpOHe7Vdm/o3PcRA3jmizXUuAQ==}
     peerDependencies:
       '@vue/compiler-sfc': '>=3.0.0'
-      prettier: 2.x
+      prettier: 2 || 3
     peerDependenciesMeta:
       '@vue/compiler-sfc':
         optional: true
     dependencies:
       '@babel/core': 7.23.2
-      '@babel/generator': 7.21.5
-      '@babel/parser': 7.21.8
-      '@babel/traverse': 7.21.5
-      '@babel/types': 7.21.5
-      prettier: 2.8.8
-      semver: 7.5.0
+      '@babel/generator': 7.23.0
+      '@babel/parser': 7.23.0
+      '@babel/traverse': 7.23.2
+      '@babel/types': 7.23.0
+      prettier: 3.2.2
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -6289,7 +6269,7 @@ packages:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       '@types/yargs': 17.0.14
       chalk: 4.1.2
     dev: false
@@ -8367,18 +8347,18 @@ packages:
   /@types/better-sqlite3@7.6.2:
     resolution: {integrity: sha512-RgmaapusqTq6IMAr4McMyAsC6RshYTCjXCnzwVV59WctUxC8bNPyUfT9t5F81lKcU41lLurhjqjoMHfauzfqGg==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/body-parser@1.19.2:
     resolution: {integrity: sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==}
     dependencies:
       '@types/connect': 3.4.35
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/bonjour@3.5.10:
     resolution: {integrity: sha512-p7ienRMiS41Nu2/igbJxxLDWrSZ0WxM8UQgCeO9KhoVF7cOVFkrKsiDr1EsJIla8vV3oEEjGcz11jc5yimhzZw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: false
 
   /@types/cacheable-request@6.0.3:
@@ -8386,7 +8366,7 @@ packages:
     dependencies:
       '@types/http-cache-semantics': 4.0.4
       '@types/keyv': 3.1.4
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       '@types/responselike': 1.0.0
     dev: true
 
@@ -8402,13 +8382,13 @@ packages:
     resolution: {integrity: sha512-h8QJa8xSb1WD4fpKBDcATDNGXghFj6/3GRWG6dhmRcu0RX1Ubasur2Uvx5aeEwlf0MwblEC2bMzzMQntxnw/Cw==}
     dependencies:
       '@types/express-serve-static-core': 4.17.34
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: false
 
   /@types/connect@3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/cors@2.8.13:
     resolution: {integrity: sha512-RG8AStHlUiV5ysZQKq97copd2UmVYw3/pRMLefISZ3S1hK104Cwm7iLQ3fTKx+lsUH2CE8FlLaYeEA2LSeqYUA==}
@@ -8445,7 +8425,7 @@ packages:
   /@types/express-serve-static-core@4.17.34:
     resolution: {integrity: sha512-fvr49XlCGoUj2Pp730AItckfjat4WNb0lb3kfrLWffd+RLeoGAMsq7UOy04PAPtoL01uKwcp6u8nhzpgpDYr3w==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
       '@types/send': 0.17.1
@@ -8462,7 +8442,7 @@ packages:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: false
 
   /@types/hash-sum@1.0.0:
@@ -8496,7 +8476,7 @@ packages:
   /@types/http-proxy@1.17.9:
     resolution: {integrity: sha512-QsbSjA/fSk7xB+UXlCT3wHBy5ai9wOcNDWwZAtud+jXhwOM3l+EYZh8Lng4+/6n8uar0J7xILzqftJdJ/Wdfkw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: false
 
   /@types/isomorphic-fetch@0.0.39:
@@ -8529,7 +8509,7 @@ packages:
   /@types/keyv@3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/lodash@4.14.190:
     resolution: {integrity: sha512-5iJ3FBJBvQHQ8sFhEhJfjUP+G+LalhavTkYyrAYqz5MEJG+erSv0k9KJLb6q7++17Lafk1scaTIFXcMJlwK8Mw==}
@@ -8571,6 +8551,11 @@ packages:
     dependencies:
       undici-types: 5.26.5
 
+  /@types/node@20.11.4:
+    resolution: {integrity: sha512-6I0fMH8Aoy2lOejL3s4LhyIYX34DPwY8bl5xlNjBvUEk8OHrcuzsFt+Ied4LvJihbtXPM+8zUqdydfIti86v9g==}
+    dependencies:
+      undici-types: 5.26.5
+
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
     dev: false
@@ -8578,7 +8563,7 @@ packages:
   /@types/oauth@0.9.1:
     resolution: {integrity: sha512-a1iY62/a3yhZ7qH7cNUsxoI3U/0Fe9+RnuFrpTKr+0WVOzbKlSLojShCKe20aOD1Sppv+i8Zlq0pLDuTJnwS4A==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: true
 
   /@types/parse-json@4.0.0:
@@ -8587,10 +8572,6 @@ packages:
 
   /@types/parse5@5.0.3:
     resolution: {integrity: sha512-kUNnecmtkunAoQ3CnjmMkzNU/gtxG8guhi+Fk2U/kOpIKjIMKnXGp4IJCgQJrXSgMsWYimYG4TGjz/UzbGEBTw==}
-    dev: false
-
-  /@types/prettier@2.7.2:
-    resolution: {integrity: sha512-KufADq8uQqo1pYKVIYzfKbJfBAc0sOeXqGbFaSpv8MRmC/zXgowNZmFcbngndGk922QDmOASEXUZCaY48gs4cg==}
     dev: false
 
   /@types/prop-types@15.7.5:
@@ -8644,7 +8625,7 @@ packages:
   /@types/responselike@1.0.0:
     resolution: {integrity: sha512-85Y2BjiufFzaMIlvJDvTTB8Fxl2xfLo4HgmHzVBz08w4wDePCTjYw66PdrolO0kzli3yam/YCgRufyo1DdQVTA==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/retry@0.12.0:
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
@@ -8657,7 +8638,7 @@ packages:
   /@types/sax@1.2.4:
     resolution: {integrity: sha512-pSAff4IAxJjfAXUG6tFkO7dsSbTmf8CtUpfhhZ5VhkRpC4628tJhh3+V6H1E+/Gs9piSzYKT5yzHO5M4GG9jkw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: false
 
   /@types/scheduler@0.16.2:
@@ -8674,7 +8655,7 @@ packages:
     resolution: {integrity: sha512-Cwo8LE/0rnvX7kIIa3QHCkcuF21c05Ayb0ZfxPiv0W8VRiZiNW/WuRupHKpqqGVGf7SUA44QSOUKaEd9lIrd/Q==}
     dependencies:
       '@types/mime': 1.3.2
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/serve-index@1.9.1:
     resolution: {integrity: sha512-d/Hs3nWDxNL2xAczmOVZNj92YZCS6RGxfBPjKzuu/XirCgXdpKEb88dYNbrYGint6IVWLNP+yonwVAuRC0T2Dg==}
@@ -8686,12 +8667,12 @@ packages:
     resolution: {integrity: sha512-z5xyF6uh8CbjAu9760KDKsH2FcDxZ2tFCsA4HIMWE6IkiYMXfVoa+4f9KX+FN0ZLsaMw1WNG2ETLA6N+/YA+cg==}
     dependencies:
       '@types/mime': 3.0.1
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
 
   /@types/sockjs@0.3.33:
     resolution: {integrity: sha512-f0KEEe05NvUnat+boPTZ0dgaLZ4SfSouXUgv5noUiefG2ajgKjmETo9ZJyuqsl7dfl2aHlLJUiki6B4ZYldiiw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
     dev: false
 
   /@types/stack-trace@0.0.29:
@@ -8923,7 +8904,7 @@ packages:
       '@babel/plugin-transform-react-jsx-source': 7.19.6(@babel/core@7.23.2)
       magic-string: 0.27.0
       react-refresh: 0.14.0
-      vite: 4.1.2(@types/node@20.10.4)
+      vite: 4.1.2(@types/node@20.11.4)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -12999,7 +12980,7 @@ packages:
     resolution: {integrity: sha512-EzV94NYKoO09GLXGjXj9JIlXijVck4ONSr5wiCWDvhsvj5jxSrzTmRU/9C1DyB6uToszLs8aifA6NQ7lEQdvFw==}
     engines: {node: '>= 0.8'}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       require-like: 0.1.2
     dev: false
 
@@ -15317,7 +15298,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       chalk: 4.1.2
       ci-info: 3.8.0
       graceful-fs: 4.2.11
@@ -15328,7 +15309,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false
@@ -15337,7 +15318,7 @@ packages:
     resolution: {integrity: sha512-lY4AnnmsEWeiXirAIA0c9SDPbuCBq8IYuDVL8PMm0MZ2PEs2yPvRA/J64QBXuZp7CYKrDM/rmNrc9/i3KJQncw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 20.11.4
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -18933,16 +18914,15 @@ packages:
       fast-diff: 1.2.0
     dev: true
 
-  /prettier-plugin-tailwindcss@0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8):
-    resolution: {integrity: sha512-Rna0sDPETA0KNhMHlN8wxKNgfSa8mTl2hPPAGxnbv6tUcHT6J4RQmQ8TLXyhB7Dm5Von4iHloBxTyClYM6wT0A==}
-    engines: {node: '>=12.17.0'}
+  /prettier-plugin-tailwindcss@0.5.11(@ianvs/prettier-plugin-sort-imports@4.1.1)(prettier@3.2.2):
+    resolution: {integrity: sha512-AvI/DNyMctyyxGOjyePgi/gqj5hJYClZ1avtQvLlqMT3uDZkRbi4HhGUpok3DRzv9z7Lti85Kdj3s3/1CeNI0w==}
+    engines: {node: '>=14.21.3'}
     peerDependencies:
       '@ianvs/prettier-plugin-sort-imports': '*'
       '@prettier/plugin-pug': '*'
       '@shopify/prettier-plugin-liquid': '*'
-      '@shufo/prettier-plugin-blade': '*'
       '@trivago/prettier-plugin-sort-imports': '*'
-      prettier: ^2.2 || ^3.0
+      prettier: ^3.0
       prettier-plugin-astro: '*'
       prettier-plugin-css-order: '*'
       prettier-plugin-import-sort: '*'
@@ -18959,8 +18939,6 @@ packages:
       '@prettier/plugin-pug':
         optional: true
       '@shopify/prettier-plugin-liquid':
-        optional: true
-      '@shufo/prettier-plugin-blade':
         optional: true
       '@trivago/prettier-plugin-sort-imports':
         optional: true
@@ -18985,14 +18963,21 @@ packages:
       prettier-plugin-twig-melody:
         optional: true
     dependencies:
-      '@ianvs/prettier-plugin-sort-imports': 4.0.0(prettier@2.8.8)
-      prettier: 2.8.8
+      '@ianvs/prettier-plugin-sort-imports': 4.1.1(prettier@3.2.2)
+      prettier: 3.2.2
     dev: false
 
   /prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
     hasBin: true
+    dev: true
+
+  /prettier@3.2.2:
+    resolution: {integrity: sha512-HTByuKZzw7utPiDO523Tt2pLtEyK7OibUD9suEJQrPUCYQqrHr74GGX6VidMrovbf/I50mPqr8j/II6oBAuc5A==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dev: false
 
   /pretty-bytes@5.6.0:
     resolution: {integrity: sha512-FFw039TmrBqFK8ma/7OL3sDz/VytdtJr044/QUJtH0wK9lb9jLq9tJyIxUwtQJHwar2BqtiA4iCWSwo9JLkzFg==}
@@ -22545,6 +22530,40 @@ packages:
     optionalDependencies:
       fsevents: 2.3.3
 
+  /vite@4.1.2(@types/node@20.11.4):
+    resolution: {integrity: sha512-MWDb9Rfy3DI8omDQySbMK93nQqStwbsQWejXRY2EBzEWKmLAXWb1mkI9Yw2IJrc+oCvPCI1Os5xSSIBYY6DEAw==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': '>= 14'
+      less: '*'
+      sass: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      '@types/node': 20.11.4
+      esbuild: 0.16.17
+      postcss: 8.4.31
+      resolve: 1.22.8
+      rollup: 3.17.1
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
   /vitest-environment-miniflare@2.12.0(vitest@0.32.0):
     resolution: {integrity: sha512-YwdWVqTxtHfGzp0/q6dd9iKBdwJ5wqobFrRkDUE8oHe7UfHGkGfeTZ26DRnqgBeoxgg/3ZLSd0sNoBJLWiqdyQ==}
     engines: {node: '>=16.13'}
@@ -23340,7 +23359,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplesnext-websockets-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplesnext-websockets-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)':
@@ -23357,7 +23376,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplestrpc-next-prisma-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)':
@@ -23374,10 +23393,10 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-todomvc'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplesnext-websockets-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplesnext-websockets-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
     version: 4.14.1
@@ -23387,7 +23406,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
     version: 4.14.1
@@ -23397,7 +23416,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252540examplestrpc-next-prisma-todomvc':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252540examplestrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
     version: 4.14.1

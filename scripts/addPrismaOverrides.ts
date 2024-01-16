@@ -48,7 +48,7 @@ async function main() {
     }),
   );
 
-  const formattedPkgJson = prettier.format(JSON.stringify(rootPkgJson), {
+  const formattedPkgJson = await prettier.format(JSON.stringify(rootPkgJson), {
     parser: 'json-stringify',
     printWidth: 80,
     endOfLine: 'auto',

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFile } from 'node:fs';
+import { readFileSync, writeFile } from 'node:fs';
 import path from 'node:path';
 import analyze from 'rollup-plugin-analyzer';
 
@@ -8,19 +8,20 @@ const PERCENT_CHANGE_THRESHOLD = 1;
 export default function analyzeSizeChange(packageDir: string) {
   let analyzePluginIterations = 0;
   return analyze({
-    summaryOnly: process.env.CI ? undefined : true,
-    skipFormatted: process.env.CI ? true : undefined,
+    summaryOnly: process.env['CI'] ? undefined : true,
+    skipFormatted: process.env['CI'] ? true : undefined,
     onAnalysis: (analysis) => {
       if (analyzePluginIterations > 0) {
         throw ''; // We only want reports on the first output
       }
       analyzePluginIterations++;
-      if (process.env.CI) {
+      if (process.env['CI']) {
         const { currentPath, prevPath } = resolveJsonPaths(packageDir);
 
         writeFile(
           currentPath,
           JSON.stringify(analysis, undefined, 2),
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
           () => {},
         );
 
@@ -148,7 +149,7 @@ function stripAnsiEscapes(str: string) {
   return str.replace(ansiRegex, '');
 }
 
-function formatGithubOptions(options: Record<string, string>) {
+function formatGithubOptions(options: GitHubLogOptions) {
   return Object.entries(options)
     .map(([key, option]) => `${key}=${option}`)
     .join(',');
