@@ -76,8 +76,8 @@ export type WithoutIndexSignature<TObj> = {
   [K in keyof TObj as string extends K
     ? never
     : number extends K
-    ? never
-    : K]: TObj[K];
+      ? never
+      : K]: TObj[K];
 };
 
 /**
@@ -94,14 +94,14 @@ export type Overwrite<TType, TWith> = TWith extends any
           | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
           ? TWith[K]
           : K extends keyof TType
-          ? TType[K]
-          : never;
+            ? TType[K]
+            : never;
       } & (string extends keyof TWith // Handle cases with an index signature
         ? { [key: string]: TWith[string] }
         : number extends keyof TWith
-        ? { [key: number]: TWith[number] }
-        : // eslint-disable-next-line @typescript-eslint/ban-types
-          {})
+          ? { [key: number]: TWith[number] }
+          : // eslint-disable-next-line @typescript-eslint/ban-types
+            {})
     : TWith
   : never;
 

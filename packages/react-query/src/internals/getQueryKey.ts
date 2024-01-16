@@ -79,16 +79,22 @@ type GetParams<
       ..._params: GetQueryParams<TProcedureOrRouter>,
     ]
   : TProcedureOrRouter extends AnyMutationProcedure
-  ? [procedureOrRouter: DecorateProcedure<TConfig, TProcedureOrRouter, TFlags>]
-  : TProcedureOrRouter extends AnyRouter
-  ? [
-      procedureOrRouter: DecoratedProcedureRecord<
-        TConfig,
-        TProcedureOrRouter['_def']['record'],
-        TFlags
-      >,
-    ]
-  : never;
+    ? [
+        procedureOrRouter: DecorateProcedure<
+          TConfig,
+          TProcedureOrRouter,
+          TFlags
+        >,
+      ]
+    : TProcedureOrRouter extends AnyRouter
+      ? [
+          procedureOrRouter: DecoratedProcedureRecord<
+            TConfig,
+            TProcedureOrRouter['_def']['record'],
+            TFlags
+          >,
+        ]
+      : never;
 
 type GetQueryKeyParams<
   TConfig extends AnyRootConfig,

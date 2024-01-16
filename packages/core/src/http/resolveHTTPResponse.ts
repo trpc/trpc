@@ -106,8 +106,8 @@ function initResponse<
   const data = eagerGeneration
     ? []
     : Array.isArray(untransformedJSON)
-    ? untransformedJSON
-    : [untransformedJSON];
+      ? untransformedJSON
+      : [untransformedJSON];
 
   const meta =
     responseMeta?.({

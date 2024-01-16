@@ -94,14 +94,14 @@ export interface ProcedureBuilder<
     schema: TInputOut extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser
-            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : ErrorMessage<'All input parsers did not resolve to an object'>
-      : ErrorMessage<'All input parsers did not resolve to an object'>,
+        ? TInputOut extends Record<string, unknown> | undefined
+          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+            ? undefined extends TInputOut
+              ? $Parser
+              : ErrorMessage<'Cannot chain an optional parser to a required parser'>
+            : $Parser
+          : ErrorMessage<'All input parsers did not resolve to an object'>
+        : ErrorMessage<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,

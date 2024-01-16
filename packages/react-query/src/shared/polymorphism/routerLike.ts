@@ -22,8 +22,8 @@ export type RouterLikeInner<
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? RouterLikeInner<TConfig, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyQueryProcedure
-    ? QueryLike<TConfig, TProcedures[TKey]>
-    : TProcedures[TKey] extends AnyMutationProcedure
-    ? MutationLike<TConfig, TProcedures[TKey]>
-    : never;
+      ? QueryLike<TConfig, TProcedures[TKey]>
+      : TProcedures[TKey] extends AnyMutationProcedure
+        ? MutationLike<TConfig, TProcedures[TKey]>
+        : never;
 };

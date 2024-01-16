@@ -50,28 +50,27 @@ export type AWSLambdaCreateContextFn<
 export type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
-> =
+> = {
+  router: TRouter;
+  batching?: {
+    enabled: boolean;
+  };
+  onError?: OnErrorFunction<TRouter, TEvent>;
+  responseMeta?: ResponseMetaFn<TRouter>;
+} & (
   | {
-      router: TRouter;
-      batching?: {
-        enabled: boolean;
-      };
-      onError?: OnErrorFunction<TRouter, TEvent>;
-      responseMeta?: ResponseMetaFn<TRouter>;
-    } & (
-      | {
-          /**
-           * @link https://trpc.io/docs/v11/context
-           **/
-          createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
-        }
-      | {
-          /**
-           * @link https://trpc.io/docs/v11/context
-           **/
-          createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
-        }
-    );
+      /**
+       * @link https://trpc.io/docs/v11/context
+       **/
+      createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
+    }
+  | {
+      /**
+       * @link https://trpc.io/docs/v11/context
+       **/
+      createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
+    }
+);
 
 export function isPayloadV1(
   event: APIGatewayEvent,

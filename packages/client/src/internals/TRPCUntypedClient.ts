@@ -30,26 +30,26 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
         transformer?: 'You must set a transformer on the backend router';
       }
     : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
-          ? DataTransformerOptions
-          : TRouter['_def']['_config']['transformer'];
-      }
-    : {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer?: CombinedDataTransformer;
-      };
+      ? {
+          /**
+           * Data transformer
+           *
+           * You must use the same transformer on the backend and frontend
+           * @link https://trpc.io/docs/v11/data-transformers
+           **/
+          transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
+            ? DataTransformerOptions
+            : TRouter['_def']['_config']['transformer'];
+        }
+      : {
+          /**
+           * Data transformer
+           *
+           * You must use the same transformer on the backend and frontend
+           * @link https://trpc.io/docs/v11/data-transformers
+           **/
+          transformer?: CombinedDataTransformer;
+        };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
 export interface TRPCRequestOptions {
@@ -70,9 +70,9 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 
 /** @internal */
 export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions<TRouter> & {
-      links: TRPCLink<TRouter>[];
-    };
+  CreateTRPCClientBaseOptions<TRouter> & {
+    links: TRPCLink<TRouter>[];
+  };
 
 /** @internal */
 export type UntypedClientProperties =
