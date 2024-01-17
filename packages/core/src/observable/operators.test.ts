@@ -111,7 +111,7 @@ test('share', () => {
     expect(next.mock.calls).toHaveLength(1);
     expect(complete.mock.calls).toHaveLength(0);
     expect(error.mock.calls).toHaveLength(0);
-    expect(next.mock.calls[0]![0]!).toBe(1);
+    expect(next.mock.calls[0]![0]).toBe(1);
   }
 
   {
@@ -145,7 +145,7 @@ test('share', () => {
     expect(next.mock.calls).toHaveLength(1);
     expect(complete.mock.calls).toHaveLength(0);
     expect(error.mock.calls).toHaveLength(0);
-    expect(next.mock.calls[0]![0]!).toBe(1);
+    expect(next.mock.calls[0]![0]).toBe(1);
     subscription3.unsubscribe();
   }
 });

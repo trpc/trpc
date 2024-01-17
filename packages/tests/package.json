@@ -39,7 +39,7 @@
     "concurrently": "^8.0.0",
     "dataloader": "^2.2.2",
     "devalue": "^4.0.0",
-    "eslint": "^8.40.0",
+    "eslint": "^8.56.0",
     "fastify": "^4.13.0",
     "fastify-plugin": "^4.5.0",
     "jsdom": "^23.0.0",

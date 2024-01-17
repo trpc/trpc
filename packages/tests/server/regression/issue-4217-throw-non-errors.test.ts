@@ -36,7 +36,7 @@ test('preserve `.cause` even on non-error objects', async () => {
   await waitError<TClientError>(() => ctx.client.throws.query());
 
   expect(ctx.onError).toHaveBeenCalledTimes(1);
-  const error = ctx.onError.mock.calls[0]![0]!.error as TRPCError & {
+  const error = ctx.onError.mock.calls[0]![0].error as TRPCError & {
     cause: any;
   };
   expect(error).toMatchInlineSnapshot('[TRPCError: Custom error message]');

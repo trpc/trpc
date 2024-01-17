@@ -11,7 +11,7 @@ function set(
   if (path.length > 1) {
     const p = path.shift()!;
     const isArrayIndex = /^\d+$/.test(path[0]!);
-    obj[p] = obj[p] || (isArrayIndex ? [] : {});
+    obj[p] ??= isArrayIndex ? [] : {};
     set(obj[p], path, value);
     return;
   }
