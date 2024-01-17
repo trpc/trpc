@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import * as React from 'react';
 
 export interface TRPCHookResult {
   trpc: {
@@ -12,7 +12,7 @@ export interface TRPCHookResult {
 export function useHookResult(
   value: TRPCHookResult['trpc'],
 ): TRPCHookResult['trpc'] {
-  const ref = useRef(value);
+  const ref = React.useRef(value);
   ref.current.path = value.path;
   return ref.current;
 }
