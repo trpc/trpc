@@ -76,6 +76,17 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "@trpc/client": {
+      "optional": true
+    },
+    "@trpc/react-query": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
