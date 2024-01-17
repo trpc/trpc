@@ -80,9 +80,6 @@
     "@tanstack/react-query": {
       "optional": true
     },
-    "@trpc/client": {
-      "optional": true
-    },
     "@trpc/react-query": {
       "optional": true
     }
