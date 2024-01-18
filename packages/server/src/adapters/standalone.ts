@@ -35,6 +35,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
+      ...(opts as CreateHTTPHandlerOptions<AnyRouter>),
       ...(opts as any),
       req,
       res,

@@ -28,7 +28,11 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
-      ...(opts as any),
+      ...(opts as NodeHTTPHandlerOptions<
+        AnyRouter,
+        express.Request,
+        express.Response
+      >),
       req,
       res,
       path: endpoint,
