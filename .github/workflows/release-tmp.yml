@@ -4,7 +4,7 @@ on:
   push:
     branches:
       # Replace this with the branch you want to release from 👇
-      - 'export-from-main'
+      - 'export-from-main-nuke-core'
     paths:
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
