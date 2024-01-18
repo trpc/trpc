@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/server": "npm:@trpc/server@next"
+    "@trpc/server": "npm:@trpc/server@next",
+    "zod": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
