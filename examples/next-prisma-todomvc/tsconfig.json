@@ -17,16 +17,16 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
+      "~/*": ["./src/*"]
     },
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     "next.config.js",
-    "next-i18next.config.js",
+    "next-i18next.config.js"
   ],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules"]
 }

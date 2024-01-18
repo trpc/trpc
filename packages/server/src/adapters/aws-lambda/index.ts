@@ -98,8 +98,8 @@ function tRPCOutputToAPIGatewayOutput<
 type inferAPIGWReturn<TType> = TType extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
   : TType extends APIGatewayProxyEventV2
-    ? APIGatewayProxyStructuredResultV2
-    : never;
+  ? APIGatewayProxyStructuredResultV2
+  : never;
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,

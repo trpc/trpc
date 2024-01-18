@@ -23,14 +23,14 @@ export type DecorateProcedureServer<
       >;
     }
   : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TConfig, TProcedure>;
-      }
-    : TProcedure extends AnySubscriptionProcedure
-      ? {
-          subscribe: Resolver<TConfig, TProcedure>;
-        }
-      : never;
+  ? {
+      mutate: Resolver<TConfig, TProcedure>;
+    }
+  : TProcedure extends AnySubscriptionProcedure
+  ? {
+      subscribe: Resolver<TConfig, TProcedure>;
+    }
+  : never;
 
 export type NextAppDirDecoratedProcedureRecord<
   TConfig extends AnyRootConfig,
@@ -42,6 +42,6 @@ export type NextAppDirDecoratedProcedureRecord<
         TProcedures[TKey]['_def']['record']
       >
     : TProcedures[TKey] extends AnyProcedure
-      ? DecorateProcedureServer<TConfig, TProcedures[TKey]>
-      : never;
+    ? DecorateProcedureServer<TConfig, TProcedures[TKey]>
+    : never;
 };

@@ -11,8 +11,8 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "isolatedModules": true,
-    "types": ["@cloudflare/workers-types"],
+    "types": ["@cloudflare/workers-types"]
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules"]
 }

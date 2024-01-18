@@ -21,8 +21,12 @@ export type ErrorFormatter<
   shape: DefaultErrorShape;
 }) => TShape;
 
-export type ErrorFormatterShape<TType> =
-  TType extends ErrorFormatter<any, infer TShape> ? TShape : DefaultErrorShape;
+export type ErrorFormatterShape<TType> = TType extends ErrorFormatter<
+  any,
+  infer TShape
+>
+  ? TShape
+  : DefaultErrorShape;
 /**
  * @internal
  */

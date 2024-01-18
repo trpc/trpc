@@ -30,8 +30,8 @@ export type ProcedureArgs<TParams extends AnyProcedure['_def']> =
   void extends TParams['_input_in']
     ? [input?: undefined | void, opts?: ProcedureOptions]
     : undefined extends TParams['_input_in']
-      ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
-      : [input: TParams['_input_in'], opts?: ProcedureOptions];
+    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
+    : [input: TParams['_input_in'], opts?: ProcedureOptions];
 
 interface BuiltProcedureDef {
   input: unknown;

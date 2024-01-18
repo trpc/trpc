@@ -6,7 +6,7 @@
     "scripts",
     "examples",
     "rollup.config.ts",
-    ".eslintrc.js",
+    ".eslintrc.js"
   ],
   "exclude": [],
   "compilerOptions": {
@@ -23,8 +23,8 @@
       "@trpc/server": ["packages/server/src"],
       "@trpc/server/*": ["packages/server/src/*"],
       "@trpc/core": ["packages/core/src"],
-      "@trpc/core/*": ["packages/core/src/*"],
+      "@trpc/core/*": ["packages/core/src/*"]
     },
-    "types": ["node", "vitest/globals"],
-  },
+    "types": ["node", "vitest/globals"]
+  }
 }

@@ -106,10 +106,10 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
     [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends LegacyV9ProcedureTag
       ? never
       : TRouter['_def']['record'][TKey] extends AnyRouter
-        ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
-        : TRouter['_def']['record'][TKey] extends AnyQueryProcedure
-          ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
-          : never;
+      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]>
+      : TRouter['_def']['record'][TKey] extends AnyQueryProcedure
+      ? DecorateProcedure<TRouter, TRouter['_def']['record'][TKey]>
+      : never;
   }>;
 ```
 

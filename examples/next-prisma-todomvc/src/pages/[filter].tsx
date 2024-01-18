@@ -250,10 +250,12 @@ export default function TodosPage(props: PageProps) {
                 props.filter === 'completed'
                   ? completed
                   : props.filter === 'active'
-                    ? !completed
-                    : true,
+                  ? !completed
+                  : true,
               )
-              .map((task) => <ListItem key={task.id} task={task} />)}
+              .map((task) => (
+                <ListItem key={task.id} task={task} />
+              ))}
           </ul>
         </section>
 

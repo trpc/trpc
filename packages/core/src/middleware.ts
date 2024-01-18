@@ -106,9 +106,9 @@ export type MiddlewareFunction<
         ctx?: $ContextOverride;
         input?: unknown;
       }): Promise<MiddlewareResult<$ContextOverride>>;
-      (opts: {
-        getRawInput: GetRawInputFn;
-      }): Promise<MiddlewareResult<TContextOverridesIn>>;
+      (opts: { getRawInput: GetRawInputFn }): Promise<
+        MiddlewareResult<TContextOverridesIn>
+      >;
     };
   }): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;

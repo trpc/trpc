@@ -5,8 +5,8 @@
     "esModuleInterop": true,
     "strict": true,
     "moduleResolution": "node",
-    "noEmit": true,
+    "noEmit": true
   },
   "include": ["src"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules"]
 }

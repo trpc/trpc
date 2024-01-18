@@ -54,12 +54,12 @@ for (const sponsor of sponsors) {
   const section = sections.diamond.includes(login)
     ? 'diamond'
     : sections.gold.includes(login)
-      ? 'gold'
-      : sections.silver.includes(login)
-        ? 'silver'
-        : sections.bronze.includes(login)
-          ? 'bronze'
-          : 'other';
+    ? 'gold'
+    : sections.silver.includes(login)
+    ? 'silver'
+    : sections.bronze.includes(login)
+    ? 'bronze'
+    : 'other';
 
   buckets[section].push(sponsor);
 }

@@ -11,8 +11,8 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "isolatedModules": true,
-    "types": ["@edge-runtime/types"],
+    "types": ["@edge-runtime/types"]
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules"]
 }

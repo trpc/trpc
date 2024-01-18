@@ -34,14 +34,16 @@ async function main() {
       const prismaClientVersion = pkgJson.dependencies?.['@prisma/client'];
       if (prismaClientVersion) {
         const version = prismaClientVersion.replace('^', '');
-        rootPkgJson.pnpm.overrides[`${pkgJson.name}>@prisma/client`] =
-          `https://registry.npmjs.com/@prisma/client/-/client-${version}.tgz?id=${encodeURIComponent(
-            pkgJson.name.replace(/\/|@/g, ''), // remove @ and / before. vitest hiccups otherwise
-          )}`;
-        rootPkgJson.pnpm.overrides[`${pkgJson.name}>prisma`] =
-          `https://registry.npmjs.com/prisma/-/prisma-${version}.tgz?id=${encodeURIComponent(
-            pkgJson.name.replace(/\//g, ''),
-          )}`;
+        rootPkgJson.pnpm.overrides[
+          `${pkgJson.name}>@prisma/client`
+        ] = `https://registry.npmjs.com/@prisma/client/-/client-${version}.tgz?id=${encodeURIComponent(
+          pkgJson.name.replace(/\/|@/g, ''), // remove @ and / before. vitest hiccups otherwise
+        )}`;
+        rootPkgJson.pnpm.overrides[
+          `${pkgJson.name}>prisma`
+        ] = `https://registry.npmjs.com/prisma/-/prisma-${version}.tgz?id=${encodeURIComponent(
+          pkgJson.name.replace(/\//g, ''),
+        )}`;
       }
     }),
   );
