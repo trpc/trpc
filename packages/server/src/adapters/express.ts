@@ -9,7 +9,7 @@
  * ```
  */
 import type * as express from 'express';
-import type { AnyRouter } from '../@trpc-server';
+import type { AnyRouter } from '../@trpc/server';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -29,7 +29,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
-      ...(opts ),
+      ...(opts as any),
       req,
       res,
       path: endpoint,

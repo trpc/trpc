@@ -16,15 +16,15 @@ import type {
   Context as APIGWContext,
 } from 'aws-lambda';
 // @trpc/server
-import type { AnyRouter } from '../../@trpc-server';
+import type { AnyRouter } from '../../@trpc/server';
 // @trpc/server
-import { TRPCError } from '../../@trpc-server';
+import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-} from '../../http';
-import { resolveHTTPResponse } from '../../http';
+} from '../../@trpc/server/http';
+import { resolveHTTPResponse } from '../../@trpc/server/http';
 import type {
   APIGatewayEvent,
   APIGatewayResult,

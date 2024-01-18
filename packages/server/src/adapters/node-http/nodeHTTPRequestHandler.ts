@@ -10,14 +10,17 @@
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 // @trpc/server
-import type { AnyRouter } from '../../@trpc-server';
+import type { AnyRouter } from '../../@trpc/server';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
-} from '../../http';
-import { getBatchStreamFormatter, resolveHTTPResponse } from '../../http';
+} from '../../@trpc/server/http';
+import {
+  getBatchStreamFormatter,
+  resolveHTTPResponse,
+} from '../../@trpc/server/http';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 import type {
@@ -51,7 +54,7 @@ export async function nodeHTTPRequestHandler<
     };
 
     const query = opts.req.query
-      ? new URLSearchParams(opts.req.query )
+      ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
     const jsonContentTypeHandler =

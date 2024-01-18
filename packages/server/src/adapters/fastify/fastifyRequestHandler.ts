@@ -11,15 +11,18 @@
 import { Readable } from 'node:stream';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 // @trpc/server
-import type { AnyRouter } from '../../@trpc-server';
+import type { AnyRouter } from '../../@trpc/server';
 import type {
   HTTPBaseHandlerOptions,
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
-} from '../../http';
-import { getBatchStreamFormatter, resolveHTTPResponse } from '../../http';
+} from '../../@trpc/server/http';
+import {
+  getBatchStreamFormatter,
+  resolveHTTPResponse,
+} from '../../@trpc/server/http';
 import type { NodeHTTPCreateContextOption } from '../node-http';
 
 export type FastifyHandlerOptions<

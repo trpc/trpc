@@ -1,14 +1,14 @@
 import type { IncomingMessage } from 'http';
 import type ws from 'ws';
-import type { AnyRouter, inferRouterContext } from '../@trpc-server';
+import type { AnyRouter, inferRouterContext } from '../@trpc/server';
 import {
   callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   TRPCError,
-} from '../@trpc-server';
-import type { BaseHandlerOptions } from '../http';
+} from '../@trpc/server';
+import type { BaseHandlerOptions } from '../@trpc/server/http';
 import { isObservable } from '../observable';
 import type { Unsubscribable } from '../observable';
 import { parseTRPCMessage } from '../rpc';

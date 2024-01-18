@@ -10,9 +10,9 @@
  */
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 // @trpc/server
-import type { AnyRouter } from '../@trpc-server';
+import type { AnyRouter } from '../@trpc/server';
 // @trpc/server
-import { getErrorShape, TRPCError } from '../@trpc-server';
+import { getErrorShape, TRPCError } from '../@trpc/server';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -63,7 +63,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
-      ...(opts ),
+      ...(opts as any),
       req,
       res,
       path,

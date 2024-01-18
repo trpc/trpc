@@ -11,7 +11,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 // @trpc/server
-import type { AnyRouter } from '../@trpc-server';
+import type { AnyRouter } from '../@trpc/server';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -36,7 +36,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
-      ...(opts ),
+      ...(opts as any),
       req,
       res,
       path,
