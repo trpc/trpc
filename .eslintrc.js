@@ -160,7 +160,7 @@ const config = {
               {
                 group: ['unstable-core-do-not-import'],
                 message:
-                  'Use e.g. `../http` instead - avoiding importing core helps us ensure third party adapters can be made',
+                  'Use e.g. `../@trpc/server/http` instead - avoiding importing core helps us ensure third party adapters can be made',
               },
             ],
           },
