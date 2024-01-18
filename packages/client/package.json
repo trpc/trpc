@@ -75,9 +75,9 @@
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
+    "@trpc/server": "10.45.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^20.10.0",
-    "@trpc/server": "10.45.0",
     "eslint": "^8.40.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
