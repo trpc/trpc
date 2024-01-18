@@ -30,7 +30,7 @@
     "postinstall": "pnpm codegen",
     "prepack": "tsx scripts/version.ts",
     "version": "tsx scripts/version.ts",
-    "link-all": "cd packages/core && pnpm link --global && cd ../server && pnpm link --global && cd ../client && pnpm link --global && cd ../react-query && pnpm link --global && cd ../next && pnpm link --global",
+    "link-all": "cd packages && cd ../server && pnpm link --global && cd ../client && pnpm link --global && cd ../react-query && pnpm link --global && cd ../next && pnpm link --global",
     "commit-date": "git log -n 1 --date=format:'%Y-%m-%d-%H-%M-%S' --pretty=format:'%ad'",
     "canary-preid": "echo \"$(pnpm --silent current-branch)-$(pnpm --silent commit-date)\"",
     "current-branch": "echo \"$(git rev-parse --abbrev-ref HEAD)\" | sed -E 's/refs\\/heads\\///' | sed -E 's/\\W|_/-/g' | sed -e 's/\\//-/'",
