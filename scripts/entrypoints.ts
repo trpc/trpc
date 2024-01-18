@@ -44,14 +44,6 @@ export async function generateEntrypoints(rawInputs: string[]) {
     },
   };
 
-  // const dirname = path.basename(path.dirname(pkgJsonPath));
-  // if (dirname !== 'core') {
-  //   // Adds a re-export of `@trpc/core` to all packages except `core`
-  //   const coreReExport = 'src/unstableDoNotImportThis.ts';
-  //   inputs.push(coreReExport);
-  //   writeFileSyncRecursive(path.resolve(coreReExport), coreReExportSnippet);
-  // }
-
   // Added to turbo.json pipeline output to ensure cache works
   const scriptOutputs = new Set<string>();
   scriptOutputs.add('package.json');
