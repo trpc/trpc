@@ -1,11 +1,12 @@
 /**
- * **DO NOT IMPORT THIS FILE**
+ * **DO NOT IMPORT FROM HERE FILE**
+ *
  * This file is here to:
  * - make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
- * - the the blue between the official `@trpc/*`-packages
+ * - the the glue between the official `@trpc/*`-packages
  *
  *
- * If you need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
+ * If you seem to need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
  */
 export type { DefaultErrorShape, DefaultErrorData } from './error/formatter';
 export { getErrorShape } from './error/getErrorShape';

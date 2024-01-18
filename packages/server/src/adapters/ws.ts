@@ -9,15 +9,16 @@ import {
   TRPCError,
 } from '../@trpc/server';
 import type { BaseHandlerOptions } from '../@trpc/server/http';
-import { isObservable } from '../observable';
-import type { Unsubscribable } from '../observable';
-import { parseTRPCMessage } from '../rpc';
+import { parseTRPCMessage } from '../@trpc/server/rpc';
+// @trpc/server/rpc
 import type {
   JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
-} from '../rpc';
+} from '../@trpc/server/rpc';
+import { isObservable } from '../observable';
+import type { Unsubscribable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
