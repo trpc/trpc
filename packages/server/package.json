@@ -139,7 +139,7 @@
     "next": "^14.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rollup": "^2.79.1",
+    "rollup": "^4.9.5",
     "superjson": "^1.12.4",
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
