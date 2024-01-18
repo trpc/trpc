@@ -46,9 +46,7 @@
     "tailwind-merge": "^2.0.0",
     "zod": "^3.0.0"
   },
-  "peerDependencies": {
-    "@trpc/server": "^10.45.0"
-  },
+  "peerDependencies": {},
   "browserslist": {
     "production": [
       ">0.5%",
