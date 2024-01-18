@@ -32,10 +32,28 @@ export function getQueryKeyInternal(
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  if (!input && (!type || type === 'any'))
+  if (!input && (!type || type === 'any')) {
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
     // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
     return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
+  }
+
+  if (
+    type === 'infinite' &&
+    input &&
+    typeof input === 'object' &&
+    'cursor' in input
+  ) {
+    const { cursor: _, ...inputWithoutCursor } = input;
+
+    return [
+      splitPath,
+      {
+        input: inputWithoutCursor,
+        type: 'infinite',
+      },
+    ];
+  }
   return [
     splitPath,
     {
