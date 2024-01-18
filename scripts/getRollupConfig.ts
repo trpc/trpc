@@ -2,7 +2,6 @@ import path from 'path';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import type { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
-import multiInput from 'rollup-plugin-multi-input';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
 import typescript from 'rollup-plugin-typescript2';
@@ -31,13 +30,14 @@ function types({ input, packageDir }: Options): RollupOptions {
     input,
     output: {
       dir: `${packageDir}/dist`,
+      preserveModules: true,
+      preserveModulesRoot: 'src',
     },
     plugins: [
       !isWatchMode &&
         del({
           targets: `${packageDir}/dist`,
         }),
-      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
         deps: true,
@@ -62,16 +62,19 @@ function lib({ input, packageDir }: Options): RollupOptions {
         format: 'cjs',
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
       },
       {
         dir: `${packageDir}/dist`,
         format: 'esm',
         entryFileNames: '[name].mjs',
         chunkFileNames: '[name]-[hash].mjs',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
       },
     ],
     plugins: [
-      multiInput({ relative: path.resolve(packageDir, 'src/') }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
       }),

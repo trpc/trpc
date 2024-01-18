@@ -13,7 +13,7 @@ import type {
   ProtectedIntersection,
 } from '@trpc/core';
 import { createFlatProxy } from '@trpc/core';
-import { useMemo } from 'react';
+import * as React from 'react';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
@@ -288,7 +288,7 @@ export function createHooksInternal<
       return () => {
         const context = trpc.useUtils();
         // create a stable reference of the utils context
-        return useMemo(() => {
+        return React.useMemo(() => {
           return (createReactQueryUtils as any)(context);
         }, [context]);
       };
