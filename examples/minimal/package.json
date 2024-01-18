@@ -12,8 +12,8 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "next",
-    "@trpc/server": "next"
+    "@trpc/client": "10.45.0",
+    "@trpc/server": "10.45.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
