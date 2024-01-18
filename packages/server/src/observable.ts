@@ -5,7 +5,7 @@ export type {
   Unsubscribable,
   UnsubscribeFn,
   inferObservableValue,
-} from './@trpc-core-unstable-do-not-import-this-please';
+} from './unstable-core-do-not-import';
 export {
   isObservable,
   map,
@@ -13,4 +13,4 @@ export {
   observableToPromise,
   share,
   tap,
-} from './@trpc-core-unstable-do-not-import-this-please';
+} from './unstable-core-do-not-import';

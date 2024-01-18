@@ -29,7 +29,7 @@ export {
   type ProcedureRouterRecord as TRPCProcedureRouterRecord,
   type ProcedureArgs as TRPCProcedureArgs,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
-} from './@trpc-core-unstable-do-not-import-this-please';
+} from './unstable-core-do-not-import';
 
 export type {
   /**
@@ -83,7 +83,7 @@ export type {
    * @deprecated use `AnyTRPCSubscriptionProcedure` instead
    */
   AnySubscriptionProcedure,
-} from '@trpc/core';
+} from './unstable-core-do-not-import';
 
 export {
   /**
@@ -95,7 +95,7 @@ export {
    * @deprecated use `callTRPCProcedure` instead
    */
   callProcedure,
-} from '@trpc/core';
+} from './unstable-core-do-not-import';
 
 /**
  * @deprecated

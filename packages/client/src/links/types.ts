@@ -6,7 +6,7 @@ import type {
   Observer,
   TRPCResultMessage,
   TRPCSuccessResponse,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
 

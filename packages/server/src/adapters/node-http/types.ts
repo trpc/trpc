@@ -1,7 +1,7 @@
 /**
  * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
  *
- * Do **not** import from `@trpc/core`
+ * Do **not** import from `@trpc/server/unstable-core-do-not-import`
  * @example
  * ```ts
  * import type { AnyTRPCRouter } from '@trpc/server'
@@ -9,8 +9,6 @@
  * ```
  */
 import type { IncomingMessage, ServerResponse } from 'http';
-// eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '@trpc/core';
 // @trpc/server
 import type { AnyRouter, inferRouterContext } from '../../@trpc-server';
 // @trpc/server/http
@@ -18,6 +16,7 @@ import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc-server/http';
+import type { MaybePromise } from '../../unstable-core-do-not-import';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {

@@ -3,7 +3,7 @@ import type {
   AnyRootConfig,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   InferMutationOptions,
   InferMutationResult,

@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
-import type { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';

@@ -5,7 +5,7 @@ import type {
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import type { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
 
 export type QueryType = 'any' | 'infinite' | 'query';

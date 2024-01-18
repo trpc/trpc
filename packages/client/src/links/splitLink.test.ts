@@ -1,5 +1,5 @@
-import type { AnyRouter } from '@trpc/core';
-import { observable } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { observable } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
 import { splitLink } from './splitLink';
 import type { OperationLink, TRPCLink } from './types';

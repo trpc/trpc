@@ -8,11 +8,11 @@ import {
   httpLink,
   TRPCClientError,
 } from '@trpc/client';
-import { isObject } from '@trpc/core';
-import type { OnErrorFunction } from '@trpc/core';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { observable } from '@trpc/server/observable';
+import { isObject } from '@trpc/server/unstable-core-do-not-import';
+import type { OnErrorFunction } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';

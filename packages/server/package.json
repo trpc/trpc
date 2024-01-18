@@ -97,6 +97,11 @@
       "import": "./dist/shared.mjs",
       "require": "./dist/shared.js",
       "default": "./dist/shared.js"
+    },
+    "./unstable-core-do-not-import": {
+      "import": "./dist/unstable-core-do-not-import/index.mjs",
+      "require": "./dist/unstable-core-do-not-import/index.js",
+      "default": "./dist/unstable-core-do-not-import/index.js"
     }
   },
   "files": [
@@ -109,14 +114,14 @@
     "observable",
     "rpc",
     "shared",
+    "unstable-core-do-not-import",
     "!**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@trpc/core": "10.45.0"
-  },
+  "dependencies": {},
+  "peerDependencies": {},
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
     "@tanstack/react-query": "^5.0.0",

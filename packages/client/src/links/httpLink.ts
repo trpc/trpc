@@ -1,5 +1,8 @@
-import type { AnyRouter } from '@trpc/core';
-import { observable, transformResult } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import {
+  observable,
+  transformResult,
+} from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,

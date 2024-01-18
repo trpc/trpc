@@ -1,2 +1,3 @@
 // This should be moved to a like `@trpc/plugin`-package
-export * from '@trpc/core';
+// FIXME - do not export *
+export * from '../unstable-core-do-not-import';

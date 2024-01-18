@@ -1,6 +1,6 @@
-import type { inferTransformedProcedureOutput } from '@trpc/core';
 import type { inferProcedureOutput, inferRouterOutputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
+import type { inferTransformedProcedureOutput } from '@trpc/server/unstable-core-do-not-import';
 import SuperJSON from 'superjson';
 import { z } from 'zod';
 

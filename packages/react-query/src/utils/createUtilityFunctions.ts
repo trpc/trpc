@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
-import type { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { getClientArgs } from '../internals/getClientArgs';
 import type { TRPCQueryUtils } from '../shared';
 

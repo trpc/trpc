@@ -1,14 +1,4 @@
 import type { IncomingMessage } from 'http';
-// eslint-disable-next-line no-restricted-imports
-import type {
-  BaseHandlerOptions,
-  JSONRPC2,
-  MaybePromise,
-  TRPCClientOutgoingMessage,
-  TRPCReconnectNotification,
-  TRPCResponseMessage,
-  Unsubscribable,
-} from '@trpc/core';
 import type ws from 'ws';
 import type { AnyRouter, inferRouterContext } from '../@trpc-server';
 import {
@@ -18,8 +8,17 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc-server';
+import type { BaseHandlerOptions } from '../http';
 import { isObservable } from '../observable';
+import type { Unsubscribable } from '../observable';
 import { parseTRPCMessage } from '../rpc';
+import type {
+  JSONRPC2,
+  TRPCClientOutgoingMessage,
+  TRPCReconnectNotification,
+  TRPCResponseMessage,
+} from '../rpc';
+import type { MaybePromise } from '../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**

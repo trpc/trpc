@@ -1,7 +1,10 @@
 /**
- * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
+ * This file is here to make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
+ *
+ * We're basically just re-exporting everything from core.
+ *
+ * If you need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
  */
-
 export type { DefaultErrorShape, DefaultErrorData } from './error/formatter';
 export { getErrorShape } from './error/getErrorShape';
 export {

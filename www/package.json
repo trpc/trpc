@@ -30,7 +30,6 @@
     "@docusaurus/types": "^2.4.1",
     "@mdx-js/react": "^1.6.22",
     "@trpc/client": "^10.45.0",
-    "@trpc/core": "^10.45.0",
     "@trpc/next": "^10.45.0",
     "@trpc/react-query": "^10.45.0",
     "@trpc/server": "^10.45.0",
@@ -46,6 +45,9 @@
     "react-icons": "^5.0.0",
     "tailwind-merge": "^2.0.0",
     "zod": "^3.0.0"
+  },
+  "peerDependencies": {
+    "@trpc/server": "10.45.0"
   },
   "browserslist": {
     "production": [

@@ -2,8 +2,14 @@
 
 import type { TRPCLink } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
-import type { AnyRouter, inferRouterContext } from '@trpc/core';
-import { callProcedure, observable } from '@trpc/core';
+import type {
+  AnyRouter,
+  inferRouterContext,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  callProcedure,
+  observable,
+} from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 

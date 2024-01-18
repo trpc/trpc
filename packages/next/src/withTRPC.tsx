@@ -10,13 +10,18 @@ import {
 } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
-import type { AnyRouter, Dict, Maybe, ResponseMeta } from '@trpc/core';
 import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
 } from '@trpc/react-query/shared';
 import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
+import type {
+  AnyRouter,
+  Dict,
+  Maybe,
+  ResponseMeta,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   AppContextType,
   AppPropsType,

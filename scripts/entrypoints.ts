@@ -35,9 +35,9 @@ function writeFileSyncRecursive(filePath: string, content: string) {
 //  * If you need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
 //  */
 
-// export * from '@trpc/core';
-// export * from '@trpc/core';
-// export * from '@trpc/core';
+// export * from '@trpc/server/unstable-core-do-not-import';
+// export * from '@trpc/server/unstable-core-do-not-import';
+// export * from '@trpc/server/unstable-core-do-not-import';
 // `.trimStart();
 
 export async function generateEntrypoints(rawInputs: string[]) {

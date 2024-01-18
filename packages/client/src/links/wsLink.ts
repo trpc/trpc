@@ -10,8 +10,11 @@ import type {
   TRPCRequestMessage,
   TRPCResponseMessage,
   UnsubscribeFn,
-} from '@trpc/core';
-import { observable, transformResult } from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  observable,
+  transformResult,
+} from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type { Operation, TRPCLink } from './types';
 

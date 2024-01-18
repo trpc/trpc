@@ -1,8 +1,8 @@
 export {
   getHTTPStatusCode,
   getHTTPStatusCodeFromError,
-} from './@trpc-core-unstable-do-not-import-this-please';
-export { resolveHTTPResponse } from './@trpc-core-unstable-do-not-import-this-please';
+} from './unstable-core-do-not-import';
+export { resolveHTTPResponse } from './unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
@@ -16,11 +16,11 @@ export type {
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
-} from './@trpc-core-unstable-do-not-import-this-please';
+} from './unstable-core-do-not-import';
 
-export { getBatchStreamFormatter } from './@trpc-core-unstable-do-not-import-this-please';
+export { getBatchStreamFormatter } from './unstable-core-do-not-import';
 export type {
   BaseContentTypeHandler,
   BodyResult,
-} from './@trpc-core-unstable-do-not-import-this-please';
-export { getJsonContentTypeInputs } from './@trpc-core-unstable-do-not-import-this-please';
+} from './unstable-core-do-not-import';
+export { getJsonContentTypeInputs } from './unstable-core-do-not-import';

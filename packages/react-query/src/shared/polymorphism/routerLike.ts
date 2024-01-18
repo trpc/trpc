@@ -4,7 +4,7 @@ import type {
   AnyQueryProcedure,
   AnyRootConfig,
   AnyRouter,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import type { MutationLike } from './mutationLike';
 import type { QueryLike } from './queryLike';
 

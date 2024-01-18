@@ -3,12 +3,12 @@ import type {
   Maybe,
   TRPCErrorResponse,
   TRPCInferrable,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   getCauseFromUnknown,
   isObject,
   type DefaultErrorShape,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;

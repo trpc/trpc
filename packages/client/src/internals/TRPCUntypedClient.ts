@@ -5,8 +5,11 @@ import type {
   DefaultDataTransformer,
   inferObservableValue,
   Unsubscribable,
-} from '@trpc/core';
-import { observableToPromise, share } from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  observableToPromise,
+  share,
+} from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
@@ -216,7 +219,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
         } else {
-          opts.onData?.((envelope.result as any).data);
+          opts.onData?.(envelope.result.data);
         }
       },
       error(err) {

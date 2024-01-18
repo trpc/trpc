@@ -1,7 +1,7 @@
 /**
  * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
  *
- * Do **not** import from `@trpc/core`
+ * Do **not** import from `@trpc/server/unstable-core-do-not-import`
  * @example
  * ```ts
  * import type { AnyTRPCRouter } from '@trpc/server'
@@ -9,7 +9,6 @@
  * ```
  */
 import type * as express from 'express';
-// @trpc/server
 import type { AnyRouter } from '../@trpc-server';
 import type {
   NodeHTTPCreateContextFnOptions,

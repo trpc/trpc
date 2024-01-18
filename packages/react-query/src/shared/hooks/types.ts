@@ -22,7 +22,10 @@ import type {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter, DistributiveOmit } from '@trpc/core';
+import type {
+  AnyRouter,
+  DistributiveOmit,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { ReactNode } from 'react';
 import type { TRPCContextProps } from '../../internals/context';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';

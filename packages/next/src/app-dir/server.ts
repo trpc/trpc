@@ -12,14 +12,14 @@ import type {
   MaybePromise,
   Simplify,
   TRPCResponse,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   createRecursiveProxy,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   TRPCError,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
