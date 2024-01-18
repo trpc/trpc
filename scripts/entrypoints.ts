@@ -7,7 +7,11 @@ export type PackageJson = {
   name: string;
   exports: Record<
     string,
-    { import: string; require: string; default: string } | string
+    | {
+        import: { types: string; default: string };
+        require: { types: string; default: string };
+      }
+    | string
   >;
   files: string[];
   dependencies: Record<string, string>;
@@ -52,9 +56,14 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
-      import: './dist/index.mjs',
-      require: './dist/index.js',
-      default: './dist/index.js',
+      import: {
+        types: './dist/index.d.ts',
+        default: './dist/index.mjs',
+      },
+      require: {
+        types: './dist/index.d.ts',
+        default: './dist/index.js',
+      },
     },
   };
 
@@ -96,10 +105,16 @@ export async function generateEntrypoints(rawInputs: string[]) {
       // write this entrypoint to the package.json exports field
       const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
       const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      const types = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.d.ts');
       pkgJson.exports[`./${importPath}`] = {
-        import: esm,
-        require: cjs,
-        default: cjs,
+        import: {
+          types, // TODO: maybe .d.mts
+          default: esm,
+        },
+        require: {
+          types,
+          default: cjs,
+        },
       };
 
       // create the barrelfile, linking the declared exports to the compiled files in dist

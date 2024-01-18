@@ -32,29 +32,54 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     },
     "./app-dir/client": {
-      "import": "./dist/app-dir/client.mjs",
-      "require": "./dist/app-dir/client.js",
-      "default": "./dist/app-dir/client.js"
+      "import": {
+        "types": "./dist/app-dir/client.d.ts",
+        "default": "./dist/app-dir/client.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/client.d.ts",
+        "default": "./dist/app-dir/client.js"
+      }
     },
     "./app-dir/links/nextCache": {
-      "import": "./dist/app-dir/links/nextCache.mjs",
-      "require": "./dist/app-dir/links/nextCache.js",
-      "default": "./dist/app-dir/links/nextCache.js"
+      "import": {
+        "types": "./dist/app-dir/links/nextCache.d.ts",
+        "default": "./dist/app-dir/links/nextCache.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/links/nextCache.d.ts",
+        "default": "./dist/app-dir/links/nextCache.js"
+      }
     },
     "./app-dir/links/nextHttp": {
-      "import": "./dist/app-dir/links/nextHttp.mjs",
-      "require": "./dist/app-dir/links/nextHttp.js",
-      "default": "./dist/app-dir/links/nextHttp.js"
+      "import": {
+        "types": "./dist/app-dir/links/nextHttp.d.ts",
+        "default": "./dist/app-dir/links/nextHttp.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/links/nextHttp.d.ts",
+        "default": "./dist/app-dir/links/nextHttp.js"
+      }
     },
     "./app-dir/server": {
-      "import": "./dist/app-dir/server.mjs",
-      "require": "./dist/app-dir/server.js",
-      "default": "./dist/app-dir/server.js"
+      "import": {
+        "types": "./dist/app-dir/server.d.ts",
+        "default": "./dist/app-dir/server.mjs"
+      },
+      "require": {
+        "types": "./dist/app-dir/server.d.ts",
+        "default": "./dist/app-dir/server.js"
+      }
     }
   },
   "files": [

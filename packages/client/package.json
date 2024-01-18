@@ -31,34 +31,64 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     },
     "./links/httpBatchLink": {
-      "import": "./dist/links/httpBatchLink.mjs",
-      "require": "./dist/links/httpBatchLink.js",
-      "default": "./dist/links/httpBatchLink.js"
+      "import": {
+        "types": "./dist/links/httpBatchLink.d.ts",
+        "default": "./dist/links/httpBatchLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/httpBatchLink.d.ts",
+        "default": "./dist/links/httpBatchLink.js"
+      }
     },
     "./links/httpLink": {
-      "import": "./dist/links/httpLink.mjs",
-      "require": "./dist/links/httpLink.js",
-      "default": "./dist/links/httpLink.js"
+      "import": {
+        "types": "./dist/links/httpLink.d.ts",
+        "default": "./dist/links/httpLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/httpLink.d.ts",
+        "default": "./dist/links/httpLink.js"
+      }
     },
     "./links/loggerLink": {
-      "import": "./dist/links/loggerLink.mjs",
-      "require": "./dist/links/loggerLink.js",
-      "default": "./dist/links/loggerLink.js"
+      "import": {
+        "types": "./dist/links/loggerLink.d.ts",
+        "default": "./dist/links/loggerLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/loggerLink.d.ts",
+        "default": "./dist/links/loggerLink.js"
+      }
     },
     "./links/splitLink": {
-      "import": "./dist/links/splitLink.mjs",
-      "require": "./dist/links/splitLink.js",
-      "default": "./dist/links/splitLink.js"
+      "import": {
+        "types": "./dist/links/splitLink.d.ts",
+        "default": "./dist/links/splitLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/splitLink.d.ts",
+        "default": "./dist/links/splitLink.js"
+      }
     },
     "./links/wsLink": {
-      "import": "./dist/links/wsLink.mjs",
-      "require": "./dist/links/wsLink.js",
-      "default": "./dist/links/wsLink.js"
+      "import": {
+        "types": "./dist/links/wsLink.d.ts",
+        "default": "./dist/links/wsLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/wsLink.d.ts",
+        "default": "./dist/links/wsLink.js"
+      }
     }
   },
   "files": [
