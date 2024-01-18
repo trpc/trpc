@@ -12,10 +12,6 @@
     "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "dependencies": {
     "@trpc/client": "next",
     "@trpc/server": "next"
