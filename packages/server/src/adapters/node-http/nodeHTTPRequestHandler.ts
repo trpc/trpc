@@ -51,7 +51,7 @@ export async function nodeHTTPRequestHandler<
     };
 
     const query = opts.req.query
-      ? new URLSearchParams(opts.req.query as any)
+      ? new URLSearchParams(opts.req.query )
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
     const jsonContentTypeHandler =

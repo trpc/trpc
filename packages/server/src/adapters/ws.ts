@@ -18,6 +18,7 @@ import type {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../rpc';
+// eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 

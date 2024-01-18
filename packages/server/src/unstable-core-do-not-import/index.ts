@@ -1,7 +1,9 @@
 /**
- * This file is here to make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
+ * **DO NOT IMPORT THIS FILE**
+ * This file is here to:
+ * - make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
+ * - the the blue between the official `@trpc/*`-packages
  *
- * We're basically just re-exporting everything from core.
  *
  * If you need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
  */

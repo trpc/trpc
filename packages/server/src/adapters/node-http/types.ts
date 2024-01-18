@@ -12,10 +12,8 @@ import type { IncomingMessage, ServerResponse } from 'http';
 // @trpc/server
 import type { AnyRouter, inferRouterContext } from '../../@trpc-server';
 // @trpc/server/http
-import type {
-  HTTPBaseHandlerOptions,
-  TRPCRequestInfo,
-} from '../../@trpc-server/http';
+import type { HTTPBaseHandlerOptions, TRPCRequestInfo } from '../../http';
+// eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
