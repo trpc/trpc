@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev:server": "tsx watch server",
-    "dev:client": "wait-port 3000 && tsx watch client",
+    "dev:server": "tsx watch src/server",
+    "dev:client": "wait-port 3000 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "start": "node dist/server",
     "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
