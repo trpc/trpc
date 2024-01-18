@@ -1,4 +1,3 @@
-import { identity } from '../unstable-core-do-not-import/utils';
 import type {
   Observable,
   Observer,
@@ -6,6 +5,10 @@ import type {
   TeardownLogic,
   UnaryFunction,
 } from './types';
+
+function identity<TType>(x: TType): TType {
+  return x;
+}
 
 /** @public */
 export type inferObservableValue<TObservable> = TObservable extends Observable<
