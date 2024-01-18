@@ -25,7 +25,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * Data transformer
          *
          * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
+         * @link https://trpc.io/docs/v11/data-transformers
          **/
         transformer?: 'You must set a transformer on the backend router';
       }
@@ -35,7 +35,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * Data transformer
          *
          * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
+         * @link https://trpc.io/docs/v11/data-transformers
          **/
         transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
           ? DataTransformerOptions
@@ -46,7 +46,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * Data transformer
          *
          * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
+         * @link https://trpc.io/docs/v11/data-transformers
          **/
         transformer?: CombinedDataTransformer;
       };

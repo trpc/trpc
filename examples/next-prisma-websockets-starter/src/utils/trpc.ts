@@ -41,18 +41,18 @@ function getEndingLink(ctx: NextPageContext | undefined) {
 
 /**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
- * @link https://trpc.io/docs/react#3-create-trpc-hooks
+ * @link https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
 export const trpc = createTRPCNext<AppRouter>({
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
-     * @link https://trpc.io/docs/ssr
+     * @link https://trpc.io/docs/v11/ssr
      */
 
     return {
       /**
-       * @link https://trpc.io/docs/client/links
+       * @link https://trpc.io/docs/v11/client/links
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
@@ -65,7 +65,7 @@ export const trpc = createTRPCNext<AppRouter>({
         getEndingLink(ctx),
       ],
       /**
-       * @link https://trpc.io/docs/data-transformers
+       * @link https://trpc.io/docs/v11/data-transformers
        */
       transformer: superjson,
       /**
@@ -75,7 +75,7 @@ export const trpc = createTRPCNext<AppRouter>({
     };
   },
   /**
-   * @link https://trpc.io/docs/ssr
+   * @link https://trpc.io/docs/v11/ssr
    */
   ssr: true,
 });

@@ -13,7 +13,7 @@ import type {
   ProtectedIntersection,
 } from '@trpc/core';
 import { createFlatProxy } from '@trpc/core';
-import { useMemo } from 'react';
+import * as React from 'react';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
@@ -98,7 +98,7 @@ export type MaybeDecoratedInfiniteQuery<
 > = inferProcedureInput<TProcedure> extends CursorInput
   ? {
       /**
-       * @see https://trpc.io/docs/client/react/suspense#useinfinitesuspensequery
+       * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
        */
       useInfiniteQuery: (
         input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
@@ -113,7 +113,7 @@ export type MaybeDecoratedInfiniteQuery<
         inferProcedureInput<TProcedure>
       >;
       /**
-       * @see https://trpc.io/docs/client/react/suspense
+       * @link https://trpc.io/docs/v11/client/react/suspense
        */
       useSuspenseInfiniteQuery: (
         input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
@@ -138,11 +138,11 @@ export type DecoratedQueryMethods<
   TProcedure extends AnyProcedure,
 > = {
   /**
-   * @see https://trpc.io/docs/client/react/useQuery
+   * @link https://trpc.io/docs/v11/client/react/useQuery
    */
   useQuery: ProcedureUseQuery<TConfig, TProcedure>;
   /**
-   * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
+   * @link https://trpc.io/docs/v11/client/react/suspense#usesuspensequery
    */
   useSuspenseQuery: <
     TQueryFnData extends inferTransformedProcedureOutput<
@@ -177,7 +177,7 @@ export interface DecoratedMutation<
   TProcedure extends AnyProcedure,
 > {
   /**
-   * @see https://trpc.io/docs/client/react/useMutation
+   * @link https://trpc.io/docs/v11/client/react/useMutation
    */
   useMutation: <TContext = unknown>(
     opts?: UseTRPCMutationOptions<
@@ -208,7 +208,7 @@ export type DecorateProcedure<
   : TProcedure extends AnySubscriptionProcedure
   ? {
       /**
-       * @see https://trpc.io/docs/subscriptions
+       * @link https://trpc.io/docs/v11/subscriptions
        */
       useSubscription: (
         input: inferProcedureInput<TProcedure>,
@@ -246,11 +246,11 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @see https://trpc.io/docs/client/react/useUtils
+   * @link https://trpc.io/docs/v11/client/react/useUtils
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @see https://trpc.io/docs/client/react/useUtils
+   * @link https://trpc.io/docs/v11/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
@@ -288,7 +288,7 @@ export function createHooksInternal<
       return () => {
         const context = trpc.useUtils();
         // create a stable reference of the utils context
-        return useMemo(() => {
+        return React.useMemo(() => {
           return (createReactQueryUtils as any)(context);
         }, [context]);
       };
