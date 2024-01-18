@@ -48,5 +48,5 @@ export function createHTTPServer<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   const handler = createHTTPHandler(opts);
-  return http.createServer((req, res) => handler(req, res));
+  return http.createServer(handler);
 }
