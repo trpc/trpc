@@ -29,7 +29,7 @@
     "@trpc/client": "10.45.0",
     "@trpc/next": "10.45.0",
     "@trpc/react-query": "10.45.0",
-    "@trpc/server": "10.45.0",
+    "@trpc/server": "^10.45.0",
     "@types/node": "^20.10.0",
     "@vitest/coverage-istanbul": "^0.32.0",
     "@vitest/ui": "^0.32.0",
