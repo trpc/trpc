@@ -76,7 +76,7 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "eslint": "^8.56.0",
-    "rollup": "^2.79.1",
+    "rollup": "^4.9.5",
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "typescript": "^5.3.3"
