@@ -84,9 +84,9 @@
       "default": "./dist/http.js"
     },
     "./observable": {
-      "import": "./dist/observable.mjs",
-      "require": "./dist/observable.js",
-      "default": "./dist/observable.js"
+      "import": "./dist/observable/index.mjs",
+      "require": "./dist/observable/index.js",
+      "default": "./dist/observable/index.js"
     },
     "./rpc": {
       "import": "./dist/rpc.mjs",

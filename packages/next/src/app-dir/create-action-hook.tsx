@@ -4,16 +4,14 @@ import type {
   TRPCRequestOptions,
 } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
-import {
-  observable,
-  transformResult,
-} from '@trpc/server/unstable-core-do-not-import';
+import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
   MaybePromise,
   ProcedureOptions,
   Simplify,
 } from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TRPCActionHandler } from './server';
 import type { ActionHandlerDef } from './shared';

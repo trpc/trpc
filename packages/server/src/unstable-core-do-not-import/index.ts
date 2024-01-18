@@ -103,6 +103,5 @@ export { isObject } from './utils';
 /**
  * These should be re-exported from separate entrypoints in server package
  */
-export * from './observable';
 export * from './rpc';
 export * from './http';

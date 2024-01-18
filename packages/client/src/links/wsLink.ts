@@ -1,20 +1,17 @@
+import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
+import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferRouterError,
   MaybePromise,
-  Observer,
   ProcedureType,
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
   TRPCResponseMessage,
-  UnsubscribeFn,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  observable,
-  transformResult,
-} from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type { Operation, TRPCLink } from './types';
 

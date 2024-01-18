@@ -1,9 +1,8 @@
+import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformer,
-  Observable,
-  Observer,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';

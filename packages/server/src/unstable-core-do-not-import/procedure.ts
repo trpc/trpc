@@ -1,4 +1,4 @@
-import type { inferObservableValue } from './observable';
+import type { inferObservableValue } from '../observable';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { Serialize } from './serialize';
 import type { DefaultDataTransformer } from './transformer';

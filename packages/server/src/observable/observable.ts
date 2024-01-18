@@ -1,4 +1,4 @@
-import { identity } from '../utils';
+import { identity } from '../unstable-core-do-not-import/utils';
 import type {
   Observable,
   Observer,
