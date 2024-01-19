@@ -9,7 +9,7 @@ on:
       - completed
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
 env:
@@ -22,6 +22,8 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
       - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v4
@@ -52,10 +54,3 @@ jobs:
         continue-on-error: true
 
       - uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
-
-  no-autofix:
-    name: '✅ No autofix needed'
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    steps:
-      - run: echo "No autofix needed"
