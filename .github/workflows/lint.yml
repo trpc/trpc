@@ -1,4 +1,4 @@
-name: autofix.ci
+name: autofix.ci # for "security reasons", this has to be named autofix.ai
 
 on:
   pull_request:
