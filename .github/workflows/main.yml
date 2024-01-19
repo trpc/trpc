@@ -18,7 +18,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: ./.github/workflows
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/workflows/setup.yml
 
       - name: Download previous bundle analysis
         uses: dawidd6/action-download-artifact@v3

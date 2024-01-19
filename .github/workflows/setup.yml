@@ -7,11 +7,6 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v4
