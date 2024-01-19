@@ -30,11 +30,20 @@ function generateTypedocDocusaurusPlugins(directories) {
       })
       .map((it) => it.replace('./dist', 'src').replace('.mjs', '.ts'))
       .filter((it) => {
+        if (it.includes('unstable')) {
+          return false;
+        }
         switch (directory) {
           case 'client': {
             // omit links entrypoints
             return !it.includes('/links/');
           }
+          case 'next':
+            // FIXME: remove this
+            return it === 'src/index.ts';
+          case 'server':
+            // FIXME: remove this
+            return !it.includes('adapters/next');
         }
         return true;
       });
