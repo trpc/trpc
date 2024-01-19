@@ -24,6 +24,20 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Removed `@trpc/client/links/*`-entrypoints
+
+```diff
+- import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
++ import { httpBatchLink } from '@trpc/client';
+- import { loggerLink } from '@trpc/client/links/loggerLink';
++ import { loggerLink } from '@trpc/client';
+- import {
+-  createWSClient,
+-  wsLink,
+- } from '@trpc/client';
++ import { createWSClient, wsLink } from '@trpc/client';
+```
+
 ### Added a `@trpc/core`-package
 
 We moved a bunch of internals of `@trpc/server` to a new package called `@trpc/core` that is **not meant for public consumption**
