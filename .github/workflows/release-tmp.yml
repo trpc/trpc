@@ -6,6 +6,7 @@ on:
       # Replace this with the branch you want to release from
       - 'workflow-merge'
     paths:
+      - '.github/workflows/release-tmp.yml'
       - 'packages/**'
       - '!packages/**/package.json'
       - '!packages/test/**'
