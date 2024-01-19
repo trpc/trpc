@@ -162,6 +162,9 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
       # </setup - coppy/paste this>
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
         run: |
@@ -169,9 +172,6 @@ jobs:
           if grep --silent '"@playwright/test"';
             then pnpm playwright install chromium;
           fi
-
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -195,7 +195,9 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - uses: actions/checkout@v4
+      # <setup - copy/paste this>
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -205,11 +207,6 @@ jobs:
         with:
           node-version: 20.x
 
-      - uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-
-      # <pnpm>
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -222,10 +219,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </pnpm>
-
+      # </setup - coppy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
 
       - run: deno --version
 
@@ -250,7 +250,9 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      # <setup - copy/paste this>
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -260,11 +262,6 @@ jobs:
         with:
           node-version: 20.x
 
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      # <pnpm>
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -277,10 +274,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </pnpm>
-
+      # </setup - coppy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
 
       - run: bun --version
 
@@ -319,7 +319,9 @@ jobs:
           ]
         node-start: ['18.x']
     steps:
-      - uses: actions/checkout@v4
+      # <setup - copy/paste this>
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -329,7 +331,6 @@ jobs:
         with:
           node-version: 20.x
 
-      # <pnpm>
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -342,8 +343,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </pnpm>
-
+      # </setup - coppy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -351,7 +351,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
-
+      - run: node -v
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
         run: |
