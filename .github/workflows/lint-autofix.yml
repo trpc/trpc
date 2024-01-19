@@ -52,10 +52,3 @@ jobs:
         continue-on-error: true
 
       - uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
-
-  no-autofix:
-    name: '✅ No autofix needed'
-    runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    steps:
-      - run: echo "No autofix needed"
