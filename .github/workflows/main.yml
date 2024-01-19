@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: ./.github/workflows/setup.yml@main
+      - uses: ./.github/workflows/setup.yml
 
       - name: Download previous bundle analysis
         uses: dawidd6/action-download-artifact@v3
