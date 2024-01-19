@@ -46,8 +46,8 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
-    : never;
+      ? DecorateProcedure<TProcedures[TKey]>
+      : never;
 };
 
 /**
@@ -75,13 +75,12 @@ export interface Router<TDef extends AnyRouterDef> {
 
 export type AnyRouter = Router<AnyRouterDef>;
 
-type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
-  infer TParams
->
-  ? TParams extends AnyRouterDef<any>
-    ? TParams
-    : never
-  : never;
+type inferRouterDef<TRouter extends AnyRouter> =
+  TRouter extends Router<infer TParams>
+    ? TParams extends AnyRouterDef<any>
+      ? TParams
+      : never
+    : never;
 type inferRouterConfig<TRouter extends AnyRouter> =
   inferRouterDef<TRouter>['_config'];
 
@@ -100,13 +99,13 @@ type GetInferenceHelpers<
     ? TRouterOrProcedure extends AnyRouter
       ? GetInferenceHelpers<TType, TRouterOrProcedure>
       : TRouterOrProcedure extends AnyProcedure
-      ? TType extends 'input'
-        ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<
-            TRouter['_def']['_config'],
-            TRouterOrProcedure
-          >
-      : never
+        ? TType extends 'input'
+          ? inferProcedureInput<TRouterOrProcedure>
+          : inferTransformedProcedureOutput<
+              TRouter['_def']['_config'],
+              TRouterOrProcedure
+            >
+        : never
     : never;
 };
 

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "moduleResolution": "node16",
-    "noEmit": true
+    "noEmit": true,
   },
-  "include": ["src", "*.ts", "*.js", ".eslintrc.js", "global.d.ts"]
+  "include": ["src", "*.ts", "*.js", ".eslintrc.js", "global.d.ts"],
 }

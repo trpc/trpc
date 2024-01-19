@@ -74,9 +74,9 @@ export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> = {
     ? TRouterOrProcedure extends AnyRouter
       ? inferReactQueryProcedureOptions<TRouterOrProcedure>
       : TRouterOrProcedure extends AnyMutationProcedure
-      ? InferMutationOptions<TRouter['_def']['_config'], TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<TRouter['_def']['_config'], TRouterOrProcedure>
-      : never
+        ? InferMutationOptions<TRouter['_def']['_config'], TRouterOrProcedure>
+        : TRouterOrProcedure extends AnyQueryProcedure
+          ? InferQueryOptions<TRouter['_def']['_config'], TRouterOrProcedure>
+          : never
     : never;
 };

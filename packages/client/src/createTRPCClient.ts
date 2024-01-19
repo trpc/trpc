@@ -61,14 +61,14 @@ type DecorateProcedure<
       query: Resolver<TConfig, TProcedure>;
     }
   : TProcedure extends AnyMutationProcedure
-  ? {
-      mutate: Resolver<TConfig, TProcedure>;
-    }
-  : TProcedure extends AnySubscriptionProcedure
-  ? {
-      subscribe: SubscriptionResolver<TConfig, TProcedure>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TConfig, TProcedure>;
+      }
+    : TProcedure extends AnySubscriptionProcedure
+      ? {
+          subscribe: SubscriptionResolver<TConfig, TProcedure>;
+        }
+      : never;
 
 /**
  * @internal
@@ -80,8 +80,8 @@ type DecoratedProcedureRecord<
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRouter['_def']['_config'], TProcedures[TKey]>
-    : never;
+      ? DecorateProcedure<TRouter['_def']['_config'], TProcedures[TKey]>
+      : never;
 };
 
 const clientCallTypeMap: Record<

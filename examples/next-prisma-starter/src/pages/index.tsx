@@ -72,8 +72,8 @@ const IndexPage: NextPageWithLayout = () => {
           {postsQuery.isFetchingNextPage
             ? 'Loading more...'
             : postsQuery.hasNextPage
-            ? 'Load More'
-            : 'Nothing more to load'}
+              ? 'Load More'
+              : 'Nothing more to load'}
         </button>
 
         {postsQuery.data?.pages.map((page, index) => (

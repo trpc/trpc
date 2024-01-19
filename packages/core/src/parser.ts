@@ -45,11 +45,11 @@ export type inferParser<TParser extends Parser> =
         out: $TOut;
       }
     : TParser extends ParserWithoutInput<infer $InOut>
-    ? {
-        in: $InOut;
-        out: $InOut;
-      }
-    : never;
+      ? {
+          in: $InOut;
+          out: $InOut;
+        }
+      : never;
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 

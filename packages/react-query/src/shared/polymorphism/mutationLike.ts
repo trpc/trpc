@@ -26,15 +26,17 @@ export type MutationLike<
  */
 export type InferMutationLikeInput<
   TMutationLike extends MutationLike<any, any>,
-> = TMutationLike extends MutationLike<any, infer $Procedure>
-  ? inferProcedureInput<$Procedure>
-  : never;
+> =
+  TMutationLike extends MutationLike<any, infer $Procedure>
+    ? inferProcedureInput<$Procedure>
+    : never;
 
 /**
  * Use to unwrap a MutationLike's data output
  */
 export type InferMutationLikeData<
   TMutationLike extends MutationLike<any, any>,
-> = TMutationLike extends MutationLike<infer TConfig, infer TProcedure>
-  ? inferTransformedProcedureOutput<TConfig, TProcedure>
-  : never;
+> =
+  TMutationLike extends MutationLike<infer TConfig, infer TProcedure>
+    ? inferTransformedProcedureOutput<TConfig, TProcedure>
+    : never;

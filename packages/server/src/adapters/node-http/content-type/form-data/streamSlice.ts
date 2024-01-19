@@ -6,7 +6,10 @@ class SliceStream extends Transform {
   private emitUp = false;
   private emitDown = false;
 
-  constructor(private startIndex = 0, private endIndex = Infinity) {
+  constructor(
+    private startIndex = 0,
+    private endIndex = Infinity,
+  ) {
     super();
   }
 

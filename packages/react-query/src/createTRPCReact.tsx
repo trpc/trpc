@@ -95,40 +95,41 @@ type CursorInput = {
 export type MaybeDecoratedInfiniteQuery<
   TProcedure extends AnyProcedure,
   TConfig extends AnyRootConfig,
-> = inferProcedureInput<TProcedure> extends CursorInput
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
-       */
-      useInfiniteQuery: (
-        input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-        opts: UseTRPCInfiniteQueryOptions<
-          inferProcedureInput<TProcedure>,
+> =
+  inferProcedureInput<TProcedure> extends CursorInput
+    ? {
+        /**
+         * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
+         */
+        useInfiniteQuery: (
+          input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+          opts: UseTRPCInfiniteQueryOptions<
+            inferProcedureInput<TProcedure>,
+            inferTransformedProcedureOutput<TConfig, TProcedure>,
+            TRPCClientErrorLike<TConfig>
+          >,
+        ) => UseTRPCInfiniteQueryResult<
           inferTransformedProcedureOutput<TConfig, TProcedure>,
-          TRPCClientErrorLike<TConfig>
-        >,
-      ) => UseTRPCInfiniteQueryResult<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
-        TRPCClientErrorLike<TConfig>,
-        inferProcedureInput<TProcedure>
-      >;
-      /**
-       * @link https://trpc.io/docs/v11/client/react/suspense
-       */
-      useSuspenseInfiniteQuery: (
-        input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
-        opts: UseTRPCSuspenseInfiniteQueryOptions<
-          inferProcedureInput<TProcedure>,
+          TRPCClientErrorLike<TConfig>,
+          inferProcedureInput<TProcedure>
+        >;
+        /**
+         * @link https://trpc.io/docs/v11/client/react/suspense
+         */
+        useSuspenseInfiniteQuery: (
+          input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
+          opts: UseTRPCSuspenseInfiniteQueryOptions<
+            inferProcedureInput<TProcedure>,
+            inferTransformedProcedureOutput<TConfig, TProcedure>,
+            TRPCClientErrorLike<TConfig>
+          >,
+        ) => UseTRPCSuspenseInfiniteQueryResult<
           inferTransformedProcedureOutput<TConfig, TProcedure>,
-          TRPCClientErrorLike<TConfig>
-        >,
-      ) => UseTRPCSuspenseInfiniteQueryResult<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
-        TRPCClientErrorLike<TConfig>,
-        inferProcedureInput<TProcedure>
-      >;
-    }
-  : object;
+          TRPCClientErrorLike<TConfig>,
+          inferProcedureInput<TProcedure>
+        >;
+      }
+    : object;
 
 /**
  * @internal
@@ -204,21 +205,21 @@ export type DecorateProcedure<
 > = TProcedure extends AnyQueryProcedure
   ? DecoratedQuery<TConfig, TProcedure>
   : TProcedure extends AnyMutationProcedure
-  ? DecoratedMutation<TConfig, TProcedure>
-  : TProcedure extends AnySubscriptionProcedure
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/subscriptions
-       */
-      useSubscription: (
-        input: inferProcedureInput<TProcedure>,
-        opts?: UseTRPCSubscriptionOptions<
-          inferTransformedSubscriptionOutput<TConfig, TProcedure>,
-          TRPCClientErrorLike<TConfig>
-        >,
-      ) => void;
-    }
-  : never;
+    ? DecoratedMutation<TConfig, TProcedure>
+    : TProcedure extends AnySubscriptionProcedure
+      ? {
+          /**
+           * @link https://trpc.io/docs/v11/subscriptions
+           */
+          useSubscription: (
+            input: inferProcedureInput<TProcedure>,
+            opts?: UseTRPCSubscriptionOptions<
+              inferTransformedSubscriptionOutput<TConfig, TProcedure>,
+              TRPCClientErrorLike<TConfig>
+            >,
+          ) => void;
+        }
+      : never;
 
 /**
  * @internal
@@ -235,8 +236,8 @@ export type DecoratedProcedureRecord<
         TFlags
       >
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TConfig, TProcedures[TKey], TFlags>
-    : never;
+      ? DecorateProcedure<TConfig, TProcedures[TKey], TFlags>
+      : never;
 };
 
 /**

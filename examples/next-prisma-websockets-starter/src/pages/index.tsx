@@ -255,8 +255,8 @@ export default function IndexPage() {
                 {isFetchingNextPage
                   ? 'Loading more...'
                   : hasNextPage
-                  ? 'Load More'
-                  : 'Nothing more to load'}
+                    ? 'Load More'
+                    : 'Nothing more to load'}
               </button>
               <div className="space-y-4">
                 {messages?.map((item) => (
