@@ -25,8 +25,7 @@ jobs:
 
       - uses: pnpm/action-setup@v2
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20.x
 
@@ -34,7 +33,6 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
@@ -42,9 +40,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
-      - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Download previous bundle analysis
         uses: dawidd6/action-download-artifact@v3
@@ -80,7 +75,6 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
@@ -88,9 +82,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
-      - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root install
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
@@ -155,7 +146,6 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
@@ -163,10 +153,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
-      - run: node -v
-      - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -178,8 +164,6 @@ jobs:
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
-
-      - run: node -v
 
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -221,7 +205,6 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
@@ -229,10 +212,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
-      - run: node -v
-      - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
@@ -278,7 +257,6 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
@@ -286,14 +264,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
-      - run: node -v
-      - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
-
-      - run: node -v
-      - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
@@ -354,18 +324,13 @@ jobs:
         id: pnpm-cache
         run: |
           echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{matrix.node-start}}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
-
-      - run: node -v
-      - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+            ${{ runner.os }}-pnpm-store-
 
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
@@ -374,10 +339,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
-
-      - run: node -v
-      - name: Install deps (with cache)
-        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
