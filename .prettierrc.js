@@ -15,7 +15,7 @@ const config = {
     /**
      * Tailwind plugin must come last!
      */
-    require.resolve('prettier-plugin-tailwindcss'),
+    // require.resolve('prettier-plugin-tailwindcss'),
   ],
 };
 
