@@ -35,15 +35,14 @@ function generateTypedocDocusaurusPlugins(directories) {
         }
         switch (directory) {
           case 'client': {
-            // omit links entrypoints
-            return !it.includes('/links/');
+            return true;
           }
           case 'next':
-            // FIXME: remove this
+            // FIXME: this shouldn't be excluded
             return it === 'index.ts';
           case 'server':
-            // FIXME: remove this
             return (
+              // FIXME: this shouldn't be excluded
               !it.includes('adapters/next') ||
               /**
                * @deprecated remove in v12
