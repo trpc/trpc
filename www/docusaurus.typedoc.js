@@ -38,12 +38,12 @@ function generateTypedocDocusaurusPlugins(directories) {
         }
         return true;
       });
-    console.log('entrypoints', directory, entrypoints);
     return {
       directory,
       entrypoints,
     };
   });
+  console.log('entrypoints', withEntryPoints);
   return withEntryPoints.map((opts, idx) => {
     const { directory, entrypoints } = opts;
     return [
