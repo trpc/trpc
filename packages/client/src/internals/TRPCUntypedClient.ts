@@ -1,14 +1,15 @@
 import type {
+  inferObservableValue,
+  Unsubscribable,
+} from '@trpc/server/observable';
+import { observableToPromise, share } from '@trpc/server/observable';
+import '@trpc/server/unstable-core-do-not-import';
+import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-} from '@trpc/core';
-import type {
-  inferObservableValue,
-  Unsubscribable,
-} from '@trpc/core/observable';
-import { observableToPromise, share } from '@trpc/core/observable';
+} from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
@@ -218,7 +219,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
         } else {
-          opts.onData?.((envelope.result as any).data);
+          opts.onData?.(envelope.result.data);
         }
       },
       error(err) {

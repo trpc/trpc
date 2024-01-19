@@ -42,8 +42,6 @@ function generateTypedocDocusaurusPlugins(directories) {
             return it === 'index.ts';
           case 'server':
             return (
-              // FIXME: this shouldn't be excluded
-              !it.includes('adapters/next') ||
               /**
                * @deprecated remove in v12
                */
@@ -57,7 +55,7 @@ function generateTypedocDocusaurusPlugins(directories) {
       entrypoints,
     };
   });
-  console.log('entrypoints', withEntryPoints);
+  console.log('TypeDoc entrypoints:', withEntryPoints);
   return withEntryPoints.map((opts, idx) => {
     const { directory, entrypoints } = opts;
     return [

@@ -23,4 +23,4 @@ export {
    * @deprecated `import { createTRPCFlatProxy } from '@trpc/server'` instead
    */
   createTRPCFlatProxy as createFlatProxy,
-} from './@trpc-server';
+} from './@trpc/server';

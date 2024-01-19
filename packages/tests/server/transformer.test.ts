@@ -7,9 +7,12 @@ import {
   TRPCClientError,
   wsLink,
 } from '@trpc/client';
-import type { CombinedDataTransformer, DataTransformer } from '@trpc/core';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type {
+  CombinedDataTransformer,
+  DataTransformer,
+} from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
 import { createTson, tsonDate } from 'tupleson';

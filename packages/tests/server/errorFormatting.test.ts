@@ -1,8 +1,11 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
-import type { DefaultErrorData, DefaultErrorShape } from '@trpc/core';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import type {
+  DefaultErrorData,
+  DefaultErrorShape,
+} from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 

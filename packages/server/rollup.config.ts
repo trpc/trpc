@@ -15,9 +15,10 @@ export const input = [
   'src/adapters/ws.ts',
   'src/http.ts',
   'src/index.ts',
-  'src/observable.ts',
+  'src/observable/index.ts',
   'src/rpc.ts',
   'src/shared.ts',
+  'src/unstable-core-do-not-import/index.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

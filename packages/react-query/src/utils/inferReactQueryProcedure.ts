@@ -7,7 +7,7 @@ import type {
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   UseTRPCMutationOptions,
   UseTRPCMutationResult,

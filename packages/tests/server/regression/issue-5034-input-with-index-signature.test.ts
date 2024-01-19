@@ -1,6 +1,6 @@
-import type { Overwrite } from '@trpc/core';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
+import type { Overwrite } from '@trpc/server/unstable-core-do-not-import';
 import * as z from 'zod';
 
 export function hardcodedExample() {

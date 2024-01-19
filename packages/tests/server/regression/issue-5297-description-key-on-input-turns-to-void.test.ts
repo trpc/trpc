@@ -1,5 +1,5 @@
-import type { QueryProcedure } from '@trpc/core';
 import { initTRPC } from '@trpc/server';
+import type { QueryProcedure } from '@trpc/server/unstable-core-do-not-import';
 import * as z from 'zod';
 
 describe('Serialization of Record types', () => {

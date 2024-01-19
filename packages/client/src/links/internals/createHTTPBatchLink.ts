@@ -1,6 +1,9 @@
-import type { AnyRouter, ProcedureType } from '@trpc/core';
-import { transformResult } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/observable';
+import type {
+  AnyRouter,
+  ProcedureType,
+} from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { dataLoader } from '../../internals/dataLoader';
 import { TRPCClientError } from '../../TRPCClientError';
 import type { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';

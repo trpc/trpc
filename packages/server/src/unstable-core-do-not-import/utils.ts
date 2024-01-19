@@ -57,10 +57,3 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
 ): TObj {
   return Object.assign(Object.create(null), obj);
 }
-
-/**
- * @internal
- */
-export function identity<TType>(x: TType): TType {
-  return x;
-}

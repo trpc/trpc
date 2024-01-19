@@ -1,7 +1,13 @@
 /**
- * @remark Do not `import` anything from `@trpc/core` it will be unreliable between minor versions of tRPC
+ * **DO NOT IMPORT FROM HERE FILE**
+ *
+ * This file is here to:
+ * - make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
+ * - the the glue between the official `@trpc/*`-packages
+ *
+ *
+ * If you seem to need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
  */
-
 export type { DefaultErrorShape, DefaultErrorData } from './error/formatter';
 export { getErrorShape } from './error/getErrorShape';
 export {
@@ -96,3 +102,9 @@ export type {
   ProtectedIntersection,
 } from './types';
 export { isObject } from './utils';
+
+/**
+ * These should be re-exported from separate entrypoints in server package
+ */
+export * from './rpc';
+export * from './http';

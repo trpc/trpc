@@ -11,15 +11,15 @@ import type {
   inferProcedureInput,
   MaybePromise,
   Simplify,
-} from '@trpc/core';
+  TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   createRecursiveProxy,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   TRPCError,
-} from '@trpc/core';
-import type { TRPCResponse } from '@trpc/core/rpc';
+} from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';

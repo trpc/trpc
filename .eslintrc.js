@@ -53,6 +53,7 @@ const config = {
           'issue-\\d+-.*\\.test\\.tsx?$',
           '\\.(t|j)sx$',
           '@trpc/*',
+          'unstable-core-*',
         ],
       },
     ],
@@ -153,12 +154,16 @@ const config = {
         'no-restricted-imports': [
           'error',
           {
-            name: '@trpc/server',
-          },
-          {
-            name: '@trpc/core',
-            message:
-              'Use e.g. `../http` instead - avoiding importing core helps us ensure third party adapters can be made',
+            patterns: [
+              {
+                group: ['@trpc/server'],
+              },
+              {
+                group: ['unstable-core-do-not-import'],
+                message:
+                  'Use e.g. `../@trpc/server/http` instead - avoiding importing core helps us ensure third party adapters can be made',
+              },
+            ],
           },
         ],
       },

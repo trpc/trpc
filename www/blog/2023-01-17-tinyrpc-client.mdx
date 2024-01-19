@@ -107,7 +107,7 @@ type Resolver<TProcedure extends AnyProcedure> = (
 import type {
   AnyQueryProcedure,
   AnyMutationProcedure
-} from "@trpc/core";
+} from '@trpc/server';
 
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
@@ -163,7 +163,7 @@ Nice, that's what we expected - we can now call `.query` on our procedure and ge
 Finally, we'll create a type that will recursively traverse the router and decorate all procedures along the way:
 
 ```twoslash include decoraterecord
-import type { ProcedureRouterRecord } from "@trpc/core";
+import type { ProcedureRouterRecord } from "@trpc/server";
 import type { AnyRouter } from "@trpc/server";
 
 type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {

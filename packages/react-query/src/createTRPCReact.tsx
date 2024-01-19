@@ -11,8 +11,8 @@ import type {
   inferTransformedSubscriptionOutput,
   ProcedureRouterRecord,
   ProtectedIntersection,
-} from '@trpc/core';
-import { createFlatProxy } from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
+import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type {
   TRPCUseQueries,

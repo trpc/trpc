@@ -1,7 +1,6 @@
 /**
  * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
  *
- * Do **not** import from `@trpc/core`
  * @example
  * ```ts
  * import type { AnyTRPCRouter } from '@trpc/server'
@@ -16,15 +15,15 @@ import type {
   Context as APIGWContext,
 } from 'aws-lambda';
 // @trpc/server
-import type { AnyRouter } from '../../@trpc-server';
+import type { AnyRouter } from '../../@trpc/server';
 // @trpc/server
-import { TRPCError } from '../../@trpc-server';
+import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-} from '../../http';
-import { resolveHTTPResponse } from '../../http';
+} from '../../@trpc/server/http';
+import { resolveHTTPResponse } from '../../@trpc/server/http';
 import type {
   APIGatewayEvent,
   APIGatewayResult,

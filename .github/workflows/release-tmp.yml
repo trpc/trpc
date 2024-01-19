@@ -4,7 +4,9 @@ on:
   push:
     branches:
       # Replace this with the branch you want to release from
-      - 'workflow-merge'
+      # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
+      - 'export-from-main-nuke-core'
+      # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'

@@ -3,8 +3,8 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter } from '@trpc/core';
-import { createRecursiveProxy } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCNextAppRouterOptions } from './shared';
 
 export {

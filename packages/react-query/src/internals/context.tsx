@@ -19,7 +19,10 @@ import type {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter, DistributiveOmit } from '@trpc/core';
+import type {
+  AnyRouter,
+  DistributiveOmit,
+} from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { ExtractCursorType } from '../shared';
 import type { TRPCQueryKey } from './getQueryKey';

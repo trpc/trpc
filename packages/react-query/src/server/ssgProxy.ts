@@ -19,12 +19,12 @@ import type {
   inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   callProcedure,
   createFlatProxy,
   createRecursiveProxy,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,

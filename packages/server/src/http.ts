@@ -1,1 +1,1 @@
-export * from './@trpc-server/http';
+export * from './@trpc/server/http';
