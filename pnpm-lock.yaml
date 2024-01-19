@@ -1953,7 +1953,7 @@ importers:
         version: 10.4.13(postcss@8.4.14)
       docusaurus-plugin-typedoc:
         specifier: ^1.0.0-next.12
-        version: 1.0.0-next.12(typedoc-plugin-markdown@4.0.0-next.43)
+        version: 1.0.0-next.12(typedoc-plugin-markdown@4.0.0-next.13)
       dotenv:
         specifier: ^16.0.1
         version: 16.0.3
@@ -2000,8 +2000,8 @@ importers:
         specifier: ^0.24.7
         version: 0.24.7(typescript@5.1.3)
       typedoc-plugin-markdown:
-        specifier: ^4.0.0-next.43
-        version: 4.0.0-next.43(typedoc@0.24.7)
+        specifier: ^4.0.0-next.13
+        version: 4.0.0-next.13(prettier@3.2.4)(typedoc@0.24.7)
       typescript:
         specifier: npm:typescript@~5.1.3
         version: 5.1.3
@@ -11875,13 +11875,13 @@ packages:
     dependencies:
       esutils: 2.0.3
 
-  /docusaurus-plugin-typedoc@1.0.0-next.12(typedoc-plugin-markdown@4.0.0-next.43):
+  /docusaurus-plugin-typedoc@1.0.0-next.12(typedoc-plugin-markdown@4.0.0-next.13):
     resolution: {integrity: sha512-GhYAFLOacSrFMP5Uwmlv42B3+PmI/5vV2HUxNY5hDVUfrzwiMjvGjSrFbK93auQm0JRmIMYjezXYjJdKUSvu1g==}
     peerDependencies:
       typedoc-plugin-markdown: '>=4.0.0-next.13'
     dependencies:
       typedoc-plugin-frontmatter: 0.0.2
-      typedoc-plugin-markdown: 4.0.0-next.43(typedoc@0.24.7)
+      typedoc-plugin-markdown: 4.0.0-next.13(prettier@3.2.4)(typedoc@0.24.7)
     dev: true
 
   /docusaurus-preset-shiki-twoslash@1.1.41:
@@ -22033,11 +22033,13 @@ packages:
       yaml: 2.3.3
     dev: true
 
-  /typedoc-plugin-markdown@4.0.0-next.43(typedoc@0.24.7):
-    resolution: {integrity: sha512-YgMZsPPH5Uk6RvNsSwOCiVVsCE+hkH7Y/Fwp7OC7iXhXYxLOQesywzDynxFy5zZiWOaAq6tYuFMCqdVje+gbaQ==}
+  /typedoc-plugin-markdown@4.0.0-next.13(prettier@3.2.4)(typedoc@0.24.7):
+    resolution: {integrity: sha512-ZOcLsJoGN4QI5x1iS2M5lj6bA3MABf6hA183W1KebbxcBA+SFr+XIu73Uovv3SiwqPa+viBftLzkZlLyA6J9bg==}
     peerDependencies:
-      typedoc: 0.25.x
+      prettier: '>=1.8.0'
+      typedoc: '>=0.24.0'
     dependencies:
+      prettier: 3.2.4
       typedoc: 0.24.7(typescript@5.1.3)
     dev: true
 
