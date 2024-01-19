@@ -7,6 +7,7 @@ runs:
         node-version: 20.x
 
     - name: Get pnpm store directory
+      shell: bash
       id: pnpm-cache
       run: |
         echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
@@ -18,3 +19,4 @@ runs:
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
     - run: pnpm install
+      shell: bash
