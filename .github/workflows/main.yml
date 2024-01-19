@@ -44,31 +44,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: pnpm/action-setup@v2
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # </setup - copy/paste this>
+      - uses: ./.github/setup
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
@@ -119,31 +100,13 @@ jobs:
             .experimental/next-app-dir,
           ]
     steps:
-      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: pnpm/action-setup@v2
+      - uses: ./.github/setup
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -177,31 +140,13 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: pnpm/action-setup@v2
+      - uses: ./.github/setup
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -232,31 +177,13 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: pnpm/action-setup@v2
+      - uses: ./.github/setup
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -301,31 +228,13 @@ jobs:
           ]
         node-start: ['18.x']
     steps:
-      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: pnpm/action-setup@v2
+      - uses: ./.github/setup
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 

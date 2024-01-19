@@ -1,4 +1,5 @@
 name: Setup Workflow
+description: Composite action that sets up pnpm
 runs:
   using: 'composite'
   steps:
