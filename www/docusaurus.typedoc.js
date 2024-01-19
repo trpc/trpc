@@ -42,8 +42,6 @@ function generateTypedocDocusaurusPlugins(directories) {
             return it === 'index.ts';
           case 'server':
             return (
-              // FIXME: this shouldn't be excluded
-              !it.includes('adapters/next') ||
               /**
                * @deprecated remove in v12
                */
