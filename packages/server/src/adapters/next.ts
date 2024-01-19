@@ -22,6 +22,10 @@ export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
+
+/**
+ * Preventing "TypeScript where it's tough not to get "The inferred type of 'xxxx' cannot be named without a reference to [...]"
+ */
 export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
