@@ -7,8 +7,6 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - uses: pnpm/action-setup@v2
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
