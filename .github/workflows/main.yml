@@ -60,6 +60,7 @@ jobs:
           directory: ./packages
 
   e2e:
+    name: 'E2E-tests'
     needs: [build]
     services:
       postgres:
