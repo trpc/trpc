@@ -30,10 +30,10 @@ function generateTypedocDocusaurusPlugins(directories) {
       })
       .map((it) => it.replace('./dist', 'src').replace('.mjs', '.ts'))
       .filter((it) => {
-        // omit some files?
         switch (directory) {
           case 'client': {
-            return it.includes('src/index.ts');
+            // omit links entrypoints
+            return !it.includes('/links/');
           }
         }
         return true;
