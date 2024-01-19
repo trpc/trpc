@@ -42,7 +42,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </setup - coppy/paste this>
+      # </setup - copy/paste this>
       - name: Download previous bundle analysis
         uses: dawidd6/action-download-artifact@v3
         with:
@@ -86,7 +86,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </setup - coppy/paste this>
+      # </setup - copy/paste this>
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
@@ -161,7 +161,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </setup - coppy/paste this>
+      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -219,7 +219,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </setup - coppy/paste this>
+      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -274,7 +274,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </setup - coppy/paste this>
+      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
@@ -343,7 +343,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </setup - coppy/paste this>
+      # </setup - copy/paste this>
       - name: Build trpc
         run: pnpm turbo --filter "@trpc/*" build
 
