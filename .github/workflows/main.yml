@@ -117,6 +117,7 @@ jobs:
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
+    name: 'E2E-tests (Deno)'
     needs: [build]
     env:
       NEXTAUTH_SECRET: supersecret
@@ -154,6 +155,7 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
+    name: 'E2E-tests (Bun)'
     needs: [build]
     env:
       NEXTAUTH_SECRET: supersecret
