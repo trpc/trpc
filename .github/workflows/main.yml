@@ -115,7 +115,7 @@ jobs:
       NEXTAUTH_SECRET: supersecret
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
     strategy:
@@ -140,7 +140,6 @@ jobs:
             .experimental/next-formdata,
             .experimental/next-app-dir,
           ]
-        os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
         with:
