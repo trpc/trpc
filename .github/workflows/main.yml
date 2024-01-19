@@ -10,6 +10,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install deps (with cache)
+        run: pnpm --filter "@trpc/*" --filter root install
+
+      - name: Download previous bundle analysis
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: bundle-analysis
+          branch: main
+          path: ./downloads/previous-bundle-analysis
+          if_no_artifact_found: ignore
+
+      - name: Build
+        run: pnpm turbo --filter "@trpc/*" build
   test:
     timeout-minutes: 10
     env:
@@ -47,23 +94,12 @@ jobs:
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: ${{ runner.os }}-pnpm-store-trpc-main-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-trpc-main-
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install deps (with cache)
         run: pnpm --filter "@trpc/*" --filter root install
-
-      - name: Download previous bundle analysis
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          name: bundle-analysis
-          branch: main
-          path: ./downloads/previous-bundle-analysis
-          if_no_artifact_found: ignore
-
-      - name: Build
-        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
@@ -73,9 +109,296 @@ jobs:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages
 
-      - name: Upload new bundle analysis
-        uses: actions/upload-artifact@v4
-        if: github.ref == 'ref/head/main'
+  e2e:
+    needs: [build]
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir:
+          [
+            .test/ssg,
+            .test/internal-types-export,
+            express-server,
+            express-minimal,
+            next-minimal-starter,
+            minimal-react,
+            fastify-server,
+            cloudflare-workers,
+            next-prisma-starter,
+            next-prisma-websockets-starter,
+            next-prisma-todomvc,
+            standalone-server,
+            .test/big-router-declaration,
+            soa,
+            vercel-edge-runtime,
+            .experimental/next-formdata,
+            .experimental/next-app-dir,
+          ]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
         with:
-          name: bundle-analysis
-          path: packages/**/dist/bundle-analysis.json
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Install playwright ???
+        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - run: node -v
+
+      - name: Run test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+
+  e2e-deno:
+    needs: [build]
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      # TURBO_REMOTE_ONLY: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        dir: [deno-deploy]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - run: deno --version
+
+      - name: run test
+        if: ${{ matrix.dir == 'deno-deploy' }}
+        run: |
+          cd ./examples/${{ matrix.dir }}
+          pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
+
+  e2e-bun:
+    needs: [build]
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      # TURBO_REMOTE_ONLY: true
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir: [bun]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
+
+      - run: bun --version
+
+      - name: Run test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+
+  e2e-legacy-node:
+    needs: [build]
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DATABASE: trpcdb
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+    env:
+      NEXTAUTH_SECRET: supersecret
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      matrix:
+        dir:
+          [
+            next-prisma-starter,
+            next-prisma-websockets-starter,
+            next-prisma-todomvc,
+          ]
+        node-start: ['18.x']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-${{matrix.node-start}}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ matrix.dir }}-
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Build trpc
+        run: pnpm turbo --filter "@trpc/*" build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-start }}
+          cache: 'pnpm'
+
+      - run: node -v
+      - name: Install deps (with cache)
+        run: pnpm --filter "./examples/${{ matrix.dir }}/**"  --filter "@trpc/*" --filter "!@trpc/tests" --filter root install
+
+      - name: Install playwright ???
+        # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
+        run: |
+          cat ./examples/${{ matrix.dir }}/package.json | 
+          if grep --silent '"@playwright/test"';
+            then pnpm playwright install chromium;
+          fi
+      - name: Run test-dev
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-start
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
