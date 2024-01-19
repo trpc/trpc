@@ -13,28 +13,12 @@
     "url": "git+https://github.com/trpc/trpc.git",
     "directory": "packages/server"
   },
-  "eslintConfig": {
-    "overrides": [
-      {
-        "files": [
-          "src"
-        ],
-        "rules": {
-          "explicit-module-boundary-types": "off",
-          "no-restricted-imports": [
-            "error",
-            "@trpc/server"
-          ]
-        }
-      }
-    ]
-  },
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "benchmark": "tsc --project tsconfig.benchmark.json",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
@@ -59,25 +43,30 @@
       "require": "./dist/adapters/fastify/index.js",
       "default": "./dist/adapters/fastify/index.js"
     },
+    "./adapters/fetch": {
+      "import": "./dist/adapters/fetch/index.mjs",
+      "require": "./dist/adapters/fetch/index.js",
+      "default": "./dist/adapters/fetch/index.js"
+    },
     "./adapters/next": {
       "import": "./dist/adapters/next.mjs",
       "require": "./dist/adapters/next.js",
       "default": "./dist/adapters/next.js"
     },
-    "./adapters/node-http": {
-      "import": "./dist/adapters/node-http/index.mjs",
-      "require": "./dist/adapters/node-http/index.js",
-      "default": "./dist/adapters/node-http/index.js"
+    "./adapters/node-http/content-type/form-data": {
+      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
+      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
+      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
     },
     "./adapters/node-http/content-type/json": {
       "import": "./dist/adapters/node-http/content-type/json/index.mjs",
       "require": "./dist/adapters/node-http/content-type/json/index.js",
       "default": "./dist/adapters/node-http/content-type/json/index.js"
     },
-    "./adapters/node-http/content-type/form-data": {
-      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
-      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
-      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
+    "./adapters/node-http": {
+      "import": "./dist/adapters/node-http/index.mjs",
+      "require": "./dist/adapters/node-http/index.js",
+      "default": "./dist/adapters/node-http/index.js"
     },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
@@ -89,35 +78,30 @@
       "require": "./dist/adapters/ws.js",
       "default": "./dist/adapters/ws.js"
     },
-    "./adapters/fetch": {
-      "import": "./dist/adapters/fetch/index.mjs",
-      "require": "./dist/adapters/fetch/index.js",
-      "default": "./dist/adapters/fetch/index.js"
-    },
     "./http": {
-      "import": "./dist/http/index.mjs",
-      "require": "./dist/http/index.js",
-      "default": "./dist/http/index.js"
-    },
-    "./rpc": {
-      "import": "./dist/rpc/index.mjs",
-      "require": "./dist/rpc/index.js",
-      "default": "./dist/rpc/index.js"
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.js",
+      "default": "./dist/http.js"
     },
     "./observable": {
       "import": "./dist/observable/index.mjs",
       "require": "./dist/observable/index.js",
       "default": "./dist/observable/index.js"
     },
-    "./subscription": {
-      "import": "./dist/subscription.mjs",
-      "require": "./dist/subscription.js",
-      "default": "./dist/subscription.js"
+    "./rpc": {
+      "import": "./dist/rpc.mjs",
+      "require": "./dist/rpc.js",
+      "default": "./dist/rpc.js"
     },
     "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
+      "import": "./dist/shared.mjs",
+      "require": "./dist/shared.js",
+      "default": "./dist/shared.js"
+    },
+    "./unstable-core-do-not-import": {
+      "import": "./dist/unstable-core-do-not-import/index.mjs",
+      "require": "./dist/unstable-core-do-not-import/index.js",
+      "default": "./dist/unstable-core-do-not-import/index.js"
     }
   },
   "files": [
@@ -127,18 +111,20 @@
     "package.json",
     "adapters",
     "http",
-    "rpc",
     "observable",
-    "subscription",
+    "rpc",
     "shared",
+    "unstable-core-do-not-import",
     "!**/*.test.*"
   ],
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {},
+  "peerDependencies": {},
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
-    "@tanstack/react-query": "^4.18.0",
+    "@tanstack/react-query": "^5.0.0",
     "@types/aws-lambda": "^8.10.97",
     "@types/express": "^4.17.17",
     "@types/hash-sum": "^1.0.0",
@@ -158,13 +144,13 @@
     "next": "^14.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rollup": "^2.79.1",
+    "rollup": "^4.9.5",
     "superjson": "^1.12.4",
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "typescript": "^5.3.3",
-    "valibot": "^0.25.0",
+    "valibot": "^0.26.0",
     "vitest": "^0.32.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",

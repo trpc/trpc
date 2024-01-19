@@ -1,8 +1,10 @@
-import { ProcedureType } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+import type {
+  ProcedureType,
+  TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
-import {
+import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,
@@ -10,8 +12,12 @@ import {
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
-import { TextDecoderEsque } from '../internals/streamingUtils';
-import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
+import type { TextDecoderEsque } from '../internals/streamingUtils';
+import type {
+  HTTPHeaders,
+  PromiseAndCancel,
+  TRPCClientRuntime,
+} from '../types';
 
 /**
  * @internal
@@ -85,11 +91,8 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     path: string;
   };
 
-export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-export type GetBody = (
-  opts: HTTPBaseRequestOptions,
-) => RequestInitEsque['body'];
-
+type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;
@@ -151,7 +154,13 @@ export async function fetchHTTPResponse(
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const resolvedHeaders = await opts.headers();
+  const resolvedHeaders = await (async () => {
+    const heads = await opts.headers();
+    if (Symbol.iterator in heads) {
+      return Object.fromEntries(heads);
+    }
+    return heads;
+  })();
   /* istanbul ignore if -- @preserve */
   if (type === 'subscription') {
     throw new Error('Subscriptions should use wsLink');

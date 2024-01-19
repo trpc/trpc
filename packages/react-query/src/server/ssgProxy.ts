@@ -1,76 +1,183 @@
-import {
+import type {
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
-import {
+import { dehydrate } from '@tanstack/react-query';
+import type { inferRouterClient, TRPCClientError } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootConfig,
   AnyRouter,
+  DataTransformerOptions,
   Filter,
-  inferHandlerInput,
+  inferProcedureInput,
+  inferRouterContext,
+  inferTransformedProcedureOutput,
+  Maybe,
   ProtectedIntersection,
-} from '@trpc/server';
+} from '@trpc/server/unstable-core-do-not-import';
 import {
+  callProcedure,
   createFlatProxy,
   createRecursiveProxy,
-  inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
-import { createSSGHelpers } from '../ssg/ssg';
-import { CreateServerSideHelpersOptions } from './types';
+} from '@trpc/server/unstable-core-do-not-import';
+import { getQueryKeyInternal } from '../internals/getQueryKey';
+import type {
+  CreateTRPCReactQueryClientConfig,
+  ExtractCursorType,
+  TRPCFetchInfiniteQueryOptions,
+  TRPCFetchQueryOptions,
+} from '../shared';
+import { getQueryClient, getQueryType } from '../shared';
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = {
+interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
+  router: TRouter;
+  ctx: inferRouterContext<TRouter>;
+  transformer?: DataTransformerOptions;
+}
+
+interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
+  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
+}
+
+type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
+  CreateTRPCReactQueryClientConfig &
+    (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
+
+type DecorateProcedure<
+  TConfig extends AnyRootConfig,
+  TProcedure extends AnyProcedure,
+> = {
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetch(
-    ...args: inferHandlerInput<TProcedure>
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchQueryOptions<
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
   fetchInfinite(
-    ...args: inferHandlerInput<TProcedure>
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<
+    InfiniteData<
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
+    >
+  >;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
-  prefetch(...args: inferHandlerInput<TProcedure>): Promise<void>;
+  prefetch(
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchQueryOptions<
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
    */
-  prefetchInfinite(...args: inferHandlerInput<TProcedure>): Promise<void>;
+  prefetchInfinite(
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
+      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >,
+  ): Promise<void>;
 };
 
 /**
  * @internal
  */
-export type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
+type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
   [TKey in keyof Filter<
     TRouter['_def']['record'],
     AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
-      DecorateProcedure<TRouter['_def']['record'][TKey]>;
+      DecorateProcedure<
+        TRouter['_def']['_config'],
+        TRouter['_def']['record'][TKey]
+      >;
 };
 
-type AnyDecoratedProcedure = DecorateProcedure<any>;
+type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @see https://trpc.io/docs/client/nextjs/server-side-helpers
+ * @link https://trpc.io/docs/v11/client/nextjs/server-side-helpers
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,
 ) {
-  const helpers = createSSGHelpers(opts);
+  const queryClient = getQueryClient(opts);
 
-  type CreateServerSideHelpers = ProtectedIntersection<
+  const resolvedOpts: {
+    serialize: (obj: unknown) => any;
+    query: (queryOpts: { path: string; input: unknown }) => Promise<unknown>;
+  } = (() => {
+    if ('router' in opts) {
+      const { transformer, ctx, router } = opts;
+      return {
+        serialize: transformer
+          ? ('input' in transformer ? transformer.input : transformer).serialize
+          : (obj) => obj,
+        query: (queryOpts) => {
+          return callProcedure({
+            procedures: router._def.procedures,
+            path: queryOpts.path,
+            getRawInput: async () => queryOpts.input,
+            ctx,
+            type: 'query',
+          });
+        },
+      };
+    }
+
+    const { client } = opts;
+    const untypedClient =
+      client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+
+    return {
+      query: (queryOpts) =>
+        untypedClient.query(queryOpts.path, queryOpts.input),
+      serialize: (obj) => untypedClient.runtime.transformer.serialize(obj),
+    };
+  })();
+
+  function _dehydrate(
+    opts: DehydrateOptions = {
+      shouldDehydrateQuery() {
+        // makes sure to serialize errors
+        return true;
+      },
+    },
+  ): DehydratedState {
+    const before = dehydrate(queryClient, opts);
+    const after = resolvedOpts.serialize(before);
+    return after;
+  }
+
+  type CreateSSGHelpers = ProtectedIntersection<
     {
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
@@ -78,28 +185,59 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     DecoratedProcedureSSGRecord<TRouter>
   >;
 
-  return createFlatProxy<CreateServerSideHelpers>((key) => {
-    if (key === 'queryClient') {
-      return helpers.queryClient;
-    }
+  return createFlatProxy<CreateSSGHelpers>((key) => {
+    if (key === 'queryClient') return queryClient;
+    if (key === 'dehydrate') return _dehydrate;
 
-    if (key === 'dehydrate') {
-      return helpers.dehydrate;
-    }
     return createRecursiveProxy((opts) => {
       const args = opts.args;
+      const input = args[0];
+      const arrayPath = [key, ...opts.path];
+      const utilName = arrayPath.pop() as keyof AnyDecoratedProcedure;
 
-      const pathCopy = [key, ...opts.path];
+      const queryFn = () =>
+        resolvedOpts.query({ path: arrayPath.join('.'), input });
 
-      const utilName = pathCopy.pop() as keyof AnyDecoratedProcedure;
+      const queryKey = getQueryKeyInternal(
+        arrayPath,
+        input,
+        getQueryType(utilName),
+      );
 
-      const fullPath = pathCopy.join('.');
+      const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+        fetch: () => {
+          const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
+          return queryClient.fetchQuery({ ...args1, queryKey, queryFn });
+        },
+        fetchInfinite: () => {
+          const args1 = args[1] as Maybe<
+            TRPCFetchInfiniteQueryOptions<any, any, any>
+          >;
+          return queryClient.fetchInfiniteQuery({
+            ...args1,
+            queryKey,
+            queryFn,
+            initialPageParam: args1?.initialCursor ?? null,
+          });
+        },
+        prefetch: () => {
+          const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
+          return queryClient.prefetchQuery({ ...args1, queryKey, queryFn });
+        },
+        prefetchInfinite: () => {
+          const args1 = args[1] as Maybe<
+            TRPCFetchInfiniteQueryOptions<any, any, any>
+          >;
+          return queryClient.prefetchInfiniteQuery({
+            ...args1,
+            queryKey,
+            queryFn,
+            initialPageParam: args1?.initialCursor ?? null,
+          });
+        },
+      };
 
-      const helperKey = `${utilName}Query` as const;
-      //     ^?
-
-      const fn: (...args: any) => any = helpers[helperKey];
-      return fn(fullPath, ...args);
+      return helperMap[utilName]();
     });
   });
 }

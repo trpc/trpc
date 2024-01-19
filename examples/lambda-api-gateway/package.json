@@ -6,15 +6,15 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "type-check": "tsc",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "^10.45.0",
-    "@trpc/server": "^10.45.0",
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/server": "npm:@trpc/server@next",
     "tsx": "^4.0.0",
     "zod": "^3.0.0"
   },

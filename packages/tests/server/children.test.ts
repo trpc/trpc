@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 
 test('children', async () => {
   const t = initTRPC.create();
@@ -15,38 +15,22 @@ test('children', async () => {
     }),
   });
 
-  const { queries, mutations, subscriptions, procedures } = router._def;
-  expect({
-    queries,
-    mutations,
-    subscriptions,
-    procedures,
-  }).toMatchInlineSnapshot(`
+  const { procedures } = router._def;
+  expect(procedures).toMatchInlineSnapshot(`
     Object {
-      "mutations": Object {
-        "child.grandchild.mut": [Function],
-      },
-      "procedures": Object {
-        "child.childQuery": [Function],
-        "child.grandchild.foo": [Function],
-        "child.grandchild.mut": [Function],
-        "foo": [Function],
-      },
-      "queries": Object {
-        "child.childQuery": [Function],
-        "child.grandchild.foo": [Function],
-        "foo": [Function],
-      },
-      "subscriptions": Object {},
+      "child.childQuery": [Function],
+      "child.grandchild.foo": [Function],
+      "child.grandchild.mut": [Function],
+      "foo": [Function],
     }
   `);
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
-  expect(await proxy.foo.query()).toBe('bar');
+  expect(await client.foo.query()).toBe('bar');
 
-  expect(await proxy.child.grandchild.foo.query()).toBe('grandchild');
-  expect(await proxy.child.grandchild.mut.mutate()).toBe('mut');
+  expect(await client.child.grandchild.foo.query()).toBe('grandchild');
+  expect(await client.child.grandchild.mut.mutate()).toBe('mut');
 
   await close();
 });

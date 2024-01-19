@@ -5,10 +5,10 @@
 // Using triple-slash directive makes sure that it will be available,
 // even if end-user `tsconfig.json` omits it in the `lib` array.
 
-import { AnyRouter } from '@trpc/server';
 import { observable, tap } from '@trpc/server/observable';
-import { TRPCClientError } from '..';
-import { Operation, OperationResultEnvelope, TRPCLink } from './types';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCClientError } from '../TRPCClientError';
+import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
@@ -135,7 +135,7 @@ function constructPartsAndArgs(
 
   const [light, dark] = palettes.css[type];
   const css = `
-    background-color: #${direction === 'up' ? light : dark}; 
+    background-color: #${direction === 'up' ? light : dark};
     color: ${direction === 'up' ? 'black' : 'white'};
     padding: 2px;
   `;
@@ -196,7 +196,7 @@ const defaultLogger =
   };
 
 /**
- * @see https://trpc.io/docs/client/links/loggerLink
+ * @link https://trpc.io/docs/v11/client/links/loggerLink
  */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},

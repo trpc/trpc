@@ -19,8 +19,8 @@ slug: /server/adapters/express
       <td>Express server &amp; procedure calls with Node.js.</td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/next/examples/express-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/express-server">Source</a></li>
         </ul>
       </td>
     </tr>

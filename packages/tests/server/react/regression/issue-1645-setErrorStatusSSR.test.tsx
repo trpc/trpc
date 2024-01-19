@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from '../__testHelpers';
-import { withTRPC } from '@trpc/next/src';
-import { AppType } from 'next/dist/shared/lib/utils';
+import { withTRPC } from '@trpc/next';
+import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;

@@ -1,5 +1,29 @@
-import { join } from 'path';
+import fs from 'fs';
+import path from 'path';
 import { defineConfig } from 'vitest/config';
+
+const aliases: Record<string, string> = {};
+
+const dirs = fs
+  .readdirSync(path.join(__dirname, '../'))
+  .filter((it) => it !== 'tests' && !it.startsWith('.'));
+
+for (const pkg of dirs.sort()) {
+  const pkgJson = path.join(__dirname, `/../${pkg}/package.json`);
+
+  const json = JSON.parse(fs.readFileSync(pkgJson, 'utf-8').toString());
+  const exports = json.exports;
+  for (const key of Object.keys(exports).sort()) {
+    if (key.includes('.json')) {
+      continue;
+    }
+    // trim first './'
+    const trimmed = key.slice(1);
+    aliases[`@trpc/${pkg}${trimmed}`] = path
+      .join(__dirname, `../${pkg}/src${key.slice(1)}`)
+      .replace(/\\/g, '/');
+  }
+}
 
 export default defineConfig({
   root: '../',
@@ -16,22 +40,19 @@ export default defineConfig({
       include: ['*/src/**/*.{ts,tsx,js,jsx}'],
       exclude: ['**/deprecated/**'],
     },
-    useAtomics: !!process.env.CI,
+    useAtomics: !!process.env['CI'],
   },
   resolve: {
     alias: {
-      '@trpc/server/src/': join(__dirname, '../server/src/'),
-      '@trpc/client/src/': join(__dirname, '../client/src/'),
-      '@trpc/react-query/src/': join(__dirname, '../react-query/src/'),
-      '@trpc/next/src/': join(__dirname, '../next/src/'),
-      'vitest-environment-miniflare': join(
+      ...aliases,
+      'vitest-environment-miniflare': [
         __dirname,
         'node_modules/vitest-environment-miniflare',
-      ),
-      '@vitest/coverage-istanbul': join(
+      ].join('/'),
+      '@vitest/coverage-istanbul': [
         __dirname,
         'node_modules/@vitest/coverage-istanbul',
-      ),
+      ].join('/'),
     },
   },
 });

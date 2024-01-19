@@ -1,12 +1,28 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { AnyRouter } from '../../core';
-import { inferRouterContext } from '../../core/types';
-import { getBatchStreamFormatter, HTTPRequest } from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import { NodeHTTPContentTypeHandler } from './internals/contentType';
+// @trpc/server
+import type { AnyRouter } from '../../@trpc/server';
+import type {
+  HTTPRequest,
+  HTTPResponse,
+  ResolveHTTPRequestOptionsContextFn,
+  ResponseChunk,
+} from '../../@trpc/server/http';
 import {
+  getBatchStreamFormatter,
+  resolveHTTPResponse,
+} from '../../@trpc/server/http';
+import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
+import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
@@ -24,8 +40,16 @@ export async function nodeHTTPRequestHandler<
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
     if (err) throw err;
 
-    const createContext = async (): Promise<inferRouterContext<TRouter>> => {
-      return await opts.createContext?.(opts);
+    //
+    // Build tRPC dependencies
+
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({
+        ...opts,
+        ...innerOpts,
+      });
     };
 
     const query = opts.req.query

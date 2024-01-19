@@ -2,6 +2,7 @@ import { createQueryClient } from '../__queryClient';
 import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import { getUntypedClient } from '@trpc/client';
 import React, { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -14,7 +15,7 @@ afterEach(async () => {
 
 describe('ensureQueryData()', () => {
   test('with input', async () => {
-    const { trpc, client } = factory;
+    const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
       const utils = trpc.useUtils();
@@ -47,18 +48,12 @@ describe('ensureQueryData()', () => {
 
       return <>{JSON.stringify(state)}</>;
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('updated post');
     });

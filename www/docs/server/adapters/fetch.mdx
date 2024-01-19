@@ -35,7 +35,7 @@ This also makes it easy to integrate into frameworks that uses the web platform 
     <tr>
       <td>Cloudflare Workers example</td>
       <td>
-        <a href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers">
+        <a href="https://github.com/trpc/trpc/tree/next/examples/cloudflare-workers">
           Source
         </a>
       </td>
@@ -43,7 +43,7 @@ This also makes it easy to integrate into frameworks that uses the web platform 
     <tr>
       <td>Deno Deploy example</td>
       <td>
-        <a href="https://github.com/trpc/trpc/tree/main/examples/deno-deploy">
+        <a href="https://github.com/trpc/trpc/tree/next/examples/deno-deploy">
           Source
         </a>
       </td>
@@ -51,7 +51,7 @@ This also makes it easy to integrate into frameworks that uses the web platform 
     <tr>
       <td>Next.js Edge Runtime example</td>
       <td>
-        <a href="https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime">
+        <a href="https://github.com/trpc/trpc/tree/next/examples/next-edge-runtime">
           Source
         </a>
       </td>
@@ -59,7 +59,7 @@ This also makes it easy to integrate into frameworks that uses the web platform 
     <tr>
       <td>Vercel Edge Runtime example</td>
       <td>
-        <a href="https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime">
+        <a href="https://github.com/trpc/trpc/tree/next/examples/vercel-edge-runtime">
           Source
         </a>
       </td>
@@ -96,36 +96,9 @@ Fun fact: that also means you can use a tRPC server in your browser!
 You can skip this step if you use Deno Deploy.
 :::
 
-<Tabs>
-  <TabItem value="npm" label="npm" default>
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-```sh
-npm install @trpc/server zod
-```
-
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-
-```sh
-yarn add @trpc/server zod
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpm add @trpc/server zod
-```
-
-  </TabItem>
-  <TabItem value="bun" label="bun">
-
-```sh
-bun add @trpc/server zod
-```
-
-  </TabItem>
-</Tabs>
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next zod" />
 
 > [Zod](https://github.com/colinhacks/zod) isn't a required dependency, but it's used in the sample router below.
 
@@ -322,7 +295,7 @@ This assumes you have Deno installed and setup. Refer to their [getting started 
 :::
 
 :::tip
-See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/main/examples/deno-deploy) for a working example.
+See our example [Deno Deploy app](https://github.com/trpc/trpc/tree/next/examples/deno-deploy) for a working example.
 :::
 
 #### Update the imports in `router.ts`
@@ -367,7 +340,7 @@ Run `deno run --allow-net=:8000 --allow-env ./server.ts` and your endpoints will
 
 ### Next.js Edge Runtime
 
-See a full example [here](https://github.com/trpc/trpc/tree/main/examples/next-edge-runtime).
+See a full example [here](https://github.com/trpc/trpc/tree/next/examples/next-edge-runtime).
 
 ### Remix
 
@@ -418,7 +391,7 @@ See the official [Vercel Edge Runtime documentation](https://edge-runtime.vercel
 :::
 
 :::tip
-See our example [Vercel Edge Runtime app](https://github.com/trpc/trpc/tree/main/examples/vercel-edge-runtime) for a working example.
+See our example [Vercel Edge Runtime app](https://github.com/trpc/trpc/tree/next/examples/vercel-edge-runtime) for a working example.
 :::
 
 #### Install dependencies

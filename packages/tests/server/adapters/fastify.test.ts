@@ -1,21 +1,21 @@
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
+import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
-  HTTPHeaders,
   splitLink,
-  TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import {
+import type {
   CreateFastifyContextOptions,
-  fastifyTRPCPlugin,
-} from '@trpc/server/src/adapters/fastify';
-import { observable } from '@trpc/server/src/observable';
+  FastifyTRPCPluginOptions,
+} from '@trpc/server/adapters/fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
@@ -27,9 +27,9 @@ const config = {
   prefix: '/trpc',
 };
 
-function createContext({ req, res }: CreateFastifyContextOptions) {
-  const user = { name: req.headers.username ?? 'anonymous' };
-  return { req, res, user };
+function createContext({ req, res, info }: CreateFastifyContextOptions) {
+  const user = { name: req.headers['username'] ?? 'anonymous' };
+  return { req, res, user, info };
 }
 
 type Context = Awaited<ReturnType<typeof createContext>>;
@@ -94,6 +94,11 @@ function createAppRouter() {
       onNewMessageSubscription();
       return sub;
     }),
+    request: router({
+      info: publicProcedure.query(({ ctx }) => {
+        return ctx.info;
+      }),
+    }),
     deferred: publicProcedure
       .input(
         z.object({
@@ -145,7 +150,15 @@ function createServer(opts: ServerOptions) {
   instance.register(plugin, {
     useWSS: true,
     prefix: config.prefix,
-    trpcOptions: { router, createContext },
+    trpcOptions: {
+      router,
+      createContext,
+      onError(data) {
+        // report to error monitoring
+        data;
+        // ^?
+      },
+    } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
   });
 
   instance.register(async function (fastify) {
@@ -180,7 +193,7 @@ const linkSpy: TRPCLink<AppRouter> = () => {
     return observable((observer) => {
       const unsubscribe = next(op).subscribe({
         next(value) {
-          orderedResults.push((value.result as any).data);
+          orderedResults.push(value.result.data as number);
           observer.next(value);
         },
         error: observer.error,
@@ -198,7 +211,7 @@ interface ClientOptions {
 function createClient(opts: ClientOptions) {
   const host = `localhost:${opts.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       splitLink({
@@ -416,6 +429,22 @@ describe('authorized user', () => {
         "text": "hello nyan",
       }
     `);
+  });
+
+  test('request info', async () => {
+    const info = await app.client.request.info.query();
+
+    expect(info).toMatchInlineSnapshot(`
+      Object {
+        "calls": Array [
+          Object {
+            "path": "request.info",
+            "type": "query",
+          },
+        ],
+        "isBatchCall": true,
+      }
+  `);
   });
 
   test('mutation', async () => {

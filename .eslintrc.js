@@ -10,6 +10,7 @@ const config = {
     'plugin:react-hooks/recommended',
     'prettier',
   ],
+  reportUnusedDisableDirectives: true,
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of import
@@ -51,6 +52,8 @@ const config = {
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',
           '\\.(t|j)sx$',
+          '@trpc/*',
+          'unstable-core-*',
         ],
       },
     ],
@@ -75,6 +78,20 @@ const config = {
       },
     ],
     'max-params': ['error', 3],
+    '@typescript-eslint/consistent-type-imports': 'error',
+    '@typescript-eslint/consistent-type-exports': 'error',
+    '@typescript-eslint/no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['@trpc/*/src'],
+            message: 'Remove the "`/src`" part of this import',
+            allowTypeImports: false,
+          },
+        ],
+      },
+    ],
   },
   overrides: [
     // {
@@ -129,6 +146,26 @@ const config = {
       files: ['packages/**/*'],
       rules: {
         'no-console': 'error',
+      },
+    },
+    {
+      files: ['packages/server/src/adapters/**/*'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: ['@trpc/server'],
+              },
+              {
+                group: ['unstable-core-do-not-import'],
+                message:
+                  'Use e.g. `../@trpc/server/http` instead - avoiding importing core helps us ensure third party adapters can be made',
+              },
+            ],
+          },
+        ],
       },
     },
   ],

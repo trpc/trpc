@@ -1,8 +1,23 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http';
-import { MaybePromise } from '../../types';
-import { NodeHTTPContentTypeHandler } from './internals/contentType';
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
+import type { IncomingMessage, ServerResponse } from 'http';
+// @trpc/server
+import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
+// @trpc/server/http
+import type {
+  HTTPBaseHandlerOptions,
+  TRPCRequestInfo,
+} from '../../@trpc/server/http';
+// eslint-disable-next-line no-restricted-imports
+import type { MaybePromise } from '../../unstable-core-do-not-import';
+import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
   [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
@@ -31,13 +46,13 @@ export type NodeHTTPCreateContextOption<
 > = object extends inferRouterContext<TRouter>
   ? {
       /**
-       * @link https://trpc.io/docs/context
+       * @link https://trpc.io/docs/v11/context
        **/
       createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
     }
   : {
       /**
-       * @link https://trpc.io/docs/context
+       * @link https://trpc.io/docs/v11/context
        **/
       createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
     };
@@ -93,6 +108,7 @@ export type NodeHTTPRequestHandlerOptions<
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
+  info: TRPCRequestInfo;
 };
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,

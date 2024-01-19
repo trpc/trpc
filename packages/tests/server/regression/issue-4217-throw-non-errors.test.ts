@@ -1,6 +1,8 @@
 import { routerToServerAndClientNew, waitError } from '../___testHelpers';
-import { httpLink, TRPCClientError } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/server';
+import type { TRPCClientError } from '@trpc/client';
+import { httpLink } from '@trpc/client';
+import type { TRPCError } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 
 const ctx = konn()
@@ -31,7 +33,7 @@ const ctx = konn()
 
 test('preserve `.cause` even on non-error objects', async () => {
   type TClientError = TRPCClientError<typeof ctx.router>;
-  await waitError<TClientError>(() => ctx.proxy.throws.query());
+  await waitError<TClientError>(() => ctx.client.throws.query());
 
   expect(ctx.onError).toHaveBeenCalledTimes(1);
   const error = ctx.onError.mock.calls[0]![0]!.error as TRPCError & {
