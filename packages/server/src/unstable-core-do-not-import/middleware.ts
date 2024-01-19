@@ -44,7 +44,7 @@ export interface MiddlewareBuilder<
   TContext,
   TMeta,
   TContextOverrides,
-  TInputIn,
+  TInputOut,
 > {
   /**
    * Create a new builder based on the current middleware builder
@@ -56,19 +56,19 @@ export interface MiddlewareBuilder<
           TMeta,
           TContextOverrides,
           $ContextOverridesOut,
-          TInputIn
+          TInputOut
         >
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
           TMeta,
           $ContextOverridesOut,
-          TInputIn
+          TInputOut
         >,
   ): MiddlewareBuilder<
     TContext,
     TMeta,
     Overwrite<TContextOverrides, $ContextOverridesOut>,
-    TInputIn
+    TInputOut
   >;
 
   /**
@@ -79,7 +79,7 @@ export interface MiddlewareBuilder<
     TMeta,
     TContextOverrides,
     object,
-    TInputIn
+    TInputOut
   >[];
 }
 
@@ -91,13 +91,13 @@ export type MiddlewareFunction<
   TMeta,
   TContextOverridesIn,
   $ContextOverridesOut,
-  TInputIn,
+  TInputOut,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
     type: ProcedureType;
     path: string;
-    input: TInputIn;
+    input: TInputOut;
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
     next: {
@@ -119,7 +119,11 @@ export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
  */
-export function createMiddlewareFactory<TContext, TMeta, TInputIn = unknown>() {
+export function createMiddlewareFactory<
+  TContext,
+  TMeta,
+  TInputOut = unknown,
+>() {
   function createMiddlewareInner(
     middlewares: AnyMiddlewareFunction[],
   ): AnyMiddlewareBuilder {
@@ -142,9 +146,9 @@ export function createMiddlewareFactory<TContext, TMeta, TInputIn = unknown>() {
       TMeta,
       object,
       $ContextOverrides,
-      TInputIn
+      TInputOut
     >,
-  ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputIn> {
+  ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputOut> {
     return createMiddlewareInner([fn]);
   }
 
