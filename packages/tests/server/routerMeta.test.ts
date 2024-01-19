@@ -1,7 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import type { inferRouterMeta } from '@trpc/core';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { inferRouterMeta } from '@trpc/server/unstable-core-do-not-import';
 
 test('route meta types', async () => {
   const testMeta = { data: 'foo' };

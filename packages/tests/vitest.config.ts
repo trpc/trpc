@@ -4,14 +4,11 @@ import { defineConfig } from 'vitest/config';
 
 const aliases: Record<string, string> = {};
 
-for (const pkg of [
-  //
-  'core',
-  'server',
-  'client',
-  'react-query',
-  'next',
-].sort()) {
+const dirs = fs
+  .readdirSync(path.join(__dirname, '../'))
+  .filter((it) => it !== 'tests' && !it.startsWith('.'));
+
+for (const pkg of dirs.sort()) {
   const pkgJson = path.join(__dirname, `/../${pkg}/package.json`);
 
   const json = JSON.parse(fs.readFileSync(pkgJson, 'utf-8').toString());

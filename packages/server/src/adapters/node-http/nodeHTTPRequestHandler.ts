@@ -1,12 +1,25 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { AnyRouter } from '@trpc/core';
+// @trpc/server
+import type { AnyRouter } from '../../@trpc/server';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
-} from '../../http';
-import { getBatchStreamFormatter, resolveHTTPResponse } from '../../http';
+} from '../../@trpc/server/http';
+import {
+  getBatchStreamFormatter,
+  resolveHTTPResponse,
+} from '../../@trpc/server/http';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 import type {

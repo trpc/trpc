@@ -12,8 +12,8 @@ import {
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
-import type { AnyRouter } from '@trpc/core';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
@@ -69,9 +69,11 @@ export function createRootHooks<
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
     const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
-    const [ssrState, setSSRState] = useState<SSRState>(props.ssrState ?? false);
+    const [ssrState, setSSRState] = React.useState<SSRState>(
+      props.ssrState ?? false,
+    );
 
-    const fns = useMemo(
+    const fns = React.useMemo(
       () =>
         createUtilityFunctions({
           client,
@@ -80,7 +82,7 @@ export function createRootHooks<
       [client, queryClient],
     );
 
-    const contextValue = useMemo<ProviderContext>(
+    const contextValue = React.useMemo<ProviderContext>(
       () => ({
         abortOnUnmount,
         queryClient,
@@ -92,7 +94,7 @@ export function createRootHooks<
       [abortOnUnmount, client, fns, queryClient, ssrContext, ssrState],
     );
 
-    useEffect(() => {
+    React.useEffect(() => {
       // Only updating state to `mounted` if we are using SSR.
       // This makes it so we don't have an unnecessary re-render when opting out of SSR.
       setSSRState((state) => (state ? 'mounted' : false));
@@ -275,10 +277,10 @@ export function createRootHooks<
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 
-    const optsRef = useRef<typeof opts>(opts);
+    const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
 
-    useEffect(() => {
+    React.useEffect(() => {
       if (!enabled) {
         return;
       }
@@ -492,7 +494,7 @@ export function createRootHooks<
     client,
     trpcState,
   ) => {
-    const transformed: DehydratedState | undefined = useMemo(() => {
+    const transformed: DehydratedState | undefined = React.useMemo(() => {
       if (!trpcState) {
         return trpcState;
       }

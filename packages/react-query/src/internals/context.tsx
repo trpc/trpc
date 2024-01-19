@@ -19,8 +19,11 @@ import type {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter, DistributiveOmit } from '@trpc/core';
-import { createContext } from 'react';
+import type {
+  AnyRouter,
+  DistributiveOmit,
+} from '@trpc/server/unstable-core-do-not-import';
+import * as React from 'react';
 import type { ExtractCursorType } from '../shared';
 import type { TRPCQueryKey } from './getQueryKey';
 
@@ -226,4 +229,4 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     queryKey: TRPCQueryKey,
   ) => InfiniteData<unknown> | undefined;
 }
-export const TRPCContext = createContext(null as any);
+export const TRPCContext = React.createContext?.(null as any);

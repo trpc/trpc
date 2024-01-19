@@ -17,7 +17,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
@@ -56,18 +56,18 @@
       ]
     }
   },
-  "dependencies": {
-    "@trpc/core": "10.45.0"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
+    "@trpc/server": "^10.45.0",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
+    "@trpc/server": "^10.45.0",
     "@types/express": "^4.17.17",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.33",
@@ -76,7 +76,7 @@
     "next": "^14.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "rollup": "^2.79.1",
+    "rollup": "^4.9.5",
     "tsx": "^4.0.0",
     "zod": "^3.0.0"
   },

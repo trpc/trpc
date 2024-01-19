@@ -4,7 +4,10 @@ import type {
   UseSuspenseQueryOptions,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import type { AnyRouter, DistributiveOmit } from '@trpc/core';
+import type {
+  AnyRouter,
+  DistributiveOmit,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   UseQueriesProcedureRecord,
   UseSuspenseQueriesProcedureRecord,

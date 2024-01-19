@@ -6,14 +6,15 @@
  */
 
 /**
- * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
+ * @link https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
 import * as fs from 'fs/promises';
 import { Readable } from 'node:stream';
-import type { CombinedDataTransformer } from '@trpc/core';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
+// @trpc/server
+import type { CombinedDataTransformer } from '../../../../@trpc/server';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import type { NodeHTTPRequest } from '../../types';
 import { NodeOnDiskFile } from './fileUploadHandler';
@@ -30,7 +31,7 @@ const utfTextDecoder = new TextDecoder('utf-8');
  * @param uploadHandler A function that handles file uploads and returns a value to be used in the request body. If uploaded to disk, the returned value is a NodeOnDiskFile. If uploaded to memory, the returned value is a File.
  * @param maxBodySize The maximum size of the request body in bytes. Defaults to Infinity.
  *
- * @see https://remix.run/utils/parse-multipart-form-data
+ * @link https://remix.run/utils/parse-multipart-form-data
  */
 async function parseMultipartFormData(
   request: NodeHTTPRequest,

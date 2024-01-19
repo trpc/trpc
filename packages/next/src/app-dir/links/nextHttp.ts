@@ -4,7 +4,7 @@ import type {
   TRPCLink,
 } from '@trpc/client';
 import { httpBatchLink, httpLink } from '@trpc/client';
-import type { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {

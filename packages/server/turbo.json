@@ -9,7 +9,8 @@
         "http/**",
         "observable/**",
         "rpc/**",
-        "shared/**"
+        "shared/**",
+        "unstable-core-do-not-import/**"
       ]
     }
   }

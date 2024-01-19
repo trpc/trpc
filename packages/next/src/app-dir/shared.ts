@@ -11,8 +11,8 @@ import type {
   Filter,
   inferHandlerInput,
   ProtectedIntersection,
-} from '@trpc/core';
-import { createRecursiveProxy } from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
+import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 
 /**
  * @internal

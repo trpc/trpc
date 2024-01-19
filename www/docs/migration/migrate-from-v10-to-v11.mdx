@@ -8,31 +8,55 @@ slug: /migrate-from-v10-to-v11
 :::info
 This is a current work in progress representing **version 11**.
 
-- The functionality is **stable and can be used in production**
-- We may do breaking API-changes between minor versions until we reach `11.0.0`
+- The functionality is **stable and can be used in production**, but we may do small breaking API-changes between patches until we reach `11.0.0`
 - The packages are published with the `next`-tag on npm
 
 :::
 
-### Installation snippet
+### Installation / upgrading
 
-```bash
-npm i --save @trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest @tanstack/react-query-devtools@latest
-```
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
+
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest @tanstack/react-query-devtools@latest" />
 
 ## Reverse-chronological changelog
 
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
-### 2024-01: created a `@trpc/core`-package
+### Deleted the `@trpc/core`-package
 
+tl;dr - pnpm + TypeScript makes it too difficult to avoid _"The inferred type of 'createContext' cannot be named without a reference to [...]"_ errors.
+
+### Removed `@trpc/client/links/*`-entrypoints
+
+```diff
+- import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
++ import { httpBatchLink } from '@trpc/client';
+- import { loggerLink } from '@trpc/client/links/loggerLink';
++ import { loggerLink } from '@trpc/client';
+- import {
+-  createWSClient,
+-  wsLink,
+- } from '@trpc/client';
++ import { createWSClient, wsLink } from '@trpc/client';
+```
+
+### ~~Added a `@trpc/core`-package~~ (reverted)
+
+<details>
 We moved a bunch of internals of `@trpc/server` to a new package called `@trpc/core` that is **not meant for public consumption**
 
-- Please help us and have a look out after errors like _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
-- If you are building a plugin or for some reason is importing something that isn't exported anymore, please open an issue on GitHub or open a conversation in [#v11-chats](https://discord.com/channels/867764511159091230/1057652120473575505) channel on Discord
+Please create an issue on GitHub or start a conversation in [#v11-chats](https://discord.com/channels/867764511159091230/1057652120473575505) channel on Discord if:
 
-### `useSuspenseQueries()`
+- You are missing types from `@trpc/server` after upgrading (also for plugin authors)
+- Get an error akin to _"The inferred type of 'createContext' cannot be named without a reference to [...]"_
+
+</details>
+
+### Added `useSuspenseQueries()`
+
+See [useSuspenseQueries](../client/react/suspense.md#usesuspensequeries)
 
 https://github.com/trpc/trpc/pull/5226
 

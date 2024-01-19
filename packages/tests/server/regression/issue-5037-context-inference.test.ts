@@ -1,7 +1,7 @@
-import type { ProcedureBuilder } from '@trpc/core';
 import type { inferRouterOutputs } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+import type { ProcedureBuilder } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 /**

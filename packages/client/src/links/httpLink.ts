@@ -1,6 +1,6 @@
-import type { AnyRouter } from '@trpc/core';
-import { transformResult } from '@trpc/core';
-import { observable } from '@trpc/core/observable';
+import { observable } from '@trpc/server/observable';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
@@ -86,6 +86,6 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
 }
 
 /**
- * @see https://trpc.io/docs/client/links/httpLink
+ * @link https://trpc.io/docs/v11/client/links/httpLink
  */
 export const httpLink = httpLinkFactory({ requester: jsonHttpRequester });

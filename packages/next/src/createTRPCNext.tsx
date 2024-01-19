@@ -1,7 +1,5 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
-import type { AnyRouter, ProtectedIntersection } from '@trpc/core';
-import { createFlatProxy } from '@trpc/core';
 import type {
   CreateReactUtils,
   DecoratedProcedureRecord,
@@ -13,6 +11,11 @@ import {
   createReactQueryUtils,
   createRootHooks,
 } from '@trpc/react-query/shared';
+import type {
+  AnyRouter,
+  ProtectedIntersection,
+} from '@trpc/server/unstable-core-do-not-import';
+import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import type { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
 import type { WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
@@ -28,11 +31,11 @@ export interface CreateTRPCNextBase<
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @see https://trpc.io/docs/client/react/useUtils
+   * @link https://trpc.io/docs/v11/client/react/useUtils
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @see https://trpc.io/docs/client/react/useUtils
+   * @link https://trpc.io/docs/v11/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;

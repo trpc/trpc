@@ -316,7 +316,7 @@ export default function IndexPage() {
  * - Export `appRouter` & `createContext` from [trpc].ts
  * - Make the `opts` object optional on `createContext()`
  *
- * @link https://trpc.io/docs/ssg
+ * @link https://trpc.io/docs/v11/ssg
  */
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,

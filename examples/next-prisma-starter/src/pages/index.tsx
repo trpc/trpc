@@ -101,8 +101,8 @@ const IndexPage: NextPageWithLayout = () => {
             /**
              * In a real app you probably don't want to use this manually
              * Checkout React Hook Form - it works great with tRPC
-             * @see https://react-hook-form.com/
-             * @see https://kitchen-sink.trpc.io/react-hook-form
+             * @link https://react-hook-form.com/
+             * @link https://kitchen-sink.trpc.io/react-hook-form
              */
             e.preventDefault();
             const $form = e.currentTarget;
@@ -164,7 +164,7 @@ export default IndexPage;
  * - Export `appRouter` & `createContext` from [trpc].ts
  * - Make the `opts` object optional on `createContext()`
  *
- * @link https://trpc.io/docs/ssg
+ * @link https://trpc.io/docs/v11/ssg
  */
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,

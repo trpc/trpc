@@ -2,9 +2,12 @@
 // This file contains a useful pattern in tRPC,
 //  building factories which can produce common functionality over a homologous data source.
 //
-import type { AnyRootConfig, createBuilder } from '@trpc/core';
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
+import type {
+  AnyRootConfig,
+  createBuilder,
+} from '@trpc/server/unstable-core-do-not-import';
 import z from 'zod';
 import type { Config } from './polymorphism.common';
 import { t } from './polymorphism.common';

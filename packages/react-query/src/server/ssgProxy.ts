@@ -19,12 +19,12 @@ import type {
   inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   callProcedure,
   createFlatProxy,
   createRecursiveProxy,
-} from '@trpc/core';
+} from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
@@ -124,7 +124,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @see https://trpc.io/docs/client/nextjs/server-side-helpers
+ * @link https://trpc.io/docs/v11/client/nextjs/server-side-helpers
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,

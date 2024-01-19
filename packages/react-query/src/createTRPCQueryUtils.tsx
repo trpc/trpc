@@ -1,4 +1,4 @@
-import type { AnyRouter } from '@trpc/core';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createQueryUtilsProxy } from './shared';
 import type { CreateQueryUtilsOptions } from './utils/createUtilityFunctions';
 import { createUtilityFunctions } from './utils/createUtilityFunctions';

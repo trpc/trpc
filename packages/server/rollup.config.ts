@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'url';
 import type { RollupOptions } from 'rollup';
 import { buildConfig } from '../../scripts/getRollupConfig';
 
@@ -14,15 +15,15 @@ export const input = [
   'src/adapters/ws.ts',
   'src/http.ts',
   'src/index.ts',
-  'src/observable.ts',
+  'src/observable/index.ts',
   'src/rpc.ts',
   'src/shared.ts',
-  // 'src/unstableDoNotImportThis.ts',
+  'src/unstable-core-do-not-import/index.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
   return buildConfig({
     input,
-    packageDir: __dirname,
+    packageDir: fileURLToPath(new URL('.', import.meta.url)),
   });
 }

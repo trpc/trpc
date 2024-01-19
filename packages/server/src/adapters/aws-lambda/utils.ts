@@ -1,5 +1,12 @@
-import type { AnyRouter, inferRouterContext } from '@trpc/core';
-import { TRPCError } from '@trpc/core';
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -7,12 +14,16 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
+import type { AnyRouter, inferRouterContext } from '../../@trpc/server'; // import @trpc/server
+
+// @trpc/server
+import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPHeaders,
   OnErrorFunction,
   ResponseMetaFn,
   TRPCRequestInfo,
-} from '../../http';
+} from '../../@trpc/server/http';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =
@@ -49,13 +60,13 @@ export type AWSLambdaOptions<
     } & (
       | {
           /**
-           * @link https://trpc.io/docs/context
+           * @link https://trpc.io/docs/v11/context
            **/
           createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }
       | {
           /**
-           * @link https://trpc.io/docs/context
+           * @link https://trpc.io/docs/v11/context
            **/
           createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }

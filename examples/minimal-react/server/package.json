@@ -5,11 +5,11 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch index.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives index.ts",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@trpc/server": "^10.45.0",
+    "@trpc/server": "npm:@trpc/server@next",
     "cors": "^2.8.5",
     "zod": "^3.0.0"
   },

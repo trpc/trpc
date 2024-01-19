@@ -26,20 +26,6 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-// const coreReExportSnippet = `
-// /**
-//  * This file is here to make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
-//  *
-//  * We're basically just re-exporting everything from @trpc/core here.
-//  *
-//  * If you need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
-//  */
-
-// export * from '@trpc/core';
-// export * from '@trpc/core/http';
-// export * from '@trpc/core/rpc';
-// `.trimStart();
-
 export async function generateEntrypoints(rawInputs: string[]) {
   const inputs = [...rawInputs];
   // set some defaults for the package.json
@@ -57,14 +43,6 @@ export async function generateEntrypoints(rawInputs: string[]) {
       default: './dist/index.js',
     },
   };
-
-  // const dirname = path.basename(path.dirname(pkgJsonPath));
-  // if (dirname !== 'core') {
-  //   // Adds a re-export of `@trpc/core` to all packages except `core`
-  //   const coreReExport = 'src/unstableDoNotImportThis.ts';
-  //   inputs.push(coreReExport);
-  //   writeFileSyncRecursive(path.resolve(coreReExport), coreReExportSnippet);
-  // }
 
   // Added to turbo.json pipeline output to ensure cache works
   const scriptOutputs = new Set<string>();

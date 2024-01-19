@@ -11,7 +11,7 @@ import { prisma } from '~/server/prisma';
 /**
  * Default selector for Post.
  * It's important to always explicitly say which fields you want to return in order to not leak extra information
- * @see https://github.com/prisma/prisma/issues/9353
+ * @link https://github.com/prisma/prisma/issues/9353
  */
 const defaultPostSelect = {
   id: true,
@@ -32,8 +32,8 @@ export const postRouter = router({
     .query(async ({ input }) => {
       /**
        * For pagination docs you can have a look here
-       * @see https://trpc.io/docs/useInfiniteQuery
-       * @see https://www.prisma.io/docs/concepts/components/prisma-client/pagination
+       * @link https://trpc.io/docs/v11/useInfiniteQuery
+       * @link https://www.prisma.io/docs/concepts/components/prisma-client/pagination
        */
 
       const limit = input.limit ?? 50;
