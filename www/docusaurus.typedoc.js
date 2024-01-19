@@ -11,7 +11,9 @@ function generateTypedocDocusaurusPlugins(directories) {
       // https://typedoc.org/guides/options/
       skipErrorChecking: true,
       id: directory,
-      entryPoints: ['index.ts', ...entrypoints].map(it => `../packages/${directory}/src/${it}`),
+      entryPoints: ['index.ts', ...entrypoints].map(
+        (it) => `../packages/${directory}/src/${it}`,
+      ),
       tsconfig: `../packages/${directory}/tsconfig.build.json`,
       out: `./typedoc/${directory}`,
       readme: 'none',
