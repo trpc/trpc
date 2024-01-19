@@ -51,7 +51,7 @@ jobs:
       - run: pnpm format-fix
         continue-on-error: true
 
-      - uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
+      - uses: autofix-ci/action@ea32e3a12414e6d3183163c3424a7d7a8631ad84
 
   no-autofix:
     name: '✅ No autofix needed'
