@@ -45,9 +45,9 @@ jobs:
       - name: Install deps (with cache)
         run: pnpm install --child-concurrency 3
 
-        # - run: pnpm turbo lint -- --fix
-        #   continue-on-error: true
-        # - run: pnpm manypkg fix
+      - run: pnpm turbo lint -- --fix
+        continue-on-error: true
+      - run: pnpm manypkg fix
         continue-on-error: true
       - run: pnpm format-fix
         continue-on-error: true
