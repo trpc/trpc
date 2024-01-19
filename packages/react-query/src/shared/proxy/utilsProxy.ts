@@ -299,9 +299,10 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
 
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
       fetch: () => context.fetchQuery(queryKey, ...args),
-      fetchInfinite: () => context.fetchInfiniteQuery(queryKey, args[0]),
+      fetchInfinite: () => context.fetchInfiniteQuery(queryKey, args[0] as any),
       prefetch: () => context.prefetchQuery(queryKey, ...args),
-      prefetchInfinite: () => context.prefetchInfiniteQuery(queryKey, args[0]),
+      prefetchInfinite: () =>
+        context.prefetchInfiniteQuery(queryKey, args[0] as any),
       ensureData: () => context.ensureQueryData(queryKey, ...args),
       invalidate: () => context.invalidateQueries(queryKey, ...args),
       reset: () => context.resetQueries(queryKey, ...args),
