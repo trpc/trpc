@@ -513,3 +513,26 @@ test('recipe: summon context in input parser', async () => {
 
   await ctx.close();
 });
+
+// regerssion: TInputIn / TInputOut
+test('zod default', () => {
+  const t = initTRPC.create();
+  const input = z.object({
+    users: z.array(z.number()).optional().default([]),
+  });
+
+  const router = t.router({
+    num: t.procedure
+      .input(input)
+      .use((opts) => {
+        expectTypeOf(opts.input.users).toMatchTypeOf<number[]>();
+        return opts.next();
+      })
+      .query((opts) => {
+        expectTypeOf(opts.input.users).toMatchTypeOf<number[]>();
+        return {
+          input,
+        };
+      }),
+  });
+});
