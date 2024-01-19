@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -29,7 +30,6 @@ jobs:
         with:
           node-version: 20.x
 
-      # <pnpm>
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -42,7 +42,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-        # </pnpm>
+      # </setup - coppy/paste this>
       - name: Download previous bundle analysis
         uses: dawidd6/action-download-artifact@v3
         with:
@@ -62,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # <setup - copy/paste this>
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
@@ -73,7 +74,6 @@ jobs:
         with:
           node-version: 20.x
 
-      # <pnpm>
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -86,7 +86,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </pnpm>
+      # </setup - coppy/paste this>
 
       - name: Test
         run: pnpm turbo --filter tests test-ci
@@ -137,7 +137,9 @@ jobs:
             .experimental/next-app-dir,
           ]
     steps:
-      - uses: actions/checkout@v4
+      # <setup - copy/paste this>
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -147,7 +149,6 @@ jobs:
         with:
           node-version: 20.x
 
-      # <pnpm>
       - name: Get pnpm store directory
         id: pnpm-cache
         run: |
@@ -160,7 +161,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      # </pnpm>
+      # </setup - coppy/paste this>
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
         run: |
