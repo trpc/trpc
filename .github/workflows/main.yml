@@ -62,8 +62,6 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
-    name: Ttest on Node ${{ matrix.node }} and ${{ matrix.os }}
-
     runs-on: ubuntu-latest
 
     steps:
