@@ -27,9 +27,6 @@ jobs:
       - uses: pnpm/action-setup@v2
       - uses: ./.github/setup
 
-      - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root install
-
       - name: Check version
         run: |
           if [[ $(node -p "require('./packages/server/package.json').version.startsWith('10.')") != true ]]; then

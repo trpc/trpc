@@ -26,16 +26,6 @@ jobs:
       - uses: pnpm/action-setup@v2
       - uses: ./.github/setup
 
-      - name: Install deps (with cache)
-        run: pnpm --filter "@trpc/*" --filter root install
-
-      - name: Check version
-        run: |
-          if [[ $(node -p "require('./packages/server/package.json').version.startsWith('10.')") != true ]]; then
-            echo "Error: The version in packages/server/package.json must start with '10.'"
-            exit 1
-          fi
-      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
