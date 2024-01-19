@@ -170,29 +170,12 @@ module.exports = {
   plugins: [
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
-      ? generateTypedocDocusaurusPlugins({
-          server: [
-            // 'adapters/aws-lambda/index.ts',
-            // 'adapters/express.ts',
-            // 'adapters/fastify/index.ts',
-            // 'adapters/fetch/index.ts',
-            // 'adapters/next.ts',
-            // 'adapters/node-http/index.ts',
-            // 'adapters/standalone.ts',
-            // 'adapters/ws.ts',
-            'observable.ts',
-            'rpc.ts',
-            'http.ts',
-          ],
-          client: [],
-          next: [
-            // 'server.ts',
-            // 'client.ts',
-            // 'links/nextCache.ts',
-            // 'links/nextHttp.ts',
-          ],
-          'react-query': [],
-        })
+      ? generateTypedocDocusaurusPlugins([
+          'server',
+          'client',
+          'react-query',
+          'next',
+        ])
       : []),
     async function myPlugin() {
       return {
