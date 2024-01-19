@@ -1,5 +1,6 @@
-name: Lint
-
+name: autofix.ci # for "security reasons", this has to be named autofix.ai
+permissions:
+  contents: read
 on:
   pull_request:
 
@@ -51,10 +52,7 @@ jobs:
       - run: pnpm format-fix
         continue-on-error: true
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'chore: auto-fix lint and/or formatting issues'
-
+      - uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
   lint-packages:
     runs-on: ubuntu-latest
     steps:
