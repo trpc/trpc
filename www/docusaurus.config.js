@@ -171,10 +171,10 @@ module.exports = {
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
       ? generateTypedocDocusaurusPlugins([
-          'client',
           'server',
-          'next',
+          'client',
           'react-query',
+          'next',
         ])
       : []),
     async function myPlugin() {
