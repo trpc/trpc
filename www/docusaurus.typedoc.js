@@ -55,7 +55,7 @@ function generateTypedocDocusaurusPlugins(directories) {
       entrypoints,
     };
   });
-  console.log('entrypoints', withEntryPoints);
+  console.log('TypeDoc entrypoints:', withEntryPoints);
   return withEntryPoints.map((opts, idx) => {
     const { directory, entrypoints } = opts;
     return [
