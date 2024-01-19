@@ -24,6 +24,10 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Deleted the `@trpc/core`-package
+
+tl;dr - pnpm + TypeScript makes it too difficult to avoid _"The inferred type of 'createContext' cannot be named without a reference to [...]"_ errors.
+
 ### Removed `@trpc/client/links/*`-entrypoints
 
 ```diff
@@ -38,14 +42,17 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 + import { createWSClient, wsLink } from '@trpc/client';
 ```
 
-### Added a `@trpc/core`-package
+### ~~Added a `@trpc/core`-package~~ (reverted)
 
+<details>
 We moved a bunch of internals of `@trpc/server` to a new package called `@trpc/core` that is **not meant for public consumption**
 
 Please create an issue on GitHub or start a conversation in [#v11-chats](https://discord.com/channels/867764511159091230/1057652120473575505) channel on Discord if:
 
 - You are missing types from `@trpc/server` after upgrading (also for plugin authors)
 - Get an error akin to _"The inferred type of 'createContext' cannot be named without a reference to [...]"_
+
+</details>
 
 ### Added `useSuspenseQueries()`
 
