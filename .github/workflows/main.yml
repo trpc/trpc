@@ -1,7 +1,5 @@
 name: main
 on:
-  push:
-    branches: [main]
   pull_request:
 
 concurrency:
@@ -24,14 +22,6 @@ jobs:
           fetch-depth: 0
       - uses: pnpm/action-setup@v2
       - uses: ./.github/setup
-
-      - name: Download previous bundle analysis
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          name: bundle-analysis
-          branch: main
-          path: ./downloads/previous-bundle-analysis
-          if_no_artifact_found: ignore
 
       - name: Build
         run: pnpm turbo --filter "@trpc/*" build
