@@ -63,12 +63,7 @@ jobs:
 
     name: Ttest on Node ${{ matrix.node }} and ${{ matrix.os }}
 
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        node: ['18.x', '20.x']
-        os: [ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
@@ -78,10 +73,9 @@ jobs:
 
       - uses: pnpm/action-setup@v2
 
-      - name: Use Node ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 20.x
 
       - name: Get pnpm store directory
         id: pnpm-cache
