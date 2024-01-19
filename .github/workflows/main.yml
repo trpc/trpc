@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: pnpm/action-setup@v2
-      - uses: ./.github/workflows/setup.yml
+      - uses: ./.github/setup.yml
 
       - name: Download previous bundle analysis
         uses: dawidd6/action-download-artifact@v3
