@@ -60,3 +60,4 @@ jobs:
         if: ${{ failure() || success() }}
         with:
           commit-message: 'chore: apply lint and formatting fixes'
+          fail-fast: false
