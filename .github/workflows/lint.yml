@@ -57,3 +57,6 @@ jobs:
 
       # commit autofixes
       - uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
+        if: ${{ failure() || success() }}
+        with:
+          commit-message: 'chore: apply lint and formatting fixes'
