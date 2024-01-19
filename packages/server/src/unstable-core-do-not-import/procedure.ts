@@ -99,7 +99,7 @@ export type inferHandlerInput<TProcedure extends AnyProcedure> = ProcedureArgs<
 >;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  inferProcedureParams<TProcedure>['_input_in'];
+  inferHandlerInput<TProcedure>[0];
 
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']

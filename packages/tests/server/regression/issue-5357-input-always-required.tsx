@@ -6,31 +6,29 @@ import { z } from 'zod';
 
 const fixtureData = ['1', '2'];
 
+const input = z
+  .object({
+    cursor: z.number(),
+    foo: z.literal('bar').optional().default('bar'),
+  })
+  .optional()
+  .default({ cursor: 0, foo: 'bar' });
+
 const ctx = konn()
   .beforeEach(() => {
     const t = initTRPC.create();
 
     const appRouter = t.router({
       post: t.router({
-        list: t.procedure
-          .input(
-            z
-              .object({
-                cursor: z.number(),
-                foo: z.literal('bar').optional().default('bar'),
-              })
-              .optional()
-              .default({ cursor: 0, foo: 'bar' }),
-          )
-          .query(({ input }) => {
-            return {
-              items: fixtureData.slice(input.cursor, input.cursor + 1),
-              next:
-                input.cursor + 1 > fixtureData.length
-                  ? undefined
-                  : input.cursor + 1,
-            };
-          }),
+        list: t.procedure.input(input).query(({ input }) => {
+          return {
+            items: fixtureData.slice(input.cursor, input.cursor + 1),
+            next:
+              input.cursor + 1 > fixtureData.length
+                ? undefined
+                : input.cursor + 1,
+          };
+        }),
       }),
     });
 
