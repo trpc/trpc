@@ -1,5 +1,6 @@
 name: autofix.ci # for "security reasons", this has to be named autofix.ai
-
+permissions:
+  contents: read
 on:
   pull_request:
 
