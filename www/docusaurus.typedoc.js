@@ -1,12 +1,17 @@
+// @ts-check
+
+/**
+ * @param {Record<string, string[]>} directories
+ */
 function generateTypedocDocusaurusPlugins(directories) {
-  return directories.map((directory, idx) => [
+  return Object.entries(directories).map(([directory, entrypoints], idx) => [
     'docusaurus-plugin-typedoc',
     {
       // TypeDoc options
       // https://typedoc.org/guides/options/
       skipErrorChecking: true,
       id: directory,
-      entryPoints: [`../packages/${directory}/src/index.ts`],
+      entryPoints: ['index.ts', ...entrypoints].map(it => `../packages/${directory}/src/${it}`),
       tsconfig: `../packages/${directory}/tsconfig.build.json`,
       out: `./typedoc/${directory}`,
       readme: 'none',
