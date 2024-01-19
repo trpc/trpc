@@ -28,7 +28,7 @@ function generateTypedocDocusaurusPlugins(directories) {
 
         return [value.import];
       })
-      .map((it) => it.replace('./dist', 'src').replace('.mjs', '.ts'))
+      .map((it) => it.replace('./dist/', '').replace('.mjs', '.ts'))
       .filter((it) => {
         if (it.includes('unstable')) {
           return false;
@@ -40,10 +40,16 @@ function generateTypedocDocusaurusPlugins(directories) {
           }
           case 'next':
             // FIXME: remove this
-            return it === 'src/index.ts';
+            return it === 'index.ts';
           case 'server':
             // FIXME: remove this
-            return !it.includes('adapters/next');
+            return (
+              !it.includes('adapters/next') ||
+              /**
+               * @deprecated remove in v12
+               */
+              it === 'shared.ts'
+            );
         }
         return true;
       });
@@ -62,7 +68,9 @@ function generateTypedocDocusaurusPlugins(directories) {
         // https://typedoc.org/guides/options/
         skipErrorChecking: true,
         id: directory,
-        entryPoints: entrypoints.map((it) => `../packages/${directory}/${it}`),
+        entryPoints: entrypoints.map(
+          (it) => `../packages/${directory}/src/${it}`,
+        ),
         tsconfig: `../packages/${directory}/tsconfig.build.json`,
         out: `./typedoc/${directory}`,
         readme: 'none',
