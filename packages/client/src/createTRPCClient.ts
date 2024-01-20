@@ -39,7 +39,7 @@ export type Resolver<
   TProcedure extends AnyProcedure,
 > = (
   input: inferProcedureInput<TProcedure>,
-  opts: ProcedureOptions,
+  opts?: ProcedureOptions,
 ) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
 type SubscriptionResolver<
