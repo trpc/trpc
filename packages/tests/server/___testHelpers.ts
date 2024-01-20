@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { IncomingMessage } from 'http';
 import type { AddressInfo } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
@@ -139,8 +138,7 @@ export async function waitError<TError extends Error = Error>(
 }
 
 export const ignoreErrors = async (fn: () => unknown) => {
-  // suppress logs
-
+  /* eslint-disable no-console */
   const suppressLogs = () => {
     const log = console.log;
     const error = console.error;
@@ -155,6 +153,7 @@ export const ignoreErrors = async (fn: () => unknown) => {
       console.error = error;
     };
   };
+  /* eslint-enable no-console */
   const release = suppressLogs();
   try {
     await fn();
