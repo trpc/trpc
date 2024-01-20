@@ -6,7 +6,8 @@ const aliases: Record<string, string> = {};
 
 const dirs = fs
   .readdirSync(path.join(__dirname, '../'))
-  .filter((it) => it !== 'tests' && !it.startsWith('.'));
+  .filter((it) => it !== 'tests' && !it.startsWith('.'))
+  .filter((it) => fs.existsSync(path.join(__dirname, `../${it}/package.json`)));
 
 for (const pkg of dirs.sort()) {
   const pkgJson = path.join(__dirname, `/../${pkg}/package.json`);
