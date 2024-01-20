@@ -7,10 +7,11 @@ import type {
   AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
+  inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
   IntersectionError,
-  ProcedureArgs,
+  ProcedureOptions,
   ProcedureRouterRecord,
   ProcedureType,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -37,23 +38,22 @@ export type Resolver<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
 > = (
-  ...args: ProcedureArgs<TProcedure['_def']>
+  input: inferProcedureInput<TProcedure>,
+  opts: ProcedureOptions,
 ) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
 type SubscriptionResolver<
   TConfig extends AnyRootConfig,
   TProcedure extends AnyProcedure,
 > = (
-  ...args: [
-    input: ProcedureArgs<TProcedure['_def']>[0],
-    opts: Partial<
-      TRPCSubscriptionObserver<
-        inferTransformedSubscriptionOutput<TConfig, TProcedure>,
-        TRPCClientError<TConfig>
-      >
-    > &
-      ProcedureArgs<TProcedure['_def']>[1],
-  ]
+  input: inferProcedureInput<TProcedure>,
+  opts?: Partial<
+    TRPCSubscriptionObserver<
+      inferTransformedSubscriptionOutput<TConfig, TProcedure>,
+      TRPCClientError<TConfig>
+    >
+  > &
+    ProcedureOptions,
 ) => Unsubscribable;
 
 type DecorateProcedure<

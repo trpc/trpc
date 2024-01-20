@@ -6,7 +6,7 @@ import type {
   AnyRootConfig,
   AnyRouter,
   AnySubscriptionProcedure,
-  ProcedureArgs,
+  inferProcedureInput,
   ProcedureRouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 
@@ -17,7 +17,7 @@ export type DecorateProcedureServer<
   ? {
       query: Resolver<TConfig, TProcedure>;
       revalidate: (
-        input?: ProcedureArgs<TProcedure['_def']>[0],
+        input?: inferProcedureInput<TProcedure>,
       ) => Promise<
         { revalidated: false; error: string } | { revalidated: true }
       >;
