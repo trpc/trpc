@@ -142,12 +142,11 @@ export const ignoreErrors = async (fn: () => unknown) => {
   const suppressLogs = () => {
     const log = console.log;
     const error = console.error;
-    console.log = () => {
+    const noop = () => {
       // ignore
     };
-    console.error = () => {
-      // ignore
-    };
+    console.log = noop;
+    console.error = noop;
     return () => {
       console.log = log;
       console.error = error;
