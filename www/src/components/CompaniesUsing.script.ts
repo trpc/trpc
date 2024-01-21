@@ -20,7 +20,7 @@ fs.writeFileSync(
   __dirname + '/CompaniesUsing.script.output.ts',
   `
 // prettier-ignore
-// eslint-ignore
+// eslint-disable
 
 export const companies = ${JSON.stringify(companies, null, 2)} as const;
 `.trimStart(),
