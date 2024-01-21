@@ -1,5 +1,5 @@
 import React from 'react';
-import { companyLogos } from './companies';
+import { companies } from './CompaniesUsing.script.output';
 import { SectionTitle } from './SectionTitle';
 
 const animationRow = Array(2).fill(0) as [number, number];
@@ -23,9 +23,13 @@ export const CompaniesUsing = () => {
             className="flex animate-infinite-scroll items-center justify-center md:justify-start [&_img]:max-w-none [&_li]:mx-8"
             aria-hidden={index > 0}
           >
-            {Object.entries(companyLogos).map(([key, value]) => (
-              <li key={key}>
-                <img src={value} alt={key} className="max-h-9 dark:invert" />
+            {companies.map((it) => (
+              <li key={it.src}>
+                <img
+                  src={it.src}
+                  alt={it.name}
+                  className="max-h-9 dark:invert"
+                />
               </li>
             ))}
           </ul>
