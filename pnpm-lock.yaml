@@ -1098,7 +1098,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplestrpc-next-prisma-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1192,7 +1192,7 @@ importers:
         version: 4.1.5
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplestrpc-next-prisma-todomvc'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1304,7 +1304,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplesnext-websockets-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1657,10 +1657,10 @@ importers:
         version: 4.20230215.0
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.57.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.60.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
-        specifier: ^0.57.0
-        version: 0.57.0(effect@2.0.0)(fast-check@3.13.2)
+        specifier: ^0.60.0
+        version: 0.60.6(effect@2.1.2)(fast-check@3.13.2)
       '@fastify/busboy':
         specifier: ^2.0.0
         version: 2.0.0
@@ -1886,10 +1886,10 @@ importers:
         version: 7.23.2(@babel/core@7.23.2)
       '@decs/typeschema':
         specifier: ^0.12.0
-        version: 0.12.0(@effect/schema@0.57.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(yup@1.0.0)(zod@3.22.4)
+        version: 0.12.0(@effect/schema@0.60.6)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(yup@1.0.0)(zod@3.22.4)
       '@effect/schema':
-        specifier: ^0.57.0
-        version: 0.57.0(effect@2.0.0)(fast-check@3.13.2)
+        specifier: ^0.60.0
+        version: 0.60.6(effect@2.1.2)(fast-check@3.13.2)
       '@octokit/graphql':
         specifier: ^7.0.0
         version: 7.0.0
@@ -4291,7 +4291,7 @@ packages:
     dev: false
     optional: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.57.0)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.60.6)(ajv@6.12.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4344,7 +4344,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@effect/schema': 0.57.0(effect@2.0.0)(fast-check@3.13.2)
+      '@effect/schema': 0.60.6(effect@2.1.2)(fast-check@3.13.2)
       ajv: 6.12.6
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
@@ -4354,7 +4354,7 @@ packages:
       zod: 3.22.4
     dev: true
 
-  /@decs/typeschema@0.12.0(@effect/schema@0.57.0)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
+  /@decs/typeschema@0.12.0(@effect/schema@0.60.6)(arktype@1.0.14-alpha)(runtypes@6.6.0)(superstruct@1.0.3)(valibot@0.26.0)(vite@4.1.2)(yup@1.0.0)(zod@3.22.4):
     resolution: {integrity: sha512-ltkDEpJvQ2LWCltsk2tzjO+rnCzdZzmgq6whYxDKac0wB0AqH8eYKdOcyWr0TklemDaebCdOpUACiMn7j1OZzQ==}
     peerDependencies:
       '@deepkit/type': ^1.0.1-alpha.97
@@ -4407,7 +4407,7 @@ packages:
       zod:
         optional: true
     dependencies:
-      '@effect/schema': 0.57.0(effect@2.0.0)(fast-check@3.13.2)
+      '@effect/schema': 0.60.6(effect@2.1.2)(fast-check@3.13.2)
       arktype: 1.0.14-alpha
       runtypes: 6.6.0
       superstruct: 1.0.3
@@ -5218,13 +5218,13 @@ packages:
       '@edge-runtime/primitives': 2.0.2
     dev: true
 
-  /@effect/schema@0.57.0(effect@2.0.0)(fast-check@3.13.2):
-    resolution: {integrity: sha512-o4dKS1qhtdIcj4wIS6uejRwXJYcouLO5klAe62vV4QfzQGGItgvD4f0HD6tdlh2E2jlo+iRSPibZadv2J3yEVQ==}
+  /@effect/schema@0.60.6(effect@2.1.2)(fast-check@3.13.2):
+    resolution: {integrity: sha512-M9DE/7fE0pVRVt8ytMpbRFqyTSHG08Ww6vAj/4x710++kA9ijgAtRuDgzQTTa3dwoJnCX+78kAKTEAsZpdKB0A==}
     peerDependencies:
-      effect: ^2.0.0
+      effect: ^2.1.2
       fast-check: ^3.13.2
     dependencies:
-      effect: 2.0.0
+      effect: 2.1.2
       fast-check: 3.13.2
 
   /@emotion/is-prop-valid@0.8.8:
@@ -12014,8 +12014,8 @@ packages:
   /ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  /effect@2.0.0:
-    resolution: {integrity: sha512-yYYNf91dlk7dEl+U1QzeSiMHIM9zz1/NqSJ5hNRZ6GrFwctaCQcdxmAhll6mQRCgXFIAMhMEawmATlGLWtU5qQ==}
+  /effect@2.1.2:
+    resolution: {integrity: sha512-MCRgwL2CukG7ZhXwqCDOZqWtDBDmofzvho91OS3SgAhjuVW8BoZHWGfHYT7U5WoKsvX9t7pEa8vrwfJfWwhZ5w==}
 
   /ejs@3.1.9:
     resolution: {integrity: sha512-rC+QVNMJWv+MtPgkt0y+0rVEIdbtxVADApW9JXrUVlzHetgcyczP/E7DJmWJ4fJCZF2cPcBk0laWO9ZHMG3DmQ==}
@@ -23372,7 +23372,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplesnext-websockets-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplesnext-websockets-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-starter(prisma@4.14.1)':
@@ -23389,7 +23389,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplestrpc-next-prisma-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplestrpc-next-prisma-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-4.14.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@4.14.1)':
@@ -23406,10 +23406,10 @@ packages:
         optional: true
     dependencies:
       '@prisma/engines-version': 4.14.0-67.d9a4c5988f480fa576d43970d5a23641aa77bc9c
-      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplestrpc-next-prisma-todomvc'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplesnext-websockets-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplesnext-websockets-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
     version: 4.14.1
@@ -23419,7 +23419,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplestrpc-next-prisma-starter':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
     version: 4.14.1
@@ -23429,7 +23429,7 @@ packages:
     dependencies:
       '@prisma/engines': 4.14.1
 
-  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%2525252525252525252540examplestrpc-next-prisma-todomvc':
+  '@registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%252525252525252525252540examplestrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-4.14.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
     version: 4.14.1
