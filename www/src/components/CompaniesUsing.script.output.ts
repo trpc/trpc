@@ -3,43 +3,43 @@
 
 export const companies = [
   {
-    "src": "/img/logos/algora.svg",
-    "name": "algora"
+    "src": "/img/logos/Algora.svg",
+    "name": "Algora"
   },
   {
-    "src": "/img/logos/calcom.svg",
-    "name": "calcom"
+    "src": "/img/logos/Cal.com.svg",
+    "name": "Cal.com"
   },
   {
-    "src": "/img/logos/documenso.png",
-    "name": "documenso"
+    "src": "/img/logos/Documenso.png",
+    "name": "Documenso"
   },
   {
-    "src": "/img/logos/fintory.svg",
-    "name": "fintory"
+    "src": "/img/logos/Fintory.svg",
+    "name": "Fintory"
+  },
+  {
+    "src": "/img/logos/Netflix.svg",
+    "name": "Netflix"
+  },
+  {
+    "src": "/img/logos/Newfront.svg",
+    "name": "Newfront"
+  },
+  {
+    "src": "/img/logos/Ping.gg.svg",
+    "name": "Ping.gg"
+  },
+  {
+    "src": "/img/logos/Pleo.svg",
+    "name": "Pleo"
+  },
+  {
+    "src": "/img/logos/Snaplet.svg",
+    "name": "Snaplet"
   },
   {
     "src": "/img/logos/napo.svg",
     "name": "napo"
-  },
-  {
-    "src": "/img/logos/netflix.svg",
-    "name": "netflix"
-  },
-  {
-    "src": "/img/logos/newfront.svg",
-    "name": "newfront"
-  },
-  {
-    "src": "/img/logos/ping.svg",
-    "name": "ping"
-  },
-  {
-    "src": "/img/logos/pleo.svg",
-    "name": "pleo"
-  },
-  {
-    "src": "/img/logos/snaplet.svg",
-    "name": "snaplet"
   }
 ] as const;
