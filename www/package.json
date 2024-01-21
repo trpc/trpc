@@ -16,6 +16,8 @@
     "sponsors-sync:pull": "tsx ./src/components/sponsors/script.pull.ts",
     "sponsors-sync:push": "tsx ./src/components/sponsors/script.push.ts",
     "sponsors-sync": "run-s sponsors-sync:*",
+    "postinstall:companies-using": "tsx ./src/components/CompaniesUsing.script.ts",
+    "postinstall": "run-p postinstall:* --print-label",
     "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts",
     "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../.gitignore src"
   },

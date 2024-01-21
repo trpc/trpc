@@ -44,4 +44,4 @@ To play with them locally go the `og-image` folder and run `pnpm dev`.
 
 ## Company logos
 
-We store a list of company logos in the `www/static/img/logos/*` folder to show on the landing page. To add future logos, simply add the png/svg to the folder, and then add it to the `www/src/components/companies.ts` map with the key of the company name and the value of the logo file location. Be sure to normalize your logos, and consider running them though an optimizer tool like [SVGOMG](https://jakearchibald.github.io/svgomg/). Finally, ensure that they have a set width and height.
+We store a list of company logos in the `www/static/img/logos/*` folder to show on the landing page. To add future logos, simply add the png/svg to the folder. Be sure to normalize your logos, and consider running them though an optimizer tool like [SVGOMG](https://jakearchibald.github.io/svgomg/). Finally, ensure that they have a set width and height.
