@@ -45,6 +45,7 @@ Implement your tRPC router. A sample router is given below:
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
+
 export const t = initTRPC.create();
 
 export const appRouter = t.router({
@@ -75,6 +76,7 @@ tRPC includes an adapter for Express out of the box. This adapter lets you conve
 ```ts title='server.ts'
 import { initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
 
 // created for each request
 const createContext = ({
