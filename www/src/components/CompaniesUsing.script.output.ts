@@ -3,43 +3,43 @@
 
 export const companies = [
   {
-    "src": "algora.svg",
+    "src": "/img/logos/algora.svg",
     "name": "algora"
   },
   {
-    "src": "calcom.svg",
+    "src": "/img/logos/calcom.svg",
     "name": "calcom"
   },
   {
-    "src": "documenso.png",
+    "src": "/img/logos/documenso.png",
     "name": "documenso"
   },
   {
-    "src": "fintory.svg",
+    "src": "/img/logos/fintory.svg",
     "name": "fintory"
   },
   {
-    "src": "napo.svg",
+    "src": "/img/logos/napo.svg",
     "name": "napo"
   },
   {
-    "src": "netflix.svg",
+    "src": "/img/logos/netflix.svg",
     "name": "netflix"
   },
   {
-    "src": "newfront.svg",
+    "src": "/img/logos/newfront.svg",
     "name": "newfront"
   },
   {
-    "src": "ping.svg",
+    "src": "/img/logos/ping.svg",
     "name": "ping"
   },
   {
-    "src": "pleo.svg",
+    "src": "/img/logos/pleo.svg",
     "name": "pleo"
   },
   {
-    "src": "snaplet.svg",
+    "src": "/img/logos/snaplet.svg",
     "name": "snaplet"
   }
 ] as const;

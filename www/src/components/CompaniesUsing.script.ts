@@ -11,7 +11,7 @@ const companies = files.map((src) => {
   const name = src.substring(0, src.length - ext.length);
 
   return {
-    src,
+    src: `/img/logos/${src}`,
     name,
   };
 });
