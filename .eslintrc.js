@@ -54,7 +54,7 @@ const config = {
           '\\.(t|j)sx$',
           '@trpc/*',
           'unstable-core-*',
-          '*.script.*',
+          'script',
         ],
       },
     ],
