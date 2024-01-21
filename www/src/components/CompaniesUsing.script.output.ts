@@ -1,5 +1,5 @@
 // prettier-ignore
-// eslint-ignore
+// eslint-disable
 
 export const companies = [
   {
