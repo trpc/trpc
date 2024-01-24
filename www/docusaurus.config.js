@@ -273,7 +273,7 @@ export default {
   markdown: {
     format: 'mdx',
     mermaid: true,
-    preprocessor: ({filePath, fileContent}) => {
+    preprocessor: ({ filePath, fileContent }) => {
       return fileContent.replaceAll('{{MY_VAR}}', 'MY_VALUE');
     },
     mdx1Compat: {
