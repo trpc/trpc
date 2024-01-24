@@ -174,6 +174,7 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
+    ...opts,
     prisma,
     session: opts.session,
   };
