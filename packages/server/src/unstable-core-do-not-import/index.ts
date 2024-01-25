@@ -97,6 +97,7 @@ export type {
   Unwrap,
   ValidateShape,
   WithoutIndexSignature,
+  TypeError,
 } from './types';
 export { isObject } from './utils';
 

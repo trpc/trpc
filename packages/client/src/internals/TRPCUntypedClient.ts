@@ -3,12 +3,12 @@ import type {
   Unsubscribable,
 } from '@trpc/server/observable';
 import { observableToPromise, share } from '@trpc/server/observable';
-import '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
   inferConfig,
+  TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
@@ -28,7 +28,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?: 'You must set a transformer on your your `initTRPC`-object first';
+        transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
       }
     : {
         /**

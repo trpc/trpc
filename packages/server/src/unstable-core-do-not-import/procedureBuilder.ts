@@ -22,14 +22,18 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
-import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
+import type {
+  GetRawInputFn,
+  MaybePromise,
+  Overwrite,
+  Simplify,
+  TypeError,
+} from './types';
 import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : Simplify<TType & TWith>;
-
-type ErrorMessage<TMessage extends string> = TMessage;
 
 /** @internal */
 export const unsetMarker = Symbol('unsetMarker');
@@ -98,10 +102,10 @@ export interface ProcedureBuilder<
         ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
           ? undefined extends TInputOut
             ? $Parser
-            : ErrorMessage<'Cannot chain an optional parser to a required parser'>
+            : TypeError<'Cannot chain an optional parser to a required parser'>
           : $Parser
-        : ErrorMessage<'All input parsers did not resolve to an object'>
-      : ErrorMessage<'All input parsers did not resolve to an object'>,
+        : TypeError<'All input parsers did not resolve to an object'>
+      : TypeError<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
