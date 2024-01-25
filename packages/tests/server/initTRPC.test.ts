@@ -16,7 +16,7 @@ test('default transformer', () => {
     foo: 'bar';
   }>();
 
-  expectTypeOf(t._config.$types.transformer).toEqualTypeOf<false>();
+  expectTypeOf<typeof t._config.$types.transformer>().toEqualTypeOf<false>();
   expectTypeOf(t._config.transformer).toEqualTypeOf<CombinedDataTransformer>();
 });
 test('custom transformer', () => {
@@ -28,7 +28,7 @@ test('custom transformer', () => {
     transformer,
   });
 
-  expectTypeOf(t._config.$types.transformer).toEqualTypeOf<true>();
+  expectTypeOf<typeof t._config.$types.transformer>().toEqualTypeOf<true>();
   expectTypeOf(t._config.transformer).toEqualTypeOf<CombinedDataTransformer>();
 });
 
