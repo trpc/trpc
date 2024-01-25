@@ -1,5 +1,8 @@
 import { initTRPC } from '@trpc/server';
-import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  CombinedDataTransformer,
+  DataTransformerOptions,
+} from '@trpc/server/unstable-core-do-not-import';
 
 test('default transformer', () => {
   const t = initTRPC
@@ -14,6 +17,7 @@ test('default transformer', () => {
   }>();
 
   expectTypeOf(t._config.$types.transformer).toEqualTypeOf<false>();
+  expectTypeOf(t._config.transformer).toEqualTypeOf<CombinedDataTransformer>();
 });
 test('custom transformer', () => {
   const transformer: DataTransformerOptions = {
@@ -23,9 +27,9 @@ test('custom transformer', () => {
   const t = initTRPC.create({
     transformer,
   });
-  const router = t.router({});
 
   expectTypeOf(t._config.$types.transformer).toEqualTypeOf<true>();
+  expectTypeOf(t._config.transformer).toEqualTypeOf<CombinedDataTransformer>();
 });
 
 test('meta typings', () => {
