@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { httpLink } from '@trpc/client';
-import { inferRouterOutputs, initTRPC } from '@trpc/server/src';
+import type { inferRouterOutputs } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import superjson from 'superjson';
 
@@ -36,7 +37,7 @@ describe('without transformer', () => {
     .done();
 
   test('output', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     type Output = inferRouterOutputs<typeof appRouter>['greeting'];
     expectTypeOf<Output>().toEqualTypeOf<{
@@ -44,7 +45,7 @@ describe('without transformer', () => {
       date: string;
     }>();
 
-    const res = await proxy.greeting.query();
+    const res = await client.greeting.query();
     expectTypeOf(res).toEqualTypeOf<{
       message: string;
       date: string;
@@ -87,7 +88,7 @@ describe('with transformer', () => {
     .done();
 
   test('output', async () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
     type Output = inferRouterOutputs<typeof appRouter>['greeting'];
     expectTypeOf<Output>().toEqualTypeOf<{
@@ -95,7 +96,7 @@ describe('with transformer', () => {
       date: Date;
     }>();
 
-    const res = await proxy.greeting.query();
+    const res = await client.greeting.query();
     expectTypeOf(res).toEqualTypeOf<{
       message: string;
       date: Date;

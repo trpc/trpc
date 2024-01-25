@@ -24,27 +24,27 @@ Full documentation for `@trpc/client` can be found [here](https://trpc.io/docs/v
 
 ```bash
 # npm
-npm install @trpc/client
+npm install @trpc/client@next
 
 # Yarn
-yarn add @trpc/client
+yarn add @trpc/client@next
 
 # pnpm
-pnpm add @trpc/client
+pnpm add @trpc/client@next
 
 # Bun
-bun add @trpc/client
+bun add @trpc/client@next
 ```
 
 ## Basic Example
 
 ```ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 // Importing the router type from the server file
 import type { AppRouter } from './server';
 
 // Initializing the tRPC client
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/trpc',

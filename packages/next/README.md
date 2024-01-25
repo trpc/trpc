@@ -24,16 +24,16 @@ Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/cli
 
 ```bash
 # npm
-npm install @trpc/next @trpc/react-query @tanstack/react-query@^4.0.0
+npm install @trpc/next@next @trpc/react-query@next @tanstack/react-query
 
 # Yarn
-yarn add @trpc/next @trpc/react-query @tanstack/react-query@^4.0.0
+yarn add @trpc/next@next @trpc/react-query@next @tanstack/react-query
 
 # pnpm
-pnpm add @trpc/next @trpc/react-query @tanstack/react-query@^4.0.0
+pnpm add @trpc/next@next @trpc/react-query@next @tanstack/react-query
 
 # Bun
-bun add @trpc/next @trpc/react-query @tanstack/react-query@^4.0.0
+bun add @trpc/next@next @trpc/react-query@next @tanstack/react-query
 ```
 
 ## Basic Example

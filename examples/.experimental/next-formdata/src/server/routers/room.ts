@@ -17,7 +17,7 @@ const formDataProcedure = publicProcedure.use(async (opts) => {
   );
 
   return opts.next({
-    rawInput: formData,
+    getRawInput: async () => formData,
   });
 });
 

@@ -48,14 +48,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    announcementBar: {
-      id: 'drift',
-      content:
-        "🚀 We've just released a beta version of <strong>tRPC Drift</strong> which helps you keep track of changes in your tRPC API. Check it out at <a href='https://drift.trpc.io'><strong>drift.trpc.io</strong></a>.",
-      backgroundColor: 'var(--ifm-color-primary-dark)',
-      textColor: '#ffffff',
-      isCloseable: true,
-    },
+    // announcementBar: {
+    //   id: 'drift',
+    //   content:
+    //     "🚀 We've just released a beta version of <strong>tRPC Drift</strong> which helps you keep track of changes in your tRPC API. Check it out at <a href='https://drift.trpc.io'><strong>drift.trpc.io</strong></a>.",
+    //   backgroundColor: 'var(--ifm-color-primary-dark)',
+    //   textColor: '#ffffff',
+    //   isCloseable: true,
+    // },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -129,7 +129,7 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/main',
+              href: 'https://github.com/trpc/trpc/tree/next',
               className: 'flex items-center',
             },
             {
@@ -153,7 +153,7 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/main',
+              href: 'https://github.com/trpc/trpc/tree/next',
               className: 'flex items-center',
             },
             {
@@ -169,12 +169,14 @@ module.exports = {
   },
   plugins: [
     // Sidebar order is decided by the position in the array below
-    ...generateTypedocDocusaurusPlugins([
-      'client',
-      'server',
-      'next',
-      'react-query',
-    ]),
+    ...(env.TYPEDOC
+      ? generateTypedocDocusaurusPlugins([
+          'server',
+          'client',
+          'react-query',
+          'next',
+        ])
+      : []),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',
@@ -202,29 +204,36 @@ module.exports = {
           // onlyIncludeVersions: ['9.x'],
           versions: {
             current: {
-              label: '10.x',
+              label: '11.x',
               // path: 'v10',
               badge: true,
-              className: 'v10',
+              // className: 'v11',
+              banner: 'unreleased',
+            },
+            '10.x': {
+              label: '10.x',
+              path: 'v10',
+              badge: true,
+              // className: 'v10',
               banner: 'none',
             },
             '9.x': {
               label: '9.x',
               path: 'v9',
               badge: true,
-              className: 'v9',
+              // className: 'v9',
               banner: 'unmaintained',
             },
           },
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

@@ -1,7 +1,12 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { TRPCClientError, TRPCClientErrorLike } from '@trpc/client/src';
-import { initTRPC } from '@trpc/server/src';
+import type { TRPCClientErrorLike } from '@trpc/client';
+import { TRPCClientError } from '@trpc/client';
+import { initTRPC } from '@trpc/server';
+import type {
+  DefaultErrorData,
+  Maybe,
+} from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import React from 'react';
 import { z, ZodError } from 'zod';
@@ -44,10 +49,10 @@ describe('custom error formatter', () => {
     .done();
 
   test('query that fails', async () => {
-    const { proxy, App, appRouter } = ctx;
+    const { client, App, appRouter } = ctx;
     const queryErrorCallback = vi.fn();
     function MyComponent() {
-      const query1 = proxy.post.byId.useQuery({
+      const query1 = client.post.byId.useQuery({
         id: 0,
       });
 
@@ -128,10 +133,10 @@ describe('no custom formatter', () => {
     .done();
 
   test('query that fails', async () => {
-    const { proxy, App, appRouter } = ctx;
+    const { client, App, appRouter } = ctx;
     const queryErrorCallback = vi.fn();
     function MyComponent() {
-      const query1 = proxy.post.byId.useQuery({
+      const query1 = client.post.byId.useQuery({
         id: 0,
       });
 
@@ -202,24 +207,9 @@ test('types', async () => {
   });
 
   type TRouterError = TRPCClientErrorLike<typeof appRouter>;
-  type TProcedureError = TRPCClientErrorLike<
-    (typeof appRouter)['post']['byId']
-  >;
 
   type TRouterError__data = TRouterError['data'];
   //      ^?
-  type TProcedureError__data = TProcedureError['data'];
-  //     ^?
 
-  expectTypeOf<TRouterError__data>().toMatchTypeOf<TProcedureError__data>();
-
-  type TRouterError__shape = TRouterError['shape'];
-  //      ^?
-  type TProcedureError__shape = TProcedureError['shape'];
-  //     ^?
-
-  expectTypeOf<TRouterError__shape>().toMatchTypeOf<TProcedureError__shape>();
-
-  expectTypeOf<TRouterError>().toEqualTypeOf<TProcedureError>();
-  expectTypeOf<TRouterError>().toMatchTypeOf<TProcedureError>();
+  expectTypeOf<TRouterError__data>().toMatchTypeOf<Maybe<DefaultErrorData>>();
 });

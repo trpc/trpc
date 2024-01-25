@@ -39,39 +39,9 @@ We recommend a file structure like this one, although it is not enforced by tRPC
 
 ### 1. Install deps
 
-<Tabs>
-  <TabItem value="npm" label="npm" default>
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-```sh
-npm install @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@^4.0.0 zod
-```
-
-  </TabItem>
-
-<TabItem value="yarn" label="yarn">
-
-```sh
-yarn add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@^4.0.0 zod
-```
-
-</TabItem>
-
-<TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpm add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@^4.0.0 zod
-```
-
-</TabItem>
-
-<TabItem value="bun" label="bun">
-
-```sh
-bun add @trpc/server @trpc/client @trpc/react-query @trpc/next @tanstack/react-query@^4.0.0 zod
-```
-
-</TabItem>
-</Tabs>
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest zod" />
 
 The Next.js integration is actually a combination of our [React Query Integration](../react/introduction.mdx) and some Next.js specific integrations.
 
@@ -148,7 +118,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/routers/_app';
 
 // export API handler
-// @see https://trpc.io/docs/server/adapters
+// @link https://trpc.io/docs/v11/server/adapters
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   createContext: () => ({}),
@@ -194,7 +164,7 @@ export const trpc = createTRPCNext<AppRouter>({
         httpBatchLink({
           /**
            * If you want to use SSR, you need to use the server's full URL
-           * @link https://trpc.io/docs/ssr
+           * @link https://trpc.io/docs/v11/ssr
            **/
           url: `${getBaseUrl()}/api/trpc`,
 
@@ -209,7 +179,7 @@ export const trpc = createTRPCNext<AppRouter>({
     };
   },
   /**
-   * @link https://trpc.io/docs/ssr
+   * @link https://trpc.io/docs/v11/ssr
    **/
   ssr: false,
 });
@@ -265,8 +235,8 @@ The `config`-argument is a function that returns an object that configures the t
 - **Required**:
 - `links` to customize the flow of data between tRPC Client and the tRPC Server. [Read more](/docs/client/links).
 - Optional:
-- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v4/docs/reference/QueryClient)
-- `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v4/docs/reference/QueryClient)
+- `queryClientConfig`: a configuration object for the React Query `QueryClient` used internally by the tRPC React hooks: [QueryClient docs](https://tanstack.com/query/v5/docs/reference/QueryClient)
+- `queryClient`: a React Query [QueryClient instance](https://tanstack.com/query/v5/docs/reference/QueryClient)
   - **Note:** You can only provide either a `queryClient` or a `queryClientConfig`.
 - `transformer`: a transformer applied to outgoing payloads. Read more about [Data Transformers](/docs/server/data-transformers)
 - `abortOnUnmount`: determines if in-flight requests will be cancelled on component unmount. This defaults to `false`.
@@ -315,4 +285,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find information about [queries](/docs/client/react/usequery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query`.
+You can also find information about [queries](/docs/client/react/usequery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query@next`@next.

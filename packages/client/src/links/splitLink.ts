@@ -1,7 +1,7 @@
-import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
-import { Operation, TRPCLink } from './types';
+import type { Operation, TRPCLink } from './types';
 
 function asArray<TType>(value: TType | TType[]) {
   return Array.isArray(value) ? value : [value];

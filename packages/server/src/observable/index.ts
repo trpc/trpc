@@ -1,4 +1,10 @@
-export * from './observable';
-export * from './types';
-export * from './operators';
-export { observableToPromise } from './internals/observableToPromise';
+export type { inferObservableValue } from './observable';
+export { isObservable, observable, observableToPromise } from './observable';
+export { map, share, tap } from './operators';
+export type {
+  Observable,
+  Observer,
+  TeardownLogic,
+  Unsubscribable,
+  UnsubscribeFn,
+} from './types';

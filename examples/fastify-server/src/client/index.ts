@@ -1,5 +1,5 @@
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
   httpBatchLink,
   splitLink,
@@ -14,7 +14,7 @@ async function start() {
   const { port, prefix } = serverConfig;
   const urlEnd = `localhost:${port}${prefix}`;
   const wsClient = createWSClient({ url: `ws://${urlEnd}` });
-  const trpc = createTRPCProxyClient<AppRouter>({
+  const trpc = createTRPCClient<AppRouter>({
     transformer: superjson,
     links: [
       splitLink({

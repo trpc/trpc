@@ -1,23 +1,21 @@
-import {
+import type {
   CreateTRPCClientOptions,
-  createTRPCUntypedClient,
-  TRPCClientError,
   TRPCLink,
   TRPCRequestOptions,
 } from '@trpc/client';
-import { transformResult } from '@trpc/client/shared';
-import {
-  AnyProcedure,
+import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
+import { observable } from '@trpc/server/observable';
+import type {
   AnyRouter,
-  inferHandlerInput,
   MaybePromise,
   ProcedureOptions,
   Simplify,
-} from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+} from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TRPCActionHandler } from './server';
-import { ActionHandlerDef, isFormData } from './shared';
+import type { TRPCActionHandler } from './server';
+import type { ActionHandlerDef } from './shared';
+import { isFormData } from './shared';
 
 type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: ProcedureOptions]
@@ -83,7 +81,7 @@ export function experimental_serverActionLink<
               : runtime.transformer.serialize(op.input),
           )
           .then((data) => {
-            const transformed = transformResult(data, runtime);
+            const transformed = transformResult(data, runtime.transformer);
 
             if (!transformed.ok) {
               observer.error(TRPCClientError.from(transformed.error, {}));
@@ -100,16 +98,6 @@ export function experimental_serverActionLink<
           });
       });
 }
-
-// ts-prune-ignore-next
-/**
- * @internal
- */
-export type inferActionResultProps<TProc extends AnyProcedure> = {
-  input: inferHandlerInput<TProc>[0];
-  output: TProc['_def']['_output_out'];
-  errorShape: TProc['_def']['_config']['$types']['errorShape'];
-};
 
 interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;

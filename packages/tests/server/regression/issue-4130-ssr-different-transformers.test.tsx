@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { DehydratedState } from '@tanstack/react-query';
+import type { DehydratedState } from '@tanstack/react-query';
 import { createTRPCNext } from '@trpc/next';
-import type { CombinedDataTransformer } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
+import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
-import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 import superjson from 'superjson';
 
@@ -72,10 +72,10 @@ test('withTRPC - SSR', async () => {
   const props = (await Wrapped.getInitialProps!({
     AppTree: Wrapped,
     Component: <div />,
-  } as any)) as any;
+  } as any)) as Record<string, any>;
 
   const trpcState: DehydratedState = transformer.output.deserialize(
-    props.pageProps.trpcState,
+    props['pageProps'].trpcState,
   );
 
   const relevantData = trpcState.queries.map((it) => ({

@@ -1,4 +1,5 @@
-import { observable, share, tap } from '.';
+import { observable } from './observable';
+import { share, tap } from './operators';
 
 test('vanilla observable - complete()', () => {
   const obs = observable<number, Error>((observer) => {

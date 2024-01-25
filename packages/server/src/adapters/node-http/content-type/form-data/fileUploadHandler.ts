@@ -8,7 +8,7 @@
  */
 
 /**
- * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-node/upload/fileUploadHandler.ts
+ * @link https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-node/upload/fileUploadHandler.ts
  */
 import { randomBytes } from 'node:crypto';
 import { createReadStream, createWriteStream, statSync } from 'node:fs';
@@ -18,7 +18,8 @@ import { basename, dirname, extname, resolve as resolvePath } from 'node:path';
 import { finished, Readable } from 'node:stream';
 import { promisify } from 'node:util';
 import { streamSlice } from './streamSlice';
-import { MaxPartSizeExceededError, UploadHandler } from './uploadHandler';
+import type { UploadHandler } from './uploadHandler';
+import { MaxPartSizeExceededError } from './uploadHandler';
 
 export async function readableStreamToString(
   stream: ReadableStream<Uint8Array>,

@@ -1,18 +1,17 @@
-import {
+import type {
+  inferObservableValue,
+  Unsubscribable,
+} from '@trpc/server/observable';
+import { observableToPromise, share } from '@trpc/server/observable';
+import '@trpc/server/unstable-core-do-not-import';
+import type {
   AnyRouter,
-  ClientDataTransformerOptions,
   CombinedDataTransformer,
   DataTransformerOptions,
   DefaultDataTransformer,
-} from '@trpc/server';
-import {
-  inferObservableValue,
-  observableToPromise,
-  share,
-  Unsubscribable,
-} from '@trpc/server/observable';
+} from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
-import {
+import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
@@ -27,7 +26,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * Data transformer
          *
          * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
+         * @link https://trpc.io/docs/v11/data-transformers
          **/
         transformer?: 'You must set a transformer on the backend router';
       }
@@ -37,7 +36,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * Data transformer
          *
          * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
+         * @link https://trpc.io/docs/v11/data-transformers
          **/
         transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
           ? DataTransformerOptions
@@ -48,11 +47,9 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * Data transformer
          *
          * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
+         * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?:
-          | /** @deprecated **/ ClientDataTransformerOptions
-          | CombinedDataTransformer;
+        transformer?: CombinedDataTransformer;
       };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
@@ -222,7 +219,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
         } else {
-          opts.onData?.((envelope.result as any).data);
+          opts.onData?.(envelope.result.data);
         }
       },
       error(err) {

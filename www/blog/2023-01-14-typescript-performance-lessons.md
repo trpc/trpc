@@ -131,7 +131,7 @@ How can we fix this? Let's change our types to _do less_.
 
 ### Get lazy
 
-We need to find a way for the `v10` API to adapt to the legacy `v9` routers more gracefully. New tRPC projects should not suffer from the reduced TypeScript performance of [interop mode](/docs/migrate-from-v9-to-v10#using-interop).
+We need to find a way for the `v10` API to adapt to the legacy `v9` routers more gracefully. New tRPC projects should not suffer from the reduced TypeScript performance of [interop mode](/docs/v10/migrate-from-v9-to-v10#using-interop).
 
 The idea is to rearrange the core types themselves. `v9` procedures are different entities than `v10` procedures so they shouldn't share the same space in our library code. On the tRPC server side, this means we had some work to do to store the types on different fields in the router instead of a single `record` field (see the `DecoratedProcedureUtilsRecord` from above).
 

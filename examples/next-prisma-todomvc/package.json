@@ -2,6 +2,9 @@
   "name": "@examples/trpc-next-prisma-todomvc",
   "version": "10.45.0",
   "private": true,
+  "engines": {
+    "node": ">=18.15.0"
+  },
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",
@@ -11,7 +14,7 @@
     "dev": "pnpm dx:next",
     "prebuild": "run-s generate migrate",
     "build": "next build",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "start": "next start",
     "studio": "prisma studio",
     "migrate-dev": "prisma migrate dev",
@@ -23,11 +26,11 @@
   },
   "dependencies": {
     "@prisma/client": "^4.14.1",
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "^10.45.0",
-    "@trpc/next": "^10.45.0",
-    "@trpc/react-query": "^10.45.0",
-    "@trpc/server": "^10.45.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/next": "npm:@trpc/next@next",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
+    "@trpc/server": "npm:@trpc/server@next",
     "clsx": "^2.0.0",
     "i18next": "^22.4.13",
     "next": "^14.0.1",
@@ -42,7 +45,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
-    "@tanstack/react-query-devtools": "^4.18.0",
+    "@tanstack/react-query-devtools": "^5.0.0",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.33",
     "eslint": "^8.40.0",

@@ -1,8 +1,13 @@
 // import "server-only";
 
-import { TRPCClientError, TRPCLink } from '@trpc/client';
-import { AnyRouter, callProcedure, inferRouterContext } from '@trpc/server';
+import type { TRPCLink } from '@trpc/client';
+import { TRPCClientError } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
+import type {
+  AnyRouter,
+  inferRouterContext,
+} from '@trpc/server/unstable-core-do-not-import';
+import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 
@@ -25,8 +30,9 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const cacheTag = generateCacheTag(path, input);
         // Let per-request revalidate override global revalidate
         const requestRevalidate =
-          typeof context.revalidate === 'number' || context.revalidate === false
-            ? context.revalidate
+          typeof context['revalidate'] === 'number' ||
+          context['revalidate'] === false
+            ? context['revalidate']
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
@@ -40,7 +46,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               const procedureResult = await callProcedure({
                 procedures: opts.router._def.procedures,
                 path,
-                rawInput: input,
+                getRawInput: async () => input,
                 ctx: ctx,
                 type,
               });

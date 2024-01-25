@@ -1,3 +1,12 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -5,10 +14,16 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import type { AnyRouter, inferRouterContext } from '../../core';
-import { TRPCError } from '../../error/TRPCError';
-import type { HTTPHeaders, ResponseMetaFn } from '../../http/internals/types';
-import { OnErrorFunction } from '../../internals/types';
+import type { AnyRouter, inferRouterContext } from '../../@trpc/server'; // import @trpc/server
+
+// @trpc/server
+import { TRPCError } from '../../@trpc/server';
+import type {
+  HTTPHeaders,
+  OnErrorFunction,
+  ResponseMetaFn,
+  TRPCRequestInfo,
+} from '../../@trpc/server/http';
 
 export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 export type APIGatewayResult =
@@ -18,6 +33,7 @@ export type APIGatewayResult =
 export type CreateAWSLambdaContextOptions<TEvent extends APIGatewayEvent> = {
   event: TEvent;
   context: APIGWContext;
+  info: TRPCRequestInfo;
 };
 export type AWSLambdaCreateContextFn<
   TRouter extends AnyRouter,
@@ -25,6 +41,7 @@ export type AWSLambdaCreateContextFn<
 > = ({
   event,
   context,
+  info,
 }: CreateAWSLambdaContextOptions<TEvent>) =>
   | inferRouterContext<TRouter>
   | Promise<inferRouterContext<TRouter>>;
@@ -43,13 +60,13 @@ export type AWSLambdaOptions<
     } & (
       | {
           /**
-           * @link https://trpc.io/docs/context
+           * @link https://trpc.io/docs/v11/context
            **/
           createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }
       | {
           /**
-           * @link https://trpc.io/docs/context
+           * @link https://trpc.io/docs/v11/context
            **/
           createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
         }

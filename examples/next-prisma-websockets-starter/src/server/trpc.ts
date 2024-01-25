@@ -4,21 +4,21 @@
  * - We export only the functionality that we use so we can enforce which base procedures should be used
  *
  * Learn how to create protected base procedures and other things below:
- * @see https://trpc.io/docs/router
- * @see https://trpc.io/docs/procedures
+ * @link https://trpc.io/docs/v11/router
+ * @link https://trpc.io/docs/v11/procedures
  */
 
-import { Context } from './context';
+import type { Context } from './context';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 
 const t = initTRPC.context<Context>().create({
   /**
-   * @see https://trpc.io/docs/data-transformers
+   * @link https://trpc.io/docs/v11/data-transformers
    */
   transformer: superjson,
   /**
-   * @see https://trpc.io/docs/error-formatting
+   * @link https://trpc.io/docs/v11/error-formatting
    */
   errorFormatter({ shape }) {
     return shape;
@@ -27,18 +27,18 @@ const t = initTRPC.context<Context>().create({
 
 /**
  * Create a router
- * @see https://trpc.io/docs/router
+ * @link https://trpc.io/docs/v11/router
  */
 export const router = t.router;
 
 /**
  * Create an unprotected procedure
- * @see https://trpc.io/docs/procedures
+ * @link https://trpc.io/docs/v11/procedures
  **/
 export const publicProcedure = t.procedure;
 
 /**
- * @see https://trpc.io/docs/merging-routers
+ * @link https://trpc.io/docs/v11/merging-routers
  */
 export const mergeRouters = t.mergeRouters;
 

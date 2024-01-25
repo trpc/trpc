@@ -3,7 +3,8 @@ import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryKey } from '@trpc/react-query/src/internals/getArrayQueryKey';
+import { getUntypedClient } from '@trpc/client';
+import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
 import React, { useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -39,8 +40,8 @@ describe('invalidateQueries()', () => {
           <button
             data-testid="refetch"
             onClick={() => {
-              queryClient.invalidateQueries([['allPosts']]);
-              queryClient.invalidateQueries([['postById']]);
+              queryClient.invalidateQueries({ queryKey: [['allPosts']] });
+              queryClient.invalidateQueries({ queryKey: [['postById']] });
             }}
           />
         </>
@@ -49,7 +50,7 @@ describe('invalidateQueries()', () => {
     function App() {
       const [queryClient] = useState(() => createQueryClient());
       return (
-        <trpc.Provider {...{ queryClient, client }}>
+        <trpc.Provider {...{ queryClient, client: getUntypedClient(client) }}>
           <QueryClientProvider client={queryClient}>
             <MyComponent />
           </QueryClientProvider>
@@ -86,7 +87,7 @@ describe('invalidateQueries()', () => {
   });
 
   test('invalidateQueries()', async () => {
-    const { trpc, resolvers, client } = factory;
+    const { trpc, resolvers, App } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
         staleTime: Infinity,
@@ -115,18 +116,12 @@ describe('invalidateQueries()', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:success');
@@ -156,7 +151,7 @@ describe('invalidateQueries()', () => {
 
   test('test invalidateQueries() with different args', async () => {
     // ref  https://github.com/trpc/trpc/issues/1383
-    const { trpc, client } = factory;
+    const { trpc, client, App } = factory;
     function MyComponent() {
       const countQuery = trpc.count.useQuery('test', {
         staleTime: Infinity,
@@ -189,7 +184,7 @@ describe('invalidateQueries()', () => {
               utils.invalidate(undefined, {
                 predicate(opts) {
                   const { queryKey } = opts;
-                  const [path, data] = queryKey as QueryKey;
+                  const [path, data] = queryKey as TRPCQueryKey;
 
                   return path[0] === 'count' && data?.input === 'test';
                 },
@@ -199,18 +194,12 @@ describe('invalidateQueries()', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('count:test:0');
@@ -232,7 +221,7 @@ describe('invalidateQueries()', () => {
     }
   });
   test('test invalidateQueries() with a partial input', async () => {
-    const { trpc, client } = factory;
+    const { trpc, client, App } = factory;
     function MyComponent() {
       const mockPostQuery1 = trpc.getMockPostByContent.useQuery(
         { id: 'id', content: { language: 'eng', type: 'fun' }, title: 'title' },
@@ -287,17 +276,12 @@ describe('invalidateQueries()', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
-    const utils = render(<App />);
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('mockPostQuery1:success');
@@ -340,7 +324,7 @@ test('predicate type should be narrowed', () => {
           [
             string[],
             {
-              input?: { limit?: number | undefined } | void;
+              input?: { limit?: number | undefined } | undefined | void;
               type: 'infinite';
             }?,
           ]

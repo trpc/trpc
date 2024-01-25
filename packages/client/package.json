@@ -25,7 +25,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
@@ -34,36 +34,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./links/httpLink": {
-      "import": "./dist/links/httpLink.mjs",
-      "require": "./dist/links/httpLink.js",
-      "default": "./dist/links/httpLink.js"
-    },
-    "./links/httpBatchLink": {
-      "import": "./dist/links/httpBatchLink.mjs",
-      "require": "./dist/links/httpBatchLink.js",
-      "default": "./dist/links/httpBatchLink.js"
-    },
-    "./links/splitLink": {
-      "import": "./dist/links/splitLink.mjs",
-      "require": "./dist/links/splitLink.js",
-      "default": "./dist/links/splitLink.js"
-    },
-    "./links/loggerLink": {
-      "import": "./dist/links/loggerLink.mjs",
-      "require": "./dist/links/loggerLink.js",
-      "default": "./dist/links/loggerLink.js"
-    },
-    "./links/wsLink": {
-      "import": "./dist/links/wsLink.mjs",
-      "require": "./dist/links/wsLink.js",
-      "default": "./dist/links/wsLink.js"
-    },
-    "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
     }
   },
   "files": [
@@ -71,22 +41,21 @@
     "src",
     "README.md",
     "package.json",
-    "links",
-    "shared",
     "!**/*.test.*"
   ],
+  "dependencies": {},
   "peerDependencies": {
-    "@trpc/server": "10.45.0"
+    "@trpc/server": "^10.45.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^9.0.0",
-    "@trpc/server": "10.45.0",
+    "@trpc/server": "^10.45.0",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^20.10.0",
     "eslint": "^8.40.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^2.79.1",
+    "rollup": "^4.9.5",
     "tsx": "^4.0.0",
     "undici": "^6.0.1",
     "vitest": "^0.32.0"

@@ -1,0 +1,42 @@
+---
+id: introduction
+title: React Query Integration
+sidebar_label: Introduction
+description: React Query Integration
+slug: /client/react
+---
+
+tRPC offers a first class integration with React. Under the hood this is simply a wrapper around the very popular [@tanstack/react-query](https://tanstack.com/query/latest), so we recommend that you familiarise yourself with React Query, as their docs go in to much greater depth on its usage.
+
+:::tip
+If you are using Next.js we recommend using [our integration with that](../nextjs/introduction.mdx) instead
+:::
+
+### The tRPC React Query Integration
+
+This library enables usage directly within React components
+
+```tsx title='pages/IndexPage.tsx'
+import { trpc } from '../utils/trpc';
+
+export default function IndexPage() {
+  const helloQuery = trpc.hello.useQuery({ name: 'Bob' });
+  const goodbyeMutation = trpc.goodbye.useMutation();
+
+  return (
+    <div>
+      <p>{helloQuery.data?.greeting}</p>
+
+      <button onClick={() => goodbyeMutation.mutate()}>Say Goodbye</button>
+    </div>
+  );
+}
+```
+
+### Differences to vanilla React Query
+
+The wrapper abstracts some aspects of React Query for you:
+
+- Query Keys - these are generated and managed by tRPC on your behalf, based on the procedure inputs you provide
+  - If you need the query key which tRPC calculates, you can use [getQueryKey](/docs/client/react/getQueryKey)
+- Type safe by default - the types you provide in your tRPC Backend also drive the types of your React Query client, providing safety throughout your React app

@@ -13,39 +13,10 @@ import Tabs from '@theme/Tabs';
 
 The following dependencies should be installed
 
-<Tabs>
-  <TabItem value="npm" label="npm" default>
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-```bash
-npm install @trpc/client @trpc/server @trpc/react-query @tanstack/react-query@^4.0.0
-```
-
-  </TabItem>
-
-  <TabItem value="yarn" label="yarn">
-
-```bash
-yarn add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query@^4.0.0
-```
-
-  </TabItem>
-
-  <TabItem value="pnpm" label="pnpm">
-
-```bash
-pnpm add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query@^4.0.0
-```
-
-  </TabItem>
-
-  <TabItem value="bun" label="bun">
-
-```bash
-bun add @trpc/client @trpc/server @trpc/react-query @tanstack/react-query@^4.0.0
-```
-
-  </TabItem>
-</Tabs>
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest" />
+;
 
 ### 2. Import your `AppRouter`
 

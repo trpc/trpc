@@ -1,13 +1,18 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink, Operation, splitLink, wsLink } from '@trpc/client/src';
+import type { Operation } from '@trpc/client';
 import {
-  createTRPCReact,
-  CreateTRPCReactBase,
-} from '@trpc/react-query/src/createTRPCReact';
-import { AnyRouter } from '@trpc/server/src';
-import React, { ReactNode } from 'react';
+  getUntypedClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
+import { createTRPCReact } from '@trpc/react-query';
+import type { CreateTRPCReactBase } from '@trpc/react-query/createTRPCReact';
+import type { AnyRouter } from '@trpc/server';
+import type { ReactNode } from 'react';
+import React from 'react';
 
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
@@ -42,11 +47,11 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   const proxy = createTRPCReact<TRouter, unknown, ''>();
   const baseProxy = proxy as CreateTRPCReactBase<TRouter, unknown>;
 
-  const client = opts.client;
-
   function App(props: { children: ReactNode }) {
     return (
-      <baseProxy.Provider {...{ queryClient, client }}>
+      <baseProxy.Provider
+        {...{ queryClient, client: getUntypedClient(opts.client) }}
+      >
         <QueryClientProvider client={queryClient}>
           {props.children}
         </QueryClientProvider>
@@ -56,9 +61,8 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
 
   return {
     close: opts.close,
-    client,
     queryClient,
-    proxy,
+    client: proxy,
     App,
     appRouter,
     opts,

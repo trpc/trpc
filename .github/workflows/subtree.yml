@@ -2,7 +2,7 @@ name: subtree-matrix
 on:
   push:
     branches:
-      - main
+      - next
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -51,14 +51,10 @@ jobs:
 
       - name: Install dependencies and create separate lockfile
         run: |
-          echo "shared-workspace-lockfile=false" >> .npmrc
-          echo "link-workspace-packages=false" >> .npmrc
-          PWD_ROOT=${PWD}
           cd ./examples/${{ matrix.path }}
-          cp ${PWD_ROOT}/pnpm-lock.yaml .
-          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g'
-          pnpm install --no-frozen-lockfile --ignore-scripts
+          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
+          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "next"/g'
+          pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
       - name: Commit changes
         run: |

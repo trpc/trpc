@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 const factory = () => {

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { FormWithUseActionExample } from './FormWithUseActionExample';
 import { RawExample } from './RawExample';
 import { RawFormExample } from './RawFormExample';
