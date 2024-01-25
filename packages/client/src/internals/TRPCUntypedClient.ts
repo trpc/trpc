@@ -19,7 +19,7 @@ import type {
 import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['$types'] extends false
+  TRouter['_def']['_config']['$types']['transformer'] extends false
     ? {
         /**
          * Data transformer
@@ -27,17 +27,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?: 'You must set a transformer on the backend router';
-      }
-    : TRouter['_def']['_config']['$types'] extends true
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer: DataTransformerOptions;
+        transformer?: 'You must set a transformer on your your `initTRPC`-object first';
       }
     : {
         /**
@@ -46,7 +36,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?: DataTransformerOptions;
+        transformer: DataTransformerOptions;
       };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
