@@ -353,7 +353,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
       return current._def._config.transformer;
     }
     return prev;
-  }, defaultTransformer as CombinedDataTransformer);
+  }, defaultTransformer);
 
   const router = createRouterFactory({
     errorFormatter,
