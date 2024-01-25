@@ -8,7 +8,6 @@ import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
-  DefaultDataTransformer,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
@@ -20,7 +19,7 @@ import type {
 import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+  TRouter['_def']['_config']['$types'] extends false
     ? {
         /**
          * Data transformer
@@ -30,7 +29,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          **/
         transformer?: 'You must set a transformer on the backend router';
       }
-    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
+    : TRouter['_def']['_config']['$types'] extends true
     ? {
         /**
          * Data transformer
@@ -38,9 +37,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
-          ? DataTransformerOptions
-          : TRouter['_def']['_config']['transformer'];
+        transformer: DataTransformerOptions;
       }
     : {
         /**

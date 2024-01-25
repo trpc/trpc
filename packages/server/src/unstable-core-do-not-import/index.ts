@@ -74,7 +74,6 @@ export type {
   CombinedDataTransformerClient,
   DataTransformer,
   DataTransformerOptions,
-  DefaultDataTransformer,
 } from './transformer';
 
 export { createFlatProxy, createRecursiveProxy } from './createProxy';
