@@ -17,7 +17,6 @@
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "@decs/typeschema": "^0.12.0",
-    "@effect/schema": "^0.60.0",
     "@fastify/busboy": "^2.0.0",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
@@ -56,7 +55,7 @@
     "tsx": "^4.0.0",
     "tupleson": "0.23.1",
     "typescript": "^5.3.3",
-    "valibot": "^0.26.0",
+    "valibot": "^0.27.0",
     "vite": "^4.1.2",
     "vitest": "^0.32.0",
     "vitest-environment-miniflare": "^2.12.0",
