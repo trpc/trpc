@@ -3,43 +3,47 @@
 
 export const companies = [
   {
-    "src": "/img/logos/Algora.svg",
+    "src": "/logos/Algora.svg",
     "name": "Algora"
   },
   {
-    "src": "/img/logos/Cal.com.svg",
+    "src": "/logos/Cal.com.svg",
     "name": "Cal.com"
   },
   {
-    "src": "/img/logos/Documenso.png",
+    "src": "/logos/Documenso.png",
     "name": "Documenso"
   },
   {
-    "src": "/img/logos/Fintory.svg",
+    "src": "/logos/Fintory.svg",
     "name": "Fintory"
   },
   {
-    "src": "/img/logos/Netflix.svg",
+    "src": "/logos/Interval.svg",
+    "name": "Interval"
+  },
+  {
+    "src": "/logos/Netflix.svg",
     "name": "Netflix"
   },
   {
-    "src": "/img/logos/Newfront.svg",
+    "src": "/logos/Newfront.svg",
     "name": "Newfront"
   },
   {
-    "src": "/img/logos/Ping.gg.svg",
+    "src": "/logos/Ping.gg.svg",
     "name": "Ping.gg"
   },
   {
-    "src": "/img/logos/Pleo.svg",
+    "src": "/logos/Pleo.svg",
     "name": "Pleo"
   },
   {
-    "src": "/img/logos/Snaplet.svg",
+    "src": "/logos/Snaplet.svg",
     "name": "Snaplet"
   },
   {
-    "src": "/img/logos/napo.svg",
+    "src": "/logos/napo.svg",
     "name": "napo"
   }
 ] as const;
