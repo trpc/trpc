@@ -71,7 +71,7 @@ export type AnyProcedure = Procedure<ProcedureType, any>;
 export type inferTransformedProcedureOutput<
   TInferrable extends TRPCInferrable,
   TProcedure extends AnyProcedure,
-> = inferConfig<TInferrable>['transformer'] extends false
+> = inferConfig<TInferrable>['$types']['transformer'] extends false
   ? Serialize<TProcedure['_def']['_output_out']>
   : TProcedure['_def']['_output_out'];
 
@@ -79,7 +79,7 @@ export type inferTransformedProcedureOutput<
 export type inferTransformedSubscriptionOutput<
   TInferrable extends TRPCInferrable,
   TProcedure extends AnyProcedure,
-> = inferConfig<TInferrable>['transformer'] extends false
+> = inferConfig<TInferrable>['$types']['transformer'] extends false
   ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
   : inferObservableValue<TProcedure['_def']['_output_out']>;
 
