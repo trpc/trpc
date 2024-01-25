@@ -22,6 +22,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/setup
+        with:
+          frozen: false
 
       - name: Run ts-prune
         run: pnpm lint-prune

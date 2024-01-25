@@ -1,5 +1,10 @@
 name: Setup Workflow
 description: Composite action that sets up pnpm
+inputs:
+  frozen:
+    description: 'Use frozen lockfile'
+    required: false
+    default: 'true'
 runs:
   using: 'composite'
   steps:
@@ -20,5 +25,5 @@ runs:
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
-    - run: pnpm install
+    - run: pnpm install --frozen-lockfile=${{ inputs.frozen }}
       shell: bash
