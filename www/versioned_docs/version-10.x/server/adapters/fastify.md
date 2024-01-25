@@ -141,11 +141,11 @@ const server = fastify({
 server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
   trpcOptions: {
-    router,
+    router: appRouter,
     createContext,
     onError({ path, error }) {
       // report to error monitoring
-      console.error(`Error in tRPC handler on path '${path}':` error)
+      console.error(`Error in tRPC handler on path '${path}':`, error);
     },
   } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });

@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { wrap } from '@decs/typeschema';
-import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
@@ -338,33 +337,6 @@ test('arktype schema - [not officially supported]', async () => {
 `);
   await close();
 });
-
-test('effect schema - [not officially supported]', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure
-      .input(S.parseSync(S.struct({ text: S.string })))
-      .query(({ input }) => {
-        expectTypeOf(input).toMatchTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query({ text: '123' });
-  expect(res.input).toMatchObject({ text: '123' });
-
-  // @ts-expect-error this only accepts a `number`
-  await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: error(s) found
-    └─ Expected <anonymous type literal schema>, actual "13"]
-  `);
-  await close();
-});
-
 test('runtypes', async () => {
   const t = initTRPC.create();
 
@@ -512,4 +484,27 @@ test('recipe: summon context in input parser', async () => {
   `);
 
   await ctx.close();
+});
+
+// regerssion: TInputIn / TInputOut
+test('zod default', () => {
+  const t = initTRPC.create();
+  const input = z.object({
+    users: z.array(z.number()).optional().default([]),
+  });
+
+  const router = t.router({
+    num: t.procedure
+      .input(input)
+      .use((opts) => {
+        expectTypeOf(opts.input.users).toMatchTypeOf<number[]>();
+        return opts.next();
+      })
+      .query((opts) => {
+        expectTypeOf(opts.input.users).toMatchTypeOf<number[]>();
+        return {
+          input,
+        };
+      }),
+  });
 });

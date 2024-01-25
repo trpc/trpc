@@ -138,9 +138,27 @@ export async function waitError<TError extends Error = Error>(
 }
 
 export const ignoreErrors = async (fn: () => unknown) => {
+  /* eslint-disable no-console */
+  const suppressLogs = () => {
+    const log = console.log;
+    const error = console.error;
+    const noop = () => {
+      // ignore
+    };
+    console.log = noop;
+    console.error = noop;
+    return () => {
+      console.log = log;
+      console.error = error;
+    };
+  };
+  /* eslint-enable no-console */
+  const release = suppressLogs();
   try {
     await fn();
   } catch {
     // ignore
+  } finally {
+    release();
   }
 };

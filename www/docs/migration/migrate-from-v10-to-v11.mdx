@@ -24,6 +24,12 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Deleted `inferHandlerInput<T>` and `ProcedureArgs<T>`
+
+> If these types mean nothing for you or your codebase, just ignore this
+
+Use `inferProcedureInput<TProcedure>` instead & `TRPCProcedureOptions` instead
+
 ### Deleted the `@trpc/core`-package
 
 tl;dr - pnpm + TypeScript makes it too difficult to avoid _"The inferred type of 'createContext' cannot be named without a reference to [...]"_ errors.

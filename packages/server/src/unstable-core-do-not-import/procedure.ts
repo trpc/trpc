@@ -23,16 +23,6 @@ export interface ProcedureOptions {
   signal?: AbortSignal;
 }
 
-/**
- * @internal
- */
-export type ProcedureArgs<TParams extends AnyProcedure['_def']> =
-  void extends TParams['_input_in']
-    ? [input?: undefined | void, opts?: ProcedureOptions]
-    : undefined extends TParams['_input_in']
-    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
-    : [input: TParams['_input_in'], opts?: ProcedureOptions];
-
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
@@ -94,12 +84,10 @@ export type inferTransformedSubscriptionOutput<
   ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
   : inferObservableValue<TProcedure['_def']['_output_out']>;
 
-export type inferHandlerInput<TProcedure extends AnyProcedure> = ProcedureArgs<
-  inferProcedureParams<TProcedure>
->;
-
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  inferProcedureParams<TProcedure>['_input_in'];
+  undefined extends inferProcedureParams<TProcedure>['_input_in']
+    ? void | inferProcedureParams<TProcedure>['_input_in']
+    : inferProcedureParams<TProcedure>['_input_in'];
 
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']

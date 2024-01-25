@@ -151,14 +151,14 @@ export interface ProcedureBuilder<
           Overwrite<TContext, TContextOverrides>,
           TMeta,
           $ContextOverridesOut,
-          TInputIn
+          TInputOut
         >
       | MiddlewareFunction<
           TContext,
           TMeta,
           TContextOverrides,
           $ContextOverridesOut,
-          TInputIn
+          TInputOut
         >,
   ): ProcedureBuilder<
     TContext,

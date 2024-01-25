@@ -27,8 +27,8 @@ export {
   type AnyMutationProcedure as AnyTRPCMutationProcedure,
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
   type ProcedureRouterRecord as TRPCProcedureRouterRecord,
-  type ProcedureArgs as TRPCProcedureArgs,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
+  type ProcedureOptions as TRPCProcedureOptions,
 } from '../../unstable-core-do-not-import';
 
 export type {
@@ -75,10 +75,6 @@ export type {
    * @deprecated use `TRPCProcedureRouterRecord` instead
    */
   ProcedureRouterRecord,
-  /**
-   * @deprecated use `TRPCProcedureArgs` instead
-   */
-  ProcedureArgs,
   /**
    * @deprecated use `AnyTRPCSubscriptionProcedure` instead
    */

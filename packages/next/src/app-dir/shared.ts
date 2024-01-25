@@ -9,7 +9,7 @@ import type {
   AnyRootConfig,
   AnyRouter,
   Filter,
-  inferHandlerInput,
+  inferProcedureInput,
   ProtectedIntersection,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
@@ -96,7 +96,7 @@ export type inferActionDef<
   TConfig extends AnyRootConfig,
   TProc extends AnyProcedure,
 > = {
-  input: inferHandlerInput<TProc>[0];
+  input: inferProcedureInput<TProc>;
   output: TProc['_def']['_output_out'];
   errorShape: TConfig['$types']['errorShape'];
 };

@@ -5,7 +5,6 @@ import type {
   AnyProcedure,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-  ProcedureArgs,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootConfig } from './rootConfig';
@@ -36,7 +35,7 @@ export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =
   RouterDef<TConfig, any>;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
-  input: ProcedureArgs<TProcedure['_def']>[0],
+  input: inferProcedureInput<TProcedure>,
 ) => Promise<TProcedure['_def']['_output_out']>;
 
 /**

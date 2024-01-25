@@ -9,6 +9,7 @@ concurrency:
 
 jobs:
   diagnostics:
+    if: github.event.pull_request.head.repo.fork == false
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
