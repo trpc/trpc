@@ -8,7 +8,6 @@ import type {
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootConfig } from './rootConfig';
-import type { CombinedDataTransformer } from './transformer';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise } from './types';
 import { mergeWithoutOverrides, omitPrototype } from './utils';
