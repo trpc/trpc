@@ -136,8 +136,7 @@ export const nodeHTTPFormDataContentTypeHandler =
           0: undefined,
         };
       }
-      const transformer = opts.router._def._config
-        .transformer as CombinedDataTransformer;
+      const transformer = opts.router._def._config.transformer;
 
       const deserializedInput = transformer.input.deserialize(
         JSON.parse(unparsedInput),
