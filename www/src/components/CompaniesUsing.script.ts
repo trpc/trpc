@@ -3,7 +3,7 @@ import path from 'path';
 
 const WWW_ROOT = path.join(__dirname, '../../');
 
-const files = fs.readdirSync(path.join(WWW_ROOT, 'static/img/logos')).sort();
+const files = fs.readdirSync(path.join(WWW_ROOT, 'static/logos')).sort();
 
 const companies = files.map((src) => {
   const ext = path.extname(src);
