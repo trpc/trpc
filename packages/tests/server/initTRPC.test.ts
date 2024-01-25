@@ -1,8 +1,5 @@
 import { initTRPC } from '@trpc/server';
-import type {
-  DataTransformerOptions,
-  DefaultDataTransformer,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
 
 test('default transformer', () => {
   const t = initTRPC
@@ -16,10 +13,7 @@ test('default transformer', () => {
     foo: 'bar';
   }>();
 
-  expectTypeOf(t._config.transformer).toMatchTypeOf<DefaultDataTransformer>();
-  expectTypeOf(
-    router._def._config.transformer,
-  ).toMatchTypeOf<DefaultDataTransformer>();
+  expectTypeOf(t._config.$types.transformer).toEqualTypeOf<false>();
 });
 test('custom transformer', () => {
   const transformer: DataTransformerOptions = {
@@ -30,12 +24,8 @@ test('custom transformer', () => {
     transformer,
   });
   const router = t.router({});
-  expectTypeOf(
-    router._def._config.transformer,
-  ).toMatchTypeOf<DataTransformerOptions>();
-  expectTypeOf(
-    router._def._config.transformer,
-  ).not.toMatchTypeOf<DefaultDataTransformer>();
+
+  expectTypeOf(t._config.$types.transformer).toEqualTypeOf<true>();
 });
 
 test('meta typings', () => {

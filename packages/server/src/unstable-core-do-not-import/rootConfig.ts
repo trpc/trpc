@@ -1,3 +1,4 @@
+import type { CombinedDataTransformer } from '.';
 import type { ErrorFormatter } from './error/formatter';
 import type { TRPCErrorShape } from './rpc';
 
@@ -9,7 +10,7 @@ export interface RootConfigTypes {
   ctx: object;
   meta: object;
   errorShape: unknown;
-  transformer: unknown;
+  transformer: boolean;
 }
 
 /**
@@ -32,7 +33,7 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
    * Use a data transformer
    * @link https://trpc.io/docs/v11/data-transformers
    */
-  transformer: TTypes['transformer'];
+  transformer: CombinedDataTransformer;
   /**
    * Use custom error formatting
    * @link https://trpc.io/docs/v11/error-formatting

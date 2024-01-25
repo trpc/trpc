@@ -19,18 +19,19 @@ import {
   createRouterFactory,
   mergeRouters,
 } from './router';
-import {
-  defaultTransformer,
-  getDataTransformer,
-  type DataTransformerOptions,
-  type DefaultDataTransformer,
-} from './transformer';
+import type { DataTransformerOptions } from './transformer';
+import { defaultTransformer, getDataTransformer } from './transformer';
 import type {
   Overwrite,
   PickFirstDefined,
   Unwrap,
   ValidateShape,
 } from './types';
+
+interface RuntimeConfigOptions<TTypes extends RootConfigTypes>
+  extends Omit<RuntimeConfig<TTypes>, 'transformer'> {
+  transformer?: DataTransformerOptions;
+}
 
 type PartialRootConfigTypes = Partial<RootConfigTypes>;
 
@@ -41,7 +42,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
       ? TTypes['meta']
       : object;
     errorShape: TTypes['errorShape'];
-    transformer: DataTransformerOptions;
+    transformer: boolean;
   }>;
 
 /**
@@ -82,13 +83,15 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
    */
   create<
     TOptions extends Partial<
-      RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>
+      RuntimeConfigOptions<CreateRootConfigTypesFromPartial<TParams>>
     >,
   >(
     options?:
       | ValidateShape<
           TOptions,
-          Partial<RuntimeConfig<CreateRootConfigTypesFromPartial<TParams>>>
+          Partial<
+            RuntimeConfigOptions<CreateRootConfigTypesFromPartial<TParams>>
+          >
         >
       | undefined,
   ) {
@@ -107,7 +110,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];
-  type $Runtime = Partial<RuntimeConfig<$Generics>>;
+  type $Runtime = Partial<RuntimeConfigOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Runtime>(
     runtime?: ValidateShape<TOptions, $Runtime>,
@@ -116,9 +119,9 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
       TOptions['errorFormatter'],
       ErrorFormatter<$Context, DefaultErrorShape>
     >;
-    type $Transformer = TOptions['transformer'] extends DataTransformerOptions
-      ? TOptions['transformer']
-      : DefaultDataTransformer;
+    type $Transformer = undefined extends TOptions['transformer']
+      ? false
+      : true;
     type $ErrorShape = ErrorFormatterShape<$Formatter>;
 
     type $Config = RootConfig<{
@@ -131,7 +134,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
     const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
       runtime?.transformer ?? defaultTransformer,
-    ) as $Transformer;
+    );
 
     const config: $Config = {
       transformer,
