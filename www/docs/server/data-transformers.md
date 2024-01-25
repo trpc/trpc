@@ -76,16 +76,16 @@ export const trpc = createTRPCReact<AppRouter>({});
 With React Query you need to pass the transformer to the createClient instance, as the `createTRPCReact` function does not accept the transformer as a parameter.
 
 ```tsx title='src/app/_trpc/Provider.tsx'
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import superjson from "superjson";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import superjson from 'superjson';
+import { trpc } from './client';
 
-import { trpc } from "./client";
 export default function Provider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
       transformer: superjson, // <--
-    })
+    }),
   );
 
   // [...]
