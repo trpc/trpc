@@ -7,7 +7,6 @@ import type {
   AnyProcedure,
   AnyRootConfig,
   AnyRouter,
-  CombinedDataTransformer,
   inferProcedureInput,
   MaybePromise,
   Simplify,

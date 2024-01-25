@@ -100,6 +100,7 @@ export type {
 } from './types';
 export { isObject } from './utils';
 
+export * from './TRPCInferrable';
 /**
  * These should be re-exported from separate entrypoints in server package
  */
