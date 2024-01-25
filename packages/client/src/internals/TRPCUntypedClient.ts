@@ -46,7 +46,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?: CombinedDataTransformer;
+        transformer?: DataTransformerOptions;
       };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
