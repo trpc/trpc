@@ -7,12 +7,7 @@ import {
 } from './error/formatter';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder } from './procedureBuilder';
-import {
-  isServerDefault,
-  type CreateRootConfigTypes,
-  type RootConfig,
-  type RootConfigTypes,
-} from './rootConfig';
+import { isServerDefault, type RootConfig } from './rootConfig';
 import {
   createCallerFactory,
   createRouterFactory,
@@ -20,110 +15,66 @@ import {
 } from './router';
 import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
-import type {
-  Overwrite,
-  PickFirstDefined,
-  Unwrap,
-  ValidateShape,
-} from './types';
+import type { PickFirstDefined, Unwrap, ValidateShape } from './types';
 
-interface RootConfigOptions<TTypes extends RootConfigTypes>
-  extends Omit<RootConfig<TTypes>, 'transformer'> {
+interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
+  extends Partial<
+    Omit<
+      RootConfig<{
+        ctx: TContext;
+        meta: TMeta;
+        errorShape: any;
+        transformer: any;
+      }>,
+      '$types' | 'transformer'
+    >
+  > {
+  /**
+   * Use a data transformer
+   * @link https://trpc.io/docs/v11/data-transformers
+   */
   transformer?: DataTransformerOptions;
 }
 
-type PartialRootConfigTypes = Partial<RootConfigTypes>;
-
-type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
-  CreateRootConfigTypes<{
-    ctx: TTypes['ctx'] extends RootConfigTypes['ctx'] ? TTypes['ctx'] : object;
-    meta: TTypes['meta'] extends RootConfigTypes['meta']
-      ? TTypes['meta']
-      : object;
-    errorShape: TTypes['errorShape'];
-    transformer: boolean;
-  }>;
-
-/**
- * TODO: This can be improved:
- * - We should be able to chain `.meta()`/`.context()` only once
- * - Simplify typings
- * - Doesn't need to be a class but it doesn't really hurt either
- */
-
-class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
+class TRPCBuilder<TContext extends object, TMeta extends object> {
   /**
    * Add a context shape as a generic to the root object
    * @link https://trpc.io/docs/v11/server/context
    */
-  context<
-    TNewContext extends
-      | RootConfigTypes['ctx']
-      | ((...args: unknown[]) => RootConfigTypes['ctx']),
-  >() {
-    type NextParams = Overwrite<TParams, { ctx: Unwrap<TNewContext> }>;
-
-    return new TRPCBuilder<NextParams>();
+  context<TNewContext extends object | ((...args: unknown[]) => object)>() {
+    return new TRPCBuilder<Unwrap<TNewContext>, TMeta>();
   }
 
   /**
    * Add a meta shape as a generic to the root object
    * @link https://trpc.io/docs/v11/quickstart
    */
-  meta<TNewMeta extends RootConfigTypes['meta']>() {
-    type NextParams = Overwrite<TParams, { meta: TNewMeta }>;
-
-    return new TRPCBuilder<NextParams>();
+  meta<TNewMeta extends object>() {
+    return new TRPCBuilder<TContext, TNewMeta>();
   }
 
   /**
    * Create the root object
    * @link https://trpc.io/docs/v11/server/routers#initialize-trpc
    */
-  create<
-    TOptions extends Partial<
-      RootConfigOptions<CreateRootConfigTypesFromPartial<TParams>>
-    >,
-  >(
-    options?:
-      | ValidateShape<
-          TOptions,
-          Partial<RootConfigOptions<CreateRootConfigTypesFromPartial<TParams>>>
-        >
+  create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
+    runtime?:
+      | ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>
       | undefined,
   ) {
-    return createTRPCInner<TParams>()<TOptions>(options);
-  }
-}
-
-/**
- * Builder to initialize the tRPC root object - use this exactly once per backend
- * @link https://trpc.io/docs/v11/quickstart
- */
-export const initTRPC = new TRPCBuilder();
-
-function createTRPCInner<TParams extends PartialRootConfigTypes>() {
-  type $Generics = CreateRootConfigTypesFromPartial<TParams>;
-
-  type $Context = $Generics['ctx'];
-  type $Meta = $Generics['meta'];
-  type $Runtime = Partial<RootConfigOptions<$Generics>>;
-
-  return function initTRPCInner<TOptions extends $Runtime>(
-    runtime?: ValidateShape<TOptions, $Runtime>,
-  ) {
-    type $Formatter = PickFirstDefined<
-      TOptions['errorFormatter'],
-      ErrorFormatter<$Context, DefaultErrorShape>
-    >;
     type $Transformer = undefined extends TOptions['transformer']
       ? false
       : true;
-    type $ErrorShape = ErrorFormatterShape<$Formatter>;
+    type $ErrorShape = ErrorFormatterShape<
+      PickFirstDefined<
+        TOptions['errorFormatter'],
+        ErrorFormatter<TContext, DefaultErrorShape>
+      >
+    >;
 
     type $Config = RootConfig<{
-      ctx: $Context;
-      meta: $Meta;
+      ctx: TContext;
+      meta: TMeta;
       errorShape: $ErrorShape;
       transformer: $Transformer;
     }>;
@@ -202,5 +153,11 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
        */
       createCallerFactory: createCallerFactory<$Config>(),
     };
-  };
+  }
 }
+
+/**
+ * Builder to initialize the tRPC root object - use this exactly once per backend
+ * @link https://trpc.io/docs/v11/quickstart
+ */
+export const initTRPC = new TRPCBuilder();
