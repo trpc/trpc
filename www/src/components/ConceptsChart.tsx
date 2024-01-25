@@ -1,4 +1,3 @@
-
 export function ConceptsChart() {
   return (
     <table width="100%">

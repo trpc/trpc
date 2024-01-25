@@ -1,4 +1,3 @@
-
 interface Props {
   videoId: string;
   title: string;

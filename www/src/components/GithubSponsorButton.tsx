@@ -1,4 +1,3 @@
-
 export const GithubSponsorButton = () => {
   return (
     <a

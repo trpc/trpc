@@ -1,4 +1,3 @@
-
 type Props = {
   title: string;
   link: string;
