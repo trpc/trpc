@@ -49,7 +49,7 @@ export type {
 } from './procedure';
 export { createBuilder, unsetMarker } from './procedureBuilder';
 export type { ProcedureBuilder } from './procedureBuilder';
-export type { AnyRootConfig, RootConfig } from './rootConfig';
+export type { AnyRootConfig } from './rootConfig';
 export type {
   AnyRouter,
   AnyRouterDef,

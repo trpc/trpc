@@ -12,7 +12,6 @@ import {
   type CreateRootConfigTypes,
   type RootConfig,
   type RootConfigTypes,
-  type RuntimeConfig,
 } from './rootConfig';
 import {
   createCallerFactory,
@@ -28,8 +27,8 @@ import type {
   ValidateShape,
 } from './types';
 
-interface RuntimeConfigOptions<TTypes extends RootConfigTypes>
-  extends Omit<RuntimeConfig<TTypes>, 'transformer'> {
+interface RootConfigOptions<TTypes extends RootConfigTypes>
+  extends Omit<RootConfig<TTypes>, 'transformer'> {
   transformer?: DataTransformerOptions;
 }
 
@@ -83,15 +82,13 @@ class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
    */
   create<
     TOptions extends Partial<
-      RuntimeConfigOptions<CreateRootConfigTypesFromPartial<TParams>>
+      RootConfigOptions<CreateRootConfigTypesFromPartial<TParams>>
     >,
   >(
     options?:
       | ValidateShape<
           TOptions,
-          Partial<
-            RuntimeConfigOptions<CreateRootConfigTypesFromPartial<TParams>>
-          >
+          Partial<RootConfigOptions<CreateRootConfigTypesFromPartial<TParams>>>
         >
       | undefined,
   ) {
@@ -110,7 +107,7 @@ function createTRPCInner<TParams extends PartialRootConfigTypes>() {
 
   type $Context = $Generics['ctx'];
   type $Meta = $Generics['meta'];
-  type $Runtime = Partial<RuntimeConfigOptions<$Generics>>;
+  type $Runtime = Partial<RootConfigOptions<$Generics>>;
 
   return function initTRPCInner<TOptions extends $Runtime>(
     runtime?: ValidateShape<TOptions, $Runtime>,
