@@ -30,7 +30,7 @@ export const t = initTRPC.create({
 });
 ```
 
-#### 3. Add to `createTRPCClient()`, `createTRPCNext()` or `CreateTRPCReact`
+#### 3. Add to `createTRPCClient()`, `createTRPCNext()` or `createTRPCReact()`
 
 `createTRPCClient()`
 
@@ -64,7 +64,9 @@ export const trpc = createTRPCNext<AppRouter>({
 });
 ```
 
-`createTRPCReact()` for React Query
+`createTRPCReact()`
+
+With React Query you need to pass the transformer to the createClient instance, as the `createTRPCReact` function does not accept the transformer as a parameter.
 
 ```ts title='src/app/_trpc/client.ts'
 import type { AppRouter } from '@/server';
@@ -72,8 +74,6 @@ import { createTRPCReact } from '@trpc/react-query';
 
 export const trpc = createTRPCReact<AppRouter>({});
 ```
-
-With React Query you need to pass the transformer to the createClient instance, as the `createTRPCReact` function does not accept the transformer as a parameter.
 
 ```tsx title='src/app/_trpc/Provider.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
