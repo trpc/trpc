@@ -67,7 +67,7 @@ export type {
 } from './router';
 
 export * from './TRPCInferrable';
-export { callProcedure, mergeRouters } from './router';
+export * from './router';
 export { transformResult, transformTRPCResponse } from './transformer';
 export type {
   CombinedDataTransformer,
