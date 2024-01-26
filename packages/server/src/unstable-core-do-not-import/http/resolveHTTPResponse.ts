@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
@@ -132,6 +131,7 @@ function initResponse<
     headers,
   };
 }
+
 function caughtErrorToData<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
@@ -288,6 +288,7 @@ export async function resolveHTTPResponse<
     ctx = await opts.createContext({ info });
 
     const errors: TRPCError[] = [];
+
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
@@ -309,16 +310,25 @@ export async function resolveHTTPResponse<
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
 
-        opts.onError?.({ error, path, input, ctx, type: type, req: opts.req });
-
-        return getErrorShape({
-          config: opts.router._def._config,
+        opts.onError?.({
           error,
-          type,
           path,
           input,
           ctx,
+          type: type,
+          req: opts.req,
         });
+
+        return {
+          error: getErrorShape({
+            config: opts.router._def._config,
+            error,
+            type,
+            path,
+            input,
+            ctx,
+          }),
+        };
       }
     });
 
@@ -343,7 +353,7 @@ export async function resolveHTTPResponse<
       unstable_onHead?.(headResponse, false);
 
       // return body stuff
-      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!;
+      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
       const transformedJSON = transformTRPCResponse(
         router._def._config,
         result,
@@ -379,13 +389,15 @@ export async function resolveHTTPResponse<
       ]),
     );
     for (const _ of paths) {
-      const [index, result] = await Promise.race(indexedPromises.values());
+      const [index, untransformedJSON] = await Promise.race(
+        indexedPromises.values(),
+      );
       indexedPromises.delete(index);
 
       try {
         const transformedJSON = transformTRPCResponse(
           router._def._config,
-          result,
+          untransformedJSON,
         );
         const body = JSON.stringify(transformedJSON);
 
