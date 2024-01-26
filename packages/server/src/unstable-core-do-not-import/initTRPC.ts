@@ -94,6 +94,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       errorFormatter,
       isServer: runtime?.isServer ?? isServerDefault,
       /**
+       * These are just types, they can't be used at runtime
        * @internal
        */
       $types: createFlatProxy((key) => {
@@ -115,7 +116,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
     }
     return {
       /**
-       * These are just types, they can't be used
+       * Your router config
        * @internal
        */
       _config: config,
