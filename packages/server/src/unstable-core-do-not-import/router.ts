@@ -69,7 +69,7 @@ export interface Router<
 
 type BuiltRouter<
   TRoot extends AnyRootTypes,
-  TRecord extends ProcedureRecord,
+  TRecord extends ProcedureRouterRecord,
 > = TRecord & Router<TRoot, TRecord>;
 
 export type AnyRouter = Router<any, any>;
