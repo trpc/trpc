@@ -203,7 +203,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       },
     };
 
-    return router as Router<TRoot, TProcRouterRecord> & TProcRouterRecord;
+    return router as BuiltRouter<TRoot, TProcRouterRecord>;
   };
 }
 
