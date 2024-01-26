@@ -94,7 +94,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientensurequerydata
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientensurequerydata
    */
   ensureData(
     input: inferProcedureInput<TProcedure>,
@@ -215,7 +215,7 @@ type DecorateRouter = {
   /**
    * Invalidate the full router
    * @link https://trpc.io/docs/v10/useContext#query-invalidation
-   * @link https://tanstack.com/query/v5/docs/react/guides/query-invalidation
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
    */
   invalidate(
     input?: undefined,
