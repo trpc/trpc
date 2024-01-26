@@ -73,7 +73,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       >
     >;
 
-    type $Config = CreateRootTypes<{
+    type $Root = CreateRootTypes<{
       ctx: TContext;
       meta: TMeta;
       errorShape: $ErrorShape;
@@ -85,7 +85,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       opts?.transformer ?? defaultTransformer,
     );
 
-    const config: RootConfig<$Config> = {
+    const config: RootConfig<$Root> = {
       transformer,
       isDev:
         opts?.isDev ??
@@ -125,19 +125,19 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * Builder object for creating procedures
        * @link https://trpc.io/docs/v11/server/procedures
        */
-      procedure: createBuilder<$Config['ctx'], $Config['meta']>({
+      procedure: createBuilder<$Root['ctx'], $Root['meta']>({
         meta: opts?.defaultMeta,
       }),
       /**
        * Create reusable middlewares
        * @link https://trpc.io/docs/v11/server/middlewares
        */
-      middleware: createMiddlewareFactory<$Config['ctx'], $Config['meta']>(),
+      middleware: createMiddlewareFactory<$Root['ctx'], $Root['meta']>(),
       /**
        * Create a router
        * @link https://trpc.io/docs/v11/server/routers
        */
-      router: createRouterFactory<$Config>(config),
+      router: createRouterFactory<$Root>(config),
       /**
        * Merge Routers
        * @link https://trpc.io/docs/v11/server/merging-routers
@@ -147,7 +147,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * Create a server-side caller for a router
        * @link https://trpc.io/docs/v11/server/server-side-calls
        */
-      createCallerFactory: createCallerFactory<$Config>(),
+      createCallerFactory: createCallerFactory<$Root>(),
     };
   }
 }

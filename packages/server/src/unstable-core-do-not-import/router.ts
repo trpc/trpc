@@ -250,9 +250,9 @@ export function callProcedure(
 }
 
 export function createCallerFactory<TRoot extends AnyRootTypes>() {
-  return function createCallerInner<TRouter extends Router<AnyRouterDef>>(
-    router: TRouter,
-  ): RouterCaller<TRouter['_def']> {
+  return function createCallerInner<
+    TRouter extends Router<RouterDef<TRoot, any>>,
+  >(router: TRouter): RouterCaller<TRouter['_def']> {
     const _def = router._def;
     type Context = TRoot['ctx'];
 

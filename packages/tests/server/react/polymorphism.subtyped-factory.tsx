@@ -49,7 +49,7 @@ export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 let COUNTER = 1;
 
 export function createSubTypedExportRoute<
-  TBaseProcedure extends BaseProcedure<(typeof t)['_config']>,
+  TBaseProcedure extends BaseProcedure<(typeof t)['_config']['$types']>,
 >(baseProcedure: TBaseProcedure, dataProvider: SubTypedDataProvider) {
   return t.router({
     start: baseProcedure
