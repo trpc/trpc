@@ -5,10 +5,11 @@ import {
 } from '@trpc/client';
 import type {
   AnyProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
   MaybePromise,
+  RootConfig,
   Simplify,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -57,7 +58,7 @@ export function experimental_createTRPCNextAppDirServer<
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
   }) as NextAppDirDecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   >;
 }
@@ -71,7 +72,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: AnyRootConfig;
+    _config: RootConfig<AnyRootTypes>;
   },
 >(
   t: TInstance,
@@ -92,7 +93,9 @@ export function experimental_createServerActionHandler<
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
-  ): TRPCActionHandler<Simplify<inferActionDef<TInstance['_config'], TProc>>> {
+  ): TRPCActionHandler<
+    Simplify<inferActionDef<TInstance['_config']['$types'], TProc>>
+  > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
@@ -144,7 +147,9 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<inferActionDef<TInstance['_config'], TProc>>;
+    } as TRPCActionHandler<
+      inferActionDef<TInstance['_config']['$types'], TProc>
+    >;
   };
 }
 

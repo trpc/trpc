@@ -6,7 +6,7 @@ import type {
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   Filter,
   inferProcedureInput,
@@ -23,7 +23,10 @@ export type UseProcedureRecord<TRouter extends AnyRouter> = {
     AnyQueryProcedure | AnyRouter
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
-    : Resolver<TRouter['_def']['_config'], TRouter['_def']['record'][TKey]>;
+    : Resolver<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record'][TKey]
+      >;
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(
@@ -93,10 +96,10 @@ export interface ActionHandlerDef {
  * @internal
  */
 export type inferActionDef<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProc extends AnyProcedure,
 > = {
   input: inferProcedureInput<TProc>;
   output: TProc['_def']['_output_out'];
-  errorShape: TConfig['$types']['errorShape'];
+  errorShape: TRoot['errorShape'];
 };

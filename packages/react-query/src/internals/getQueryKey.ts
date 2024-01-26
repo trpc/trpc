@@ -1,7 +1,7 @@
 import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
@@ -85,7 +85,7 @@ type GetQueryParams<
   : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
 
 type GetParams<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
@@ -93,15 +93,15 @@ type GetParams<
   TFlags,
 > = TProcedureOrRouter extends AnyQueryProcedure
   ? [
-      procedureOrRouter: DecorateProcedure<TConfig, TProcedureOrRouter, TFlags>,
+      procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>,
       ..._params: GetQueryParams<TProcedureOrRouter>,
     ]
   : TProcedureOrRouter extends AnyMutationProcedure
-  ? [procedureOrRouter: DecorateProcedure<TConfig, TProcedureOrRouter, TFlags>]
+  ? [procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>]
   : TProcedureOrRouter extends AnyRouter
   ? [
       procedureOrRouter: DecoratedProcedureRecord<
-        TConfig,
+        TRoot,
         TProcedureOrRouter['_def']['record'],
         TFlags
       >,
@@ -109,13 +109,13 @@ type GetParams<
   : never;
 
 type GetQueryKeyParams<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
   TFlags,
-> = GetParams<TConfig, TProcedureOrRouter, TFlags>;
+> = GetParams<TRoot, TProcedureOrRouter, TFlags>;
 
 /**
  * Method to extract the query key for a procedure
@@ -125,13 +125,13 @@ type GetQueryKeyParams<
  * @link https://trpc.io/docs/v11/getQueryKey
  */
 export function getQueryKey<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
   TFlags,
->(..._params: GetQueryKeyParams<TConfig, TProcedureOrRouter, TFlags>) {
+>(..._params: GetQueryKeyParams<TRoot, TProcedureOrRouter, TFlags>) {
   const [procedureOrRouter, input, type] = _params;
   // @ts-expect-error - we don't expose _def on the type layer
   const path = procedureOrRouter._def().path as string[];

@@ -7,7 +7,7 @@ import type {
   inferTransformedProcedureOutput,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
-import type { AnyRootConfig } from './rootConfig';
+import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise } from './types';
 import { mergeWithoutOverrides, omitPrototype } from './utils';
@@ -20,18 +20,17 @@ export interface ProcedureRouterRecord {
 }
 
 export interface RouterDef<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TRecord extends ProcedureRouterRecord,
 > {
-  _config: TConfig;
+  _config: RootConfig<TRoot>;
   router: true;
   procedure?: never;
   procedures: TRecord;
   record: TRecord;
 }
 
-export type AnyRouterDef<TConfig extends AnyRootConfig = AnyRootConfig> =
-  RouterDef<TConfig, any>;
+export type AnyRouterDef = RouterDef<any, any>;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
@@ -76,7 +75,7 @@ export type AnyRouter = Router<AnyRouterDef>;
 type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
   infer TParams
 >
-  ? TParams extends AnyRouterDef<any>
+  ? TParams extends AnyRouterDef
     ? TParams
     : never
   : never;
@@ -100,10 +99,7 @@ type GetInferenceHelpers<
       : TRouterOrProcedure extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<
-            TRouter['_def']['_config'],
-            TRouterOrProcedure
-          >
+        : inferTransformedProcedureOutput<TRouter, TRouterOrProcedure>
       : never
     : never;
 };
@@ -150,9 +146,9 @@ const reservedWords = [
  * @internal
  */
 export type CreateRouterInner<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<RouterDef<TConfig, TProcRouterRecord>> &
+> = Router<RouterDef<TRoot, TProcRouterRecord>> &
   /**
    * This adds ability to call procedures directly but is primarily used for quick access in type inference
    */
@@ -161,14 +157,14 @@ export type CreateRouterInner<
 /**
  * @internal
  */
-export function createRouterFactory<TConfig extends AnyRootConfig>(
-  config: TConfig,
+export function createRouterFactory<TRoot extends AnyRootTypes>(
+  config: RootConfig<TRoot>,
 ) {
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
   >(
     procedures: TProcRouterRecord,
-  ): CreateRouterInner<TConfig, TProcRouterRecord> {
+  ): CreateRouterInner<TRoot, TProcRouterRecord> {
     const reservedWordsUsed = new Set(
       Object.keys(procedures).filter((v) => reservedWords.includes(v)),
     );
@@ -198,7 +194,7 @@ export function createRouterFactory<TConfig extends AnyRootConfig>(
     }
     recursiveGetPaths(procedures);
 
-    const _def: AnyRouterDef<TConfig> = {
+    const _def: AnyRouterDef = {
       _config: config,
       router: true,
       procedures: routerProcedures,
@@ -253,12 +249,12 @@ export function callProcedure(
   return proc(opts);
 }
 
-export function createCallerFactory<TConfig extends AnyRootConfig>() {
+export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<
-    TRouter extends Router<AnyRouterDef<TConfig>>,
+    TRouter extends Router<RouterDef<TRoot, any>>,
   >(router: TRouter): RouterCaller<TRouter['_def']> {
     const _def = router._def;
-    type Context = TConfig['$types']['ctx'];
+    type Context = TRoot['ctx'];
 
     return function createCaller(maybeContext) {
       const proxy = createRecursiveProxy(({ path, args }) => {
@@ -293,7 +289,7 @@ export function createCallerFactory<TConfig extends AnyRootConfig>() {
 type MergeRouters<
   TRouters extends AnyRouter[],
   TRouterDef extends AnyRouterDef = RouterDef<
-    TRouters[0]['_def']['_config'],
+    TRouters[0]['_def']['_config']['$types'],
     // eslint-disable-next-line @typescript-eslint/ban-types
     {}
   >,
@@ -362,7 +358,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
       (r) => r._def._config.allowOutsideOfServer,
     ),
     isServer: routerList.some((r) => r._def._config.isServer),
-    $types: routerList[0]?._def._config.$types as any,
+    $types: routerList[0]?._def._config.$types,
   })(record);
   return router as any;
 }

@@ -3,7 +3,7 @@ import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   Filter,
   inferProcedureInput,
@@ -18,19 +18,19 @@ import type {
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
+> = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TConfig>
+    TRPCClientError<TRoot>
   >,
 ) => TrpcQueryOptionsForUseQueries<
-  inferTransformedProcedureOutput<TConfig, TProcedure>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TConfig>
+  TRPCClientError<TRoot>
 >;
 
 /**
@@ -43,25 +43,25 @@ export type UseQueriesProcedureRecord<TRouter extends AnyRouter> = {
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
     : GetQueryOptions<
-        TRouter['_def']['_config'],
+        TRouter['_def']['_config']['$types'],
         TRouter['_def']['record'][TKey]
       >;
 };
 
 type GetSuspenseQueryOptions<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
+> = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseSuspenseQueries<
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TConfig>
+    TRPCClientError<TRoot>
   >,
 ) => TrpcQueryOptionsForUseSuspenseQueries<
-  inferTransformedProcedureOutput<TConfig, TProcedure>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TConfig>
+  TRPCClientError<TRoot>
 >;
 
 /**
@@ -74,7 +74,7 @@ export type UseSuspenseQueriesProcedureRecord<TRouter extends AnyRouter> = {
   >]: TRouter['_def']['record'][TKey] extends AnyRouter
     ? UseSuspenseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
     : GetSuspenseQueryOptions<
-        TRouter['_def']['_config'],
+        TRouter['_def']['_config']['$types'],
         TRouter['_def']['record'][TKey]
       >;
 };
