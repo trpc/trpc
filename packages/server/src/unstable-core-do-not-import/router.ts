@@ -67,7 +67,7 @@ export interface Router<
   createCaller: RouterCaller<TRoot, TRecord>;
 }
 
-type BuiltRouter<
+export type BuiltRouter<
   TRoot extends AnyRootTypes,
   TRecord extends ProcedureRouterRecord,
 > = TRecord & Router<TRoot, TRecord>;
@@ -269,14 +269,15 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 /** @internal */
 type MergeRouters<
   TRouters extends AnyRouter[],
+  TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
   // eslint-disable-next-line @typescript-eslint/ban-types
   TRecord extends ProcedureRouterRecord = {},
 > = TRouters extends [
   infer Head extends AnyRouter,
   ...infer Tail extends AnyRouter[],
 ]
-  ? MergeRouters<Tail, Head['_def']['record'] & TRecord>
-  : Router<TRouters[0]['_def']['_config']['$types'], TRecord> & TRecord;
+  ? MergeRouters<Tail, TRoot, Head['_def']['record'] & TRecord>
+  : BuiltRouter<TRoot, TRecord>;
 
 export function mergeRouters<TRouters extends AnyRouter[]>(
   ...routerList: [...TRouters]
