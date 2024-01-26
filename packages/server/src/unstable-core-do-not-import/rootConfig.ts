@@ -72,7 +72,8 @@ export interface RootConfig<TTypes extends RootConfigTypes> {
 /**
  * @internal
  */
-type CreateRootConfigTypes<TGenerics extends RootConfigTypes> = TGenerics;
+export type CreateRootConfigTypes<TGenerics extends RootConfigTypes> =
+  TGenerics;
 
 /**
  * @deprecated Use `RootConfigTypes` instead
