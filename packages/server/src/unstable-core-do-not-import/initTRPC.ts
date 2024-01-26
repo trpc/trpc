@@ -3,7 +3,6 @@ import {
   defaultFormatter,
   type DefaultErrorShape,
   type ErrorFormatter,
-  type ErrorFormatterShape,
 } from './error/formatter';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder } from './procedureBuilder';
@@ -16,8 +15,14 @@ import {
 } from './router';
 import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
-import type { PickFirstDefined, Unwrap, ValidateShape } from './types';
+import type { Unwrap, ValidateShape } from './types';
 
+type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
+  any,
+  infer TShape
+>
+  ? TShape
+  : DefaultErrorShape;
 interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
   extends Partial<
     Omit<
@@ -66,12 +71,9 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
     type $Transformer = undefined extends TOptions['transformer']
       ? false
       : true;
-    type $ErrorShape = ErrorFormatterShape<
-      PickFirstDefined<
-        TOptions['errorFormatter'],
-        ErrorFormatter<TContext, DefaultErrorShape>
-      >
-    >;
+    type $ErrorShape = undefined extends TOptions['errorFormatter']
+      ? DefaultErrorShape
+      : inferErrorFormatterShape<TOptions['errorFormatter']>;
 
     type $Root = CreateRootTypes<{
       ctx: TContext;
