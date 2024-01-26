@@ -134,21 +134,31 @@ const reservedWords = [
   'then',
 ];
 
+export type CreateRouterOptions = {
+  [key: string]: AnyProcedure | RouterRecord | Router<any, any>;
+};
+
+type CreateRouterRecordToRouterRecord<T extends CreateRouterOptions> = {
+  [K in keyof T]: T[K] extends AnyProcedure
+    ? T[K]
+    : T[K] extends Router<any, infer TRecord>
+    ? TRecord
+    : T[K] extends RouterRecord
+    ? CreateRouterRecordToRouterRecord<T[K]>
+    : never;
+};
+
 /**
  * @internal
  */
 export function createRouterFactory<TRoot extends AnyRootTypes>(
   config: RootConfig<TRoot>,
 ) {
-  return function createRouterInner<TRouterRecord extends RouterRecord>(
-    procedures: TRouterRecord | Router<any, TRouterRecord>,
-  ): BuiltRouter<TRoot, TRouterRecord> {
-    const routerRecordIn: TRouterRecord = isRouter(procedures)
-      ? procedures._def.record
-      : procedures;
-
+  return function createRouterInner<TInput extends CreateRouterOptions>(
+    input: TInput,
+  ): BuiltRouter<TRoot, CreateRouterRecordToRouterRecord<TInput>> {
     const reservedWordsUsed = new Set(
-      Object.keys(routerRecordIn).filter((v) => reservedWords.includes(v)),
+      Object.keys(input).filter((v) => reservedWords.includes(v)),
     );
     if (reservedWordsUsed.size > 0) {
       throw new Error(
@@ -158,7 +168,10 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }
 
     const record: RouterRecord = omitPrototype({});
-    function recursiveGetPaths(procedures: RouterRecord, path = '') {
+    function recursiveGetPaths(
+      procedures: CreateRouterOptions<any>,
+      path = '',
+    ) {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
@@ -174,14 +187,14 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
         record[newPath] = procedureOrRouter;
       }
     }
-    recursiveGetPaths(routerRecordIn);
+    recursiveGetPaths(input);
 
     const _def: AnyRouter['_def'] = {
       _config: config,
       router: true,
       procedures: record,
       ...emptyRouter,
-      record: procedures,
+      record,
     };
 
     const router = {

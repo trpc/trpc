@@ -12,8 +12,8 @@ import type {
   inferTransformedSubscriptionOutput,
   IntersectionError,
   ProcedureOptions,
-  ProcedureRouterRecord,
   ProcedureType,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -78,7 +78,7 @@ type DecorateProcedure<
  */
 type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
-  TProcedures extends ProcedureRouterRecord,
+  TProcedures extends RouterRecord,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>

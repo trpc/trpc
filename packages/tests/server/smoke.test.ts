@@ -127,11 +127,12 @@ test('call a mutation as a query', async () => {
 test('flat router', async () => {
   const hello = procedure.query(() => 'world');
   const bye = procedure.query(() => 'bye');
+  const child = t.router({
+    bye,
+  });
   const router1 = t.router({
     hello,
-    child: t.router({
-      bye,
-    }),
+    child,
   });
 
   expect(router1.hello).toBe(hello);
@@ -151,6 +152,17 @@ test('flat router', async () => {
 
   expect(merged.hello).toBe(hello);
   expect(merged.child.bye).toBe(bye);
+});
+
+test('meep', () => {
+  const router = t.router({
+    foo: {
+      bar: {
+        baz: procedure.query(() => 'world'),
+      },
+    },
+  });
+  router.foo.bar.baz;
 });
 
 test('subscriptions', async () => {
