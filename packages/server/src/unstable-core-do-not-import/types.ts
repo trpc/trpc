@@ -154,3 +154,4 @@ export const ERROR_SYMBOL = Symbol('TypeError');
 export type TypeError<TMessage extends string> = TMessage & {
   _: typeof ERROR_SYMBOL;
 };
+export type ValueOf<TObj> = TObj[keyof TObj];
