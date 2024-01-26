@@ -26,7 +26,9 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
+export type DecoratedProcedureRecord<
+  TProcedures extends ProcedureRouterRecord,
+> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
@@ -74,7 +76,7 @@ export type BuiltRouter<
 
 export type AnyRouter = Router<any, any>;
 
-type inferRouterRootTypes<TRouter extends AnyRouter> =
+export type inferRouterRootTypes<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['$types'];
 
 export type inferRouterContext<TRouter extends AnyRouter> =
@@ -183,7 +185,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       record: procedures,
     };
 
-    const router: AnyRouter = {
+    const router: BuiltRouter<TRoot, TProcRouterRecord> = {
       ...procedures,
       _def,
       createCaller(ctx) {
@@ -203,7 +205,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       },
     };
 
-    return router as BuiltRouter<TRoot, TProcRouterRecord>;
+    return router;
   };
 }
 
