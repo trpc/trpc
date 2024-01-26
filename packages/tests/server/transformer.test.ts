@@ -525,18 +525,22 @@ describe('required transformers', () => {
       transformer,
     });
     const router = t.router({});
+    type Test = typeof t._config.$types.transformer;
 
-    // @ts-expect-error missing transformer on frontend
-    createTRPCClient<typeof router>({
-      links: [httpBatchLink({ url: '' })],
-    });
+    createTRPCClient<typeof router>(
+      // @ts-expect-error missing transformer on frontend
+      {
+        links: [httpBatchLink({ url: '' })],
+      },
+    );
   });
 
   test('errors with transformer set on frontend but not on backend', () => {
-    const transformer = superjson;
     const t = initTRPC.create({});
     const router = t.router({});
+    type Test = typeof t._config.$types.transformer;
 
+    const transformer = superjson;
     createTRPCClient<typeof router>({
       links: [httpBatchLink({ url: '' })],
       // @ts-expect-error missing transformer on backend

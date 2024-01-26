@@ -1,3 +1,4 @@
+import type { CombinedDataTransformer } from '.';
 import type { ErrorFormatter } from './error/formatter';
 import type { TRPCErrorShape } from './rpc';
 
@@ -9,7 +10,7 @@ export interface RootConfigTypes {
   ctx: object;
   meta: object;
   errorShape: unknown;
-  transformer: unknown;
+  transformer: boolean;
 }
 
 /**
@@ -24,15 +25,20 @@ export const isServerDefault: boolean =
   !!globalThis.process?.env?.['VITEST_WORKER_ID'];
 
 /**
- * The runtime config that are used and actually represents real values underneath
+ * The tRPC root config
  * @internal
  */
-export interface RuntimeConfig<TTypes extends RootConfigTypes> {
+export interface RootConfig<TTypes extends RootConfigTypes> {
+  /**
+   * The types that are used in the config
+   * @internal
+   */
+  $types: TTypes;
   /**
    * Use a data transformer
    * @link https://trpc.io/docs/v11/data-transformers
    */
-  transformer: TTypes['transformer'];
+  transformer: CombinedDataTransformer;
   /**
    * Use custom error formatting
    * @link https://trpc.io/docs/v11/error-formatting
@@ -68,16 +74,6 @@ export interface RuntimeConfig<TTypes extends RootConfigTypes> {
  */
 export type CreateRootConfigTypes<TGenerics extends RootConfigTypes> =
   TGenerics;
-
-/**
- * The config that is resolved after `initTRPC.create()` has been called
- * Combination of `InitTOptions` + `InitGenerics`
- * @internal
- */
-export interface RootConfig<TGenerics extends RootConfigTypes>
-  extends RuntimeConfig<TGenerics> {
-  $types: TGenerics;
-}
 
 /**
  * @internal
