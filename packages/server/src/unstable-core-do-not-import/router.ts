@@ -84,7 +84,7 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 
-type GetInferenceHelpers<
+export type GetInferenceHelpers<
   TType extends 'input' | 'output',
   TRouter extends AnyRouter,
 > = {
