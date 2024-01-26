@@ -7,7 +7,7 @@ import type {
   inferTransformedProcedureOutput,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
-import type { AnyRootConfigTypes, RootConfig } from './rootConfig';
+import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise } from './types';
 import { mergeWithoutOverrides, omitPrototype } from './utils';
@@ -20,10 +20,10 @@ export interface ProcedureRouterRecord {
 }
 
 export interface RouterDef<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TRecord extends ProcedureRouterRecord,
 > {
-  _config: RootConfig<TConfig>;
+  _config: RootConfig<TRoot>;
   router: true;
   procedure?: never;
   procedures: TRecord;
@@ -146,9 +146,9 @@ const reservedWords = [
  * @internal
  */
 export type CreateRouterInner<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<RouterDef<TConfig, TProcRouterRecord>> &
+> = Router<RouterDef<TRoot, TProcRouterRecord>> &
   /**
    * This adds ability to call procedures directly but is primarily used for quick access in type inference
    */
@@ -157,14 +157,14 @@ export type CreateRouterInner<
 /**
  * @internal
  */
-export function createRouterFactory<TConfig extends AnyRootConfigTypes>(
-  config: RootConfig<TConfig>,
+export function createRouterFactory<TRoot extends AnyRootTypes>(
+  config: RootConfig<TRoot>,
 ) {
   return function createRouterInner<
     TProcRouterRecord extends ProcedureRouterRecord,
   >(
     procedures: TProcRouterRecord,
-  ): CreateRouterInner<TConfig, TProcRouterRecord> {
+  ): CreateRouterInner<TRoot, TProcRouterRecord> {
     const reservedWordsUsed = new Set(
       Object.keys(procedures).filter((v) => reservedWords.includes(v)),
     );
@@ -249,12 +249,12 @@ export function callProcedure(
   return proc(opts);
 }
 
-export function createCallerFactory<TConfig extends AnyRootConfigTypes>() {
+export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRouter extends Router<AnyRouterDef>>(
     router: TRouter,
   ): RouterCaller<TRouter['_def']> {
     const _def = router._def;
-    type Context = TConfig['ctx'];
+    type Context = TRoot['ctx'];
 
     return function createCaller(maybeContext) {
       const proxy = createRecursiveProxy(({ path, args }) => {

@@ -7,7 +7,7 @@ import {
 } from './error/formatter';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder } from './procedureBuilder';
-import type { CreateRootConfigTypes } from './rootConfig';
+import type { CreateRootTypes } from './rootConfig';
 import { isServerDefault, type RootConfig } from './rootConfig';
 import {
   createCallerFactory,
@@ -73,7 +73,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       >
     >;
 
-    type $Config = CreateRootConfigTypes<{
+    type $Config = CreateRootTypes<{
       ctx: TContext;
       meta: TMeta;
       errorShape: $ErrorShape;

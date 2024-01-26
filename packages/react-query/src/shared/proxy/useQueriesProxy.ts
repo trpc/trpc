@@ -3,7 +3,7 @@ import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
   Filter,
   inferProcedureInput,
@@ -18,19 +18,19 @@ import type {
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
+> = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TConfig>
+    TRPCClientError<TRoot>
   >,
 ) => TrpcQueryOptionsForUseQueries<
-  inferTransformedProcedureOutput<TConfig, TProcedure>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TConfig>
+  TRPCClientError<TRoot>
 >;
 
 /**
@@ -49,19 +49,19 @@ export type UseQueriesProcedureRecord<TRouter extends AnyRouter> = {
 };
 
 type GetSuspenseQueryOptions<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-> = <TData = inferTransformedProcedureOutput<TConfig, TProcedure>>(
+> = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseSuspenseQueries<
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TConfig>
+    TRPCClientError<TRoot>
   >,
 ) => TrpcQueryOptionsForUseSuspenseQueries<
-  inferTransformedProcedureOutput<TConfig, TProcedure>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TConfig>
+  TRPCClientError<TRoot>
 >;
 
 /**

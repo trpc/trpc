@@ -1,6 +1,6 @@
 import type {
   AnyProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -13,12 +13,12 @@ import type {
  * Use to describe a mutation route which matches a given mutation procedure's interface
  */
 export type MutationLike<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
   useMutation: (
-    opts?: InferMutationOptions<TConfig, TProcedure>,
-  ) => InferMutationResult<TConfig, TProcedure>;
+    opts?: InferMutationOptions<TRoot, TProcedure>,
+  ) => InferMutationResult<TRoot, TProcedure>;
 };
 
 /**
@@ -35,6 +35,6 @@ export type InferMutationLikeInput<
  */
 export type InferMutationLikeData<
   TMutationLike extends MutationLike<any, any>,
-> = TMutationLike extends MutationLike<infer TConfig, infer TProcedure>
-  ? inferTransformedProcedureOutput<TConfig, TProcedure>
+> = TMutationLike extends MutationLike<infer TRoot, infer TProcedure>
+  ? inferTransformedProcedureOutput<TRoot, TProcedure>
   : never;

@@ -6,7 +6,7 @@ import type {
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
   Filter,
   inferProcedureInput,
@@ -96,10 +96,10 @@ export interface ActionHandlerDef {
  * @internal
  */
 export type inferActionDef<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProc extends AnyProcedure,
 > = {
   input: inferProcedureInput<TProc>;
   output: TProc['_def']['_output_out'];
-  errorShape: TConfig['errorShape'];
+  errorShape: TRoot['errorShape'];
 };

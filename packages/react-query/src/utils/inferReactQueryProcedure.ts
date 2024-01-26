@@ -3,7 +3,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -19,14 +19,14 @@ import type {
  * @internal
  */
 export type InferQueryOptions<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-  TData = inferTransformedProcedureOutput<TConfig, TProcedure>,
+  TData = inferTransformedProcedureOutput<TRoot, TProcedure>,
 > = Omit<
   UseTRPCQueryOptions<
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
-    TRPCClientErrorLike<TConfig>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCClientErrorLike<TRoot>,
     TData
   >,
   'select'
@@ -36,35 +36,35 @@ export type InferQueryOptions<
  * @internal
  */
 export type InferMutationOptions<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = UseTRPCMutationOptions<
   inferProcedureInput<TProcedure>,
-  TRPCClientErrorLike<TConfig>,
-  inferTransformedProcedureOutput<TConfig, TProcedure>
+  TRPCClientErrorLike<TRoot>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>
 >;
 
 /**
  * @internal
  */
 export type InferQueryResult<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = UseTRPCQueryResult<
-  inferTransformedProcedureOutput<TConfig, TProcedure>,
-  TRPCClientErrorLike<TConfig>
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TRPCClientErrorLike<TRoot>
 >;
 
 /**
  * @internal
  */
 export type InferMutationResult<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
   TContext = unknown,
 > = UseTRPCMutationResult<
-  inferTransformedProcedureOutput<TConfig, TProcedure>,
-  TRPCClientErrorLike<TConfig>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TRPCClientErrorLike<TRoot>,
   inferProcedureInput<TProcedure>,
   TContext
 >;

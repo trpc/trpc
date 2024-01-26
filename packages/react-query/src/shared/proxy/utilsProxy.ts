@@ -14,7 +14,7 @@ import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
   AnyQueryProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
   DeepPartial,
   Filter,
@@ -39,7 +39,7 @@ import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
@@ -48,10 +48,10 @@ type DecorateProcedure<
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
@@ -60,12 +60,12 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<
     InfiniteData<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
       NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
@@ -76,8 +76,8 @@ type DecorateProcedure<
   prefetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 
@@ -88,8 +88,8 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 
@@ -99,10 +99,10 @@ type DecorateProcedure<
   ensureData(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientinvalidatequeries
@@ -113,7 +113,7 @@ type DecorateProcedure<
       predicate?: (
         query: Query<
           inferProcedureInput<TProcedure>,
-          TRPCClientError<TConfig>,
+          TRPCClientError<TRoot>,
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
@@ -161,8 +161,8 @@ type DecorateProcedure<
      */
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      inferTransformedProcedureOutput<TConfig, TProcedure> | undefined,
-      inferTransformedProcedureOutput<TConfig, TProcedure> | undefined
+      inferTransformedProcedureOutput<TRoot, TProcedure> | undefined,
+      inferTransformedProcedureOutput<TRoot, TProcedure> | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -174,12 +174,12 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
       | InfiniteData<
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
         >
       | undefined,
       | InfiniteData<
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
         >
       | undefined
@@ -192,7 +192,7 @@ type DecorateProcedure<
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
-  ): inferTransformedProcedureOutput<TConfig, TProcedure> | undefined;
+  ): inferTransformedProcedureOutput<TRoot, TProcedure> | undefined;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
@@ -201,7 +201,7 @@ type DecorateProcedure<
     input?: inferProcedureInput<TProcedure>,
   ):
     | InfiniteData<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
         NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
       >
     | undefined;

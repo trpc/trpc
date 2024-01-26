@@ -2,7 +2,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { MutationLike } from './mutationLike';
@@ -16,14 +16,14 @@ export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
   TRouter['_def']['procedures']
 >;
 export type RouterLikeInner<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedures extends AnyProcedure,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? RouterLikeInner<TConfig, TProcedures[TKey]['_def']['record']>
+    ? RouterLikeInner<TRoot, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyQueryProcedure
-    ? QueryLike<TConfig, TProcedures[TKey]>
+    ? QueryLike<TRoot, TProcedures[TKey]>
     : TProcedures[TKey] extends AnyMutationProcedure
-    ? MutationLike<TConfig, TProcedures[TKey]>
+    ? MutationLike<TRoot, TProcedures[TKey]>
     : never;
 };

@@ -5,7 +5,7 @@ import {
 } from '@trpc/client';
 import type {
   AnyProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
   MaybePromise,
@@ -72,7 +72,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: RootConfig<AnyRootConfigTypes>;
+    _config: RootConfig<AnyRootTypes>;
   },
 >(
   t: TInstance,

@@ -10,7 +10,7 @@ import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfigTypes,
+  AnyRootTypes,
   AnyRouter,
   DataTransformerOptions,
   Filter,
@@ -49,7 +49,7 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfigTypes,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
@@ -58,10 +58,10 @@ type DecorateProcedure<
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
@@ -70,12 +70,12 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<
     InfiniteData<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
       NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
@@ -86,8 +86,8 @@ type DecorateProcedure<
   prefetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 
@@ -98,8 +98,8 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 };
