@@ -52,8 +52,6 @@ export type { ProcedureBuilder } from './procedureBuilder';
 export * from './rootConfig';
 export type {
   AnyRouter,
-  AnyRouterDef,
-  CreateRouterInner,
   ProcedureRecord,
   ProcedureRouterRecord,
   Router,

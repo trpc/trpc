@@ -1,3 +1,4 @@
+import type { DefaultErrorData } from '../error/formatter';
 import type { TRPCError } from '../error/TRPCError';
 import type { TRPC_ERROR_CODES_BY_KEY, TRPCResponse } from '../rpc';
 import { TRPC_ERROR_CODES_BY_NUMBER } from '../rpc';
@@ -32,9 +33,11 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
   const httpStatuses = new Set(
     arr.map((res) => {
       if ('error' in res) {
-        const data = res.error.data;
-        if (typeof data['httpStatus'] === 'number') {
-          return data['httpStatus'];
+        const data = res.error.data as
+          | Record<string, unknown>
+          | DefaultErrorData;
+        if (typeof data.httpStatus === 'number') {
+          return data.httpStatus;
         }
         const code = TRPC_ERROR_CODES_BY_NUMBER[res.error.code];
         return getStatusCodeFromKey(code);
