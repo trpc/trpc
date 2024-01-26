@@ -31,20 +31,20 @@ import type { TRPCClientError } from './TRPCClientError';
  * @public
  **/
 export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+  DecoratedProcedureRecord<TRouter['_def']['record'], TRouter>;
 
 /** @internal */
 export type Resolver<
-  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
+  TRoot extends AnyRootTypes,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: ProcedureOptions,
 ) => Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
 type SubscriptionResolver<
-  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
+  TRoot extends AnyRootTypes,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: Partial<
@@ -57,19 +57,19 @@ type SubscriptionResolver<
 ) => Unsubscribable;
 
 type DecorateProcedure<
-  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
+  TRoot extends AnyRootTypes,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      query: Resolver<TRoot, TProcedure>;
+      query: Resolver<TProcedure, TRoot>;
     }
   : TProcedure extends AnyMutationProcedure
   ? {
-      mutate: Resolver<TRoot, TProcedure>;
+      mutate: Resolver<TProcedure, TRoot>;
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
-      subscribe: SubscriptionResolver<TRoot, TProcedure>;
+      subscribe: SubscriptionResolver<TProcedure, TRoot>;
     }
   : never;
 
@@ -77,13 +77,13 @@ type DecorateProcedure<
  * @internal
  */
 type DecoratedProcedureRecord<
-  TRouter extends AnyRouter,
   TProcedures extends ProcedureRouterRecord,
+  TRouter extends AnyRouter,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
+    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record'], TRouter>
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRouter['_def']['_config']['$types'], TProcedures[TKey]>
+    ? DecorateProcedure<TProcedures[TKey], TRouter['_def']['_config']['$types']>
     : never;
 };
 
