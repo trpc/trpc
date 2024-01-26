@@ -7,6 +7,7 @@ import {
 } from './error/formatter';
 import { createMiddlewareFactory } from './middleware';
 import { createBuilder } from './procedureBuilder';
+import type { CreateRootConfigTypes } from './rootConfig';
 import { isServerDefault, type RootConfig } from './rootConfig';
 import {
   createCallerFactory,
@@ -72,7 +73,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       >
     >;
 
-    type $Config = RootConfig<{
+    type $Config = CreateRootConfigTypes<{
       ctx: TContext;
       meta: TMeta;
       errorShape: $ErrorShape;
@@ -84,7 +85,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       opts?.transformer ?? defaultTransformer,
     );
 
-    const config: $Config = {
+    const config: RootConfig<$Config> = {
       transformer,
       isDev:
         opts?.isDev ??
@@ -124,20 +125,14 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * Builder object for creating procedures
        * @link https://trpc.io/docs/v11/server/procedures
        */
-      procedure: createBuilder<
-        $Config['$types']['ctx'],
-        $Config['$types']['meta']
-      >({
+      procedure: createBuilder<$Config['ctx'], $Config['meta']>({
         meta: opts?.defaultMeta,
       }),
       /**
        * Create reusable middlewares
        * @link https://trpc.io/docs/v11/server/middlewares
        */
-      middleware: createMiddlewareFactory<
-        $Config['$types']['ctx'],
-        $Config['$types']['meta']
-      >(),
+      middleware: createMiddlewareFactory<$Config['ctx'], $Config['meta']>(),
       /**
        * Create a router
        * @link https://trpc.io/docs/v11/server/routers

@@ -1,6 +1,6 @@
 import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import type { ProcedureType } from '../procedure';
-import type { AnyRootConfig } from '../rootConfig';
+import type { AnyRootConfigTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
 import type { TRPCError } from './TRPCError';
@@ -8,14 +8,14 @@ import type { TRPCError } from './TRPCError';
 /**
  * @internal
  */
-export function getErrorShape<TConfig extends AnyRootConfig>(opts: {
-  config: TConfig;
+export function getErrorShape<TConfig extends AnyRootConfigTypes>(opts: {
+  config: RootConfig<TConfig>;
   error: TRPCError;
   type: ProcedureType | 'unknown';
   path: string | undefined;
   input: unknown;
-  ctx: TConfig['$types']['ctx'] | undefined;
-}): TConfig['$types']['errorShape'] {
+  ctx: TConfig['ctx'] | undefined;
+}): TConfig['errorShape'] {
   const { path, error, config } = opts;
   const { code } = opts.error;
   const shape: DefaultErrorShape = {

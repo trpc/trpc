@@ -75,16 +75,6 @@ export interface RootConfig<TTypes extends RootConfigTypes> {
 export type CreateRootConfigTypes<TGenerics extends RootConfigTypes> =
   TGenerics;
 
-/**
- * @deprecated Use `RootConfigTypes` instead
- */
-export type AnyRootConfig = RootConfig<{
-  ctx: any;
-  meta: any;
-  errorShape: any;
-  transformer: any;
-}>;
-
 export type AnyRootConfigTypes = CreateRootConfigTypes<{
   ctx: any;
   meta: any;

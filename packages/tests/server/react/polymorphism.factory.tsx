@@ -5,7 +5,7 @@
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
 import type {
-  AnyRootConfig,
+  AnyRootConfigTypes,
   createBuilder,
 } from '@trpc/server/unstable-core-do-not-import';
 import z from 'zod';
@@ -33,7 +33,7 @@ export type FileExportStatusType = z.infer<typeof FileExportStatus>;
 // Dependencies
 //
 
-type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
+type BaseProcedure<TConfig extends AnyRootConfigTypes> = ReturnType<
   typeof createBuilder<TConfig['$types']['ctx'], TConfig['$types']['meta']>
 >;
 

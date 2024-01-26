@@ -1,7 +1,7 @@
 import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
@@ -85,7 +85,7 @@ type GetQueryParams<
   : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
 
 type GetParams<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
@@ -109,7 +109,7 @@ type GetParams<
   : never;
 
 type GetQueryKeyParams<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure
@@ -125,7 +125,7 @@ type GetQueryKeyParams<
  * @link https://trpc.io/docs/v11/getQueryKey
  */
 export function getQueryKey<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedureOrRouter extends
     | AnyMutationProcedure
     | AnyQueryProcedure

@@ -3,7 +3,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
@@ -46,7 +46,7 @@ import type { CreateTRPCReactOptions } from './shared/types';
  * @internal
  */
 export interface ProcedureUseQuery<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > {
   <
@@ -94,7 +94,7 @@ type CursorInput = {
  */
 export type MaybeDecoratedInfiniteQuery<
   TProcedure extends AnyProcedure,
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
 > = inferProcedureInput<TProcedure> extends CursorInput
   ? {
       /**
@@ -134,7 +134,7 @@ export type MaybeDecoratedInfiniteQuery<
  * @internal
  */
 export type DecoratedQueryMethods<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
@@ -164,7 +164,7 @@ export type DecoratedQueryMethods<
  * @internal
  */
 export type DecoratedQuery<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = MaybeDecoratedInfiniteQuery<TProcedure, TConfig> &
   DecoratedQueryMethods<TConfig, TProcedure>;
@@ -173,7 +173,7 @@ export type DecoratedQuery<
  * @internal
  */
 export interface DecoratedMutation<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > {
   /**
@@ -198,7 +198,7 @@ export interface DecoratedMutation<
  * @internal
  */
 export type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
   _TFlags,
 > = TProcedure extends AnyQueryProcedure
@@ -224,7 +224,7 @@ export type DecorateProcedure<
  * @internal
  */
 export type DecoratedProcedureRecord<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedures extends ProcedureRouterRecord,
   TFlags,
 > = {
@@ -267,7 +267,7 @@ export type CreateTRPCReact<
 > = ProtectedIntersection<
   CreateTRPCReactBase<TRouter, TSSRContext>,
   DecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record'],
     TFlags
   >

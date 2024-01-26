@@ -1,7 +1,7 @@
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   inferProcedureInput,
   inferProcedureOutput,
   inferTransformedProcedureOutput,
@@ -16,7 +16,7 @@ import type { UseTRPCSuspenseQueryResult } from '../hooks/types';
  * Use to request a query route which matches a given query procedure's interface
  */
 export type QueryLike<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = {
   useQuery: (

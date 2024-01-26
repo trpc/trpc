@@ -4,7 +4,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
@@ -35,7 +35,7 @@ export type inferRouterClient<TRouter extends AnyRouter> =
 
 /** @internal */
 export type Resolver<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = (
   input: inferProcedureInput<TProcedure>,
@@ -43,7 +43,7 @@ export type Resolver<
 ) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
 type SubscriptionResolver<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = (
   input: inferProcedureInput<TProcedure>,
@@ -57,7 +57,7 @@ type SubscriptionResolver<
 ) => Unsubscribable;
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = TProcedure extends AnyQueryProcedure
   ? {
@@ -83,7 +83,7 @@ type DecoratedProcedureRecord<
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
     ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRouter['_def']['_config'], TProcedures[TKey]>
+    ? DecorateProcedure<TRouter['_def']['_config']['$types'], TProcedures[TKey]>
     : never;
 };
 

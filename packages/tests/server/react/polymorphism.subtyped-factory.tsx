@@ -5,7 +5,7 @@
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
 import type {
-  AnyRootConfig,
+  AnyRootConfigTypes,
   createBuilder,
   createRouterFactory,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -32,10 +32,10 @@ export type SubTypedFileExportStatusType = z.infer<
 // Dependencies
 //
 
-type RouterFactory<TConfig extends AnyRootConfig> = ReturnType<
+type RouterFactory<TConfig extends AnyRootConfigTypes> = ReturnType<
   typeof createRouterFactory<TConfig>
 >;
-type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
+type BaseProcedure<TConfig extends AnyRootConfigTypes> = ReturnType<
   typeof createBuilder<TConfig['$types']['ctx'], TConfig['$types']['meta']>
 >;
 

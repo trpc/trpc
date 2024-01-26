@@ -3,7 +3,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -19,7 +19,7 @@ import type {
  * @internal
  */
 export type InferQueryOptions<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
   TData = inferTransformedProcedureOutput<TConfig, TProcedure>,
 > = Omit<
@@ -36,7 +36,7 @@ export type InferQueryOptions<
  * @internal
  */
 export type InferMutationOptions<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = UseTRPCMutationOptions<
   inferProcedureInput<TProcedure>,
@@ -48,7 +48,7 @@ export type InferMutationOptions<
  * @internal
  */
 export type InferQueryResult<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = UseTRPCQueryResult<
   inferTransformedProcedureOutput<TConfig, TProcedure>,
@@ -59,7 +59,7 @@ export type InferQueryResult<
  * @internal
  */
 export type InferMutationResult<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
   TContext = unknown,
 > = UseTRPCMutationResult<
@@ -74,9 +74,15 @@ export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> = {
     ? TRouterOrProcedure extends AnyRouter
       ? inferReactQueryProcedureOptions<TRouterOrProcedure>
       : TRouterOrProcedure extends AnyMutationProcedure
-      ? InferMutationOptions<TRouter['_def']['_config'], TRouterOrProcedure>
+      ? InferMutationOptions<
+          TRouter['_def']['_config']['$types'],
+          TRouterOrProcedure
+        >
       : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<TRouter['_def']['_config'], TRouterOrProcedure>
+      ? InferQueryOptions<
+          TRouter['_def']['_config']['$types'],
+          TRouterOrProcedure
+        >
       : never
     : never;
 };

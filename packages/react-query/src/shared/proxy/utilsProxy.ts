@@ -14,7 +14,7 @@ import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   DeepPartial,
   Filter,
@@ -39,7 +39,7 @@ import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
@@ -237,7 +237,7 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
           DecorateRouter
       : // utils only apply to queries
         DecorateProcedure<
-          TRouter['_def']['_config'],
+          TRouter['_def']['_config']['$types'],
           TRouter['_def']['record'][TKey]
         >;
   }; // Add functions that should be available at utils root

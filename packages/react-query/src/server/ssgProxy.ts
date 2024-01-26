@@ -10,7 +10,7 @@ import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   DataTransformerOptions,
   Filter,
@@ -49,7 +49,7 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
@@ -115,7 +115,7 @@ type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
     ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
     : // utils only apply to queries
       DecorateProcedure<
-        TRouter['_def']['_config'],
+        TRouter['_def']['_config']['$types'],
         TRouter['_def']['record'][TKey]
       >;
 };

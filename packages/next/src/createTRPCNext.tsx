@@ -53,7 +53,7 @@ export type CreateTRPCNext<
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
   DecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record'],
     TFlags
   >

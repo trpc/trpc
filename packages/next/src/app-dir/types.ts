@@ -3,7 +3,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootConfigTypes,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
@@ -11,7 +11,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 
 export type DecorateProcedureServer<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedure extends AnyProcedure,
 > = TProcedure extends AnyQueryProcedure
   ? {
@@ -33,7 +33,7 @@ export type DecorateProcedureServer<
   : never;
 
 export type NextAppDirDecoratedProcedureRecord<
-  TConfig extends AnyRootConfig,
+  TConfig extends AnyRootConfigTypes,
   TProcedures extends ProcedureRouterRecord,
 > = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
