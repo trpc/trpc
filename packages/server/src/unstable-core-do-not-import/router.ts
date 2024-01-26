@@ -16,7 +16,7 @@ import { mergeWithoutOverrides, omitPrototype } from './utils';
 export type ProcedureRecord = Record<string, AnyProcedure>;
 
 export interface ProcedureRouterRecord {
-  [key: string]: AnyProcedure | AnyRouter;
+  [key: string]: AnyProcedure | ProcedureRouterRecord | AnyRouter;
 }
 
 export interface RouterDef<
