@@ -138,13 +138,13 @@ export type CreateRouterOptions = {
   [key: string]: AnyProcedure | RouterRecord | Router<any, any>;
 };
 
-type CreateRouterRecordToRouterRecord<T extends CreateRouterOptions> = {
-  [K in keyof T]: T[K] extends AnyProcedure
-    ? T[K]
-    : T[K] extends Router<any, infer TRecord>
+type DecorateCreateRouterOptions<TRouterOptions extends CreateRouterOptions> = {
+  [K in keyof TRouterOptions]: TRouterOptions[K] extends AnyProcedure
+    ? TRouterOptions[K]
+    : TRouterOptions[K] extends Router<any, infer TRecord>
     ? TRecord
-    : T[K] extends RouterRecord
-    ? CreateRouterRecordToRouterRecord<T[K]>
+    : TRouterOptions[K] extends RouterRecord
+    ? DecorateCreateRouterOptions<TRouterOptions[K]>
     : never;
 };
 
@@ -156,7 +156,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 ) {
   return function createRouterInner<TInput extends CreateRouterOptions>(
     input: TInput,
-  ): BuiltRouter<TRoot, CreateRouterRecordToRouterRecord<TInput>> {
+  ) {
     const reservedWordsUsed = new Set(
       Object.keys(input).filter((v) => reservedWords.includes(v)),
     );
@@ -168,10 +168,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }
 
     const record: RouterRecord = omitPrototype({});
-    function recursiveGetPaths(
-      procedures: CreateRouterOptions<any>,
-      path = '',
-    ) {
+    function recursiveGetPaths(procedures: CreateRouterOptions, path = '') {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
@@ -217,7 +214,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       },
     };
 
-    return router as BuiltRouter<TRoot, TRouterRecord>;
+    return router as BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
   };
 }
 
