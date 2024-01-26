@@ -49,7 +49,6 @@
     "tailwind-merge": "^2.0.0",
     "zod": "^3.0.0"
   },
-  "peerDependencies": {},
   "browserslist": {
     "production": [
       ">0.5%",
@@ -63,28 +62,28 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.23.2",
-    "@babel/preset-env": "^7.23.2",
-    "@decs/typeschema": "^0.12.0",
-    "@docusaurus/tsconfig": "^3.0.0-beta.0",
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "@decs/typeschema": "^0.12.2",
+    "@docusaurus/tsconfig": "^3.1.0",
     "@octokit/graphql": "^7.0.0",
     "@octokit/graphql-schema": "^14.0.0",
     "@types/node": "^20.10.0",
     "@types/oauth": "^0.9.1",
-    "@types/react": "^18.2.33",
-    "@types/react-dom": "^18.2.14",
-    "arktype": "1.0.14-alpha",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "arktype": "1.0.29-alpha",
     "autoprefixer": "^10.4.7",
     "docusaurus-plugin-typedoc": "^1.0.0-next.12",
     "dotenv": "^16.0.1",
     "eslint": "^8.40.0",
     "next": "^14.0.1",
-    "next-auth": "^4.22.1",
+    "next-auth": "^4.24.5",
     "npm-run-all": "^4.1.5",
     "oauth": "^0.10.0",
-    "postcss": "^8.4.14",
+    "postcss": "^8.4.33",
     "prettier": "^2.8.8",
-    "runtypes": "^6.6.0",
+    "runtypes": "^6.7.0",
     "scale-codec": "^0.13.0",
     "superstruct": "^1.0.0",
     "tailwindcss": "^3.3.0",
@@ -94,6 +93,6 @@
     "typedoc-plugin-markdown": "^4.0.0-next.13",
     "typescript": "npm:typescript@~5.1.3",
     "valibot": "^0.27.0",
-    "yup": "^1.0.0"
+    "yup": "^1.3.3"
   }
 }

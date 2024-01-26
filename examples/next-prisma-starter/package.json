@@ -52,7 +52,7 @@
   "devDependencies": {
     "@playwright/test": "^1.26.1",
     "@types/node": "^20.10.0",
-    "@types/react": "^18.2.33",
+    "@types/react": "^18.2.48",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
     "autoprefixer": "^10.4.7",
@@ -64,7 +64,7 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "npm-run-all": "^4.1.5",
-    "postcss": "^8.4.14",
+    "postcss": "^8.4.33",
     "prettier": "^2.8.8",
     "prisma": "^4.14.1",
     "start-server-and-test": "^1.12.0",
