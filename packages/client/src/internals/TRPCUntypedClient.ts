@@ -7,7 +7,7 @@ import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
-  inferConfig,
+  inferConfigTypes,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
@@ -20,7 +20,7 @@ import type {
 import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  inferConfig<TRouter>['transformer'] extends false
+  inferConfigTypes<TRouter>['transformer'] extends false
     ? {
         /**
          * Data transformer
