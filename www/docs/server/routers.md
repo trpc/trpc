@@ -77,7 +77,7 @@ const t = initTRPC.context<Context>().meta<Meta>().create({
 ### Runtime Configuration
 
 ```ts
-export interface RuntimeConfig<TTypes extends RootConfigTypes> {
+export interface RootConfig<TTypes extends RootConfigTypes> {
   /**
    * Use a data transformer
    * @link https://trpc.io/docs/v11/data-transformers

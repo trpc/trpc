@@ -8,7 +8,6 @@ import type {
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootConfig } from './rootConfig';
-import type { CombinedDataTransformer } from './transformer';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise } from './types';
 import { mergeWithoutOverrides, omitPrototype } from './utils';
@@ -353,7 +352,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
       return current._def._config.transformer;
     }
     return prev;
-  }, defaultTransformer as CombinedDataTransformer);
+  }, defaultTransformer);
 
   const router = createRouterFactory({
     errorFormatter,

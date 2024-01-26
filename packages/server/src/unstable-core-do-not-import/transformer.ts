@@ -79,15 +79,7 @@ export function getDataTransformer(
 /**
  * @internal
  */
-export type DefaultDataTransformer = CombinedDataTransformer & {
-  _default: true;
-};
-
-/**
- * @internal
- */
-export const defaultTransformer: DefaultDataTransformer = {
-  _default: true,
+export const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
