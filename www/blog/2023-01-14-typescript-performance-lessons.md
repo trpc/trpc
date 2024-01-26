@@ -115,7 +115,7 @@ export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
 
 Okay, now we have some things to unpack and learn about. Let's figure out what this code is doing first.
 
-We have a recursive type `DecoratedProcedureUtilsRecord` that walks through all the procedures in the router and "decorates" (adds methods to) them with React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/framework//react/guides/query-invalidation).
+We have a recursive type `DecoratedProcedureUtilsRecord` that walks through all the procedures in the router and "decorates" (adds methods to) them with React Query utilities like [`invalidateQueries`](https://tanstack.com/query/v4/docs/framework/react/guides/query-invalidation).
 
 In tRPC v10 we still support old `v9` routers, but `v10` clients cannot call procedures from `v9` routers. So for each procedure we check if it's a `v9` procedure (`extends LegacyV9ProcedureTag`) and strip it out if so. It's all a lot of work for TypeScript to do...**if it's not lazily evaluated**.
 
