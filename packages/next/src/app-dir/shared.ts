@@ -8,25 +8,25 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  Filter,
   inferProcedureInput,
   ProtectedIntersection,
+  RootTypes,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 
 /**
  * @internal
  */
-export type UseProcedureRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? UseProcedureRecord<TRouter['_def']['record'][TKey]>
-    : Resolver<
-        TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record'][TKey]
-      >;
+export type UseProcedureRecord<
+  TRoot extends RootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends RouterRecord
+    ? UseProcedureRecord<TRoot, TRecord[TKey]>
+    : TRecord[TKey] extends AnyQueryProcedure
+    ? Resolver<TRoot, TRecord[TKey]>
+    : never;
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(
@@ -36,17 +36,30 @@ export function createUseProxy<TRouter extends AnyRouter>(
     const path = opts.path.join('.');
 
     return client.query(path, ...opts.args);
-  }) as UseProcedureRecord<TRouter>;
+  }) as UseProcedureRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
 }
 
 type NextAppRouterUse<TRouter extends AnyRouter> = {
   <TData extends Promise<unknown>[]>(
-    cb: (t: UseProcedureRecord<TRouter>) => [...TData],
+    cb: (
+      t: UseProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => [...TData],
   ): {
     [TKey in keyof TData]: Awaited<TData[TKey]>;
   };
   <TData extends Promise<unknown>>(
-    cb: (t: UseProcedureRecord<TRouter>) => TData,
+    cb: (
+      t: UseProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => TData,
   ): Awaited<TData>;
 };
 type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
@@ -55,7 +68,10 @@ type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
 export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
   ProtectedIntersection<
     CreateTRPCNextAppRouterBase<TRouter>,
-    UseProcedureRecord<TRouter>
+    UseProcedureRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
   >;
 
 /**
