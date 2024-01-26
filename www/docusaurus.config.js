@@ -39,7 +39,7 @@ module.exports = {
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
     prism: {
-      theme: require('prism-react-renderer/themes/vsDark'),
+      theme: require('prism-react-renderer').themes.vsDark,
     },
     algolia: {
       appId: 'BTGPSR4MOE',
