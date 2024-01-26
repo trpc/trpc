@@ -23,7 +23,7 @@ jobs:
       - uses: ./.github/setup
 
       - name: Build
-        run: pnpm turbo --filter "@trpc/*" build --force
+        run: pnpm turbo --filter "@trpc/*" build
   test:
     timeout-minutes: 10
     env:
