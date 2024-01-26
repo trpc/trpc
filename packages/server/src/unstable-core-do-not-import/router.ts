@@ -327,11 +327,11 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
   const router = createRouterFactory({
     errorFormatter,
     transformer,
-    isDev: routerList.some((r) => r._def._config.isDev),
-    allowOutsideOfServer: routerList.some(
+    isDev: routerList.every((r) => r._def._config.isDev),
+    allowOutsideOfServer: routerList.every(
       (r) => r._def._config.allowOutsideOfServer,
     ),
-    isServer: routerList.some((r) => r._def._config.isServer),
+    isServer: routerList.every((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types,
   })(record);
 
