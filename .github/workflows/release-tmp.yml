@@ -5,7 +5,7 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - '01-26-rootconfigtypes'
+      - '01-26-simplify-router'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/workflows/release-tmp.yml'
