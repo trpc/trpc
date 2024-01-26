@@ -1,6 +1,5 @@
 import type { CombinedDataTransformer } from '.';
-import type { ErrorFormatter } from './error/formatter';
-import type { TRPCErrorShape } from './rpc';
+import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
 
 /**
  * The initial generics that are used in the init function
@@ -9,7 +8,7 @@ import type { TRPCErrorShape } from './rpc';
 export interface RootTypes {
   ctx: object;
   meta: object;
-  errorShape: unknown;
+  errorShape: DefaultErrorShape;
   transformer: boolean;
 }
 
@@ -43,10 +42,7 @@ export interface RootConfig<TTypes extends RootTypes> {
    * Use custom error formatting
    * @link https://trpc.io/docs/v11/error-formatting
    */
-  errorFormatter: ErrorFormatter<
-    TTypes['ctx'],
-    TRPCErrorShape<number> & { [key: string]: any }
-  >;
+  errorFormatter: ErrorFormatter<TTypes['ctx'], TTypes['errorShape']>;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.

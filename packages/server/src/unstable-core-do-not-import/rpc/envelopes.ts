@@ -6,10 +6,9 @@ import type { TRPC_ERROR_CODE_NUMBER } from './codes';
  * Error response
  */
 export interface TRPCErrorShape<
-  TCode extends number = TRPC_ERROR_CODE_NUMBER,
   TData extends Record<string, unknown> = Record<string, unknown>,
 > {
-  code: TCode;
+  code: TRPC_ERROR_CODE_NUMBER;
   message: string;
   data: TData;
 }
