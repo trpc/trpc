@@ -11,7 +11,7 @@ import type { TRPCResponse } from '@trpc/server/rpc';
 import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
-  ProcedureRouterRecord,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 
 interface ProxyCallbackOptions {
@@ -65,9 +65,9 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+type DecoratedProcedureRecord<TProcedures extends RouterRecord> = {
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends RouterRecord
+    ? DecoratedProcedureRecord<TProcedures[TKey]>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
     : never;

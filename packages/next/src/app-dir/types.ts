@@ -4,10 +4,9 @@ import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
-  AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
-  ProcedureRouterRecord,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 
 export type DecorateProcedureServer<
@@ -34,13 +33,10 @@ export type DecorateProcedureServer<
 
 export type NextAppDirDecoratedProcedureRecord<
   TRoot extends AnyRootTypes,
-  TProcedures extends ProcedureRouterRecord,
+  TProcedures extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? NextAppDirDecoratedProcedureRecord<
-        TRoot,
-        TProcedures[TKey]['_def']['record']
-      >
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends RouterRecord
+    ? NextAppDirDecoratedProcedureRecord<TRoot, TProcedures[TKey]>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedureServer<TRoot, TProcedures[TKey]>
     : never;

@@ -13,12 +13,13 @@ import type {
   AnyRootTypes,
   AnyRouter,
   DataTransformerOptions,
-  Filter,
   inferProcedureInput,
   inferRouterContext,
   inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
+  RootTypes,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   callProcedure,
@@ -107,17 +108,16 @@ type DecorateProcedure<
 /**
  * @internal
  */
-type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
+type DecoratedProcedureSSGRecord<
+  TRoot extends RootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends RouterRecord
+    ? DecoratedProcedureSSGRecord<TRoot, TRecord[TKey]>
     : // utils only apply to queries
-      DecorateProcedure<
-        TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record'][TKey]
-      >;
+    TRecord[TKey] extends AnyQueryProcedure
+    ? DecorateProcedure<TRoot, TRecord[TKey]>
+    : never;
 };
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
@@ -182,7 +182,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
     },
-    DecoratedProcedureSSGRecord<TRouter>
+    DecoratedProcedureSSGRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
   >;
 
   return createFlatProxy<CreateSSGHelpers>((key) => {

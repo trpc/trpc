@@ -9,8 +9,8 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
-  ProcedureRouterRecord,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -225,15 +225,11 @@ export type DecorateProcedure<
  */
 export type DecoratedProcedureRecord<
   TRoot extends AnyRootTypes,
-  TProcedures extends ProcedureRouterRecord,
+  TProcedures extends RouterRecord,
   TFlags,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<
-        TRoot,
-        TProcedures[TKey]['_def']['record'],
-        TFlags
-      >
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends RouterRecord
+    ? DecoratedProcedureRecord<TRoot, TProcedures[TKey], TFlags>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TRoot, TProcedures[TKey], TFlags>
     : never;

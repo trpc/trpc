@@ -154,9 +154,13 @@ type DecorateCreateRouterOptions<TRouterOptions extends CreateRouterOptions> = {
 export function createRouterFactory<TRoot extends AnyRootTypes>(
   config: RootConfig<TRoot>,
 ) {
-  return function createRouterInner<TInput extends CreateRouterOptions>(
+  function createRouterInner<TInput extends RouterRecord>(
     input: TInput,
-  ) {
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
+  function createRouterInner<TInput extends CreateRouterOptions>(
+    input: TInput,
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
+  function createRouterInner(input: RouterRecord | CreateRouterOptions) {
     const reservedWordsUsed = new Set(
       Object.keys(input).filter((v) => reservedWords.includes(v)),
     );
@@ -214,8 +218,10 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       },
     };
 
-    return router as BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
-  };
+    return router as BuiltRouter<TRoot, any>;
+  }
+
+  return createRouterInner;
 }
 
 function isProcedure(

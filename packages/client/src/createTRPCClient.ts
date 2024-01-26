@@ -80,8 +80,8 @@ type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
   TProcedures extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends RouterRecord
+    ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TRouter['_def']['_config']['$types'], TProcedures[TKey]>
     : never;
