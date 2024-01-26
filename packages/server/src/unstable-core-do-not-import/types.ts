@@ -150,8 +150,7 @@ export type ProtectedIntersection<TType, TWith> = keyof TType &
  */
 export type GetRawInputFn = () => Promise<unknown>;
 
-const ERROR_SYMBOL = Symbol('TypeError');
-export type TypeErrorSymbol = typeof ERROR_SYMBOL;
+export const ERROR_SYMBOL = Symbol('TypeError');
 export type TypeError<TMessage extends string> = TMessage & {
-  _: TypeErrorSymbol;
+  _: typeof ERROR_SYMBOL;
 };
