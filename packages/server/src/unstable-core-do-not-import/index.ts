@@ -66,7 +66,7 @@ export type {
   inferRouterOutputs,
 } from './router';
 
-export type { TRPCInferrable, inferErrorShape } from './TRPCInferrable';
+export * from './TRPCInferrable';
 export { callProcedure, mergeRouters } from './router';
 export { transformResult, transformTRPCResponse } from './transformer';
 export type {
