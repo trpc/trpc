@@ -74,14 +74,15 @@ export type BuiltRouter<
 
 export type AnyRouter = Router<any, any>;
 
-type inferRouterConfig<TRouter extends AnyRouter> = TRouter['_def']['_config'];
+type inferRouterRootTypes<TRouter extends AnyRouter> =
+  TRouter['_def']['_config']['$types'];
 
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['ctx'];
+  inferRouterRootTypes<TRouter>['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['errorShape'];
+  inferRouterRootTypes<TRouter>['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['meta'];
+  inferRouterRootTypes<TRouter>['meta'];
 
 type GetInferenceHelpers<
   TType extends 'input' | 'output',
