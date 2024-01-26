@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
@@ -131,52 +132,6 @@ function initResponse<
     headers,
   };
 }
-
-async function inputToProcedureCall<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(procedureOpts: {
-  opts: Pick<
-    ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'onError' | 'req' | 'router'
-  >;
-  ctx: inferRouterContext<TRouter> | undefined;
-  type: 'mutation' | 'query';
-  input: unknown;
-  path: string;
-}): Promise<TRPCResponse<unknown, inferRouterError<TRouter>>> {
-  const { opts, ctx, type, input, path } = procedureOpts;
-  try {
-    const data = await callProcedure({
-      procedures: opts.router._def.procedures,
-      path,
-      getRawInput: async () => input,
-      ctx,
-      type,
-    });
-    return {
-      result: {
-        data,
-      },
-    };
-  } catch (cause) {
-    const error = getTRPCErrorFromUnknown(cause);
-
-    opts.onError?.({ error, path, input, ctx, type: type, req: opts.req });
-
-    return {
-      error: getErrorShape({
-        config: opts.router._def._config,
-        error,
-        type,
-        path,
-        input,
-        ctx,
-      }),
-    };
-  }
-}
-
 function caughtErrorToData<
   TRouter extends AnyRouter,
   TRequest extends HTTPRequest,
@@ -331,9 +286,41 @@ export async function resolveHTTPResponse<
       })),
     };
     ctx = await opts.createContext({ info });
-    const promises = paths.map((path, index) =>
-      inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
-    );
+
+    const errors: TRPCError[] = [];
+    const promises: Promise<
+      TRPCResponse<unknown, inferRouterError<TRouter>>
+    >[] = paths.map(async (path, index) => {
+      const input = inputs[index];
+      try {
+        const data = await callProcedure({
+          procedures: opts.router._def.procedures,
+          path,
+          getRawInput: async () => input,
+          ctx,
+          type,
+        });
+        return {
+          result: {
+            data,
+          },
+        };
+      } catch (cause) {
+        const error = getTRPCErrorFromUnknown(cause);
+        errors.push(error);
+
+        opts.onError?.({ error, path, input, ctx, type: type, req: opts.req });
+
+        return getErrorShape({
+          config: opts.router._def._config,
+          error,
+          type,
+          path,
+          input,
+          ctx,
+        });
+      }
+    });
 
     if (!isStreamCall) {
       /**
@@ -344,9 +331,6 @@ export async function resolveHTTPResponse<
        */
 
       const untransformedJSON = await Promise.all(promises);
-      const errors = untransformedJSON.flatMap((response) =>
-        'error' in response ? [response.error] : [],
-      );
 
       const headResponse = initResponse({
         ctx,
@@ -359,7 +343,7 @@ export async function resolveHTTPResponse<
       unstable_onHead?.(headResponse, false);
 
       // return body stuff
-      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
+      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!;
       const transformedJSON = transformTRPCResponse(
         router._def._config,
         result,
@@ -395,15 +379,13 @@ export async function resolveHTTPResponse<
       ]),
     );
     for (const _ of paths) {
-      const [index, untransformedJSON] = await Promise.race(
-        indexedPromises.values(),
-      );
+      const [index, result] = await Promise.race(indexedPromises.values());
       indexedPromises.delete(index);
 
       try {
         const transformedJSON = transformTRPCResponse(
           router._def._config,
-          untransformedJSON,
+          result,
         );
         const body = JSON.stringify(transformedJSON);
 
