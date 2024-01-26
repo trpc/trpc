@@ -1,5 +1,5 @@
 import { initTRPC } from '@trpc/server';
-import type { inferConfigTypes } from '@trpc/server/unstable-core-do-not-import';
+import type { inferRootTypes } from '@trpc/server/unstable-core-do-not-import';
 
 test('mergeRouters', async () => {
   const t = initTRPC.create();
@@ -66,8 +66,8 @@ test('good merge: one has default transformer', async () => {
   await expect(caller.foo()).resolves.toBe('foo');
   await expect(caller.bar()).resolves.toBe('bar');
 
-  expectTypeOf<inferConfigTypes<typeof router1>>().toEqualTypeOf<
-    inferConfigTypes<typeof merged>
+  expectTypeOf<inferRootTypes<typeof router1>>().toEqualTypeOf<
+    inferRootTypes<typeof merged>
   >();
 });
 test('bad merge: error formatter', async () => {
