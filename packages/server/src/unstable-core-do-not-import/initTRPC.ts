@@ -24,7 +24,8 @@ type InferrableOptions<TContext> = {
    */
   transformer?: DataTransformerOptions;
   /**
-   * Use a custom error formatter
+   * Use custom error formatting
+   * @link https://trpc.io/docs/v11/error-formatting
    */
   errorFormatter?: ErrorFormatter<TContext, any>;
 };
