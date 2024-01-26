@@ -69,7 +69,8 @@ export async function nodeHTTPRequestHandler<
     const contentTypeHandler =
       contentTypeHandlers.find((handler) =>
         handler.isMatch({
-          ...opts,
+          // FIXME: no typecasting should be needed here
+          ...(opts as any),
           query,
         }),
       ) ??
@@ -77,7 +78,8 @@ export async function nodeHTTPRequestHandler<
       jsonContentTypeHandler;
 
     const bodyResult = await contentTypeHandler.getBody({
-      ...opts,
+      // FIXME: no typecasting should be needed here
+      ...(opts as any),
       query,
     });
 

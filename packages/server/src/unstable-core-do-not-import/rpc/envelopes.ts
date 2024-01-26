@@ -5,9 +5,7 @@ import type { TRPC_ERROR_CODE_NUMBER } from './codes';
 /**
  * Error response
  */
-export interface TRPCErrorShape<
-  TData extends Record<string, unknown> = Record<string, unknown>,
-> {
+export interface TRPCErrorShape<TData extends object = object> {
   code: TRPC_ERROR_CODE_NUMBER;
   message: string;
   data: TData;
