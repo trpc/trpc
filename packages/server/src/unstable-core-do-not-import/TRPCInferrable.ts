@@ -2,7 +2,7 @@ import type { AnyRootTypes } from './rootConfig';
 import type { AnyRouter } from './router';
 
 export type TRPCInferrable = AnyRouter | AnyRootTypes;
-export type inferConfigTypes<TInferrable extends TRPCInferrable> =
+export type inferRootTypes<TInferrable extends TRPCInferrable> =
   TInferrable extends AnyRootTypes
     ? TInferrable
     : TInferrable extends AnyRouter
@@ -10,4 +10,4 @@ export type inferConfigTypes<TInferrable extends TRPCInferrable> =
     : never;
 
 export type inferErrorShape<TInferrable extends TRPCInferrable> =
-  inferConfigTypes<TInferrable>['errorShape'];
+  inferRootTypes<TInferrable>['errorShape'];
