@@ -3,12 +3,12 @@ import type {
   Unsubscribable,
 } from '@trpc/server/observable';
 import { observableToPromise, share } from '@trpc/server/observable';
-import '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
-  DefaultDataTransformer,
+  inferConfigTypes,
+  TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
@@ -20,7 +20,7 @@ import type {
 import { TRPCClientError } from '../TRPCClientError';
 
 type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+  inferConfigTypes<TRouter>['transformer'] extends false
     ? {
         /**
          * Data transformer
@@ -28,19 +28,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?: 'You must set a transformer on the backend router';
-      }
-    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
-          ? DataTransformerOptions
-          : TRouter['_def']['_config']['transformer'];
+        transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
       }
     : {
         /**
@@ -49,7 +37,7 @@ type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
          * You must use the same transformer on the backend and frontend
          * @link https://trpc.io/docs/v11/data-transformers
          **/
-        transformer?: CombinedDataTransformer;
+        transformer: DataTransformerOptions;
       };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';

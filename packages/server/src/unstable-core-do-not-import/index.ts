@@ -49,7 +49,7 @@ export type {
 } from './procedure';
 export { createBuilder, unsetMarker } from './procedureBuilder';
 export type { ProcedureBuilder } from './procedureBuilder';
-export type { AnyRootConfig, RootConfig } from './rootConfig';
+export * from './rootConfig';
 export type {
   AnyRouter,
   AnyRouterDef,
@@ -74,7 +74,6 @@ export type {
   CombinedDataTransformerClient,
   DataTransformer,
   DataTransformerOptions,
-  DefaultDataTransformer,
 } from './transformer';
 
 export { createFlatProxy, createRecursiveProxy } from './createProxy';
@@ -98,9 +97,11 @@ export type {
   Unwrap,
   ValidateShape,
   WithoutIndexSignature,
+  TypeError,
 } from './types';
 export { isObject } from './utils';
 
+export * from './TRPCInferrable';
 /**
  * These should be re-exported from separate entrypoints in server package
  */

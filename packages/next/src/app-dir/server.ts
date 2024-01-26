@@ -7,7 +7,6 @@ import type {
   AnyProcedure,
   AnyRootConfig,
   AnyRouter,
-  CombinedDataTransformer,
   inferProcedureInput,
   MaybePromise,
   Simplify,
@@ -88,7 +87,7 @@ export function experimental_createServerActionHandler<
   const config = t._config;
   const { normalizeFormData = true, createContext } = opts;
 
-  const transformer = config.transformer as CombinedDataTransformer;
+  const transformer = config.transformer;
 
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
