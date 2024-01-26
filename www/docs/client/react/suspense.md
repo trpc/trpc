@@ -84,6 +84,7 @@ export const trpc = createTRPCReact<AppRouter>();
 // @include: server
 // ---cut---
 // @filename: pages/index.tsx
+import * as React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {
