@@ -17,26 +17,12 @@ import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
 import type { Unwrap, ValidateShape } from './types';
 
-type InferrableOptions<TContext> = {
-  /**
-   * Use a data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
-   */
-  transformer?: DataTransformerOptions;
-  /**
-   * Use custom error formatting
-   * @link https://trpc.io/docs/v11/error-formatting
-   */
-  errorFormatter?: ErrorFormatter<TContext, any>;
-};
-
 type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
   any,
   infer TShape
 >
   ? TShape
   : DefaultErrorShape;
-
 interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
   extends Partial<
     Omit<
@@ -46,9 +32,15 @@ interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
         errorShape: any;
         transformer: any;
       }>,
-      '$types' | keyof InferrableOptions<TContext>
+      '$types' | 'transformer'
     >
-  > {}
+  > {
+  /**
+   * Use a data transformer
+   * @link https://trpc.io/docs/v11/data-transformers
+   */
+  transformer?: DataTransformerOptions;
+}
 
 class TRPCBuilder<TContext extends object, TMeta extends object> {
   /**
@@ -71,9 +63,10 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
    * Create the root object
    * @link https://trpc.io/docs/v11/server/routers#initialize-trpc
    */
-  create<TOptions extends InferrableOptions<TContext>>(
-    opts?: RuntimeConfigOptions<TContext, TMeta> &
-      ValidateShape<TOptions, InferrableOptions<TContext>>,
+  create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
+    opts?:
+      | ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>
+      | undefined,
   ) {
     type $Transformer = undefined extends TOptions['transformer']
       ? false
