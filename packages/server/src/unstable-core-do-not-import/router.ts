@@ -180,6 +180,10 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
           continue;
         }
+        if (!isProcedure(procedureOrRouter)) {
+          recursiveGetPaths(procedureOrRouter, `${newPath}.`);
+          continue;
+        }
 
         if (record[newPath]) {
           throw new Error(`Duplicate key: ${newPath}`);

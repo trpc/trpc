@@ -73,6 +73,26 @@ test('very happy path', async () => {
   await close();
 });
 
+test('nested short-hand routes', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .query(({ input }) => `hello ${input}`);
+  const router = t.router({
+    deeply: {
+      nested: {
+        greeting,
+      },
+    },
+  });
+
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.deeply.nested.greeting.query('KATT')).toBe('hello KATT');
+  await close();
+});
+
 test('middleware', async () => {
   const router = t.router({
     greeting: procedure
@@ -127,12 +147,11 @@ test('call a mutation as a query', async () => {
 test('flat router', async () => {
   const hello = procedure.query(() => 'world');
   const bye = procedure.query(() => 'bye');
-  const child = t.router({
-    bye,
-  });
   const router1 = t.router({
     hello,
-    child,
+    child: t.router({
+      bye,
+    }),
   });
 
   expect(router1.hello).toBe(hello);
@@ -152,17 +171,6 @@ test('flat router', async () => {
 
   expect(merged.hello).toBe(hello);
   expect(merged.child.bye).toBe(bye);
-});
-
-test('meep', () => {
-  const router = t.router({
-    foo: {
-      bar: {
-        baz: procedure.query(() => 'world'),
-      },
-    },
-  });
-  router.foo.bar.baz;
 });
 
 test('subscriptions', async () => {
