@@ -58,7 +58,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
    * @link https://trpc.io/docs/v11/server/routers#initialize-trpc
    */
   create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
-    runtime?:
+    opts?:
       | ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>
       | undefined,
   ) {
@@ -79,20 +79,20 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       transformer: $Transformer;
     }>;
 
-    const errorFormatter = runtime?.errorFormatter ?? defaultFormatter;
+    const errorFormatter = opts?.errorFormatter ?? defaultFormatter;
     const transformer = getDataTransformer(
-      runtime?.transformer ?? defaultTransformer,
+      opts?.transformer ?? defaultTransformer,
     );
 
     const config: $Config = {
       transformer,
       isDev:
-        runtime?.isDev ??
+        opts?.isDev ??
         // eslint-disable-next-line @typescript-eslint/dot-notation
         globalThis.process?.env?.['NODE_ENV'] !== 'production',
-      allowOutsideOfServer: runtime?.allowOutsideOfServer ?? false,
+      allowOutsideOfServer: opts?.allowOutsideOfServer ?? false,
       errorFormatter,
-      isServer: runtime?.isServer ?? isServerDefault,
+      isServer: opts?.isServer ?? isServerDefault,
       /**
        * These are just types, they can't be used at runtime
        * @internal
@@ -106,9 +106,9 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
 
     {
       // Server check
-      const isServer: boolean = runtime?.isServer ?? isServerDefault;
+      const isServer: boolean = opts?.isServer ?? isServerDefault;
 
-      if (!isServer && runtime?.allowOutsideOfServer !== true) {
+      if (!isServer && opts?.allowOutsideOfServer !== true) {
         throw new Error(
           `You're trying to use @trpc/server in a non-server environment. This is not supported by default.`,
         );
@@ -128,7 +128,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
         $Config['$types']['ctx'],
         $Config['$types']['meta']
       >({
-        meta: runtime?.defaultMeta,
+        meta: opts?.defaultMeta,
       }),
       /**
        * Create reusable middlewares
