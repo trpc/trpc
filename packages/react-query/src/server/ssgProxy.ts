@@ -18,7 +18,6 @@ import type {
   inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
-  RootTypes,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -109,7 +108,7 @@ type DecorateProcedure<
  * @internal
  */
 type DecoratedProcedureSSGRecord<
-  TRoot extends RootTypes,
+  TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends RouterRecord

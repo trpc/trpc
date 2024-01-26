@@ -7,7 +7,6 @@ import type {
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-  RootTypes,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
@@ -50,7 +49,7 @@ export type UseQueriesProcedureRecord<
 
 type GetSuspenseQueryOptions<
   TRoot extends AnyRootTypes,
-  TProcedure extends AnyProcedure,
+  TProcedure extends AnyQueryProcedure,
 > = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseSuspenseQueries<
@@ -68,7 +67,7 @@ type GetSuspenseQueryOptions<
  * @internal
  */
 export type UseSuspenseQueriesProcedureRecord<
-  TRoot extends RootTypes,
+  TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends RouterRecord
