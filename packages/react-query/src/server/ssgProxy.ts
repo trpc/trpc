@@ -53,7 +53,7 @@ type DecorateProcedure<
   TProcedure extends AnyProcedure,
 > = {
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -64,7 +64,7 @@ type DecorateProcedure<
   ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -81,7 +81,7 @@ type DecorateProcedure<
   >;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -92,7 +92,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
