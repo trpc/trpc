@@ -72,12 +72,8 @@ export interface RootConfig<TTypes extends RootTypes> {
 /**
  * @internal
  */
-type CreateRootTypes<TGenerics extends RootTypes> = TGenerics;
+export type CreateRootTypes<TGenerics extends RootTypes> = TGenerics;
 
-/**
- * These types are the root config of tRPC
- * @internal
- */
 export type AnyRootTypes = CreateRootTypes<{
   ctx: any;
   meta: any;
