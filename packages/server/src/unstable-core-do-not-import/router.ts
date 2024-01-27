@@ -83,27 +83,30 @@ export type inferRouterMeta<TRouter extends AnyRouter> =
 
 export type GetInferenceHelpers<
   TType extends 'input' | 'output',
-  TRouter extends AnyRouter,
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
-    ? TRouterOrProcedure extends AnyRouter
-      ? GetInferenceHelpers<TType, TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyProcedure
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
+    ? $Item extends RouterRecord
+      ? GetInferenceHelpers<TType, TRoot, $Item>
+      : $Item extends AnyProcedure
       ? TType extends 'input'
-        ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<TRouter, TRouterOrProcedure>
+        ? inferProcedureInput<$Item>
+        : inferTransformedProcedureOutput<TRoot, $Item>
       : never
     : never;
 };
 
 export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'input',
-  TRouter
+  TRouter['_def']['_config']['$types'],
+  TRouter['_def']['record']
 >;
 
 export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'output',
-  TRouter
+  TRouter['_def']['_config']['$types'],
+  TRouter['_def']['record']
 >;
 
 function isRouter(
