@@ -71,7 +71,7 @@ export type UseSuspenseQueriesProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends RouterRecord
-    ? UseSuspenseQueriesProcedureRecord<TRoot, TRecord>
+    ? UseSuspenseQueriesProcedureRecord<TRoot, TRecord[TKey]>
     : TRecord[TKey] extends AnyQueryProcedure
     ? GetSuspenseQueryOptions<TRoot, TRecord[TKey]>
     : never;
