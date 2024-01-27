@@ -135,7 +135,7 @@ const reservedWords = [
 ];
 
 export type CreateRouterOptions = {
-  [key: string]: AnyProcedure | RouterRecord | Router<any, any>;
+  [key: string]: AnyProcedure | Router<any, any>;
 };
 
 type DecorateCreateRouterOptions<TRouterOptions extends CreateRouterOptions> = {
@@ -143,8 +143,6 @@ type DecorateCreateRouterOptions<TRouterOptions extends CreateRouterOptions> = {
     ? TRouterOptions[K]
     : TRouterOptions[K] extends Router<any, infer TRecord>
     ? TRecord
-    : TRouterOptions[K] extends RouterRecord
-    ? DecorateCreateRouterOptions<TRouterOptions[K]>
     : never;
 };
 
@@ -156,7 +154,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 ) {
   function createRouterInner<TInput extends RouterRecord>(
     input: TInput,
-  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
+  ): BuiltRouter<TRoot, TInput>;
   function createRouterInner<TInput extends CreateRouterOptions>(
     input: TInput,
   ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
@@ -172,7 +170,10 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }
 
     const record: RouterRecord = omitPrototype({});
-    function recursiveGetPaths(procedures: CreateRouterOptions, path = '') {
+    function recursiveGetPaths(
+      procedures: CreateRouterOptions | RouterRecord,
+      path = '',
+    ) {
       for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
         const newPath = `${path}${key}`;
 
