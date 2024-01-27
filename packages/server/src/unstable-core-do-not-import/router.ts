@@ -172,41 +172,46 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       );
     }
 
-    const record: RouterRecord = omitPrototype({});
-    function recursiveGetPaths(
-      procedures: CreateRouterOptions | RouterRecord,
-      path = '',
+    const procedures: Record<string, AnyProcedure> = omitPrototype({});
+
+    function step(
+      from: CreateRouterOptions | RouterRecord,
+      path: string[] = [],
     ) {
-      for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
-        const newPath = `${path}${key}`;
-
-        if (isRouter(procedureOrRouter)) {
-          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
+      const aggregate: RouterRecord = omitPrototype({});
+      for (const [key, item] of Object.entries(from ?? {})) {
+        if (isRouter(item)) {
+          aggregate[key] = step(item._def.record, [...path, key]);
           continue;
         }
-        if (!isProcedure(procedureOrRouter)) {
-          recursiveGetPaths(procedureOrRouter, `${newPath}.`);
+        if (!isProcedure(item)) {
+          aggregate[key] = step(item, [...path, key]);
           continue;
         }
 
-        if (record[newPath]) {
+        const newPath = [...path, key].join('.');
+
+        if (procedures[newPath]) {
           throw new Error(`Duplicate key: ${newPath}`);
         }
 
-        record[newPath] = procedureOrRouter;
+        procedures[newPath] = item;
+        aggregate[key] = item;
       }
+
+      return aggregate;
     }
-    recursiveGetPaths(input);
+    const record = step(input);
 
     const _def: AnyRouter['_def'] = {
       _config: config,
       router: true,
-      procedures: record,
+      procedures,
       ...emptyRouter,
       record,
     };
 
-    const router = {
+    return {
       ...record,
       _def,
       createCaller(ctx: TRoot['ctx']) {
@@ -225,8 +230,6 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
         return proxy as ReturnType<RouterCaller<any, any>>;
       },
     };
-
-    return router as BuiltRouter<TRoot, any>;
   }
 
   return createRouterInner;

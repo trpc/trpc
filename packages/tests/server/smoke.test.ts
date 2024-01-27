@@ -147,11 +147,13 @@ test('call a mutation as a query', async () => {
 test('flat router', async () => {
   const hello = procedure.query(() => 'world');
   const bye = procedure.query(() => 'bye');
+  const child = t.router({
+    bye,
+  });
+
   const router1 = t.router({
     hello,
-    child: t.router({
-      bye,
-    }),
+    child,
   });
 
   expect(router1.hello).toBe(hello);
