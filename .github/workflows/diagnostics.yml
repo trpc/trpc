@@ -52,7 +52,7 @@ jobs:
       - run: pnpm install
         shell: bash
 
-      - run: pnpm build --force
+      - run: pnpm build
 
       - run: mkdir diagnostics-results
 
