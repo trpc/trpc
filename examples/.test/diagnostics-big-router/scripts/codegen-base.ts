@@ -1,6 +1,6 @@
-import { publicProcedure, router } from '~/server/trpc';
-import { z } from 'zod';
 import type { TRPCRouterRecord } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure } from '~/server/trpc';
 
 export const __ROUTER__NAME__ = {
   greeting: publicProcedure
