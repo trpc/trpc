@@ -19,11 +19,13 @@ export type RouterLikeInner<
   TRoot extends AnyRootTypes,
   TProcedures extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends RouterRecord
-    ? RouterLikeInner<TRoot, TProcedures[TKey]>
-    : TProcedures[TKey] extends AnyQueryProcedure
-    ? QueryLike<TRoot, TProcedures[TKey]>
-    : TProcedures[TKey] extends AnyMutationProcedure
-    ? MutationLike<TRoot, TProcedures[TKey]>
+  [TKey in keyof TProcedures]: TProcedures[TKey] extends infer TItem
+    ? TItem extends RouterRecord
+      ? RouterLikeInner<TRoot, TItem>
+      : TItem extends AnyQueryProcedure
+      ? QueryLike<TRoot, TItem>
+      : TItem extends AnyMutationProcedure
+      ? MutationLike<TRoot, TItem>
+      : never
     : never;
 };
