@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 import type { AnyRouter } from '../core';
-import { toUrl } from '../http/toURL';
+import { toUrl } from '../http/toUrl';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,

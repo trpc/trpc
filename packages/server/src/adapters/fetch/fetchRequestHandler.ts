@@ -3,7 +3,7 @@ import type { HTTPRequest } from '../../http';
 import { getBatchStreamFormatter } from '../../http';
 import type { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { toUrl } from '../../http/toURL';
+import { toUrl } from '../../http/toUrl';
 import type { FetchHandlerOptions } from './types';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
