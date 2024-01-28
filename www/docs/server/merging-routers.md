@@ -33,7 +33,7 @@ const appRouter = router({
   nested1: {
     proc: publicProcedure.query(() => '...'),
   },
-  //
+  // Equivalent of:
   nested2: router({
     proc : publicProcedure.query(() => '...'),
   }),
