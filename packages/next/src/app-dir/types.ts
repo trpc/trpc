@@ -35,11 +35,11 @@ export type NextAppDirDecoratedProcedureRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
-    ? $Item extends RouterRecord
-      ? NextAppDirDecoratedProcedureRecord<TRoot, $Item>
-      : $Item extends AnyProcedure
-      ? DecorateProcedureServer<TRoot, $Item>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? NextAppDirDecoratedProcedureRecord<TRoot, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedureServer<TRoot, $Value>
       : never
     : never;
 };

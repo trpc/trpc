@@ -66,11 +66,11 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
  * @internal
  */
 type DecoratedProcedureRecord<TRecord extends RouterRecord> = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
-    ? $Item extends RouterRecord
-      ? DecoratedProcedureRecord<$Item>
-      : $Item extends AnyProcedure
-      ? DecorateProcedure<$Item>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<$Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<$Value>
       : never
     : never;
 };

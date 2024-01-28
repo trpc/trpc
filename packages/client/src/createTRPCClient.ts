@@ -80,11 +80,11 @@ type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
-    ? $Item extends RouterRecord
-      ? DecoratedProcedureRecord<TRouter, $Item>
-      : $Item extends AnyProcedure
-      ? DecorateProcedure<TRouter['_def']['_config']['$types'], $Item>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<TRouter, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<TRouter['_def']['_config']['$types'], $Value>
       : never
     : never;
 };

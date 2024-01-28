@@ -228,11 +228,11 @@ export type DecoratedProcedureRecord<
   TRecord extends RouterRecord,
   TFlags,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
-    ? $Item extends RouterRecord
-      ? DecoratedProcedureRecord<TRoot, $Item, TFlags>
-      : $Item extends AnyProcedure
-      ? DecorateProcedure<TRoot, $Item, TFlags>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<TRoot, $Value, TFlags>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<TRoot, $Value, TFlags>
       : never
     : never;
 };

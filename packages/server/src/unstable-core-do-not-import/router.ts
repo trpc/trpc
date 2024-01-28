@@ -86,13 +86,13 @@ export type GetInferenceHelpers<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
-    ? $Item extends RouterRecord
-      ? GetInferenceHelpers<TType, TRoot, $Item>
-      : $Item extends AnyProcedure
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? GetInferenceHelpers<TType, TRoot, $Value>
+      : $Value extends AnyProcedure
       ? TType extends 'input'
-        ? inferProcedureInput<$Item>
-        : inferTransformedProcedureOutput<TRoot, $Item>
+        ? inferProcedureInput<$Value>
+        : inferTransformedProcedureOutput<TRoot, $Value>
       : never
     : never;
 };
@@ -144,13 +144,13 @@ export type CreateRouterOptions = {
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
 > = {
-  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer $Item
-    ? $Item extends AnyProcedure
-      ? $Item
-      : $Item extends Router<any, infer TRecord>
+  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? $Value
+      : $Value extends Router<any, infer TRecord>
       ? TRecord
-      : $Item extends CreateRouterOptions
-      ? DecorateCreateRouterOptions<$Item>
+      : $Value extends CreateRouterOptions
+      ? DecorateCreateRouterOptions<$Value>
       : never
     : never;
 };
