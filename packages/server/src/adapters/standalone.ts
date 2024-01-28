@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 import type { AnyRouter } from '../core';
+import { toUrl } from '../http/toURL';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -19,18 +20,15 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    // if no hostname, set a dummy one
-    const href = req.url!.startsWith('/')
-      ? `http://127.0.0.1${req.url}`
-      : req.url!;
+    const url = toUrl(req.url!);
 
     // get procedure path and remove the leading slash
     // /procedure -> procedure
-    const path = new URL(href).pathname.slice(1);
+    const path = url.pathname.slice(1);
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
-      ...(opts as CreateHTTPHandlerOptions<AnyRouter>),
+      ...opts,
       req,
       res,
       path,
