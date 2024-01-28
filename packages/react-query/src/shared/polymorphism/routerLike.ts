@@ -19,13 +19,13 @@ export type RouterLikeInner<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
-    ? TItem extends RouterRecord
-      ? RouterLikeInner<TRoot, TItem>
-      : TItem extends AnyQueryProcedure
-      ? QueryLike<TRoot, TItem>
-      : TItem extends AnyMutationProcedure
-      ? MutationLike<TRoot, TItem>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
+    ? $Item extends RouterRecord
+      ? RouterLikeInner<TRoot, $Item>
+      : $Item extends AnyQueryProcedure
+      ? QueryLike<TRoot, $Item>
+      : $Item extends AnyMutationProcedure
+      ? MutationLike<TRoot, $Item>
       : never
     : never;
 };

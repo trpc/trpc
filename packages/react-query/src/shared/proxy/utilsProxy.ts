@@ -231,12 +231,12 @@ export type DecoratedProcedureUtilsRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = DecorateRouter & {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
-    ? TItem extends RouterRecord
-      ? DecoratedProcedureUtilsRecord<TRoot, TItem> & DecorateRouter
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
+    ? $Item extends RouterRecord
+      ? DecoratedProcedureUtilsRecord<TRoot, $Item> & DecorateRouter
       : // utils only apply to queries
-      TItem extends AnyQueryProcedure
-      ? DecorateProcedure<TRoot, TItem>
+      $Item extends AnyQueryProcedure
+      ? DecorateProcedure<TRoot, $Item>
       : never
     : never;
 }; // Add functions that should be available at utils root

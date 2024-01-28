@@ -21,11 +21,11 @@ export type UseProcedureRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
-    ? TItem extends RouterRecord
-      ? UseProcedureRecord<TRoot, TItem>
-      : TItem extends AnyQueryProcedure
-      ? Resolver<TRoot, TItem>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
+    ? $Item extends RouterRecord
+      ? UseProcedureRecord<TRoot, $Item>
+      : $Item extends AnyQueryProcedure
+      ? Resolver<TRoot, $Item>
       : never
     : never;
 };

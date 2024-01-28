@@ -144,13 +144,13 @@ export type CreateRouterOptions = {
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
 > = {
-  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer TItem
-    ? TItem extends AnyProcedure
-      ? TItem
-      : TItem extends Router<any, infer TRecord>
+  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer $Item
+    ? $Item extends AnyProcedure
+      ? $Item
+      : $Item extends Router<any, infer TRecord>
       ? TRecord
-      : TItem extends CreateRouterOptions
-      ? DecorateCreateRouterOptions<TItem>
+      : $Item extends CreateRouterOptions
+      ? DecorateCreateRouterOptions<$Item>
       : never
     : never;
 };

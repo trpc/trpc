@@ -40,11 +40,11 @@ export type UseQueriesProcedureRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
-    ? TItem extends RouterRecord
-      ? UseQueriesProcedureRecord<TRoot, TItem>
-      : TItem extends AnyQueryProcedure
-      ? GetQueryOptions<TRoot, TItem>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
+    ? $Item extends RouterRecord
+      ? UseQueriesProcedureRecord<TRoot, $Item>
+      : $Item extends AnyQueryProcedure
+      ? GetQueryOptions<TRoot, $Item>
       : never
     : never;
 };
@@ -72,11 +72,11 @@ export type UseSuspenseQueriesProcedureRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
-    ? TItem extends RouterRecord
-      ? UseSuspenseQueriesProcedureRecord<TRoot, TItem>
-      : TItem extends AnyQueryProcedure
-      ? GetSuspenseQueryOptions<TRoot, TItem>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Item
+    ? $Item extends RouterRecord
+      ? UseSuspenseQueriesProcedureRecord<TRoot, $Item>
+      : $Item extends AnyQueryProcedure
+      ? GetSuspenseQueryOptions<TRoot, $Item>
       : never
     : never;
 };
