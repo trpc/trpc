@@ -1,4 +1,4 @@
-export function toUrl(urlOrPathname: string): URL {
+export function toURL(urlOrPathname: string): URL {
   if (URL.canParse(urlOrPathname)) {
     return new URL(urlOrPathname);
   }

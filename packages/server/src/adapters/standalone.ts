@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 import type { AnyRouter } from '../core';
-import { toUrl } from '../http/toUrl';
+import { toURL } from '../http/toURL';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -20,7 +20,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const url = toUrl(req.url!);
+    const url = toURL(req.url!);
 
     // get procedure path and remove the leading slash
     // /procedure -> procedure
@@ -28,7 +28,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
-      ...(opts as CreateHTTPHandlerOptions<AnyRouter>),
+      ...opts,
       req,
       res,
       path,
