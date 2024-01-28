@@ -109,10 +109,10 @@ export const clientCallTypeToProcedureType = (
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
 export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $ProcedureRecord
-    ? UntypedClientProperties & keyof $ProcedureRecord extends never
+  inferRouterClient<TRouter> extends infer $Value
+    ? UntypedClientProperties & keyof $Value extends never
       ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $ProcedureRecord>
+      : IntersectionError<UntypedClientProperties & keyof $Value>
     : never;
 
 /**
