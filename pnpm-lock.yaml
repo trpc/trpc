@@ -91,9 +91,9 @@ importers:
       lerna:
         specifier: ^8.0.0
         version: 8.0.0(@swc/core@1.3.3)
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: ^6.0.0
+        version: 6.1.1
       prettier:
         specifier: ^2.8.8
         version: 2.8.8
@@ -110,8 +110,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       rollup-plugin-node-externals:
-        specifier: ^6.1.2
-        version: 6.1.2(rollup@4.9.5)
+        specifier: ^7.0.0
+        version: 7.0.0(rollup@4.9.5)
       rollup-plugin-swc3:
         specifier: ^0.11.0
         version: 0.11.0(@swc/core@1.3.3)(rollup@4.9.5)
@@ -1097,7 +1097,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplestrpc-next-prisma-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1191,7 +1191,7 @@ importers:
         version: 4.1.5
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1303,7 +1303,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplesnext-websockets-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1925,9 +1925,9 @@ importers:
       next-auth:
         specifier: ^4.22.1
         version: 4.22.1(next@14.0.1)(react-dom@18.2.0)(react@18.2.0)
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
+      npm-run-all2:
+        specifier: ^6.0.0
+        version: 6.1.1
       oauth:
         specifier: ^0.10.0
         version: 0.10.0
@@ -8597,7 +8597,6 @@ packages:
 
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
-    dev: false
 
   /@types/oauth@0.9.1:
     resolution: {integrity: sha512-a1iY62/a3yhZ7qH7cNUsxoI3U/0Fe9+RnuFrpTKr+0WVOzbKlSLojShCKe20aOD1Sppv+i8Zlq0pLDuTJnwS4A==}
@@ -10200,6 +10199,7 @@ packages:
     dependencies:
       function-bind: 1.1.2
       get-intrinsic: 1.2.2
+    dev: true
 
   /call-bind@1.0.5:
     resolution: {integrity: sha512-C3nQxfFZxFRVoJoGKKI8y3MOEo129NQ+FgQ08iye+Mk4zNZZGdjfs06bVTr+DBSlA66Q2VEcMki/cUCP4SercQ==}
@@ -11045,6 +11045,7 @@ packages:
       semver: 5.7.1
       shebang-command: 1.2.0
       which: 1.3.1
+    dev: true
 
   /cross-spawn@7.0.3:
     resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==}
@@ -11701,6 +11702,7 @@ packages:
     dependencies:
       has-property-descriptors: 1.0.0
       object-keys: 1.1.1
+    dev: true
 
   /define-properties@1.2.1:
     resolution: {integrity: sha512-8QmQKqEASLd5nx0U1B1okLElbUuuttJ/AnYmRXbbbGDWh6uS208EjD4Xqq/I9wK7u0v6O08XhTWnt5XtEbR6Dg==}
@@ -12144,6 +12146,7 @@ packages:
       string.prototype.trimend: 1.0.7
       string.prototype.trimstart: 1.0.7
       unbox-primitive: 1.0.2
+    dev: true
 
   /es-abstract@1.22.3:
     resolution: {integrity: sha512-eiiY8HQeYfYH2Con2berK+To6GrK2RxbPawDkGq4UiCQQfZHb6wX9qQqkbpPqaxQFcl8d9QzZqo0tGE0VcrdwA==}
@@ -14407,6 +14410,12 @@ packages:
       lru-cache: 7.18.3
     dev: false
 
+  /hosted-git-info@7.0.1:
+    resolution: {integrity: sha512-+K84LB1DYwMHoHSgaOY/Jfhw3ucPmSET5v98Ke/HdNSw4a0UktWzyW1mjhjpuxxTqOOsfWT/7iVshHmVZ4IpOA==}
+    engines: {node: ^16.14.0 || >=18.0.0}
+    dependencies:
+      lru-cache: 10.2.0
+
   /hpack.js@2.1.6:
     resolution: {integrity: sha512-zJxVehUdMGIKsRaNt7apO2Gqp0BdqW5yaiGHXXmbpvxgBYVZnAql+BJb4RO5ad2MgpbZKn5G6nMnegrH1FcNYQ==}
     dependencies:
@@ -15488,7 +15497,6 @@ packages:
   /json-parse-even-better-errors@3.0.0:
     resolution: {integrity: sha512-iZbGHafX/59r39gPwVPRBGw0QQKnA7tte5pSMrhWOW7swGsVvVTjmfyAV9pNqk8YGT7tRCdxRu8uzcgZwoDooA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
-    dev: false
 
   /json-refs@3.0.15(supports-color@8.1.1):
     resolution: {integrity: sha512-0vOQd9eLNBL18EGl5yYaO44GhixmImes2wiYn9Z3sag3QnehWrYWlB9AFtMxCL2Bj3fyxgDYkxGFEU/chlYssw==}
@@ -15808,7 +15816,6 @@ packages:
   /lines-and-columns@2.0.3:
     resolution: {integrity: sha512-cNOjgCnLB+FnvWWtyRTzmB3POJ+cXxTA81LoW7u8JdmhfXzriropYwpjShnz1QLLWsQwY7nIxoDmcPTwphDK9w==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-    dev: false
 
   /load-json-file@4.0.0:
     resolution: {integrity: sha512-Kx8hMakjX03tiGTLAIdJ+lL0htKnXjEZN6hk/tozf/WOuYGdZBJrZ+rCJRbVCugsjB3jMLn9746NsQIf5VjBMw==}
@@ -16001,6 +16008,10 @@ packages:
     resolution: {integrity: sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dev: false
+
+  /lru-cache@10.2.0:
+    resolution: {integrity: sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==}
+    engines: {node: 14 || >=16.14}
 
   /lru-cache@4.1.5:
     resolution: {integrity: sha512-sWZlbEP2OsHNkXrMl5GYk/jKk70MBng6UU4YI/qGDYbgf6YbP4EvmqISbXCoJiRKs+1bSpFHVgQxvJ17F2li5g==}
@@ -16787,6 +16798,7 @@ packages:
 
   /nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
+    dev: true
 
   /no-case@3.0.4:
     resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
@@ -16921,6 +16933,15 @@ packages:
       validate-npm-package-license: 3.0.4
     dev: false
 
+  /normalize-package-data@6.0.0:
+    resolution: {integrity: sha512-UL7ELRVxYBHBgYEtZCXjxuD5vPxnmvMGq0jp/dGPKKrN7tfsBh2IY7TlJ15WWwdjRWD3RJbnsygUurTK3xkPkg==}
+    engines: {node: ^16.14.0 || >=18.0.0}
+    dependencies:
+      hosted-git-info: 7.0.1
+      is-core-module: 2.13.1
+      semver: 7.5.4
+      validate-npm-package-license: 3.0.4
+
   /normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
@@ -17049,6 +17070,19 @@ packages:
       - encoding
     dev: true
 
+  /npm-run-all2@6.1.1:
+    resolution: {integrity: sha512-lWLbkPZ5BSdXtN8lR+0rc8caKoPdymycpZksyDEC9MOBvfdwTXZ0uVhb7bMcGeXv2/BKtfQuo6Zn3zfc8rxNXA==}
+    engines: {node: ^14.18.0 || >=16.0.0, npm: '>= 8'}
+    hasBin: true
+    dependencies:
+      ansi-styles: 6.2.1
+      cross-spawn: 7.0.3
+      memorystream: 0.3.1
+      minimatch: 9.0.3
+      pidtree: 0.6.0
+      read-pkg: 8.1.0
+      shell-quote: 1.8.1
+
   /npm-run-all@4.1.5:
     resolution: {integrity: sha512-Oo82gJDAVcaMdi3nuoKFavkIHBRVqQ1qvMb+9LHk/cF4P6B2m8aP04hGf7oL6wZ9BuGwX1onlLhpuoofSyoQDQ==}
     engines: {node: '>= 4'}
@@ -17063,6 +17097,7 @@ packages:
       read-pkg: 3.0.0
       shell-quote: 1.8.1
       string.prototype.padend: 3.1.4
+    dev: true
 
   /npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
@@ -17624,6 +17659,16 @@ packages:
       lines-and-columns: 1.2.4
     dev: false
 
+  /parse-json@7.1.1:
+    resolution: {integrity: sha512-SgOTCX/EZXtZxBE5eJ97P4yGM5n37BwRU+YMsH4vNzFqJV/oWFXXCmwFlgWUM4PrakybVOueJJ6pwHqSVhTFDw==}
+    engines: {node: '>=16'}
+    dependencies:
+      '@babel/code-frame': 7.22.13
+      error-ex: 1.3.2
+      json-parse-even-better-errors: 3.0.0
+      lines-and-columns: 2.0.3
+      type-fest: 3.13.1
+
   /parse-ms@2.1.0:
     resolution: {integrity: sha512-kHt7kzLoS9VBZfUsiKjv43mr91ea+U05EyKkEtqp7vNbHxmaVuEqN7XxeEVnGrMtYOAxGrDElSi96K7EgO1zCA==}
     engines: {node: '>=6'}
@@ -17699,6 +17744,7 @@ packages:
   /path-key@2.0.1:
     resolution: {integrity: sha512-fEHGKCSmUSDPv4uoj8AlD+joPlq3peND+HRYyxFz4KPw4z926S/b8rIuFs2FYJg3BwsxJf6A9/3eIdLaYC+9Dw==}
     engines: {node: '>=4'}
+    dev: true
 
   /path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
@@ -17789,6 +17835,12 @@ packages:
 
   /pidtree@0.3.1:
     resolution: {integrity: sha512-qQbW94hLHEqCg7nhby4yRC7G2+jYHY4Rguc2bjw7Uug4GIJuu1tvf2uHaZv5Q8zdt+WKJ6qK1FOI6amaWUo5FA==}
+    engines: {node: '>=0.10'}
+    hasBin: true
+    dev: true
+
+  /pidtree@0.6.0:
+    resolution: {integrity: sha512-eG2dWTVw5bzqGRztnHExczNxt5VGsE6OwTeCG3fdUf9KBsZzO3R5OIIIzWR+iZA0NtZ+RDVdaoE2dK1cn6jH4g==}
     engines: {node: '>=0.10'}
     hasBin: true
 
@@ -19607,6 +19659,15 @@ packages:
       type-fest: 0.6.0
     dev: false
 
+  /read-pkg@8.1.0:
+    resolution: {integrity: sha512-PORM8AgzXeskHO/WEv312k9U03B8K9JSiWF/8N9sUuFjBa+9SF2u6K7VClzXwDXab51jCd8Nd36CNM+zR97ScQ==}
+    engines: {node: '>=16'}
+    dependencies:
+      '@types/normalize-package-data': 2.4.1
+      normalize-package-data: 6.0.0
+      parse-json: 7.1.1
+      type-fest: 4.10.1
+
   /read-yaml-file@1.1.0:
     resolution: {integrity: sha512-VIMnQi/Z4HT2Fxuwg5KrY174U1VdUIASQVWXXyqtNRtxSr9IYkn1rsI6Tb6HsrHCmB7gVpNwX6JxPTHcH6IoTA==}
     engines: {node: '>=6'}
@@ -20059,9 +20120,9 @@ packages:
       rollup-pluginutils: 2.8.2
     dev: true
 
-  /rollup-plugin-node-externals@6.1.2(rollup@4.9.5):
-    resolution: {integrity: sha512-2TWan0u0/zHcgPrKpIPgKSY8OMqwDAYD380I0hxx7iUQw8mrN34DWwG9sQUMEo5Yy4xd6/5QEAySYgiKN9fdBQ==}
-    engines: {node: '>=16.0.0'}
+  /rollup-plugin-node-externals@7.0.0(rollup@4.9.5):
+    resolution: {integrity: sha512-EcPXBAP7S5Yk3JUe4njDeiRyAYquuC6AcbFUuEQdd5PrkXy0ysmMDMiG2cpR2tUQF0wdBfhMvUAetl3bGWPeww==}
+    engines: {node: '>= 21 || ^20.6.0 || ^18.19.0'}
     peerDependencies:
       rollup: ^3.0.0 || ^4.0.0
     dependencies:
@@ -21068,6 +21129,7 @@ packages:
       call-bind: 1.0.2
       define-properties: 1.1.4
       es-abstract: 1.20.5
+    dev: true
 
   /string.prototype.trim@1.2.8:
     resolution: {integrity: sha512-lfjY4HcixfQXOfaqCvcBuOIapyaroTXhbkfJN3gcB1OtyupngWK4sEET9Knd0cXd28kTUqu/kHoV4HKSJdnjiQ==}
@@ -21951,10 +22013,18 @@ packages:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
 
+  /type-fest@3.13.1:
+    resolution: {integrity: sha512-tLq3bSNx+xSpwvAJnzrK0Ep5CLNWjvFTOp71URMaAEWBfRb9nnJiBoUe0tF8bI4ZFO3omgBR6NvnbzVUT3Ly4g==}
+    engines: {node: '>=14.16'}
+
   /type-fest@3.6.0:
     resolution: {integrity: sha512-RqTRtKTzvPpNdDUp1dVkKQRunlPITk4mXeqFlAZoJsS+fLRn8AdPK0TcQDumGayhU7fjlBfiBjsq3pe3rIfXZQ==}
     engines: {node: '>=14.16'}
     dev: true
+
+  /type-fest@4.10.1:
+    resolution: {integrity: sha512-7ZnJYTp6uc04uYRISWtiX3DSKB/fxNQT0B5o1OUeCqiQiwF+JC9+rJiZIDrPrNCLLuTqyQmh4VdQqh/ZOkv9MQ==}
+    engines: {node: '>=16'}
 
   /type-is@1.6.18:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
@@ -23365,7 +23435,7 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplesnext-websockets-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplesnext-websockets-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-starter(prisma@5.8.1)':
@@ -23381,7 +23451,7 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplestrpc-next-prisma-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplestrpc-next-prisma-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@5.8.1)':
@@ -23397,10 +23467,10 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplestrpc-next-prisma-todomvc'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplesnext-websockets-starter':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplesnext-websockets-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
     version: 5.8.1
@@ -23410,7 +23480,7 @@ packages:
     dependencies:
       '@prisma/engines': 5.8.1
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplestrpc-next-prisma-starter':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
     version: 5.8.1
@@ -23420,7 +23490,7 @@ packages:
     dependencies:
       '@prisma/engines': 5.8.1
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2540examplestrpc-next-prisma-todomvc':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%2525252540examplestrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
     version: 5.8.1
