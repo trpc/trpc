@@ -141,7 +141,9 @@ export type CreateRouterOptions = {
   [key: string]: AnyProcedure | AnyRouter | CreateRouterOptions;
 };
 
-type DecorateCreateRouterOptions<TRouterOptions extends CreateRouterOptions> = {
+export type DecorateCreateRouterOptions<
+  TRouterOptions extends CreateRouterOptions,
+> = {
   [K in keyof TRouterOptions]: TRouterOptions[K] extends infer TItem
     ? TItem extends AnyProcedure
       ? TItem
