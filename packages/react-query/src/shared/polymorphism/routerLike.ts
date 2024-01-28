@@ -17,9 +17,9 @@ export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
 >;
 export type RouterLikeInner<
   TRoot extends AnyRootTypes,
-  TProcedures extends RouterRecord,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends infer TItem
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
     ? TItem extends RouterRecord
       ? RouterLikeInner<TRoot, TItem>
       : TItem extends AnyQueryProcedure

@@ -166,11 +166,11 @@ Finally, we'll create a type that will recursively traverse the router and decor
 import type { ProcedureRouterRecord } from "@trpc/server";
 import type { AnyRouter } from "@trpc/server";
 
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
+type DecoratedProcedureRecord<TRecord extends ProcedureRouterRecord> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends AnyRouter
+    ? DecoratedProcedureRecord<TRecord[TKey]['_def']['record']>
+    : TRecord[TKey] extends AnyProcedure
+    ? DecorateProcedure<TRecord[TKey]>
     : never;
 };
 ```

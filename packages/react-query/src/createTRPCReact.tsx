@@ -225,10 +225,10 @@ export type DecorateProcedure<
  */
 export type DecoratedProcedureRecord<
   TRoot extends AnyRootTypes,
-  TProcedures extends RouterRecord,
+  TRecord extends RouterRecord,
   TFlags,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends infer TItem
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
     ? TItem extends RouterRecord
       ? DecoratedProcedureRecord<TRoot, TItem, TFlags>
       : TItem extends AnyProcedure
