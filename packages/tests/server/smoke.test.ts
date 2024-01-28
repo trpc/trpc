@@ -93,6 +93,32 @@ test('nested short-hand routes', async () => {
   await close();
 });
 
+test('mixing short-hand routes and routers', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .query(({ input }) => `hello ${input}`);
+  const router = t.router({
+    deeply: {
+      nested: {
+        greeting,
+        router: t.router({
+          greeting,
+        }),
+      },
+    },
+  });
+
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.deeply.nested.greeting.query('KATT')).toBe('hello KATT');
+  expect(await client.deeply.nested.router.greeting.query('KATT')).toBe(
+    'hello KATT',
+  );
+  await close();
+});
+
 test('middleware', async () => {
   const router = t.router({
     greeting: procedure

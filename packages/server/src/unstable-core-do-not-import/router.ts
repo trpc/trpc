@@ -110,7 +110,7 @@ export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
 >;
 
 function isRouter(
-  procedureOrRouter: AnyProcedure | AnyRouter | RouterRecord,
+  procedureOrRouter: ValueOf<CreateRouterOptions>,
 ): procedureOrRouter is AnyRouter {
   return procedureOrRouter._def && 'router' in procedureOrRouter._def;
 }
@@ -138,14 +138,18 @@ const reservedWords = [
 ];
 
 export type CreateRouterOptions = {
-  [key: string]: AnyProcedure | Router<any, any>;
+  [key: string]: AnyProcedure | AnyRouter | CreateRouterOptions;
 };
 
 type DecorateCreateRouterOptions<TRouterOptions extends CreateRouterOptions> = {
-  [K in keyof TRouterOptions]: TRouterOptions[K] extends AnyProcedure
-    ? TRouterOptions[K]
-    : TRouterOptions[K] extends Router<any, infer TRecord>
-    ? TRecord
+  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer TItem
+    ? TItem extends AnyProcedure
+      ? TItem
+      : TItem extends Router<any, infer TRecord>
+      ? TRecord
+      : TItem extends CreateRouterOptions
+      ? DecorateCreateRouterOptions<TItem>
+      : never
     : never;
 };
 
@@ -174,10 +178,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
     const procedures: Record<string, AnyProcedure> = omitPrototype({});
 
-    function step(
-      from: CreateRouterOptions | RouterRecord,
-      path: string[] = [],
-    ) {
+    function step(from: CreateRouterOptions, path: string[] = []) {
       const aggregate: RouterRecord = omitPrototype({});
       for (const [key, item] of Object.entries(from ?? {})) {
         if (isRouter(item)) {
@@ -185,6 +186,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           continue;
         }
         if (!isProcedure(item)) {
+          // RouterRecord
           aggregate[key] = step(item, [...path, key]);
           continue;
         }
@@ -236,7 +238,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 }
 
 function isProcedure(
-  procedureOrRouter: ValueOf<RouterRecord>,
+  procedureOrRouter: ValueOf<CreateRouterOptions>,
 ): procedureOrRouter is AnyProcedure {
   return typeof procedureOrRouter === 'function';
 }
