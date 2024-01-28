@@ -74,13 +74,13 @@ type inferReactQueryProcedureOptionsInner<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer TRouterOrProcedure
-    ? TRouterOrProcedure extends RouterRecord
-      ? inferReactQueryProcedureOptionsInner<TRoot, TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyMutationProcedure
-      ? InferMutationOptions<TRoot, TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<TRoot, TRouterOrProcedure>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
+    ? TItem extends RouterRecord
+      ? inferReactQueryProcedureOptionsInner<TRoot, TItem>
+      : TItem extends AnyMutationProcedure
+      ? InferMutationOptions<TRoot, TItem>
+      : TItem extends AnyQueryProcedure
+      ? InferQueryOptions<TRoot, TItem>
       : never
     : never;
 };

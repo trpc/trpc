@@ -111,11 +111,13 @@ type DecoratedProcedureSSGRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends RouterRecord
-    ? DecoratedProcedureSSGRecord<TRoot, TRecord[TKey]>
-    : // utils only apply to queries
-    TRecord[TKey] extends AnyQueryProcedure
-    ? DecorateProcedure<TRoot, TRecord[TKey]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer TItem
+    ? TItem extends RouterRecord
+      ? DecoratedProcedureSSGRecord<TRoot, TItem>
+      : // utils only apply to queries
+      TItem extends AnyQueryProcedure
+      ? DecorateProcedure<TRoot, TItem>
+      : never
     : never;
 };
 
