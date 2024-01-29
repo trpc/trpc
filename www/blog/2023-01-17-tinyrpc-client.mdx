@@ -254,7 +254,7 @@ Below is a visual representation of how the proxy works on the call `trpc.post.b
 
 ### 🧩 Putting it all together
 
-Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyRouter`), and then we'll cast the return type to the `DecorateRouterRecord` type we created earlier:
+Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyTRPCRouter`), and then we'll cast the return type to the `DecorateRouterRecord` type we created earlier:
 
 ```twoslash include tinyrpc
 import { TRPCResponse } from '@trpc/server/rpc';
