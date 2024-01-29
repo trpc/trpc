@@ -65,10 +65,10 @@ type DecorateProcedure<TProcedure extends AnyProcedure> =
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TRecord extends RouterRecord> = {
+type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<$Value>
+      ? DecorateRouterRecord<$Value>
       : $Value extends AnyProcedure
       ? DecorateProcedure<$Value>
       : never
@@ -108,4 +108,4 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
     }
     // No error - all good. Return the data.
     return json.result.data;
-  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  }, []) as DecorateRouterRecord<TRouter['_def']['record']>;

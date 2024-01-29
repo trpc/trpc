@@ -223,14 +223,14 @@ export type DecorateProcedure<
 /**
  * @internal
  */
-export type DecoratedProcedureRecord<
+export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
   TFlags,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<TRoot, $Value, TFlags>
+      ? DecorateRouterRecord<TRoot, $Value, TFlags>
       : $Value extends AnyProcedure
       ? DecorateProcedure<TRoot, $Value, TFlags>
       : never
@@ -264,7 +264,7 @@ export type CreateTRPCReact<
   TFlags,
 > = ProtectedIntersection<
   CreateTRPCReactBase<TRouter, TSSRContext>,
-  DecoratedProcedureRecord<
+  DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record'],
     TFlags

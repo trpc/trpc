@@ -166,9 +166,9 @@ Finally, we'll create a type that will recursively traverse the router and decor
 import type { ProcedureRouterRecord } from "@trpc/server";
 import type { AnyRouter } from "@trpc/server";
 
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
+type DecorateRouterRecord<TProcedures extends ProcedureRouterRecord> = {
   [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
+    ? DecorateRouterRecord<TProcedures[TKey]['_def']['record']>
     : TProcedures[TKey] extends AnyProcedure
     ? DecorateProcedure<TProcedures[TKey]>
     : never;
@@ -253,7 +253,7 @@ Below is a visual representation of how the proxy works on the call `trpc.post.b
 
 ### 🧩 Putting it all together
 
-Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyRouter`), and then we'll cast the return type to the `DecoratedProcedureRecord` type we created earlier:
+Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyRouter`), and then we'll cast the return type to the `DecorateRouterRecord` type we created earlier:
 
 ```twoslash include tinyrpc
 import { TRPCResponse } from '@trpc/server/rpc';
@@ -291,7 +291,7 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
     }
     // No error - all good. Return the data.
     return json.result.data;
-  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  }, []) as DecorateRouterRecord<TRouter['_def']['record']>;
 //   ^? provide empty array as path to begin with
 ```
 

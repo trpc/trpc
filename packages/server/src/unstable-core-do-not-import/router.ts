@@ -23,11 +23,11 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 /**
  * @internal
  */
-export type DecoratedRouterRecord<TRecord extends RouterRecord> = {
+export type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
     ? DecorateProcedure<TRecord[TKey]>
     : TRecord[TKey] extends RouterRecord
-    ? DecoratedRouterRecord<TRecord[TKey]>
+    ? DecorateRouterRecord<TRecord[TKey]>
     : never;
 };
 
@@ -44,7 +44,7 @@ export type RouterCaller<
    * e.g. wrapped in `React.cache` to avoid unnecessary computations
    */
   ctx: TRoot['ctx'] | (() => MaybePromise<TRoot['ctx']>),
-) => DecoratedRouterRecord<TRecord>;
+) => DecorateRouterRecord<TRecord>;
 
 export interface Router<
   TRoot extends AnyRootTypes,
