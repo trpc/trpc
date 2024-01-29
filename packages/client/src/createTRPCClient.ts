@@ -30,10 +30,8 @@ import type { TRPCClientError } from './TRPCClientError';
 /**
  * @public
  **/
-export type inferRouterClient<TRouter extends AnyRouter> = DecorateRouterRecord<
-  TRouter['_def']['_config']['$types'],
-  TRouter['_def']['record']
->;
+export type inferRouterClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 /** @internal */
 export type Resolver<
@@ -78,15 +76,15 @@ type DecorateProcedure<
 /**
  * @internal
  */
-type DecorateRouterRecord<
-  TRoot extends AnyRootTypes,
+type DecoratedProcedureRecord<
+  TRouter extends AnyRouter,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecorateRouterRecord<TRoot, $Value>
+      ? DecoratedProcedureRecord<TRouter, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<TRoot, $Value>
+      ? DecorateProcedure<TRouter['_def']['_config']['$types'], $Value>
       : never
     : never;
 };
