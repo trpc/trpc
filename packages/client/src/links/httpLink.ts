@@ -27,11 +27,9 @@ export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
   };
 
-export function httpLinkFactory<TRoot extends AnyRootTypes>(factoryOpts: {
-  requester: Requester;
-}) {
+export function httpLinkFactory(factoryOpts: { requester: Requester }) {
   return <TRouter extends AnyRouter>(
-    opts: HTTPLinkOptions<TRoot>,
+    opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
   ): TRPCLink<TRouter> => {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
 
