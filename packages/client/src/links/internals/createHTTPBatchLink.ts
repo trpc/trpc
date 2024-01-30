@@ -1,5 +1,6 @@
 import { observable } from '@trpc/server/observable';
 import type {
+  AnyRootTypes,
   AnyRouter,
   ProcedureType,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -19,7 +20,10 @@ import { getUrl, resolveHTTPLinkOptions } from './httpUtils';
 /**
  * @internal
  */
-export type RequesterFn<TOptions extends HTTPBatchLinkOptions> = (
+export type RequesterFn<
+  TRoot extends AnyRootTypes,
+  TOptions extends HTTPBatchLinkOptions<TRoot>,
+> = (
   requesterOpts: ResolvedHTTPLinkOptions & {
     runtime: TRPCClientRuntime;
     type: ProcedureType;
@@ -36,9 +40,10 @@ export type RequesterFn<TOptions extends HTTPBatchLinkOptions> = (
 /**
  * @internal
  */
-export function createHTTPBatchLink<TOptions extends HTTPBatchLinkOptions>(
-  requester: RequesterFn<TOptions>,
-) {
+export function createHTTPBatchLink<
+  TRoot extends AnyRootTypes,
+  TOptions extends HTTPBatchLinkOptions<AnyRootTypes>,
+>(requester: RequesterFn<TRoot, TOptions>) {
   return function httpBatchLink<TRouter extends AnyRouter>(
     opts: TOptions,
   ): TRPCLink<TRouter> {

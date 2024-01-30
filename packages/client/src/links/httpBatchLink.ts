@@ -1,3 +1,4 @@
+import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../internals/types';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { RequesterFn } from './internals/createHTTPBatchLink';
@@ -5,7 +6,10 @@ import { createHTTPBatchLink } from './internals/createHTTPBatchLink';
 import { jsonHttpRequester } from './internals/httpUtils';
 import type { Operation } from './types';
 
-const batchRequester: RequesterFn<HTTPBatchLinkOptions> = (requesterOpts) => {
+const batchRequester: RequesterFn<
+  AnyRootTypes,
+  HTTPBatchLinkOptions<AnyRootTypes>
+> = (requesterOpts) => {
   return (batchOps) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);

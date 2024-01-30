@@ -1,4 +1,5 @@
 import type {
+  AnyRootTypes,
   ProcedureType,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -22,7 +23,7 @@ import type {
 /**
  * @internal
  */
-export interface HTTPLinkBaseOptions {
+export type HTTPLinkBaseOptions<_TRoot extends AnyRootTypes> = {
   url: string | URL;
   /**
    * Add ponyfill for fetch
@@ -32,7 +33,8 @@ export interface HTTPLinkBaseOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
-}
+  // TODO: add transformers here
+};
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
@@ -41,7 +43,7 @@ export interface ResolvedHTTPLinkOptions {
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkBaseOptions,
+  opts: HTTPLinkBaseOptions<AnyRootTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes

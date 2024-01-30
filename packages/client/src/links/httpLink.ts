@@ -1,5 +1,8 @@
 import { observable } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  AnyRootTypes,
+  AnyRouter,
+} from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
@@ -13,19 +16,22 @@ import {
 } from './internals/httpUtils';
 import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
-export interface HTTPLinkOptions extends HTTPLinkBaseOptions {
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/client/headers
-   */
-  headers?:
-    | HTTPHeaders
-    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
-}
+export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
+  HTTPLinkBaseOptions<TRoot> & {
+    /**
+     * Headers to be set on outgoing requests or a callback that of said headers
+     * @link http://trpc.io/docs/client/headers
+     */
+    headers?:
+      | HTTPHeaders
+      | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  };
 
-export function httpLinkFactory(factoryOpts: { requester: Requester }) {
+export function httpLinkFactory<TRoot extends AnyRootTypes>(factoryOpts: {
+  requester: Requester;
+}) {
   return <TRouter extends AnyRouter>(
-    opts: HTTPLinkOptions,
+    opts: HTTPLinkOptions<TRoot>,
   ): TRPCLink<TRouter> => {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
 
