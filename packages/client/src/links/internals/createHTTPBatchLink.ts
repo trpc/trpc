@@ -42,7 +42,7 @@ export type RequesterFn<
  */
 export function createHTTPBatchLink<
   TRoot extends AnyRootTypes,
-  TOptions extends HTTPBatchLinkOptions<AnyRootTypes>,
+  TOptions extends HTTPBatchLinkOptions<TRoot>,
 >(requester: RequesterFn<TRoot, TOptions>) {
   return function httpBatchLink<TRouter extends AnyRouter>(
     opts: TOptions,

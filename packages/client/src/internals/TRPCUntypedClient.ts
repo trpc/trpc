@@ -7,7 +7,6 @@ import type {
   AnyRouter,
   CombinedDataTransformer,
   DataTransformerOptions,
-  inferRootTypes,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
@@ -18,27 +17,6 @@ import type {
   TRPCLink,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
-
-type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  inferRootTypes<TRouter>['transformer'] extends false
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
-      }
-    : {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer: DataTransformerOptions;
-      };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
 export interface TRPCRequestOptions {
@@ -58,10 +36,10 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions<TRouter> & {
-      links: TRPCLink<TRouter>[];
-    };
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
+  links: TRPCLink<TRouter>[];
+  transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
+};
 
 /** @internal */
 export type UntypedClientProperties =

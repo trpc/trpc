@@ -15,21 +15,21 @@ interface NextLinkBaseOptions {
   batch?: boolean;
 }
 
-interface NextLinkSingleOptions
-  extends NextLinkBaseOptions,
-    Omit<HTTPLinkOptions<AnyRootTypes>, 'fetch'> {
-  batch?: false;
-}
+type NextLinkSingleOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
+  Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
+    batch?: false;
+  };
 
-interface NextLinkBatchOptions
-  extends NextLinkBaseOptions,
-    Omit<HTTPBatchLinkOptions<AnyRootTypes>, 'fetch'> {
-  batch: true;
-}
+type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
+  Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
+    batch: true;
+  };
 
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(
-  opts: NextLinkSingleOptions | NextLinkBatchOptions,
+  opts:
+    | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
+    | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
@@ -60,11 +60,11 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
       };
       const link = opts.batch
         ? httpBatchLink({
-            ...opts,
+            ...(opts as any),
             fetch: _fetch,
           })
         : httpLink({
-            ...opts,
+            ...(opts as any),
             fetch: _fetch,
           });
 
