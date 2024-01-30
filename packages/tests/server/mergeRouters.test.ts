@@ -1,3 +1,4 @@
+import type { TRPCRouterRecord } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { inferRootTypes } from '@trpc/server/unstable-core-do-not-import';
 
@@ -12,6 +13,26 @@ test('mergeRouters', async () => {
   });
   const merged = t.mergeRouters(router1, router2);
   const caller = merged.createCaller({});
+
+  await expect(caller.foo()).resolves.toBe('foo');
+  await expect(caller.bar()).resolves.toBe('bar');
+});
+
+test('merge routers with spread operator', async () => {
+  const t = initTRPC.create();
+
+  const router1 = {
+    foo: t.procedure.query(() => 'foo'),
+  } satisfies TRPCRouterRecord;
+  const router2 = {
+    bar: t.procedure.query(() => 'bar'),
+  } satisfies TRPCRouterRecord;
+
+  const merged = t.router({
+    ...router1,
+    ...router2,
+  });
+  const caller = t.createCallerFactory(merged)({});
 
   await expect(caller.foo()).resolves.toBe('foo');
   await expect(caller.bar()).resolves.toBe('bar');

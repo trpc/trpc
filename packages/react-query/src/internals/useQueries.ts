@@ -179,7 +179,10 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
   TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
 >(
   queriesCallback: (
-    t: UseQueriesProcedureRecord<TRouter>,
+    t: UseQueriesProcedureRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >,
   ) => readonly [...QueriesOptions<TQueryOptions>],
 ) => QueriesResults<TQueryOptions>;
 
@@ -195,6 +198,9 @@ export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = <
   >[],
 >(
   queriesCallback: (
-    t: UseSuspenseQueriesProcedureRecord<TRouter>,
+    t: UseSuspenseQueriesProcedureRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >,
   ) => readonly [...SuspenseQueriesOptions<TQueryOptions>],
 ) => SuspenseQueriesResults<TQueryOptions>;

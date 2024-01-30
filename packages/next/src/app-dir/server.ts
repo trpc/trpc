@@ -29,7 +29,7 @@ import type {
   inferActionDef,
 } from './shared';
 import { generateCacheTag, isFormData } from './shared';
-import type { NextAppDirDecoratedProcedureRecord } from './types';
+import type { NextAppDirDecorateRouterRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -57,7 +57,7 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecoratedProcedureRecord<
+  }) as NextAppDirDecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   >;

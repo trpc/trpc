@@ -9,8 +9,8 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
-  ProcedureRouterRecord,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -223,19 +223,17 @@ export type DecorateProcedure<
 /**
  * @internal
  */
-export type DecoratedProcedureRecord<
+export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
-  TProcedures extends ProcedureRouterRecord,
+  TRecord extends RouterRecord,
   TFlags,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<
-        TRoot,
-        TProcedures[TKey]['_def']['record'],
-        TFlags
-      >
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRoot, TProcedures[TKey], TFlags>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecorateRouterRecord<TRoot, $Value, TFlags>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<TRoot, $Value, TFlags>
+      : never
     : never;
 };
 
@@ -266,7 +264,7 @@ export type CreateTRPCReact<
   TFlags,
 > = ProtectedIntersection<
   CreateTRPCReactBase<TRouter, TSSRContext>,
-  DecoratedProcedureRecord<
+  DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record'],
     TFlags
