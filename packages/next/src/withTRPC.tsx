@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
+import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
   type TransformerOptions,
@@ -91,6 +92,9 @@ export function withTRPC<
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const { config: getClientConfig } = opts;
+  const transformer = getTransformer(
+    (opts as CoercedTransformerParameters).transformer,
+  );
 
   type TRPCPrepassProps = {
     config: WithTRPCConfig<TRouter>;
@@ -116,18 +120,17 @@ export function withTRPC<
         const config = getClientConfig({});
         const queryClient = getQueryClient(config);
         const trpcClient = trpc.createClient(config);
+
         return {
           abortOnUnmount: config.abortOnUnmount,
           queryClient,
           trpcClient,
           ssrState: opts.ssr ? ('mounting' as const) : (false as const),
           ssrContext: null,
-          transformer: getTransformer(config.transformer as any),
         };
       });
 
-      const { queryClient, trpcClient, ssrState, ssrContext, transformer } =
-        prepassProps;
+      const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
 
       // allow normal components to be wrapped, not just app/pages
       const trpcState = props.pageProps?.trpcState;
@@ -205,8 +208,6 @@ export function withTRPC<
         const config = getClientConfig({ ctx });
         const trpcClient = createTRPCUntypedClient(config);
         const queryClient = getQueryClient(config);
-
-        const transformer = getTransformer(config.transformer as any);
 
         const trpcProp: TRPCPrepassProps = {
           config,
