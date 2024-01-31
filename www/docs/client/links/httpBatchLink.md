@@ -20,6 +20,7 @@ const client = createTRPCClient<AppRouter>({
     httpBatchLink({
       url: 'http://localhost:3000',
     }),
+    // transformer,
   ],
 });
 ```
@@ -54,8 +55,13 @@ export interface HTTPLinkOptions {
    */
   AbortController?: typeof AbortController | null;
   /**
+   * Data transformer
+   * @link https://trpc.io/docs/data-transformers
+   **/
+  transformer?: DataTransformerOptions;
+  /**
    * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/v10/header
+   * @link http://trpc.io/docs/header
    */
   headers?:
     | HTTPHeaders

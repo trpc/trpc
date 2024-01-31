@@ -15,22 +15,7 @@ import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
 import { z } from 'zod';
 
-const mockRuntime: TRPCClientRuntime = {
-  transformer: {
-    serialize: (v) => v,
-    deserialize: (v) => v,
-  },
-  combinedTransformer: {
-    input: {
-      serialize: (v) => v,
-      deserialize: (v) => v,
-    },
-    output: {
-      serialize: (v) => v,
-      deserialize: (v) => v,
-    },
-  },
-};
+const mockRuntime: TRPCClientRuntime = {};
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = vi.fn();

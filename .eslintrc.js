@@ -53,7 +53,7 @@ const config = {
           'issue-\\d+-.*\\.test\\.tsx?$',
           '\\.(t|j)sx$',
           '@trpc/*',
-          'unstable-core-*',
+          'unstable-*',
           'script',
         ],
       },

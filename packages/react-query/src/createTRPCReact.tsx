@@ -27,7 +27,6 @@ import type {
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCProvider,
-  UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -255,7 +254,6 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
-  useDehydratedState: UseDehydratedState<TRouter>;
 };
 
 export type CreateTRPCReact<

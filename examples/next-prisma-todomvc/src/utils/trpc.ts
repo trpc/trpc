@@ -29,16 +29,13 @@ function getBaseUrl() {
  * @link https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
 export const trpc = createTRPCNext<AppRouter>({
+  transformer: superjson,
   config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/v11/ssr
      */
     return {
-      /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
       /**
        * @link https://trpc.io/docs/v11/client/links
        */
@@ -51,6 +48,10 @@ export const trpc = createTRPCNext<AppRouter>({
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          /**
+           * @link https://trpc.io/docs/v11/data-transformers
+           */
+          transformer: superjson,
         }),
       ],
       /**
