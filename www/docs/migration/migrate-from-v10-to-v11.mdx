@@ -71,22 +71,6 @@ const appRouter = router({
 
 Use `inferProcedureInput<TProcedure>` instead & `TRPCProcedureOptions` instead
 
-### Deleted the `@trpc/core`-package
-
-tl;dr - pnpm + TypeScript makes it too difficult to avoid _"The inferred type of 'createContext' cannot be named without a reference to [...]"_ errors.
-
-### ~~Added a `@trpc/core`-package~~ (reverted)
-
-<details>
-We moved a bunch of internals of `@trpc/server` to a new package called `@trpc/core` that is **not meant for public consumption**
-
-Please create an issue on GitHub or start a conversation in [#v11-chats](https://discord.com/channels/867764511159091230/1057652120473575505) channel on Discord if:
-
-- You are missing types from `@trpc/server` after upgrading (also for plugin authors)
-- Get an error akin to _"The inferred type of 'createContext' cannot be named without a reference to [...]"_
-
-</details>
-
 ### Added `useSuspenseQueries()`
 
 See [useSuspenseQueries](../client/react/suspense.md#usesuspensequeries)
