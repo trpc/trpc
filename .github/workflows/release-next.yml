@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'next'
+      - 01-30-typed-links
     paths:
       - 'packages/**'
       - '!packages/**/package.json'
