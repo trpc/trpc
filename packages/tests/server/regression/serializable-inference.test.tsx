@@ -70,10 +70,10 @@ describe('with transformer', () => {
       const opts = routerToServerAndClientNew(appRouter, {
         client({ httpUrl }) {
           return {
-            transformer: superjson,
             links: [
               httpLink({
                 url: httpUrl,
+                transformer: superjson,
               }),
             ],
           };
