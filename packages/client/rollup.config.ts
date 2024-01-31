@@ -5,6 +5,7 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 export const input = [
   //
   'src/index.ts',
+  'src/unstable-internals.ts',
 ];
 
 export default function rollup(): RollupOptions[] {

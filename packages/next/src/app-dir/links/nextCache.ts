@@ -2,6 +2,10 @@
 
 import type { TRPCLink } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
+import {
+  getTransformer,
+  type TransformerOptions,
+} from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
@@ -16,13 +20,14 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
-};
+} & TransformerOptions<TRouter['_def']['_config']['$types']>;
 
 // ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
-  return (runtime) =>
+  const transformer = getTransformer(opts.transformer);
+  return () =>
     ({ op }) =>
       observable((observer) => {
         const { path, input, type, context } = op;
@@ -52,7 +57,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               });
 
               // We need to serialize cause the cache only accepts JSON
-              return runtime.transformer.serialize(procedureResult);
+              return transformer.input.serialize(procedureResult);
             };
 
             if (type === 'query') {
@@ -70,7 +75,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
 
         promise
           .then((data) => {
-            const transformedResult = runtime.transformer.deserialize(data);
+            const transformedResult = transformer.output.deserialize(data);
             observer.next({ result: { data: transformedResult } });
             observer.complete();
           })

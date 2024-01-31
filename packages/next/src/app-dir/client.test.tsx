@@ -172,10 +172,15 @@ describe('with transformer', () => {
     },
   });
 
-  const useAction = experimental_createActionHook({
-    links: [experimental_serverActionLink()],
-    transformer: superjson,
-  });
+  const useAction = experimental_createActionHook<(typeof instance)['_config']>(
+    {
+      links: [
+        experimental_serverActionLink({
+          transformer: superjson,
+        }),
+      ],
+    },
+  );
 
   test('pass a Date', async () => {
     const action = createAction(

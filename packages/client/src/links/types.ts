@@ -1,8 +1,6 @@
 import type { Observable, Observer } from '@trpc/server/observable';
 import type {
-  AnyRouter,
-  CombinedDataTransformer,
-  DataTransformer,
+  TRPCInferrable,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -59,9 +57,7 @@ export type TRPCFetch = (
 ) => Promise<ResponseEsque>;
 
 export interface TRPCClientRuntime {
-  transformer: DataTransformer;
-  // FIXME: we should be able to remove this - added as `withTRPC()` needs it, but we can have it as an extra option on SSR instead
-  combinedTransformer: CombinedDataTransformer;
+  // nothing here anymore
 }
 
 /**
@@ -78,7 +74,7 @@ export interface OperationResultEnvelope<TOutput> {
  * @internal
  */
 export type OperationResultObservable<
-  TRouter extends AnyRouter,
+  TRouter extends TRPCInferrable,
   TOutput,
 > = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
@@ -86,7 +82,7 @@ export type OperationResultObservable<
  * @internal
  */
 export type OperationResultObserver<
-  TRouter extends AnyRouter,
+  TRouter extends TRPCInferrable,
   TOutput,
 > = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
 
@@ -94,7 +90,7 @@ export type OperationResultObserver<
  * @internal
  */
 export type OperationLink<
-  TRouter extends AnyRouter,
+  TRouter extends TRPCInferrable,
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
@@ -105,6 +101,6 @@ export type OperationLink<
 /**
  * @public
  */
-export type TRPCLink<TRouter extends AnyRouter> = (
+export type TRPCLink<TRouter extends TRPCInferrable> = (
   opts: TRPCClientRuntime,
 ) => OperationLink<TRouter>;

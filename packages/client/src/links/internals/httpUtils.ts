@@ -1,10 +1,10 @@
+import type { TransformerOptions } from '@trpc/client/unstable-internals';
+import { getTransformer } from '@trpc/client/unstable-internals';
 import type {
   AnyRootTypes,
   CombinedDataTransformer,
-  DataTransformerOptions,
   ProcedureType,
   TRPCResponse,
-  TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
@@ -23,30 +23,12 @@ import type {
   TRPCClientRuntime,
 } from '../types';
 
-export type TransformerOptions<TRoot extends AnyRootTypes> =
-  TRoot['transformer'] extends false
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
-      }
-    : {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/v11/data-transformers
-         **/
-        transformer: DataTransformerOptions;
-      };
 /**
  * @internal
  */
-export type HTTPLinkBaseOptions<TRoot extends AnyRootTypes> = {
+export type HTTPLinkBaseOptions<
+  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+> = {
   url: string | URL;
   /**
    * Add ponyfill for fetch
@@ -69,34 +51,11 @@ export interface ResolvedHTTPLinkOptions {
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions<AnyRootTypes>,
 ): ResolvedHTTPLinkOptions {
-  const transformer: CombinedDataTransformer = (() => {
-    const _transformer = opts.transformer as DataTransformerOptions | undefined;
-
-    if (!_transformer) {
-      return {
-        input: {
-          serialize: (data) => data,
-          deserialize: (data) => data,
-        },
-        output: {
-          serialize: (data) => data,
-          deserialize: (data) => data,
-        },
-      };
-    }
-    if ('input' in _transformer) {
-      return _transformer;
-    }
-    return {
-      input: _transformer,
-      output: _transformer,
-    };
-  })();
   return {
     url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
-    transformer: transformer,
+    transformer: getTransformer(opts.transformer),
   };
 }
 

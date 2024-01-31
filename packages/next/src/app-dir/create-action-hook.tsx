@@ -4,12 +4,17 @@ import type {
   TRPCRequestOptions,
 } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
+import type {
+  inferTransformerParameters,
+  TransformerOptionYes,
+} from '@trpc/client/unstable-internals';
+import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
-  AnyRouter,
   MaybePromise,
   ProcedureOptions,
   Simplify,
+  TRPCInferrable,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -66,10 +71,12 @@ type ActionContext = {
 };
 
 // ts-prune-ignore-next
-export function experimental_serverActionLink<
-  TRouter extends AnyRouter = AnyRouter,
->(): TRPCLink<TRouter> {
-  return (runtime) =>
+export function experimental_serverActionLink<TRouter extends TRPCInferrable>(
+  ...args: inferTransformerParameters<TRouter>
+): TRPCLink<TRouter> {
+  const [opts] = args as [Partial<TransformerOptionYes>];
+  const transformer = getTransformer(opts?.transformer);
+  return () =>
     ({ op }) =>
       observable((observer) => {
         const context = op.context as ActionContext;
@@ -78,10 +85,10 @@ export function experimental_serverActionLink<
           ._action(
             isFormData(op.input)
               ? op.input
-              : runtime.transformer.serialize(op.input),
+              : transformer.input.serialize(op.input),
           )
           .then((data) => {
-            const transformed = transformResult(data, runtime.transformer);
+            const transformed = transformResult(data, transformer.output);
 
             if (!transformed.ok) {
               observer.error(TRPCClientError.from(transformed.error, {}));
@@ -105,7 +112,7 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
 }
 
 // ts-prune-ignore-next
-export function experimental_createActionHook<TRouter extends AnyRouter>(
+export function experimental_createActionHook<TRouter extends TRPCInferrable>(
   opts: CreateTRPCClientOptions<TRouter>,
 ) {
   type ActionContext = {

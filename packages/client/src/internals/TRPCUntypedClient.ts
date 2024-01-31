@@ -5,8 +5,7 @@ import type {
 import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
-  CombinedDataTransformer,
-  DataTransformerOptions,
+  TRPCInferrable,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
@@ -36,7 +35,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> = {
+export type CreateTRPCClientOptions<TRouter extends TRPCInferrable> = {
   links: TRPCLink<TRouter>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
@@ -60,39 +59,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    const combinedTransformer: CombinedDataTransformer = (() => {
-      const transformer = opts.transformer as
-        | DataTransformerOptions
-        | undefined;
-
-      if (!transformer) {
-        return {
-          input: {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          },
-          output: {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          },
-        };
-      }
-      if ('input' in transformer) {
-        return opts.transformer as CombinedDataTransformer;
-      }
-      return {
-        input: transformer,
-        output: transformer,
-      };
-    })();
-
-    this.runtime = {
-      transformer: {
-        serialize: (data) => combinedTransformer.input.serialize(data),
-        deserialize: (data) => combinedTransformer.output.deserialize(data),
-      },
-      combinedTransformer,
-    };
+    this.runtime = {};
 
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));
