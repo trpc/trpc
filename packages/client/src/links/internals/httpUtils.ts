@@ -1,4 +1,3 @@
-import type { TransformerOptions } from '@trpc/client/unstable-internals';
 import type {
   AnyRootTypes,
   CombinedDataTransformer,
@@ -15,6 +14,7 @@ import type {
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
+import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { TextDecoderEsque } from '../internals/streamingUtils';
 import type { HTTPHeaders, PromiseAndCancel } from '../types';
