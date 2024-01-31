@@ -8,7 +8,6 @@ import type {
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { dataLoader } from '../../internals/dataLoader';
 import { TRPCClientError } from '../../TRPCClientError';
-import { getTransformer } from '../../unstable-internals';
 import type { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
 import type {
   CancelFn,
@@ -47,7 +46,6 @@ export function createHTTPBatchLink(
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
     const maxURLLength = opts.maxURLLength ?? Infinity;
-    const transformer = getTransformer(opts.transformer);
 
     // initialized config
     return (runtime) => {
@@ -62,7 +60,6 @@ export function createHTTPBatchLink(
 
           const url = getUrl({
             ...resolvedOpts,
-            transformer,
             type,
             path,
             inputs,
@@ -99,7 +96,10 @@ export function createHTTPBatchLink(
           promise
             .then((res) => {
               _res = res;
-              const transformed = transformResult(res.json, transformer.output);
+              const transformed = transformResult(
+                res.json,
+                resolvedOpts.transformer.output,
+              );
 
               if (!transformed.ok) {
                 observer.error(

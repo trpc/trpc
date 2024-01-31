@@ -5,7 +5,6 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
-import { getTransformer } from '../unstable-internals';
 import type {
   HTTPLinkBaseOptions,
   HTTPResult,
@@ -33,7 +32,6 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
     opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
   ): TRPCLink<TRouter> => {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
-    const transformer = getTransformer(opts.transformer);
 
     return () =>
       ({ op }) =>
@@ -41,7 +39,6 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
           const { path, input, type } = op;
           const { promise, cancel } = factoryOpts.requester({
             ...resolvedOpts,
-            transformer,
             type,
             path,
             input,
@@ -61,7 +58,10 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
           promise
             .then((res) => {
               meta = res.meta;
-              const transformed = transformResult(res.json, transformer.output);
+              const transformed = transformResult(
+                res.json,
+                resolvedOpts.transformer.output,
+              );
 
               if (!transformed.ok) {
                 observer.error(
