@@ -75,20 +75,6 @@ Use `inferProcedureInput<TProcedure>` instead & `TRPCProcedureOptions` instead
 
 tl;dr - pnpm + TypeScript makes it too difficult to avoid _"The inferred type of 'createContext' cannot be named without a reference to [...]"_ errors.
 
-### Removed `@trpc/client/links/*`-entrypoints (breaking)
-
-```diff
-- import { httpBatchLink } from '@trpc/client/links/httpBatchLink';
-+ import { httpBatchLink } from '@trpc/client';
-- import { loggerLink } from '@trpc/client/links/loggerLink';
-+ import { loggerLink } from '@trpc/client';
-- import {
--  createWSClient,
--  wsLink,
-- } from '@trpc/client';
-+ import { createWSClient, wsLink } from '@trpc/client';
-```
-
 ### ~~Added a `@trpc/core`-package~~ (reverted)
 
 <details>
