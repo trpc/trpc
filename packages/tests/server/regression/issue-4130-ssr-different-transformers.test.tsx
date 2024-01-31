@@ -70,7 +70,7 @@ test('withTRPC - SSR', async () => {
     Component: <div />,
   } as any)) as Record<string, any>;
 
-  const trpcState: DehydratedState = transformer.output.deserialize(
+  const trpcState: DehydratedState = transformer.input.deserialize(
     props['pageProps'].trpcState,
   );
 

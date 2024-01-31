@@ -138,7 +138,7 @@ export function withTRPC<
           return trpcState;
         }
 
-        return transformer.output.deserialize(trpcState);
+        return transformer.input.deserialize(trpcState);
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [trpcState, trpcClient]);
 
@@ -264,7 +264,7 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps['trpcState'] = transformer.output.serialize(
+        pageProps['trpcState'] = transformer.input.serialize(
           dehydratedCacheWithErrors,
         );
 
