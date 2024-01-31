@@ -133,7 +133,7 @@ export function experimental_createActionHook<
   TInferrable extends TRPCInferrable,
 >(
   opts: TRPCInferrable extends TInferrable
-    ? TypeError<'Generic parameter missing to `createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>
+    ? TypeError<'Generic parameter missing to `createActionHook<HERE>()`'>
     : CreateTRPCClientOptions<TInferrable>,
 ) {
   type ActionContext = {
