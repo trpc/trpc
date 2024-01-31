@@ -23,7 +23,6 @@ import type {
 import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
-  CombinedDataTransformer,
   Dict,
   inferRootTypes,
   Maybe,
@@ -102,7 +101,6 @@ export function withTRPC<
     trpcClient: TRPCUntypedClient<TRouter>;
     ssrState: 'prepass';
     ssrContext: TSSRContext;
-    transformer: CombinedDataTransformer;
   };
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createRootHooks<TRouter, TSSRContext>(opts);
