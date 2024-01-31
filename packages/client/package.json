@@ -34,6 +34,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./unstable-internals": {
+      "import": "./dist/unstable-internals.mjs",
+      "require": "./dist/unstable-internals.js",
+      "default": "./dist/unstable-internals.js"
     }
   },
   "files": [
@@ -41,6 +46,7 @@
     "src",
     "README.md",
     "package.json",
+    "unstable-internals",
     "!**/*.test.*"
   ],
   "dependencies": {},
