@@ -32,7 +32,7 @@ export const t = initTRPC.create({
 
 #### 3. Add to `httpLink()`, `wsLink()`, etc
 
-> TypeScript will instruct you where to add `transformer` as soon as you've added it on the `initTRPC`-object
+> TypeScript will guide you to where you need to add `transformer` as soon as you've added it on the `initTRPC`-object
 
 `createTRPCClient()`:
 
