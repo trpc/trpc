@@ -2,7 +2,6 @@
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
     "strict": true,
-    "moduleResolution": "Node16",
     "noEmit": true
   },
   "include": ["src", "*.ts", "*.js", ".eslintrc.js", "global.d.ts"]

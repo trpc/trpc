@@ -1,5 +1,6 @@
 import { hierarchy, Pack } from '@visx/hierarchy';
 import { ParentSize } from '@visx/responsive';
+import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { allSponsors } from './script.output';
 
@@ -11,10 +12,12 @@ const pack = {
 };
 
 export function SponsorBubbles() {
-  const root = React.useMemo(
+  const root = useMemo(
     () =>
       hierarchy(pack)
+        // @ts-expect-error - whatever...
         .sum((d) => d?.weight, 1)
+        // @ts-expect-error - whatever...
         .sort((a, b) => (b.data.weight ?? 0) - (a.data.weight ?? 0)),
     [],
   );
@@ -59,6 +62,7 @@ export function SponsorBubbles() {
                       return (
                         <a
                           key={`circle-${i}`}
+                          // @ts-expect-error - whatever...
                           href={circle.data.link}
                           className={
                             `spon-link ` +
@@ -78,6 +82,7 @@ export function SponsorBubbles() {
                                     bg-center bg-no-repeat dark:h-[100.5%] dark:w-[100.5%]
                                     `}
                             style={{
+                              // @ts-expect-error - whatever...
                               backgroundImage: `url(${circle.data.imgSrc})`,
                             }}
                           />

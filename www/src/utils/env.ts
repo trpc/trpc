@@ -1,15 +1,10 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
-const { z } = require('zod');
+import z from 'zod';
 
 const booleanSchema = z
   .enum(['1', '0', 'true', 'false'])
   .transform((str) => ['1', 'true'].includes(str.toLowerCase()));
 
-/**
- * @param {unknown} input
- */
-function parseEnv(input) {
+export function parseEnv(input: unknown) {
   const envSchema = z.object({
     VERCEL_URL: z
       .string()
@@ -53,7 +48,3 @@ function parseEnv(input) {
     OG_URL,
   };
 }
-
-module.exports = {
-  parseEnv,
-};

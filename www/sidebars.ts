@@ -1,10 +1,8 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
+import { parseEnv } from './src/utils/env';
 
-const { parseEnv } = require('./src/utils/env');
 const env = parseEnv(process.env);
 
-module.exports = {
+export default {
   docs: [
     {
       type: 'category',
