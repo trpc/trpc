@@ -42,7 +42,7 @@ jobs:
       - name: Test
         run: pnpm turbo --filter tests test-ci
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages
