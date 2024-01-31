@@ -30,9 +30,11 @@ export const t = initTRPC.create({
 });
 ```
 
-#### 3. Add to `createTRPCClient()`, `createTRPCNext()` or `createTRPCReact()`
+#### 3. Add to `httpLink()`, `wsLink()`, etc
 
-`createTRPCClient()`
+> TypeScript will instruct you where to add `transformer` as soon as you've added it on the `initTRPC`-object
+
+`createTRPCClient()`:
 
 ```ts title='src/app/_trpc/client.ts'
 import { createTRPCClient } from '@trpc/client';
@@ -40,56 +42,13 @@ import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
 
 export const client = createTRPCClient<AppRouter>({
-  transformer: superjson, // <--
-  // [...]
-});
-```
-
-`createTRPCNext()`
-
-```ts title='utils/trpc.ts'
-import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '~/server/routers/_app';
-import superjson from 'superjson';
-
-// [...]
-
-export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
-    return {
-      transformer: superjson, // <--
-    };
-  },
-  // [...]
-});
-```
-
-`createTRPCReact()`
-
-With React Query you need to pass the transformer to the createClient instance, as the `createTRPCReact` function does not accept the transformer as a parameter.
-
-```ts title='src/app/_trpc/client.ts'
-import type { AppRouter } from '@/server';
-import { createTRPCReact } from '@trpc/react-query';
-
-export const trpc = createTRPCReact<AppRouter>({});
-```
-
-```tsx title='src/app/_trpc/Provider.tsx'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import superjson from 'superjson';
-import { trpc } from './client';
-
-export default function Provider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
-      transformer: superjson, // <--
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+      // transformer: superjson
     }),
-  );
-
-  // [...]
-}
+  ],
+});
 ```
 
 ## Different transformers for upload and download
@@ -135,18 +94,6 @@ export const t = initTRPC.create({
 });
 
 export const appRouter = t.router({
-  // [...]
-});
-```
-
-#### 4. Add to `createTRPCClient()`
-
-```ts title='client.ts'
-import { createTRPCClient } from '@trpc/client';
-import { transformer } from '../utils/trpc';
-
-export const client = createTRPCClient<AppRouter>({
-  transformer, // <--
   // [...]
 });
 ```
