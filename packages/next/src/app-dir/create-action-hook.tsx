@@ -1,4 +1,8 @@
-import type { TRPCLink, TRPCRequestOptions } from '@trpc/client';
+import type {
+  CreateTRPCClientOptions,
+  TRPCLink,
+  TRPCRequestOptions,
+} from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
 import type {
   CoercedTransformerParameters,
@@ -122,19 +126,22 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
 }
 
+type GenericMissing =
+  TypeError<'Generic parameter missing to `createActionHook<typeof t>()`'>;
+
 // ts-prune-ignore-next
 export function experimental_createActionHook<
   TInferrable extends TRPCInferrable,
 >(
   opts: TRPCInferrable extends TInferrable
-    ? TypeError<'Generic parameter missing to `createActionHook<HERE>()`'>
-    : TInferrable,
+    ? GenericMissing
+    : CreateTRPCClientOptions<TInferrable>,
 ) {
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
   const client = createTRPCUntypedClient(
-    opts as Exclude<typeof opts, TypeError<any>>,
+    opts as Exclude<typeof opts, GenericMissing>,
   );
   return function useAction<TDef extends ActionHandlerDef>(
     handler: TRPCActionHandler<TDef>,
