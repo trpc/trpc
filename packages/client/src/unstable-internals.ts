@@ -26,7 +26,8 @@ export type inferTransformerParameters<TInferrable extends TRPCInferrable> =
 export type CoercedTransformerParameters = {
   transformer?: DataTransformerOptions;
 };
-export type TransformerOptionYes = {
+
+type TransformerOptionYes = {
   /**
    * Data transformer
    *
@@ -35,7 +36,7 @@ export type TransformerOptionYes = {
    **/
   transformer: DataTransformerOptions;
 };
-export type TransformerOptionNo = {
+type TransformerOptionNo = {
   /**
    * Data transformer
    *
@@ -44,11 +45,12 @@ export type TransformerOptionNo = {
    **/
   transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
 };
+
 export type TransformerOptions<
   TRoot extends Pick<AnyRootTypes, 'transformer'>,
-> = TRoot['transformer'] extends false
-  ? TransformerOptionNo
-  : TransformerOptionYes;
+> = TRoot['transformer'] extends true
+  ? TransformerOptionYes
+  : TransformerOptionNo;
 /**
  * @internal
  */

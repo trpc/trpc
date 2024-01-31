@@ -24,6 +24,7 @@ import type {
   AnyRouter,
   CombinedDataTransformer,
   Dict,
+  inferRootTypes,
   Maybe,
   ResponseMeta,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -78,7 +79,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
       ctx: NextPageContext;
       clientErrors: TRPCClientError<TRouter>[];
     }) => ResponseMeta;
-  } & TransformerOptions<TRouter['_def']['_config']['$types']>;
+  } & TransformerOptions<inferRootTypes<TRouter>>;
 
 export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
   extends WithTRPCOptions<TRouter> {

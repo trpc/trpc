@@ -18,6 +18,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferRootTypes,
   inferRouterContext,
   inferTransformedProcedureOutput,
   Maybe,
@@ -41,7 +42,7 @@ import { getQueryClient, getQueryType } from '../shared';
 type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-} & TransformerOptions<TRouter['_def']['_config']['$types']>;
+} & TransformerOptions<inferRootTypes<TRouter>>;
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;

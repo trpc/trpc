@@ -5,8 +5,8 @@ import type {
 } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
 import type {
+  CoercedTransformerParameters,
   inferTransformerParameters,
-  TransformerOptionYes,
 } from '@trpc/client/unstable-internals';
 import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
@@ -74,7 +74,7 @@ type ActionContext = {
 export function experimental_serverActionLink<TRouter extends TRPCInferrable>(
   ...args: inferTransformerParameters<TRouter>
 ): TRPCLink<TRouter> {
-  const [opts] = args as [Partial<TransformerOptionYes>];
+  const [opts] = args as [CoercedTransformerParameters];
   const transformer = getTransformer(opts?.transformer);
   return () =>
     ({ op }) =>
