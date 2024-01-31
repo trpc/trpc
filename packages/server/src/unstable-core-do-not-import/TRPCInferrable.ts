@@ -1,12 +1,22 @@
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 
+/**
+ * Result of `initTRPC.create()`
+ */
 type InitLike = {
   _config: RootConfig<AnyRootTypes>;
 };
 
+/**
+ * Result of `initTRPC.create().router()`
+ */
 type RouterLike = {
   _def: InitLike;
 };
+
+/**
+ * Result of `initTRPC.create()._config`
+ */
 type RootConfigLike = {
   $types: AnyRootTypes;
 };
