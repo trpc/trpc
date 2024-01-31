@@ -8,7 +8,10 @@ import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone'
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import type { OnErrorFunction } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  DataTransformerOptions,
+  OnErrorFunction,
+} from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 
@@ -29,6 +32,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
     client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
+    transformer?: DataTransformerOptions;
   },
 ) {
   // http
@@ -67,7 +71,12 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     ...opts?.wsClient,
   });
   const trpcClientOptions = {
-    links: [httpBatchLink({ url: httpUrl })],
+    links: [
+      httpBatchLink({
+        url: httpUrl,
+        transformer: opts?.transformer as any,
+      }),
+    ],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })

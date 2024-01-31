@@ -33,12 +33,7 @@ const ctx = konn()
       foo: t.procedure.query(() => 'bar' as const),
     });
     const opts = routerToServerAndClientNew(appRouter, {
-      client(opts) {
-        return {
-          ...opts,
-          transformer,
-        };
-      },
+      transformer,
     });
 
     return opts;
@@ -60,6 +55,7 @@ test('withTRPC - SSR', async () => {
       return ctx.trpcClientOptions;
     },
     ssr: true,
+    transformer,
   });
 
   const App: AppType = () => {
