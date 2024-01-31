@@ -34,7 +34,9 @@ Add ponyfill for AbortController
 > `optional` **fetch**: `FetchEsque`
 
 Add ponyfill for fetch
+
 <!-- markdownlint-disable MD024 -->
+
 #### Source
 
 [packages/client/src/links/internals/httpUtils.ts:30](https://github.com/trpc/trpc/blob/caccce64/packages/client/src/links/internals/httpUtils.ts#L30)

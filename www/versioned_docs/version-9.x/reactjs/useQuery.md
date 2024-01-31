@@ -19,6 +19,7 @@ The first argument is a `[path, input]`-tuple - if the `input` is optional, you 
 You'll notice that you get autocompletion on the `path` and automatic typesafety on the `input`.
 
 ### Example
+
 <!-- markdownlint-disable MD033 -->
 <details>
 <summary>Backend code</summary>

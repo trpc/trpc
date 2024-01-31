@@ -8,6 +8,7 @@ slug: /server/adapters/fastify
 ## Example app
 
 The best way to start with the Fastify adapter is to take a look at the example application.
+
 <!-- markdownlint-disable MD033 -->
 <table>
   <thead>

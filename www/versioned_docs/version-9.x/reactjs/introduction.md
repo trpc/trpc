@@ -59,7 +59,9 @@ Follow the [Quickstart](quickstart) and read the [`@trpc/server` docs](router) f
 ### Client Side
 
 > tRPC works fine with Create React App!
+
 <!-- markdownlint-disable MD024 -->
+
 #### 1. Install dependencies
 
 ```bash

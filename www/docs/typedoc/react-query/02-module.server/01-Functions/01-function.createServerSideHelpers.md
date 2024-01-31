@@ -23,8 +23,8 @@ https://trpc.io/docs/v11/client/nextjs/server-side-helpers
 
 ## Parameters
 
-| Parameter | Type                                            |
-| :-------- | :---------------------------------------------- |
+| Parameter | Type                                           |
+| :-------- | :--------------------------------------------- |
 | `opts`    | `CreateServerSideHelpersOptions`< `TRouter` \> |
 
 ## Returns

@@ -425,8 +425,8 @@ This option can be used to transform or select a part of the data returned by th
 
 #### Parameters
 
-| Parameter | Type                                                                                                                        |
-| :-------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| Parameter | Type                                                                                                                      |
+| :-------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `data`    | `InfiniteData`< `TOutput`, [`ExtractCursorType`](../02-Type%20Aliases/04-type-alias.ExtractCursorType.md)< `TInput` \> \> |
 
 #### Returns

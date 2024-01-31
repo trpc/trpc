@@ -1,5 +1,5 @@
 ---
-sidebar_label: "@trpc/react-query"
+sidebar_label: '@trpc/react-query'
 sidebar_position: 0
 pagination_prev: null
 pagination_next: null

@@ -58,13 +58,13 @@ test('route meta in middleware', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.foo1.query()).toBe('bar1');
-  expect(calls[0]![0]!).toHaveProperty('meta');
+  expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo1',
   });
 
   expect(await client.foo2.mutate()).toBe('bar2');
-  expect(calls[1]![0]!).toHaveProperty('meta');
+  expect(calls[1]![0]).toHaveProperty('meta');
   expect(calls[1]![0]!.meta).toEqual({
     data: 'foo2',
   });
@@ -97,13 +97,13 @@ test('default meta', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.foo1.query()).toBe('bar1');
-  expect(calls[0]![0]!).toHaveProperty('meta');
+  expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foobar',
   });
 
   expect(await client.foo2.mutate()).toBe('bar2');
-  expect(calls[1]![0]!).toHaveProperty('meta');
+  expect(calls[1]![0]).toHaveProperty('meta');
   expect(calls[1]![0]!.meta).toEqual({
     data: 'foobar',
   });
@@ -134,13 +134,13 @@ test('default meta with merging', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.foo1.query()).toBe('bar1');
-  expect(calls[0]![0]!).toHaveProperty('meta');
+  expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo1',
   });
 
   expect(await client.foo2.mutate()).toBe('bar2');
-  expect(calls[1]![0]!).toHaveProperty('meta');
+  expect(calls[1]![0]).toHaveProperty('meta');
   expect(calls[1]![0]!.meta).toEqual({
     data: 'foo2',
   });
@@ -173,7 +173,7 @@ test('meta chaining with merging', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.foo1.query()).toBe('bar1');
-  expect(calls[0]![0]!).toHaveProperty('meta');
+  expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo2',
   });
@@ -215,7 +215,7 @@ test('complex meta merging', async () => {
 
   const calls = middleware.mock.calls;
   expect(await client.foo1.query()).toBe('bar1');
-  expect(calls[0]![0]!).toHaveProperty('meta');
+  expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data1: 'bazbar',
     data2: 11,

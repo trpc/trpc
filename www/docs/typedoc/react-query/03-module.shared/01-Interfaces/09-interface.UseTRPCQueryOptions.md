@@ -197,14 +197,14 @@ DistributiveOmit.notifyOnChangeProps
 
 #### Parameters
 
-| Parameter          | Type                                                          |
-| :----------------- | :------------------------------------------------------------ |
+| Parameter          | Type                                                        |
+| :----------------- | :---------------------------------------------------------- |
 | `queryFn`          | `QueryFunction`< `NoInfer`< `TOutput` \>, `any`, `never` \> |
-| `context`          | `object`                                                      |
-| `context.meta`     | `undefined` \| `Record`< `string`, `unknown` \>              |
-| `context.queryKey` | `any`                                                         |
-| `context.signal`   | `AbortSignal`                                                 |
-| `query`            | `Query`< `unknown`, `Error`, `unknown`, `QueryKey` \>        |
+| `context`          | `object`                                                    |
+| `context.meta`     | `undefined` \| `Record`< `string`, `unknown` \>             |
+| `context.queryKey` | `any`                                                       |
+| `context.signal`   | `AbortSignal`                                               |
+| `query`            | `Query`< `unknown`, `Error`, `unknown`, `QueryKey` \>       |
 
 #### Returns
 

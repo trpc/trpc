@@ -1,5 +1,5 @@
 ---
-sidebar_label: "@trpc/client"
+sidebar_label: '@trpc/client'
 sidebar_position: 0
 pagination_prev: null
 pagination_next: null

@@ -8,6 +8,7 @@ slug: /example-apps
 You can clone trpc and play with local examples, or play with them in the CodeSandbox link below.
 
 Here's some example apps:
+
 <!-- markdownlint-disable MD033 -->
 <table width="100%">
   <thead>

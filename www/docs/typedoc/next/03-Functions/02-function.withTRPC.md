@@ -18,8 +18,8 @@ custom_edit_url: null
 
 ## Parameters
 
-| Parameter | Type                                                                                                                                                                                         |
-| :-------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parameter | Type                                                                                                                                                                                       |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `opts`    | [`WithTRPCNoSSROptions`](../01-Interfaces/01-interface.WithTRPCNoSSROptions.md)< `TRouter` \> \| [`WithTRPCSSROptions`](../01-Interfaces/02-interface.WithTRPCSSROptions.md)< `TRouter` \> |
 
 ## Returns
@@ -28,8 +28,8 @@ custom_edit_url: null
 >
 > ### Parameters
 >
-> | Parameter   | Type                                         |
-> | :---------- | :------------------------------------------- |
+> | Parameter   | Type                                        |
+> | :---------- | :------------------------------------------ |
 > | `AppOrPage` | `NextComponentType`< `any`, `any`, `any` \> |
 >
 > ### Returns

@@ -28,6 +28,7 @@ custom_edit_url: null
 > **new TRPCClientError**\<`TRouterOrProcedure`\>(`message`, `opts`?): [`TRPCClientError`](01-class.TRPCClientError.md)< `TRouterOrProcedure` \>
 
 <!-- markdownlint-disable MD024 -->
+
 #### Type parameters
 
 | Parameter                                       |
@@ -36,12 +37,12 @@ custom_edit_url: null
 
 #### Parameters
 
-| Parameter      | Type                                                                              |
-| :------------- | :-------------------------------------------------------------------------------- |
-| `message`      | `string`                                                                          |
-| `opts`?        | `object`                                                                          |
-| `opts.cause`?  | `Error`                                                                           |
-| `opts.meta`?   | `Record`< `string`, `unknown` \>                                                 |
+| Parameter      | Type                                                                           |
+| :------------- | :----------------------------------------------------------------------------- |
+| `message`      | `string`                                                                       |
+| `opts`?        | `object`                                                                       |
+| `opts.cause`?  | `Error`                                                                        |
+| `opts.meta`?   | `Record`< `string`, `unknown` \>                                               |
 | `opts.result`? | `Maybe`< `TRPCErrorResponse`< `inferErrorShape`< `TRouterOrProcedure` \> \> \> |
 
 #### Returns
@@ -243,10 +244,10 @@ node_modules/.pnpm/@types+node@20.10.4/node_modules/@types/node/globals.d.ts:21
 
 #### Parameters
 
-| Parameter    | Type                                      |
-| :----------- | :---------------------------------------- |
+| Parameter    | Type                                     |
+| :----------- | :--------------------------------------- |
 | `_cause`     | `Error` \| `TRPCErrorResponse`< `any` \> |
-| `opts`       | `object`                                  |
+| `opts`       | `object`                                 |
 | `opts.meta`? | `Record`< `string`, `unknown` \>         |
 
 #### Returns

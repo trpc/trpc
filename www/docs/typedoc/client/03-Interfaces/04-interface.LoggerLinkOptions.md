@@ -24,7 +24,7 @@ Color mode
 #### Default
 
 ```ts
-typeof window === 'undefined' ? 'ansi' : 'css'
+typeof window === 'undefined' ? 'ansi' : 'css';
 ```
 
 #### Source

@@ -17,10 +17,10 @@ custom_edit_url: null
 
 ## Parameters
 
-| Parameter        | Type                                                                                                                                                         | Description                                                    |
-| :--------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
-| `opts`           | `object`                                                                                                                                                     | -                                                              |
-| `opts.condition` | (`op`) => `boolean`                                                                                                                                          | -                                                              |
+| Parameter        | Type                                                                                                                                                       | Description                                                    |
+| :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
+| `opts`           | `object`                                                                                                                                                   | -                                                              |
+| `opts.condition` | (`op`) => `boolean`                                                                                                                                        | -                                                              |
 | `opts.false`     | [`TRPCLink`](../04-Type%20Aliases/04-type-alias.TRPCLink.md)< `TRouter` \> \| [`TRPCLink`](../04-Type%20Aliases/04-type-alias.TRPCLink.md)< `TRouter` \>[] | The link to execute next if the test function returns `false`. |
 | `opts.true`      | [`TRPCLink`](../04-Type%20Aliases/04-type-alias.TRPCLink.md)< `TRouter` \> \| [`TRPCLink`](../04-Type%20Aliases/04-type-alias.TRPCLink.md)< `TRouter` \>[] | The link to execute next if the test function returns `true`.  |
 

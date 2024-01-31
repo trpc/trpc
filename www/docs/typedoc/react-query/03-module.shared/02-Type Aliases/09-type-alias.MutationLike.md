@@ -26,8 +26,8 @@ Use to describe a mutation route which matches a given mutation procedure's inte
 
 #### Parameters
 
-| Parameter | Type                                                |
-| :-------- | :-------------------------------------------------- |
+| Parameter | Type                                               |
+| :-------- | :------------------------------------------------- |
 | `opts`?   | `InferMutationOptions`< `TConfig`, `TProcedure` \> |
 
 #### Returns

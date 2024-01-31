@@ -71,7 +71,7 @@ Lazy mode will close the WebSocket automatically after a period of inactivity (n
 > ###### Default
 >
 > ```ts
-> 0
+> 0;
 > ```
 >
 > ##### lazy.enabled
@@ -83,7 +83,7 @@ Lazy mode will close the WebSocket automatically after a period of inactivity (n
 > ###### Default
 >
 > ```ts
-> false
+> false;
 > ```
 
 #### Source

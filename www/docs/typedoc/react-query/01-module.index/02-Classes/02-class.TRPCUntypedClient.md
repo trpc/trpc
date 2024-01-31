@@ -27,8 +27,8 @@ custom_edit_url: null
 
 #### Parameters
 
-| Parameter | Type                                     |
-| :-------- | :--------------------------------------- |
+| Parameter | Type                                    |
+| :-------- | :-------------------------------------- |
 | `opts`    | `CreateTRPCClientOptions`< `TRouter` \> |
 
 #### Returns
@@ -110,10 +110,10 @@ packages/client/dist/internals/TRPCUntypedClient.d.ts:58
 
 #### Parameters
 
-| Parameter | Type                                                                                                                                                                                                      |
-| :-------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`    | `string`                                                                                                                                                                                                  |
-| `input`   | `unknown`                                                                                                                                                                                                 |
+| Parameter | Type                                                                                                                                                                                                   |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`    | `string`                                                                                                                                                                                               |
+| `input`   | `unknown`                                                                                                                                                                                              |
 | `opts`    | `Partial`< `TRPCSubscriptionObserver`< `unknown`, [`TRPCClientError`](01-class.TRPCClientError.md)< `AnyRouter` \> \> \> & [`TRPCRequestOptions`](../03-Interfaces/07-interface.TRPCRequestOptions.md) |
 
 #### Returns

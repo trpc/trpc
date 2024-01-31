@@ -6,6 +6,7 @@ slug: /server/adapters/express
 ---
 
 ## Example app
+
 <!-- markdownlint-disable MD033 -->
 <table>
   <thead>

@@ -21,8 +21,8 @@ https://trpc.io/docs/v11/client/links/loggerLink
 
 ## Parameters
 
-| Parameter | Type                                                                                     |
-| :-------- | :--------------------------------------------------------------------------------------- |
+| Parameter | Type                                                                                    |
+| :-------- | :-------------------------------------------------------------------------------------- |
 | `opts`?   | [`LoggerLinkOptions`](../03-Interfaces/04-interface.LoggerLinkOptions.md)< `TRouter` \> |
 
 ## Returns

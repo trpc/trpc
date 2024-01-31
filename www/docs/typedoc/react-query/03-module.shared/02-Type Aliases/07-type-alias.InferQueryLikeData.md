@@ -13,8 +13,8 @@ Use to unwrap a QueryLike's data output
 
 ## Type parameters
 
-| Parameter                                                                          |
-| :--------------------------------------------------------------------------------- |
+| Parameter                                                                         |
+| :-------------------------------------------------------------------------------- |
 | `TQueryLike` _extends_ [`QueryLike`](11-type-alias.QueryLike.md)< `any`, `any` \> |
 
 ## Source

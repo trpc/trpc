@@ -31,9 +31,9 @@ custom_edit_url: null
 
 #### Parameters
 
-| Parameter   | Type                                             |
-| :---------- | :----------------------------------------------- |
-| `op`        | `Operation`                                      |
+| Parameter   | Type                                            |
+| :---------- | :---------------------------------------------- |
+| `op`        | `Operation`                                     |
 | `callbacks` | `WSCallbackObserver`< `AnyRouter`, `unknown` \> |
 
 #### Returns

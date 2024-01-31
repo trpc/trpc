@@ -10,6 +10,7 @@ slug: /react-mutations
 Works like react-query's mutations - [see their docs](https://tanstack.com/query/v3/docs/react/guides/mutations).
 
 ### Example
+
 <!-- markdownlint-disable MD033 -->
 <details>
 <summary>Backend code</summary>

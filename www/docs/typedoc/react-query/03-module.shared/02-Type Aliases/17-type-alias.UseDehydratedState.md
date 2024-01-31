@@ -17,10 +17,10 @@ custom_edit_url: null
 
 ## Parameters
 
-| Parameter   | Type                                                                                                 |
-| :---------- | :--------------------------------------------------------------------------------------------------- |
+| Parameter   | Type                                                                                                |
+| :---------- | :-------------------------------------------------------------------------------------------------- |
 | `client`    | [`TRPCUntypedClient`](../../01-module.index/02-Classes/02-class.TRPCUntypedClient.md)< `TRouter` \> |
-| `trpcState` | `DehydratedState` \| `undefined`                                                                     |
+| `trpcState` | `DehydratedState` \| `undefined`                                                                    |
 
 ## Returns
 

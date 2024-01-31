@@ -25,8 +25,8 @@ https://trpc.io/docs/v11/getQueryKey
 
 ## Parameters
 
-| Parameter    | Type                                                       |
-| :----------- | :--------------------------------------------------------- |
+| Parameter    | Type                                                      |
+| :----------- | :-------------------------------------------------------- |
 | ...`_params` | `GetParams`< `TConfig`, `TProcedureOrRouter`, `TFlags` \> |
 
 ## Returns

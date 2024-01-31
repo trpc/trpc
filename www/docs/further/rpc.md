@@ -6,13 +6,17 @@ slug: /rpc
 ---
 
 ## Methods \<-> Type mapping
+
 <!-- markdownlint-disable MD033 -->
+
 | HTTP Method  | Mapping           | Notes                                                                                                          |
 | ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |
 | `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}` |
 | `POST`       | `.mutation()`     | Input as POST body.                                                                                            |
 | <em>n/a</em> | `.subscription()` | <em>Subscriptions are not supported in HTTP transport</em>                                                     |
+
 <!-- markdownlint-enable MD033 -->
+
 ## Accessing nested procedures
 
 Nested procedures are separated by dots, so for a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
@@ -96,6 +100,7 @@ encodeURIComponent(
 ```
 
 ### Batching Example Response
+
 <!-- markdownlint-disable MD033 -->
 <details>
   <summary>Example output from server</summary>

@@ -32,7 +32,7 @@ Abort loading query calls when unmounting a component - usually when navigating 
 #### Default
 
 ```ts
-false
+false;
 ```
 
 #### Source
@@ -82,7 +82,7 @@ The SSR context when server-side rendering
 #### Default
 
 ```ts
-null
+null;
 ```
 
 #### Source
@@ -109,7 +109,7 @@ State of SSR hydration.
 #### Default
 
 ```ts
-false
+false;
 ```
 
 #### Source

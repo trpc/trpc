@@ -26,8 +26,8 @@ Use to request a query route which matches a given query procedure's interface
 
 #### Parameters
 
-| Parameter   | Type                                                    |
-| :---------- | :------------------------------------------------------ |
+| Parameter   | Type                                                   |
+| :---------- | :----------------------------------------------------- |
 | `variables` | `inferProcedureInput`< `TProcedure` \>                 |
 | `opts`?     | `InferQueryOptions`< `TConfig`, `TProcedure`, `any` \> |
 
@@ -43,8 +43,8 @@ Use to request a query route which matches a given query procedure's interface
 
 #### Parameters
 
-| Parameter   | Type                                                    |
-| :---------- | :------------------------------------------------------ |
+| Parameter   | Type                                                   |
+| :---------- | :----------------------------------------------------- |
 | `variables` | `inferProcedureInput`< `TProcedure` \>                 |
 | `opts`?     | `InferQueryOptions`< `TConfig`, `TProcedure`, `any` \> |
 

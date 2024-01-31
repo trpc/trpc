@@ -13,8 +13,8 @@ Use to unwrap a MutationLike's input
 
 ## Type parameters
 
-| Parameter                                                                                   |
-| :------------------------------------------------------------------------------------------ |
+| Parameter                                                                                  |
+| :----------------------------------------------------------------------------------------- |
 | `TMutationLike` _extends_ [`MutationLike`](09-type-alias.MutationLike.md)< `any`, `any` \> |
 
 ## Source

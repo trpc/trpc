@@ -28,7 +28,7 @@ Abort all queries when unmounting
 #### Default
 
 ```ts
-false
+false;
 ```
 
 #### Source
@@ -75,7 +75,7 @@ Override the default context provider
 #### Default
 
 ```ts
-undefined
+undefined;
 ```
 
 #### Source
@@ -116,11 +116,11 @@ WithTRPCOptions.overrides
 
 #### Parameters
 
-| Parameter           | Type                               |
-| :------------------ | :--------------------------------- |
-| `opts`              | `object`                           |
+| Parameter           | Type                              |
+| :------------------ | :-------------------------------- |
+| `opts`              | `object`                          |
 | `opts.clientErrors` | `TRPCClientError`< `TRouter` \>[] |
-| `opts.ctx`          | `NextPageContext`                  |
+| `opts.ctx`          | `NextPageContext`                 |
 
 #### Returns
 

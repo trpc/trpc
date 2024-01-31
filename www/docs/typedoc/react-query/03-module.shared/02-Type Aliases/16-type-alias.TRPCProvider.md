@@ -18,8 +18,8 @@ custom_edit_url: null
 
 ## Parameters
 
-| Parameter | Type                                                                                                    |
-| :-------- | :------------------------------------------------------------------------------------------------------ |
+| Parameter | Type                                                                                                   |
+| :-------- | :----------------------------------------------------------------------------------------------------- |
 | `props`   | [`TRPCProviderProps`](../01-Interfaces/03-interface.TRPCProviderProps.md)< `TRouter`, `TSSRContext` \> |
 
 ## Returns

@@ -19,8 +19,8 @@ custom_edit_url: null
 
 ## Parameters
 
-| Parameter | Type                                    |
-| :-------- | :-------------------------------------- |
+| Parameter | Type                                   |
+| :-------- | :------------------------------------- |
 | `opts`?   | `CreateTRPCReactOptions`< `TRouter` \> |
 
 ## Returns

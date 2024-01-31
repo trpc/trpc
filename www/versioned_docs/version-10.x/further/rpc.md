@@ -6,7 +6,9 @@ slug: /rpc
 ---
 
 ## Methods \<-> Type mapping
+
 <!-- markdownlint-disable MD033 -->
+
 | HTTP Method  | Mapping           | Notes                                                                                                          |
 | ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |
 | `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}` |
