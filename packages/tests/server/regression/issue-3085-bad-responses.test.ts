@@ -66,9 +66,9 @@ test('badly formatted superjson response', async () => {
       httpLink({
         url: server.url,
         fetch: fetch as any,
+        transformer: superjson,
       }),
     ],
-    transformer: superjson,
   });
 
   const error = await waitError(client.test.query(), TRPCClientError);
@@ -94,9 +94,9 @@ test('badly formatted superjson response', async () => {
       httpLink({
         url: server.url,
         fetch: fetch as any,
+        transformer: superjson,
       }),
     ],
-    transformer: superjson,
   });
 
   const error = await waitError(client.test.query(), TRPCClientError);
