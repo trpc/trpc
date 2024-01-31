@@ -12,7 +12,7 @@ If you have an existing API deployment like [Express](express), [Fastify](fastif
 It's also not uncommon, where the deployed adapter is hard to run on local machines, to have 2 entry-points in your application. You could use the Standalone Adapter for local development, and a different adapter when deployed.
 
 ## Example app
-
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>

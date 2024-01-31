@@ -10,7 +10,7 @@ slug: /server/adapters/aws-lambda
 The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2) use cases.
 
 ## Example app
-
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>
@@ -29,7 +29,7 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
     </tr>
   </tbody>
 </table>
-
+<!-- markdownlint-enable MD033 -->
 ## How to add tRPC
 
 ### 1. Install deps

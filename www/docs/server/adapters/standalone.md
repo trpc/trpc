@@ -12,7 +12,7 @@ If you have an existing API deployment like [Express](express), [Fastify](fastif
 It's also not uncommon, where the deployed adapter is hard to run on local machines, to have 2 entry-points in your application. You could use the Standalone Adapter for local development, and a different adapter when deployed.
 
 ## Example app
-
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>
@@ -136,7 +136,7 @@ The `middleware` option will accept any function which resembles a connect/node.
 
 ## Going further
 
-`createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
+`createHTTPServer` is returning an instance of Node's built-in `http.Server`[https://nodejs.org/api/http.html#class-httpserver](https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
 ```ts title='server.ts'
 import { createServer } from 'http';

@@ -102,7 +102,7 @@ unstable_httpBatchStreamLink({
 ## Compatibility (server-side)
 
 > ⚠️ for **aws lambda**, `unstable_httpBatchStreamLink` is not supported (will simply behave like a regular `httpBatchLink`). It should not break anything if enabled, but will not have any effect.
-
+>
 > ⚠️ for **cloudflare workers**, you need to enable the `ReadableStream` API through a feature flag: [`streams_enable_constructors`](https://developers.cloudflare.com/workers/platform/compatibility-dates#streams-constructors)
 
 ## Reference

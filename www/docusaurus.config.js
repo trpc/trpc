@@ -244,7 +244,7 @@ module.exports = {
       },
     ],
     [
-      'docusaurus-preset-shiki-twoslash',
+      'remark-shiki-twoslash',
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme

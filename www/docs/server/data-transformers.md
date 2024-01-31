@@ -95,7 +95,7 @@ export default function Provider({ children }: { children: React.ReactNode }) {
 ## Different transformers for upload and download
 
 If a transformer should only be used for one direction or different transformers should be used for upload and download (e.g., for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
-
+<!-- markdownlint-disable MD024 -->
 ### How to
 
 Here [superjson](https://github.com/blitz-js/superjson) is used for uploading and [devalue](https://github.com/Rich-Harris/devalue) for downloading data because devalue is a lot faster but insecure to use on the server.

@@ -9,7 +9,7 @@ The server-side helpers provides you with a set of helper functions that you can
 
 Prefetching via the server-side helpers allows populating the query cache on the server, which means that these queries do not have to fetch on the client initially.
 
-## There are 2 ways to use the server-side helpers.
+## There are 2 ways to use the server-side helpers
 
 ### 1. Internal router
 

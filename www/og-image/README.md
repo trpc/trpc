@@ -16,7 +16,7 @@ relatedTemplates:
 
 # Vercel OG + Next.js
 
-```
+```bash
 pnpm dev
 ```
 
@@ -36,7 +36,7 @@ pnpm dev
 
 ## How to Use
 
-```
+```bash
 pnpm dev dev
 ```
 

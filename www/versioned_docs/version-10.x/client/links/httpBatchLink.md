@@ -83,7 +83,7 @@ const client = createTRPCProxyClient<AppRouter>({
 
 ## Disabling request batching
 
-### 1. Disable `batching` on your server:
+### 1. Disable `batching` on your server
 
 ```ts title="server.ts"
 import { createHTTPServer } from '@trpc/server/adapters/standalone';

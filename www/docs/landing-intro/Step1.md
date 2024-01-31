@@ -1,4 +1,5 @@
 <!-- prettier-ignore -->
+<!-- markdownlint-disable MD041 -->
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
 import z from 'zod';

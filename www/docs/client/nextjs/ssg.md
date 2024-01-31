@@ -6,7 +6,7 @@ slug: /client/nextjs/ssg
 ---
 
 :::tip
-Reference project: https://github.com/trpc/examples-next-prisma-todomvc
+Reference project: [https://github.com/trpc/examples-next-prisma-todomvc](https://github.com/trpc/examples-next-prisma-todomvc)
 :::
 
 Static site generation requires executing tRPC queries inside `getStaticProps` on each page.

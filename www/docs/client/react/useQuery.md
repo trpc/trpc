@@ -38,9 +38,10 @@ If you need to set any options but don't want to pass any input, you can pass `u
 You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
 
 ### Example
-
+<!-- markdownlint-disable MD033 -->
 <details>
 <summary>Backend code</summary>
+<!-- markdownlint-enable MD033 -->
 
 ```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';

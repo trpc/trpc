@@ -8,7 +8,7 @@ slug: /fastify
 ## Example app
 
 The best way to start with the Fastify adapter is to take a look at the example application.
-
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>
@@ -158,7 +158,7 @@ Your endpoints are now available via HTTP!
 ## How to enable subscriptions (WebSocket)
 
 The Fastify adapter supports [subscriptions](subscriptions) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
-
+<!-- markdownlint-disable MD024 -->
 ### Install dependencies
 
 ```bash

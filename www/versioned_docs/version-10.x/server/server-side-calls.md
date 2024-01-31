@@ -10,7 +10,7 @@ You may need to call your procedure(s) directly from the same server they're hos
 :::info
 
 `createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
-
+<!-- markdownlint-disable MD033 -->
 <div className="flex gap-2 w-full justify-between pt-2">
   <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />
   <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" className="w-[49.5%]" />
@@ -89,7 +89,7 @@ const postList = await caller.post.list();
 
 ### Example usage in an integration test
 
-> Taken from <https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts>
+> Taken from [https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts](https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts)
 
 ```ts
 import { inferProcedureInput } from '@trpc/server';
@@ -172,7 +172,7 @@ const result = await caller.post.add('Four');
 ### Context with middleware example
 
 We create a middleware to check the context before executing the `secret` procedure. Below are two examples: the former fails because the context doesn't fit the middleware logic, and the latter works correctly.
-
+<!-- markdownlint-disable MD033 -->
 <br />
 
 :::info

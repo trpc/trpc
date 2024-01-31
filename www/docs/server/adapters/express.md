@@ -6,7 +6,7 @@ slug: /server/adapters/express
 ---
 
 ## Example app
-
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>
@@ -26,7 +26,7 @@ slug: /server/adapters/express
     </tr>
   </tbody>
 </table>
-
+<!-- markdownlint-enable MD033 -->
 ## How to add tRPC to existing Express project
 
 ### 1. Install deps

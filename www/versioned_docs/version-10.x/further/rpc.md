@@ -5,8 +5,8 @@ sidebar_label: HTTP RPC Specification
 slug: /rpc
 ---
 
-## Methods <-> Type mapping
-
+## Methods \<-> Type mapping
+<!-- markdownlint-disable MD033 -->
 | HTTP Method  | Mapping           | Notes                                                                                                          |
 | ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |
 | `GET`        | `.query()`        | Input JSON-stringified in query param.<br/>_e.g._ `myQuery?input=${encodeURIComponent(JSON.stringify(input))}` |
@@ -34,11 +34,11 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 - The called procedures' names are combined by a comma (`,`) in the `pathname`
 - Input parameters are sent as a query parameter called `input` which has the shape `Record<number, unknown>`.
 - We also need to pass `batch=1` as a query parameter.
-- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded) _
+- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded)_
 
 ### Batching Example Request
 
-#### Given a router like this exposed at `/api/trpc`:
+#### Given a router like this exposed at `/api/trpc`
 
 ```tsx title='server/router.ts'
 export const appRouter = t.router({
@@ -55,7 +55,7 @@ export const appRouter = t.router({
 });
 ```
 
-#### ... And two queries defined like this in a React component:
+#### ... And two queries defined like this in a React component
 
 ```tsx title='MyComponent.tsx'
 export function MyComponent() {
@@ -77,7 +77,7 @@ export function MyComponent() {
 }
 ```
 
-#### The above would result in exactly 1 HTTP call with this data:
+#### The above would result in exactly 1 HTTP call with this data
 
 | Location property | Value                                                           |
 | ----------------- | --------------------------------------------------------------- |
@@ -132,7 +132,8 @@ In order to have a specification that works regardless of the transport layer we
 
 ### Successful Response
 
-<details><summary>Example JSON Response</summary>
+<details>
+<summary>Example JSON Response</summary>
 
 ```json
 {
@@ -158,7 +159,8 @@ In order to have a specification that works regardless of the transport layer we
 
 ### Error Response
 
-<details><summary>Example JSON Response</summary>
+<details>
+<summary>Example JSON Response</summary>
 
 ```json
 [
@@ -184,10 +186,10 @@ In order to have a specification that works regardless of the transport layer we
 <br/>
 
 - When possible, we propagate HTTP status codes from the error thrown.
-- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded) _
+- If the response has different statuses, we send back `207 Multi-Status` _(e.g., if one call errored and one succeeded)_
 - For more on errors and how to customize them see [Error Formatting](../server/error-formatting.md).
 
-## Error Codes <-> HTTP Status
+## Error Codes \<-> HTTP Status
 
 ```ts
 PARSE_ERROR: 400,
@@ -207,9 +209,10 @@ INTERNAL_SERVER_ERROR: 500,
 NOT_IMPLEMENTED: 501,
 ```
 
-## Error Codes <-> JSON-RPC 2.0 Error Codes
+## Error Codes \<-> JSON-RPC 2.0 Error Codes
 
-<details><summary>Available codes & JSON-RPC code</summary>
+<details>
+<summary>Available codes & JSON-RPC code</summary>
 
 ```ts
 /**
