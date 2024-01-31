@@ -1,4 +1,3 @@
-import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRootTypes,
@@ -9,6 +8,7 @@ import type {
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { dataLoader } from '../../internals/dataLoader';
 import { TRPCClientError } from '../../TRPCClientError';
+import { getTransformer } from '../../unstable-internals';
 import type { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
 import type {
   CancelFn,
