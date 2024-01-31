@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - 'next'
-      - 01-30-typed-links
+      - '01-30-typed-links'
     paths:
+      - '.github/workflows/release-next.yml'
       - 'packages/**'
       - '!packages/**/package.json'
       - '!packages/test/**'
