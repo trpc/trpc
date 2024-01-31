@@ -41,7 +41,6 @@
     "cssnano": "^6.0.0",
     "docusaurus-preset-shiki-twoslash": "^1.1.41",
     "framer-motion": "^11.0.0",
-    "http": "link:@trpc/server/http",
     "prism-react-renderer": "^2.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
