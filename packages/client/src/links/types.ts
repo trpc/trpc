@@ -74,33 +74,35 @@ export interface OperationResultEnvelope<TOutput> {
  * @internal
  */
 export type OperationResultObservable<
-  TRouter extends TRPCInferrable,
+  TInferrable extends TRPCInferrable,
   TOutput,
-> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
+> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
 /**
  * @internal
  */
 export type OperationResultObserver<
-  TRouter extends TRPCInferrable,
+  TInferrable extends TRPCInferrable,
   TOutput,
-> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
+> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
 /**
  * @internal
  */
 export type OperationLink<
-  TRouter extends TRPCInferrable,
+  TInferrable extends TRPCInferrable,
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
   op: Operation<TInput>;
-  next: (op: Operation<TInput>) => OperationResultObservable<TRouter, TOutput>;
-}) => OperationResultObservable<TRouter, TOutput>;
+  next: (
+    op: Operation<TInput>,
+  ) => OperationResultObservable<TInferrable, TOutput>;
+}) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
  * @public
  */
-export type TRPCLink<TRouter extends TRPCInferrable> = (
+export type TRPCLink<TInferrable extends TRPCInferrable> = (
   opts: TRPCClientRuntime,
-) => OperationLink<TRouter>;
+) => OperationLink<TInferrable>;

@@ -1,12 +1,11 @@
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 
-type RouterLike = {
-  _def: {
-    _config: RootConfig<AnyRootTypes>;
-  };
-};
 type InitLike = {
   _config: RootConfig<AnyRootTypes>;
+};
+
+type RouterLike = {
+  _def: InitLike;
 };
 type RootConfigLike = {
   $types: AnyRootTypes;

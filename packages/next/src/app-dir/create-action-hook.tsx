@@ -6,15 +6,17 @@ import type {
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
 import type {
   CoercedTransformerParameters,
-  inferTransformerParameters,
+  TransformerOptions,
 } from '@trpc/client/unstable-internals';
 import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
+  inferRootTypes,
   MaybePromise,
   ProcedureOptions,
   Simplify,
   TRPCInferrable,
+  TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -70,10 +72,27 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
+type inferTransformerParameters<TInferrable extends TRPCInferrable> =
+  TRPCInferrable extends TInferrable
+    ? [
+        opts: TypeError<'You must define a generic parameter to this function or the parent function'>,
+      ]
+    : inferRootTypes<TInferrable> extends { transformer: false }
+    ? [
+        opts?: TransformerOptions<{
+          transformer: false;
+        }>,
+      ]
+    : [
+        opts: TransformerOptions<{
+          transformer: true;
+        }>,
+      ];
+
 // ts-prune-ignore-next
-export function experimental_serverActionLink<TRouter extends TRPCInferrable>(
-  ...args: inferTransformerParameters<TRouter>
-): TRPCLink<TRouter> {
+export function experimental_serverActionLink<
+  TInferrable extends TRPCInferrable,
+>(...args: inferTransformerParameters<TInferrable>): TRPCLink<TInferrable> {
   const [opts] = args as [CoercedTransformerParameters];
   const transformer = getTransformer(opts?.transformer);
   return () =>
@@ -112,9 +131,9 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
 }
 
 // ts-prune-ignore-next
-export function experimental_createActionHook<TRouter extends TRPCInferrable>(
-  opts: CreateTRPCClientOptions<TRouter>,
-) {
+export function experimental_createActionHook<
+  TInferrable extends TRPCInferrable,
+>(opts: CreateTRPCClientOptions<TInferrable>) {
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
