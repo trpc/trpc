@@ -213,7 +213,6 @@ export function withTRPC<
           queryClient,
           ssrState: 'prepass',
           ssrContext: ctx as TSSRContext,
-          transformer,
         };
         const prepassProps = {
           pageProps,
