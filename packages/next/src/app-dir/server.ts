@@ -5,11 +5,11 @@ import {
 } from '@trpc/client';
 import type {
   AnyProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
-  CombinedDataTransformer,
   inferProcedureInput,
   MaybePromise,
+  RootConfig,
   Simplify,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -29,7 +29,7 @@ import type {
   inferActionDef,
 } from './shared';
 import { generateCacheTag, isFormData } from './shared';
-import type { NextAppDirDecoratedProcedureRecord } from './types';
+import type { NextAppDirDecorateRouterRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -57,8 +57,8 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+  }) as NextAppDirDecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   >;
 }
@@ -72,7 +72,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: AnyRootConfig;
+    _config: RootConfig<AnyRootTypes>;
   },
 >(
   t: TInstance,
@@ -88,12 +88,14 @@ export function experimental_createServerActionHandler<
   const config = t._config;
   const { normalizeFormData = true, createContext } = opts;
 
-  const transformer = config.transformer as CombinedDataTransformer;
+  const transformer = config.transformer;
 
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
-  ): TRPCActionHandler<Simplify<inferActionDef<TInstance['_config'], TProc>>> {
+  ): TRPCActionHandler<
+    Simplify<inferActionDef<TInstance['_config']['$types'], TProc>>
+  > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
@@ -145,7 +147,9 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<inferActionDef<TInstance['_config'], TProc>>;
+    } as TRPCActionHandler<
+      inferActionDef<TInstance['_config']['$types'], TProc>
+    >;
   };
 }
 

@@ -2,7 +2,7 @@
 // We're testing this through E2E-testing
 import type {
   CreateReactUtils,
-  DecoratedProcedureRecord,
+  DecorateRouterRecord,
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
 } from '@trpc/react-query/shared';
@@ -52,8 +52,8 @@ export type CreateTRPCNext<
   TFlags,
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
-  DecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+  DecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record'],
     TFlags
   >

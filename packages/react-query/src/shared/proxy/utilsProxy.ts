@@ -14,13 +14,13 @@ import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   DeepPartial,
-  Filter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -39,7 +39,7 @@ import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
@@ -48,10 +48,10 @@ type DecorateProcedure<
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
@@ -60,12 +60,12 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<
     InfiniteData<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
       NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
@@ -76,8 +76,8 @@ type DecorateProcedure<
   prefetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 
@@ -88,21 +88,21 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/reference/QueryClient#queryclientensurequerydata
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientensurequerydata
    */
   ensureData(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientinvalidatequeries
@@ -113,7 +113,7 @@ type DecorateProcedure<
       predicate?: (
         query: Query<
           inferProcedureInput<TProcedure>,
-          TRPCClientError<TConfig>,
+          TRPCClientError<TRoot>,
           inferProcedureInput<TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
@@ -161,8 +161,8 @@ type DecorateProcedure<
      */
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
-      inferTransformedProcedureOutput<TConfig, TProcedure> | undefined,
-      inferTransformedProcedureOutput<TConfig, TProcedure> | undefined
+      inferTransformedProcedureOutput<TRoot, TProcedure> | undefined,
+      inferTransformedProcedureOutput<TRoot, TProcedure> | undefined
     >,
     options?: SetDataOptions,
   ): void;
@@ -174,12 +174,12 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
       | InfiniteData<
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
         >
       | undefined,
       | InfiniteData<
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
         >
       | undefined
@@ -192,7 +192,7 @@ type DecorateProcedure<
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
-  ): inferTransformedProcedureOutput<TConfig, TProcedure> | undefined;
+  ): inferTransformedProcedureOutput<TRoot, TProcedure> | undefined;
 
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
@@ -201,7 +201,7 @@ type DecorateProcedure<
     input?: inferProcedureInput<TProcedure>,
   ):
     | InfiniteData<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
         NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
       >
     | undefined;
@@ -215,7 +215,7 @@ type DecorateRouter = {
   /**
    * Invalidate the full router
    * @link https://trpc.io/docs/v10/useContext#query-invalidation
-   * @link https://tanstack.com/query/v5/docs/react/guides/query-invalidation
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
    */
   invalidate(
     input?: undefined,
@@ -227,20 +227,19 @@ type DecorateRouter = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
-  DecorateRouter & {
-    [TKey in keyof Filter<
-      TRouter['_def']['record'],
-      AnyQueryProcedure | AnyRouter
-    >]: TRouter['_def']['record'][TKey] extends AnyRouter
-      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-          DecorateRouter
+export type DecoratedProcedureUtilsRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = DecorateRouter & {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
       : // utils only apply to queries
-        DecorateProcedure<
-          TRouter['_def']['_config'],
-          TRouter['_def']['record'][TKey]
-        >;
-  }; // Add functions that should be available at utils root
+      $Value extends AnyQueryProcedure
+      ? DecorateProcedure<TRoot, $Value>
+      : never
+    : never;
+}; // Add functions that should be available at utils root
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
@@ -249,11 +248,17 @@ export type CreateReactUtils<
   TSSRContext,
 > = ProtectedIntersection<
   DecoratedTRPCContextProps<TRouter, TSSRContext>,
-  DecoratedProcedureUtilsRecord<TRouter>
+  DecoratedProcedureUtilsRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >
 >;
 
 export type CreateQueryUtils<TRouter extends AnyRouter> =
-  DecoratedProcedureUtilsRecord<TRouter>;
+  DecoratedProcedureUtilsRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
 
 export const getQueryType = (
   utilName: keyof AnyDecoratedProcedure,

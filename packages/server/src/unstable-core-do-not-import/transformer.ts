@@ -1,4 +1,4 @@
-import type { AnyRootConfig } from './rootConfig';
+import type { AnyRootTypes, RootConfig } from './rootConfig';
 import type { AnyRouter, inferRouterError } from './router';
 import type {
   TRPCResponse,
@@ -79,22 +79,14 @@ export function getDataTransformer(
 /**
  * @internal
  */
-export type DefaultDataTransformer = CombinedDataTransformer & {
-  _default: true;
-};
-
-/**
- * @internal
- */
-export const defaultTransformer: DefaultDataTransformer = {
-  _default: true,
+export const defaultTransformer: CombinedDataTransformer = {
   input: { serialize: (obj) => obj, deserialize: (obj) => obj },
   output: { serialize: (obj) => obj, deserialize: (obj) => obj },
 };
 
 function transformTRPCResponseItem<
   TResponseItem extends TRPCResponse | TRPCResponseMessage,
->(config: AnyRootConfig, item: TResponseItem): TResponseItem {
+>(config: RootConfig<AnyRootTypes>, item: TResponseItem): TResponseItem {
   if ('error' in item) {
     return {
       ...item,
@@ -124,7 +116,7 @@ export function transformTRPCResponse<
     | TRPCResponse[]
     | TRPCResponseMessage
     | TRPCResponseMessage[],
->(config: AnyRootConfig, itemOrItems: TResponse) {
+>(config: RootConfig<AnyRootTypes>, itemOrItems: TResponse) {
   return Array.isArray(itemOrItems)
     ? itemOrItems.map((item) => transformTRPCResponseItem(config, item))
     : transformTRPCResponseItem(config, itemOrItems);

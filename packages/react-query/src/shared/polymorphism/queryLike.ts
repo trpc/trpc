@@ -1,7 +1,7 @@
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   inferProcedureInput,
   inferProcedureOutput,
   inferTransformedProcedureOutput,
@@ -16,20 +16,20 @@ import type { UseTRPCSuspenseQueryResult } from '../hooks/types';
  * Use to request a query route which matches a given query procedure's interface
  */
 export type QueryLike<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
   useQuery: (
     variables: inferProcedureInput<TProcedure>,
-    opts?: InferQueryOptions<TConfig, TProcedure, any>,
-  ) => InferQueryResult<TConfig, TProcedure>;
+    opts?: InferQueryOptions<TRoot, TProcedure, any>,
+  ) => InferQueryResult<TRoot, TProcedure>;
 
   useSuspenseQuery: (
     variables: inferProcedureInput<TProcedure>,
-    opts?: InferQueryOptions<TConfig, TProcedure, any>,
+    opts?: InferQueryOptions<TRoot, TProcedure, any>,
   ) => UseTRPCSuspenseQueryResult<
     inferProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TConfig>
+    TRPCClientErrorLike<TRoot>
   >;
 };
 
@@ -45,6 +45,6 @@ export type InferQueryLikeInput<TQueryLike extends QueryLike<any, any>> =
  * Use to unwrap a QueryLike's data output
  */
 export type InferQueryLikeData<TQueryLike extends QueryLike<any, any>> =
-  TQueryLike extends QueryLike<infer TConfig, infer TProcedure>
-    ? inferTransformedProcedureOutput<TConfig, TProcedure>
+  TQueryLike extends QueryLike<infer TRoot, infer TProcedure>
+    ? inferTransformedProcedureOutput<TRoot, TProcedure>
     : never;

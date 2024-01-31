@@ -10,15 +10,15 @@ import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   DataTransformerOptions,
-  Filter,
   inferProcedureInput,
   inferRouterContext,
   inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   callProcedure,
@@ -49,57 +49,57 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<
     InfiniteData<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
       NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
     >
   >;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/react/guides/prefetching
+   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
   ): Promise<void>;
 };
@@ -107,17 +107,18 @@ type DecorateProcedure<
 /**
  * @internal
  */
-type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
-    : // utils only apply to queries
-      DecorateProcedure<
-        TRouter['_def']['_config'],
-        TRouter['_def']['record'][TKey]
-      >;
+type DecoratedProcedureSSGRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureSSGRecord<TRoot, $Value>
+      : // utils only apply to queries
+      $Value extends AnyQueryProcedure
+      ? DecorateProcedure<TRoot, $Value>
+      : never
+    : never;
 };
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
@@ -182,7 +183,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
     },
-    DecoratedProcedureSSGRecord<TRouter>
+    DecoratedProcedureSSGRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
   >;
 
   return createFlatProxy<CreateSSGHelpers>((key) => {

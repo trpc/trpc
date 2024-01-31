@@ -4,7 +4,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
@@ -12,8 +12,8 @@ import type {
   inferTransformedSubscriptionOutput,
   IntersectionError,
   ProcedureOptions,
-  ProcedureRouterRecord,
   ProcedureType,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -35,41 +35,41 @@ export type inferRouterClient<TRouter extends AnyRouter> =
 
 /** @internal */
 export type Resolver<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: ProcedureOptions,
-) => Promise<inferTransformedProcedureOutput<TConfig, TProcedure>>;
+) => Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
 type SubscriptionResolver<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: Partial<
     TRPCSubscriptionObserver<
-      inferTransformedSubscriptionOutput<TConfig, TProcedure>,
-      TRPCClientError<TConfig>
+      inferTransformedSubscriptionOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >
   > &
     ProcedureOptions,
 ) => Unsubscribable;
 
 type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      query: Resolver<TConfig, TProcedure>;
+      query: Resolver<TRoot, TProcedure>;
     }
   : TProcedure extends AnyMutationProcedure
   ? {
-      mutate: Resolver<TConfig, TProcedure>;
+      mutate: Resolver<TRoot, TProcedure>;
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
-      subscribe: SubscriptionResolver<TConfig, TProcedure>;
+      subscribe: SubscriptionResolver<TRoot, TProcedure>;
     }
   : never;
 
@@ -78,12 +78,14 @@ type DecorateProcedure<
  */
 type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
-  TProcedures extends ProcedureRouterRecord,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TRouter, TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRouter['_def']['_config'], TProcedures[TKey]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<TRouter, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<TRouter['_def']['_config']['$types'], $Value>
+      : never
     : never;
 };
 
@@ -107,10 +109,10 @@ export const clientCallTypeToProcedureType = (
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
 export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $ProcedureRecord
-    ? UntypedClientProperties & keyof $ProcedureRecord extends never
+  inferRouterClient<TRouter> extends infer $Value
+    ? UntypedClientProperties & keyof $Value extends never
       ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $ProcedureRecord>
+      : IntersectionError<UntypedClientProperties & keyof $Value>
     : never;
 
 /**

@@ -3,19 +3,18 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
-  AnyRouter,
+  AnyRootTypes,
   AnySubscriptionProcedure,
   inferProcedureInput,
-  ProcedureRouterRecord,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 
 export type DecorateProcedureServer<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      query: Resolver<TConfig, TProcedure>;
+      query: Resolver<TRoot, TProcedure>;
       revalidate: (
         input?: inferProcedureInput<TProcedure>,
       ) => Promise<
@@ -24,24 +23,23 @@ export type DecorateProcedureServer<
     }
   : TProcedure extends AnyMutationProcedure
   ? {
-      mutate: Resolver<TConfig, TProcedure>;
+      mutate: Resolver<TRoot, TProcedure>;
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
-      subscribe: Resolver<TConfig, TProcedure>;
+      subscribe: Resolver<TRoot, TProcedure>;
     }
   : never;
 
-export type NextAppDirDecoratedProcedureRecord<
-  TConfig extends AnyRootConfig,
-  TProcedures extends ProcedureRouterRecord,
+export type NextAppDirDecorateRouterRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? NextAppDirDecoratedProcedureRecord<
-        TConfig,
-        TProcedures[TKey]['_def']['record']
-      >
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedureServer<TConfig, TProcedures[TKey]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? NextAppDirDecorateRouterRecord<TRoot, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedureServer<TRoot, $Value>
+      : never
     : never;
 };

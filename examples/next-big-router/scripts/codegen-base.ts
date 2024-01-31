@@ -1,8 +1,7 @@
-import type { TRPCRouterRecord } from '@trpc/server';
+import { publicProcedure, router } from '~/server/trpc';
 import { z } from 'zod';
-import { publicProcedure } from '~/server/trpc';
 
-export const __ROUTER__NAME__ = {
+export const __ROUTER__NAME__ = router({
   greeting: publicProcedure
     .input(
       z.object({
@@ -38,8 +37,8 @@ export const __ROUTER__NAME__ = {
       }),
     )
     .query(({ input }) => `hello ${input.who}`),
-  childRouter: {
+  childRouter: router({
     hello: publicProcedure.query(() => 'there'),
     doSomething: publicProcedure.mutation(() => 'okay'),
-  },
-} satisfies TRPCRouterRecord
+  }),
+});

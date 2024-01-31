@@ -5,7 +5,7 @@
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
 import type {
-  AnyRootConfig,
+  AnyRootTypes,
   createBuilder,
   createRouterFactory,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -32,11 +32,11 @@ export type SubTypedFileExportStatusType = z.infer<
 // Dependencies
 //
 
-type RouterFactory<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createRouterFactory<TConfig>
+type RouterFactory<TRoot extends AnyRootTypes> = ReturnType<
+  typeof createRouterFactory<TRoot>
 >;
-type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createBuilder<TConfig['$types']['ctx'], TConfig['$types']['meta']>
+type BaseProcedure<TRoot extends AnyRootTypes> = ReturnType<
+  typeof createBuilder<TRoot['ctx'], TRoot['meta']>
 >;
 
 export type SubTypedDataProvider = SubTypedFileExportStatusType[];
@@ -49,7 +49,7 @@ export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 let COUNTER = 1;
 
 export function createSubTypedExportRoute<
-  TBaseProcedure extends BaseProcedure<(typeof t)['_config']>,
+  TBaseProcedure extends BaseProcedure<(typeof t)['_config']['$types']>,
 >(baseProcedure: TBaseProcedure, dataProvider: SubTypedDataProvider) {
   return t.router({
     start: baseProcedure

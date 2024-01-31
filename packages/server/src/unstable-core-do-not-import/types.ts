@@ -149,3 +149,9 @@ export type ProtectedIntersection<TType, TWith> = keyof TType &
  * Returns the raw input type of a procedure
  */
 export type GetRawInputFn = () => Promise<unknown>;
+
+export const ERROR_SYMBOL = Symbol('TypeError');
+export type TypeError<TMessage extends string> = TMessage & {
+  _: typeof ERROR_SYMBOL;
+};
+export type ValueOf<TObj> = TObj[keyof TObj];
