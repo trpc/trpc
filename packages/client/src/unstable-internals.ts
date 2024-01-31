@@ -43,7 +43,8 @@ export function getTransformer(
     | TransformerOptions<{ transformer: true }>['transformer']
     | undefined,
 ): CombinedDataTransformer {
-  const _transformer = transformer as CombinedDataTransformer | undefined;
+  const _transformer =
+    transformer as CoercedTransformerParameters['transformer'];
   if (!_transformer) {
     return {
       input: {
