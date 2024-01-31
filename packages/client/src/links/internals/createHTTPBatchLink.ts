@@ -3,6 +3,7 @@ import { observable } from '@trpc/server/observable';
 import type {
   AnyRootTypes,
   AnyRouter,
+  inferRootTypes,
   ProcedureType,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
@@ -21,10 +22,7 @@ import { getUrl, resolveHTTPLinkOptions } from './httpUtils';
 /**
  * @internal
  */
-export type RequesterFn<
-  TRoot extends AnyRootTypes,
-  TOptions extends HTTPBatchLinkOptions<TRoot>,
-> = (
+export type RequesterFn<TOptions extends HTTPBatchLinkOptions<AnyRootTypes>> = (
   requesterOpts: ResolvedHTTPLinkOptions & {
     runtime: TRPCClientRuntime;
     type: ProcedureType;
@@ -41,12 +39,11 @@ export type RequesterFn<
 /**
  * @internal
  */
-export function createHTTPBatchLink<
-  TRoot extends AnyRootTypes,
-  TOptions extends HTTPBatchLinkOptions<TRoot>,
->(requester: RequesterFn<TRoot, TOptions>) {
+export function createHTTPBatchLink(
+  requester: RequesterFn<HTTPBatchLinkOptions<AnyRootTypes>>,
+) {
   return function httpBatchLink<TRouter extends AnyRouter>(
-    opts: TOptions,
+    opts: HTTPBatchLinkOptions<inferRootTypes<TRouter>>,
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
     const maxURLLength = opts.maxURLLength ?? Infinity;

@@ -3,7 +3,7 @@ import type { AddressInfo } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import type { AnyRouter as AnyNewRouter } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -16,19 +16,19 @@ import { WebSocket, WebSocketServer } from 'ws';
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
 
-export type CreateClientCallback = (opts: {
+export type CreateClientCallback<TRouter extends AnyRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
-}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+}) => Partial<WithTRPCConfig<TRouter>>;
 
-export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
+export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
   },
 ) {
   // http

@@ -6,10 +6,9 @@ import { createHTTPBatchLink } from './internals/createHTTPBatchLink';
 import { jsonHttpRequester } from './internals/httpUtils';
 import type { Operation } from './types';
 
-const batchRequester: RequesterFn<
-  AnyRootTypes,
-  HTTPBatchLinkOptions<AnyRootTypes>
-> = (requesterOpts) => {
+const batchRequester: RequesterFn<HTTPBatchLinkOptions<AnyRootTypes>> = (
+  requesterOpts,
+) => {
   return (batchOps) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);

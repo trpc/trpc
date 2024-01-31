@@ -18,10 +18,9 @@ export type HTTPBatchStreamLinkOptions<TRoot extends AnyRootTypes> =
     textDecoder?: TextDecoderEsque;
   };
 
-const streamRequester: RequesterFn<
-  AnyRootTypes,
-  HTTPBatchStreamLinkOptions<AnyRootTypes>
-> = (requesterOpts) => {
+const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions<AnyRootTypes>> = (
+  requesterOpts,
+) => {
   const textDecoder = getTextDecoder(requesterOpts.opts.textDecoder);
   return (batchOps, unitResolver) => {
     const path = batchOps.map((op) => op.path).join(',');

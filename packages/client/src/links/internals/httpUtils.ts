@@ -34,7 +34,6 @@ export type HTTPLinkBaseOptions<
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
-  // TODO: add tranformers here
 } & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
