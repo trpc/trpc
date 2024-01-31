@@ -1,4 +1,0 @@
-// @ts-check
-/** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
-const typedocSidebar = { items: [{"type":"category","label":"Interfaces","items":[{"type":"doc","id":"next/interfaces/WithTRPCNoSSROptions","label":"WithTRPCNoSSROptions"},{"type":"doc","id":"next/interfaces/WithTRPCSSROptions","label":"WithTRPCSSROptions"}]},{"type":"category","label":"Type Aliases","items":[{"type":"doc","id":"next/type-aliases/WithTRPCConfig","label":"WithTRPCConfig"}]},{"type":"category","label":"Functions","items":[{"type":"doc","id":"next/functions/createTRPCNext","label":"createTRPCNext"},{"type":"doc","id":"next/functions/withTRPC","label":"withTRPC"}]}]};
-module.exports = typedocSidebar.items;
