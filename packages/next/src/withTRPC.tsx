@@ -65,10 +65,10 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
       abortOnUnmount?: boolean;
     };
 
-interface WithTRPCOptions<TRouter extends AnyRouter>
-  extends CreateTRPCReactOptions<TRouter> {
-  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
-}
+type WithTRPCOptions<TRouter extends AnyRouter> =
+  CreateTRPCReactOptions<TRouter> & {
+    config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+  } & TransformerOptions<inferRootTypes<TRouter>>;
 
 export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
@@ -79,12 +79,12 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
       ctx: NextPageContext;
       clientErrors: TRPCClientError<TRouter>[];
     }) => ResponseMeta;
-  } & TransformerOptions<inferRootTypes<TRouter>>;
+  };
 
-export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
-  ssr?: false;
-}
+export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
+  WithTRPCOptions<TRouter> & {
+    ssr?: false;
+  };
 
 export function withTRPC<
   TRouter extends AnyRouter,
@@ -132,14 +132,16 @@ export function withTRPC<
 
       // allow normal components to be wrapped, not just app/pages
       const trpcState = props.pageProps?.trpcState;
+
       const hydratedState: DehydratedState | undefined = React.useMemo(() => {
         if (!trpcState) {
           return trpcState;
         }
 
-        return transformer.output.deserialize(trpcState);
+        return transformer.input.deserialize(trpcState);
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [trpcState, trpcClient]);
+
       return (
         <trpc.Provider
           abortOnUnmount={(prepassProps as any).abortOnUnmount ?? false}
@@ -262,7 +264,7 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps['trpcState'] = transformer.output.serialize(
+        pageProps['trpcState'] = transformer.input.serialize(
           dehydratedCacheWithErrors,
         );
 

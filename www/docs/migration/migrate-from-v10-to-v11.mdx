@@ -26,7 +26,27 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 ### Transformers are moved to links (breaking)
 
+> TypeScript will guide you through this migration
+>
+> Only applies if you use data transformers.
+
 You now setup data transforemrs in the `links`-array instead of when you initialize the tRPC-client;
+
+Wherever you have a HTTP Link you have to add `transformer: superjson` if you use transformers:
+
+```ts
+httpBatchLink({
+  url: '/api/trpc',
+  transformer: superjson, // <-- add this
+});
+```
+
+```ts
+createTRPCNext<AppRouter>({
+  // [..]
+  transformer: superjson, // <-- add this
+});
+```
 
 ### Added support for short-hand router definitions (non-breaking)
 
@@ -87,7 +107,7 @@ See [useSuspenseQueries](../client/react/suspense.md#usesuspensequeries)
 
 https://github.com/trpc/trpc/pull/5226
 
-### Refactor internal generics
+### Refactor internal generics (breaking)
 
 We have refactored our internal generics and made them more readable (TODO: link procedure builder sauce)
 
@@ -95,12 +115,12 @@ We have refactored our internal generics and made them more readable (TODO: link
 
 Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-guide
 
-### `wsLink` improvements
+### `wsLink` improvements (minor)
 
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
 - Added new `lazy` option that makes the websocket automatically disconnect when there are no pending requests
 
-### `rawInput` in middleware is now a `getRawInput`
+### `rawInput` in middleware is now a `getRawInput` (breaking)
 
 While we're not doing anything differently internally (just yet) this is help support a much requested feature in tRPC: content types other than JSON.
 
