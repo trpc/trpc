@@ -23,6 +23,7 @@ export type CreateClientCallback<TRouter extends AnyRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
+  transformer?: DataTransformerOptions;
 }) => Partial<WithTRPCConfig<TRouter>>;
 
 export function routerToServerAndClientNew<TRouter extends AnyRouter>(
