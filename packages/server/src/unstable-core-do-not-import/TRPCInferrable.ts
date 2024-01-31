@@ -1,16 +1,33 @@
 import type { AnyRootTypes, RootConfig } from './rootConfig';
-import type { AnyRouter } from './router';
 
+type RouterLike = {
+  _def: {
+    _config: RootConfig<AnyRootTypes>;
+  };
+};
+type InitLike = {
+  _config: RootConfig<AnyRootTypes>;
+};
+type RootConfigLike = {
+  $types: AnyRootTypes;
+};
+/**
+ * Anything that can be inferred to the root config types
+ */
 export type TRPCInferrable =
-  | AnyRouter
-  | AnyRootTypes
-  | RootConfig<AnyRootTypes>;
+  | RouterLike
+  | InitLike
+  | RootConfigLike
+  | AnyRootTypes;
+
 export type inferRootTypes<TInferrable extends TRPCInferrable> =
   TInferrable extends AnyRootTypes
     ? TInferrable
-    : TInferrable extends RootConfig<AnyRootTypes>
+    : TInferrable extends RootConfigLike
     ? TInferrable['$types']
-    : TInferrable extends AnyRouter
+    : TInferrable extends InitLike
+    ? TInferrable['_config']['$types']
+    : TInferrable extends RouterLike
     ? TInferrable['_def']['_config']['$types']
     : never;
 

@@ -8,6 +8,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferRootTypes,
   MaybePromise,
   RootConfig,
   Simplify,
@@ -77,7 +78,7 @@ export function experimental_createServerActionHandler<
 >(
   t: TInstance,
   opts: {
-    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
+    createContext: () => MaybePromise<inferRootTypes<TInstance>['ctx']>;
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true
@@ -94,12 +95,12 @@ export function experimental_createServerActionHandler<
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
   ): TRPCActionHandler<
-    Simplify<inferActionDef<TInstance['_config']['$types'], TProc>>
+    Simplify<inferActionDef<inferRootTypes<TInstance>, TProc>>
   > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      const ctx: inferRootTypes<TInstance>['ctx'] | undefined = undefined;
       try {
         const ctx = await createContext();
         if (normalizeFormData && isFormData(rawInput)) {

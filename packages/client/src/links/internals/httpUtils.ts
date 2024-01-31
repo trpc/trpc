@@ -17,11 +17,7 @@ import type {
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
 import type { TextDecoderEsque } from '../internals/streamingUtils';
-import type {
-  HTTPHeaders,
-  PromiseAndCancel,
-  TRPCClientRuntime,
-} from '../types';
+import type { HTTPHeaders, PromiseAndCancel } from '../types';
 
 /**
  * @internal
@@ -83,14 +79,14 @@ export interface HTTPResult {
 }
 
 type GetInputOptions = {
-  runtime: TRPCClientRuntime;
+  transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
 
 function getInput(opts: GetInputOptions) {
   return 'input' in opts
-    ? opts.runtime.transformer.serialize(opts.input)
+    ? opts.transformer.input.serialize(opts.input)
     : arrayToDict(
-        opts.inputs.map((_input) => opts.runtime.transformer.serialize(_input)),
+        opts.inputs.map((_input) => opts.transformer.input.serialize(_input)),
       );
 }
 

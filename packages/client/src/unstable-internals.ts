@@ -23,7 +23,9 @@ export type inferTransformerParameters<TInferrable extends TRPCInferrable> =
           transformer: true;
         }>,
       ];
-
+export type CoercedTransformerParameters = {
+  transformer?: DataTransformerOptions;
+};
 export type TransformerOptionYes = {
   /**
    * Data transformer

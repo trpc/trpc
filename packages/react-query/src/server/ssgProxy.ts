@@ -7,12 +7,16 @@ import type {
 import { dehydrate } from '@tanstack/react-query';
 import type { inferRouterClient, TRPCClientError } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
+import {
+  getTransformer,
+  type TransformerOptions,
+} from '@trpc/client/unstable-internals';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  DataTransformerOptions,
   inferProcedureInput,
   inferRouterContext,
   inferTransformedProcedureOutput,
@@ -34,11 +38,10 @@ import type {
 } from '../shared';
 import { getQueryClient, getQueryType } from '../shared';
 
-interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
+type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: DataTransformerOptions;
-}
+} & TransformerOptions<TRouter['_def']['_config']['$types']>;
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
@@ -131,17 +134,18 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,
 ) {
   const queryClient = getQueryClient(opts);
+  const transformer = getTransformer(
+    (opts as CoercedTransformerParameters).transformer,
+  );
 
   const resolvedOpts: {
     serialize: (obj: unknown) => any;
     query: (queryOpts: { path: string; input: unknown }) => Promise<unknown>;
   } = (() => {
     if ('router' in opts) {
-      const { transformer, ctx, router } = opts;
+      const { ctx, router } = opts;
       return {
-        serialize: transformer
-          ? ('input' in transformer ? transformer.input : transformer).serialize
-          : (obj) => obj,
+        serialize: transformer.output.serialize,
         query: (queryOpts) => {
           return callProcedure({
             procedures: router._def.procedures,
@@ -161,7 +165,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     return {
       query: (queryOpts) =>
         untypedClient.query(queryOpts.path, queryOpts.input),
-      serialize: (obj) => untypedClient.runtime.transformer.serialize(obj),
+      serialize: (obj) => transformer.output.serialize(obj),
     };
   })();
 

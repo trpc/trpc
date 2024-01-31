@@ -1,3 +1,4 @@
+import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRootTypes,
@@ -49,6 +50,7 @@ export function createHTTPBatchLink<
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
     const maxURLLength = opts.maxURLLength ?? Infinity;
+    const transformer = getTransformer(opts.transformer);
 
     // initialized config
     return (runtime) => {
@@ -63,7 +65,7 @@ export function createHTTPBatchLink<
 
           const url = getUrl({
             ...resolvedOpts,
-            runtime,
+            transformer,
             type,
             path,
             inputs,
@@ -100,10 +102,7 @@ export function createHTTPBatchLink<
           promise
             .then((res) => {
               _res = res;
-              const transformed = transformResult(
-                res.json,
-                runtime.transformer,
-              );
+              const transformed = transformResult(res.json, transformer.output);
 
               if (!transformed.ok) {
                 observer.error(
