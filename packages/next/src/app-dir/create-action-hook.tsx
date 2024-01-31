@@ -78,7 +78,7 @@ export function experimental_serverActionLink<
 >(
   ...args: TRPCInferrable extends TInferrable
     ? [
-        TypeError<'Generic parameter missing in `createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
+        TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
       ]
     : inferRootTypes<TInferrable>['transformer'] extends true
     ? [
@@ -133,7 +133,7 @@ export function experimental_createActionHook<
   TInferrable extends TRPCInferrable,
 >(
   opts: TRPCInferrable extends TInferrable
-    ? TypeError<'Generic parameter missing in `createActionHook<HERE>()`'>
+    ? TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()`'>
     : CreateTRPCClientOptions<TInferrable>,
 ) {
   type ActionContext = {
