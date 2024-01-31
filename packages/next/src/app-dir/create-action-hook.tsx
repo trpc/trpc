@@ -1,8 +1,4 @@
-import type {
-  CreateTRPCClientOptions,
-  TRPCLink,
-  TRPCRequestOptions,
-} from '@trpc/client';
+import type { TRPCLink, TRPCRequestOptions } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
 import type {
   CoercedTransformerParameters,
@@ -73,11 +69,7 @@ type ActionContext = {
 };
 
 type inferTransformerParameters<TInferrable extends TRPCInferrable> =
-  TRPCInferrable extends TInferrable
-    ? [
-        opts: TypeError<'You must define a generic parameter to this function or the parent function'>,
-      ]
-    : inferRootTypes<TInferrable> extends { transformer: false }
+  inferRootTypes<TInferrable> extends { transformer: false }
     ? [
         opts?: TransformerOptions<{
           transformer: false;
@@ -133,11 +125,17 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
 // ts-prune-ignore-next
 export function experimental_createActionHook<
   TInferrable extends TRPCInferrable,
->(opts: CreateTRPCClientOptions<TInferrable>) {
+>(
+  opts: TRPCInferrable extends TInferrable
+    ? TypeError<'Generic parameter missing to `createActionHook<HERE>()`'>
+    : TInferrable,
+) {
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
-  const client = createTRPCUntypedClient(opts);
+  const client = createTRPCUntypedClient(
+    opts as Exclude<typeof opts, TypeError<any>>,
+  );
   return function useAction<TDef extends ActionHandlerDef>(
     handler: TRPCActionHandler<TDef>,
     useActionOpts?: UseTRPCActionOptions<Simplify<TDef>>,

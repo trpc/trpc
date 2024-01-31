@@ -408,4 +408,13 @@ describe('type tests', () => {
       await hook.mutateAsync(null);
     });
   });
+
+  test('makes sure we have defined a generic', async () => {
+    experimental_createActionHook(
+      // @ts-expect-error missing generic param
+      {
+        links: [],
+      },
+    );
+  });
 });

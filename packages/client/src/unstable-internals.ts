@@ -2,27 +2,9 @@ import type {
   AnyRootTypes,
   CombinedDataTransformer,
   DataTransformerOptions,
-  inferRootTypes,
-  TRPCInferrable,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 
-export type inferTransformerParameters<TInferrable extends TRPCInferrable> =
-  TRPCInferrable extends TInferrable
-    ? [
-        opts: TypeError<'You must define a generic parameter to this function or the parent function'>,
-      ]
-    : inferRootTypes<TInferrable> extends { transformer: false }
-    ? [
-        opts?: TransformerOptions<{
-          transformer: false;
-        }>,
-      ]
-    : [
-        opts: TransformerOptions<{
-          transformer: true;
-        }>,
-      ];
 export type CoercedTransformerParameters = {
   transformer?: DataTransformerOptions;
 };
