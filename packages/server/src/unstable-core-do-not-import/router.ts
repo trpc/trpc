@@ -184,7 +184,8 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       const aggregate: RouterRecord = omitPrototype({});
       for (const [key, item] of Object.entries(from ?? {})) {
         if (isRouter(item)) {
-          aggregate[key] = step(item._def.record, [...path, key]);
+          aggregate[key] = item._def.record;
+          mergeWithoutOverrides(procedures, item._def.procedures);
           continue;
         }
         if (!isProcedure(item)) {
