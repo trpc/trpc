@@ -36,10 +36,6 @@ export const trpc = createTRPCNext<AppRouter>({
      */
     return {
       /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
-      /**
        * @link https://trpc.io/docs/v11/client/links
        */
       links: [
@@ -51,6 +47,10 @@ export const trpc = createTRPCNext<AppRouter>({
         }),
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          /**
+           * @link https://trpc.io/docs/v11/data-transformers
+           */
+          transformer: superjson,
         }),
       ],
       /**

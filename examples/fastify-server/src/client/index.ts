@@ -15,14 +15,16 @@ async function start() {
   const urlEnd = `localhost:${port}${prefix}`;
   const wsClient = createWSClient({ url: `ws://${urlEnd}` });
   const trpc = createTRPCClient<AppRouter>({
-    transformer: superjson,
     links: [
       splitLink({
         condition(op) {
           return op.type === 'subscription';
         },
-        true: wsLink({ client: wsClient }),
-        false: httpBatchLink({ url: `http://${urlEnd}` }),
+        true: wsLink({ client: wsClient, transformer: superjson }),
+        false: httpBatchLink({
+          url: `http://${urlEnd}`,
+          transformer: superjson,
+        }),
       }),
     ],
   });

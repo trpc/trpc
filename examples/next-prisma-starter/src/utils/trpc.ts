@@ -52,10 +52,6 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
      */
     return {
       /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer,
-      /**
        * @link https://trpc.io/docs/v11/client/links
        */
       links: [
@@ -85,6 +81,10 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
             } = ctx.req.headers;
             return headers;
           },
+          /**
+           * @link https://trpc.io/docs/v11/data-transformers
+           */
+          transformer,
         }),
       ],
       /**
@@ -122,6 +122,10 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
 
     return {};
   },
+  /**
+   * @link https://trpc.io/docs/v11/data-transformers
+   */
+  transformer,
 });
 
 export type RouterInput = inferRouterInputs<AppRouter>;
