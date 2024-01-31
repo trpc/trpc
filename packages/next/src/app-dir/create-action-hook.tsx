@@ -72,23 +72,26 @@ type ActionContext = {
   _action: (...args: any[]) => Promise<any>;
 };
 
-type inferTransformerParameters<TInferrable extends TRPCInferrable> =
-  inferRootTypes<TInferrable> extends { transformer: false }
+// ts-prune-ignore-next
+export function experimental_serverActionLink<
+  TInferrable extends TRPCInferrable,
+>(
+  ...args: TRPCInferrable extends TInferrable
     ? [
+        TypeError<'Generic parameter missing to `createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
+      ]
+    : inferRootTypes<TInferrable>['transformer'] extends true
+    ? [
+        opts: TransformerOptions<{
+          transformer: true;
+        }>,
+      ]
+    : [
         opts?: TransformerOptions<{
           transformer: false;
         }>,
       ]
-    : [
-        opts: TransformerOptions<{
-          transformer: true;
-        }>,
-      ];
-
-// ts-prune-ignore-next
-export function experimental_serverActionLink<
-  TInferrable extends TRPCInferrable,
->(...args: inferTransformerParameters<TInferrable>): TRPCLink<TInferrable> {
+): TRPCLink<TInferrable> {
   const [opts] = args as [CoercedTransformerParameters];
   const transformer = getTransformer(opts?.transformer);
   return () =>
@@ -125,23 +128,19 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
   onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
 }
-
-type GenericMissing =
-  TypeError<'Generic parameter missing to `createActionHook<typeof t>()`'>;
-
 // ts-prune-ignore-next
 export function experimental_createActionHook<
   TInferrable extends TRPCInferrable,
 >(
   opts: TRPCInferrable extends TInferrable
-    ? GenericMissing
+    ? TypeError<'Generic parameter missing to `createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>
     : CreateTRPCClientOptions<TInferrable>,
 ) {
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
   const client = createTRPCUntypedClient(
-    opts as Exclude<typeof opts, GenericMissing>,
+    opts as Exclude<typeof opts, TypeError<any>>,
   );
   return function useAction<TDef extends ActionHandlerDef>(
     handler: TRPCActionHandler<TDef>,
