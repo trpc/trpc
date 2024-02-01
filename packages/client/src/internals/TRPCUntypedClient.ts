@@ -5,7 +5,7 @@ import type {
 import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
-  ClientInferrable,
+  InferrableClientTypes,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
@@ -35,7 +35,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends ClientInferrable> = {
+export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
   links: TRPCLink<TRouter>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };

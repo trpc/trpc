@@ -1,6 +1,6 @@
 import type {
-  ClientInferrable,
   inferErrorShape,
+  InferrableClientTypes,
   Maybe,
   TRPCErrorResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -15,7 +15,7 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly shape: Maybe<TShape>;
   readonly data: Maybe<TShape['data']>;
 }
-export type TRPCClientErrorLike<TInferrable extends ClientInferrable> =
+export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
   TRPCClientErrorBase<inferErrorShape<TInferrable>>;
 
 function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
@@ -38,7 +38,7 @@ function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
   );
 }
 
-export class TRPCClientError<TRouterOrProcedure extends ClientInferrable>
+export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
@@ -78,7 +78,7 @@ export class TRPCClientError<TRouterOrProcedure extends ClientInferrable>
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
-  public static from<TRouterOrProcedure extends ClientInferrable>(
+  public static from<TRouterOrProcedure extends InferrableClientTypes>(
     _cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {

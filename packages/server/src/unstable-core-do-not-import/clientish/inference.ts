@@ -3,7 +3,7 @@ import type { AnyProcedure, inferProcedureInput } from '../procedure';
 import type { AnyRouter, RouterRecord } from '../router';
 import type {
   AnyClientRootTypes,
-  ClientInferrable,
+  InferrableClientTypes,
   inferRootTypes,
 } from './inferrable';
 import type { Serialize } from './serialize';
@@ -13,7 +13,7 @@ import type { Serialize } from './serialize';
  */
 
 export type inferTransformedProcedureOutput<
-  TInferrable extends ClientInferrable,
+  TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,
 > = inferRootTypes<TInferrable>['transformer'] extends false
   ? Serialize<TProcedure['_def']['_output_out']>
@@ -21,7 +21,7 @@ export type inferTransformedProcedureOutput<
 /** @internal */
 
 export type inferTransformedSubscriptionOutput<
-  TInferrable extends ClientInferrable,
+  TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,
 > = inferRootTypes<TInferrable>['transformer'] extends false
   ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>

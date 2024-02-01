@@ -11,7 +11,7 @@ import type {
 import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
-  ClientInferrable,
+  InferrableClientTypes,
   inferRootTypes,
   MaybePromise,
   ProcedureOptions,
@@ -74,9 +74,9 @@ type ActionContext = {
 
 // ts-prune-ignore-next
 export function experimental_serverActionLink<
-  TInferrable extends ClientInferrable,
+  TInferrable extends InferrableClientTypes,
 >(
-  ...args: ClientInferrable extends TInferrable
+  ...args: InferrableClientTypes extends TInferrable
     ? [
         TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
       ]
@@ -130,9 +130,9 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
 }
 // ts-prune-ignore-next
 export function experimental_createActionHook<
-  TInferrable extends ClientInferrable,
+  TInferrable extends InferrableClientTypes,
 >(
-  opts: ClientInferrable extends TInferrable
+  opts: InferrableClientTypes extends TInferrable
     ? TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()`'>
     : CreateTRPCClientOptions<TInferrable>,
 ) {

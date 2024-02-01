@@ -1,1 +1,1 @@
-export * from './unstable-internals/transformer';
+export * from './internals/transformer';
