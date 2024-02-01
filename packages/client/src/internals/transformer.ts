@@ -1,10 +1,13 @@
 import type {
-  AnyRootTypes,
+  AnyClientRootTypes,
   CombinedDataTransformer,
   DataTransformerOptions,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 
+/**
+ * @internal
+ */
 export type CoercedTransformerParameters = {
   transformer?: DataTransformerOptions;
 };
@@ -28,8 +31,11 @@ type TransformerOptionNo = {
   transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
 };
 
+/**
+ * @internal
+ */
 export type TransformerOptions<
-  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+  TRoot extends Pick<AnyClientRootTypes, 'transformer'>,
 > = TRoot['transformer'] extends true
   ? TransformerOptionYes
   : TransformerOptionNo;
@@ -37,6 +43,9 @@ export type TransformerOptions<
  * @internal
  */
 
+/**
+ * @internal
+ */
 export function getTransformer(
   transformer:
     | TransformerOptions<{ transformer: false }>['transformer']
