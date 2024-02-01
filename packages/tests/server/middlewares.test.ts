@@ -81,7 +81,8 @@ describe('standalone middleware', () => {
   test('without ctx', () => {
     const addBarToCtxMiddleware = experimental_trpcMiddleware().create(
       (opts) => {
-        expectTypeOf(opts.ctx).toEqualTypeOf<object>();
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        expectTypeOf(opts.ctx).toEqualTypeOf<object | {}>();
         return opts.next({
           ctx: {
             bar: 'bar' as const,

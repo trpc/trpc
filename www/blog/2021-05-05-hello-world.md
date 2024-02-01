@@ -55,7 +55,7 @@ main();
 
 **That's all you need to get type safety!** The `result` is type inferred from what the backend returns in the function. The data from input is also inferred from the return of the validator, so the data is safe to use straight up - actually, you _have to_ pass the input data through a validator (& tRPC works out-of-the-box with zod/yup/custom validators).
 
-Here's a CodeSandbox link where you can play with the example above: https://githubbox.com/trpc/trpc/tree/next/examples/standalone-server (have a look at the terminal output rather than the preview!)
+Here's a CodeSandbox link where you can play with the example above: [https://githubbox.com/trpc/trpc/tree/next/examples/standalone-server](https://githubbox.com/trpc/trpc/tree/next/examples/standalone-server) (have a look at the terminal output rather than the preview!)
 
 **_Wat? I'm importing code from my backend to my client?_ - No, you're actually not**
 
@@ -63,7 +63,7 @@ Even though it might look like it, no code is shared from the server to the clie
 
 There's no code generation involved, you can this to your app today as long as you have a way to share types from the server to the client (hopefully you're using a monorepo already).
 
-## But we're only getting started!
+## But we're only getting started
 
 I mentioned before that there's a React-library, the way to use the data above in React you do:
 
@@ -79,7 +79,7 @@ You can add tRPC today with your existing brownfield project (got adapters for E
 
 Mutations are as simple to do as queries, they're actually the same underneath, but are just exposed differently as syntactic sugar and produce a HTTP POST rather than a GET request.
 
-Here's a little more complicated example using a database, taken from our TodoMVC example at todomvc.trpc.io / https://github.com/trpc/trpc/tree/next/examples/next-prisma-todomvc
+Here's a little more complicated example using a database, taken from our TodoMVC example at todomvc.trpc.io / [https://github.com/trpc/trpc/tree/next/examples/next-prisma-todomvc](https://github.com/trpc/trpc/tree/next/examples/next-prisma-todomvc)
 
 ```tsx
 const todoRouter = createRouter().mutation('add', {
@@ -122,7 +122,7 @@ return (
 )
 ```
 
-## End, for now.
+## End, for now
 
 Anyway, as I said, I just wanted to get the ball rolling. There's a lot more things:
 

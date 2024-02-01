@@ -9,6 +9,7 @@ Links enable you to customize the flow of data between the tRPC Client and Serve
 
 You can compose links together into an array that you can provide to the tRPC client configuration via the `links` property, which represents a link chain. This means that the tRPC client will execute the links in the order they are added to the `links` array when doing a request and will execute them again in reverse when it's handling a response. Here's a visual representation of the link chain:
 
+<!-- markdownlint-disable MD033 -->
 <div align="center" style={{marginBottom: '12px'}}>
   <img src="/img/links-diagram.svg" style={{background: 'white'}} alt="tRPC Link Diagram"/>
   <small>tRPC Link Diagram. Based on <a href="https://www.apollographql.com/docs/react/api/link/introduction/" target="_blank">Apollo's</a>.</small>

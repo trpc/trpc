@@ -1,4 +1,3 @@
-import React from 'react';
 import { companies } from './CompaniesUsing.script.output';
 import { SectionTitle } from './SectionTitle';
 

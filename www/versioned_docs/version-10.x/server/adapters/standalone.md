@@ -13,6 +13,7 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
 
 ## Example app
 
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>

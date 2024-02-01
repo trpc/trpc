@@ -13,7 +13,8 @@ Works like react-query's mutations - [see their docs](https://tanstack.com/query
 
 ### Example
 
-<details><summary>Backend code</summary>
+<details>
+<summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';

@@ -247,7 +247,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     expect(onErrorMock).toHaveBeenCalledTimes(1);
     expect(onCompleteMock).toHaveBeenCalledTimes(0);
   });
-  expect(onErrorMock.mock.calls[0]![0]!).toMatchInlineSnapshot(
+  expect(onErrorMock.mock.calls[0]![0]).toMatchInlineSnapshot(
     `[TRPCClientError: WebSocket closed prematurely]`,
   );
   expect(onErrorMock.mock.calls[0]![0]!.originalError.name).toBe(

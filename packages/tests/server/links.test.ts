@@ -498,10 +498,10 @@ describe('loggerLink', () => {
       .unsubscribe();
 
     expect(logger.log.mock.calls).toHaveLength(2);
-    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[0]![0]).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[0]![1]!).toMatchInlineSnapshot(`
+    expect(logger.log.mock.calls[0]![1]).toMatchInlineSnapshot(`
       "
           background-color: #72e3ff;
           color: black;
@@ -523,10 +523,10 @@ describe('loggerLink', () => {
     })
       .subscribe({})
       .unsubscribe();
-    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[0]![0]).toMatchInlineSnapshot(
       `"%c >> subscription #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
       `"%c << subscription #1 %cn/a%c %O"`,
     );
   });
@@ -545,10 +545,10 @@ describe('loggerLink', () => {
       .subscribe({})
       .unsubscribe();
 
-    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[0]![0]).toMatchInlineSnapshot(
       `"%c >> mutation #1 %cn/a%c %O"`,
     );
-    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
       `"%c << mutation #1 %cn/a%c %O"`,
     );
   });
@@ -567,10 +567,10 @@ describe('loggerLink', () => {
       .subscribe({})
       .unsubscribe();
 
-    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[0]![0]).toMatchInlineSnapshot(
       `"%c >> query #1 %cn/a%c %O"`,
     );
-    expect(logger.error.mock.calls[0]![0]!).toMatchInlineSnapshot(
+    expect(logger.error.mock.calls[0]![0]).toMatchInlineSnapshot(
       `"%c << query #1 %cn/a%c %O"`,
     );
   });
@@ -596,10 +596,10 @@ describe('loggerLink', () => {
       .subscribe({})
       .unsubscribe();
 
-    expect(logger.log.mock.calls[0]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[0]![0]).toMatchInlineSnapshot(
       `"\x1b[30;46m >> query \x1b[1;30;46m #1 n/a \x1b[0m"`,
     );
-    expect(logger.log.mock.calls[1]![0]!).toMatchInlineSnapshot(
+    expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
       `"\x1b[97;46m << query \x1b[1;97;46m #1 n/a \x1b[0m"`,
     );
   });

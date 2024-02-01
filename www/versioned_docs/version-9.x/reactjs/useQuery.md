@@ -20,7 +20,9 @@ You'll notice that you get autocompletion on the `path` and automatic typesafety
 
 ### Example
 
-<details><summary>Backend code</summary>
+<!-- markdownlint-disable MD033 -->
+<details>
+<summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';

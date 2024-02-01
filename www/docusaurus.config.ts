@@ -1,8 +1,9 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
+import type { Config } from '@docusaurus/types';
+import prismReact from 'prism-react-renderer';
+import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc';
+import { parseEnv } from './src/utils/env';
 
-const { parseEnv } = require('./src/utils/env');
-const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
+console.log('prism', prismReact);
 
 const env = parseEnv(process.env);
 
@@ -23,7 +24,7 @@ const poweredByVercel = `
 `.trim();
 
 /** @type {import('@docusaurus/types').Config} */
-module.exports = {
+export default {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -39,7 +40,7 @@ module.exports = {
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
     prism: {
-      theme: require('prism-react-renderer/themes/vsDark'),
+      theme: prismReact?.themes.vsDark,
     },
     algolia: {
       appId: 'BTGPSR4MOE',
@@ -244,7 +245,7 @@ module.exports = {
       },
     ],
     [
-      'docusaurus-preset-shiki-twoslash',
+      'remark-shiki-twoslash',
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme
@@ -259,12 +260,12 @@ module.exports = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [
-    require.resolve('./docusaurus.twitterReload.js'),
-    require.resolve('./docusaurus.preferredTheme.js'),
-  ],
+  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
 
   customFields: {
     env,
   },
-};
+  markdown: {
+    format: 'detect',
+  },
+} satisfies Config;

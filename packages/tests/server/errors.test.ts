@@ -367,7 +367,7 @@ test('retain stack trace', async () => {
 
   expect(onError).toHaveBeenCalledTimes(1);
 
-  const serverOnErrorOpts = onError.mock.calls[0]![0]!;
+  const serverOnErrorOpts = onError.mock.calls[0]![0];
   const serverError = serverOnErrorOpts.error;
   expect(serverError).toBeInstanceOf(TRPCError);
   expect(serverError.cause).toBeInstanceOf(CustomError);

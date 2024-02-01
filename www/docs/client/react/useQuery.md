@@ -39,7 +39,10 @@ You'll notice that you get autocompletion on the `input` based on what you have 
 
 ### Example
 
-<details><summary>Backend code</summary>
+<!-- markdownlint-disable MD033 -->
+<details>
+<summary>Backend code</summary>
+<!-- markdownlint-enable MD033 -->
 
 ```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';

@@ -34,7 +34,6 @@ The philosophy of the _"Zero-API data layer"_ is the main common denominator in 
 
 Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js and adding it into core - resulting in a more integrated developer experience. tRPC is a set of libraries that mainly focuses on the API-layer that can be used with any app or framework, resulting in no framework lock-in of React or Blitz's fork of Next.js.
 
-
 ### Benefits with tRPC
 
 - Easy HTTP caching of queries as requests are made with `GET` rather than `POST` _(Blitz is planning on adding support for this too)_
@@ -48,7 +47,6 @@ Blitz is a full-stack framework & achieves this by maintaining a fork of Next.js
 - Zero-conf SSR with `ssr: true` in `_app.tsx` does a prepass of all `useQuery` on the server
 - Configurable data flow between client/server with links
 - Single API-endpoint which reduces amounts of cold starts in serverless environments
-
 
 ### Benefits with Blitz.js
 

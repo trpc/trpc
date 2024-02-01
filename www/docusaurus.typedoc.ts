@@ -1,23 +1,17 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-// @ts-check
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-const fs = require('fs');
-const path = require('path');
-/**
- * @param {string[]} directories
- */
-function generateTypedocDocusaurusPlugins(directories) {
+export function generateTypedocDocusaurusPlugins(directories: string[]) {
   const withEntryPoints = directories.map((directory) => {
     const pkgJson = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, `../packages/${directory}/package.json`),
+      readFileSync(
+        join(__dirname, `../packages/${directory}/package.json`),
         'utf-8',
       ),
-    );
+    ) as {
+      exports: Record<string, string | { import: string }>;
+    };
 
-    /**
-     * @type {Record<string, string | { import: string }>}
-     */
     const exports = pkgJson.exports;
 
     const entrypoints = Object.entries(exports)
@@ -86,14 +80,12 @@ function generateTypedocDocusaurusPlugins(directories) {
 
         // Markdown options
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter
-        frontmatterGlobals: {
-          pagination_prev: null,
-          pagination_next: null,
-          custom_edit_url: null,
-        },
+        // frontmatterGlobals: {
+        //   pagination_prev: null,
+        //   pagination_next: null,
+        //   custom_edit_url: null,
+        // },
       },
     ];
   });
 }
-
-module.exports = { generateTypedocDocusaurusPlugins };

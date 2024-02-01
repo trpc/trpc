@@ -5,7 +5,7 @@ sidebar_label: Introduction
 slug: /client/vanilla
 ---
 
-# tRPC Client
+## tRPC Client
 
 The "Vanilla" tRPC client can be used to call your API procedures as if they are local functions, enabling a seamless development experience.
 

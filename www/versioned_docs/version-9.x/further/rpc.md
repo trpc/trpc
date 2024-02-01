@@ -5,7 +5,7 @@ sidebar_label: HTTP RPC Specification
 slug: /rpc
 ---
 
-## Methods <-> Type mapping
+## Methods \<-> Type mapping
 
 | HTTP Method  | Mapping           | Notes                                                                                                         |
 | ------------ | ----------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -128,7 +128,8 @@ In order to have a specification that works regardless of the transport layer we
 
 ### Successful Response
 
-<details><summary>Example JSON Response</summary>
+<details>
+<summary>Example JSON Response</summary>
 
 ```json
 {
@@ -158,7 +159,8 @@ In order to have a specification that works regardless of the transport layer we
 
 ### Error Response
 
-<details><summary>Example JSON Response</summary>
+<details>
+<summary>Example JSON Response</summary>
 
 ```json
 [
@@ -188,7 +190,7 @@ In order to have a specification that works regardless of the transport layer we
 - If the response has different statuses we send back `207 Multi-Status` _(e.g. if one call errored and one succeeded) _
 - For more on errors and how customize them see [Error Formatting](../server/error-formatting.md).
 
-## Error Codes <-> HTTP Status
+## Error Codes \<-> HTTP Status
 
 ```ts
 PARSE_ERROR: 400,
@@ -205,9 +207,10 @@ PAYLOAD_TOO_LARGE: 413,
 METHOD_NOT_SUPPORTED: 405,
 ```
 
-## Error Codes <-> JSON-RPC 2.0 Error Codes
+## Error Codes \<-> JSON-RPC 2.0 Error Codes
 
-<details><summary>Available codes & JSON-RPC code</summary>
+<details>
+<summary>Available codes & JSON-RPC code</summary>
 
 ```ts
 /**

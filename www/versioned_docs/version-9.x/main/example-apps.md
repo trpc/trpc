@@ -9,6 +9,7 @@ You can clone trpc and play with local examples, or play with them in the CodeSa
 
 Here's some example apps:
 
+<!-- markdownlint-disable MD033 -->
 <table width="100%">
   <thead>
     <tr>
@@ -135,7 +136,7 @@ Here's some example apps:
           <code>npx create-trpc-appx --example https://github.com/omar-dulaimi/trpc-shield/tree/master/example</code>
         </details>
       </td>
-      <td><em>n/a</em></td>      
+      <td><em>n/a</em></td>
       <td>
         <ul>
           <li><a href="https://github.com/omar-dulaimi/trpc-shield/tree/master/example">Source</a></li>

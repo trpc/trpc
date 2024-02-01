@@ -11,6 +11,7 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
 
 ## Example app
 
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>

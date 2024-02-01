@@ -11,6 +11,7 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
 
 ## Example app
 
+<!-- markdownlint-disable MD033 -->
 <table>
   <thead>
     <tr>

@@ -11,7 +11,9 @@ Works like react-query's mutations - [see their docs](https://tanstack.com/query
 
 ### Example
 
-<details><summary>Backend code</summary>
+<!-- markdownlint-disable MD033 -->
+<details>
+<summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
