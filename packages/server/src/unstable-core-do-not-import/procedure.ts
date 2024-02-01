@@ -67,6 +67,7 @@ export type AnyProcedure = Procedure<ProcedureType, any>;
 
 /**
  * @internal
+ * TODO: move to `@trpc/client`
  */
 export type inferTransformedProcedureOutput<
   TInferrable extends TRPCInferrable,
