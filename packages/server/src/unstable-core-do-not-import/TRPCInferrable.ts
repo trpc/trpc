@@ -22,7 +22,11 @@ type InitLike = {
  * Result of `initTRPC.create().router()`
  */
 type RouterLike = {
-  _def: InitLike;
+  _def: {
+    _config: {
+      $types: AnyClientRootTypes;
+    };
+  };
 };
 
 /**
@@ -46,7 +50,7 @@ export type TRPCInferrable =
  * FIXME: rename me - this is a client-side concern
  */
 export type inferRootTypes<TInferrable extends TRPCInferrable> =
-  TInferrable extends ClientTypes
+  TInferrable extends AnyClientRootTypes
     ? TInferrable
     : TInferrable extends RootConfigLike
     ? TInferrable['$types']
