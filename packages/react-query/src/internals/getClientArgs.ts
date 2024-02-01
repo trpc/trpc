@@ -9,7 +9,12 @@ export function getClientArgs<TOptions>(
   pageParam?: any,
 ) {
   const path = queryKey[0];
-  const input = queryKey[1]?.input;
-  if (pageParam) (input as any).cursor = pageParam;
+  let input = queryKey[1]?.input;
+  if (pageParam) {
+    input = {
+      ...(input ?? {}),
+      cursor: pageParam,
+    };
+  }
   return [path.join('.'), input, (opts as any)?.trpc] as const;
 }
