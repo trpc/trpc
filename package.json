@@ -14,7 +14,7 @@
     "dev-www": "turbo --filter www dev",
     "test": "FORCE_COLOR=1 turbo --filter \"@trpc/tests\" test -- --retry=1",
     "test-watch": "cd packages/tests && pnpm test-watch",
-    "ts-watch": "pnpm --parallel -r ts-watch",
+    "ts-watch": "turbo run ts-watch",
     "vitest": "cd packages/tests && pnpm vitest",
     "lint": "turbo lint",
     "lint-fix": "turbo lint -- --fix && manypkg fix && pnpm format-fix",
@@ -78,7 +78,8 @@
     "tsx": "^4.0.0",
     "turbo": "^1.10.2",
     "typescript": "^5.3.3",
-    "vitest": "^0.32.0"
+    "vitest": "^0.32.0",
+    "zod": "^3.0.0"
   },
   "pnpm": {
     "overrides": {

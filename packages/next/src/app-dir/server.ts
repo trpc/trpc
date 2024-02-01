@@ -78,7 +78,7 @@ export function experimental_createServerActionHandler<
 >(
   t: TInstance,
   opts: {
-    createContext: () => MaybePromise<inferRootTypes<TInstance>['ctx']>;
+    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true
@@ -100,7 +100,7 @@ export function experimental_createServerActionHandler<
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: inferRootTypes<TInstance>['ctx'] | undefined = undefined;
+      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
         const ctx = await createContext();
         if (normalizeFormData && isFormData(rawInput)) {
