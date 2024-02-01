@@ -87,7 +87,6 @@ test('prefetch faulty query and dehydrate', async () => {
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
-    transformer: SuperJSON,
   });
 
   await ssg.post.throwsError.prefetch();

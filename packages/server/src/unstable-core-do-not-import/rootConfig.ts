@@ -1,15 +1,14 @@
 import type { CombinedDataTransformer } from '.';
-import type { ErrorFormatter } from './error/formatter';
-import type { TRPCErrorShape } from './rpc';
+import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
 
 /**
  * The initial generics that are used in the init function
  * @internal
  */
-export interface RootConfigTypes {
+export interface RootTypes {
   ctx: object;
   meta: object;
-  errorShape: unknown;
+  errorShape: DefaultErrorShape;
   transformer: boolean;
 }
 
@@ -28,7 +27,7 @@ export const isServerDefault: boolean =
  * The tRPC root config
  * @internal
  */
-export interface RootConfig<TTypes extends RootConfigTypes> {
+export interface RootConfig<TTypes extends RootTypes> {
   /**
    * The types that are used in the config
    * @internal
@@ -43,10 +42,7 @@ export interface RootConfig<TTypes extends RootConfigTypes> {
    * Use custom error formatting
    * @link https://trpc.io/docs/v11/error-formatting
    */
-  errorFormatter: ErrorFormatter<
-    TTypes['ctx'],
-    TRPCErrorShape<number> & { [key: string]: any }
-  >;
+  errorFormatter: ErrorFormatter<TTypes['ctx'], TTypes['errorShape']>;
   /**
    * Allow `@trpc/server` to run in non-server environments
    * @warning **Use with caution**, this should likely mainly be used within testing.
@@ -72,13 +68,9 @@ export interface RootConfig<TTypes extends RootConfigTypes> {
 /**
  * @internal
  */
-export type CreateRootConfigTypes<TGenerics extends RootConfigTypes> =
-  TGenerics;
+export type CreateRootTypes<TGenerics extends RootTypes> = TGenerics;
 
-/**
- * @internal
- */
-export type AnyRootConfig = RootConfig<{
+export type AnyRootTypes = CreateRootTypes<{
   ctx: any;
   meta: any;
   errorShape: any;

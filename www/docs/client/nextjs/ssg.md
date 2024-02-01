@@ -117,7 +117,6 @@ import type { AppRouter } from './api/trpc/[trpc]';
 export const trpc = createTRPCNext<AppRouter>({
   config(opts) {
     return {
-      transformer: superjson,
       links: [
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,

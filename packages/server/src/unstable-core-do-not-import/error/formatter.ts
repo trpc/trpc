@@ -9,10 +9,7 @@ import type { TRPCError } from './TRPCError';
 /**
  * @internal
  */
-export type ErrorFormatter<
-  TContext,
-  TShape extends TRPCErrorShape<number>,
-> = (args: {
+export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (opts: {
   error: TRPCError;
   type: ProcedureType | 'unknown';
   path: string | undefined;
@@ -21,27 +18,26 @@ export type ErrorFormatter<
   shape: DefaultErrorShape;
 }) => TShape;
 
-export type ErrorFormatterShape<TType> = TType extends ErrorFormatter<
-  any,
-  infer TShape
->
-  ? TShape
-  : DefaultErrorShape;
 /**
  * @internal
  */
 export type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
   httpStatus: number;
+  /**
+   * Path to the procedure that threw the error
+   */
   path?: string;
+  /**
+   * Stack trace of the error (only in development)
+   */
   stack?: string;
 };
 
 /**
  * @internal
  */
-export interface DefaultErrorShape
-  extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
+export interface DefaultErrorShape extends TRPCErrorShape<DefaultErrorData> {
   message: string;
   code: TRPC_ERROR_CODE_NUMBER;
 }

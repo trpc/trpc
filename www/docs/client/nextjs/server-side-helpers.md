@@ -45,7 +45,6 @@ const proxyClient = createTRPCClient<AppRouter>({
       url: 'http://localhost:3000/api/trpc',
     }),
   ],
-  transformer: superjson,
 });
 
 const helpers = createServerSideHelpers({

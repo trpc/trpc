@@ -30,7 +30,6 @@ export const trpc = createTRPCNext<AppRouter>({
     if (typeof window !== 'undefined') {
       // during client requests
       return {
-        transformer: superjson, // optional - adds superjson serialization
         links: [
           httpBatchLink({
             url: '/api/trpc',
@@ -40,7 +39,6 @@ export const trpc = createTRPCNext<AppRouter>({
     }
 
     return {
-      transformer: superjson, // optional - adds superjson serialization
       links: [
         httpBatchLink({
           // The server needs to know your app's full url
@@ -81,7 +79,6 @@ export const trpc = createTRPCNext<AppRouter>({
     if (typeof window !== 'undefined') {
       // during client requests
       return {
-        transformer: superjson, // optional - adds superjson serialization
         links: [
           httpBatchLink({
             url: '/api/trpc',
@@ -91,7 +88,6 @@ export const trpc = createTRPCNext<AppRouter>({
     }
 
     return {
-      transformer: superjson, // optional - adds superjson serialization
       links: [
         httpBatchLink({
           // The server needs to know your app's full url

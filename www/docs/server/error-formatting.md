@@ -69,16 +69,22 @@ export function MyComponent() {
 **`DefaultErrorShape`:**
 
 ```ts
-interface DefaultErrorData {
+type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
   httpStatus: number;
+  /**
+   * Path to the procedure that threw the error
+   */
   path?: string;
+  /**
+   * Stack trace of the error (only in development)
+   */
   stack?: string;
-}
+};
 
-interface DefaultErrorShape
-  extends TRPCErrorShape<TRPC_ERROR_CODE_NUMBER, DefaultErrorData> {
+interface DefaultErrorShape {
   message: string;
   code: TRPC_ERROR_CODE_NUMBER;
+  data: DefaultErrorData;
 }
 ```

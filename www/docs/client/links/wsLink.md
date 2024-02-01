@@ -31,6 +31,11 @@ The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can b
 ```ts
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
+  /**
+   * Data transformer
+   * @link https://trpc.io/docs/v11/data-transformers
+   **/
+  transformer?: DataTransformerOptions;
 }
 
 function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient

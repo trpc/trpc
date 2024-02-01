@@ -5,10 +5,12 @@ import {
 } from '@trpc/client';
 import type {
   AnyProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferRootTypes,
   MaybePromise,
+  RootConfig,
   Simplify,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -28,7 +30,7 @@ import type {
   inferActionDef,
 } from './shared';
 import { generateCacheTag, isFormData } from './shared';
-import type { NextAppDirDecoratedProcedureRecord } from './types';
+import type { NextAppDirDecorateRouterRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -56,8 +58,8 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+  }) as NextAppDirDecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   >;
 }
@@ -71,12 +73,12 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: AnyRootConfig;
+    _config: RootConfig<AnyRootTypes>;
   },
 >(
   t: TInstance,
   opts: {
-    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
+    createContext: () => MaybePromise<inferRootTypes<TInstance>['ctx']>;
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true
@@ -92,11 +94,13 @@ export function experimental_createServerActionHandler<
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
-  ): TRPCActionHandler<Simplify<inferActionDef<TInstance['_config'], TProc>>> {
+  ): TRPCActionHandler<
+    Simplify<inferActionDef<inferRootTypes<TInstance>, TProc>>
+  > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      const ctx: inferRootTypes<TInstance>['ctx'] | undefined = undefined;
       try {
         const ctx = await createContext();
         if (normalizeFormData && isFormData(rawInput)) {
@@ -144,7 +148,9 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<inferActionDef<TInstance['_config'], TProc>>;
+    } as TRPCActionHandler<
+      inferActionDef<TInstance['_config']['$types'], TProc>
+    >;
   };
 }
 

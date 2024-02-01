@@ -1,4 +1,3 @@
-import type { DehydratedState } from '@tanstack/react-query';
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
@@ -31,7 +30,6 @@ import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
-  UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -490,20 +488,6 @@ export function createRootHooks<
     return [hook.map((h) => h.data), hook] as any;
   };
 
-  const useDehydratedState: UseDehydratedState<TRouter> = (
-    client,
-    trpcState,
-  ) => {
-    const transformed: DehydratedState | undefined = React.useMemo(() => {
-      if (!trpcState) {
-        return trpcState;
-      }
-
-      return client.runtime.transformer.deserialize(trpcState);
-    }, [trpcState, client]);
-    return transformed;
-  };
-
   return {
     Provider: TRPCProvider,
     createClient,
@@ -515,7 +499,6 @@ export function createRootHooks<
     useSuspenseQueries,
     useMutation,
     useSubscription,
-    useDehydratedState,
     useInfiniteQuery,
     useSuspenseInfiniteQuery,
   };

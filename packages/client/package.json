@@ -34,6 +34,36 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./links/httpBatchLink": {
+      "import": "./dist/links/httpBatchLink.mjs",
+      "require": "./dist/links/httpBatchLink.js",
+      "default": "./dist/links/httpBatchLink.js"
+    },
+    "./links/httpLink": {
+      "import": "./dist/links/httpLink.mjs",
+      "require": "./dist/links/httpLink.js",
+      "default": "./dist/links/httpLink.js"
+    },
+    "./links/loggerLink": {
+      "import": "./dist/links/loggerLink.mjs",
+      "require": "./dist/links/loggerLink.js",
+      "default": "./dist/links/loggerLink.js"
+    },
+    "./links/splitLink": {
+      "import": "./dist/links/splitLink.mjs",
+      "require": "./dist/links/splitLink.js",
+      "default": "./dist/links/splitLink.js"
+    },
+    "./links/wsLink": {
+      "import": "./dist/links/wsLink.mjs",
+      "require": "./dist/links/wsLink.js",
+      "default": "./dist/links/wsLink.js"
+    },
+    "./unstable-internals": {
+      "import": "./dist/unstable-internals.mjs",
+      "require": "./dist/unstable-internals.js",
+      "default": "./dist/unstable-internals.js"
     }
   },
   "files": [
@@ -41,6 +71,8 @@
     "src",
     "README.md",
     "package.json",
+    "links",
+    "unstable-internals",
     "!**/*.test.*"
   ],
   "dependencies": {},

@@ -3,14 +3,14 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
-  ProcedureRouterRecord,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -27,7 +27,6 @@ import type {
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCProvider,
-  UseDehydratedState,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -46,40 +45,40 @@ import type { CreateTRPCReactOptions } from './shared/types';
  * @internal
  */
 export interface ProcedureUseQuery<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > {
   <
     TQueryFnData extends inferTransformedProcedureOutput<
-      TConfig,
+      TRoot,
       TProcedure
-    > = inferTransformedProcedureOutput<TConfig, TProcedure>,
+    > = inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts: DefinedUseTRPCQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TConfig>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>
+      TRPCClientErrorLike<TRoot>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>
     >,
-  ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TConfig>>;
+  ): DefinedUseTRPCQueryResult<TData, TRPCClientErrorLike<TRoot>>;
 
   <
     TQueryFnData extends inferTransformedProcedureOutput<
-      TConfig,
+      TRoot,
       TProcedure
-    > = inferTransformedProcedureOutput<TConfig, TProcedure>,
+    > = inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TConfig>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>
+      TRPCClientErrorLike<TRoot>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>
     >,
-  ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TConfig>>;
+  ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TRoot>>;
 }
 
 /**
@@ -94,7 +93,7 @@ type CursorInput = {
  */
 export type MaybeDecoratedInfiniteQuery<
   TProcedure extends AnyProcedure,
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
 > = inferProcedureInput<TProcedure> extends CursorInput
   ? {
       /**
@@ -104,12 +103,12 @@ export type MaybeDecoratedInfiniteQuery<
         input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
         opts: UseTRPCInfiniteQueryOptions<
           inferProcedureInput<TProcedure>,
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
-          TRPCClientErrorLike<TConfig>
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
+          TRPCClientErrorLike<TRoot>
         >,
       ) => UseTRPCInfiniteQueryResult<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
-        TRPCClientErrorLike<TConfig>,
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        TRPCClientErrorLike<TRoot>,
         inferProcedureInput<TProcedure>
       >;
       /**
@@ -119,12 +118,12 @@ export type MaybeDecoratedInfiniteQuery<
         input: Omit<inferProcedureInput<TProcedure>, 'cursor'>,
         opts: UseTRPCSuspenseInfiniteQueryOptions<
           inferProcedureInput<TProcedure>,
-          inferTransformedProcedureOutput<TConfig, TProcedure>,
-          TRPCClientErrorLike<TConfig>
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
+          TRPCClientErrorLike<TRoot>
         >,
       ) => UseTRPCSuspenseInfiniteQueryResult<
-        inferTransformedProcedureOutput<TConfig, TProcedure>,
-        TRPCClientErrorLike<TConfig>,
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        TRPCClientErrorLike<TRoot>,
         inferProcedureInput<TProcedure>
       >;
     }
@@ -134,46 +133,46 @@ export type MaybeDecoratedInfiniteQuery<
  * @internal
  */
 export type DecoratedQueryMethods<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
    * @link https://trpc.io/docs/v11/client/react/useQuery
    */
-  useQuery: ProcedureUseQuery<TConfig, TProcedure>;
+  useQuery: ProcedureUseQuery<TRoot, TProcedure>;
   /**
    * @link https://trpc.io/docs/v11/client/react/suspense#usesuspensequery
    */
   useSuspenseQuery: <
     TQueryFnData extends inferTransformedProcedureOutput<
-      TConfig,
+      TRoot,
       TProcedure
-    > = inferTransformedProcedureOutput<TConfig, TProcedure>,
+    > = inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,
   >(
     input: inferProcedureInput<TProcedure>,
     opts?: UseTRPCSuspenseQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TConfig>
+      TRPCClientErrorLike<TRoot>
     >,
-  ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TConfig>>;
+  ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TRoot>>;
 };
 
 /**
  * @internal
  */
 export type DecoratedQuery<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-> = MaybeDecoratedInfiniteQuery<TProcedure, TConfig> &
-  DecoratedQueryMethods<TConfig, TProcedure>;
+> = MaybeDecoratedInfiniteQuery<TProcedure, TRoot> &
+  DecoratedQueryMethods<TRoot, TProcedure>;
 
 /**
  * @internal
  */
 export interface DecoratedMutation<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > {
   /**
@@ -182,13 +181,13 @@ export interface DecoratedMutation<
   useMutation: <TContext = unknown>(
     opts?: UseTRPCMutationOptions<
       inferProcedureInput<TProcedure>,
-      TRPCClientErrorLike<TConfig>,
-      inferTransformedProcedureOutput<TConfig, TProcedure>,
+      TRPCClientErrorLike<TRoot>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
       TContext
     >,
   ) => UseTRPCMutationResult<
-    inferTransformedProcedureOutput<TConfig, TProcedure>,
-    TRPCClientErrorLike<TConfig>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCClientErrorLike<TRoot>,
     inferProcedureInput<TProcedure>,
     TContext
   >;
@@ -198,13 +197,13 @@ export interface DecoratedMutation<
  * @internal
  */
 export type DecorateProcedure<
-  TConfig extends AnyRootConfig,
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
   _TFlags,
 > = TProcedure extends AnyQueryProcedure
-  ? DecoratedQuery<TConfig, TProcedure>
+  ? DecoratedQuery<TRoot, TProcedure>
   : TProcedure extends AnyMutationProcedure
-  ? DecoratedMutation<TConfig, TProcedure>
+  ? DecoratedMutation<TRoot, TProcedure>
   : TProcedure extends AnySubscriptionProcedure
   ? {
       /**
@@ -213,8 +212,8 @@ export type DecorateProcedure<
       useSubscription: (
         input: inferProcedureInput<TProcedure>,
         opts?: UseTRPCSubscriptionOptions<
-          inferTransformedSubscriptionOutput<TConfig, TProcedure>,
-          TRPCClientErrorLike<TConfig>
+          inferTransformedSubscriptionOutput<TRoot, TProcedure>,
+          TRPCClientErrorLike<TRoot>
         >,
       ) => void;
     }
@@ -223,19 +222,17 @@ export type DecorateProcedure<
 /**
  * @internal
  */
-export type DecoratedProcedureRecord<
-  TConfig extends AnyRootConfig,
-  TProcedures extends ProcedureRouterRecord,
+export type DecorateRouterRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
   TFlags,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<
-        TConfig,
-        TProcedures[TKey]['_def']['record'],
-        TFlags
-      >
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TConfig, TProcedures[TKey], TFlags>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecorateRouterRecord<TRoot, $Value, TFlags>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<TRoot, $Value, TFlags>
+      : never
     : never;
 };
 
@@ -257,7 +254,6 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
-  useDehydratedState: UseDehydratedState<TRouter>;
 };
 
 export type CreateTRPCReact<
@@ -266,8 +262,8 @@ export type CreateTRPCReact<
   TFlags,
 > = ProtectedIntersection<
   CreateTRPCReactBase<TRouter, TSSRContext>,
-  DecoratedProcedureRecord<
-    TRouter['_def']['_config'],
+  DecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
     TRouter['_def']['record'],
     TFlags
   >

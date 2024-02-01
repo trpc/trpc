@@ -1,4 +1,6 @@
+import type { TRPCRouterRecord } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
+import type { inferRootTypes } from '@trpc/server/unstable-core-do-not-import';
 
 test('mergeRouters', async () => {
   const t = initTRPC.create();
@@ -11,6 +13,26 @@ test('mergeRouters', async () => {
   });
   const merged = t.mergeRouters(router1, router2);
   const caller = merged.createCaller({});
+
+  await expect(caller.foo()).resolves.toBe('foo');
+  await expect(caller.bar()).resolves.toBe('bar');
+});
+
+test('merge routers with spread operator', async () => {
+  const t = initTRPC.create();
+
+  const router1 = {
+    foo: t.procedure.query(() => 'foo'),
+  } satisfies TRPCRouterRecord;
+  const router2 = {
+    bar: t.procedure.query(() => 'bar'),
+  } satisfies TRPCRouterRecord;
+
+  const merged = t.router({
+    ...router1,
+    ...router2,
+  });
+  const caller = t.createCallerFactory(merged)({});
 
   await expect(caller.foo()).resolves.toBe('foo');
   await expect(caller.bar()).resolves.toBe('bar');
@@ -38,7 +60,10 @@ test('good merge: one has default formatter', async () => {
 });
 
 test('good merge: one has default transformer', async () => {
-  const t1 = initTRPC.create({});
+  type Context = {
+    foo: 'bar';
+  };
+  const t1 = initTRPC.context<Context>().create({});
 
   const t2 = initTRPC.create({
     transformer: {
@@ -55,10 +80,16 @@ test('good merge: one has default transformer', async () => {
   });
 
   const merged = t1.mergeRouters(router1, router2);
-  const caller = merged.createCaller({});
+  const caller = merged.createCaller({
+    foo: 'bar',
+  });
 
   await expect(caller.foo()).resolves.toBe('foo');
   await expect(caller.bar()).resolves.toBe('bar');
+
+  expectTypeOf<inferRootTypes<typeof router1>>().toEqualTypeOf<
+    inferRootTypes<typeof merged>
+  >();
 });
 test('bad merge: error formatter', async () => {
   const t1 = initTRPC.create({

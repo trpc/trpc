@@ -10,6 +10,11 @@ import {
 } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
+import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
+import {
+  getTransformer,
+  type TransformerOptions,
+} from '@trpc/client/unstable-internals';
 import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import type {
   CreateTRPCReactOptions,
@@ -19,6 +24,7 @@ import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
   Dict,
+  inferRootTypes,
   Maybe,
   ResponseMeta,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -59,29 +65,35 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
       abortOnUnmount?: boolean;
     };
 
-interface WithTRPCOptions<TRouter extends AnyRouter>
-  extends CreateTRPCReactOptions<TRouter> {
-  config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
-}
+type WithTRPCOptions<TRouter extends AnyRouter> =
+  CreateTRPCReactOptions<TRouter> & {
+    config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
+  } & TransformerOptions<inferRootTypes<TRouter>>;
 
-export interface WithTRPCSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
-  ssr: true | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
-  responseMeta?: (opts: {
-    ctx: NextPageContext;
-    clientErrors: TRPCClientError<TRouter>[];
-  }) => ResponseMeta;
-}
-export interface WithTRPCNoSSROptions<TRouter extends AnyRouter>
-  extends WithTRPCOptions<TRouter> {
-  ssr?: false;
-}
+export type WithTRPCSSROptions<TRouter extends AnyRouter> =
+  WithTRPCOptions<TRouter> & {
+    ssr:
+      | true
+      | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
+    responseMeta?: (opts: {
+      ctx: NextPageContext;
+      clientErrors: TRPCClientError<TRouter>[];
+    }) => ResponseMeta;
+  };
+
+export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
+  WithTRPCOptions<TRouter> & {
+    ssr?: false;
+  };
 
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const { config: getClientConfig } = opts;
+  const transformer = getTransformer(
+    (opts as CoercedTransformerParameters).transformer,
+  );
 
   type TRPCPrepassProps = {
     config: WithTRPCConfig<TRouter>;
@@ -106,6 +118,7 @@ export function withTRPC<
         const config = getClientConfig({});
         const queryClient = getQueryClient(config);
         const trpcClient = trpc.createClient(config);
+
         return {
           abortOnUnmount: config.abortOnUnmount,
           queryClient,
@@ -118,10 +131,16 @@ export function withTRPC<
       const { queryClient, trpcClient, ssrState, ssrContext } = prepassProps;
 
       // allow normal components to be wrapped, not just app/pages
-      const hydratedState = trpc.useDehydratedState(
-        trpcClient,
-        props.pageProps?.trpcState,
-      );
+      const trpcState = props.pageProps?.trpcState;
+
+      const hydratedState: DehydratedState | undefined = React.useMemo(() => {
+        if (!trpcState) {
+          return trpcState;
+        }
+
+        return transformer.input.deserialize(trpcState);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [trpcState, trpcClient]);
 
       return (
         <trpc.Provider
@@ -245,10 +264,9 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps['trpcState'] =
-          trpcClient.runtime.combinedTransformer.output.serialize(
-            dehydratedCacheWithErrors,
-          );
+        pageProps['trpcState'] = transformer.input.serialize(
+          dehydratedCacheWithErrors,
+        );
 
         const appTreeProps = getAppTreeProps(pageProps);
 
