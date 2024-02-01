@@ -1,8 +1,6 @@
-export * from './createTRPCUntypedClient';
-export * from './createTRPCClient';
-export * from './getFetch';
-export * from './TRPCClientError';
-export * from './links';
+// TODO: Be explicit about what we export here
+
+export * from './unstable-internals';
 
 export {
   /**
@@ -17,4 +15,4 @@ export {
    * @deprecated - use `inferRouterClient` instead
    */
   type inferRouterClient as inferRouterProxyClient,
-} from './createTRPCClient';
+} from './unstable-internals';
