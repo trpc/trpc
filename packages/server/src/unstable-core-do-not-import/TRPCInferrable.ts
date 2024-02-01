@@ -1,10 +1,14 @@
-import type { AnyRootTypes, RootConfig } from './rootConfig';
+import type { AnyRootTypes } from './rootConfig';
+
+type ClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 
 /**
  * Result of `initTRPC.create()`
  */
 type InitLike = {
-  _config: RootConfig<AnyRootTypes>;
+  _config: {
+    $types: ClientTypes;
+  };
 };
 
 /**
@@ -18,19 +22,19 @@ type RouterLike = {
  * Result of `initTRPC.create()._config`
  */
 type RootConfigLike = {
-  $types: AnyRootTypes;
+  $types: ClientTypes;
 };
 /**
- * Anything that can be inferred to the root config types
+ * Anything that can be inferred to the root config types needed for a TRPC client
  */
 export type TRPCInferrable =
   | RouterLike
   | InitLike
   | RootConfigLike
-  | AnyRootTypes;
+  | ClientTypes;
 
 export type inferRootTypes<TInferrable extends TRPCInferrable> =
-  TInferrable extends AnyRootTypes
+  TInferrable extends ClientTypes
     ? TInferrable
     : TInferrable extends RootConfigLike
     ? TInferrable['$types']
