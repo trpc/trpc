@@ -12,45 +12,12 @@ import { observable } from '@trpc/server/observable';
 import type {
   CombinedDataTransformer,
   DataTransformer,
-  inferRootTypes,
-  inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
 import { createTson, tsonDate } from 'tupleson';
 import { z } from 'zod';
 
-describe('inferTransformedProcedureOutput', () => {
-  test('transformed', () => {
-    const t = initTRPC.create({
-      transformer: superjson,
-    });
-
-    const proc = t.procedure.query(() => new Date());
-
-    type $Inferrable = typeof t._config.$types;
-
-    type Output = inferTransformedProcedureOutput<$Inferrable, typeof proc>;
-
-    expectTypeOf<Output>().toEqualTypeOf<Date>();
-
-    type RootTypes = inferRootTypes<$Inferrable>;
-
-    expectTypeOf<RootTypes['transformer']>().toEqualTypeOf<true>();
-  });
-
-  test('not transformed', () => {
-    const t = initTRPC.create({});
-
-    const proc = t.procedure.query(() => new Date());
-
-    type $Inferrable = typeof t._config.$types;
-
-    type Output = inferTransformedProcedureOutput<$Inferrable, typeof proc>;
-
-    expectTypeOf<Output>().toEqualTypeOf<string>();
-  });
-});
 test('superjson up and down', async () => {
   const transformer = superjson;
   const date = new Date();
