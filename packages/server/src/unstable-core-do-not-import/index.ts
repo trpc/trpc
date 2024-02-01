@@ -41,11 +41,6 @@ export type {
   ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
-  inferProcedureInput,
-  inferProcedureOutput,
-  inferProcedureParams,
-  inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
 } from './procedure';
 export { createBuilder, unsetMarker } from './procedureBuilder';
 export type { ProcedureBuilder } from './procedureBuilder';
@@ -62,7 +57,10 @@ export type {
   inferRouterOutputs,
 } from './router';
 
+export * from './clientish/inference';
 export * from './clientish/inferrable';
+export * from './clientish/serialize';
+
 export * from './router';
 export { transformResult, transformTRPCResponse } from './transformer';
 export type {
@@ -75,7 +73,7 @@ export type {
 export { createFlatProxy, createRecursiveProxy } from './createProxy';
 
 // For `.d.ts` files https://github.com/trpc/trpc/issues/3943
-export type { Serialize, SerializeObject } from './serialize';
+export type { Serialize, SerializeObject } from './clientish/serialize';
 
 export type {
   DeepPartial,

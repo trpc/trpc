@@ -1,11 +1,11 @@
+import type {
+  inferProcedureInput,
+  inferTransformedProcedureOutput,
+} from './clientish/inference';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
-import type {
-  AnyProcedure,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
-} from './procedure';
+import type { AnyProcedure } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
