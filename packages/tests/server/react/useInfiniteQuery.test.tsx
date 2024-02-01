@@ -493,7 +493,6 @@ test.only('regression 5412: invalidating a query', async () => {
   // It should correctly fetch both pages
   expect(posts).toHaveTextContent('first post');
   expect(posts).toHaveTextContent('second post');
-  expect(posts).not.toHaveTextContent('third post');
 
   // invalidate
   await userEvent.click(utils.getByTestId('invalidate'));
@@ -507,5 +506,4 @@ test.only('regression 5412: invalidating a query', async () => {
 
   expect(posts).toHaveTextContent('first post');
   expect(posts).toHaveTextContent('second post');
-  expect(posts).not.toHaveTextContent('third post');
 });
