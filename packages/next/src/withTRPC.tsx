@@ -160,6 +160,7 @@ export function withTRPC<
     };
 
     if (AppOrPage.getInitialProps ?? opts.ssr) {
+      console.log('got here');
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
         const shouldSsr = async () => {
           if (typeof opts.ssr === 'function') {
@@ -174,7 +175,9 @@ export function withTRPC<
           }
           return opts.ssr;
         };
+        console.log('got here 2');
         const ssr = await shouldSsr();
+        console.log('got here 3');
         const AppTree = appOrPageCtx.AppTree;
 
         // Determine if we are wrapping an App component or a Page component.
@@ -202,6 +205,7 @@ export function withTRPC<
           isApp ? { pageProps: props } : props;
 
         if (typeof window !== 'undefined' || !ssr) {
+          console.log('got here 4');
           return getAppTreeProps(pageProps);
         }
 
@@ -264,7 +268,7 @@ export function withTRPC<
         };
 
         // dehydrate query client's state and add it to the props
-        pageProps['trpcState'] = transformer.input.serialize(
+        pageProps.trpcState = transformer.input.serialize(
           dehydratedCacheWithErrors,
         );
 
