@@ -52,9 +52,7 @@ export type {
   createRouterFactory,
   inferRouterContext,
   inferRouterError,
-  inferRouterInputs,
   inferRouterMeta,
-  inferRouterOutputs,
 } from './router';
 
 export * from './clientish/inference';
