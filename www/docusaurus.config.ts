@@ -266,6 +266,6 @@ export default {
     env,
   },
   markdown: {
-    format: "detect"
-  }
+    format: 'detect',
+  },
 } satisfies Config;
