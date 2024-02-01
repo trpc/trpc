@@ -265,4 +265,7 @@ export default {
   customFields: {
     env,
   },
+  markdown: {
+    format: "detect"
+  }
 } satisfies Config;
