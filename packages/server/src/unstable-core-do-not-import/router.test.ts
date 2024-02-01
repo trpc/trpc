@@ -1,4 +1,4 @@
-import { initTRPC } from './initTRPC';
+import { initTRPC } from '..';
 
 const t = initTRPC.create();
 

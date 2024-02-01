@@ -1,6 +1,6 @@
-import type { TRPCRouterRecord } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
-import type { inferRootTypes } from '@trpc/server/unstable-core-do-not-import';
+import type { inferRootTypes } from '.';
+import type { TRPCRouterRecord } from '..';
+import { initTRPC } from '..';
 
 test('mergeRouters', async () => {
   const t = initTRPC.create();
