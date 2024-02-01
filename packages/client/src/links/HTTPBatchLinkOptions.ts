@@ -1,9 +1,9 @@
-import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
+import type { AnyClientRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../internals/types';
 import type { HTTPLinkBaseOptions } from './internals/httpUtils';
 import type { HTTPHeaders, Operation } from './types';
 
-export type HTTPBatchLinkOptions<TRoot extends AnyRootTypes> =
+export type HTTPBatchLinkOptions<TRoot extends AnyClientRootTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     maxURLLength?: number;
     /**

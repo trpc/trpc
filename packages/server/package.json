@@ -99,9 +99,9 @@
       "default": "./dist/shared.js"
     },
     "./unstable-core-do-not-import": {
-      "import": "./dist/unstable-core-do-not-import/index.mjs",
-      "require": "./dist/unstable-core-do-not-import/index.js",
-      "default": "./dist/unstable-core-do-not-import/index.js"
+      "import": "./dist/unstable-core-do-not-import.mjs",
+      "require": "./dist/unstable-core-do-not-import.js",
+      "default": "./dist/unstable-core-do-not-import.js"
     }
   },
   "files": [

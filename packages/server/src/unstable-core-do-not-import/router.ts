@@ -1,11 +1,7 @@
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
-import type {
-  AnyProcedure,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
-} from './procedure';
+import type { AnyProcedure, inferProcedureInput } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
@@ -80,34 +76,6 @@ export type inferRouterError<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
-
-export type GetInferenceHelpers<
-  TType extends 'input' | 'output',
-  TRoot extends AnyRootTypes,
-  TRecord extends RouterRecord,
-> = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? GetInferenceHelpers<TType, TRoot, $Value>
-      : $Value extends AnyProcedure
-      ? TType extends 'input'
-        ? inferProcedureInput<$Value>
-        : inferTransformedProcedureOutput<TRoot, $Value>
-      : never
-    : never;
-};
-
-export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
-  'input',
-  TRouter['_def']['_config']['$types'],
-  TRouter['_def']['record']
->;
-
-export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
-  'output',
-  TRouter['_def']['_config']['$types'],
-  TRouter['_def']['record']
->;
 
 function isRouter(
   procedureOrRouter: ValueOf<CreateRouterOptions>,

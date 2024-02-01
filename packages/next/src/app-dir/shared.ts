@@ -4,6 +4,7 @@ import type {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
+  AnyClientRootTypes,
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
@@ -113,7 +114,7 @@ export interface ActionHandlerDef {
  * @internal
  */
 export type inferActionDef<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientRootTypes,
   TProc extends AnyProcedure,
 > = {
   input: inferProcedureInput<TProc>;
