@@ -1,7 +1,7 @@
 import type { inferObservableValue } from '../observable';
+import type { ClientInferrable, inferRootTypes } from './clientish/inferrable';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { Serialize } from './serialize';
-import type { inferRootTypes, TRPCInferrable } from './TRPCInferrable';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -70,7 +70,7 @@ export type AnyProcedure = Procedure<ProcedureType, any>;
  * TODO: move to `@trpc/client`
  */
 export type inferTransformedProcedureOutput<
-  TInferrable extends TRPCInferrable,
+  TInferrable extends ClientInferrable,
   TProcedure extends AnyProcedure,
 > = inferRootTypes<TInferrable>['transformer'] extends false
   ? Serialize<TProcedure['_def']['_output_out']>
@@ -78,7 +78,7 @@ export type inferTransformedProcedureOutput<
 
 /** @internal */
 export type inferTransformedSubscriptionOutput<
-  TInferrable extends TRPCInferrable,
+  TInferrable extends ClientInferrable,
   TProcedure extends AnyProcedure,
 > = inferRootTypes<TInferrable>['transformer'] extends false
   ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>

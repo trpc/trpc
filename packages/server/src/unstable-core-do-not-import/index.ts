@@ -62,7 +62,7 @@ export type {
   inferRouterOutputs,
 } from './router';
 
-export * from './TRPCInferrable';
+export * from './clientish/inferrable';
 export * from './router';
 export { transformResult, transformTRPCResponse } from './transformer';
 export type {
@@ -97,7 +97,6 @@ export type {
 } from './types';
 export { isObject } from './utils';
 
-export * from './TRPCInferrable';
 /**
  * These should be re-exported from separate entrypoints in server package
  */

@@ -1,6 +1,6 @@
 import type { Observable, Observer } from '@trpc/server/observable';
 import type {
-  TRPCInferrable,
+  ClientInferrable,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -74,7 +74,7 @@ export interface OperationResultEnvelope<TOutput> {
  * @internal
  */
 export type OperationResultObservable<
-  TInferrable extends TRPCInferrable,
+  TInferrable extends ClientInferrable,
   TOutput,
 > = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
@@ -82,7 +82,7 @@ export type OperationResultObservable<
  * @internal
  */
 export type OperationResultObserver<
-  TInferrable extends TRPCInferrable,
+  TInferrable extends ClientInferrable,
   TOutput,
 > = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
@@ -90,7 +90,7 @@ export type OperationResultObserver<
  * @internal
  */
 export type OperationLink<
-  TInferrable extends TRPCInferrable,
+  TInferrable extends ClientInferrable,
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
@@ -103,6 +103,6 @@ export type OperationLink<
 /**
  * @public
  */
-export type TRPCLink<TInferrable extends TRPCInferrable> = (
+export type TRPCLink<TInferrable extends ClientInferrable> = (
   opts: TRPCClientRuntime,
 ) => OperationLink<TInferrable>;
