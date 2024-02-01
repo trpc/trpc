@@ -69,6 +69,7 @@ export function createAppRouter() {
     posts: [
       { id: '1', title: 'first post', createdAt: 0 },
       { id: '2', title: 'second post', createdAt: 1 },
+      { id: '3', title: 'third post', createdAt: 2 },
     ],
   };
   const postLiveInputs: unknown[] = [];

@@ -424,3 +424,88 @@ test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
     await ssg.postById.fetchInfinite({ limit: 1 });
   });
 });
+
+test.only('regression 5412: invalidating a query', async () => {
+  const { trpc, App } = factory;
+
+  function MyComponent() {
+    const trpcContext = trpc.useUtils();
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
+    );
+    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+
+    return (
+      <>
+        <div data-testid="posts">
+          {q.data?.pages.map((group, i) => (
+            <Fragment key={i}>
+              {group.items.map((msg) => (
+                <Fragment key={msg.id}>
+                  <div>{msg.title}</div>
+                </Fragment>
+              ))}
+            </Fragment>
+          ))}
+        </div>
+        <div>
+          <button
+            onClick={() => trpcContext.invalidate()}
+            data-testid="invalidate"
+          >
+            invalidate
+          </button>
+          <button data-testid="next" onClick={() => q.fetchNextPage()}>
+            Fetch
+          </button>
+        </div>
+        <div>{q.isFetching || q.isRefetching ? 'Fetching...' : null}</div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  // get testid posts
+  const posts = utils.getByTestId('posts');
+  await waitFor(() => {
+    expect(posts).toHaveTextContent('first post');
+  });
+  expect(posts).not.toHaveTextContent('second post');
+
+  await userEvent.click(utils.getByTestId('next'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Fetching...');
+  });
+  await waitFor(() => {
+    expect(utils.container).not.toHaveTextContent('Fetching...');
+  });
+
+  // It should correctly fetch both pages
+  expect(posts).toHaveTextContent('first post');
+  expect(posts).toHaveTextContent('second post');
+  expect(posts).not.toHaveTextContent('third post');
+
+  // invalidate
+  await userEvent.click(utils.getByTestId('invalidate'));
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Fetching...');
+  });
+  await waitFor(() => {
+    expect(utils.container).not.toHaveTextContent('Fetching...');
+  });
+
+  expect(posts).toHaveTextContent('first post');
+  expect(posts).toHaveTextContent('second post');
+  expect(posts).not.toHaveTextContent('third post');
+});
