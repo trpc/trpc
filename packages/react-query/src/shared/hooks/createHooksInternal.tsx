@@ -503,26 +503,6 @@ export function createRootHooks<
     useSuspenseInfiniteQuery,
   };
 }
-/* istanbul ignore next */
-/**
- * Hack to infer the type of `createReactQueryHooks`
- * @link https://stackoverflow.com/a/59072991
- */
-class GnClass<TRouter extends AnyRouter, TSSRContext = unknown> {
-  fn() {
-    return createRootHooks<TRouter, TSSRContext>();
-  }
-}
-
-type returnTypeInferer<TType> = TType extends (
-  a: Record<string, string>,
-) => infer U
-  ? U
-  : never;
-type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
-  TRouter,
-  TSSRContext
->['fn'];
 
 /**
  * Infer the type of a `createReactQueryHooks` function
@@ -531,4 +511,4 @@ type fooType<TRouter extends AnyRouter, TSSRContext = unknown> = GnClass<
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
-> = returnTypeInferer<fooType<TRouter, TSSRContext>>;
+> = ReturnType<typeof createRootHooks<TRouter, TSSRContext>>;
