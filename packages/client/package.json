@@ -61,9 +61,9 @@
       "default": "./dist/links/wsLink.js"
     },
     "./unstable-internals": {
-      "import": "./dist/unstable-internals.mjs",
-      "require": "./dist/unstable-internals.js",
-      "default": "./dist/unstable-internals.js"
+      "import": "./dist/unstable-internals/index.mjs",
+      "require": "./dist/unstable-internals/index.js",
+      "default": "./dist/unstable-internals/index.js"
     }
   },
   "files": [

@@ -9,7 +9,7 @@ export const input = [
   'src/links/loggerLink.ts',
   'src/links/splitLink.ts',
   'src/links/wsLink.ts',
-  'src/unstable-internals.ts',
+  'src/unstable-internals/index.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
