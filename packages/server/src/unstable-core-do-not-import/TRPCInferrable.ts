@@ -36,6 +36,7 @@ export type TRPCInferrable =
 
 /**
  * Infer the root types from a TRPCInferrable
+ * FIXME: rename me
  */
 export type inferRootTypes<TInferrable extends TRPCInferrable> =
   TInferrable extends ClientTypes
