@@ -425,7 +425,7 @@ test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
   });
 });
 
-test.only('regression 5412: invalidating a query', async () => {
+test('regression 5412: invalidating a query', async () => {
   const { trpc, App } = factory;
 
   function MyComponent() {
