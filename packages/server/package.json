@@ -145,7 +145,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^4.9.5",
-    "superjson": "^2.0.0",
+    "superjson": "^1.12.4",
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
