@@ -61,3 +61,14 @@ export type AnyQueryProcedure = QueryProcedure<any>;
 export type AnyMutationProcedure = MutationProcedure<any>;
 export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
 export type AnyProcedure = Procedure<ProcedureType, any>;
+
+export type inferProcedureInput<TProcedure extends AnyProcedure> =
+  undefined extends inferProcedureParams<TProcedure>['_input_in']
+    ? void | inferProcedureParams<TProcedure>['_input_in']
+    : inferProcedureParams<TProcedure>['_input_in'];
+
+export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
+  ? TProcedure['_def']
+  : never;
+export type inferProcedureOutput<TProcedure> =
+  inferProcedureParams<TProcedure>['_output_out'];

@@ -1,5 +1,5 @@
-import type { inferObservableValue } from '@trpc/server/observable';
-import type { AnyProcedure } from '../procedure';
+import type { inferObservableValue } from '../../observable';
+import type { AnyProcedure, inferProcedureInput } from '../procedure';
 import type { AnyRouter, RouterRecord } from '../router';
 import type {
   AnyClientRootTypes,
@@ -26,17 +26,6 @@ export type inferTransformedSubscriptionOutput<
 > = inferRootTypes<TInferrable>['transformer'] extends false
   ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
   : inferObservableValue<TProcedure['_def']['_output_out']>;
-
-export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  undefined extends inferProcedureParams<TProcedure>['_input_in']
-    ? void | inferProcedureParams<TProcedure>['_input_in']
-    : inferProcedureParams<TProcedure>['_input_in'];
-
-export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
-  ? TProcedure['_def']
-  : never;
-export type inferProcedureOutput<TProcedure> =
-  inferProcedureParams<TProcedure>['_output_out'];
 
 export type GetInferenceHelpers<
   TType extends 'input' | 'output',
