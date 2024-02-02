@@ -89,7 +89,7 @@ export function withTRPC<
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createReactQueryHooks<TRouter, TSSRContext>(opts);
 
-    const WithTRPC = (
+    const WithTRPC = /** #__PURE__ */ (
       props: AppPropsType<NextRouter, any> & {
         trpc?: TRPCPrepassProps;
       },
@@ -198,7 +198,9 @@ export function withTRPC<
           trpc: trpcProp,
         };
 
-        const reactDomServer = await import('react-dom/server');
+        const reactDomServer = /** #__PURE__ */ await import(
+          'react-dom/server'
+        );
 
         // Run the prepass step on AppTree. This will run all trpc queries on the server.
         // multiple prepass ensures that we can do batching on the server
