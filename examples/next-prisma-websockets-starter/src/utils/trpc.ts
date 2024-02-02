@@ -6,6 +6,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/pages/ssr';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
 import getConfig from 'next/config';
@@ -86,6 +87,7 @@ export const trpc = createTRPCNext<AppRouter>({
    * @link https://trpc.io/docs/v11/ssr
    */
   ssr: true,
+  ssrPrepass,
   /**
    * @link https://trpc.io/docs/v11/data-transformers
    */
