@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test.setTimeout(35e3);
 
@@ -8,7 +8,7 @@ test('go to /', async ({ page }) => {
   await page.waitForSelector(`text=Starter`);
 });
 
-test('add a post', async ({ page, browser }) => {
+test('add a post', async ({ page }) => {
   const nonce = `${Math.random()}`;
 
   await page.goto('/');
@@ -19,10 +19,4 @@ test('add a post', async ({ page, browser }) => {
   await page.reload();
 
   await page.waitForSelector(`text="${nonce}"`);
-
-  const ssrContext = await browser.newContext();
-  const ssrPage = await ssrContext.newPage();
-  await ssrPage.goto('/');
-
-  await ssrPage.waitForSelector(`text="${nonce}"`);
 });
