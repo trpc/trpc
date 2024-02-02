@@ -8,7 +8,7 @@ export const input = [
   'src/app-dir/client.ts',
   'src/app-dir/links/nextCache.ts',
   'src/app-dir/links/nextHttp.ts',
-  'src/pages/ssr.tsx',
+  'src/pages/ssr.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
