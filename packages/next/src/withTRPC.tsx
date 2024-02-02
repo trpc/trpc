@@ -137,7 +137,9 @@ export function withTRPC<
     };
 
     if (AppOrPage.getInitialProps ?? opts.ssr) {
-      WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
+      WithTRPC.getInitialProps = /** #__PURE__ */ async (
+        appOrPageCtx: AppContextType,
+      ) => {
         const shouldSsr = async () => {
           if (typeof opts.ssr === 'function') {
             if (typeof window !== 'undefined') {
