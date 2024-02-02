@@ -3,6 +3,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { initTRPC } from '@trpc/server';
 import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
@@ -56,6 +57,7 @@ test('withTRPC - SSR', async () => {
     },
     ssr: true,
     transformer,
+    ssrPrepass,
   });
 
   const App: AppType = () => {

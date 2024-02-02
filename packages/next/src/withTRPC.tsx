@@ -3,19 +3,14 @@
  * https://github.com/FormidableLabs/urql/blob/main/packages/next-urql/src/with-urql-client.ts
  */
 import type { DehydratedState, QueryClient } from '@tanstack/react-query';
-import {
-  dehydrate,
-  HydrationBoundary,
-  QueryClientProvider,
-} from '@tanstack/react-query';
+import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
 import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
-import { createTRPCUntypedClient } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
+import type { TRPCClientError } from '@trpc/react-query';
 import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
@@ -23,42 +18,17 @@ import type {
 import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
-  Dict,
   inferRootTypes,
-  Maybe,
   ResponseMeta,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
-  AppContextType,
   AppPropsType,
   NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import type { NextRouter } from 'next/router';
-import React, { createElement, useState } from 'react';
+import React, { useState } from 'react';
 
-function transformQueryOrMutationCacheErrors<
-  TState extends
-    | DehydratedState['mutations'][0]
-    | DehydratedState['queries'][0],
->(result: TState): TState {
-  const error = result.state.error as Maybe<TRPCClientError<any>>;
-  if (error instanceof Error && error.name === 'TRPCClientError') {
-    const newError: TRPCClientErrorLike<any> = {
-      message: error.message,
-      data: error.data,
-      shape: error.shape,
-    };
-    return {
-      ...result,
-      state: {
-        ...result.state,
-        error: newError,
-      },
-    };
-  }
-  return result;
-}
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
     CreateTRPCReactQueryClientConfig & {
@@ -70,8 +40,17 @@ type WithTRPCOptions<TRouter extends AnyRouter> =
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   } & TransformerOptions<inferRootTypes<TRouter>>;
 
+export type TRPCPrepassHelper = (opts: {
+  parent: WithTRPCSSROptions<AnyRouter>;
+  WithTRPC: NextComponentType<any, any, any>;
+  AppOrPage: NextComponentType<any, any, any>;
+}) => void;
 export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
+    /**
+     * If you enable this, you also need to add a `ssrPrepass`-prop
+     * @link https://trpc.io/docs/client/nextjs/ssr
+     */
     ssr:
       | true
       | ((opts: { ctx: NextPageContext }) => boolean | Promise<boolean>);
@@ -79,12 +58,28 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
       ctx: NextPageContext;
       clientErrors: TRPCClientError<TRouter>[];
     }) => ResponseMeta;
+    /**
+     * use `import { ssrPrepass } from '@trpc/next/ssrPrepass'`
+     * @link https://trpc.io/docs/client/nextjs/ssr
+     */
+    ssrPrepass: TRPCPrepassHelper;
   };
 
 export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
     ssr?: false;
   };
+
+export type TRPCPrepassProps<
+  TRouter extends AnyRouter,
+  TSSRContext extends NextPageContext = NextPageContext,
+> = {
+  config: WithTRPCConfig<TRouter>;
+  queryClient: QueryClient;
+  trpcClient: TRPCUntypedClient<TRouter>;
+  ssrState: 'prepass';
+  ssrContext: TSSRContext;
+};
 
 export function withTRPC<
   TRouter extends AnyRouter,
@@ -95,19 +90,13 @@ export function withTRPC<
     (opts as CoercedTransformerParameters).transformer,
   );
 
-  type TRPCPrepassProps = {
-    config: WithTRPCConfig<TRouter>;
-    queryClient: QueryClient;
-    trpcClient: TRPCUntypedClient<TRouter>;
-    ssrState: 'prepass';
-    ssrContext: TSSRContext;
-  };
+  type $PrepassProps = TRPCPrepassProps<TRouter, TSSRContext>;
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createRootHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
-        trpc?: TRPCPrepassProps;
+        trpc?: $PrepassProps;
       },
     ) => {
       const [prepassProps] = useState(() => {
@@ -159,145 +148,12 @@ export function withTRPC<
       );
     };
 
-    if (AppOrPage.getInitialProps ?? opts.ssr) {
-      WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
-        const shouldSsr = async () => {
-          if (typeof opts.ssr === 'function') {
-            if (typeof window !== 'undefined') {
-              return false;
-            }
-            try {
-              return await opts.ssr({ ctx: appOrPageCtx.ctx });
-            } catch (e) {
-              return false;
-            }
-          }
-          return opts.ssr;
-        };
-        const ssr = await shouldSsr();
-        const AppTree = appOrPageCtx.AppTree;
-
-        // Determine if we are wrapping an App component or a Page component.
-        const isApp = !!appOrPageCtx.Component;
-        const ctx: NextPageContext = isApp
-          ? appOrPageCtx.ctx
-          : (appOrPageCtx as any as NextPageContext);
-
-        // Run the wrapped component's getInitialProps function.
-        let pageProps: Dict<unknown> = {};
-        if (AppOrPage.getInitialProps) {
-          const originalProps = await AppOrPage.getInitialProps(
-            appOrPageCtx as any,
-          );
-          const originalPageProps = isApp
-            ? originalProps.pageProps ?? {}
-            : originalProps;
-
-          pageProps = {
-            ...originalPageProps,
-            ...pageProps,
-          };
-        }
-        const getAppTreeProps = (props: Record<string, unknown>) =>
-          isApp ? { pageProps: props } : props;
-
-        if (typeof window !== 'undefined' || !ssr) {
-          return getAppTreeProps(pageProps);
-        }
-
-        const config = getClientConfig({ ctx });
-        const trpcClient = createTRPCUntypedClient(config);
-        const queryClient = getQueryClient(config);
-
-        const trpcProp: TRPCPrepassProps = {
-          config,
-          trpcClient,
-          queryClient,
-          ssrState: 'prepass',
-          ssrContext: ctx as TSSRContext,
-        };
-        const prepassProps = {
-          pageProps,
-          trpc: trpcProp,
-        };
-
-        const reactDomServer = await import('react-dom/server');
-
-        // Run the prepass step on AppTree. This will run all trpc queries on the server.
-        // multiple prepass ensures that we can do batching on the server
-        while (true) {
-          // render full tree
-          reactDomServer.renderToString(createElement(AppTree, prepassProps));
-          if (!queryClient.isFetching()) {
-            // the render didn't cause the queryClient to fetch anything
-            break;
-          }
-
-          // wait until the query cache has settled it's promises
-          await new Promise<void>((resolve) => {
-            const unsub = queryClient.getQueryCache().subscribe((event) => {
-              if (event?.query.getObserversCount() === 0) {
-                resolve();
-                unsub();
-              }
-            });
-          });
-        }
-        const dehydratedCache = dehydrate(queryClient, {
-          shouldDehydrateQuery(query) {
-            // filter out queries that are marked as trpc: { ssr: false } or are not enabled, but make sure errors are dehydrated
-            const isExcludedFromSSr =
-              query.state.fetchStatus === 'idle' &&
-              query.state.status === 'pending';
-            return !isExcludedFromSSr;
-          },
-        });
-        // since error instances can't be serialized, let's make them into `TRPCClientErrorLike`-objects
-        const dehydratedCacheWithErrors = {
-          ...dehydratedCache,
-          queries: dehydratedCache.queries.map(
-            transformQueryOrMutationCacheErrors,
-          ),
-          mutations: dehydratedCache.mutations.map(
-            transformQueryOrMutationCacheErrors,
-          ),
-        };
-
-        // dehydrate query client's state and add it to the props
-        pageProps['trpcState'] = transformer.input.serialize(
-          dehydratedCacheWithErrors,
-        );
-
-        const appTreeProps = getAppTreeProps(pageProps);
-
-        if ('responseMeta' in opts) {
-          const meta =
-            opts.responseMeta?.({
-              ctx,
-              clientErrors: [
-                ...dehydratedCache.queries,
-                ...dehydratedCache.mutations,
-              ]
-                .map((v) => v.state.error)
-                .flatMap((err) =>
-                  err instanceof Error && err.name === 'TRPCClientError'
-                    ? [err as TRPCClientError<TRouter>]
-                    : [],
-                ),
-            }) ?? {};
-
-          for (const [key, value] of Object.entries(meta.headers ?? {})) {
-            if (typeof value === 'string') {
-              ctx.res?.setHeader(key, value);
-            }
-          }
-          if (meta.status && ctx.res) {
-            ctx.res.statusCode = meta.status;
-          }
-        }
-
-        return appTreeProps;
-      };
+    if (opts.ssr) {
+      opts.ssrPrepass({
+        parent: opts,
+        AppOrPage,
+        WithTRPC,
+      });
     }
 
     const displayName = AppOrPage.displayName ?? AppOrPage.name ?? 'Component';

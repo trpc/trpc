@@ -19,6 +19,12 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 <InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest @tanstack/react-query-devtools@latest" />
 
+## `@trpc/next` ssr mode now requires a prepass helper with `ssr: true`
+
+This is to fix https://github.com/trpc/trpc/issues/5378 where `react-dom` was imported regardless if you were using this functionality or not.
+
+See [SSR docs](../client/nextjs/ssr.md)
+
 ## Reverse-chronological changelog
 
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
