@@ -14,7 +14,6 @@ yarn.lock
 yalc.lock
 
 coverage/
-playwright/
 __generated__/
 
 
