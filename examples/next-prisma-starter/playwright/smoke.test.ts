@@ -20,9 +20,7 @@ test('add a post', async ({ page, browser }) => {
 
   expect(await page.content()).toContain(nonce);
 
-  const ssrContext = await browser.newContext({
-    javaScriptEnabled: false,
-  });
+  const ssrContext = await browser.newContext();
   const ssrPage = await ssrContext.newPage();
   await ssrPage.goto('/');
 
