@@ -86,6 +86,16 @@ export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
     ssr?: false;
   };
 
+type TRPCPrepassProps<
+  TRouter extends AnyRouter,
+  TSSRContext extends NextPageContext = NextPageContext,
+> = {
+  config: WithTRPCConfig<TRouter>;
+  queryClient: QueryClient;
+  trpcClient: TRPCUntypedClient<TRouter>;
+  ssrState: 'prepass';
+  ssrContext: TSSRContext;
+};
 export function withTRPC<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
@@ -95,19 +105,13 @@ export function withTRPC<
     (opts as CoercedTransformerParameters).transformer,
   );
 
-  type TRPCPrepassProps = {
-    config: WithTRPCConfig<TRouter>;
-    queryClient: QueryClient;
-    trpcClient: TRPCUntypedClient<TRouter>;
-    ssrState: 'prepass';
-    ssrContext: TSSRContext;
-  };
+  type $PrepassProps = TRPCPrepassProps<TRouter, TSSRContext>;
   return (AppOrPage: NextComponentType<any, any, any>): NextComponentType => {
     const trpc = createRootHooks<TRouter, TSSRContext>(opts);
 
     const WithTRPC = (
       props: AppPropsType<NextRouter, any> & {
-        trpc?: TRPCPrepassProps;
+        trpc?: $PrepassProps;
       },
     ) => {
       const [prepassProps] = useState(() => {
@@ -209,7 +213,7 @@ export function withTRPC<
         const trpcClient = createTRPCUntypedClient(config);
         const queryClient = getQueryClient(config);
 
-        const trpcProp: TRPCPrepassProps = {
+        const trpcProp: $PrepassProps = {
           config,
           trpcClient,
           queryClient,
