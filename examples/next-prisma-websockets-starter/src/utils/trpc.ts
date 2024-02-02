@@ -6,6 +6,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
 import getConfig from 'next/config';
@@ -56,6 +57,11 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
  * @link https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
 export const trpc = createTRPCNext<AppRouter>({
+  /**
+   * @link https://trpc.io/docs/v11/ssr
+   */
+  ssr: true,
+  ssrPrepass,
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
@@ -82,10 +88,6 @@ export const trpc = createTRPCNext<AppRouter>({
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
-  /**
-   * @link https://trpc.io/docs/v11/ssr
-   */
-  ssr: true,
   /**
    * @link https://trpc.io/docs/v11/data-transformers
    */
