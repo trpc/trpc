@@ -55,6 +55,11 @@
       "import": "./dist/app-dir/server.mjs",
       "require": "./dist/app-dir/server.js",
       "default": "./dist/app-dir/server.js"
+    },
+    "./pages/ssr": {
+      "import": "./dist/pages/ssr.mjs",
+      "require": "./dist/pages/ssr.js",
+      "default": "./dist/pages/ssr.js"
     }
   },
   "files": [
@@ -63,6 +68,7 @@
     "README.md",
     "package.json",
     "app-dir",
+    "pages",
     "!**/*.test.*"
   ],
   "dependencies": {},

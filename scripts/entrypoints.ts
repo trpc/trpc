@@ -69,11 +69,11 @@ export async function generateEntrypoints(rawInputs: string[]) {
       const importPath =
         parts.at(-1) === 'index.ts'
           ? parts.slice(0, -1).join('/')
-          : pathWithoutSrc.replace(/\.ts$/, '');
+          : pathWithoutSrc.replace(/\.tsx?$/, '');
 
       // write this entrypoint to the package.json exports field
-      const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
-      const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      const esm = './dist/' + pathWithoutSrc.replace(/\.tsx?$/, '.mjs');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.tsx?$/, '.js');
       pkgJson.exports[`./${importPath}`] = {
         import: esm,
         require: cjs,
