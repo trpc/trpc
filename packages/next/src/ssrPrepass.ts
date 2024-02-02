@@ -19,7 +19,7 @@ import type {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import { createElement } from 'react';
-import type { TRPCPrepassHelper, TRPCPrepassProps } from '../withTRPC';
+import type { TRPCPrepassHelper, TRPCPrepassProps } from './withTRPC';
 
 function transformQueryOrMutationCacheErrors<
   TState extends

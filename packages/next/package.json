@@ -56,10 +56,10 @@
       "require": "./dist/app-dir/server.js",
       "default": "./dist/app-dir/server.js"
     },
-    "./pages/ssr": {
-      "import": "./dist/pages/ssr.mjs",
-      "require": "./dist/pages/ssr.js",
-      "default": "./dist/pages/ssr.js"
+    "./ssrPrepass": {
+      "import": "./dist/ssrPrepass.mjs",
+      "require": "./dist/ssrPrepass.js",
+      "default": "./dist/ssrPrepass.js"
     }
   },
   "files": [
@@ -68,7 +68,7 @@
     "README.md",
     "package.json",
     "app-dir",
-    "pages",
+    "ssrPrepass",
     "!**/*.test.*"
   ],
   "dependencies": {},

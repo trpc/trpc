@@ -3,7 +3,7 @@
   "extends": ["//"],
   "pipeline": {
     "codegen-entrypoints": {
-      "outputs": ["package.json", "app-dir/**", "pages/**"]
+      "outputs": ["package.json", "app-dir/**", "ssrPrepass/**"]
     }
   }
 }

@@ -59,7 +59,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
       clientErrors: TRPCClientError<TRouter>[];
     }) => ResponseMeta;
     /**
-     * use `import { ssrPrepass } from '@trpc/next/pages/ssr'`
+     * use `import { ssrPrepass } from '@trpc/next/ssrPrepass'`
      * @link https://trpc.io/docs/client/nextjs/ssr
      */
     ssrPrepass: TRPCPrepassHelper;

@@ -6,7 +6,7 @@ import {
   wsLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/pages/ssr';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
 import getConfig from 'next/config';

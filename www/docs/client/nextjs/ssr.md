@@ -21,7 +21,7 @@ Additionally, consider [`Response Caching`](../../server/caching.md).
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
-import { ssrPrepass } from '@trpc/next/pages/ssr';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
