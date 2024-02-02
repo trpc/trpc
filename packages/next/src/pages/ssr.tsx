@@ -53,10 +53,10 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
   );
   WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
     const shouldSsr = async () => {
+      if (typeof window !== 'undefined') {
+        return false;
+      }
       if (typeof parent.ssr === 'function') {
-        if (typeof window !== 'undefined') {
-          return false;
-        }
         try {
           return await parent.ssr({ ctx: appOrPageCtx.ctx });
         } catch (e) {
@@ -65,7 +65,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
       }
       return parent.ssr;
     };
-    const ssr = await shouldSsr();
+    const ssrEnabled = await shouldSsr();
     const AppTree = appOrPageCtx.AppTree;
 
     // Determine if we are wrapping an App component or a Page component.
@@ -92,7 +92,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
     const getAppTreeProps = (props: Record<string, unknown>) =>
       isApp ? { pageProps: props } : props;
 
-    if (typeof window !== 'undefined' || !ssr) {
+    if (typeof window !== 'undefined' || !ssrEnabled) {
       return getAppTreeProps(pageProps);
     }
 

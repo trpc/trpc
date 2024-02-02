@@ -148,7 +148,7 @@ export function withTRPC<
       );
     };
 
-    if (opts.ssr && typeof window === 'undefined') {
+    if (opts.ssr) {
       opts.ssrPrepass({
         parent: opts,
         AppOrPage,
