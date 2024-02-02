@@ -18,11 +18,11 @@ test('add a post', async ({ page, browser }) => {
   await page.waitForLoadState('networkidle');
   await page.reload();
 
-  expect(await page.content()).toContain(nonce);
+  await page.waitForSelector(`text="${nonce}"`);
 
   const ssrContext = await browser.newContext();
   const ssrPage = await ssrContext.newPage();
   await ssrPage.goto('/');
 
-  expect(await ssrPage.content()).toContain(nonce);
+  await ssrPage.waitForSelector(`text="${nonce}"`);
 });
