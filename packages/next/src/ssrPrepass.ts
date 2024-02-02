@@ -49,7 +49,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
   type $PrepassProps = TRPCPrepassProps<AnyRouter, any>;
 
   const transformer = getTransformer(
-    (opts as CoercedTransformerParameters).transformer,
+    (parent as CoercedTransformerParameters).transformer,
   );
   WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
     const shouldSsr = async () => {
