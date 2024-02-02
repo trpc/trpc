@@ -200,7 +200,7 @@ export function withTRPC<
           trpc: trpcProp,
         };
 
-        const reactDomServer = /** #__PURE__ */ await import(
+        const { renderToString } = /** #__PURE__ */ await import(
           'react-dom/server'
         );
 
@@ -208,7 +208,7 @@ export function withTRPC<
         // multiple prepass ensures that we can do batching on the server
         while (true) {
           // render full tree
-          reactDomServer.renderToString(createElement(AppTree, prepassProps));
+          renderToString(createElement(AppTree, prepassProps));
           if (!queryClient.isFetching()) {
             // the render didn't cause the queryClient to fetch anything
             break;
