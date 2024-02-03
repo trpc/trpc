@@ -2,6 +2,7 @@ import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
+  inferRootTypes,
   inferRouterError,
   MaybePromise,
   ProcedureType,
@@ -13,6 +14,8 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
+import type { TransformerOptions } from '../unstable-internals';
+import { getTransformer } from '../unstable-internals';
 import type { Operation, TRPCLink } from './types';
 
 const run = <TResult>(fn: () => TResult): TResult => fn();
@@ -429,9 +432,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
-export interface WebSocketLinkOptions {
+export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
-}
+} & TransformerOptions<inferRootTypes<TRouter>>;
 class TRPCWebSocketClosedError extends Error {
   constructor(message: string) {
     super(message);
@@ -444,15 +447,16 @@ class TRPCWebSocketClosedError extends Error {
  * @link https://trpc.io/docs/v11/client/links/wsLink
  */
 export function wsLink<TRouter extends AnyRouter>(
-  opts: WebSocketLinkOptions,
+  opts: WebSocketLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
-  return (runtime) => {
+  const transformer = getTransformer(opts.transformer);
+  return () => {
     const { client } = opts;
     return ({ op }) => {
       return observable((observer) => {
         const { type, path, id, context } = op;
 
-        const input = runtime.transformer.serialize(op.input);
+        const input = transformer.input.serialize(op.input);
 
         const unsub = client.request(
           { type, path, input, id, context },
@@ -465,7 +469,7 @@ export function wsLink<TRouter extends AnyRouter>(
               observer.complete();
             },
             next(message) {
-              const transformed = transformResult(message, runtime.transformer);
+              const transformed = transformResult(message, transformer.output);
 
               if (!transformed.ok) {
                 observer.error(TRPCClientError.from(transformed.error));

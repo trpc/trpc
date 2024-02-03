@@ -93,32 +93,31 @@ So let's create a type that will do this for us:
 
 ```twoslash include resolver
 import type {
-  AnyProcedure,
+  AnyTRPCProcedure,
   inferProcedureInput,
   inferProcedureOutput,
-} from "@trpc/server";
+  AnyTRPCQueryProcedure,
+  AnyTRPCMutationProcedure
+} from '@trpc/server';
 
-type Resolver<TProcedure extends AnyProcedure> = (
-  input: inferProcedureInput<TProcedure>
+
+
+type Resolver<TProcedure extends AnyTRPCProcedure> = (
+  input: inferProcedureInput<TProcedure>,
 ) => Promise<inferProcedureOutput<TProcedure>>;
+
 ```
 
 ```twoslash include decorate
-import type {
-  AnyQueryProcedure,
-  AnyMutationProcedure
-} from '@trpc/server';
-
-type DecorateProcedure<TProcedure extends AnyProcedure> =
-  TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : never;
+type DecorateProcedure<TProcedure> = TProcedure extends AnyTRPCQueryProcedure
+  ? {
+      query: Resolver<TProcedure>;
+    }
+  : TProcedure extends AnyTRPCMutationProcedure
+  ? {
+      mutate: Resolver<TProcedure>;
+    }
+  : never;
 ```
 
 ```ts twoslash
@@ -163,14 +162,16 @@ Nice, that's what we expected - we can now call `.query` on our procedure and ge
 Finally, we'll create a type that will recursively traverse the router and decorate all procedures along the way:
 
 ```twoslash include decoraterecord
-import type { ProcedureRouterRecord } from "@trpc/server";
-import type { AnyRouter } from "@trpc/server";
+import type { TRPCRouterRecord } from "@trpc/server";
+import type { AnyTRPCRouter } from "@trpc/server";
 
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
+type DecorateRouterRecord<TRecord extends TRPCRouterRecord> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends TRPCRouterRecord
+      ? DecorateRouterRecord<$Value>
+      : $Value extends AnyTRPCProcedure
+      ? DecorateProcedure<$Value>
+      : never
     : never;
 };
 ```
@@ -184,7 +185,7 @@ type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
 
 Let's digest this type a bit:
 
-1. We pass a `ProcedureRouterRecord` to the type as a generic, which is a type containing all the procedures and sub-routers that exists on a tRPC router.
+1. We pass a `TRPCRouterRecord` to the type as a generic, which is a type containing all the procedures and sub-routers that exists on a tRPC router.
 2. We iterate over the keys of the record, which are the procedure or router names, and do the following:
    - If the key maps to a router, we recursively call the type on that router's procedure record, which will decorate all the procedures in that router. This will provide autocompletion as we traverse the path.
    - If the key maps to a procedure, we decorate the procedure using the `DecorateProcedure` type we created earlier.
@@ -253,12 +254,12 @@ Below is a visual representation of how the proxy works on the call `trpc.post.b
 
 ### 🧩 Putting it all together
 
-Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyRouter`), and then we'll cast the return type to the `DecoratedProcedureRecord` type we created earlier:
+Now that we have this helper and know what it does, let's use it to create our client. We'll provide the `createRecursiveProxy` a callback that will take the path and args and request the server using `fetch`. We'll need to add a generic to the function that will accept any tRPC router type (`AnyTRPCRouter`), and then we'll cast the return type to the `DecorateRouterRecord` type we created earlier:
 
 ```twoslash include tinyrpc
 import { TRPCResponse } from '@trpc/server/rpc';
 
-export const createTinyRPCClient = <TRouter extends AnyRouter>(
+export const createTinyRPCClient = <TRouter extends AnyTRPCRouter>(
   baseUrl: string,
 ) =>
   createRecursiveProxy(async (opts) => {
@@ -291,7 +292,7 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
     }
     // No error - all good. Return the data.
     return json.result.data;
-  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  }, []) as DecorateRouterRecord<TRouter['_def']['record']>;
 //   ^? provide empty array as path to begin with
 ```
 

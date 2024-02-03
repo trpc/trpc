@@ -12,8 +12,8 @@ import type {
   inferTransformedSubscriptionOutput,
   IntersectionError,
   ProcedureOptions,
-  ProcedureRouterRecord,
   ProcedureType,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -77,13 +77,15 @@ type DecorateProcedure<
  * @internal
  */
 type DecoratedProcedureRecord<
-  TProcedures extends ProcedureRouterRecord,
+  TRecord extends RouterRecord,
   TRouter extends AnyRouter,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record'], TRouter>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey], TRouter['_def']['_config']['$types']>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<$Value, TRouter>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<$Value, TRouter['_def']['_config']['$types']>
+      : never
     : never;
 };
 
@@ -107,10 +109,10 @@ export const clientCallTypeToProcedureType = (
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
 export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $ProcedureRecord
-    ? UntypedClientProperties & keyof $ProcedureRecord extends never
+  inferRouterClient<TRouter> extends infer $Value
+    ? UntypedClientProperties & keyof $Value extends never
       ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $ProcedureRecord>
+      : IntersectionError<UntypedClientProperties & keyof $Value>
     : never;
 
 /**

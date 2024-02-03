@@ -17,81 +17,80 @@ afterEach(async () => {
   await factory.close();
 });
 
-describe('Infinite Query', () => {
-  test('useInfiniteQuery()', async () => {
-    const { trpc, App } = factory;
+test('useInfiniteQuery()', async () => {
+  const { trpc, App } = factory;
 
-    function MyComponent() {
-      const q = trpc.paginatedPosts.useInfiniteQuery(
-        {
-          limit: 1,
-        },
-        {
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
-        },
-      );
-
-      expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
-
-      return q.status === 'pending' ? (
-        <p>Loading...</p>
-      ) : q.status === 'error' ? (
-        <p>Error: {q.error.message}</p>
-      ) : (
-        <>
-          {q.data?.pages.map((group, i) => (
-            <Fragment key={i}>
-              {group.items.map((msg) => (
-                <Fragment key={msg.id}>
-                  <div>{msg.title}</div>
-                </Fragment>
-              ))}
-            </Fragment>
-          ))}
-          <div>
-            <button
-              onClick={() => q.fetchNextPage()}
-              disabled={!q.hasNextPage || q.isFetchingNextPage}
-              data-testid="loadMore"
-            >
-              {q.isFetchingNextPage
-                ? 'Loading more...'
-                : q.hasNextPage
-                ? 'Load More'
-                : 'Nothing more to load'}
-            </button>
-          </div>
-          <div>
-            {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
-          </div>
-        </>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
+  function MyComponent() {
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
     );
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).not.toHaveTextContent('second post');
-      expect(utils.container).toHaveTextContent('Load More');
-    });
-    await userEvent.click(utils.getByTestId('loadMore'));
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('Loading more...');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).toHaveTextContent('second post');
-      expect(utils.container).toHaveTextContent('Nothing more to load');
-    });
 
-    expect(utils.container).toMatchInlineSnapshot(`
+    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+
+    return q.status === 'pending' ? (
+      <p>Loading...</p>
+    ) : q.status === 'error' ? (
+      <p>Error: {q.error.message}</p>
+    ) : (
+      <>
+        {q.data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((msg) => (
+              <Fragment key={msg.id}>
+                <div>{msg.title}</div>
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+        <div>
+          <button
+            onClick={() => q.fetchNextPage()}
+            disabled={!q.hasNextPage || q.isFetchingNextPage}
+            data-testid="loadMore"
+          >
+            {q.isFetchingNextPage
+              ? 'Loading more...'
+              : q.hasNextPage
+              ? 'Load More'
+              : 'Nothing more to load'}
+          </button>
+        </div>
+        <div>
+          {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).not.toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Load More');
+  });
+  await userEvent.click(utils.getByTestId('loadMore'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Loading more...');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Nothing more to load');
+  });
+
+  expect(utils.container).toMatchInlineSnapshot(`
     <div>
       <div>
         first post
@@ -110,99 +109,99 @@ describe('Infinite Query', () => {
       <div />
     </div>
   `);
+});
+
+test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
+  const { trpc, App } = factory;
+
+  function MyComponent() {
+    const trpcContext = trpc.useUtils();
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
+    );
+
+    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+
+    return q.status === 'pending' ? (
+      <p>Loading...</p>
+    ) : q.status === 'error' ? (
+      <p>Error: {q.error.message}</p>
+    ) : (
+      <>
+        {q.data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((msg) => (
+              <Fragment key={msg.id}>
+                <div>{msg.title}</div>
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+        <div>
+          <button
+            onClick={() => q.fetchNextPage()}
+            disabled={!q.hasNextPage || q.isFetchingNextPage}
+            data-testid="loadMore"
+          >
+            {q.isFetchingNextPage
+              ? 'Loading more...'
+              : q.hasNextPage
+              ? 'Load More'
+              : 'Nothing more to load'}
+          </button>
+        </div>
+        <div>
+          <button
+            data-testid="prefetch"
+            onClick={() =>
+              trpcContext.paginatedPosts.prefetchInfinite(
+                { limit: 1 },
+                {
+                  pages: 3,
+                  getNextPageParam: (lastPage) => lastPage.nextCursor,
+                },
+              )
+            }
+          >
+            Prefetch
+          </button>
+        </div>
+        <div>
+          {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).not.toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Load More');
+  });
+  await userEvent.click(utils.getByTestId('loadMore'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Loading more...');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Nothing more to load');
   });
 
-  test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
-    const { trpc, App } = factory;
-
-    function MyComponent() {
-      const trpcContext = trpc.useUtils();
-      const q = trpc.paginatedPosts.useInfiniteQuery(
-        {
-          limit: 1,
-        },
-        {
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
-        },
-      );
-
-      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
-
-      return q.status === 'pending' ? (
-        <p>Loading...</p>
-      ) : q.status === 'error' ? (
-        <p>Error: {q.error.message}</p>
-      ) : (
-        <>
-          {q.data?.pages.map((group, i) => (
-            <Fragment key={i}>
-              {group.items.map((msg) => (
-                <Fragment key={msg.id}>
-                  <div>{msg.title}</div>
-                </Fragment>
-              ))}
-            </Fragment>
-          ))}
-          <div>
-            <button
-              onClick={() => q.fetchNextPage()}
-              disabled={!q.hasNextPage || q.isFetchingNextPage}
-              data-testid="loadMore"
-            >
-              {q.isFetchingNextPage
-                ? 'Loading more...'
-                : q.hasNextPage
-                ? 'Load More'
-                : 'Nothing more to load'}
-            </button>
-          </div>
-          <div>
-            <button
-              data-testid="prefetch"
-              onClick={() =>
-                trpcContext.paginatedPosts.prefetchInfinite(
-                  { limit: 1 },
-                  {
-                    pages: 3,
-                    getNextPageParam: (lastPage) => lastPage.nextCursor,
-                  },
-                )
-              }
-            >
-              Prefetch
-            </button>
-          </div>
-          <div>
-            {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
-          </div>
-        </>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).not.toHaveTextContent('second post');
-      expect(utils.container).toHaveTextContent('Load More');
-    });
-    await userEvent.click(utils.getByTestId('loadMore'));
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('Loading more...');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).toHaveTextContent('second post');
-      expect(utils.container).toHaveTextContent('Nothing more to load');
-    });
-
-    expect(utils.container).toMatchInlineSnapshot(`
+  expect(utils.container).toMatchInlineSnapshot(`
     <div>
       <div>
         first post
@@ -229,109 +228,109 @@ describe('Infinite Query', () => {
     </div>
   `);
 
-    await userEvent.click(utils.getByTestId('prefetch'));
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('Fetching...');
-    });
-    await waitFor(() => {
-      expect(utils.container).not.toHaveTextContent('Fetching...');
-    });
-
-    // It should correctly fetch both pages
-    expect(utils.container).toHaveTextContent('first post');
-    expect(utils.container).toHaveTextContent('second post');
+  await userEvent.click(utils.getByTestId('prefetch'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Fetching...');
+  });
+  await waitFor(() => {
+    expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
-  test('useInfiniteQuery and fetchInfiniteQuery', async () => {
-    const { trpc, App } = factory;
+  // It should correctly fetch both pages
+  expect(utils.container).toHaveTextContent('first post');
+  expect(utils.container).toHaveTextContent('second post');
+});
 
-    function MyComponent() {
-      const trpcContext = trpc.useUtils();
-      const q = trpc.paginatedPosts.useInfiniteQuery(
-        {
-          limit: 1,
-        },
-        {
-          getNextPageParam: (lastPage) => lastPage.nextCursor,
-        },
-      );
-      expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+test('useInfiniteQuery and fetchInfiniteQuery', async () => {
+  const { trpc, App } = factory;
 
-      return q.status === 'pending' ? (
-        <p>Loading...</p>
-      ) : q.status === 'error' ? (
-        <p>Error: {q.error.message}</p>
-      ) : (
-        <>
-          {q.data?.pages.map((group, i) => (
-            <Fragment key={i}>
-              {group.items.map((msg) => (
-                <Fragment key={msg.id}>
-                  <div>{msg.title}</div>
-                </Fragment>
-              ))}
-            </Fragment>
-          ))}
-          <div>
-            <button
-              onClick={() => q.fetchNextPage()}
-              disabled={!q.hasNextPage || q.isFetchingNextPage}
-              data-testid="loadMore"
-            >
-              {q.isFetchingNextPage
-                ? 'Loading more...'
-                : q.hasNextPage
-                ? 'Load More'
-                : 'Nothing more to load'}
-            </button>
-          </div>
-          <div>
-            <button
-              data-testid="fetch"
-              onClick={() =>
-                trpcContext.paginatedPosts.fetchInfinite(
-                  { limit: 1 },
-                  {
-                    pages: 3,
-                    getNextPageParam: (lastPage) => lastPage.nextCursor,
-                  },
-                )
-              }
-            >
-              Fetch
-            </button>
-          </div>
-          <div>
-            {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
-          </div>
-        </>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
+  function MyComponent() {
+    const trpcContext = trpc.useUtils();
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
     );
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).not.toHaveTextContent('second post');
-      expect(utils.container).toHaveTextContent('Load More');
-    });
-    await userEvent.click(utils.getByTestId('loadMore'));
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('Loading more...');
-    });
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('first post');
-      expect(utils.container).toHaveTextContent('second post');
-      expect(utils.container).toHaveTextContent('Nothing more to load');
-    });
+    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
 
-    expect(utils.container).toMatchInlineSnapshot(`
+    return q.status === 'pending' ? (
+      <p>Loading...</p>
+    ) : q.status === 'error' ? (
+      <p>Error: {q.error.message}</p>
+    ) : (
+      <>
+        {q.data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((msg) => (
+              <Fragment key={msg.id}>
+                <div>{msg.title}</div>
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+        <div>
+          <button
+            onClick={() => q.fetchNextPage()}
+            disabled={!q.hasNextPage || q.isFetchingNextPage}
+            data-testid="loadMore"
+          >
+            {q.isFetchingNextPage
+              ? 'Loading more...'
+              : q.hasNextPage
+              ? 'Load More'
+              : 'Nothing more to load'}
+          </button>
+        </div>
+        <div>
+          <button
+            data-testid="fetch"
+            onClick={() =>
+              trpcContext.paginatedPosts.fetchInfinite(
+                { limit: 1 },
+                {
+                  pages: 3,
+                  getNextPageParam: (lastPage) => lastPage.nextCursor,
+                },
+              )
+            }
+          >
+            Fetch
+          </button>
+        </div>
+        <div>
+          {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).not.toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Load More');
+  });
+  await userEvent.click(utils.getByTestId('loadMore'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Loading more...');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Nothing more to load');
+  });
+
+  expect(utils.container).toMatchInlineSnapshot(`
     <div>
       <div>
         first post
@@ -358,71 +357,153 @@ describe('Infinite Query', () => {
     </div>
   `);
 
-    await userEvent.click(utils.getByTestId('fetch'));
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('Fetching...');
+  await userEvent.click(utils.getByTestId('fetch'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Fetching...');
+  });
+  await waitFor(() => {
+    expect(utils.container).not.toHaveTextContent('Fetching...');
+  });
+
+  // It should correctly fetch both pages
+  expect(utils.container).toHaveTextContent('first post');
+  expect(utils.container).toHaveTextContent('second post');
+});
+
+test('prefetchInfiniteQuery()', async () => {
+  const { appRouter } = factory;
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+
+  {
+    await ssg.paginatedPosts.prefetchInfinite({ limit: 1 });
+    const data = JSON.stringify(ssg.dehydrate());
+    expect(data).toContain('first post');
+    expect(data).not.toContain('second post');
+  }
+  {
+    await ssg.paginatedPosts.fetchInfinite({ limit: 2 });
+    const data = JSON.stringify(ssg.dehydrate());
+    expect(data).toContain('first post');
+    expect(data).toContain('second post');
+  }
+});
+
+test('useInfiniteQuery() is exposed on procedure with optional inputs', () => {
+  const { trpc, appRouter } = factory;
+
+  type AppRouter = typeof appRouter;
+  type Input = inferProcedureInput<AppRouter['paginatedPosts']>;
+
+  type Extends<T, U> = T extends U ? true : false;
+
+  // Optional procedure inputs are unioned with void | undefined.
+
+  assertType<Extends<Input, { cursor?: string }>>(false);
+  assertType<Extends<Input, { cursor?: string } | void>>(true);
+  assertType<Extends<Input, { cursor?: string } | undefined>>(true);
+  assertType<Extends<Input, { cursor?: string } | undefined | void>>(true);
+
+  // Assert 'useInfiniteQuery' is exposed in 'trpc.paginatedPosts'.
+
+  expectTypeOf(trpc.paginatedPosts.useInfiniteQuery).toBeFunction();
+});
+
+test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
+  ignoreErrors(async () => {
+    // @ts-expect-error 'cursor' is required
+    factory.trpc.postById.useInfiniteQuery;
+    const ssg = createServerSideHelpers({
+      router: factory.appRouter,
+      ctx: {},
     });
-    await waitFor(() => {
-      expect(utils.container).not.toHaveTextContent('Fetching...');
-    });
 
-    // It should correctly fetch both pages
-    expect(utils.container).toHaveTextContent('first post');
-    expect(utils.container).toHaveTextContent('second post');
+    // good
+    await ssg.paginatedPosts.fetchInfinite({ limit: 1 });
+
+    // @ts-expect-error 'cursor' is required
+    await ssg.postById.fetchInfinite({ limit: 1 });
+  });
+});
+
+test('regression 5412: invalidating a query', async () => {
+  const { trpc, App } = factory;
+
+  function MyComponent() {
+    const trpcContext = trpc.useUtils();
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
+    );
+    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+
+    return (
+      <>
+        <div data-testid="posts">
+          {q.data?.pages.map((group, i) => (
+            <Fragment key={i}>
+              {group.items.map((msg) => (
+                <Fragment key={msg.id}>
+                  <div>{msg.title}</div>
+                </Fragment>
+              ))}
+            </Fragment>
+          ))}
+        </div>
+        <div>
+          <button
+            onClick={() => trpcContext.invalidate()}
+            data-testid="invalidate"
+          >
+            invalidate
+          </button>
+          <button data-testid="next" onClick={() => q.fetchNextPage()}>
+            Fetch
+          </button>
+        </div>
+        <div>{q.isFetching || q.isRefetching ? 'Fetching...' : null}</div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  // get testid posts
+  const posts = utils.getByTestId('posts');
+  await waitFor(() => {
+    expect(posts).toHaveTextContent('first post');
+  });
+  expect(posts).not.toHaveTextContent('second post');
+
+  await userEvent.click(utils.getByTestId('next'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Fetching...');
+  });
+  await waitFor(() => {
+    expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
-  test('prefetchInfiniteQuery()', async () => {
-    const { appRouter } = factory;
-    const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+  // It should correctly fetch both pages
+  expect(posts).toHaveTextContent('first post');
+  expect(posts).toHaveTextContent('second post');
 
-    {
-      await ssg.paginatedPosts.prefetchInfinite({ limit: 1 });
-      const data = JSON.stringify(ssg.dehydrate());
-      expect(data).toContain('first post');
-      expect(data).not.toContain('second post');
-    }
-    {
-      await ssg.paginatedPosts.fetchInfinite({ limit: 2 });
-      const data = JSON.stringify(ssg.dehydrate());
-      expect(data).toContain('first post');
-      expect(data).toContain('second post');
-    }
+  // invalidate
+  await userEvent.click(utils.getByTestId('invalidate'));
+
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Fetching...');
+  });
+  await waitFor(() => {
+    expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
-  test('useInfiniteQuery() is exposed on procedure with optional inputs', () => {
-    const { trpc, appRouter } = factory;
-
-    type AppRouter = typeof appRouter;
-    type Input = inferProcedureInput<AppRouter['paginatedPosts']>;
-
-    type Extends<T, U> = T extends U ? true : false;
-
-    // Optional procedure inputs are unioned with void | undefined.
-
-    assertType<Extends<Input, { cursor?: string }>>(false);
-    assertType<Extends<Input, { cursor?: string } | void>>(true);
-    assertType<Extends<Input, { cursor?: string } | undefined>>(true);
-    assertType<Extends<Input, { cursor?: string } | undefined | void>>(true);
-
-    // Assert 'useInfiniteQuery' is exposed in 'trpc.paginatedPosts'.
-
-    expectTypeOf(trpc.paginatedPosts.useInfiniteQuery).toBeFunction();
-  });
-
-  test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
-    ignoreErrors(async () => {
-      // @ts-expect-error 'cursor' is required
-      factory.trpc.postById.useInfiniteQuery;
-      const ssg = createServerSideHelpers({
-        router: factory.appRouter,
-        ctx: {},
-      });
-
-      // good
-      await ssg.paginatedPosts.fetchInfinite({ limit: 1 });
-
-      // @ts-expect-error 'cursor' is required
-      await ssg.postById.fetchInfinite({ limit: 1 });
-    });
-  });
+  expect(posts).toHaveTextContent('first post');
+  expect(posts).toHaveTextContent('second post');
 });

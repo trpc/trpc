@@ -6,7 +6,7 @@ import type {
   DeepPartial,
   inferProcedureInput,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { DecoratedProcedureRecord, DecorateProcedure } from '../shared';
+import type { DecorateProcedure, DecorateRouterRecord } from '../shared';
 
 export type QueryType = 'any' | 'infinite' | 'query';
 
@@ -100,7 +100,7 @@ type GetParams<
   ? [procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>]
   : TProcedureOrRouter extends AnyRouter
   ? [
-      procedureOrRouter: DecoratedProcedureRecord<
+      procedureOrRouter: DecorateRouterRecord<
         TRoot,
         TProcedureOrRouter['_def']['record'],
         TFlags

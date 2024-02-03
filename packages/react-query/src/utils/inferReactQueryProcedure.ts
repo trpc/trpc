@@ -7,6 +7,7 @@ import type {
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   UseTRPCMutationOptions,
@@ -69,20 +70,23 @@ export type InferMutationResult<
   TContext
 >;
 
-export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
-    ? TRouterOrProcedure extends AnyRouter
-      ? inferReactQueryProcedureOptions<TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyMutationProcedure
-      ? InferMutationOptions<
-          TRouter['_def']['_config']['$types'],
-          TRouterOrProcedure
-        >
-      : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<
-          TRouter['_def']['_config']['$types'],
-          TRouterOrProcedure
-        >
+type inferReactQueryProcedureOptionsInner<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? inferReactQueryProcedureOptionsInner<TRoot, $Value>
+      : $Value extends AnyMutationProcedure
+      ? InferMutationOptions<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? InferQueryOptions<TRoot, $Value>
       : never
     : never;
 };
+
+export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> =
+  inferReactQueryProcedureOptionsInner<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;

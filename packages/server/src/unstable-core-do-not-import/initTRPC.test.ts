@@ -1,8 +1,8 @@
-import { initTRPC } from '@trpc/server';
+import { initTRPC } from './initTRPC';
 import type {
   CombinedDataTransformer,
   DataTransformerOptions,
-} from '@trpc/server/unstable-core-do-not-import';
+} from './transformer';
 
 test('default transformer', () => {
   const t = initTRPC

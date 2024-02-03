@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from '../__testHelpers';
 import { withTRPC } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 
@@ -44,6 +45,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   const Wrapped = withTRPC({
     config: () => trpcClientOptions,
     ssr: true,
+    ssrPrepass,
   })(App);
 
   await Wrapped.getInitialProps!({

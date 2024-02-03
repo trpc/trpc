@@ -1,3 +1,4 @@
+import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../internals/types';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { RequesterFn } from './internals/createHTTPBatchLink';
@@ -7,16 +8,17 @@ import { streamingJsonHttpRequester } from './internals/parseJSONStream';
 import type { TextDecoderEsque } from './internals/streamingUtils';
 import type { Operation } from './types';
 
-export interface HTTPBatchStreamLinkOptions extends HTTPBatchLinkOptions {
-  /**
-   * Will default to the webAPI `TextDecoder`,
-   * but you can use this option if your client
-   * runtime doesn't provide it.
-   */
-  textDecoder?: TextDecoderEsque;
-}
+export type HTTPBatchStreamLinkOptions<TRoot extends AnyRootTypes> =
+  HTTPBatchLinkOptions<TRoot> & {
+    /**
+     * Will default to the webAPI `TextDecoder`,
+     * but you can use this option if your client
+     * runtime doesn't provide it.
+     */
+    textDecoder?: TextDecoderEsque;
+  };
 
-const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions> = (
+const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions<AnyRootTypes>> = (
   requesterOpts,
 ) => {
   const textDecoder = getTextDecoder(requesterOpts.opts.textDecoder);

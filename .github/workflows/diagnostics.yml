@@ -9,6 +9,7 @@ concurrency:
 
 jobs:
   diagnostics:
+    timeout-minutes: 10
     if: github.event.pull_request.head.repo.fork == false
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}

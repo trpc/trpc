@@ -27,7 +27,7 @@ describe('without transformer', () => {
     },
   });
 
-  const useAction = experimental_createActionHook({
+  const useAction = experimental_createActionHook<typeof instance>({
     links: [experimental_serverActionLink()],
   });
 
@@ -172,9 +172,12 @@ describe('with transformer', () => {
     },
   });
 
-  const useAction = experimental_createActionHook({
-    links: [experimental_serverActionLink()],
-    transformer: superjson,
+  const useAction = experimental_createActionHook<typeof instance>({
+    links: [
+      experimental_serverActionLink({
+        transformer: superjson,
+      }),
+    ],
   });
 
   test('pass a Date', async () => {
@@ -356,7 +359,7 @@ describe('type tests', () => {
     },
   });
 
-  const useAction = experimental_createActionHook({
+  const useAction = experimental_createActionHook<typeof instance>({
     links: [experimental_serverActionLink()],
   });
 
@@ -404,5 +407,14 @@ describe('type tests', () => {
       // @ts-expect-error this takes no input
       await hook.mutateAsync(null);
     });
+  });
+
+  test('makes sure we have defined a generic', async () => {
+    experimental_createActionHook(
+      // @ts-expect-error missing generic param
+      {
+        links: [],
+      },
+    );
   });
 });

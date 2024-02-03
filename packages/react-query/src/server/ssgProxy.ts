@@ -7,18 +7,23 @@ import type {
 import { dehydrate } from '@tanstack/react-query';
 import type { inferRouterClient, TRPCClientError } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
+import {
+  getTransformer,
+  type TransformerOptions,
+} from '@trpc/client/unstable-internals';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  DataTransformerOptions,
-  Filter,
   inferProcedureInput,
+  inferRootTypes,
   inferRouterContext,
   inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   callProcedure,
@@ -34,11 +39,10 @@ import type {
 } from '../shared';
 import { getQueryClient, getQueryType } from '../shared';
 
-interface CreateSSGHelpersInternal<TRouter extends AnyRouter> {
+type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   router: TRouter;
   ctx: inferRouterContext<TRouter>;
-  transformer?: DataTransformerOptions;
-}
+} & TransformerOptions<inferRootTypes<TRouter>>;
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
@@ -107,17 +111,18 @@ type DecorateProcedure<
 /**
  * @internal
  */
-type DecoratedProcedureSSGRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? DecoratedProcedureSSGRecord<TRouter['_def']['record'][TKey]>
-    : // utils only apply to queries
-      DecorateProcedure<
-        TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record'][TKey]
-      >;
+type DecoratedProcedureSSGRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureSSGRecord<TRoot, $Value>
+      : // utils only apply to queries
+      $Value extends AnyQueryProcedure
+      ? DecorateProcedure<TRoot, $Value>
+      : never
+    : never;
 };
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
@@ -130,17 +135,18 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,
 ) {
   const queryClient = getQueryClient(opts);
+  const transformer = getTransformer(
+    (opts as CoercedTransformerParameters).transformer,
+  );
 
   const resolvedOpts: {
     serialize: (obj: unknown) => any;
     query: (queryOpts: { path: string; input: unknown }) => Promise<unknown>;
   } = (() => {
     if ('router' in opts) {
-      const { transformer, ctx, router } = opts;
+      const { ctx, router } = opts;
       return {
-        serialize: transformer
-          ? ('input' in transformer ? transformer.input : transformer).serialize
-          : (obj) => obj,
+        serialize: transformer.output.serialize,
         query: (queryOpts) => {
           return callProcedure({
             procedures: router._def.procedures,
@@ -160,7 +166,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     return {
       query: (queryOpts) =>
         untypedClient.query(queryOpts.path, queryOpts.input),
-      serialize: (obj) => untypedClient.runtime.transformer.serialize(obj),
+      serialize: (obj) => transformer.output.serialize(obj),
     };
   })();
 
@@ -182,7 +188,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       queryClient: QueryClient;
       dehydrate: (opts?: DehydrateOptions) => DehydratedState;
     },
-    DecoratedProcedureSSGRecord<TRouter>
+    DecoratedProcedureSSGRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
   >;
 
   return createFlatProxy<CreateSSGHelpers>((key) => {

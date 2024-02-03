@@ -5,9 +5,9 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  Filter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
@@ -36,21 +36,22 @@ type GetQueryOptions<
 /**
  * @internal
  */
-export type UseQueriesProcedureRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? UseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
-    : GetQueryOptions<
-        TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record'][TKey]
-      >;
+export type UseQueriesProcedureRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? UseQueriesProcedureRecord<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? GetQueryOptions<TRoot, $Value>
+      : never
+    : never;
 };
 
 type GetSuspenseQueryOptions<
   TRoot extends AnyRootTypes,
-  TProcedure extends AnyProcedure,
+  TProcedure extends AnyQueryProcedure,
 > = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseSuspenseQueries<
@@ -67,16 +68,17 @@ type GetSuspenseQueryOptions<
 /**
  * @internal
  */
-export type UseSuspenseQueriesProcedureRecord<TRouter extends AnyRouter> = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? UseSuspenseQueriesProcedureRecord<TRouter['_def']['record'][TKey]>
-    : GetSuspenseQueryOptions<
-        TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record'][TKey]
-      >;
+export type UseSuspenseQueriesProcedureRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? UseSuspenseQueriesProcedureRecord<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? GetSuspenseQueryOptions<TRoot, $Value>
+      : never
+    : never;
 };
 
 /**
@@ -103,5 +105,8 @@ export function createUseQueries<TRouter extends AnyRouter>(
     };
 
     return options;
-  }) as UseQueriesProcedureRecord<TRouter>;
+  }) as UseQueriesProcedureRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
 }

@@ -73,6 +73,52 @@ test('very happy path', async () => {
   await close();
 });
 
+test('nested short-hand routes', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .query(({ input }) => `hello ${input}`);
+  const router = t.router({
+    deeply: {
+      nested: {
+        greeting,
+      },
+    },
+  });
+
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.deeply.nested.greeting.query('KATT')).toBe('hello KATT');
+  await close();
+});
+
+test('mixing short-hand routes and routers', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .query(({ input }) => `hello ${input}`);
+  const router = t.router({
+    deeply: {
+      nested: {
+        greeting,
+        router: t.router({
+          greeting,
+        }),
+      },
+    },
+  });
+
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.deeply.nested.greeting.query('KATT')).toBe('hello KATT');
+  expect(await client.deeply.nested.router.greeting.query('KATT')).toBe(
+    'hello KATT',
+  );
+  await close();
+});
+
 test('middleware', async () => {
   const router = t.router({
     greeting: procedure
@@ -127,11 +173,13 @@ test('call a mutation as a query', async () => {
 test('flat router', async () => {
   const hello = procedure.query(() => 'world');
   const bye = procedure.query(() => 'bye');
+  const child = t.router({
+    bye,
+  });
+
   const router1 = t.router({
     hello,
-    child: t.router({
-      bye,
-    }),
+    child,
   });
 
   expect(router1.hello).toBe(hello);

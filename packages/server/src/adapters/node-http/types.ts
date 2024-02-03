@@ -7,7 +7,7 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import type { IncomingMessage, ServerResponse } from 'http';
+import type * as http from 'http';
 // @trpc/server
 import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
 // @trpc/server/http
@@ -23,11 +23,11 @@ interface ParsedQs {
   [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
 }
 
-export type NodeHTTPRequest = IncomingMessage & {
+export type NodeHTTPRequest = http.IncomingMessage & {
   query?: ParsedQs;
   body?: unknown;
 };
-export type NodeHTTPResponse = ServerResponse & {
+export type NodeHTTPResponse = http.ServerResponse & {
   /**
    * Force the partially-compressed response to be flushed to the client.
    *

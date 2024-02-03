@@ -1,4 +1,4 @@
-import type { CombinedDataTransformer } from '.';
+import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
 
 /**

@@ -194,10 +194,10 @@ describe('with superjson', () => {
         const opts = routerToServerAndClientNew(appRouter, {
           client({ httpUrl }) {
             return {
-              transformer: superjson,
               links: [
                 httpLink({
                   url: httpUrl,
+                  transformer: superjson,
                 }),
               ],
             };
@@ -231,10 +231,10 @@ describe('with superjson', () => {
         const opts = routerToServerAndClientNew(appRouter, {
           client({ httpUrl }) {
             return {
-              transformer: superjson,
               links: [
                 httpBatchLink({
                   url: httpUrl,
+                  transformer: superjson,
                 }),
               ],
             };

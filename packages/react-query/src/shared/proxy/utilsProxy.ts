@@ -17,10 +17,10 @@ import type {
   AnyRootTypes,
   AnyRouter,
   DeepPartial,
-  Filter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -227,20 +227,19 @@ type DecorateRouter = {
 /**
  * @internal
  */
-export type DecoratedProcedureUtilsRecord<TRouter extends AnyRouter> =
-  DecorateRouter & {
-    [TKey in keyof Filter<
-      TRouter['_def']['record'],
-      AnyQueryProcedure | AnyRouter
-    >]: TRouter['_def']['record'][TKey] extends AnyRouter
-      ? DecoratedProcedureUtilsRecord<TRouter['_def']['record'][TKey]> &
-          DecorateRouter
+export type DecoratedProcedureUtilsRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = DecorateRouter & {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
       : // utils only apply to queries
-        DecorateProcedure<
-          TRouter['_def']['_config']['$types'],
-          TRouter['_def']['record'][TKey]
-        >;
-  }; // Add functions that should be available at utils root
+      $Value extends AnyQueryProcedure
+      ? DecorateProcedure<TRoot, $Value>
+      : never
+    : never;
+}; // Add functions that should be available at utils root
 
 type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
@@ -249,11 +248,17 @@ export type CreateReactUtils<
   TSSRContext,
 > = ProtectedIntersection<
   DecoratedTRPCContextProps<TRouter, TSSRContext>,
-  DecoratedProcedureUtilsRecord<TRouter>
+  DecoratedProcedureUtilsRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >
 >;
 
 export type CreateQueryUtils<TRouter extends AnyRouter> =
-  DecoratedProcedureUtilsRecord<TRouter>;
+  DecoratedProcedureUtilsRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
 
 export const getQueryType = (
   utilName: keyof AnyDecoratedProcedure,

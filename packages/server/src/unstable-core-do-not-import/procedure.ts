@@ -1,7 +1,4 @@
-import type { inferObservableValue } from '../observable';
 import type { ProcedureCallOptions } from './procedureBuilder';
-import type { Serialize } from './serialize';
-import type { inferRootTypes, TRPCInferrable } from './TRPCInferrable';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -64,24 +61,6 @@ export type AnyQueryProcedure = QueryProcedure<any>;
 export type AnyMutationProcedure = MutationProcedure<any>;
 export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
 export type AnyProcedure = Procedure<ProcedureType, any>;
-
-/**
- * @internal
- */
-export type inferTransformedProcedureOutput<
-  TInferrable extends TRPCInferrable,
-  TProcedure extends AnyProcedure,
-> = inferRootTypes<TInferrable>['transformer'] extends false
-  ? Serialize<TProcedure['_def']['_output_out']>
-  : TProcedure['_def']['_output_out'];
-
-/** @internal */
-export type inferTransformedSubscriptionOutput<
-  TInferrable extends TRPCInferrable,
-  TProcedure extends AnyProcedure,
-> = inferRootTypes<TInferrable>['transformer'] extends false
-  ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
-  : inferObservableValue<TProcedure['_def']['_output_out']>;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
   undefined extends inferProcedureParams<TProcedure>['_input_in']

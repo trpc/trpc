@@ -3,6 +3,7 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { initTRPC } from '@trpc/server';
 import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
@@ -33,12 +34,7 @@ const ctx = konn()
       foo: t.procedure.query(() => 'bar' as const),
     });
     const opts = routerToServerAndClientNew(appRouter, {
-      client(opts) {
-        return {
-          ...opts,
-          transformer,
-        };
-      },
+      transformer,
     });
 
     return opts;
@@ -60,6 +56,8 @@ test('withTRPC - SSR', async () => {
       return ctx.trpcClientOptions;
     },
     ssr: true,
+    transformer,
+    ssrPrepass,
   });
 
   const App: AppType = () => {
@@ -74,7 +72,7 @@ test('withTRPC - SSR', async () => {
     Component: <div />,
   } as any)) as Record<string, any>;
 
-  const trpcState: DehydratedState = transformer.output.deserialize(
+  const trpcState: DehydratedState = transformer.input.deserialize(
     props['pageProps'].trpcState,
   );
 

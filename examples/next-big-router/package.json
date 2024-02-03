@@ -7,7 +7,8 @@
     "build": "next build",
     "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "start": "next start",
-    "postinstall": "tsx scripts/codegen"
+    "postinstall": "tsx scripts/codegen",
+    "tsc": "tsc"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",

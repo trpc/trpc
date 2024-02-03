@@ -155,11 +155,11 @@ describe('with transformer', () => {
         server: {},
         client(opts) {
           return {
-            transformer: superjson,
             links: [
               linkSpy,
               unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
+                transformer: superjson,
               }),
             ],
           };

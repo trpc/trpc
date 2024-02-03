@@ -3,6 +3,7 @@ import { createAppRouter } from './__testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { withTRPC } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { konn } from 'konn';
 import type { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
 import React from 'react';
@@ -29,6 +30,7 @@ describe('withTRPC()', () => {
     const Wrapped = withTRPC({
       config: () => trpcClientOptions,
       ssr: true,
+      ssrPrepass,
     })(App);
 
     const props = await Wrapped.getInitialProps!({
@@ -63,6 +65,7 @@ describe('withTRPC()', () => {
         ssr: ({ ctx }) => {
           return ctx?.pathname === '/';
         },
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -96,6 +99,7 @@ describe('withTRPC()', () => {
         ssr: () => {
           throw new Error('oops');
         },
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -129,6 +133,7 @@ describe('withTRPC()', () => {
         ssr: ({ ctx }) => {
           return ctx?.pathname === '/not-matching-path';
         },
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -163,6 +168,7 @@ describe('withTRPC()', () => {
           await new Promise((resolve) => setTimeout(resolve, 100));
           return ctx?.pathname === '/';
         },
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -188,6 +194,7 @@ describe('withTRPC()', () => {
         ssr: async () => {
           return true;
         },
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -232,6 +239,7 @@ describe('withTRPC()', () => {
         ssr: async ({ ctx }) => {
           return ctx?.pathname === '/';
         },
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -263,6 +271,7 @@ describe('withTRPC()', () => {
       const Wrapped = withTRPC({
         config: () => trpcClientOptions,
         ssr: ssrFn,
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -297,6 +306,7 @@ describe('withTRPC()', () => {
     const Wrapped = withTRPC({
       config: () => trpcClientOptions,
       ssr: true,
+      ssrPrepass,
     })(App);
 
     const props = await Wrapped.getInitialProps!({
@@ -369,6 +379,7 @@ describe('withTRPC()', () => {
     const Wrapped = withTRPC({
       config: () => trpcClientOptions,
       ssr: true,
+      ssrPrepass,
     })(App);
 
     const props = await Wrapped.getInitialProps!({
@@ -392,6 +403,7 @@ describe('withTRPC()', () => {
     const Wrapped = withTRPC({
       config: () => trpcClientOptions,
       ssr: true,
+      ssrPrepass,
     })(App);
 
     const props = await Wrapped.getInitialProps!({
@@ -423,6 +435,7 @@ describe('withTRPC()', () => {
       const Wrapped = withTRPC({
         config: () => trpcClientOptions,
         ssr: true,
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -465,6 +478,7 @@ describe('withTRPC()', () => {
       const Wrapped = withTRPC({
         config: () => trpcClientOptions,
         ssr: true,
+        ssrPrepass,
       })(App);
 
       const props = await Wrapped.getInitialProps!({
@@ -501,6 +515,7 @@ describe('withTRPC()', () => {
     const Wrapped = withTRPC({
       config: () => trpcClientOptions,
       ssr: true,
+      ssrPrepass,
     })(App);
 
     const props = await Wrapped.getInitialProps!({
@@ -544,6 +559,7 @@ describe('withTRPC()', () => {
         const Wrapped = withTRPC({
           config: () => trpcClientOptions,
           ssr: true,
+          ssrPrepass,
         })(App);
 
         const props = await Wrapped.getInitialProps!({
@@ -589,6 +605,7 @@ describe('withTRPC()', () => {
         const Wrapped = withTRPC({
           config: () => trpcClientOptions,
           ssr: true,
+          ssrPrepass,
         })(App);
 
         const props = (await Wrapped.getInitialProps!({
@@ -641,6 +658,7 @@ describe('withTRPC()', () => {
         const Wrapped = withTRPC({
           config: () => trpcClientOptions,
           ssr: true,
+          ssrPrepass,
         })(App);
 
         const props = await Wrapped.getInitialProps!({
@@ -696,6 +714,7 @@ describe('withTRPC()', () => {
         const Wrapped = withTRPC({
           config: () => trpcClientOptions,
           ssr: true,
+          ssrPrepass,
         })(App);
 
         const props = await Wrapped.getInitialProps!({
@@ -749,6 +768,7 @@ describe('withTRPC()', () => {
         const Wrapped = withTRPC({
           config: () => trpcClientOptions,
           ssr: true,
+          ssrPrepass,
         })(App);
 
         const props = await Wrapped.getInitialProps!({
@@ -815,6 +835,7 @@ describe('withTRPC()', () => {
       const Wrapped = withTRPC({
         config: () => trpcClientOptions,
         ssr: true,
+        ssrPrepass,
       })(App);
 
       // @ts-ignore

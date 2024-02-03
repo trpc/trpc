@@ -22,7 +22,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   });
 
   const opts = routerToServerAndClientNew(appRouter, {
-    client: ({ wsClient, httpUrl }) => ({
+    client: (opts) => ({
       links: [
         () => {
           // here we just got initialized in the app - this happens once per app
@@ -36,8 +36,14 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
         },
         splitLink({
           condition: (op) => op.type === 'subscription',
-          true: wsLink({ client: wsClient }),
-          false: httpBatchLink({ url: httpUrl }),
+          true: wsLink({
+            client: opts.wsClient,
+            transformer: opts.transformer as any,
+          }),
+          false: httpBatchLink({
+            url: opts.httpUrl,
+            transformer: opts.transformer as any,
+          }),
         }),
       ],
     }),

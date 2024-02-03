@@ -1,36 +1,16 @@
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
-import type {
-  AnyProcedure,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
-} from './procedure';
+import type { AnyProcedure, inferProcedureInput } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
-import type { MaybePromise } from './types';
+import type { MaybePromise, ValueOf } from './types';
 import { mergeWithoutOverrides, omitPrototype } from './utils';
 
-/** @internal **/
-export type ProcedureRecord = Record<string, AnyProcedure>;
-
-export interface ProcedureRouterRecord {
-  [key: string]: AnyProcedure | AnyRouter;
+export interface RouterRecord {
+  [key: string]: AnyProcedure | RouterRecord;
 }
-
-export interface RouterDef<
-  TRoot extends AnyRootTypes,
-  TRecord extends ProcedureRouterRecord,
-> {
-  _config: RootConfig<TRoot>;
-  router: true;
-  procedure?: never;
-  procedures: TRecord;
-  record: TRecord;
-}
-
-export type AnyRouterDef = RouterDef<any, any>;
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
@@ -39,85 +19,68 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 /**
  * @internal
  */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
+export type DecorateRouterRecord<TRecord extends RouterRecord> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
+    ? DecorateProcedure<TRecord[TKey]>
+    : TRecord[TKey] extends RouterRecord
+    ? DecorateRouterRecord<TRecord[TKey]>
     : never;
 };
 
 /**
  * @internal
  */
-export type RouterCaller<TDef extends AnyRouterDef> = (
+export type RouterCaller<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = (
   /**
    * @note
    * If passing a function, we recommend it's a cached function
    * e.g. wrapped in `React.cache` to avoid unnecessary computations
    */
-  ctx:
-    | TDef['_config']['$types']['ctx']
-    | (() => MaybePromise<TDef['_config']['$types']['ctx']>),
-) => DecoratedProcedureRecord<TDef['record']>;
+  ctx: TRoot['ctx'] | (() => MaybePromise<TRoot['ctx']>),
+) => DecorateRouterRecord<TRecord>;
 
-export interface Router<TDef extends AnyRouterDef> {
-  _def: TDef;
+export interface Router<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> {
+  _def: {
+    _config: RootConfig<TRoot>;
+    router: true;
+    procedure?: never;
+    procedures: TRecord;
+    record: TRecord;
+  };
   /**
    * @deprecated use `t.createCallerFactory(router)` instead
    * @link https://trpc.io/docs/v11/server/server-side-calls
    */
-  createCaller: RouterCaller<TDef>;
+  createCaller: RouterCaller<TRoot, TRecord>;
 }
 
-export type AnyRouter = Router<AnyRouterDef>;
+export type BuiltRouter<
+  TRoot extends AnyRootTypes,
+  TDef extends RouterRecord,
+> = Router<TRoot, TDef> & TDef;
 
-type inferRouterDef<TRouter extends AnyRouter> = TRouter extends Router<
-  infer TParams
->
-  ? TParams extends AnyRouterDef
-    ? TParams
-    : never
-  : never;
-type inferRouterConfig<TRouter extends AnyRouter> =
-  inferRouterDef<TRouter>['_config'];
+export type AnyRouter = Router<any, any>;
+
+export type inferRouterRootTypes<TRouter extends AnyRouter> =
+  TRouter['_def']['_config']['$types'];
 
 export type inferRouterContext<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['ctx'];
+  inferRouterRootTypes<TRouter>['ctx'];
 export type inferRouterError<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['errorShape'];
+  inferRouterRootTypes<TRouter>['errorShape'];
 export type inferRouterMeta<TRouter extends AnyRouter> =
-  inferRouterConfig<TRouter>['$types']['meta'];
-
-type GetInferenceHelpers<
-  TType extends 'input' | 'output',
-  TRouter extends AnyRouter,
-> = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
-    ? TRouterOrProcedure extends AnyRouter
-      ? GetInferenceHelpers<TType, TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyProcedure
-      ? TType extends 'input'
-        ? inferProcedureInput<TRouterOrProcedure>
-        : inferTransformedProcedureOutput<TRouter, TRouterOrProcedure>
-      : never
-    : never;
-};
-
-export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
-  'input',
-  TRouter
->;
-
-export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
-  'output',
-  TRouter
->;
+  inferRouterRootTypes<TRouter>['meta'];
 
 function isRouter(
-  procedureOrRouter: AnyProcedure | AnyRouter,
+  procedureOrRouter: ValueOf<CreateRouterOptions>,
 ): procedureOrRouter is AnyRouter {
-  return 'router' in procedureOrRouter._def;
+  return procedureOrRouter._def && 'router' in procedureOrRouter._def;
 }
 
 const emptyRouter = {
@@ -142,17 +105,23 @@ const reservedWords = [
   'then',
 ];
 
-/**
- * @internal
- */
-export type CreateRouterInner<
-  TRoot extends AnyRootTypes,
-  TProcRouterRecord extends ProcedureRouterRecord,
-> = Router<RouterDef<TRoot, TProcRouterRecord>> &
-  /**
-   * This adds ability to call procedures directly but is primarily used for quick access in type inference
-   */
-  TProcRouterRecord;
+export type CreateRouterOptions = {
+  [key: string]: AnyProcedure | AnyRouter | CreateRouterOptions;
+};
+
+export type DecorateCreateRouterOptions<
+  TRouterOptions extends CreateRouterOptions,
+> = {
+  [K in keyof TRouterOptions]: TRouterOptions[K] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? $Value
+      : $Value extends Router<any, infer TRecord>
+      ? TRecord
+      : $Value extends CreateRouterOptions
+      ? DecorateCreateRouterOptions<$Value>
+      : never
+    : never;
+};
 
 /**
  * @internal
@@ -160,13 +129,15 @@ export type CreateRouterInner<
 export function createRouterFactory<TRoot extends AnyRootTypes>(
   config: RootConfig<TRoot>,
 ) {
-  return function createRouterInner<
-    TProcRouterRecord extends ProcedureRouterRecord,
-  >(
-    procedures: TProcRouterRecord,
-  ): CreateRouterInner<TRoot, TProcRouterRecord> {
+  function createRouterInner<TInput extends RouterRecord>(
+    input: TInput,
+  ): BuiltRouter<TRoot, TInput>;
+  function createRouterInner<TInput extends CreateRouterOptions>(
+    input: TInput,
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
+  function createRouterInner(input: RouterRecord | CreateRouterOptions) {
     const reservedWordsUsed = new Set(
-      Object.keys(procedures).filter((v) => reservedWords.includes(v)),
+      Object.keys(input).filter((v) => reservedWords.includes(v)),
     );
     if (reservedWordsUsed.size > 0) {
       throw new Error(
@@ -175,37 +146,47 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       );
     }
 
-    const routerProcedures: ProcedureRecord = omitPrototype({});
-    function recursiveGetPaths(procedures: ProcedureRouterRecord, path = '') {
-      for (const [key, procedureOrRouter] of Object.entries(procedures ?? {})) {
-        const newPath = `${path}${key}`;
+    const procedures: Record<string, AnyProcedure> = omitPrototype({});
 
-        if (isRouter(procedureOrRouter)) {
-          recursiveGetPaths(procedureOrRouter._def.procedures, `${newPath}.`);
+    function step(from: CreateRouterOptions, path: string[] = []) {
+      const aggregate: RouterRecord = omitPrototype({});
+      for (const [key, item] of Object.entries(from ?? {})) {
+        if (isRouter(item)) {
+          aggregate[key] = step(item._def.record, [...path, key]);
+          continue;
+        }
+        if (!isProcedure(item)) {
+          // RouterRecord
+          aggregate[key] = step(item, [...path, key]);
           continue;
         }
 
-        if (routerProcedures[newPath]) {
+        const newPath = [...path, key].join('.');
+
+        if (procedures[newPath]) {
           throw new Error(`Duplicate key: ${newPath}`);
         }
 
-        routerProcedures[newPath] = procedureOrRouter;
+        procedures[newPath] = item;
+        aggregate[key] = item;
       }
-    }
-    recursiveGetPaths(procedures);
 
-    const _def: AnyRouterDef = {
+      return aggregate;
+    }
+    const record = step(input);
+
+    const _def: AnyRouter['_def'] = {
       _config: config,
       router: true,
-      procedures: routerProcedures,
+      procedures,
       ...emptyRouter,
-      record: procedures,
+      record,
     };
 
-    const router: AnyRouter = {
-      ...procedures,
+    return {
+      ...record,
       _def,
-      createCaller(ctx) {
+      createCaller(ctx: TRoot['ctx']) {
         const proxy = createRecursiveProxy(({ path, args }) => {
           const fullPath = path.join('.');
           const procedure = _def.procedures[fullPath] as AnyProcedure;
@@ -218,24 +199,24 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           });
         });
 
-        return proxy as ReturnType<RouterCaller<any>>;
+        return proxy as ReturnType<RouterCaller<any, any>>;
       },
     };
+  }
 
-    return router as any;
-  };
+  return createRouterInner;
 }
 
 function isProcedure(
-  procedureOrRouter: AnyProcedure | AnyRouter,
+  procedureOrRouter: ValueOf<CreateRouterOptions>,
 ): procedureOrRouter is AnyProcedure {
-  return !!procedureOrRouter._def.procedure;
+  return typeof procedureOrRouter === 'function';
 }
 /**
  * @internal
  */
 export function callProcedure(
-  opts: ProcedureCallOptions & { procedures: ProcedureRouterRecord },
+  opts: ProcedureCallOptions & { procedures: RouterRecord },
 ) {
   const { type, path } = opts;
   const proc = opts.procedures[path];
@@ -250,15 +231,16 @@ export function callProcedure(
 }
 
 export function createCallerFactory<TRoot extends AnyRootTypes>() {
-  return function createCallerInner<
-    TRouter extends Router<RouterDef<TRoot, any>>,
-  >(router: TRouter): RouterCaller<TRouter['_def']> {
+  return function createCallerInner<TRecord extends RouterRecord>(
+    router: Router<TRoot, TRecord>,
+  ): RouterCaller<TRoot, TRecord> {
     const _def = router._def;
     type Context = TRoot['ctx'];
 
     return function createCaller(maybeContext) {
       const proxy = createRecursiveProxy(({ path, args }) => {
         const fullPath = path.join('.');
+
         const procedure = _def.procedures[fullPath] as AnyProcedure;
 
         const callProc = (ctx: Context) =>
@@ -280,7 +262,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
         return callProc(maybeContext);
       });
 
-      return proxy as ReturnType<RouterCaller<any>>;
+      return proxy as ReturnType<RouterCaller<any, any>>;
     };
   };
 }
@@ -288,25 +270,15 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 /** @internal */
 type MergeRouters<
   TRouters extends AnyRouter[],
-  TRouterDef extends AnyRouterDef = RouterDef<
-    TRouters[0]['_def']['_config']['$types'],
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    {}
-  >,
+  TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  TRecord extends RouterRecord = {},
 > = TRouters extends [
   infer Head extends AnyRouter,
   ...infer Tail extends AnyRouter[],
 ]
-  ? MergeRouters<
-      Tail,
-      {
-        _config: TRouterDef['_config'];
-        router: true;
-        procedures: Head['_def']['procedures'] & TRouterDef['procedures'];
-        record: Head['_def']['record'] & TRouterDef['record'];
-      }
-    >
-  : Router<TRouterDef> & TRouterDef['record'];
+  ? MergeRouters<Tail, TRoot, Head['_def']['record'] & TRecord>
+  : BuiltRouter<TRoot, TRecord>;
 
 export function mergeRouters<TRouters extends AnyRouter[]>(
   ...routerList: [...TRouters]
@@ -353,12 +325,13 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
   const router = createRouterFactory({
     errorFormatter,
     transformer,
-    isDev: routerList.some((r) => r._def._config.isDev),
-    allowOutsideOfServer: routerList.some(
+    isDev: routerList.every((r) => r._def._config.isDev),
+    allowOutsideOfServer: routerList.every(
       (r) => r._def._config.allowOutsideOfServer,
     ),
-    isServer: routerList.some((r) => r._def._config.isServer),
+    isServer: routerList.every((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types,
   })(record);
-  return router as any;
+
+  return router as MergeRouters<TRouters>;
 }

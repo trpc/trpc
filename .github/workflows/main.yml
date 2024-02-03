@@ -42,7 +42,7 @@ jobs:
       - name: Test
         run: pnpm turbo --filter tests test-ci
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           directory: ./packages
@@ -70,23 +70,23 @@ jobs:
       matrix:
         dir:
           [
-            .test/ssg,
-            .test/internal-types-export,
-            express-server,
-            express-minimal,
-            next-minimal-starter,
-            minimal-react,
-            fastify-server,
-            cloudflare-workers,
-            next-prisma-starter,
-            next-prisma-websockets-starter,
-            next-prisma-todomvc,
-            standalone-server,
-            .test/big-router-declaration,
-            soa,
-            vercel-edge-runtime,
-            .experimental/next-formdata,
             .experimental/next-app-dir,
+            .experimental/next-formdata,
+            .test/diagnostics-big-router,
+            .test/internal-types-export,
+            .test/ssg,
+            cloudflare-workers,
+            express-minimal,
+            express-server,
+            fastify-server,
+            minimal-react,
+            next-minimal-starter,
+            next-prisma-starter,
+            next-prisma-todomvc,
+            next-prisma-websockets-starter,
+            soa,
+            standalone-server,
+            vercel-edge-runtime,
           ]
     steps:
       - name: Checkout repo

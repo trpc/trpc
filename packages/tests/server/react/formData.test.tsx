@@ -145,7 +145,7 @@ const ctx = konn()
         links: [
           loggerLink({
             enabled: () => true,
-            // console: loggerLinkConsole,
+            console: loggerLinkConsole,
           }),
           splitLink({
             condition: (op) => op.input instanceof FormData,

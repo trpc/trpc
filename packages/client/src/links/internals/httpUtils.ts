@@ -1,4 +1,6 @@
 import type {
+  AnyRootTypes,
+  CombinedDataTransformer,
   ProcedureType,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -12,17 +14,17 @@ import type {
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
+import type { TransformerOptions } from '../../unstable-internals';
+import { getTransformer } from '../../unstable-internals';
 import type { TextDecoderEsque } from '../internals/streamingUtils';
-import type {
-  HTTPHeaders,
-  PromiseAndCancel,
-  TRPCClientRuntime,
-} from '../types';
+import type { HTTPHeaders, PromiseAndCancel } from '../types';
 
 /**
  * @internal
  */
-export interface HTTPLinkBaseOptions {
+export type HTTPLinkBaseOptions<
+  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+> = {
   url: string | URL;
   /**
    * Add ponyfill for fetch
@@ -32,21 +34,23 @@ export interface HTTPLinkBaseOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
-}
+} & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
+  transformer: CombinedDataTransformer;
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkBaseOptions,
+  opts: HTTPLinkBaseOptions<AnyRootTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
+    transformer: getTransformer(opts.transformer),
   };
 }
 
@@ -74,14 +78,14 @@ export interface HTTPResult {
 }
 
 type GetInputOptions = {
-  runtime: TRPCClientRuntime;
+  transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
 
 function getInput(opts: GetInputOptions) {
   return 'input' in opts
-    ? opts.runtime.transformer.serialize(opts.input)
+    ? opts.transformer.input.serialize(opts.input)
     : arrayToDict(
-        opts.inputs.map((_input) => opts.runtime.transformer.serialize(_input)),
+        opts.inputs.map((_input) => opts.transformer.input.serialize(_input)),
       );
 }
 

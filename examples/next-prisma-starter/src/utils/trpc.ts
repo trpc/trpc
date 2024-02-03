@@ -1,5 +1,6 @@
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
 // ℹ️ Type-only import:
@@ -52,10 +53,6 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
      */
     return {
       /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer,
-      /**
        * @link https://trpc.io/docs/v11/client/links
        */
       links: [
@@ -85,6 +82,10 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
             } = ctx.req.headers;
             return headers;
           },
+          /**
+           * @link https://trpc.io/docs/v11/data-transformers
+           */
+          transformer,
         }),
       ],
       /**
@@ -96,32 +97,11 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
   /**
    * @link https://trpc.io/docs/v11/ssr
    */
-  ssr: true,
+  ssr: false,
   /**
-   * Set headers or status code when doing SSR
+   * @link https://trpc.io/docs/v11/data-transformers
    */
-  responseMeta(opts) {
-    const ctx = opts.ctx as SSRContext;
-
-    if (ctx.status) {
-      // If HTTP status set, propagate that
-      return {
-        status: ctx.status,
-      };
-    }
-
-    const error = opts.clientErrors[0];
-    if (error) {
-      // Propagate http first error from API calls
-      return {
-        status: error.data?.httpStatus ?? 500,
-      };
-    }
-
-    // for app caching with SSR see https://trpc.io/docs/v11/caching
-
-    return {};
-  },
+  transformer,
 });
 
 export type RouterInput = inferRouterInputs<AppRouter>;
