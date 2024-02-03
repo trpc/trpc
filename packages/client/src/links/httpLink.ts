@@ -1,6 +1,6 @@
 import { observable } from '@trpc/server/observable';
 import type {
-  AnyRootTypes,
+  AnyClientRootTypes,
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
@@ -16,7 +16,7 @@ import {
 } from './internals/httpUtils';
 import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
-export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
+export type HTTPLinkOptions<TRoot extends AnyClientRootTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
