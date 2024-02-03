@@ -7,10 +7,11 @@ import type { TRPCHookResult } from '../shared/hooks/types';
 export function useHookResult(value: {
   path: string[];
 }): TRPCHookResult['trpc'] {
+  const path = value.path.join('.');
   return React.useMemo(
     () => ({
-      path: value.path.join('.'),
+      path,
     }),
-    [value.path],
+    [path],
   );
 }
