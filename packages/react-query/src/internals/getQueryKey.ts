@@ -90,20 +90,18 @@ type GetParams<
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
-  TFlags,
 > = TProcedureOrRouter extends AnyQueryProcedure
   ? [
-      procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>,
+      procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter>,
       ..._params: GetQueryParams<TProcedureOrRouter>,
     ]
   : TProcedureOrRouter extends AnyMutationProcedure
-  ? [procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>]
+  ? [procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter>]
   : TProcedureOrRouter extends AnyRouter
   ? [
       procedureOrRouter: DecorateRouterRecord<
         TRoot,
-        TProcedureOrRouter['_def']['record'],
-        TFlags
+        TProcedureOrRouter['_def']['record']
       >,
     ]
   : never;
@@ -114,8 +112,7 @@ type GetQueryKeyParams<
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
-  TFlags,
-> = GetParams<TRoot, TProcedureOrRouter, TFlags>;
+> = GetParams<TRoot, TProcedureOrRouter>;
 
 /**
  * Method to extract the query key for a procedure
@@ -130,8 +127,7 @@ export function getQueryKey<
     | AnyMutationProcedure
     | AnyQueryProcedure
     | AnyRouter,
-  TFlags,
->(..._params: GetQueryKeyParams<TRoot, TProcedureOrRouter, TFlags>) {
+>(..._params: GetQueryKeyParams<TRoot, TProcedureOrRouter>) {
   const [procedureOrRouter, input, type] = _params;
   // @ts-expect-error - we don't expose _def on the type layer
   const path = procedureOrRouter._def().path as string[];
