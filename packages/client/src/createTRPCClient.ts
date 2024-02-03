@@ -7,8 +7,8 @@ import type {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
-  ClientRootTypes,
   inferProcedureInput,
+  inferRootTypes,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
   IntersectionError,
@@ -62,34 +62,15 @@ type DecorateProcedure<
   TRoot extends AnyClientRootTypes,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      query: Resolver<
-        TProcedure,
-        // This wrapper only exists to make hovering over the type in VSCode only shows the relevant types
-        ClientRootTypes<{
-          transformer: TRoot['transformer'];
-          errorShape: TRoot['errorShape'];
-        }>
-      >;
+      query: Resolver<TProcedure, TRoot>;
     }
   : TProcedure extends AnyMutationProcedure
   ? {
-      mutate: Resolver<
-        TProcedure,
-        ClientRootTypes<{
-          transformer: TRoot['transformer'];
-          errorShape: TRoot['errorShape'];
-        }>
-      >;
+      mutate: Resolver<TProcedure, TRoot>;
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
-      subscribe: SubscriptionResolver<
-        TProcedure,
-        ClientRootTypes<{
-          transformer: TRoot['transformer'];
-          errorShape: TRoot['errorShape'];
-        }>
-      >;
+      subscribe: SubscriptionResolver<TProcedure, TRoot>;
     }
   : never;
 
@@ -104,7 +85,7 @@ type DecoratedProcedureRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureRecord<$Value, TRouter>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<$Value, TRouter['_def']['_config']['$types']>
+      ? DecorateProcedure<$Value, inferRootTypes<TRouter>>
       : never
     : never;
 };

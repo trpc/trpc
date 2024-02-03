@@ -5,7 +5,7 @@ export type AnyClientRootTypes = Pick<
   'errorShape' | 'transformer'
 >;
 
-export type ClientRootTypes<TConfig extends AnyClientRootTypes> = {
+type ClientTypes<TConfig extends AnyClientRootTypes> = {
   errorShape: TConfig['errorShape'];
   transformer: TConfig['transformer'];
 };
@@ -43,17 +43,29 @@ export type InferrableClientTypes =
   | AnyClientRootTypes;
 
 /**
- * Infer the root types from a InferrableClientTypes
+ * Infer the root types from a InferrableClientTypes and simplifies it
  */
 export type inferRootTypes<TInferrable extends InferrableClientTypes> =
   TInferrable extends AnyClientRootTypes
-    ? TInferrable
+    ? ClientTypes<{
+        errorShape: TInferrable['errorShape'];
+        transformer: TInferrable['transformer'];
+      }>
     : TInferrable extends RootConfigLike
-    ? TInferrable['$types']
+    ? ClientTypes<{
+        errorShape: TInferrable['$types']['errorShape'];
+        transformer: TInferrable['$types']['transformer'];
+      }>
     : TInferrable extends InitLike
-    ? TInferrable['_config']['$types']
+    ? ClientTypes<{
+        errorShape: TInferrable['_config']['$types']['errorShape'];
+        transformer: TInferrable['_config']['$types']['transformer'];
+      }>
     : TInferrable extends RouterLike
-    ? TInferrable['_def']['_config']['$types']
+    ? ClientTypes<{
+        errorShape: TInferrable['_def']['_config']['$types']['errorShape'];
+        transformer: TInferrable['_def']['_config']['$types']['transformer'];
+      }>
     : never;
 
 export type inferErrorShape<TInferrable extends InferrableClientTypes> =
