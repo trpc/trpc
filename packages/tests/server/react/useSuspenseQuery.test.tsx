@@ -32,6 +32,7 @@ test('useSuspenseQuery()', async () => {
     const [data, query1] = client.post.byId.useSuspenseQuery({
       id: '1',
     });
+
     expectTypeOf(data).toEqualTypeOf<'__result'>();
 
     type TData = typeof data;

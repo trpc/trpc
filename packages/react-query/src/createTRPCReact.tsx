@@ -6,6 +6,7 @@ import type {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  inferClientTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
@@ -44,9 +45,9 @@ import type { CreateTRPCReactOptions } from './shared/types';
 /**
  * @internal
  */
-export interface ProcedureUseQuery<
-  TRoot extends AnyClientTypes,
+export interface UseQuery<
   TProcedure extends AnyProcedure,
+  TRoot extends AnyClientTypes,
 > {
   <
     TQueryFnData extends inferTransformedProcedureOutput<
@@ -132,14 +133,14 @@ export type MaybeDecoratedInfiniteQuery<
 /**
  * @internal
  */
-export type DecoratedQueryMethods<
-  TRoot extends AnyClientTypes,
+export type QueryHooks<
   TProcedure extends AnyProcedure,
+  TRoot extends AnyClientTypes,
 > = {
   /**
    * @link https://trpc.io/docs/v11/client/react/useQuery
    */
-  useQuery: ProcedureUseQuery<TRoot, TProcedure>;
+  useQuery: UseQuery<TProcedure, TRoot>;
   /**
    * @link https://trpc.io/docs/v11/client/react/suspense#usesuspensequery
    */
@@ -157,23 +158,14 @@ export type DecoratedQueryMethods<
       TRPCClientErrorLike<TRoot>
     >,
   ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TRoot>>;
-};
+} & MaybeDecoratedInfiniteQuery<TProcedure, TRoot>;
 
 /**
  * @internal
  */
-export type DecoratedQuery<
-  TRoot extends AnyClientTypes,
+export interface MutationHooks<
   TProcedure extends AnyProcedure,
-> = MaybeDecoratedInfiniteQuery<TProcedure, TRoot> &
-  DecoratedQueryMethods<TRoot, TProcedure>;
-
-/**
- * @internal
- */
-export interface DecoratedMutation<
   TRoot extends AnyClientTypes,
-  TProcedure extends AnyProcedure,
 > {
   /**
    * @link https://trpc.io/docs/v11/client/react/useMutation
@@ -201,9 +193,9 @@ export type DecorateProcedure<
   TProcedure extends AnyProcedure,
   _TFlags,
 > = TProcedure extends AnyQueryProcedure
-  ? DecoratedQuery<TRoot, TProcedure>
+  ? QueryHooks<TProcedure, TRoot>
   : TProcedure extends AnyMutationProcedure
-  ? DecoratedMutation<TRoot, TProcedure>
+  ? MutationHooks<TProcedure, TRoot>
   : TProcedure extends AnySubscriptionProcedure
   ? {
       /**
@@ -263,7 +255,7 @@ export type CreateTRPCReact<
 > = ProtectedIntersection<
   CreateTRPCReactBase<TRouter, TSSRContext>,
   DecorateRouterRecord<
-    TRouter['_def']['_config']['$types'],
+    inferClientTypes<TRouter>,
     TRouter['_def']['record'],
     TFlags
   >
