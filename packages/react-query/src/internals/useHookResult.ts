@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useMemo } from 'react';
 
 export interface TRPCHookResult {
   trpc: {
@@ -12,7 +12,6 @@ export interface TRPCHookResult {
 export function useHookResult(
   value: TRPCHookResult['trpc'],
 ): TRPCHookResult['trpc'] {
-  const ref = useRef(value);
-  ref.current.path = value.path;
-  return ref.current;
+  const { path } = value;
+  return useMemo(() => ({ path }), [path]);
 }
