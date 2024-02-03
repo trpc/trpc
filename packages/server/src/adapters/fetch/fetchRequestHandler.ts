@@ -8,6 +8,7 @@
  * ```
  */
 // @trpc/server
+
 import type { AnyRouter } from '../../@trpc/server';
 import type {
   HTTPRequest,
@@ -18,6 +19,7 @@ import type {
 import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
+  toURL,
 } from '../../@trpc/server/http';
 import type { FetchHandlerOptions } from './types';
 
@@ -45,7 +47,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     return opts.createContext?.({ req: opts.req, resHeaders, ...innerOpts });
   };
 
-  const url = new URL(opts.req.url);
+  const url = toURL(opts.req.url);
 
   const pathname = trimSlashes(url.pathname);
   const endpoint = trimSlashes(opts.endpoint);

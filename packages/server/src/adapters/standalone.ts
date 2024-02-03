@@ -11,6 +11,7 @@
 import http from 'http';
 // @trpc/server
 import type { AnyRouter } from '../@trpc/server';
+import { toURL } from '../@trpc/server/http';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -29,9 +30,11 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
   return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    // Get procedure path and remove the leading slash, `/procedure -> procedure`
-    // Use dummy hostname if one is not provided.
-    const path = new URL(req.url!, 'http://127.0.0.1').pathname.slice(1);
+    const url = toURL(req.url!);
+
+    // get procedure path and remove the leading slash
+    // /procedure -> procedure
+    const path = url.pathname.slice(1);
 
     await nodeHTTPRequestHandler({
       // FIXME: no typecasting should be needed here
