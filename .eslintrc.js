@@ -55,6 +55,7 @@ const config = {
           '@trpc/*',
           'unstable-*',
           'script',
+          'URL',
         ],
       },
     ],
