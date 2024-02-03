@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
+  AnyClientRootTypes,
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   AnySubscriptionProcedure,
+  ClientRootTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
@@ -36,7 +37,7 @@ export type inferRouterClient<TRouter extends AnyRouter> =
 /** @internal */
 export type Resolver<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientRootTypes,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: ProcedureOptions,
@@ -44,7 +45,7 @@ export type Resolver<
 
 type SubscriptionResolver<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientRootTypes,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: Partial<
@@ -58,18 +59,37 @@ type SubscriptionResolver<
 
 type DecorateProcedure<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientRootTypes,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      query: Resolver<TProcedure, TRoot>;
+      query: Resolver<
+        TProcedure,
+        // This wrapper only exists to make hovering over the type in VSCode only shows the relevant types
+        ClientRootTypes<{
+          transformer: TRoot['transformer'];
+          errorShape: TRoot['errorShape'];
+        }>
+      >;
     }
   : TProcedure extends AnyMutationProcedure
   ? {
-      mutate: Resolver<TProcedure, TRoot>;
+      mutate: Resolver<
+        TProcedure,
+        ClientRootTypes<{
+          transformer: TRoot['transformer'];
+          errorShape: TRoot['errorShape'];
+        }>
+      >;
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
-      subscribe: SubscriptionResolver<TProcedure, TRoot>;
+      subscribe: SubscriptionResolver<
+        TProcedure,
+        ClientRootTypes<{
+          transformer: TRoot['transformer'];
+          errorShape: TRoot['errorShape'];
+        }>
+      >;
     }
   : never;
 

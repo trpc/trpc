@@ -5,6 +5,11 @@ export type AnyClientRootTypes = Pick<
   'errorShape' | 'transformer'
 >;
 
+export type ClientRootTypes<TConfig extends AnyClientRootTypes> = {
+  errorShape: TConfig['errorShape'];
+  transformer: TConfig['transformer'];
+};
+
 /**
  * Result of `initTRPC.create()`
  */
