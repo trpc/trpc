@@ -1,7 +1,7 @@
 import type {
+  AnyClientTypes,
   AnyMutationProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -16,7 +16,7 @@ export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
   TRouter['_def']['procedures']
 >;
 export type RouterLikeInner<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value

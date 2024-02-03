@@ -1,9 +1,9 @@
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -20,7 +20,7 @@ import type {
  * @internal
  */
 export type InferQueryOptions<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
   TData = inferTransformedProcedureOutput<TRoot, TProcedure>,
 > = Omit<
@@ -37,7 +37,7 @@ export type InferQueryOptions<
  * @internal
  */
 export type InferMutationOptions<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = UseTRPCMutationOptions<
   inferProcedureInput<TProcedure>,
@@ -49,7 +49,7 @@ export type InferMutationOptions<
  * @internal
  */
 export type InferQueryResult<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = UseTRPCQueryResult<
   inferTransformedProcedureOutput<TRoot, TProcedure>,
@@ -60,7 +60,7 @@ export type InferQueryResult<
  * @internal
  */
 export type InferMutationResult<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
   TContext = unknown,
 > = UseTRPCMutationResult<
@@ -71,7 +71,7 @@ export type InferMutationResult<
 >;
 
 type inferReactQueryProcedureOptionsInner<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value

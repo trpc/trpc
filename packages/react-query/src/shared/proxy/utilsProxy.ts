@@ -13,8 +13,8 @@ import type {
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
@@ -39,7 +39,7 @@ import { getQueryKeyInternal } from '../../internals/getQueryKey';
 import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
@@ -228,7 +228,7 @@ type DecorateRouter = {
  * @internal
  */
 export type DecoratedProcedureUtilsRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = DecorateRouter & {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value

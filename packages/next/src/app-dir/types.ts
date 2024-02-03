@@ -1,9 +1,9 @@
 import type { Resolver } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnySubscriptionProcedure,
   inferProcedureInput,
   RouterRecord,
@@ -11,7 +11,7 @@ import type {
 
 export type DecorateProcedureServer<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
 > = TProcedure extends AnyQueryProcedure
   ? {
       query: Resolver<TProcedure, TRoot>;
@@ -32,7 +32,7 @@ export type DecorateProcedureServer<
   : never;
 
 export type NextAppDirDecorateRouterRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value

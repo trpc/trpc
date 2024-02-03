@@ -13,9 +13,9 @@ import {
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
 import type {
+  AnyClientTypes,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   inferClientTypes,
   inferProcedureInput,
@@ -53,7 +53,7 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
 type DecorateProcedure<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
@@ -112,7 +112,7 @@ type DecorateProcedure<
  * @internal
  */
 type DecoratedProcedureSSGRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value

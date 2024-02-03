@@ -1,6 +1,6 @@
 import type {
+  AnyClientTypes,
   AnyProcedure,
-  AnyRootTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -13,7 +13,7 @@ import type {
  * Use to describe a mutation route which matches a given mutation procedure's interface
  */
 export type MutationLike<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = {
   useMutation: (

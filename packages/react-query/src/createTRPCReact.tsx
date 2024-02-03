@@ -1,9 +1,9 @@
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   AnySubscriptionProcedure,
   inferProcedureInput,
@@ -45,7 +45,7 @@ import type { CreateTRPCReactOptions } from './shared/types';
  * @internal
  */
 export interface ProcedureUseQuery<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > {
   <
@@ -93,7 +93,7 @@ type CursorInput = {
  */
 export type MaybeDecoratedInfiniteQuery<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
 > = inferProcedureInput<TProcedure> extends CursorInput
   ? {
       /**
@@ -133,7 +133,7 @@ export type MaybeDecoratedInfiniteQuery<
  * @internal
  */
 export type DecoratedQueryMethods<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = {
   /**
@@ -163,7 +163,7 @@ export type DecoratedQueryMethods<
  * @internal
  */
 export type DecoratedQuery<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = MaybeDecoratedInfiniteQuery<TProcedure, TRoot> &
   DecoratedQueryMethods<TRoot, TProcedure>;
@@ -172,7 +172,7 @@ export type DecoratedQuery<
  * @internal
  */
 export interface DecoratedMutation<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > {
   /**
@@ -197,7 +197,7 @@ export interface DecoratedMutation<
  * @internal
  */
 export type DecorateProcedure<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
   _TFlags,
 > = TProcedure extends AnyQueryProcedure
@@ -223,7 +223,7 @@ export type DecorateProcedure<
  * @internal
  */
 export type DecorateRouterRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
   TFlags,
 > = {

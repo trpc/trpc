@@ -7,7 +7,7 @@ import type {
   AnyClientTypes,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
+  AnyClientTypes,
   AnyRouter,
   inferProcedureInput,
   ProtectedIntersection,
@@ -19,7 +19,7 @@ import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
  * @internal
  */
 export type UseProcedureRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value

@@ -1,9 +1,9 @@
 import type { QueryOptions } from '@tanstack/react-query';
 import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -18,7 +18,7 @@ import type {
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyProcedure,
 > = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
@@ -37,7 +37,7 @@ type GetQueryOptions<
  * @internal
  */
 export type UseQueriesProcedureRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
@@ -50,7 +50,7 @@ export type UseQueriesProcedureRecord<
 };
 
 type GetSuspenseQueryOptions<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TProcedure extends AnyQueryProcedure,
 > = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
@@ -69,7 +69,7 @@ type GetSuspenseQueryOptions<
  * @internal
  */
 export type UseSuspenseQueriesProcedureRecord<
-  TRoot extends AnyRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
