@@ -1,6 +1,6 @@
 import { observable } from '@trpc/server/observable';
 import type {
-  AnyClientRootTypes,
+  AnyClientTypes,
   AnyRouter,
   inferClientTypes,
   ProcedureType,
@@ -21,27 +21,26 @@ import { getUrl, resolveHTTPLinkOptions } from './httpUtils';
 /**
  * @internal
  */
-export type RequesterFn<
-  TOptions extends HTTPBatchLinkOptions<AnyClientRootTypes>,
-> = (
-  requesterOpts: ResolvedHTTPLinkOptions & {
-    runtime: TRPCClientRuntime;
-    type: ProcedureType;
-    opts: TOptions;
-  },
-) => (
-  batchOps: Operation[],
-  unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
-) => {
-  promise: Promise<HTTPResult[]>;
-  cancel: CancelFn;
-};
+export type RequesterFn<TOptions extends HTTPBatchLinkOptions<AnyClientTypes>> =
+  (
+    requesterOpts: ResolvedHTTPLinkOptions & {
+      runtime: TRPCClientRuntime;
+      type: ProcedureType;
+      opts: TOptions;
+    },
+  ) => (
+    batchOps: Operation[],
+    unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
+  ) => {
+    promise: Promise<HTTPResult[]>;
+    cancel: CancelFn;
+  };
 
 /**
  * @internal
  */
 export function createHTTPBatchLink(
-  requester: RequesterFn<HTTPBatchLinkOptions<AnyClientRootTypes>>,
+  requester: RequesterFn<HTTPBatchLinkOptions<AnyClientTypes>>,
 ) {
   return function httpBatchLink<TRouter extends AnyRouter>(
     opts: HTTPBatchLinkOptions<inferClientTypes<TRouter>>,

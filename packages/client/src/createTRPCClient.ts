@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
-  AnyClientRootTypes,
+  AnyClientTypes,
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
@@ -37,7 +37,7 @@ export type inferRouterClient<TRouter extends AnyRouter> =
 /** @internal */
 export type Resolver<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyClientRootTypes,
+  TRoot extends AnyClientTypes,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: ProcedureOptions,
@@ -45,7 +45,7 @@ export type Resolver<
 
 type SubscriptionResolver<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyClientRootTypes,
+  TRoot extends AnyClientTypes,
 > = (
   input: inferProcedureInput<TProcedure>,
   opts?: Partial<
@@ -59,7 +59,7 @@ type SubscriptionResolver<
 
 type DecorateProcedure<
   TProcedure extends AnyProcedure,
-  TRoot extends AnyClientRootTypes,
+  TRoot extends AnyClientTypes,
 > = TProcedure extends AnyQueryProcedure
   ? {
       query: Resolver<TProcedure, TRoot>;

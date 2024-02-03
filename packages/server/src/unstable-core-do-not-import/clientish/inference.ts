@@ -2,7 +2,7 @@ import type { inferObservableValue } from '../../observable';
 import type { AnyProcedure, inferProcedureInput } from '../procedure';
 import type { AnyRouter, RouterRecord } from '../router';
 import type {
-  AnyClientRootTypes,
+  AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
 } from './inferrable';
@@ -29,7 +29,7 @@ export type inferTransformedSubscriptionOutput<
 
 export type GetInferenceHelpers<
   TType extends 'input' | 'output',
-  TRoot extends AnyClientRootTypes,
+  TRoot extends AnyClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
