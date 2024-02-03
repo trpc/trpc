@@ -182,7 +182,7 @@ export function createRootHooks<
     ) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
-      path: path.join('.'),
+      path,
     });
 
     return hook;
@@ -221,7 +221,7 @@ export function createRootHooks<
     ) as UseTRPCQueryResult<unknown, TError>;
 
     hook.trpc = useHookResult({
-      path: path.join('.'),
+      path,
     });
 
     return [hook.data, hook as any];
@@ -259,7 +259,7 @@ export function createRootHooks<
     ) as UseTRPCMutationResult<unknown, TError, unknown, unknown>;
 
     hook.trpc = useHookResult({
-      path: path.join('.'),
+      path,
     });
 
     return hook;
@@ -376,7 +376,7 @@ export function createRootHooks<
     ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;
 
     hook.trpc = useHookResult({
-      path: path.join('.'),
+      path,
     });
     return hook;
   }
@@ -429,7 +429,7 @@ export function createRootHooks<
     ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;
 
     hook.trpc = useHookResult({
-      path: path.join('.'),
+      path,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -29,7 +29,6 @@ import type {
 import type { ReactNode } from 'react';
 import type { TRPCContextProps } from '../../internals/context';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
-import type { TRPCHookResult } from '../../internals/useHookResult';
 
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
@@ -226,3 +225,9 @@ export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
  */
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
   TRPCHookResult & UseMutationResult<TData, TError, TVariables, TContext>;
+
+export interface TRPCHookResult {
+  trpc: {
+    path: string;
+  };
+}

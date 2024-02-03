@@ -1,18 +1,16 @@
 import * as React from 'react';
-
-export interface TRPCHookResult {
-  trpc: {
-    path: string;
-  };
-}
+import type { TRPCHookResult } from '../shared/hooks/types';
 
 /**
  * Makes a stable reference of the `trpc` prop
  */
-export function useHookResult(
-  value: TRPCHookResult['trpc'],
-): TRPCHookResult['trpc'] {
-  const ref = React.useRef(value);
-  ref.current.path = value.path;
-  return ref.current;
+export function useHookResult(value: {
+  path: string[];
+}): TRPCHookResult['trpc'] {
+  return React.useMemo(
+    () => ({
+      path: value.path.join('.'),
+    }),
+    [value.path],
+  );
 }
