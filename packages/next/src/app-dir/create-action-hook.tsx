@@ -11,8 +11,8 @@ import type {
 import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
+  inferClientTypes,
   InferrableClientTypes,
-  inferRootTypes,
   MaybePromise,
   ProcedureOptions,
   Simplify,
@@ -80,7 +80,7 @@ export function experimental_serverActionLink<
     ? [
         TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
       ]
-    : inferRootTypes<TInferrable>['transformer'] extends true
+    : inferClientTypes<TInferrable>['transformer'] extends true
     ? [
         opts: TransformerOptions<{
           transformer: true;

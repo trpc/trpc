@@ -7,8 +7,8 @@ import type {
   AnyQueryProcedure,
   AnyRouter,
   AnySubscriptionProcedure,
+  inferClientTypes,
   inferProcedureInput,
-  inferRootTypes,
   inferTransformedProcedureOutput,
   inferTransformedSubscriptionOutput,
   IntersectionError,
@@ -85,7 +85,7 @@ type DecoratedProcedureRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureRecord<$Value, TRouter>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<$Value, inferRootTypes<TRouter>>
+      ? DecorateProcedure<$Value, inferClientTypes<TRouter>>
       : never
     : never;
 };

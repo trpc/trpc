@@ -7,8 +7,8 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferClientTypes,
   inferProcedureInput,
-  inferRootTypes,
   MaybePromise,
   RootConfig,
   Simplify,
@@ -95,7 +95,7 @@ export function experimental_createServerActionHandler<
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
   ): TRPCActionHandler<
-    Simplify<inferActionDef<inferRootTypes<TInstance>, TProc>>
+    Simplify<inferActionDef<inferClientTypes<TInstance>, TProc>>
   > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,

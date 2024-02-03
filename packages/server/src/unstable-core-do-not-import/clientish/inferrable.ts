@@ -45,7 +45,7 @@ export type InferrableClientTypes =
 /**
  * Infer the root types from a InferrableClientTypes and simplifies it
  */
-export type inferRootTypes<TInferrable extends InferrableClientTypes> =
+export type inferClientTypes<TInferrable extends InferrableClientTypes> =
   TInferrable extends AnyClientRootTypes
     ? ClientTypes<{
         errorShape: TInferrable['errorShape'];
@@ -69,4 +69,4 @@ export type inferRootTypes<TInferrable extends InferrableClientTypes> =
     : never;
 
 export type inferErrorShape<TInferrable extends InferrableClientTypes> =
-  inferRootTypes<TInferrable>['errorShape'];
+  inferClientTypes<TInferrable>['errorShape'];

@@ -9,7 +9,7 @@ import {
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
-  inferRootTypes,
+  inferClientTypes,
   inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
@@ -21,7 +21,7 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
-} & TransformerOptions<inferRootTypes<TRouter>>;
+} & TransformerOptions<inferClientTypes<TRouter>>;
 
 // ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
