@@ -4,8 +4,8 @@ import {
   createTRPCUntypedClient,
 } from '@trpc/client';
 import type {
-  AnyClientTypes,
   AnyProcedure,
+  AnyRootTypes,
   AnyRouter,
   inferClientTypes,
   inferProcedureInput,
@@ -73,7 +73,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: RootConfig<AnyClientTypes>;
+    _config: RootConfig<AnyRootTypes>;
   },
 >(
   t: TInstance,

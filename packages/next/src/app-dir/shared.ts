@@ -7,7 +7,6 @@ import type {
   AnyClientTypes,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyClientTypes,
   AnyRouter,
   inferProcedureInput,
   ProtectedIntersection,
