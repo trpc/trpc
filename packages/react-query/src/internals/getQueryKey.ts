@@ -12,7 +12,7 @@ export type TRPCQueryKey = [
 type ProcedureOrRouter =
   | DecoratedMutation<any>
   | DecoratedQuery<any>
-  | DecorateRouterRecord<any, any, any>;
+  | DecorateRouterRecord<any, any>;
 
 /**
  * To allow easy interactions with groups of related queries, such as

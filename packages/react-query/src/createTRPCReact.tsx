@@ -203,11 +203,10 @@ export type DecorateProcedure<
 export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
-  TFlags,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecorateRouterRecord<TRoot, $Value, TFlags>
+      ? DecorateRouterRecord<TRoot, $Value>
       : $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
@@ -245,13 +244,11 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
 export type CreateTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext,
-  TFlags,
 > = ProtectedIntersection<
   CreateTRPCReactBase<TRouter, TSSRContext>,
   DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record'],
-    TFlags
+    TRouter['_def']['record']
   >
 >;
 
@@ -261,9 +258,8 @@ export type CreateTRPCReact<
 export function createHooksInternal<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
-  TFlags = null,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext, TFlags>;
+  type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext>;
 
   return createFlatProxy<CreateHooksInternal>((key) => {
     if (key === 'useContext' || key === 'useUtils') {
@@ -287,12 +283,11 @@ export function createHooksInternal<
 export function createTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
-  TFlags = null,
 >(
   opts?: CreateTRPCReactOptions<TRouter>,
-): CreateTRPCReact<TRouter, TSSRContext, TFlags> {
+): CreateTRPCReact<TRouter, TSSRContext> {
   const hooks = createRootHooks<TRouter, TSSRContext>(opts);
-  const proxy = createHooksInternal<TRouter, TSSRContext, TFlags>(hooks);
+  const proxy = createHooksInternal<TRouter, TSSRContext>(hooks);
 
   return proxy as any;
 }
