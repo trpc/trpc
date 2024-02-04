@@ -3,8 +3,8 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
+  inferClientTypes,
   inferProcedureInput,
-  inferRootTypes,
   inferTransformedProcedureOutput,
   IntersectionError,
   ProcedureOptions,
@@ -83,11 +83,11 @@ type DecoratedProcedureRecord<
           {
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<
-              inferRootTypes<TRouter>,
+              inferClientTypes<TRouter>,
               $Value
             >;
-            errorShape: inferRootTypes<TRouter>['errorShape'];
-            transformer: inferRootTypes<TRouter>['transformer'];
+            errorShape: inferClientTypes<TRouter>['errorShape'];
+            transformer: inferClientTypes<TRouter>['transformer'];
           }
         >
       : never
