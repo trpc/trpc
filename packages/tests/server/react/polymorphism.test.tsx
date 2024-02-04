@@ -305,6 +305,8 @@ describe('polymorphism', () => {
               //                                       ^?
               currentExport={currentExport}
               renderAdditionalFields={(data) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
+                expectTypeOf(data?.description!).toEqualTypeOf<string>();
                 return `Description: "${data?.description}"`;
               }}
             />
