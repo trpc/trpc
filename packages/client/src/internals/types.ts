@@ -13,7 +13,7 @@ export interface AbortControllerInstanceEsque {
    * Sets this object's AbortSignal's aborted flag and signals to
    * any observers that the associated activity is to be aborted.
    */
-  abort(): void;
+  abort: () => void;
 }
 
 /**
@@ -90,7 +90,7 @@ export interface ResponseEsque {
    * that's not as type-safe as unknown. We use unknown because we're
    * more type-safe. You do want more type safety, right? 😉
    */
-  json(): Promise<unknown>;
+  json: () => Promise<unknown>;
 }
 
 /**

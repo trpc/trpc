@@ -7,20 +7,20 @@ interface SubscriptionEvents<TOutput> {
 }
 
 declare interface CustomEventEmitter<TOutput> {
-  on<U extends keyof SubscriptionEvents<TOutput>>(
+  on: <U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
     listener: SubscriptionEvents<TOutput>[U],
-  ): this;
+  ) => this;
 
-  once<U extends keyof SubscriptionEvents<TOutput>>(
+  once: <U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
     listener: SubscriptionEvents<TOutput>[U],
-  ): this;
+  ) => this;
 
-  emit<U extends keyof SubscriptionEvents<TOutput>>(
+  emit: <U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
     ...args: Parameters<SubscriptionEvents<TOutput>[U]>
-  ): boolean;
+  ) => boolean;
 }
 class CustomEventEmitter<TOutput>
   extends EventEmitter

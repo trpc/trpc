@@ -30,7 +30,7 @@ function subscriptionPullFactory<TOutput>(opts: {
    * The interval of how often the function should run
    */
   intervalMs: number;
-  pull(emit: Observer<TOutput, unknown>): Promise<void> | void;
+  pull: (emit: Observer<TOutput, unknown>) => Promise<void> | void;
 }): Observable<TOutput, unknown> {
   let timer: any;
   let stopped = false;

@@ -21,7 +21,7 @@ export type ParserYupEsque<TInput> = {
 };
 
 export type ParserScaleEsque<TInput> = {
-  assert(value: unknown): asserts value is TInput;
+  assert: (value: unknown) => asserts value is TInput;
 };
 
 export type ParserWithoutInput<TInput> =
