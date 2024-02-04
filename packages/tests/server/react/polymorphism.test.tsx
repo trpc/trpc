@@ -478,7 +478,7 @@ function ExportStatus<
 }
 
 function ExportsList(props: { list: Factory.ExportRouteLike['list'] }) {
-  const exportsList = props.list.useQuery();
+  const exportsList = props.list.useQuery({});
 
   return (
     <>
