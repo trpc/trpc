@@ -3,12 +3,8 @@
 //  which can be used with existing components, but has extra data for other use cases
 //
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
+import type { AnyTRPCProcedureBuilder } from '@trpc/server';
 import { TRPCError } from '@trpc/server';
-import type {
-  AnyRootTypes,
-  createBuilder,
-  createRouterFactory,
-} from '@trpc/server/unstable-core-do-not-import';
 import z from 'zod';
 import { t } from './polymorphism.common';
 import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
@@ -32,13 +28,6 @@ export type SubTypedFileExportStatusType = z.infer<
 // Dependencies
 //
 
-type RouterFactory<TRoot extends AnyRootTypes> = ReturnType<
-  typeof createRouterFactory<TRoot>
->;
-type BaseProcedure<TRoot extends AnyRootTypes> = ReturnType<
-  typeof createBuilder<TRoot['ctx'], TRoot['meta']>
->;
-
 export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 
 //
@@ -49,7 +38,7 @@ export type SubTypedDataProvider = SubTypedFileExportStatusType[];
 let COUNTER = 1;
 
 export function createSubTypedExportRoute<
-  TBaseProcedure extends BaseProcedure<(typeof t)['_config']['$types']>,
+  TBaseProcedure extends AnyTRPCProcedureBuilder,
 >(baseProcedure: TBaseProcedure, dataProvider: SubTypedDataProvider) {
   return t.router({
     start: baseProcedure
