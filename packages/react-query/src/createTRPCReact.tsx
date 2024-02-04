@@ -5,6 +5,7 @@ import type {
   AnyRouter,
   inferProcedureInput,
   inferTransformedProcedureOutput,
+  ProcedureType,
   ProtectedIntersection,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -157,7 +158,7 @@ export type DecoratedQuery<TDef extends ResolverDef> =
  * @internal
  */
 export type DecorateProcedure<
-  TType extends 'query' | 'mutation' | 'subscription',
+  TType extends ProcedureType,
   TDef extends ResolverDef,
 > = TType extends 'query'
   ? DecoratedQuery<TDef>
