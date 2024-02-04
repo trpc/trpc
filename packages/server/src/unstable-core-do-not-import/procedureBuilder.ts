@@ -73,12 +73,15 @@ type ProcedureResolver<
   _TMeta,
   TContextOverrides,
   TInputOut,
-  TOutputIn,
-  TOutputOut,
+  TOutputParserIn,
+  $Output,
 > = (opts: {
   ctx: Simplify<Overwrite<TContext, TContextOverrides>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
-}) => MaybePromise<DefaultValue<TOutputIn, TOutputOut>>;
+}) => MaybePromise<
+  // If an output parser is defined, we need to return what the parser expects, otherwise we return the inferred type
+  DefaultValue<TOutputParserIn, $Output>
+>;
 
 type AnyResolver = ProcedureResolver<any, any, any, any, any, any>;
 export interface ProcedureBuilder<
