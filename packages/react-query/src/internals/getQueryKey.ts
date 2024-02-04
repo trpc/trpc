@@ -5,6 +5,7 @@ import type {
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
+  inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { DecorateProcedure, DecorateRouterRecord } from '../shared';
 
@@ -93,11 +94,29 @@ type GetParams<
   TFlags,
 > = TProcedureOrRouter extends AnyQueryProcedure
   ? [
-      procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>,
+      procedureOrRouter: DecorateProcedure<
+        TProcedureOrRouter['_def']['type'],
+        {
+          input: inferProcedureInput<TProcedureOrRouter>;
+          output: inferTransformedProcedureOutput<TRoot, TProcedureOrRouter>;
+          transformer: TRoot['transformer'];
+          errorShape: TRoot['errorShape'];
+        }
+      >,
       ..._params: GetQueryParams<TProcedureOrRouter>,
     ]
   : TProcedureOrRouter extends AnyMutationProcedure
-  ? [procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>]
+  ? [
+      procedureOrRouter: DecorateProcedure<
+        TProcedureOrRouter['_def']['type'],
+        {
+          input: inferProcedureInput<TProcedureOrRouter>;
+          output: inferTransformedProcedureOutput<TRoot, TProcedureOrRouter>;
+          transformer: TRoot['transformer'];
+          errorShape: TRoot['errorShape'];
+        }
+      >,
+    ]
   : TProcedureOrRouter extends AnyRouter
   ? [
       procedureOrRouter: DecorateRouterRecord<
