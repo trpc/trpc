@@ -154,6 +154,24 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
 export type DecoratedQuery<TDef extends ResolverDef> =
   MaybeDecoratedInfiniteQuery<TDef> & DecoratedQueryMethods<TDef>;
 
+export type DecoratedMutation<TDef extends ResolverDef> = {
+  /**
+   * @link https://trpc.io/docs/v11/client/react/useMutation
+   */
+  useMutation: <TContext = unknown>(
+    opts?: UseTRPCMutationOptions<
+      TDef['input'],
+      TDef['errorShape'],
+      TDef['output'],
+      TContext
+    >,
+  ) => UseTRPCMutationResult<
+    TDef['output'],
+    TRPCClientErrorLike<TDef>,
+    TDef['input'],
+    TContext
+  >;
+};
 /**
  * @internal
  */
@@ -163,24 +181,7 @@ export type DecorateProcedure<
 > = TType extends 'query'
   ? DecoratedQuery<TDef>
   : TType extends 'mutation'
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/client/react/useMutation
-       */
-      useMutation: <TContext = unknown>(
-        opts?: UseTRPCMutationOptions<
-          TDef['input'],
-          TDef['errorShape'],
-          TDef['output'],
-          TContext
-        >,
-      ) => UseTRPCMutationResult<
-        TDef['output'],
-        TRPCClientErrorLike<TDef>,
-        TDef['input'],
-        TContext
-      >;
-    }
+  ? DecoratedMutation<TDef>
   : TType extends 'subscription'
   ? {
       /**
