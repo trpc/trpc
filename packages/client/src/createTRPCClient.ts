@@ -33,14 +33,16 @@ import type { TRPCClientError } from './TRPCClientError';
 export type inferRouterClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
+type ResolverDef = {
+  input: any;
+  output: any;
+};
+
 /** @internal */
-export type Resolver<
-  TRoot extends AnyClientRootTypes,
-  TProcedure extends AnyProcedure,
-> = (
-  input: inferProcedureInput<TProcedure>,
+export type Resolver<TDef extends ResolverDef> = (
+  input: TDef['input'],
   opts?: ProcedureOptions,
-) => Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
+) => Promise<TDef['output']>;
 
 type SubscriptionResolver<
   TRoot extends AnyClientRootTypes,
@@ -61,11 +63,17 @@ type DecorateProcedure<
   TProcedure extends AnyProcedure,
 > = TProcedure extends AnyQueryProcedure
   ? {
-      query: Resolver<TRoot, TProcedure>;
+      query: Resolver<{
+        input: inferProcedureInput<TProcedure>;
+        output: inferTransformedProcedureOutput<TRoot, TProcedure>;
+      }>;
     }
   : TProcedure extends AnyMutationProcedure
   ? {
-      mutate: Resolver<TRoot, TProcedure>;
+      mutate: Resolver<{
+        input: inferProcedureInput<TProcedure>;
+        output: inferTransformedProcedureOutput<TRoot, TProcedure>;
+      }>;
     }
   : TProcedure extends AnySubscriptionProcedure
   ? {
