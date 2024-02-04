@@ -161,7 +161,7 @@ export type DecoratedMutation<TDef extends ResolverDef> = {
   useMutation: <TContext = unknown>(
     opts?: UseTRPCMutationOptions<
       TDef['input'],
-      TDef['errorShape'],
+      TRPCClientErrorLike<TDef>,
       TDef['output'],
       TContext
     >,
