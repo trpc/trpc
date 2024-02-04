@@ -235,7 +235,15 @@ export interface ProcedureBuilder<
   _def: ProcedureBuilderDef<TMeta>;
 }
 
-export type AnyProcedureBuilder = ProcedureBuilder<any, any, any, any, any, any, any>;
+export type AnyProcedureBuilder = ProcedureBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
 type ProcedureBuilderResolver = (
   opts: ResolverOptions<any, any, any, any>,
 ) => Promise<unknown>;
