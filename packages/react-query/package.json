@@ -27,6 +27,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./rsc": {
+      "import": "./dist/rsc.mjs",
+      "require": "./dist/rsc.js",
+      "default": "./dist/rsc.js"
+    },
     "./server": {
       "import": "./dist/server/index.mjs",
       "require": "./dist/server/index.js",
@@ -43,6 +48,7 @@
     "src",
     "README.md",
     "package.json",
+    "rsc",
     "server",
     "shared",
     "!**/*.test.*"
