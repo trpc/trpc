@@ -1,6 +1,5 @@
 {
   "name": "@examples/minimal-react-server",
-  "version": "10.45.0",
   "private": true,
   "scripts": {
     "build": "tsc",
