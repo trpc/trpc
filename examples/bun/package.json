@@ -1,7 +1,7 @@
 {
   "name": "@examples/bun",
   "private": true,
-  "version": "10.45.0",
+  "version": "10.45.1",
   "scripts": {
     "build": "bun build src/index.ts --outdir ./dist && bun build src/client.ts --outdir ./dist",
     "dev:server": "bun run src/index.ts --watch",

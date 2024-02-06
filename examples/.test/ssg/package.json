@@ -1,6 +1,6 @@
 {
   "name": "@examples/test-ssg",
-  "version": "10.45.0",
+  "version": "10.45.1",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -1378,7 +1378,7 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -1415,12 +1415,12 @@ importers:
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.45.1
-        version: 10.45.1(@trpc/server@packages+server)
+        version: link:../client
       '@trpc/react-query':
-        specifier: 10.45.0
+        specifier: 10.45.1
         version: link:../react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1466,9 +1466,9 @@ importers:
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
       '@trpc/client':
         specifier: 10.45.1
-        version: 10.45.1(@trpc/server@packages+server)
+        version: link:../client
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../server
       '@types/express':
         specifier: ^4.17.17
@@ -1637,15 +1637,15 @@ importers:
         version: 14.4.3(@testing-library/dom@9.0.0)
       '@trpc/client':
         specifier: 10.45.1
-        version: 10.45.1(@trpc/server@packages+server)
+        version: link:../client
       '@trpc/next':
-        specifier: 10.45.0
+        specifier: 10.45.1
         version: link:../next
       '@trpc/react-query':
-        specifier: 10.45.0
+        specifier: 10.45.1
         version: link:../react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../server
       '@types/node':
         specifier: ^20.10.0
@@ -1774,16 +1774,16 @@ importers:
         specifier: ^1.6.22
         version: 1.6.22(react@18.2.0)
       '@trpc/client':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../packages/client
       '@trpc/next':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.0
+        specifier: ^10.45.1
         version: link:../packages/server
       '@visx/hierarchy':
         specifier: ^3.0.0
@@ -8282,13 +8282,6 @@ packages:
     resolution: {integrity: sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==}
     engines: {node: '>= 10'}
     dev: false
-
-  /@trpc/client@10.45.1(@trpc/server@packages+server):
-    resolution: {integrity: sha512-nVbAk1xpIiI64WgzXGgfxPOGgHoYvffn1IsjV1D/Ri7DL4BKuo2qtZ7UQ+OuHkzH2M8j4ikSVBDpk545fOdvpw==}
-    peerDependencies:
-      '@trpc/server': 10.45.1
-    dependencies:
-      '@trpc/server': link:packages/server
 
   /@trysound/sax@0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}

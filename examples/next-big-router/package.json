@@ -1,6 +1,6 @@
 {
   "name": "@examples/next-big-router",
-  "version": "10.45.0",
+  "version": "10.45.1",
   "private": true,
   "scripts": {
     "dev": "next dev",

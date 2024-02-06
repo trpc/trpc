@@ -1,6 +1,6 @@
 {
   "name": "@examples/trpc-next-prisma-starter",
-  "version": "10.45.0",
+  "version": "10.45.1",
   "private": true,
   "engines": {
     "node": ">=18.0.0"

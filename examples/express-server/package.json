@@ -1,6 +1,6 @@
 {
   "name": "@examples/express-server",
-  "version": "10.45.0",
+  "version": "10.45.1",
   "private": true,
   "type": "module",
   "scripts": {
