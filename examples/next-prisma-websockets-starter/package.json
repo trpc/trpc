@@ -1,6 +1,5 @@
 {
   "name": "@examples/next-websockets-starter",
-  "version": "10.45.0",
   "private": true,
   "engines": {
     "node": ">=18.15.0"
