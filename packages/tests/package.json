@@ -1,6 +1,5 @@
 {
   "name": "@trpc/tests",
-  "version": "10.45.1",
   "private": true,
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
