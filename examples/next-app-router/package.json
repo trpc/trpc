@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^0.6.2",
-    "@hookform/resolvers": "^3.3.4",
+    "@hookform/resolvers": "npm:@hookform/resolvers@3.3.4",
     "@juliusmarminge/next-themes": "^0.3.0",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-slot": "^1.0.2",
