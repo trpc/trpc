@@ -1,6 +1,5 @@
 {
   "name": "@examples/next-edge-runtime",
-  "version": "10.45.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
