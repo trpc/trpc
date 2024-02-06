@@ -1,6 +1,6 @@
 import { HydrateClient, trpc } from '~/trpc/server';
 import { Suspense } from 'react';
-import { SomeClientComponent } from './_components/posts';
+import { Posts } from './_components/posts';
 import { UserButton } from './_components/user-button';
 
 export default async function Home() {
@@ -15,7 +15,7 @@ export default async function Home() {
         </div>
       </Suspense>
       <HydrateClient>
-        <SomeClientComponent />
+        <Posts />
       </HydrateClient>
     </main>
   );

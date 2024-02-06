@@ -14,7 +14,7 @@ import {
 import { Input } from '~/ui/input';
 import { toast } from 'sonner';
 
-export function SomeClientComponent() {
+export function Posts() {
   // Won't be fetched initially, but instead pulled from query cache.
   const [data] = trpc.post.list.useSuspenseQuery();
 
