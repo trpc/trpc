@@ -71,7 +71,6 @@
     "ssrPrepass",
     "!**/*.test.*"
   ],
-  "dependencies": {},
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "10.45.0",
@@ -112,5 +111,8 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "dependencies": {
+    "@noble/hashes": "^1.3.3"
+  }
 }

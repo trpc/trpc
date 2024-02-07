@@ -18,6 +18,11 @@ import { generateCacheTag } from '../shared';
 
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
+  /**
+   * define which values from the context should be considered into the cache
+   * key
+   */
+  cacheContext?: (ctx: inferRouterContext<TRouter>) => any[];
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
@@ -33,18 +38,18 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
       observable((observer) => {
         const { path, input, type, context } = op;
 
-        const cacheTag = generateCacheTag(path, input);
-        // Let per-request revalidate override global revalidate
-        const requestRevalidate =
-          typeof context['revalidate'] === 'number' ||
-          context['revalidate'] === false
-            ? context['revalidate']
-            : undefined;
-        const revalidate = requestRevalidate ?? opts.revalidate ?? false;
-
         const promise = opts
           .createContext()
           .then(async (ctx) => {
+            const cacheTag = generateCacheTag(path, input, opts.cacheContext?.(ctx));
+            // Let per-request revalidate override global revalidate
+            const requestRevalidate =
+              typeof context['revalidate'] === 'number' ||
+              context['revalidate'] === false
+                ? context['revalidate']
+                : undefined;
+            const revalidate = requestRevalidate ?? opts.revalidate ?? false;
+
             const callProc = async (_cachebuster: string) => {
               //   // _cachebuster is not used by us but to make sure
               //   // that calls with different tags are properly separated
