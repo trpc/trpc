@@ -41,7 +41,11 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const promise = opts
           .createContext()
           .then(async (ctx) => {
-            const cacheTag = generateCacheTag(path, input, opts.cacheContext?.(ctx));
+            const cacheTag = generateCacheTag(
+              path,
+              input,
+              opts.cacheContext?.(ctx),
+            );
             // Let per-request revalidate override global revalidate
             const requestRevalidate =
               typeof context['revalidate'] === 'number' ||

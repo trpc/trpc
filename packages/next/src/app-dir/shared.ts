@@ -1,3 +1,4 @@
+import { sha256 } from '@noble/hashes/sha256';
 import type {
   CreateTRPCClientOptions,
   Resolver,
@@ -14,7 +15,6 @@ import type {
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
-import { sha256 } from '@noble/hashes/sha256'
 
 /**
  * @internal
@@ -87,8 +87,12 @@ export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
 /**
  * @internal
  */
-export function generateCacheTag(procedurePath: string, input: any, context?: any) {
-  return `${procedurePath}?hash=${sha256(JSON.stringify({input, context}))}`
+export function generateCacheTag(
+  procedurePath: string,
+  input: any,
+  context?: any,
+) {
+  return `${procedurePath}?hash=${sha256(JSON.stringify({ input, context }))}`;
 }
 
 export function isFormData(value: unknown): value is FormData {
