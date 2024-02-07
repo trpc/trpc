@@ -1,6 +1,5 @@
 {
   "name": "@examples/express-minimal",
-  "version": "10.45.0",
   "private": true,
   "type": "module",
   "scripts": {
