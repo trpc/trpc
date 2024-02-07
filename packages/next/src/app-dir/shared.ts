@@ -1,4 +1,4 @@
-import { sha256 } from '@noble/hashes/sha256';
+import { createHash } from 'crypto';
 import type {
   CreateTRPCClientOptions,
   Resolver,
@@ -92,7 +92,9 @@ export function generateCacheTag(
   input: any,
   context?: any,
 ) {
-  return `${procedurePath}?hash=${sha256(JSON.stringify({ input, context }))}`;
+  return `${procedurePath}?hash=${createHash('sha256')
+    .update(JSON.stringify({ input, context }))
+    .digest('hex')}`;
 }
 
 export function isFormData(value: unknown): value is FormData {
