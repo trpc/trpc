@@ -10,8 +10,8 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
-  inferTransformedProcedureOutput,
   inferRouterContext,
+  inferTransformedProcedureOutput,
   ProtectedIntersection,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
