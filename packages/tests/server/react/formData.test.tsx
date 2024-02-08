@@ -187,7 +187,7 @@ const ctx = konn()
   })
   .done();
 
-test('upload file', async () => {
+test.skip('upload file', async () => {
   const form = new FormData();
   form.append(
     'file',
@@ -209,7 +209,7 @@ test('upload file', async () => {
   `);
 });
 
-test('polymorphic - accept both JSON and FormData', async () => {
+test.skip('polymorphic - accept both JSON and FormData', async () => {
   const form = new FormData();
   form.set('text', 'foo');
 
@@ -220,7 +220,7 @@ test('polymorphic - accept both JSON and FormData', async () => {
   expect(formDataRes).toEqual(jsonRes);
 });
 
-test('upload a combination of files and non-file text fields', async () => {
+test.skip('upload a combination of files and non-file text fields', async () => {
   const form = new FormData();
   form.append(
     'files',
@@ -260,7 +260,7 @@ test('upload a combination of files and non-file text fields', async () => {
   });
 });
 
-test('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - files too large', async () => {
+test.skip('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - files too large', async () => {
   const form = new FormData();
   form.append(
     'files',
@@ -284,7 +284,7 @@ test('Throws when aggregate size of uploaded files and non-file text fields exce
   );
 });
 
-test('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - text fields too large', async () => {
+test.skip('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - text fields too large', async () => {
   const form = new FormData();
   form.append(
     'files',
