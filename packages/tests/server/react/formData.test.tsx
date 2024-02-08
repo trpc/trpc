@@ -130,6 +130,10 @@ const ctx = konn()
 
     type TRouter = typeof appRouter;
 
+    const loggerLinkConsole = {
+      log: vi.fn(),
+      error: vi.fn(),
+    };
     const opts = routerToServerAndClientNew(appRouter, {
       server: {
         experimental_contentTypeHandlers: [
