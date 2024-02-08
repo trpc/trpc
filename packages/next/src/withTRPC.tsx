@@ -157,7 +157,7 @@ export function withTRPC<
         WithTRPC,
       });
     } else if (AppOrPage.getInitialProps) {
-      // Support getInitialProps in wrapped components
+      // Allow combining `getServerSideProps` and `getInitialProps`
 
       WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
         // Determine if we are wrapping an App component or a Page component.
