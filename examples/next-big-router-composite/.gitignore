@@ -1,3 +1,4 @@
 .next
 src/server/routers
+src/module
 node_modules

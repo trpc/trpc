@@ -1,42 +1,111 @@
-import fs from 'fs';
+import fs from "fs";
 
 // Modify this is if you want to try bigger routers
 // Each router will have 5 procedures + a small sub-router with 2 procedures
 const NUM_ROUTERS = 100;
 
-const ROUTERS_DIR = __dirname + '/../src/server/routers';
-if (fs.existsSync(ROUTERS_DIR)) {
-  fs.rmSync(ROUTERS_DIR, { recursive: true });
+const ROOT_DIR = __dirname + "../";
+const MODULES_DIR = __dirname + "/../module";
+
+// delete all folders in MODULES_DIR that start with 'router'
+const folders = fs.readdirSync(MODULES_DIR);
+for (const folder of folders) {
+    if (folder.startsWith("router")) {
+        fs.rmSync(MODULES_DIR + "/" + folder, { recursive: true });
+    }
 }
 
-fs.mkdirSync(ROUTERS_DIR, { recursive: true });
-
 // read file codege-base.ts in the same dir as this script
-const codegenBase = fs.readFileSync(__dirname + '/codegen-base.ts', 'utf-8');
+const routerBase = fs.readFileSync(
+    __dirname + "/router-x/server/codegen-router.ts",
+    "utf-8"
+);
+const tsconfigBase = fs.readFileSync(
+    __dirname + "/codegen-tsconfig.json",
+    "utf-8"
+);
 
 function createRouter(routerName: string) {
-  return codegenBase.replace('__ROUTER__NAME__', routerName);
+    return routerBase.replace("__ROUTER__NAME__", routerName);
 }
 
 const indexBuf: string[] = [];
 for (let i = 0; i < NUM_ROUTERS; i++) {
-  const routerName = `router${i}`;
-  indexBuf.push(routerName);
-  fs.writeFileSync(`${ROUTERS_DIR}/${routerName}.ts`, createRouter(routerName));
+    const routerName = `router${i}`;
+    indexBuf.push(routerName);
+    const moduleDir = `${MODULES_DIR}/${routerName}`;
+    const serverDir = `${moduleDir}/server`;
+    fs.mkdirSync(serverDir, {
+        recursive: true,
+    });
+    fs.writeFileSync(`${serverDir}/${routerName}.ts`, createRouter(routerName));
+
+    const tsconfig = {
+        extends: "../tsconfig-base.json",
+        compilerOptions: {
+            rootDir: ".",
+            composite: true,
+        },
+        references: [
+            {
+                path: "../trpc-base",
+            },
+        ],
+    };
+    fs.writeFileSync(
+        `${moduleDir}/tsconfig.json`,
+        JSON.stringify(tsconfig, null, 4)
+    );
 }
 
-const indexFile = `
-import { router } from '~/server/trpc';
+{
+    // router-app
 
-${indexBuf.map((name) => `import { ${name} } from './${name}';`).join('\n')}
+    const moduleDir = `${MODULES_DIR}/router-app`;
+    const serverDir = `${moduleDir}/server`;
 
-export const appRouter = router({
-  ${indexBuf.join(',\n    ')}
-})
+    {
+        // create index file
+        const indexFile = `
+    import { router } from '../../trpc-base/server/trpc';
 
-// export only the type definition of the API
-// None of the actual implementation is exposed to the client
-export type AppRouter = typeof appRouter;
-`.trim();
+    ${indexBuf
+        .map(
+            (name) => `import { ${name} } from '../../${name}/server/${name}';`
+        )
+        .join("\n")}
 
-fs.writeFileSync(`${ROUTERS_DIR}/_app.ts`, indexFile);
+    export const appRouter = router({
+      ${indexBuf.join(",\n    ")}
+    })
+
+    // export only the type definition of the API
+    // None of the actual implementation is exposed to the client
+    export type AppRouter = typeof appRouter;
+    `.trim();
+
+        fs.mkdirSync(serverDir, {
+            recursive: true,
+        });
+        fs.writeFileSync(`${serverDir}/_app.ts`, indexFile);
+    }
+
+    {
+        // create composite tsconfig for the generated router-app
+
+        const tsconfig = {
+            extends: "../tsconfig-base.json",
+            compilerOptions: {
+                rootDir: ".",
+            },
+            references: indexBuf.map((name) => ({
+                path: `../${name}`,
+            })),
+        };
+
+        fs.writeFileSync(
+            `${moduleDir}/tsconfig.json`,
+            JSON.stringify(tsconfig, null, 4)
+        );
+    }
+}

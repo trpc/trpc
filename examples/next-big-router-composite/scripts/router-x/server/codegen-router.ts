@@ -1,4 +1,4 @@
-import { publicProcedure, router } from '~/server/trpc';
+import { publicProcedure, router } from '../../../module/trpc-base/server/trpc';
 import { z } from 'zod';
 
 export const __ROUTER__NAME__ = router({
