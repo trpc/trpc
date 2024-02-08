@@ -110,7 +110,7 @@ test('bad merge: error formatter', async () => {
   expect(() =>
     t1.mergeRouters(router1, router2),
   ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have several error formatters"`,
+    `[Error: You seem to have several error formatters]`,
   );
 });
 
@@ -139,6 +139,6 @@ test('bad merge: transformer', async () => {
   expect(() =>
     t1.mergeRouters(router1, router2),
   ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have several transformers"`,
+    `[Error: You seem to have several transformers]`,
   );
 });
