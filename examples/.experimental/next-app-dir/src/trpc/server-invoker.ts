@@ -21,6 +21,8 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           revalidate: 5,
           router: appRouter,
           transformer: superjson,
+          // include the user id in the cache key
+          cacheContext: (ctx) => [ctx.session?.user.id],
           createContext: async () => {
             return {
               session: await auth(),

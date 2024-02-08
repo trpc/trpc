@@ -34,7 +34,6 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;
-      const cacheTag = generateCacheTag(path, input);
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
@@ -45,10 +44,11 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
 
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const _fetch: NonNullable<HTTPLinkOptions<AnyRootTypes>['fetch']> = (
+      const _fetch: NonNullable<HTTPLinkOptions<AnyRootTypes>['fetch']> = async (
         url,
         fetchOpts,
       ) => {
+        const cacheTag = await generateCacheTag(path, input);
         return fetch(url, {
           ...fetchOpts,
           // cache: 'no-cache',

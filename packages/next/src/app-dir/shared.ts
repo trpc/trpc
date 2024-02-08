@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import type {
   CreateTRPCClientOptions,
   Resolver,
@@ -86,15 +85,27 @@ export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
 
 /**
  * @internal
+ * @link https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest#converting_a_digest_to_a_hex_string
  */
-export function generateCacheTag(
+async function digestMessage(message: string) {
+  const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8); // hash the message
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join(""); // convert bytes to hex string
+  return hashHex;
+}
+
+/**
+ * @internal
+ */
+export async function generateCacheTag(
   procedurePath: string,
   input: any,
   context?: any,
 ) {
-  return `${procedurePath}?hash=${createHash('sha256')
-    .update(JSON.stringify({ input, context }))
-    .digest('hex')}`;
+  return `${procedurePath}?hash=${await digestMessage(JSON.stringify({ input, context }))}`
 }
 
 export function isFormData(value: unknown): value is FormData {

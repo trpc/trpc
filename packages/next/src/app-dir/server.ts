@@ -41,7 +41,7 @@ export function experimental_createTRPCNextAppDirServer<
     return createTRPCUntypedClient(config);
   });
 
-  return createRecursiveProxy((callOpts) => {
+  return createRecursiveProxy(async (callOpts) => {
     // lazily initialize client
     const client = getClient();
 
@@ -50,7 +50,7 @@ export function experimental_createTRPCNextAppDirServer<
     const action = pathCopy.pop()!;
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
-    const cacheTag = generateCacheTag(procedurePath, callOpts.args[0]);
+    const cacheTag = await generateCacheTag(procedurePath, callOpts.args[0]);
 
     if (action === 'revalidate') {
       revalidateTag(cacheTag);
