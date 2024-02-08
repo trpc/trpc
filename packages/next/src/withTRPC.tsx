@@ -18,7 +18,7 @@ import type {
 import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
-  inferRootTypes,
+  inferClientTypes,
   ResponseMeta,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -38,7 +38,7 @@ export type WithTRPCConfig<TRouter extends AnyRouter> =
 type WithTRPCOptions<TRouter extends AnyRouter> =
   CreateTRPCReactOptions<TRouter> & {
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
-  } & TransformerOptions<inferRootTypes<TRouter>>;
+  } & TransformerOptions<inferClientTypes<TRouter>>;
 
 export type TRPCPrepassHelper = (opts: {
   parent: WithTRPCSSROptions<AnyRouter>;

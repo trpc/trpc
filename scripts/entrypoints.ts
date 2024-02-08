@@ -47,6 +47,7 @@ export async function generateEntrypoints(rawInputs: string[]) {
   // Added to turbo.json pipeline output to ensure cache works
   const scriptOutputs = new Set<string>();
   scriptOutputs.add('package.json');
+  scriptOutputs.add('dist/**');
 
   /** Parse the inputs to get the user-import-paths, e.g.
    *  src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
