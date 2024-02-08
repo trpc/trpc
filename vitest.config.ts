@@ -44,9 +44,8 @@ export default defineConfig({
     setupFiles: ['./tests/setupTests.ts'],
     coverage: {
       provider: 'istanbul',
-
-      exclude: ['**/deprecated/**'],
-      include: ['trpc/packages/*/src/**'],
+      include: ['**/src/**'],
+      exclude: ['**/www/**', '**/examples/**'],
     },
     poolOptions: {
       threads: {
