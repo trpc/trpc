@@ -39,8 +39,9 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Test
-        run: pnpm turbo --filter tests test-ci
+      - name: Build tRPC, then test
+        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm vitest --coverage
 
       - uses: codecov/codecov-action@v4
         with:
