@@ -4,12 +4,13 @@ import type {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
-  AnyClientRootTypes,
+  AnyClientTypes,
   AnyProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferTransformedProcedureOutput,
   ProtectedIntersection,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -26,7 +27,12 @@ export type UseProcedureRecord<
     ? $Value extends RouterRecord
       ? UseProcedureRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? Resolver<TRoot, $Value>
+      ? Resolver<{
+          input: inferProcedureInput<$Value>;
+          output: inferTransformedProcedureOutput<TRoot, $Value>;
+          errorShape: TRoot['errorShape'];
+          transformer: TRoot['transformer'];
+        }>
       : never
     : never;
 };
@@ -114,7 +120,7 @@ export interface ActionHandlerDef {
  * @internal
  */
 export type inferActionDef<
-  TRoot extends AnyClientRootTypes,
+  TRoot extends AnyClientTypes,
   TProc extends AnyProcedure,
 > = {
   input: inferProcedureInput<TProc>;

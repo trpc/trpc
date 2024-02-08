@@ -1,4 +1,4 @@
-import type { inferRootTypes } from '.';
+import type { inferClientTypes } from '.';
 import type { TRPCRouterRecord } from '..';
 import { initTRPC } from '..';
 
@@ -87,8 +87,8 @@ test('good merge: one has default transformer', async () => {
   await expect(caller.foo()).resolves.toBe('foo');
   await expect(caller.bar()).resolves.toBe('bar');
 
-  expectTypeOf<inferRootTypes<typeof router1>>().toEqualTypeOf<
-    inferRootTypes<typeof merged>
+  expectTypeOf<inferClientTypes<typeof router1>>().toEqualTypeOf<
+    inferClientTypes<typeof merged>
   >();
 });
 test('bad merge: error formatter', async () => {
