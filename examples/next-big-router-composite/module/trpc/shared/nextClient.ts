@@ -1,11 +1,11 @@
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '../../router-app/server/_app';
+import { httpBatchLink } from "@trpc/client";
+import { createTRPCNext } from "@trpc/next";
+import type { AppRouter } from "../../router-app/server/_app";
 
 function getBaseUrl() {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     // In the browser, we return a relative URL
-    return '';
+    return "";
   }
   // When rendering on the server, we return an absolute URL
 
@@ -23,7 +23,7 @@ export const trpc = createTRPCNext<AppRouter>({
     return {
       links: [
         httpBatchLink({
-          url: getBaseUrl() + '/api/trpc',
+          url: getBaseUrl() + "/api/trpc",
         }),
       ],
     };
