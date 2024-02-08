@@ -10,6 +10,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferRouterContext,
   ProtectedIntersection,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -81,6 +82,7 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
  */
 export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
   config: () => CreateTRPCClientOptions<TRouter>;
+  createContext: () => Promise<inferRouterContext<TRouter>>;
 }
 
 /**
@@ -103,7 +105,7 @@ async function digestMessage(message: string) {
 export async function generateCacheTag(
   procedurePath: string,
   input: any,
-  context?: any,
+  context: any,
 ) {
   return `${procedurePath}?hash=${await digestMessage(JSON.stringify({ input, context }))}`
 }

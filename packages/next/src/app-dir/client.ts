@@ -25,7 +25,7 @@ type QueryResult = {
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
   TRouter extends AnyRouter,
->(opts: CreateTRPCNextAppRouterOptions<TRouter>) {
+>(opts: Omit<CreateTRPCNextAppRouterOptions<TRouter>, 'createContext'>) {
   const client = createTRPCUntypedClient<TRouter>(opts.config());
   // const useProxy = createUseProxy<TRouter>(client);
 

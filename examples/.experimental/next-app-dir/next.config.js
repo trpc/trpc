@@ -8,7 +8,6 @@ const nextConfig = {
   },
   webpack: (config) => {
     // This is only intended to pass CI and should be skiped in your app
-    console.log(config)
     if (config.name === 'server')
       config.optimization.concatenateModules = false;
 
