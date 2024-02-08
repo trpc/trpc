@@ -4,9 +4,13 @@
     "rootDir": ".",
     "outDir": "./dist"
   },
+  "include": ["./**/*.ts"],
   "references": [
     {
       "path": "../module/trpc-base"
+    },
+    {
+      "path": "../module/router-app"
     }
   ]
 }
