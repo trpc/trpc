@@ -11,11 +11,11 @@ tRPC adheres to the industry standard when it comes to aborting procedures. All 
 // @target: esnext
 // ---cut---
 // @filename: server.ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 // @noErrors
 import type { AppRouter } from 'server.ts';
 
-const proxy = createTRPCProxyClient<AppRouter>({
+const proxy = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/trpc',

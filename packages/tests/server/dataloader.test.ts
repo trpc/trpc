@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { waitError, waitMs } from './___testHelpers';
-import { dataLoader } from '@trpc/client/src/internals/dataLoader';
+import { dataLoader } from '@trpc/client/internals/dataLoader';
 
 describe('basic', () => {
   const fetchFn = vi.fn();

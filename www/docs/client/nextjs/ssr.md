@@ -21,16 +21,18 @@ Additionally, consider [`Response Caching`](../../server/caching.md).
 ```tsx title='utils/trpc.ts'
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
+  ssr: true,
+  ssrPrepass,
   config(opts) {
     const { ctx } = opts;
     if (typeof window !== 'undefined') {
       // during client requests
       return {
-        transformer: superjson, // optional - adds superjson serialization
         links: [
           httpBatchLink({
             url: '/api/trpc',
@@ -40,7 +42,6 @@ export const trpc = createTRPCNext<AppRouter>({
     }
 
     return {
-      transformer: superjson, // optional - adds superjson serialization
       links: [
         httpBatchLink({
           // The server needs to know your app's full url
@@ -63,7 +64,6 @@ export const trpc = createTRPCNext<AppRouter>({
       ],
     };
   },
-  ssr: true,
 });
 ```
 
@@ -81,7 +81,6 @@ export const trpc = createTRPCNext<AppRouter>({
     if (typeof window !== 'undefined') {
       // during client requests
       return {
-        transformer: superjson, // optional - adds superjson serialization
         links: [
           httpBatchLink({
             url: '/api/trpc',
@@ -91,7 +90,6 @@ export const trpc = createTRPCNext<AppRouter>({
     }
 
     return {
-      transformer: superjson, // optional - adds superjson serialization
       links: [
         httpBatchLink({
           // The server needs to know your app's full url

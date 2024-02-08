@@ -25,7 +25,7 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 ```ts title="client/index.ts"
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   httpLink,
   splitLink,
@@ -34,7 +34,7 @@ import type { AppRouter } from '../server';
 
 const url = `http://localhost:3000`;
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition(op) {

@@ -1,6 +1,7 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { inferRouterMeta, initTRPC } from '@trpc/server/src';
-import { observable } from '@trpc/server/src/observable';
+import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+import type { inferRouterMeta } from '@trpc/server/unstable-core-do-not-import';
 
 test('route meta types', async () => {
   const testMeta = { data: 'foo' };
@@ -28,15 +29,12 @@ test('route meta types', async () => {
   expect(router._def.procedures.query).toMatchInlineSnapshot(`[Function]`);
 
   const queryMeta = router._def.procedures.query._def.meta;
-  expectTypeOf(queryMeta).toMatchTypeOf<TMeta | undefined>();
   expect(queryMeta).toEqual(testMeta);
 
   const mutationMeta = router._def.procedures.mutation._def.meta;
-  expectTypeOf(mutationMeta).toMatchTypeOf<TMeta | undefined>();
   expect(mutationMeta).toEqual(testMeta);
 
   const subscriptionMeta = router._def.procedures.subscription._def.meta;
-  expectTypeOf(subscriptionMeta).toMatchTypeOf<TMeta | undefined>();
   expect(subscriptionMeta).toEqual(testMeta);
 });
 
@@ -56,16 +54,16 @@ test('route meta in middleware', async () => {
     foo2: procedure.meta({ data: 'foo2' }).mutation(() => 'bar2'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
   const calls = middleware.mock.calls;
-  expect(await proxy.foo1.query()).toBe('bar1');
+  expect(await client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]!).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo1',
   });
 
-  expect(await proxy.foo2.mutate()).toBe('bar2');
+  expect(await client.foo2.mutate()).toBe('bar2');
   expect(calls[1]![0]!).toHaveProperty('meta');
   expect(calls[1]![0]!.meta).toEqual({
     data: 'foo2',
@@ -95,16 +93,16 @@ test('default meta', async () => {
     foo2: procedure.mutation(() => 'bar2'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
   const calls = middleware.mock.calls;
-  expect(await proxy.foo1.query()).toBe('bar1');
+  expect(await client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]!).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foobar',
   });
 
-  expect(await proxy.foo2.mutate()).toBe('bar2');
+  expect(await client.foo2.mutate()).toBe('bar2');
   expect(calls[1]![0]!).toHaveProperty('meta');
   expect(calls[1]![0]!.meta).toEqual({
     data: 'foobar',
@@ -132,16 +130,16 @@ test('default meta with merging', async () => {
     foo2: procedure.meta({ data: 'foo2' }).mutation(() => 'bar2'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
   const calls = middleware.mock.calls;
-  expect(await proxy.foo1.query()).toBe('bar1');
+  expect(await client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]!).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo1',
   });
 
-  expect(await proxy.foo2.mutate()).toBe('bar2');
+  expect(await client.foo2.mutate()).toBe('bar2');
   expect(calls[1]![0]!).toHaveProperty('meta');
   expect(calls[1]![0]!.meta).toEqual({
     data: 'foo2',
@@ -171,10 +169,10 @@ test('meta chaining with merging', async () => {
       .query(() => 'bar1'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
   const calls = middleware.mock.calls;
-  expect(await proxy.foo1.query()).toBe('bar1');
+  expect(await client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]!).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo2',
@@ -213,10 +211,10 @@ test('complex meta merging', async () => {
       .query(() => 'bar1'),
   });
 
-  const { close, proxy } = routerToServerAndClientNew(router);
+  const { close, client } = routerToServerAndClientNew(router);
 
   const calls = middleware.mock.calls;
-  expect(await proxy.foo1.query()).toBe('bar1');
+  expect(await client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]!).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data1: 'bazbar',

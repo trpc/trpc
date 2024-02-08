@@ -26,9 +26,12 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export async function generateEntrypoints(inputs: string[]) {
+export async function generateEntrypoints(rawInputs: string[]) {
+  const inputs = [...rawInputs];
   // set some defaults for the package.json
+
   const pkgJsonPath = path.resolve('package.json');
+
   const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
 
   pkgJson.files = ['dist', 'src', 'README.md'];
@@ -55,6 +58,7 @@ export async function generateEntrypoints(inputs: string[]) {
    */
   inputs
     .filter((i) => i !== 'src/index.ts') // index included by default above
+    .sort()
     .forEach((i) => {
       // first, exclude 'src' part of the path
       const parts = i.split('/').slice(1);
@@ -78,11 +82,14 @@ export async function generateEntrypoints(inputs: string[]) {
 
       // create the barrelfile, linking the declared exports to the compiled files in dist
       const importDepth = importPath.split('/').length || 1;
-      const resolvedImport = path.join(
+
+      // in windows, "path.join" uses backslashes, it leads escape characters
+      const resolvedImport = [
         ...Array(importDepth).fill('..'),
         'dist',
         importPath,
-      );
+      ].join('/');
+
       // index.js
       const indexFile = path.resolve(importPath, 'index.js');
       const indexFileContent = `module.exports = require('${resolvedImport}');\n`;

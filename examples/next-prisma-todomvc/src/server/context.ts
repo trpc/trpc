@@ -19,7 +19,7 @@ export interface CreateInnerContextOptions
  * - testing, so you don't have to mock Next.js' `req`/`res`
  * - tRPC's `createSSGHelpers` where we don't have `req`/`res`
  *
- * @see https://trpc.io/docs/context#inner-and-outer-context
+ * @link https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
   return {
@@ -32,7 +32,7 @@ export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
 /**
  * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
  *
- * @see https://trpc.io/docs/context#inner-and-outer-context
+ * @link https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export const createTRPCContext = async (opts?: CreateNextContextOptions) => {
   const acceptLanguage = opts?.req.headers['accept-language'];

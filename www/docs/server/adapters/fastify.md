@@ -26,8 +26,8 @@ The best way to start with the Fastify adapter is to take a look at the example 
       </td>
       <td>
         <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/fastify-server">Source</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/next/examples/fastify-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/fastify-server">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -141,11 +141,11 @@ const server = fastify({
 server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
   trpcOptions: {
-    router,
+    router: appRouter,
     createContext,
     onError({ path, error }) {
       // report to error monitoring
-      console.error(`Error in tRPC handler on path '${path}':` error)
+      console.error(`Error in tRPC handler on path '${path}':`, error);
     },
   } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });

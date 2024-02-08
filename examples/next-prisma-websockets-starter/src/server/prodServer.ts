@@ -1,6 +1,7 @@
 import next from 'next';
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
+import type { Socket } from 'net';
 
 import { WebSocketServer } from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
@@ -28,7 +29,7 @@ void app.prepare().then(() => {
   });
 
   server.on('upgrade', (req, socket, head) => {
-    wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.handleUpgrade(req, socket as Socket, head, (ws) => {
       wss.emit('connection', ws, req);
     });
   });

@@ -1,12 +1,8 @@
 import { initTRPC } from '@trpc/server';
-import {
-  CreateHTTPContextOptions,
-  createHTTPServer,
-} from '@trpc/server/adapters/standalone';
-import {
-  applyWSSHandler,
-  CreateWSSContextFnOptions,
-} from '@trpc/server/adapters/ws';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import { WebSocketServer } from 'ws';
 import { z } from 'zod';
@@ -72,7 +68,7 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 // http server
-const { server, listen } = createHTTPServer({
+const server = createHTTPServer({
   router: appRouter,
   createContext,
 });
@@ -88,4 +84,4 @@ applyWSSHandler<AppRouter>({
 // setInterval(() => {
 //   console.log('Connected clients', wss.clients.size);
 // }, 1000);
-listen(2022);
+server.listen(2022);

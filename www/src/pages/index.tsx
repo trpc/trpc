@@ -28,7 +28,7 @@ const sandboxes = [
     id: 'minimal',
     title: 'Node.js',
     description: 'This is a minimal Node.js application using tRPC.',
-    files: ['client/index.ts', 'server/index.ts'],
+    files: ['src/client/index.ts', 'src/server/index.ts'],
   },
   {
     id: 'next-minimal-starter',
@@ -171,7 +171,7 @@ function TryItOut() {
               </div>
               {!deviceSupported && (
                 <ErrorOverlay
-                  url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
+                  url={`https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}`}
                   dismiss={() => {
                     setIsSupported(true);
                   }}
@@ -179,7 +179,7 @@ function TryItOut() {
               )}
               <Iframe
                 src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}?` +
+                  `https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,

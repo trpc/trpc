@@ -11,57 +11,11 @@ if (fs.existsSync(ROUTERS_DIR)) {
 
 fs.mkdirSync(ROUTERS_DIR, { recursive: true });
 
+// read file codege-base.ts in the same dir as this script
+const codegenBase = fs.readFileSync(__dirname + '/codegen-base.ts', 'utf-8');
+
 function createRouter(routerName: string) {
-  return `
-  import { z } from 'zod';
-  import { t } from '~/server/trpc';
-  
-  export const ${routerName} = t.router({
-    greeting: t
-      .procedure
-      .input(
-        z.object({
-          who: z.string()
-        })
-      )
-      .query(({input}) => \`hello \${input.who}\`),
-    greeting2: t
-      .procedure
-      .input(
-        z.object({
-          who: z.string()
-        })
-      )
-      .query(({input}) => \`hello \${input.who}\`),
-      greeting3: t
-        .procedure
-        .input(
-          z.object({
-            who: z.string()
-          })
-        )
-        .query(({input}) => \`hello \${input.who}\`),
-      greeting4: t
-        .procedure
-        .input(
-          z.object({
-            who: z.string()
-          })
-        )
-        .query(({input}) => \`hello \${input.who}\`),
-      greeting5: t
-        .procedure
-        .input(
-          z.object({
-            who: z.string()
-          })
-        )
-        .query(({input}) => \`hello \${input.who}\`),
-      childRouter: t.router({
-        hello: t.procedure.query(() => 'there'),
-        doSomething: t.procedure.mutation(() => 'okay'),
-      })
-  })`.trim();
+  return codegenBase.replace('__ROUTER__NAME__', routerName);
 }
 
 const indexBuf: string[] = [];
@@ -71,17 +25,12 @@ for (let i = 0; i < NUM_ROUTERS; i++) {
   fs.writeFileSync(`${ROUTERS_DIR}/${routerName}.ts`, createRouter(routerName));
 }
 
-const trpcFile = `
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.create();
-`.trim();
 const indexFile = `
-import { t } from '~/server/trpc';
+import { router } from '~/server/trpc';
 
 ${indexBuf.map((name) => `import { ${name} } from './${name}';`).join('\n')}
 
-export const appRouter = t.router({
+export const appRouter = router({
   ${indexBuf.join(',\n    ')}
 })
 

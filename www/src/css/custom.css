@@ -458,3 +458,12 @@ details p {
 .DocSearch-Logo a svg {
   @apply w-16;
 }
+
+.InstallationSnippet__CodeBlock {
+  @apply relative;
+}
+.InstallationSnippet__CodeBlock .copy-button {
+  /* @apply absolute right-0 top-0 rounded bg-zinc-400 bg-opacity-50 text-sm dark:bg-zinc-800 dark:bg-opacity-50; */
+  /* I'd enable the above but the copy button doesn't actually work */
+  @apply hidden;
+}

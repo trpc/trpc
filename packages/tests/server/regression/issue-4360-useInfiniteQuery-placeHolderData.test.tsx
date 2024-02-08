@@ -1,6 +1,6 @@
 import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from '../react/__reactHelpers';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import { z } from 'zod';
 
@@ -39,10 +39,10 @@ const ctx = konn()
   .done();
 
 test('with input', async () => {
-  const { proxy } = ctx;
+  const { client } = ctx;
 
   ignoreErrors(() => {
-    proxy.post.list.useInfiniteQuery(
+    client.post.list.useInfiniteQuery(
       { foo: 'bar' },
       {
         // @ts-expect-error can't return page data that doesn't match the output type
@@ -54,15 +54,11 @@ test('with input', async () => {
         },
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );
 
-    proxy.post.list.useSuspenseInfiniteQuery(
+    client.post.list.useSuspenseInfiniteQuery(
       { foo: 'bar' },
       {
         // @ts-expect-error can't return page data that doesn't match the output type
@@ -74,10 +70,6 @@ test('with input', async () => {
         },
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );
@@ -85,10 +77,10 @@ test('with input', async () => {
 });
 
 test('good placeholderData', () => {
-  const { proxy } = ctx;
+  const { client } = ctx;
 
   ignoreErrors(() => {
-    proxy.post.list.useInfiniteQuery(
+    client.post.list.useInfiniteQuery(
       { foo: 'bar' },
       {
         placeholderData() {
@@ -103,10 +95,6 @@ test('good placeholderData', () => {
         },
         getNextPageParam(lastPage) {
           return lastPage.next;
-        },
-        onSuccess: (data) => {
-          if (data.pages[0]?.next) {
-          }
         },
       },
     );

@@ -1,32 +1,43 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+// @trpc/server
+import type { AnyRouter } from '../@trpc/server';
+// @trpc/server
+import { getErrorShape, TRPCError } from '../@trpc/server';
 import type {
-  NextApiHandler,
-  NextApiRequest,
-  NextApiResponse,
-} from 'next/types';
-import { AnyRouter } from '../core';
-import { TRPCError } from '../error/TRPCError';
-import { getErrorShape } from '../shared/getErrorShape';
-import {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
 } from './node-http';
+import { nodeHTTPRequestHandler } from './node-http';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
   NextApiResponse
 >;
 
+/**
+ * Preventing "TypeScript where it's tough not to get "The inferred type of 'xxxx' cannot be named without a reference to [...]"
+ */
+export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
   return async (req, res) => {
     function getPath(): string | null {
-      if (typeof req.query.trpc === 'string') {
-        return req.query.trpc;
+      if (typeof req.query['trpc'] === 'string') {
+        return req.query['trpc'];
       }
-      if (Array.isArray(req.query.trpc)) {
-        return req.query.trpc.join('/');
+      if (Array.isArray(req.query['trpc'])) {
+        return req.query['trpc'].join('/');
       }
       return null;
     }

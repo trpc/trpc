@@ -7,10 +7,10 @@
         "package.json",
         "adapters/**",
         "http/**",
-        "rpc/**",
         "observable/**",
-        "subscription/**",
-        "shared/**"
+        "rpc/**",
+        "shared/**",
+        "unstable-core-do-not-import/**"
       ]
     }
   }

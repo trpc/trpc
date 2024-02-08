@@ -1,9 +1,9 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
-import { createTRPCProxyClient } from '@trpc/client';
-import { createProxySSGHelpers } from '@trpc/react-query/src/ssg';
-import { IntersectionError } from '@trpc/server';
-import { initTRPC } from '@trpc/server/src/core';
+import { createTRPCClient } from '@trpc/client';
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import { initTRPC } from '@trpc/server';
+import type { IntersectionError } from '@trpc/server/unstable-core-do-not-import';
 import React from 'react';
 import { z } from 'zod';
 
@@ -15,7 +15,7 @@ test('vanilla client', async () => {
     a: t.procedure.query(() => 'a'),
   });
 
-  const client = createTRPCProxyClient<typeof appRouter>({ links: [] });
+  const client = createTRPCClient<typeof appRouter>({ links: [] });
 
   expectTypeOf(client).toMatchTypeOf<IntersectionError<'links'>>();
 });
@@ -32,10 +32,10 @@ test('utils client', async () => {
     a: t.procedure.query(() => 'a'),
   });
 
-  const { proxy, App } = getServerAndReactClient(appRouter);
+  const { client, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    expectTypeOf(proxy).toMatchTypeOf<IntersectionError<'Provider'>>();
+    expectTypeOf(client).toMatchTypeOf<IntersectionError<'Provider'>>();
 
     return null;
   }
@@ -58,10 +58,10 @@ test('utils client', async () => {
     }),
   });
 
-  const { proxy, App } = getServerAndReactClient(appRouter);
+  const { client, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
     expectTypeOf(utils).toEqualTypeOf<IntersectionError<'client'>>();
 
@@ -86,7 +86,7 @@ test('ssg queryClient', async () => {
     }),
   });
 
-  const ssg = createProxySSGHelpers({ router: appRouter, ctx: {} });
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
   expectTypeOf(ssg).toEqualTypeOf<IntersectionError<'queryClient'>>();
 });

@@ -1,40 +1,45 @@
-import { Resolver } from '@trpc/client';
-import {
+import type { Resolver } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRouter,
+  AnyRootTypes,
   AnySubscriptionProcedure,
-  ProcedureArgs,
-  ProcedureRouterRecord,
-} from '@trpc/server';
+  inferProcedureInput,
+  RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
 
-export type DecorateProcedureServer<TProcedure extends AnyProcedure> =
-  TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-        revalidate: (
-          input?: ProcedureArgs<TProcedure['_def']>[0],
-        ) => Promise<
-          { revalidated: false; error: string } | { revalidated: true }
-        >;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnySubscriptionProcedure
-    ? {
-        subscribe: Resolver<TProcedure>;
-      }
-    : never;
+export type DecorateProcedureServer<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyProcedure,
+> = TProcedure extends AnyQueryProcedure
+  ? {
+      query: Resolver<TRoot, TProcedure>;
+      revalidate: (
+        input?: inferProcedureInput<TProcedure>,
+      ) => Promise<
+        { revalidated: false; error: string } | { revalidated: true }
+      >;
+    }
+  : TProcedure extends AnyMutationProcedure
+  ? {
+      mutate: Resolver<TRoot, TProcedure>;
+    }
+  : TProcedure extends AnySubscriptionProcedure
+  ? {
+      subscribe: Resolver<TRoot, TProcedure>;
+    }
+  : never;
 
-export type NextAppDirDecoratedProcedureRecord<
-  TProcedures extends ProcedureRouterRecord,
+export type NextAppDirDecorateRouterRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? NextAppDirDecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedureServer<TProcedures[TKey]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? NextAppDirDecorateRouterRecord<TRoot, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedureServer<TRoot, $Value>
+      : never
     : never;
 };

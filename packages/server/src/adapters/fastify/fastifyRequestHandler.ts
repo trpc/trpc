@@ -1,14 +1,28 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 import { Readable } from 'node:stream';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { AnyRouter, inferRouterContext } from '../../core';
-import {
-  getBatchStreamFormatter,
+import type { FastifyReply, FastifyRequest } from 'fastify';
+// @trpc/server
+import type { AnyRouter } from '../../@trpc/server';
+import type {
   HTTPBaseHandlerOptions,
   HTTPRequest,
-} from '../../http';
-import { HTTPResponse, ResponseChunk } from '../../http/internals/types';
-import { resolveHTTPResponse } from '../../http/resolveHTTPResponse';
-import { NodeHTTPCreateContextOption } from '../node-http';
+  HTTPResponse,
+  ResolveHTTPRequestOptionsContextFn,
+  ResponseChunk,
+} from '../../@trpc/server/http';
+import {
+  getBatchStreamFormatter,
+  resolveHTTPResponse,
+} from '../../@trpc/server/http';
+import type { NodeHTTPCreateContextOption } from '../node-http';
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
@@ -32,10 +46,13 @@ export async function fastifyRequestHandler<
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
 >(opts: FastifyRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const createContext = async function _createContext(): Promise<
-    inferRouterContext<TRouter>
-  > {
-    return opts.createContext?.(opts);
+  const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+    innerOpts,
+  ) => {
+    return await opts.createContext?.({
+      ...opts,
+      ...innerOpts,
+    });
   };
 
   const query = opts.req.query

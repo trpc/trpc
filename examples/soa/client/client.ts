@@ -1,7 +1,7 @@
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { AppRouter } from '../faux-gateway/index';
 
-export const client = createTRPCProxyClient<AppRouter>({
+export const client = createTRPCClient<AppRouter>({
   links: [
     // create a custom ending link
     (runtime) => {
@@ -16,7 +16,7 @@ export const client = createTRPCProxyClient<AppRouter>({
         const pathParts = op.path.split('.');
 
         // first part of the query should be `server1` or `server2`
-        const serverName = pathParts.shift() as string as keyof typeof servers;
+        const serverName = pathParts.shift() as keyof typeof servers;
 
         // combine the rest of the parts of the paths
         // -- this is what we're actually calling the target server with

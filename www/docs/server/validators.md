@@ -338,31 +338,6 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-### With [@effect/schema](https://github.com/Effect-TS/schema)
-
-```ts twoslash
-import * as S from '@effect/schema/Schema';
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.create();
-
-const publicProcedure = t.procedure;
-
-export const appRouter = t.router({
-  hello: publicProcedure
-    .input(S.parseSync(S.struct({ name: S.string })))
-    .output(S.parseSync(S.struct({ greeting: S.string })))
-    .query(({ input }) => {
-      //      ^?
-      return {
-        greeting: `hello ${input.name}`,
-      };
-    }),
-});
-
-export type AppRouter = typeof appRouter;
-```
-
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash

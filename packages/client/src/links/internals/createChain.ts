@@ -1,6 +1,10 @@
-import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { Operation, OperationLink, OperationResultObservable } from '../types';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  Operation,
+  OperationLink,
+  OperationResultObservable,
+} from '../types';
 
 /** @internal */
 export function createChain<

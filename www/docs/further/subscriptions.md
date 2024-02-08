@@ -10,7 +10,7 @@ slug: /subscriptions
 :::tip
 
 - For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
-- For a bare-minimum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/main/examples/standalone-server).
+- For a bare-minimum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server).
 
 :::
 
@@ -100,7 +100,7 @@ You can use [Links](../client/links/overview.md) to route queries and/or mutatio
 :::
 
 ```tsx title='client.ts'
-import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from '../path/to/server/trpc';
 
 // create persistent WebSocket connection
@@ -109,7 +109,7 @@ const wsClient = createWSClient({
 });
 
 // configure TRPCClient to use WebSockets transport
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     wsLink({
       client: wsClient,
@@ -126,8 +126,8 @@ See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-
 
 > You can read more details by drilling into the TypeScript definitions:
 >
-> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/envelopes.ts)
-> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/main/packages/server/src/rpc/codes.ts).
+> - [/packages/server/src/rpc/envelopes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/envelopes.ts)
+> - [/packages/server/src/rpc/codes.ts](https://github.com/trpc/trpc/tree/next/packages/server/src/rpc/codes.ts).
 
 ### `query` / `mutation`
 

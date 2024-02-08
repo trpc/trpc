@@ -2,7 +2,7 @@
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
-import { Post } from '@prisma/client';
+import type { Post } from '@prisma/client';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { prisma } from '../prisma';
@@ -107,15 +107,15 @@ export const postRouter = router({
         skip: 0,
       });
       const items = page.reverse();
-      let prevCursor: typeof cursor | null = null;
+      let nextCursor: typeof cursor | null = null;
       if (items.length > take) {
         const prev = items.shift();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        prevCursor = prev!.createdAt;
+        nextCursor = prev!.createdAt;
       }
       return {
         items,
-        prevCursor,
+        nextCursor,
       };
     }),
 

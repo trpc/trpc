@@ -1,9 +1,20 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 /// <reference types="@fastify/websocket" />
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { FastifyHandlerOptions } from '.';
-import { AnyRouter } from '../../core';
-import { NodeHTTPCreateContextFnOptions } from '../node-http';
-import { applyWSSHandler, WSSHandlerOptions } from '../ws';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyHandlerOptions } from '.';
+// @trpc/server
+import type { AnyRouter } from '../../@trpc/server';
+import type { NodeHTTPCreateContextFnOptions } from '../node-http';
+import type { WSSHandlerOptions } from '../ws';
+import { applyWSSHandler } from '../ws';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
@@ -32,6 +43,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   );
 
   let prefix = opts.prefix ?? '';
+  const websocketPrefix = prefix;
 
   // https://github.com/fastify/fastify-plugin/blob/fe079bef6557a83794bf437e14b9b9edb8a74104/plugin.js#L11
   // @ts-expect-error property 'default' does not exists on type ...
@@ -47,6 +59,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   if (opts.useWSS) {
     applyWSSHandler<TRouter>({
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
+      prefix: websocketPrefix,
       wss: fastify.websocketServer,
     });
     // eslint-disable-next-line @typescript-eslint/no-empty-function

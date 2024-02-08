@@ -1,4 +1,4 @@
-import { TextDecoderEsque } from './streamingUtils';
+import type { TextDecoderEsque } from './streamingUtils';
 
 export function getTextDecoder(
   customTextDecoder?: TextDecoderEsque,

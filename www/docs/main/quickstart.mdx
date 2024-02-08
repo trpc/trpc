@@ -88,36 +88,11 @@ tRPC is split between several packages, so you can install only what you need. M
 
 Start off by installing the `@trpc/server` and `@trpc/client` packages:
 
-<Tabs>
-  <TabItem value="npm" label="npm" default>
 
-```sh
-npm install @trpc/server @trpc/client
-```
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
+<InstallSnippet pkgs="@trpc/server@next @trpc/client@next" />
 
-```sh
-yarn add @trpc/server @trpc/client
-```
-
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-
-```sh
-pnpm add @trpc/server @trpc/client
-```
-
-  </TabItem>
-  <TabItem value="bun" label="bun">
-
-```sh
-bun add @trpc/server @trpc/client
-```
-
-  </TabItem>
-</Tabs>
 
 ## Defining a backend router
 
@@ -313,7 +288,7 @@ const appRouter = router({
 
   </TabItem>
   <TabItem value="valibot" label="Valibot">
-    With Valibot, you simply need to <code>wrap</code> your schema with [TypeSchema](https://typeschema.com).
+    With Valibot, you simply need to <code>wrap</code> your schema with <a href="https://typeschema.com">TypeSchema</a>.
 
 <br />
 <br />
@@ -452,13 +427,13 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // @include: server
 // @filename: client.ts
 // ---cut---
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 //     👆 **type-only** import
 
 // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
 // what procedures are available on the server and their input/output types.
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -482,10 +457,10 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 // @filename: server.ts
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -515,10 +490,10 @@ You can open up your Intellisense to explore your API on your frontend. You'll f
 // @filename: server.ts
 // @include: server
 // @filename: client.ts
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCProxyClient<AppRouter>({
+const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -546,13 +521,13 @@ import clsx from 'clsx';
 >
   <Iframe
     src={
-      `https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal?` +
+      `https://stackblitz.com/github/trpc/trpc/tree/next/examples/minimal?` +
       searchParams({
         embed: '1',
         file: [
           // Opens these side-by-side
-          'client/index.ts',
-          'server/index.ts',
+          'src/client/index.ts',
+          'src/server/index.ts',
         ],
         hideNavigation: '1',
         terminalHeight: '1',

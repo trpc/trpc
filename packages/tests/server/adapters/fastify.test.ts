@@ -1,25 +1,25 @@
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
+import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   createWSClient,
-  HTTPHeaders,
   splitLink,
-  TRPCLink,
   unstable_httpBatchStreamLink,
   wsLink,
-} from '@trpc/client/src';
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import {
+import type {
   CreateFastifyContextOptions,
-  fastifyTRPCPlugin,
   FastifyTRPCPluginOptions,
-} from '@trpc/server/src/adapters/fastify';
-import { observable } from '@trpc/server/src/observable';
+} from '@trpc/server/adapters/fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
+import { WebSocket } from 'ws';
 import { z } from 'zod';
 
 const config = {
@@ -27,9 +27,9 @@ const config = {
   prefix: '/trpc',
 };
 
-function createContext({ req, res }: CreateFastifyContextOptions) {
-  const user = { name: req.headers.username ?? 'anonymous' };
-  return { req, res, user };
+function createContext({ req, res, info }: CreateFastifyContextOptions) {
+  const user = { name: req.headers['username'] ?? 'anonymous' };
+  return { req, res, user, info };
 }
 
 type Context = Awaited<ReturnType<typeof createContext>>;
@@ -94,6 +94,11 @@ function createAppRouter() {
       onNewMessageSubscription();
       return sub;
     }),
+    request: router({
+      info: publicProcedure.query(({ ctx }) => {
+        return ctx.info;
+      }),
+    }),
     deferred: publicProcedure
       .input(
         z.object({
@@ -156,6 +161,14 @@ function createServer(opts: ServerOptions) {
     } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
   });
 
+  instance.register(async function (fastify) {
+    fastify.get('/ws', { websocket: true }, (connection) => {
+      connection.socket.on('message', (message) => {
+        connection.socket.send(message);
+      });
+    });
+  });
+
   instance.get('/hello', async () => {
     return { hello: 'GET' };
   });
@@ -180,7 +193,7 @@ const linkSpy: TRPCLink<AppRouter> = () => {
     return observable((observer) => {
       const unsubscribe = next(op).subscribe({
         next(value) {
-          orderedResults.push((value.result as any).data);
+          orderedResults.push(value.result.data as number);
           observer.next(value);
         },
         error: observer.error,
@@ -198,7 +211,7 @@ interface ClientOptions {
 function createClient(opts: ClientOptions) {
   const host = `localhost:${opts.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
-  const client = createTRPCProxyClient<AppRouter>({
+  const client = createTRPCClient<AppRouter>({
     links: [
       linkSpy,
       splitLink({
@@ -303,6 +316,29 @@ describe('anonymous user', () => {
     `);
   });
 
+  test('does not bind other websocket connection', async () => {
+    const client = new WebSocket(`ws://localhost:${app.url.port}/ws`);
+
+    await new Promise<void>((resolve, reject) => {
+      client.once('open', () => {
+        client.send('hello');
+        resolve();
+      });
+
+      client.once('error', reject);
+    });
+
+    const promise = new Promise<string>((resolve) => {
+      client.once('message', resolve);
+    });
+
+    const message = await promise;
+
+    expect(message.toString()).toBe('hello');
+
+    client.close();
+  });
+
   test('subscription', async () => {
     app.ee.once('subscription:created', () => {
       setTimeout(() => {
@@ -393,6 +429,22 @@ describe('authorized user', () => {
         "text": "hello nyan",
       }
     `);
+  });
+
+  test('request info', async () => {
+    const info = await app.client.request.info.query();
+
+    expect(info).toMatchInlineSnapshot(`
+      Object {
+        "calls": Array [
+          Object {
+            "path": "request.info",
+            "type": "query",
+          },
+        ],
+        "isBatchCall": true,
+      }
+  `);
   });
 
   test('mutation', async () => {

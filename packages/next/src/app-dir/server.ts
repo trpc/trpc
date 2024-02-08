@@ -3,34 +3,34 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import {
+import type {
   AnyProcedure,
-  AnyRootConfig,
+  AnyRootTypes,
   AnyRouter,
-  CombinedDataTransformer,
-  getTRPCErrorFromUnknown,
   inferProcedureInput,
+  inferRootTypes,
   MaybePromise,
+  RootConfig,
   Simplify,
-  TRPCError,
-} from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+  TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   createRecursiveProxy,
   getErrorShape,
+  getTRPCErrorFromUnknown,
   transformTRPCResponse,
-} from '@trpc/server/shared';
+  TRPCError,
+} from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
-import {
+import type {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
-  generateCacheTag,
   inferActionDef,
-  isFormData,
 } from './shared';
-import { NextAppDirDecoratedProcedureRecord } from './types';
+import { generateCacheTag, isFormData } from './shared';
+import type { NextAppDirDecorateRouterRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -58,7 +58,10 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecoratedProcedureRecord<TRouter['_def']['record']>;
+  }) as NextAppDirDecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
 }
 
 /**
@@ -70,7 +73,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: AnyRootConfig;
+    _config: RootConfig<AnyRootTypes>;
   },
 >(
   t: TInstance,
@@ -86,12 +89,14 @@ export function experimental_createServerActionHandler<
   const config = t._config;
   const { normalizeFormData = true, createContext } = opts;
 
-  const transformer = config.transformer as CombinedDataTransformer;
+  const transformer = config.transformer;
 
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
   return function createServerAction<TProc extends AnyProcedure>(
     proc: TProc,
-  ): TRPCActionHandler<Simplify<inferActionDef<TProc>>> {
+  ): TRPCActionHandler<
+    Simplify<inferActionDef<inferRootTypes<TInstance>, TProc>>
+  > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
@@ -116,8 +121,8 @@ export function experimental_createServerActionHandler<
           input: undefined,
           ctx,
           path: 'serverAction',
-          rawInput,
-          type: proc._type,
+          getRawInput: async () => rawInput,
+          type: proc._def.type,
         });
 
         const transformedJSON = transformTRPCResponse(config, {
@@ -134,7 +139,7 @@ export function experimental_createServerActionHandler<
           error,
           input: rawInput,
           path: 'serverAction',
-          type: proc._type,
+          type: proc._def.type,
         });
 
         // TODO: send the right HTTP header?!
@@ -143,7 +148,9 @@ export function experimental_createServerActionHandler<
           error: shape,
         });
       }
-    } as TRPCActionHandler<inferActionDef<TProc>>;
+    } as TRPCActionHandler<
+      inferActionDef<TInstance['_config']['$types'], TProc>
+    >;
   };
 }
 

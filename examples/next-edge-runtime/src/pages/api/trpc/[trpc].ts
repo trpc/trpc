@@ -4,7 +4,7 @@
  */
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { publicProcedure, router } from '~/server/trpc';
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 const appRouter = router({

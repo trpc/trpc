@@ -6,22 +6,19 @@
  */
 
 /**
- * @see https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
+ * @link https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
 import * as fs from 'fs/promises';
 import { Readable } from 'node:stream';
-import { CombinedDataTransformer } from '../../../../transformer';
+// @trpc/server
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import { NodeHTTPRequest } from '../../types';
+import type { NodeHTTPRequest } from '../../types';
 import { NodeOnDiskFile } from './fileUploadHandler';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from './streamMultipart';
-import {
-  MaxBodySizeExceededError,
-  UploadHandler,
-  UploadHandlerPart,
-} from './uploadHandler';
+import type { UploadHandler, UploadHandlerPart } from './uploadHandler';
+import { MaxBodySizeExceededError } from './uploadHandler';
 
 const utfTextDecoder = new TextDecoder('utf-8');
 
@@ -33,7 +30,7 @@ const utfTextDecoder = new TextDecoder('utf-8');
  * @param uploadHandler A function that handles file uploads and returns a value to be used in the request body. If uploaded to disk, the returned value is a NodeOnDiskFile. If uploaded to memory, the returned value is a File.
  * @param maxBodySize The maximum size of the request body in bytes. Defaults to Infinity.
  *
- * @see https://remix.run/utils/parse-multipart-form-data
+ * @link https://remix.run/utils/parse-multipart-form-data
  */
 async function parseMultipartFormData(
   request: NodeHTTPRequest,
@@ -138,8 +135,7 @@ export const nodeHTTPFormDataContentTypeHandler =
           0: undefined,
         };
       }
-      const transformer = opts.router._def._config
-        .transformer as CombinedDataTransformer;
+      const transformer = opts.router._def._config.transformer;
 
       const deserializedInput = transformer.input.deserialize(
         JSON.parse(unparsedInput),
@@ -150,16 +146,18 @@ export const nodeHTTPFormDataContentTypeHandler =
     },
   });
 
-export { parseMultipartFormData as experimental_parseMultipartFormData };
+export {
+  NodeOnDiskFile as experimental_NodeOnDiskFile,
+  createFileUploadHandler as experimental_createFileUploadHandler,
+} from './fileUploadHandler';
 export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
 export {
-  createFileUploadHandler as experimental_createFileUploadHandler,
-  NodeOnDiskFile as experimental_NodeOnDiskFile,
-} from './fileUploadHandler';
-export {
-  composeUploadHandlers as experimental_composeUploadHandlers,
-  MaxPartSizeExceededError,
   MaxBodySizeExceededError,
+  MaxPartSizeExceededError,
+  composeUploadHandlers as experimental_composeUploadHandlers,
+  type UploadHandler,
 } from './uploadHandler';
-export { type UploadHandler } from './uploadHandler';
-export { isMultipartFormDataRequest as experimental_isMultipartFormDataRequest };
+export {
+  isMultipartFormDataRequest as experimental_isMultipartFormDataRequest,
+  parseMultipartFormData as experimental_parseMultipartFormData,
+};

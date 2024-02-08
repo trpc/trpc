@@ -1,8 +1,12 @@
-import { ProcedureType } from '@trpc/server';
-import { TRPCResponse } from '@trpc/server/rpc';
+import type {
+  AnyRootTypes,
+  CombinedDataTransformer,
+  ProcedureType,
+  TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import { getAbortController } from '../../internals/getAbortController';
-import {
+import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,
@@ -10,13 +14,17 @@ import {
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
-import { TextDecoderEsque } from '../internals/streamingUtils';
-import { HTTPHeaders, PromiseAndCancel, TRPCClientRuntime } from '../types';
+import type { TransformerOptions } from '../../unstable-internals';
+import { getTransformer } from '../../unstable-internals';
+import type { TextDecoderEsque } from '../internals/streamingUtils';
+import type { HTTPHeaders, PromiseAndCancel } from '../types';
 
 /**
  * @internal
  */
-export interface HTTPLinkBaseOptions {
+export type HTTPLinkBaseOptions<
+  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+> = {
   url: string | URL;
   /**
    * Add ponyfill for fetch
@@ -26,21 +34,23 @@ export interface HTTPLinkBaseOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
-}
+} & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
+  transformer: CombinedDataTransformer;
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkBaseOptions,
+  opts: HTTPLinkBaseOptions<AnyRootTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
+    transformer: getTransformer(opts.transformer),
   };
 }
 
@@ -68,14 +78,14 @@ export interface HTTPResult {
 }
 
 type GetInputOptions = {
-  runtime: TRPCClientRuntime;
+  transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
 
 function getInput(opts: GetInputOptions) {
   return 'input' in opts
-    ? opts.runtime.transformer.serialize(opts.input)
+    ? opts.transformer.input.serialize(opts.input)
     : arrayToDict(
-        opts.inputs.map((_input) => opts.runtime.transformer.serialize(_input)),
+        opts.inputs.map((_input) => opts.transformer.input.serialize(_input)),
       );
 }
 
@@ -85,11 +95,8 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     path: string;
   };
 
-export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-export type GetBody = (
-  opts: HTTPBaseRequestOptions,
-) => RequestInitEsque['body'];
-
+type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;
@@ -151,7 +158,13 @@ export async function fetchHTTPResponse(
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const resolvedHeaders = await opts.headers();
+  const resolvedHeaders = await (async () => {
+    const heads = await opts.headers();
+    if (Symbol.iterator in heads) {
+      return Object.fromEntries(heads);
+    }
+    return heads;
+  })();
   /* istanbul ignore if -- @preserve */
   if (type === 'subscription') {
     throw new Error('Subscriptions should use wsLink');

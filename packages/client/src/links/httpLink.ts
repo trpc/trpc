@@ -1,39 +1,44 @@
-import { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { transformResult } from '../shared/transformResult';
+import type {
+  AnyRootTypes,
+  AnyRouter,
+} from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
-import {
+import type {
   HTTPLinkBaseOptions,
   HTTPResult,
-  jsonHttpRequester,
   Requester,
+} from './internals/httpUtils';
+import {
+  jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import { HTTPHeaders, Operation, TRPCLink } from './types';
+import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
-export interface HTTPLinkOptions extends HTTPLinkBaseOptions {
-  /**
-   * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/client/headers
-   */
-  headers?:
-    | HTTPHeaders
-    | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
-}
+export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
+  HTTPLinkBaseOptions<TRoot> & {
+    /**
+     * Headers to be set on outgoing requests or a callback that of said headers
+     * @link http://trpc.io/docs/client/headers
+     */
+    headers?:
+      | HTTPHeaders
+      | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  };
 
 export function httpLinkFactory(factoryOpts: { requester: Requester }) {
   return <TRouter extends AnyRouter>(
-    opts: HTTPLinkOptions,
+    opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
   ): TRPCLink<TRouter> => {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
 
-    return (runtime) =>
+    return () =>
       ({ op }) =>
         observable((observer) => {
           const { path, input, type } = op;
           const { promise, cancel } = factoryOpts.requester({
             ...resolvedOpts,
-            runtime,
             type,
             path,
             input,
@@ -53,7 +58,10 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
           promise
             .then((res) => {
               meta = res.meta;
-              const transformed = transformResult(res.json, runtime);
+              const transformed = transformResult(
+                res.json,
+                resolvedOpts.transformer.output,
+              );
 
               if (!transformed.ok) {
                 observer.error(
@@ -81,6 +89,6 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
 }
 
 /**
- * @see https://trpc.io/docs/client/links/httpLink
+ * @link https://trpc.io/docs/v11/client/links/httpLink
  */
 export const httpLink = httpLinkFactory({ requester: jsonHttpRequester });

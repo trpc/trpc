@@ -1,44 +1,39 @@
-import { IncomingMessage } from 'http';
-import {
-  createTRPCClient,
-  createTRPCClientProxy,
-  createWSClient,
-  httpBatchLink,
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-} from '@trpc/client/src';
-import { WithTRPCConfig } from '@trpc/next/src';
-import { OnErrorFunction } from '@trpc/server/internals/types';
-import { AnyRouter as AnyNewRouter } from '@trpc/server/src';
-import {
-  CreateHTTPHandlerOptions,
-  createHTTPServer,
-} from '@trpc/server/src/adapters/standalone';
-import {
-  applyWSSHandler,
-  WSSHandlerOptions,
-} from '@trpc/server/src/adapters/ws';
+import type { IncomingMessage } from 'http';
+import type { AddressInfo } from 'net';
+import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
+import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
+import type { WithTRPCConfig } from '@trpc/next';
+import type { AnyRouter } from '@trpc/server';
+import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import type {
+  DataTransformerOptions,
+  OnErrorFunction,
+} from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
-import './___packages';
 
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
 
-export type CreateClientCallback = (opts: {
+export type CreateClientCallback<TRouter extends AnyRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
-}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+  transformer?: DataTransformerOptions;
+}) => Partial<WithTRPCConfig<TRouter>>;
 
-export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
+export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
+    transformer?: DataTransformerOptions;
   },
 ) {
   // http
@@ -55,7 +50,8 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
       },
     }),
   });
-  const { port: httpPort } = httpServer.listen(0);
+  const server = httpServer.listen(0);
+  const httpPort = (server.address() as AddressInfo).port;
   const httpUrl = `http://localhost:${httpPort}`;
 
   // wss
@@ -76,7 +72,12 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     ...opts?.wsClient,
   });
   const trpcClientOptions = {
-    links: [httpBatchLink({ url: httpUrl })],
+    links: [
+      httpBatchLink({
+        url: httpUrl,
+        transformer: opts?.transformer as any,
+      }),
+    ],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })
@@ -85,14 +86,13 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   } as WithTRPCConfig<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
-  const proxy = createTRPCClientProxy<typeof router>(client);
+
   return {
     wsClient,
     client,
-    proxy,
     close: async () => {
       await Promise.all([
-        new Promise((resolve) => httpServer.server.close(resolve)),
+        new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
           wss.clients.forEach((ws) => {
             ws.close();
@@ -148,9 +148,27 @@ export async function waitError<TError extends Error = Error>(
 }
 
 export const ignoreErrors = async (fn: () => unknown) => {
+  /* eslint-disable no-console */
+  const suppressLogs = () => {
+    const log = console.log;
+    const error = console.error;
+    const noop = () => {
+      // ignore
+    };
+    console.log = noop;
+    console.error = noop;
+    return () => {
+      console.log = log;
+      console.error = error;
+    };
+  };
+  /* eslint-enable no-console */
+  const release = suppressLogs();
   try {
     await fn();
   } catch {
     // ignore
+  } finally {
+    release();
   }
 };

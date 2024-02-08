@@ -1,13 +1,15 @@
-import { TRPCClientErrorLike } from '@trpc/client';
-import {
+import type { TRPCClientErrorLike } from '@trpc/client';
+import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
-} from '@trpc/server';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
-import {
+  inferTransformedProcedureOutput,
+  RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
+import type {
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
   UseTRPCQueryOptions,
@@ -18,16 +20,14 @@ import {
  * @internal
  */
 export type InferQueryOptions<
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
-  TPath extends string,
-  TData = inferTransformedProcedureOutput<TProcedure>,
+  TData = inferTransformedProcedureOutput<TRoot, TProcedure>,
 > = Omit<
   UseTRPCQueryOptions<
-    TPath,
-    inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCClientErrorLike<TRoot>,
     TData
   >,
   'select'
@@ -36,49 +36,57 @@ export type InferQueryOptions<
 /**
  * @internal
  */
-export type InferMutationOptions<TProcedure extends AnyProcedure> =
-  UseTRPCMutationOptions<
-    inferProcedureInput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>
-  >;
+export type InferMutationOptions<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyProcedure,
+> = UseTRPCMutationOptions<
+  inferProcedureInput<TProcedure>,
+  TRPCClientErrorLike<TRoot>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>
+>;
 
 /**
  * @internal
  */
-export type InferQueryResult<TProcedure extends AnyProcedure> =
-  UseTRPCQueryResult<
-    inferTransformedProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TProcedure>
-  >;
+export type InferQueryResult<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyProcedure,
+> = UseTRPCQueryResult<
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TRPCClientErrorLike<TRoot>
+>;
 
 /**
  * @internal
  */
 export type InferMutationResult<
+  TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
   TContext = unknown,
 > = UseTRPCMutationResult<
-  inferTransformedProcedureOutput<TProcedure>,
-  TRPCClientErrorLike<TProcedure>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TRPCClientErrorLike<TRoot>,
   inferProcedureInput<TProcedure>,
   TContext
 >;
 
-export type inferReactQueryProcedureOptions<
-  TRouter extends AnyRouter,
-  TPath extends string = '',
+type inferReactQueryProcedureOptionsInner<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRouter['_def']['record']]: TRouter['_def']['record'][TKey] extends infer TRouterOrProcedure
-    ? TRouterOrProcedure extends AnyRouter
-      ? inferReactQueryProcedureOptions<
-          TRouterOrProcedure,
-          `${TPath}${TKey & string}.`
-        >
-      : TRouterOrProcedure extends AnyMutationProcedure
-      ? InferMutationOptions<TRouterOrProcedure>
-      : TRouterOrProcedure extends AnyQueryProcedure
-      ? InferQueryOptions<TRouterOrProcedure, `${TPath}${TKey & string}`>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? inferReactQueryProcedureOptionsInner<TRoot, $Value>
+      : $Value extends AnyMutationProcedure
+      ? InferMutationOptions<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? InferQueryOptions<TRoot, $Value>
       : never
     : never;
 };
+
+export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> =
+  inferReactQueryProcedureOptionsInner<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;

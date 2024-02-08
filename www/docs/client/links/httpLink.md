@@ -14,13 +14,14 @@ slug: /client/links/httpLink
 You can import and add the `httpLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: 'http://localhost:3000',
+      // transformer,
     }),
   ],
 });
@@ -41,6 +42,11 @@ export interface HTTPLinkOptions {
    * Add ponyfill for AbortController
    */
   AbortController?: typeof AbortController | null;
+  /**
+   * Data transformer
+   * @link https://trpc.io/docs/v11/data-transformers
+   **/
+  transformer?: DataTransformerOptions;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header

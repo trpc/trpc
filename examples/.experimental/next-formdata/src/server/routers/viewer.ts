@@ -16,7 +16,7 @@ export const viewer = router({
       );
 
       return opts.next({
-        rawInput: { formData },
+        getRawInput: async () => ({ formData }),
       });
     })
     .input(

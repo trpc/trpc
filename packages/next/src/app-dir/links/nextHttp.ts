@@ -1,11 +1,13 @@
-import {
-  httpBatchLink,
+import type {
   HTTPBatchLinkOptions,
-  httpLink,
   HTTPLinkOptions,
   TRPCLink,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { httpBatchLink, httpLink } from '@trpc/client';
+import type {
+  AnyRootTypes,
+  AnyRouter,
+} from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {
@@ -13,21 +15,21 @@ interface NextLinkBaseOptions {
   batch?: boolean;
 }
 
-interface NextLinkSingleOptions
-  extends NextLinkBaseOptions,
-    Omit<HTTPLinkOptions, 'fetch'> {
-  batch?: false;
-}
+type NextLinkSingleOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
+  Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
+    batch?: false;
+  };
 
-interface NextLinkBatchOptions
-  extends NextLinkBaseOptions,
-    Omit<HTTPBatchLinkOptions, 'fetch'> {
-  batch: true;
-}
+type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
+  Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
+    batch: true;
+  };
 
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(
-  opts: NextLinkSingleOptions | NextLinkBatchOptions,
+  opts:
+    | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
+    | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
@@ -36,13 +38,14 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
-        typeof context.revalidate === 'number' || context.revalidate === false
-          ? context.revalidate
+        typeof context['revalidate'] === 'number' ||
+        context['revalidate'] === false
+          ? context['revalidate']
           : undefined;
 
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const _fetch: NonNullable<HTTPLinkOptions['fetch']> = (
+      const _fetch: NonNullable<HTTPLinkOptions<AnyRootTypes>['fetch']> = (
         url,
         fetchOpts,
       ) => {
@@ -57,11 +60,11 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
       };
       const link = opts.batch
         ? httpBatchLink({
-            ...opts,
+            ...(opts as any),
             fetch: _fetch,
           })
         : httpLink({
-            ...opts,
+            ...(opts as any),
             fetch: _fetch,
           });
 

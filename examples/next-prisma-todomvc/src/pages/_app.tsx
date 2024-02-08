@@ -1,7 +1,8 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { appWithTranslation, SSRConfig } from 'next-i18next';
-import { AppProps } from 'next/app';
-import { ComponentProps } from 'react';
+import type { SSRConfig } from 'next-i18next';
+import { appWithTranslation } from 'next-i18next';
+import type { AppProps } from 'next/app';
+import type { ComponentProps } from 'react';
 import { trpc } from '../utils/trpc';
 
 const I18nextAdapter = appWithTranslation<

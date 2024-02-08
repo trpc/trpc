@@ -2,7 +2,7 @@ import { getServerAndReactClient } from '../react/__reactHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
@@ -38,19 +38,26 @@ const ctx = konn()
   .done();
 
 test('invalidate with filter', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   const greetingSpy = vi.fn();
   const postSpy = vi.fn();
 
   function MyComponent() {
-    const allPosts = proxy.post.all.useQuery(undefined, {
-      onSuccess: () => postSpy(),
+    const allPosts = client.post.all.useQuery(undefined, {
+      structuralSharing: false,
     });
-    const greeting = proxy.greeting.useQuery(undefined, {
-      onSuccess: () => greetingSpy(),
+    const greeting = client.greeting.useQuery(undefined, {
+      structuralSharing: false,
     });
 
-    const utils = proxy.useContext();
+    React.useEffect(() => {
+      if (allPosts.data) postSpy();
+    }, [allPosts.data]);
+    React.useEffect(() => {
+      if (greeting.data) greetingSpy();
+    }, [greeting.data]);
+
+    const utils = client.useContext();
 
     return (
       <>
@@ -103,16 +110,19 @@ test('invalidate with filter', async () => {
 });
 
 test('tanstack query queries are invalidated', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
-    const rqQuery = useQuery(['test'], async () => {
-      await new Promise((res) => setTimeout(res, 500));
-      return 'Hello tanstack';
+    const rqQuery = useQuery({
+      queryKey: ['test'],
+      queryFn: async () => {
+        await new Promise((res) => setTimeout(res, 500));
+        return 'Hello tanstack';
+      },
     });
-    const trpcQuery = proxy.greeting.useQuery();
+    const trpcQuery = client.greeting.useQuery();
 
     return (
       <>
@@ -145,30 +155,30 @@ test('tanstack query queries are invalidated', async () => {
 });
 
 test('mixed providers with more "advanced" filter', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
 
   function MyComponent() {
-    const utils = proxy.useContext();
+    const utils = client.useContext();
 
-    const rqQuery1 = useQuery(
-      ['test', 1],
-      async () => {
+    const rqQuery1 = useQuery({
+      queryKey: ['test', 1],
+      queryFn: async () => {
         await new Promise((res) => setTimeout(res, 500));
         return 'Hello tanstack1';
       },
-      { retry: false },
-    );
+      retry: false,
+    });
 
-    const rqQuery2 = useQuery(
-      ['test', 2],
-      async () => {
+    const rqQuery2 = useQuery({
+      queryKey: ['test', 2],
+      queryFn: async () => {
         await new Promise((res) => setTimeout(res, 500));
         return 'Hello tanstack2';
       },
-      { retry: true },
-    );
+      retry: true,
+    });
 
-    const trpcQuery = proxy.greeting.useQuery(undefined, {
+    const trpcQuery = client.greeting.useQuery(undefined, {
       retry: false,
     });
 

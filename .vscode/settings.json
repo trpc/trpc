@@ -9,14 +9,10 @@
     { "pattern": "./packages/*" },
     { "pattern": "./www/*" }
   ],
-  "files.exclude": {
-    "packages/client/{links,shared}": true,
-    "packages/next/{app-dir}": true,
-    "packages/react-query/{shared,ssg}": true,
-    "packages/server/{adapters,http,observable,rpc,shared,subscription}": true
-  },
   "search.exclude": {
-    "/www/versioned_*": true
+    "/www/versioned_docs": true,
+    "/www/.docusaurus": true,
+    "/www/build": true
   },
   "workbench.colorCustomizations": {
     "titleBar.activeBackground": "#2596be",
@@ -31,5 +27,6 @@
   ],
   "tailwindCSS.experimental.configFile": "./www/tailwind.config.ts",
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "explorer.excludeGitIgnore": true
 }

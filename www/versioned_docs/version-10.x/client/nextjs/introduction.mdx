@@ -1,0 +1,22 @@
+---
+id: introduction
+title: Next.js Integration
+sidebar_label: Introduction
+slug: /client/nextjs
+---
+
+### tRPC ❤️ Next.js
+
+Next.js makes it easy to build a client and server together in one codebase. tRPC makes it easy to share types between them, ensuring typesafety for your application's data fetching.
+
+Our Next.js integration is built on top of our [React Query Integration](../) with some Next.js specific APIs, to handle both client and server side rendering.
+
+When using the Next.js integration, you'll get the following features:
+
+- **Server-side rendering** - You can tell tRPC to render your pages on the server, and then hydrate them on the client. This way, you'll avoid an initial loading state, although time to first byte will be blocked by the server. Read more about [Server-side rendering](/docs/client/nextjs/ssr).
+- **Static site generation** - Prefetch queries on the server and generate static HTML files that are ready to be served. Read more about [Static site generation](/docs/client/nextjs/ssg).
+- **Automatic Provider Wrapping** - `@trpc/next` provides a higher-order component (HOC) that wraps your app with the necessary providers so you don't have to do it yourself.
+
+:::tip
+If you're using tRPC in a new project, consider using one of the example projects for reference: [tRPC Example Projects](/docs/example-apps)
+:::

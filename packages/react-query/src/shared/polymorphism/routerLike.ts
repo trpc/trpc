@@ -1,23 +1,31 @@
-import {
+import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
+  AnyRootTypes,
   AnyRouter,
-} from '@trpc/server';
-import { MutationLike } from './mutationLike';
-import { QueryLike } from './queryLike';
+  RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
+import type { MutationLike } from './mutationLike';
+import type { QueryLike } from './queryLike';
 
 /**
  * Use to describe a route path which matches a given route's interface
  */
-export type RouterLike<
-  TRouter extends AnyRouter,
-  TRecord extends TRouter['_def']['record'] = TRouter['_def']['record'],
+export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
+  TRouter['_def']['_config']['$types'],
+  TRouter['_def']['procedures']
+>;
+export type RouterLikeInner<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
 > = {
-  [key in keyof TRecord]: TRecord[key] extends AnyRouter
-    ? RouterLike<TRecord[key]>
-    : TRecord[key] extends AnyQueryProcedure
-    ? QueryLike<TRecord[key]>
-    : TRecord[key] extends AnyMutationProcedure
-    ? MutationLike<TRecord[key]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? RouterLikeInner<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? QueryLike<TRoot, $Value>
+      : $Value extends AnyMutationProcedure
+      ? MutationLike<TRoot, $Value>
+      : never
     : never;
 };

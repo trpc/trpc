@@ -1,4 +1,4 @@
-import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+import type { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export interface User {
   name: string[] | string;

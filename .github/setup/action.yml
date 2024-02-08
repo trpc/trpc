@@ -1,0 +1,24 @@
+name: Setup Workflow
+description: Composite action that sets up pnpm
+runs:
+  using: 'composite'
+  steps:
+    - uses: pnpm/action-setup@v2
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+
+    - name: Get pnpm store directory
+      shell: bash
+      id: pnpm-cache
+      run: |
+        echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+    - uses: actions/cache@v4
+      name: Setup pnpm cache
+      with:
+        path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+    - run: pnpm install
+      shell: bash

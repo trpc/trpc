@@ -1,4 +1,4 @@
-import { getPostBody } from '@trpc/server/src/adapters/node-http/content-type/json/getPostBody';
+import { getPostBody } from '@trpc/server/adapters/node-http/content-type/json/getPostBody';
 
 test('POST w/o specifying content-type should work', async () => {
   {
