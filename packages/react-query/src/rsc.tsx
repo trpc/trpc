@@ -12,7 +12,6 @@ import {
 import type {
   AnyProcedure,
   inferProcedureOutput,
-  inferRootTypes,
   RouterCaller,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -32,7 +31,7 @@ type DecorateRouterRecord<TRecord extends RouterRecord> = {
 };
 
 type Caller<TRouter extends AnyRouter> = ReturnType<
-  RouterCaller<inferRootTypes<TRouter>, TRouter['_def']['record']>
+  RouterCaller<TRouter['_def']['_config']['$types'], TRouter['_def']['record']>
 >;
 
 export function createHydrationHelpers<TRouter extends AnyRouter>(
