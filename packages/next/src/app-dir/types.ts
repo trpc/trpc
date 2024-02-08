@@ -1,33 +1,39 @@
 import type { Resolver } from '@trpc/client';
 import type {
-  AnyMutationProcedure,
   AnyProcedure,
-  AnyQueryProcedure,
   AnyRootTypes,
-  AnySubscriptionProcedure,
   inferProcedureInput,
+  inferTransformedProcedureOutput,
+  ProcedureType,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 
+type ResolverDef = {
+  input: any;
+  output: any;
+  transformer: boolean;
+  errorShape: any;
+};
+
 export type DecorateProcedureServer<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyProcedure,
-> = TProcedure extends AnyQueryProcedure
+  TType extends ProcedureType,
+  TDef extends ResolverDef,
+> = TType extends 'query'
   ? {
-      query: Resolver<TRoot, TProcedure>;
+      query: Resolver<TDef>;
       revalidate: (
-        input?: inferProcedureInput<TProcedure>,
+        input?: TDef['input'],
       ) => Promise<
         { revalidated: false; error: string } | { revalidated: true }
       >;
     }
-  : TProcedure extends AnyMutationProcedure
+  : TType extends 'mutation'
   ? {
-      mutate: Resolver<TRoot, TProcedure>;
+      mutate: Resolver<TDef>;
     }
-  : TProcedure extends AnySubscriptionProcedure
+  : TType extends 'subscription'
   ? {
-      subscribe: Resolver<TRoot, TProcedure>;
+      subscribe: Resolver<TDef>;
     }
   : never;
 
@@ -39,7 +45,15 @@ export type NextAppDirDecorateRouterRecord<
     ? $Value extends RouterRecord
       ? NextAppDirDecorateRouterRecord<TRoot, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedureServer<TRoot, $Value>
+      ? DecorateProcedureServer<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            errorShape: TRoot['errorShape'];
+            transformer: TRoot['transformer'];
+          }
+        >
       : never
     : never;
 };

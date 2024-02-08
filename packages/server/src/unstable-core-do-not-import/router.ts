@@ -1,3 +1,4 @@
+import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
@@ -14,7 +15,11 @@ export interface RouterRecord {
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
-) => Promise<TProcedure['_def']['_output_out']>;
+) => Promise<
+  TProcedure['_def']['type'] extends 'subscription'
+    ? Observable<TProcedure['_def']['_output_out'], TRPCError>
+    : TProcedure['_def']['_output_out']
+>;
 
 /**
  * @internal

@@ -66,15 +66,20 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
       }) & {
     wss: ws.WebSocketServer;
     process?: NodeJS.Process;
+    prefix?: string;
   };
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, createContext, router } = opts;
+  const { wss, createContext, router, prefix } = opts;
 
   const { transformer } = router._def._config;
   wss.on('connection', async (client, req) => {
+    if (prefix && !req.url?.startsWith(prefix)) {
+      return;
+    }
+
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {

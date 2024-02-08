@@ -1,7 +1,7 @@
 import superjson from 'superjson';
 import { initTRPC } from '../initTRPC';
 import type { inferTransformedProcedureOutput } from './inference';
-import type { inferRootTypes } from './inferrable';
+import type { inferClientTypes } from './inferrable';
 
 describe('inferTransformedProcedureOutput', () => {
   test('transformed', () => {
@@ -17,7 +17,7 @@ describe('inferTransformedProcedureOutput', () => {
 
     expectTypeOf<Output>().toEqualTypeOf<Date>();
 
-    type RootTypes = inferRootTypes<$Inferrable>;
+    type RootTypes = inferClientTypes<$Inferrable>;
 
     expectTypeOf<RootTypes['transformer']>().toEqualTypeOf<true>();
   });

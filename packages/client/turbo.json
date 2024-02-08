@@ -3,7 +3,12 @@
   "extends": ["//"],
   "pipeline": {
     "codegen-entrypoints": {
-      "outputs": ["package.json", "links/**", "unstable-internals/**"]
+      "outputs": [
+        "package.json",
+        "dist/**",
+        "links/**",
+        "unstable-internals/**"
+      ]
     }
   }
 }
