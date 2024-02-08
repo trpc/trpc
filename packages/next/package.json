@@ -46,11 +46,6 @@
       "require": "./dist/app-dir/links/nextCache.js",
       "default": "./dist/app-dir/links/nextCache.js"
     },
-    "./app-dir/links/nextHttp": {
-      "import": "./dist/app-dir/links/nextHttp.mjs",
-      "require": "./dist/app-dir/links/nextHttp.js",
-      "default": "./dist/app-dir/links/nextHttp.js"
-    },
     "./app-dir/server": {
       "import": "./dist/app-dir/server.mjs",
       "require": "./dist/app-dir/server.js",

@@ -50,13 +50,17 @@ export function experimental_createTRPCNextAppDirServer<
     const action = pathCopy.pop()!;
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
-    
-    const cacheTag = await generateCacheTag(procedurePath, callOpts.args[0], await opts.createContext());
+
+    const cacheTag = await generateCacheTag(
+      procedurePath,
+      callOpts.args[0],
+      await opts.createContext(),
+    );
 
     if (action === 'revalidate') {
       revalidateTag(cacheTag);
       return;
-  }
+    }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
   }) as NextAppDirDecorateRouterRecord<

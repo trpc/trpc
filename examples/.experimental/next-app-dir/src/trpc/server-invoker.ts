@@ -23,7 +23,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           transformer: superjson,
           // include the user id in the cache key
           cacheContext: (ctx) => [ctx.session?.user.id],
-          createContext
+          createContext,
         }),
       ],
     };
