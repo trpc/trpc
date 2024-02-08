@@ -5,12 +5,7 @@
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen-tests": "run-p codegen:*",
     "lint": "eslint --cache --ext .ts,.tsx --ignore-path ../../.gitignore .",
-    "test": "concurrently -P -c \"green,blue\" \"npm:test-run:vitest -- {@}\" npm:test-run:tsc",
-    "test-run:vitest": "vitest --run",
     "test-run:tsc": "tsc --noEmit --pretty",
-    "test-watch": "vitest",
-    "test-ci": "concurrently \"CI=true vitest --coverage\" npm:test-run:tsc",
-    "test-ui": "vitest --ui",
     "ts-watch": "tsc --watch"
   },
   "dependencies": {
@@ -31,7 +26,6 @@
     "@types/node": "^20.10.0",
     "abort-controller": "^3.0.0",
     "arktype": "1.0.14-alpha",
-    "concurrently": "^8.0.0",
     "dataloader": "^2.2.2",
     "devalue": "^4.0.0",
     "eslint": "^8.40.0",

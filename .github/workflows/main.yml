@@ -41,7 +41,7 @@ jobs:
 
       - name: Build tRPC, then test
         run: pnpm turbo --filter "@trpc/*" build
-      - run: pnpm vitest --coverage
+      - run: pnpm test-ci
 
       - uses: codecov/codecov-action@v3
         # with:
