@@ -16,7 +16,7 @@
     "noUncheckedIndexedAccess": true,
 
     /* If transpiling with TypeScript: */
-    "outDir": "dist",
+    "outDir": "./dist",
     "sourceMap": true,
 
     /* AND if you're building for a library: */

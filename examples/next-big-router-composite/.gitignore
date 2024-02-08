@@ -2,3 +2,4 @@
 src/server/routers
 src/module
 node_modules
+dist

@@ -40,8 +40,9 @@ for (let i = 0; i < NUM_ROUTERS; i++) {
     extends: "../../tsconfig-base.json",
     compilerOptions: {
       rootDir: ".",
-      composite: true,
+      outDir: "./dist",
     },
+    includes: ["./**/*.ts"],
     references: [
       {
         path: "../trpc-base",
@@ -91,8 +92,10 @@ for (let i = 0; i < NUM_ROUTERS; i++) {
       extends: "../../tsconfig-base.json",
       compilerOptions: {
         rootDir: ".",
+        outDir: "./dist",
       },
-      references: indexBuf.map((name) => ({
+      includes: ["./**/*.ts"],
+      references: ["trpc-base", ...indexBuf].map((name) => ({
         path: `../${name}`,
       })),
     };
