@@ -177,7 +177,7 @@ export function withTRPC<
           ...originalPageProps,
           ...pageProps,
         };
-        const getAppTreeProps = (props: Record<string, unknown>) =>
+        const getAppTreeProps = (props: Dict<unknown>) =>
           isApp ? { pageProps: props } : props;
 
         return getAppTreeProps(pageProps);
