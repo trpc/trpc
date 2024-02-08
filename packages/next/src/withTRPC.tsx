@@ -18,10 +18,12 @@ import type {
 import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
+  Dict,
   inferClientTypes,
   ResponseMeta,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
+  AppContextType,
   AppPropsType,
   NextComponentType,
   NextPageContext,
@@ -154,6 +156,32 @@ export function withTRPC<
         AppOrPage,
         WithTRPC,
       });
+    } else if (AppOrPage.getInitialProps) {
+      // Allow combining `getServerSideProps` and `getInitialProps`
+
+      WithTRPC.getInitialProps = async (appOrPageCtx: AppContextType) => {
+        // Determine if we are wrapping an App component or a Page component.
+        const isApp = !!appOrPageCtx.Component;
+
+        // Run the wrapped component's getInitialProps function.
+        let pageProps: Dict<unknown> = {};
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const originalProps = await AppOrPage.getInitialProps!(
+          appOrPageCtx as any,
+        );
+        const originalPageProps = isApp
+          ? originalProps.pageProps ?? {}
+          : originalProps;
+
+        pageProps = {
+          ...originalPageProps,
+          ...pageProps,
+        };
+        const getAppTreeProps = (props: Dict<unknown>) =>
+          isApp ? { pageProps: props } : props;
+
+        return getAppTreeProps(pageProps);
+      };
     }
 
     const displayName = AppOrPage.displayName ?? AppOrPage.name ?? 'Component';

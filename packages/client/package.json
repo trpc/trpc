@@ -90,7 +90,7 @@
     "rollup": "^4.9.5",
     "tsx": "^4.0.0",
     "undici": "^6.0.1",
-    "vitest": "^0.32.0"
+    "vitest": "^1.2.2"
   },
   "publishConfig": {
     "access": "public"
