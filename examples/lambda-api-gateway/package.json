@@ -1,7 +1,6 @@
 {
   "name": "@examples/lambda-api-gateway",
   "private": true,
-  "version": "10.45.0",
   "type": "module",
   "main": "index.js",
   "license": "MIT",
