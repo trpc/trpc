@@ -49,23 +49,20 @@ export interface CreateTRPCNextBase<
 export type CreateTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
-  TFlags,
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
   DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record'],
-    TFlags
+    TRouter['_def']['record']
   >
 >;
 
 export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
-  TFlags = null,
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
-): CreateTRPCNext<TRouter, TSSRContext, TFlags> {
+): CreateTRPCNext<TRouter, TSSRContext> {
   const hooks = createRootHooks<TRouter, TSSRContext>(opts);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`

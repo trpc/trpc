@@ -2,7 +2,7 @@ import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
-  inferRootTypes,
+  inferClientTypes,
   inferRouterError,
   MaybePromise,
   ProcedureType,
@@ -434,7 +434,7 @@ export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
-} & TransformerOptions<inferRootTypes<TRouter>>;
+} & TransformerOptions<inferClientTypes<TRouter>>;
 class TRPCWebSocketClosedError extends Error {
   constructor(message: string) {
     super(message);
