@@ -96,7 +96,7 @@ jobs:
       - uses: ./.github/setup
 
       - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+        run: pnpm turbo --filter "@trpc/*" build --force
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -109,7 +109,7 @@ jobs:
       - name: Run test-dev
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
       - name: Run test-start
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
