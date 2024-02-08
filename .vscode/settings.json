@@ -27,6 +27,5 @@
   ],
   "tailwindCSS.experimental.configFile": "./www/tailwind.config.ts",
   "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
-  "explorer.excludeGitIgnore": true
+  "typescript.enablePromptUseWorkspaceTsdk": true
 }
