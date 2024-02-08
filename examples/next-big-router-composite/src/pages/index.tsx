@@ -18,6 +18,7 @@ export default function IndexPage() {
   return (
     <div style={styles}>
       <h1>{result.data}</h1>
+      {/*           ^? */}
     </div>
   );
 }
