@@ -238,10 +238,7 @@ export default function Page() {
       title="Pricing 💸"
       description="Get premium features and support. Support open source. Win-win. tRPC is free to use, but we offer premium plans for teams that need tailored support and features."
     >
-      <Head>
-        <body className="pricing" />
-        <PageMetadata image={ogImg} />
-      </Head>
+      <PageMetadata image={ogImg} />
       <Pricing />
     </Layout>
   );
