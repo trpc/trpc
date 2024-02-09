@@ -1,4 +1,5 @@
 import Head from '@docusaurus/Head';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { RadioGroup } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/20/solid';
 import Layout from '@theme/Layout';
@@ -23,12 +24,12 @@ const tiers = [
     ],
     featured: false,
     cta: 'Donate',
-    href: 'https://trpc.io/sponsor',
+    href: '/buy/tier-oss',
   },
   {
     name: 'Pro',
     id: 'tier-pro',
-    href: 'https://github.com/sponsors/trpc/sponsorships?tier_id=73667',
+    href: '/buy/tier-pro',
     price: { monthly: '$500', annually: '$4500' },
     description: 'A plan that scales with your rapidly growing business.',
     features: [
@@ -78,7 +79,11 @@ function classNames(...classes: string[]) {
 }
 
 function Pricing() {
-  const [frequency, setFrequency] = useState(frequencies[0]);
+  const [
+    frequency,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    setFrequency,
+  ] = useState(frequencies[0]);
 
   return (
     <main className="space-y-28 bg-white px-6 py-24 sm:py-32">
@@ -95,7 +100,7 @@ function Pricing() {
           tRPC is free to use, but we offer premium plans for teams that need
           tailored support and features.{' '}
         </p>
-        <div className="mt-16 flex justify-center">
+        {/* <div className="mt-16 flex justify-center">
           <RadioGroup
             value={frequency}
             onChange={setFrequency}
@@ -119,7 +124,7 @@ function Pricing() {
               </RadioGroup.Option>
             ))}
           </RadioGroup>
-        </div>
+        </div> */}
         <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {tiers.map((tier) => (
             <div

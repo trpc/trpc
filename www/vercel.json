@@ -316,6 +316,16 @@
       "permanent": false
     },
     {
+      "source": "/buy/tier-oss",
+      "destination": "https://github.com/sponsors/trpc",
+      "permanent": false
+    },
+    {
+      "source": "/buy/tier-pro",
+      "destination": "https://github.com/sponsors/trpc/sponsorships?tier_id=73667",
+      "permanent": false
+    },
+    {
       "source": "/edge-runtimes",
       "destination": "/docs/server/adapters/fetch",
       "permanent": true
