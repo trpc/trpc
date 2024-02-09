@@ -1,4 +1,4 @@
-import Head from '@docusaurus/Head';
+import { PageMetadata } from '@docusaurus/theme-common';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { RadioGroup } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/20/solid';
@@ -234,13 +234,10 @@ export default function Page() {
   })}`;
   return (
     <Layout
-      title={`Pricing 💸`}
-      description="End-to-end typesafe APIs made easy. Automatic typesafety & autocompletion inferred from your API-paths, their input data, &amp; outputs 🧙‍♂️"
+      title="Pricing 💸"
+      description="Get premium features and support. Support open source. Win-win. tRPC is free to use, but we offer premium plans for teams that need tailored support and features."
     >
-      <Head>
-        <body className="pricing" />
-        <meta property="og:image" content={ogImg} />
-      </Head>
+      <PageMetadata image={ogImg} />
       <Pricing />
     </Layout>
   );
