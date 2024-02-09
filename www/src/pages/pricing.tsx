@@ -12,19 +12,17 @@ const frequencies = [
 
 const tiers = [
   {
-    name: 'Freelancer',
-    id: 'tier-freelancer',
-    href: '#',
-    price: { monthly: '$15', annually: '$144' },
-    description: 'The essentials to provide your best work for clients.',
+    name: 'Free plan',
+    id: 'tier-free',
+    href: 'https://trpc.io/sponsor',
+    price: 'Free. Forever.',
+    description: 'Our packages are free to use, forever. But you can donate.',
     features: [
-      '5 products',
-      'Up to 1,000 subscribers',
-      'Basic analytics',
-      '48-hour support response time',
+      'Access to all MIT-licensed tRPC packages',
+      'Community support through Discord',
     ],
     featured: false,
-    cta: 'Buy plan',
+    cta: 'Donate',
   },
   {
     name: 'Startup',
