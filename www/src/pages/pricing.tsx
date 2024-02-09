@@ -1,5 +1,4 @@
 import Head from '@docusaurus/Head';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { RadioGroup } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/20/solid';
 import Layout from '@theme/Layout';
@@ -14,28 +13,28 @@ const tiers = [
   {
     name: 'Free plan',
     id: 'tier-free',
-    href: 'https://trpc.io/sponsor',
     price: 'Free. Forever.',
     description: 'Our packages are free to use, forever. But you can donate.',
     features: [
       'Access to all MIT-licensed tRPC packages',
-      'Community support through Discord',
+      'Community support through Discord and GitHub Discussions',
     ],
     featured: false,
     cta: 'Donate',
+    href: 'https://trpc.io/sponsor',
   },
   {
     name: 'Startup',
     id: 'tier-startup',
     href: '#',
-    price: { monthly: '$30', annually: '$288' },
+    price: { monthly: '$500', annually: '$4500' },
     description: 'A plan that scales with your rapidly growing business.',
     features: [
-      '25 products',
-      'Up to 10,000 subscribers',
-      'Advanced analytics',
+      'Prioritized feature-requests',
+      'Prioritized bug fixes',
+      'Access to non-MIT-licensed tRPC packages',
       '48-hour support response time',
-      'Up to 2 hour consulting each calendar month (worth $500)',
+      '2 hour consulting each calendar month with a core team member (worth $1,000)',
     ],
     featured: false,
     cta: 'Buy plan',
@@ -50,7 +49,7 @@ const tiers = [
       'Unlimited products',
       'Unlimited subscribers',
       'Advanced analytics',
-      '1-hour, dedicated support response time',
+      '24 support response time',
       'Marketing automations',
       'Custom reporting tools',
     ],
