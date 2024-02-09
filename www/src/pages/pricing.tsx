@@ -93,7 +93,7 @@ function Pricing() {
             Pricing
           </h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Support open source. Get premium features and support. Win-win.
+            Get premium features and support. Support open source. Win-win.
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
