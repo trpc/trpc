@@ -13,7 +13,7 @@ By defining an input validator, tRPC can check that a procedure call is correct 
 
 To set up an input validator, use the `procedure.input()` method:
 
-```ts twoslash
+```ts
 // @target: esnext
 import { initTRPC } from '@trpc/server';
 // ---cut---
@@ -45,7 +45,7 @@ export const appRouter = t.router({
 
 `.input()` can be stacked to build more complex types, which is particularly useful when you want to utilise some common input to a collection of procedures in a [middleware](middlewares).
 
-```ts twoslash
+```ts
 // @target: esnext
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -93,7 +93,7 @@ Validating outputs is not always as important as defining inputs, since tRPC giv
 If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
 :::
 
-```ts twoslash
+```ts
 // @target: esnext
 import { initTRPC } from '@trpc/server';
 // @noErrors
@@ -130,7 +130,7 @@ We don't recommend making a custom validator unless you have a specific need, bu
 In most cases we recommend you use a [validation library](#library-integrations)
 :::
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
@@ -169,7 +169,7 @@ tRPC works out of the box with a number of popular validation and parsing librar
 
 Zod is our default recommendation, it has a strong ecosystem which makes it a great choice to use in multiple parts of your codebase. If you have no opinion of your own and want a powerful library which won't limit future needs, Zod is a great choice.
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -202,7 +202,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Yup](https://github.com/jquense/yup)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import * as yup from 'yup';
 
@@ -235,7 +235,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import { object, string } from 'superstruct';
 
@@ -260,7 +260,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [scale-ts](https://github.com/paritytech/scale-ts)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import * as $ from 'scale-codec';
 
@@ -315,7 +315,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [ArkType](https://github.com/arktypeio/arktype#trpc)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import { type } from 'arktype';
 
@@ -340,7 +340,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [@effect/schema](https://github.com/Effect-TS/schema)
 
-```ts twoslash
+```ts
 import * as S from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server';
 
@@ -365,7 +365,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import * as T from 'runtypes';
 
@@ -389,7 +389,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
-```ts twoslash
+```ts
 import { wrap } from '@decs/typeschema';
 import { initTRPC } from '@trpc/server';
 import { object, string } from 'valibot';
