@@ -81,19 +81,19 @@ function Pricing() {
   const [frequency, setFrequency] = useState(frequencies[0]);
 
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <main className="space-y-28 bg-white px-6 py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-base font-semibold leading-7 text-primary">
             Pricing
           </h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Support open source and get more
+            Support open source. Get premium features and support. We got you.
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
           tRPC is free to use, but we offer premium plans for teams that need
-          tailored support and features.
+          tailored support and features.{' '}
         </p>
         <div className="mt-16 flex justify-center">
           <RadioGroup
@@ -206,7 +206,12 @@ function Pricing() {
           ))}
         </div>
       </div>
-    </div>
+
+      <p className="text-italic text-center text-gray-900">
+        Got questions? Do not hesitate to email us at{' '}
+        <a href="mailto:info@trpc.io?subject=Pricing">info@trpc.io</a>
+      </p>
+    </main>
   );
 }
 
