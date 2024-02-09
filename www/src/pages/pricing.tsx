@@ -183,6 +183,7 @@ function Pricing() {
                   aria-describedby={tier.id}
                   variant="primary"
                   className="w-full"
+                  external
                 >
                   {tier.cta}
                 </Button>

@@ -3,13 +3,18 @@ import Link from '@docusaurus/Link';
 import { clsx } from 'clsx';
 import React from 'react';
 
-type AnchorProps = LinkProps & { href: string };
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
-  ({ onClick: React.MouseEvent<HTMLButtonElement> } | { type: 'submit' });
+type ExternalLink = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  external: true;
+};
+type InternalLink = LinkProps & { href: string; external?: never };
+type ButtonProps = (React.ButtonHTMLAttributes<HTMLButtonElement> &
+  ({ onClick: React.MouseEvent<HTMLButtonElement> } | { type: 'submit' })) & {
+  external?: never;
+};
 
 type Props = {
   variant: 'primary' | 'secondary' | 'tertiary';
-} & (AnchorProps | ButtonProps);
+} & (InternalLink | ButtonProps | ExternalLink);
 
 export const Button = ({
   variant,
@@ -30,6 +35,18 @@ export const Button = ({
     _className,
   );
 
+  if ('external' in props && props.external) {
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      external,
+      ...rest
+    } = props;
+    return (
+      <a {...rest} className={className}>
+        {children}
+      </a>
+    );
+  }
   if ('href' in props) {
     const rel = clsx({ ['noopener']: props.target === '_blank' });
     return (
