@@ -28,7 +28,7 @@ const tiers = [
   {
     name: 'Pro',
     id: 'tier-pro',
-    href: '#',
+    href: 'https://github.com/sponsors/trpc/sponsorships?tier_id=73667',
     price: { monthly: '$500', annually: '$4500' },
     description: 'A plan that scales with your rapidly growing business.',
     features: [
@@ -39,6 +39,7 @@ const tiers = [
       'Dedicated Discord channel for your team',
       'Access to non-MIT-licensed tRPC packages',
       'Up to 2 hours consulting each month with a core team member',
+      'Cancel any time',
       'Optional: Your company featured on the tRPC website and GitHub readme',
     ],
     featured: false,
