@@ -69,6 +69,10 @@ module.exports = {
           activeBaseRegex: 'docs(/?)$',
         },
         {
+          to: '/pricing',
+          label: 'Pricing',
+        },
+        {
           to: 'docs/quickstart',
           label: 'Quickstart',
         },

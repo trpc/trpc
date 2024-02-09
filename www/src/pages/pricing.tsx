@@ -3,6 +3,7 @@ import { RadioGroup } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/20/solid';
 import Layout from '@theme/Layout';
 import React, { useState } from 'react';
+import { Button } from '../components/Button';
 
 const frequencies = [
   { value: 'monthly', label: 'Monthly', priceSuffix: '/month' },
@@ -11,10 +12,11 @@ const frequencies = [
 
 const tiers = [
   {
-    name: 'Free plan',
+    name: 'Open Source',
     id: 'tier-free',
     price: 'Free. Forever.',
-    description: 'Our packages are free to use, forever. But you can donate.',
+    description:
+      'Our MIT-licensed packages are free to use, forever. But you can donate.',
     features: [
       'Access to all MIT-licensed tRPC packages',
       'Community support through Discord and GitHub Discussions',
@@ -24,17 +26,18 @@ const tiers = [
     href: 'https://trpc.io/sponsor',
   },
   {
-    name: 'Startup',
-    id: 'tier-startup',
+    name: 'Pro',
+    id: 'tier-pro',
     href: '#',
     price: { monthly: '$500', annually: '$4500' },
     description: 'A plan that scales with your rapidly growing business.',
     features: [
-      'Prioritized feature-requests',
+      'Prioritized feature requests',
       'Prioritized bug fixes',
       'Access to non-MIT-licensed tRPC packages',
       '48-hour support response time',
-      '2 hour consulting each calendar month with a core team member (worth $1,000)',
+      'Up to 2 hours consulting each calendar month with a core team member (value $1,000)',
+      'Optional: Your company featured on the tRPC website and GitHub readme',
     ],
     featured: false,
     cta: 'Buy plan',
@@ -42,18 +45,18 @@ const tiers = [
   {
     name: 'Enterprise',
     id: 'tier-enterprise',
-    href: '#',
     price: 'Custom',
     description: 'Dedicated support and infrastructure for your company.',
     features: [
-      'Unlimited products',
-      'Unlimited subscribers',
-      'Advanced analytics',
-      '24 support response time',
-      'Marketing automations',
-      'Custom reporting tools',
+      'Tailored feature requests',
+      'Prioritized bug fixes',
+      'Access to all non-MIT-licensed tRPC packages',
+      '24-hour support response time',
+      'Dedicated Slack or Discord channel',
+      'Optional: Your company featured on the tRPC website and GitHub readme',
     ],
     featured: true,
+    href: 'mailto:sales@trpc.io?subject=Enterprise%20Plan%20Inquiry',
     cta: 'Contact sales',
   },
 ] as const satisfies {
@@ -87,7 +90,7 @@ function Pricing() {
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
           tRPC is free to use, but we offer premium plans for teams that need
-          more.
+          more and want to support the project.
         </p>
         <div className="mt-16 flex justify-center">
           <RadioGroup
@@ -162,18 +165,15 @@ function Pricing() {
                   </span>
                 ) : null}
               </p>
-              <a
+
+              <Button
                 href={tier.href}
                 aria-describedby={tier.id}
-                className={classNames(
-                  tier.featured
-                    ? 'bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white'
-                    : 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600',
-                  'mt-6 block rounded-md px-3 py-2 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                )}
+                variant="primary"
+                className="w-full"
               >
                 {tier.cta}
-              </a>
+              </Button>
               <ul
                 role="list"
                 className={classNames(
