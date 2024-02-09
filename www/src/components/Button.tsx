@@ -6,11 +6,9 @@ import React from 'react';
 type ExternalLink = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   external: true;
 };
-type InternalLink = LinkProps & { href: string; external?: never };
-type ButtonProps = (React.ButtonHTMLAttributes<HTMLButtonElement> &
-  ({ onClick: React.MouseEvent<HTMLButtonElement> } | { type: 'submit' })) & {
-  external?: never;
-};
+type InternalLink = LinkProps & { href: string };
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+  ({ onClick: React.MouseEvent<HTMLButtonElement> } | { type: 'submit' });
 
 type Props = {
   variant: 'primary' | 'secondary' | 'tertiary';
@@ -35,7 +33,7 @@ export const Button = ({
     _className,
   );
 
-  if ('external' in props && props.external) {
+  if ('external' in props) {
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       external,
