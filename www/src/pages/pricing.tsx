@@ -4,7 +4,9 @@ import { RadioGroup } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/20/solid';
 import Layout from '@theme/Layout';
 import React, { useState } from 'react';
+import { docsParams } from '../../og-image/utils/zodParams';
 import { Button } from '../components/Button';
+import { useEnv } from '../utils/useEnv';
 
 const frequencies = [
   { value: 'monthly', label: 'Monthly', priceSuffix: '/month' },
@@ -222,6 +224,14 @@ function Pricing() {
 }
 
 export default function Page() {
+  const env = useEnv();
+
+  const ogImg = `${env.OG_URL}/api/docs?${docsParams.toSearchString({
+    title: '💸💸💸 Pricing 💸💸💸💸',
+    description:
+      'Get premium features and support. Support open source. Win-win.',
+    permalink: '/pricing',
+  })}`;
   return (
     <Layout
       title={`Pricing 💸`}
@@ -229,6 +239,7 @@ export default function Page() {
     >
       <Head>
         <body className="pricing" />
+        <meta property="og:image" content={ogImg} />
       </Head>
       <Pricing />
     </Layout>
