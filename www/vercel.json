@@ -312,11 +312,6 @@
     },
     {
       "source": "/sponsor",
-      "destination": "https://github.com/sponsors/KATT",
-      "permanent": false
-    },
-    {
-      "source": "/buy/tier-oss",
       "destination": "https://github.com/sponsors/trpc",
       "permanent": false
     },

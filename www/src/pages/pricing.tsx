@@ -26,7 +26,7 @@ const tiers = [
     ],
     featured: false,
     cta: 'Donate',
-    href: '/buy/tier-oss',
+    href: '/sponsor',
   },
   {
     name: 'Pro',
