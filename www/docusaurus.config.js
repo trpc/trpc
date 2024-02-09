@@ -115,6 +115,10 @@ module.exports = {
           title: 'Docs',
           items: [
             {
+              label: 'Pricing',
+              to: '/pricing',
+            },
+            {
               label: 'Docs',
               to: 'docs',
             },
