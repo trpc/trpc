@@ -1,4 +1,3 @@
-import Head from '@docusaurus/Head';
 import { PageMetadata } from '@docusaurus/theme-common';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { RadioGroup } from '@headlessui/react';
