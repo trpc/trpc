@@ -142,9 +142,7 @@ bunx create-next-app --example https://github.com/trpc/trpc --example-path examp
 
 ## Sponsors
 
-If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
-
-Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://trpc.io/sponsor) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+If you enjoy working with tRPC and want to support us, consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
 
 <!-- SPONSORS:LIST:START -->
 <!-- prettier-ignore-start -->
@@ -224,8 +222,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <!-- SPONSORS:LIST:END -->
 
 ## All contributors ✨
-
-> tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept by [colinhacks](https://github.com/colinhacks).
 
 <a href="https://github.com/trpc/trpc/graphs/contributors">
   <p align="center">
