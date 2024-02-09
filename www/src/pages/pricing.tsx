@@ -86,8 +86,8 @@ function Pricing() {
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
-          Distinctio et nulla eum soluta et neque labore quibusdam. Saepe et
-          quasi iusto modi velit ut non voluptas in. Explicabo id ut laborum.
+          tRPC is free to use, but we offer premium plans for teams that need
+          more.
         </p>
         <div className="mt-16 flex justify-center">
           <RadioGroup
