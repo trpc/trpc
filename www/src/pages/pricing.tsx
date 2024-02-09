@@ -107,7 +107,7 @@ function Pricing() {
                 value={option}
                 className={({ checked }) =>
                   classNames(
-                    checked ? 'bg-indigo-600 text-white' : 'text-gray-500',
+                    checked ? 'bg-primary text-white' : 'text-gray-500',
                     'cursor-pointer rounded-full px-2.5 py-1',
                   )
                 }
@@ -124,56 +124,61 @@ function Pricing() {
               className={classNames(
                 tier.featured ? 'bg-gray-900 ring-gray-900' : 'ring-gray-200',
                 'rounded-3xl p-8 ring-1 xl:p-10',
+                'space-y-6',
               )}
             >
-              <h3
-                id={tier.id}
-                className={classNames(
-                  tier.featured ? 'text-white' : 'text-gray-900',
-                  'text-lg font-semibold leading-8',
-                )}
-              >
-                {tier.name}
-              </h3>
-              <p
-                className={classNames(
-                  tier.featured ? 'text-gray-300' : 'text-gray-600',
-                  'mt-4 text-sm leading-6',
-                )}
-              >
-                {tier.description}
-              </p>
-              <p className="mt-6 flex items-baseline gap-x-1">
-                <span
+              <div className="space-y-4">
+                <h3
+                  id={tier.id}
                   className={classNames(
                     tier.featured ? 'text-white' : 'text-gray-900',
-                    'text-4xl font-bold tracking-tight',
+                    'text-lg font-semibold leading-8',
                   )}
                 >
-                  {typeof tier.price === 'string'
-                    ? tier.price
-                    : tier.price[frequency.value]}
-                </span>
-                {typeof tier.price !== 'string' ? (
+                  {tier.name}
+                </h3>
+                <p
+                  className={classNames(
+                    tier.featured ? 'text-gray-300' : 'text-gray-600',
+                    'text-sm leading-6',
+                  )}
+                >
+                  {tier.description}
+                </p>
+              </div>
+              <div className="space-y-4">
+                <p className="flex items-baseline gap-x-1">
                   <span
                     className={classNames(
-                      tier.featured ? 'text-gray-300' : 'text-gray-600',
-                      'text-sm font-semibold leading-6',
+                      tier.featured ? 'text-white' : 'text-gray-900',
+                      'text-4xl font-bold tracking-tight',
                     )}
                   >
-                    {frequency.priceSuffix}
+                    {typeof tier.price === 'string'
+                      ? tier.price
+                      : tier.price[frequency.value]}
                   </span>
-                ) : null}
-              </p>
+                  {typeof tier.price !== 'string' ? (
+                    <span
+                      className={classNames(
+                        tier.featured ? 'text-gray-300' : 'text-gray-600',
+                        'text-sm font-semibold leading-6',
+                      )}
+                    >
+                      {frequency.priceSuffix}
+                    </span>
+                  ) : null}
+                </p>
 
-              <Button
-                href={tier.href}
-                aria-describedby={tier.id}
-                variant="primary"
-                className="w-full"
-              >
-                {tier.cta}
-              </Button>
+                <Button
+                  href={tier.href}
+                  aria-describedby={tier.id}
+                  variant="primary"
+                  className="w-full"
+                >
+                  {tier.cta}
+                </Button>
+              </div>
               <ul
                 role="list"
                 className={classNames(
@@ -185,7 +190,7 @@ function Pricing() {
                   <li key={feature} className="flex gap-x-3">
                     <CheckIcon
                       className={classNames(
-                        tier.featured ? 'text-white' : 'text-indigo-600',
+                        tier.featured ? 'text-white' : 'text-primary',
                         'h-6 w-5 flex-none',
                       )}
                       aria-hidden="true"
