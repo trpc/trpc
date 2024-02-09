@@ -32,11 +32,13 @@ const tiers = [
     price: { monthly: '$500', annually: '$4500' },
     description: 'A plan that scales with your rapidly growing business.',
     features: [
+      'Everything in the Open Source plan',
       'Prioritized feature requests',
       'Prioritized bug fixes',
+      'Prioritized support',
+      'Dedicated Discord channel for your team',
       'Access to non-MIT-licensed tRPC packages',
-      '48-hour support response time',
-      'Up to 2 hours consulting each calendar month with a core team member (value $1,000)',
+      'Up to 2 hours consulting each month with a core team member',
       'Optional: Your company featured on the tRPC website and GitHub readme',
     ],
     featured: false,
@@ -48,16 +50,16 @@ const tiers = [
     price: 'Custom',
     description: 'Dedicated support and infrastructure for your company.',
     features: [
+      'Everything in the Pro plan',
       'Tailored feature requests',
-      'Prioritized bug fixes',
-      'Access to all non-MIT-licensed tRPC packages',
+      'Access to enterprise tRPC packages',
       '24-hour support response time',
       'Dedicated Slack or Discord channel',
       'Optional: Your company featured on the tRPC website and GitHub readme',
     ],
     featured: true,
     href: 'mailto:sales@trpc.io?subject=Enterprise%20Plan%20Inquiry',
-    cta: 'Contact sales',
+    cta: 'Contact us',
   },
 ] as const satisfies {
   name: string;
@@ -81,7 +83,7 @@ function Pricing() {
     <div className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-600">
+          <h2 className="text-base font-semibold leading-7 text-primary">
             Pricing
           </h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
