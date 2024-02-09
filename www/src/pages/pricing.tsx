@@ -88,12 +88,12 @@ function Pricing() {
             Pricing
           </h2>
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Pricing plans for teams of all sizes
+            Support open source and get more
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
           tRPC is free to use, but we offer premium plans for teams that need
-          more and want to support the project.
+          tailored support and features.
         </p>
         <div className="mt-16 flex justify-center">
           <RadioGroup
