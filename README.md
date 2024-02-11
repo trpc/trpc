@@ -142,9 +142,7 @@ bunx create-next-app --example https://github.com/trpc/trpc --example-path examp
 
 ## Sponsors
 
-If you enjoy working with tRPC and want to support me consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
-
-Also, if your company using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://trpc.io/sponsor) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+If you enjoy working with tRPC and want to support us, consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
 
 <!-- SPONSORS:LIST:START -->
 <!-- prettier-ignore-start -->
@@ -212,8 +210,9 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
    <td align="center"><a href="https://www.spencermckenney.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/15722950?u=8b69f66d5809d45c4da0999c207730085b920888&v=4&s=100" width="100" alt="Spencer%20McKenney"/><br />Spencer McKenney</a></td>
   </tr>
   <tr>
-   <td align="center"><a href="https://github.com/mcmaterassi"><img src="https://avatars.githubusercontent.com/u/157734077?v=4&s=100" width="100" alt="mcmaterassi"/><br />mcmaterassi</a></td>
+   <td align="center"><a href="https://proxidize.com/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/70805857?v=4&s=100" width="100" alt="Proxidize"/><br />Proxidize</a></td>
    <td align="center"><a href="https://github.com/oskarhertzman"><img src="https://avatars.githubusercontent.com/u/43958723?u=939de62b1618bf7552a9dddc291ba5b3e54a5158&v=4&s=100" width="100" alt="Oskar%20Hertzman"/><br />Oskar Hertzman</a></td>
+   <td align="center"><a href="https://imbios.dev/?ref=trpc"><img src="https://avatars.githubusercontent.com/u/41441643?u=086a755a9734123c705313283b3d892fe3ab8471&v=4&s=100" width="100" alt="Imamuzzaki%20Abu%20Salam"/><br />Imamuzzaki Abu Salam</a></td>
   </tr>
 </table>
 
@@ -223,8 +222,6 @@ Also, if your company using tRPC and want to support long-term maintenance of tR
 <!-- SPONSORS:LIST:END -->
 
 ## All contributors ✨
-
-> tRPC is developed by [KATT](https://twitter.com/alexdotjs), originally based on a proof-of-concept by [colinhacks](https://github.com/colinhacks).
 
 <a href="https://github.com/trpc/trpc/graphs/contributors">
   <p align="center">
