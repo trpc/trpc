@@ -34,6 +34,7 @@ type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  ctx: any;
 };
 
 /** @internal */
@@ -86,6 +87,7 @@ type DecoratedProcedureRecord<
               inferClientTypes<TRouter>,
               $Value
             >;
+            ctx: inferClientTypes<TRouter>['ctx'];
             errorShape: inferClientTypes<TRouter>['errorShape'];
             transformer: inferClientTypes<TRouter>['transformer'];
           }

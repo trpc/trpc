@@ -51,10 +51,11 @@ export function experimental_createTRPCNextAppDirServer<
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
 
+    
     const cacheTag = await generateCacheTag(
       procedurePath,
       callOpts.args[0],
-      await opts.createContext(),
+      await client.runtime.createContext?.(),
     );
 
     if (action === 'revalidate') {

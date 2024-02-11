@@ -23,7 +23,6 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
    * key
    */
   cacheContext: ((ctx: inferRouterContext<TRouter>) => any[]) | undefined;
-  createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
 } & TransformerOptions<inferClientTypes<TRouter>>;
@@ -33,8 +32,11 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
-  return () =>
-    ({ op }) =>
+  return ({createContext}) =>{
+    if (!createContext) 
+    throw new Error('\`createContext\` is required to be passed to use \`experimental_nextCacheLink\`.')
+
+    return ({ op }) =>
       observable((observer) => {
         const { path, input, type, context } = op;
 
@@ -46,8 +48,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-        const promise = opts
-          .createContext()
+        const promise = createContext()
           .then(async (ctx) => {
             const cacheTag = await generateCacheTag(
               path,
@@ -94,4 +95,5 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             observer.error(TRPCClientError.from(cause));
           });
       });
+    }
 }

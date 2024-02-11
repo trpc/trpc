@@ -7,12 +7,12 @@ import { getUrl } from './shared';
 import { createContext } from './shared-server';
 
 export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
-  createContext,
   config() {
     return {
+      createContext,
       links: [
         loggerLink({
-          enabled: (op) => true,
+          enabled: (_op) => true,
         }),
         httpBatchLink({
           url: getUrl(),

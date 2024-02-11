@@ -43,6 +43,7 @@ type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  ctx: any;
 };
 /**
  * @internal
@@ -56,6 +57,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
       TRPCClientErrorLike<{
         errorShape: TDef['errorShape'];
         transformer: TDef['transformer'];
+        ctx: TDef['ctx'];
       }>,
       TDef['output']
     >,
@@ -64,6 +66,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
     TRPCClientErrorLike<{
       errorShape: TDef['errorShape'];
       transformer: TDef['transformer'];
+        ctx: TDef['ctx'];
     }>
   >;
 
@@ -215,6 +218,7 @@ export type DecorateRouterRecord<
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             transformer: TRoot['transformer'];
             errorShape: TRoot['errorShape'];
+        ctx: TRoot['ctx'];
           }
         >
       : never

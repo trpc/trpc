@@ -10,7 +10,6 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
-  inferRouterContext,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
   RouterRecord,
@@ -33,6 +32,7 @@ export type UseProcedureRecord<
           output: inferTransformedProcedureOutput<TRoot, $Value>;
           errorShape: TRoot['errorShape'];
           transformer: TRoot['transformer'];
+          ctx: TRoot['ctx'];
         }>
       : never
     : never;
@@ -88,7 +88,6 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
  */
 export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
   config: () => CreateTRPCClientOptions<TRouter>;
-  createContext: () => Promise<inferRouterContext<TRouter>>;
 }
 
 /**

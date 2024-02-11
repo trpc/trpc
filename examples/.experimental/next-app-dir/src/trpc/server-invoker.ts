@@ -9,9 +9,9 @@ import { createContext } from './shared-server';
  * This client invokes procedures directly on the server without fetching over HTTP.
  */
 export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
-  createContext,
   config() {
     return {
+      createContext,
       links: [
         loggerLink({
           enabled: (op) => true,
@@ -23,7 +23,6 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           transformer: superjson,
           // include the user id in the cache key
           cacheContext: (ctx) => [ctx.session?.user.id],
-          createContext,
         }),
       ],
     };

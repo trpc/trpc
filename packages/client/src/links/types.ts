@@ -3,6 +3,7 @@ import type {
   InferrableClientTypes,
   TRPCResultMessage,
   TRPCSuccessResponse,
+  inferClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
@@ -56,8 +57,8 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<ResponseEsque>;
 
-export interface TRPCClientRuntime {
-  // nothing here anymore
+export interface TRPCClientRuntime<TInferrable extends InferrableClientTypes> {
+  createContext?: () => Promise<inferClientTypes<TInferrable>['ctx']>
 }
 
 /**
@@ -104,5 +105,5 @@ export type OperationLink<
  * @public
  */
 export type TRPCLink<TInferrable extends InferrableClientTypes> = (
-  opts: TRPCClientRuntime,
+  opts: TRPCClientRuntime<TInferrable>,
 ) => OperationLink<TInferrable>;

@@ -40,8 +40,8 @@ type WithTRPCOptions<TRouter extends AnyRouter> =
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
   } & TransformerOptions<inferClientTypes<TRouter>>;
 
-export type TRPCPrepassHelper = (opts: {
-  parent: WithTRPCSSROptions<AnyRouter>;
+export type TRPCPrepassHelper = <TRouter extends AnyRouter>(opts: {
+  parent: WithTRPCSSROptions<TRouter>;
   WithTRPC: NextComponentType<any, any, any>;
   AppOrPage: NextComponentType<any, any, any>;
 }) => void;

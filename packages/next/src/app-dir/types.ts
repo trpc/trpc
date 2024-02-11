@@ -13,6 +13,7 @@ type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  ctx: any;
 };
 
 export type DecorateProcedureServer<
@@ -52,6 +53,7 @@ export type NextAppDirDecorateRouterRecord<
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             errorShape: TRoot['errorShape'];
             transformer: TRoot['transformer'];
+            ctx: TRoot['ctx'];
           }
         >
       : never
