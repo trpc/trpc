@@ -11,7 +11,7 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 
 type inferErrorShape<TInferrable extends InferrableClientTypes> =
-inferClientTypes<TInferrable>['errorShape'];
+  inferClientTypes<TInferrable>['errorShape'];
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
   readonly shape: Maybe<TShape>;
@@ -85,7 +85,6 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
     const cause = _cause as unknown;
-
 
     if (isTRPCClientError(cause)) {
       if (opts.meta) {

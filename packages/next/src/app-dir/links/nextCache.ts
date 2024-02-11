@@ -32,9 +32,11 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
-  return ({createContext}) =>{
-    if (!createContext) 
-    throw new Error('\`createContext\` is required to be passed to use \`experimental_nextCacheLink\`.')
+  return ({ createContext }) => {
+    if (!createContext)
+      throw new Error(
+        '`createContext` is required to be passed to use `experimental_nextCacheLink`.',
+      );
 
     return ({ op }) =>
       observable((observer) => {
@@ -95,5 +97,5 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             observer.error(TRPCClientError.from(cause));
           });
       });
-    }
+  };
 }

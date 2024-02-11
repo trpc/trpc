@@ -20,7 +20,11 @@ import type {
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import { createElement } from 'react';
-import type { TRPCPrepassHelper, TRPCPrepassProps, WithTRPCSSROptions } from './withTRPC';
+import type {
+  TRPCPrepassHelper,
+  TRPCPrepassProps,
+  WithTRPCSSROptions,
+} from './withTRPC';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
@@ -51,7 +55,7 @@ export const ssrPrepass: TRPCPrepassHelper = <TRouter extends AnyRouter>(opts: {
   AppOrPage: NextComponentType<any, any, any>;
 }) => {
   const { parent, WithTRPC, AppOrPage } = opts;
-  type $PrepassProps= TRPCPrepassProps<TRouter, any>;
+  type $PrepassProps = TRPCPrepassProps<TRouter, any>;
 
   const transformer = getTransformer(
     (parent as CoercedTransformerParameters).transformer,

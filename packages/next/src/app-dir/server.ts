@@ -51,7 +51,6 @@ export function experimental_createTRPCNextAppDirServer<
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
 
-    
     const cacheTag = await generateCacheTag(
       procedurePath,
       callOpts.args[0],
