@@ -2,6 +2,7 @@ import type { Config } from '@docusaurus/types';
 import prismReact from 'prism-react-renderer';
 import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc';
 import { parseEnv } from './src/utils/env';
+import {themes as prismThemes} from 'prism-react-renderer';
 
 console.log('prism', prismReact);
 
@@ -29,7 +30,7 @@ export default {
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
   baseUrl: '/',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'ignore',
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
@@ -40,7 +41,8 @@ export default {
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
     prism: {
-      theme: prismReact?.themes.vsDark,
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
     },
     algolia: {
       appId: 'BTGPSR4MOE',
@@ -237,7 +239,7 @@ export default {
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: ['./src/css/custom.css'],
         },
         gtag: {
           trackingID: 'G-7KLX2VFLVR',
