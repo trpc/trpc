@@ -1,4 +1,7 @@
-import type { ProcedureCallOptions } from './procedureBuilder';
+import type {
+  AnyProcedureBuilder,
+  ProcedureCallOptions,
+} from './procedureBuilder';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
@@ -70,5 +73,10 @@ export type inferProcedureInput<TProcedure extends AnyProcedure> =
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
+
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
+
+export type inferProcedureBuilderContext<
+  TProcedureBuilder extends AnyProcedureBuilder,
+> = Parameters<Parameters<TProcedureBuilder['mutation']>[0]>[0]['ctx'];

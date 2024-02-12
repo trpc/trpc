@@ -13,6 +13,7 @@ export {
   createFlatProxy as createTRPCFlatProxy,
   type inferProcedureInput,
   type inferProcedureOutput,
+  type inferProcedureBuilderContext,
   type inferRouterError,
   type inferRouterInputs,
   type inferRouterOutputs,

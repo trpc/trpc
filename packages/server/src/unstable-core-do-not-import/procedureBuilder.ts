@@ -236,7 +236,15 @@ export interface ProcedureBuilder<
   _def: ProcedureBuilderDef<TMeta>;
 }
 
-type AnyProcedureBuilder = ProcedureBuilder<any, any, any, any, any, any, any>;
+export type AnyProcedureBuilder = ProcedureBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
 type ProcedureBuilderResolver = (
   opts: ResolverOptions<any, any, any, any>,
 ) => Promise<unknown>;
@@ -273,16 +281,6 @@ export function createBuilder<TContext, TMeta>(
     middlewares: [],
     ...initDef,
   };
-
-  type AnyProcedureBuilder = ProcedureBuilder<
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any
-  >;
 
   const builder: AnyProcedureBuilder = {
     _def,
