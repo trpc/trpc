@@ -1,3 +1,4 @@
+import type { inferProcedureBuilderContext } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Context } from './context';
 
@@ -16,3 +17,7 @@ export const somethingProcedure = t.procedure.use(({ ctx, next }) => {
     },
   });
 });
+
+export type SomethingProcedureCtx = inferProcedureBuilderContext<
+  typeof somethingProcedure
+>;
