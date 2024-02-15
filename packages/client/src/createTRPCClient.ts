@@ -1,15 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
-  AnyClientRootTypes,
-  AnyMutationProcedure,
   AnyProcedure,
-  AnyQueryProcedure,
   AnyRouter,
-  AnySubscriptionProcedure,
+  inferClientTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-  inferTransformedSubscriptionOutput,
   IntersectionError,
   ProcedureOptions,
   ProcedureType,
@@ -33,43 +29,41 @@ import type { TRPCClientError } from './TRPCClientError';
 export type inferRouterClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
-/** @internal */
-export type Resolver<
-  TRoot extends AnyClientRootTypes,
-  TProcedure extends AnyProcedure,
-> = (
-  input: inferProcedureInput<TProcedure>,
-  opts?: ProcedureOptions,
-) => Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
+type ResolverDef = {
+  input: any;
+  output: any;
+  transformer: boolean;
+  errorShape: any;
+};
 
-type SubscriptionResolver<
-  TRoot extends AnyClientRootTypes,
-  TProcedure extends AnyProcedure,
-> = (
-  input: inferProcedureInput<TProcedure>,
+/** @internal */
+export type Resolver<TDef extends ResolverDef> = (
+  input: TDef['input'],
+  opts?: ProcedureOptions,
+) => Promise<TDef['output']>;
+
+type SubscriptionResolver<TDef extends ResolverDef> = (
+  input: TDef['input'],
   opts?: Partial<
-    TRPCSubscriptionObserver<
-      inferTransformedSubscriptionOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >
+    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
     ProcedureOptions,
 ) => Unsubscribable;
 
 type DecorateProcedure<
-  TRoot extends AnyClientRootTypes,
-  TProcedure extends AnyProcedure,
-> = TProcedure extends AnyQueryProcedure
+  TType extends ProcedureType,
+  TDef extends ResolverDef,
+> = TType extends 'query'
   ? {
-      query: Resolver<TRoot, TProcedure>;
+      query: Resolver<TDef>;
     }
-  : TProcedure extends AnyMutationProcedure
+  : TType extends 'mutation'
   ? {
-      mutate: Resolver<TRoot, TProcedure>;
+      mutate: Resolver<TDef>;
     }
-  : TProcedure extends AnySubscriptionProcedure
+  : TType extends 'subscription'
   ? {
-      subscribe: SubscriptionResolver<TRoot, TProcedure>;
+      subscribe: SubscriptionResolver<TDef>;
     }
   : never;
 
@@ -84,7 +78,18 @@ type DecoratedProcedureRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureRecord<TRouter, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<TRouter['_def']['_config']['$types'], $Value>
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<
+              inferClientTypes<TRouter>,
+              $Value
+            >;
+            errorShape: inferClientTypes<TRouter>['errorShape'];
+            transformer: inferClientTypes<TRouter>['transformer'];
+          }
+        >
       : never
     : never;
 };

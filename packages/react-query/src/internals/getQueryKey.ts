@@ -1,12 +1,6 @@
-import type {
-  AnyMutationProcedure,
-  AnyQueryProcedure,
-  AnyRootTypes,
-  AnyRouter,
-  DeepPartial,
-  inferProcedureInput,
-} from '@trpc/server/unstable-core-do-not-import';
-import type { DecorateProcedure, DecorateRouterRecord } from '../shared';
+import type { DeepPartial } from '@trpc/server/unstable-core-do-not-import';
+import type { DecoratedMutation, DecoratedQuery } from '../createTRPCReact';
+import type { DecorateRouterRecord } from '../shared';
 
 export type QueryType = 'any' | 'infinite' | 'query';
 
@@ -14,6 +8,11 @@ export type TRPCQueryKey = [
   string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
+
+type ProcedureOrRouter =
+  | DecoratedMutation<any>
+  | DecoratedQuery<any>
+  | DecorateRouterRecord<any, any>;
 
 /**
  * To allow easy interactions with groups of related queries, such as
@@ -77,45 +76,10 @@ export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
   ? GetInfiniteQueryInput<TProcedureInput>
   : DeepPartial<TProcedureInput> | undefined;
 
-type GetQueryParams<
-  TProcedureOrRouter extends AnyQueryProcedure,
-  TProcedureInput = inferProcedureInput<TProcedureOrRouter>,
-> = TProcedureInput extends undefined
-  ? []
-  : [input?: GetQueryProcedureInput<TProcedureInput>, type?: QueryType];
-
-type GetParams<
-  TRoot extends AnyRootTypes,
-  TProcedureOrRouter extends
-    | AnyMutationProcedure
-    | AnyQueryProcedure
-    | AnyRouter,
-  TFlags,
-> = TProcedureOrRouter extends AnyQueryProcedure
-  ? [
-      procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>,
-      ..._params: GetQueryParams<TProcedureOrRouter>,
-    ]
-  : TProcedureOrRouter extends AnyMutationProcedure
-  ? [procedureOrRouter: DecorateProcedure<TRoot, TProcedureOrRouter, TFlags>]
-  : TProcedureOrRouter extends AnyRouter
-  ? [
-      procedureOrRouter: DecorateRouterRecord<
-        TRoot,
-        TProcedureOrRouter['_def']['record'],
-        TFlags
-      >,
-    ]
-  : never;
-
-type GetQueryKeyParams<
-  TRoot extends AnyRootTypes,
-  TProcedureOrRouter extends
-    | AnyMutationProcedure
-    | AnyQueryProcedure
-    | AnyRouter,
-  TFlags,
-> = GetParams<TRoot, TProcedureOrRouter, TFlags>;
+type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
+  TProcedureOrRouter extends DecoratedQuery<infer $Def>
+    ? [input?: GetQueryProcedureInput<$Def['input']>, type?: QueryType]
+    : [];
 
 /**
  * Method to extract the query key for a procedure
@@ -124,15 +88,12 @@ type GetQueryKeyParams<
  * @param type - defaults to `any`
  * @link https://trpc.io/docs/v11/getQueryKey
  */
-export function getQueryKey<
-  TRoot extends AnyRootTypes,
-  TProcedureOrRouter extends
-    | AnyMutationProcedure
-    | AnyQueryProcedure
-    | AnyRouter,
-  TFlags,
->(..._params: GetQueryKeyParams<TRoot, TProcedureOrRouter, TFlags>) {
-  const [procedureOrRouter, input, type] = _params;
+export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
+  procedureOrRouter: TProcedureOrRouter,
+  ..._params: GetParams<TProcedureOrRouter>
+) {
+  const [input, type] = _params;
+
   // @ts-expect-error - we don't expose _def on the type layer
   const path = procedureOrRouter._def().path as string[];
   const queryKey = getQueryKeyInternal(path, input, type ?? 'any');

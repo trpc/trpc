@@ -124,9 +124,7 @@ function TryItOut() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className={clsx(
-          'z-10 my-0 h-[800px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
-        )}
+        className={clsx('relative z-10 my-0 w-full md:my-4 lg:my-8')}
       >
         <div className="h-full">
           <div className="flex w-full justify-center">
@@ -155,7 +153,7 @@ function TryItOut() {
             <div
               key={sandbox.id}
               className={cn(
-                'relative h-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
+                'relative h-[800px] overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
                 selectedId !== sandbox.id && 'hidden',
               )}
             >

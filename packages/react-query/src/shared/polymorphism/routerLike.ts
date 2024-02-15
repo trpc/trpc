@@ -29,3 +29,15 @@ export type RouterLikeInner<
       : never
     : never;
 };
+
+// /**
+//  * Use to describe a route path which matches a given route's interface
+//  */
+// export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
+//   TRouter['_def']['_config']['$types'],
+//   TRouter['_def']['procedures']
+// >;
+// export type RouterLikeInner<
+//   TRoot extends AnyRootTypes,
+//   TRecord extends RouterRecord,
+// > = DecorateRouterRecord<TRoot, TRecord>;

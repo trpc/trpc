@@ -305,6 +305,7 @@ describe('polymorphism', () => {
               //                                       ^?
               currentExport={currentExport}
               renderAdditionalFields={(data) => {
+                expectTypeOf(data.description).toEqualTypeOf<string>();
                 return `Description: "${data?.description}"`;
               }}
             />

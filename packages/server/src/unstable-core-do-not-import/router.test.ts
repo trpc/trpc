@@ -9,7 +9,7 @@ describe('router', () => {
         then: t.procedure.query(() => 'hello'),
       });
     }).toThrowErrorMatchingInlineSnapshot(
-      `"Reserved words used in \`router({})\` call: then"`,
+      `[Error: Reserved words used in \`router({})\` call: then]`,
     );
   });
 

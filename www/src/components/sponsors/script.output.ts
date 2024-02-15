@@ -16,12 +16,12 @@ export const topSponsors = [
     "weight": 101,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1686098153310
+    "createdAt": 1686753485872
   },
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 41,
+    "weight": 44,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -177,7 +177,7 @@ export const allSponsors = [
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 41,
+    "weight": 44,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -244,7 +244,7 @@ export const allSponsors = [
     "weight": 101,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1686098153310
+    "createdAt": 1686753485872
   },
   {
     "name": "Drew Powers",
@@ -287,11 +287,19 @@ export const allSponsors = [
     "createdAt": 1706115991000
   },
   {
-    "name": "mcmaterassi",
-    "imgSrc": "https://avatars.githubusercontent.com/u/157734077?v=4",
+    "name": "Proxidize",
+    "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
     "weight": 2,
-    "login": "mcmaterassi",
-    "link": "https://github.com/mcmaterassi",
-    "createdAt": 1706203493000
+    "login": "proxidize",
+    "link": "https://proxidize.com/?ref=trpc",
+    "createdAt": 1707060132000
+  },
+  {
+    "name": "Imamuzzaki Abu Salam",
+    "imgSrc": "https://avatars.githubusercontent.com/u/41441643?u=086a755a9734123c705313283b3d892fe3ab8471&v=4",
+    "weight": 1,
+    "login": "ImBIOS",
+    "link": "https://imbios.dev/?ref=trpc",
+    "createdAt": 1707440908000
   }
 ] as const;

@@ -1,16 +1,13 @@
 import type { AnyRootTypes } from '../rootConfig';
 
-export type AnyClientRootTypes = Pick<
-  AnyRootTypes,
-  'errorShape' | 'transformer'
->;
+export type AnyClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 
 /**
  * Result of `initTRPC.create()`
  */
 type InitLike = {
   _config: {
-    $types: AnyClientRootTypes;
+    $types: AnyClientTypes;
   };
 };
 
@@ -25,7 +22,7 @@ type RouterLike = {
  * Result of `initTRPC.create()._config`
  */
 type RootConfigLike = {
-  $types: AnyClientRootTypes;
+  $types: AnyClientTypes;
 };
 
 /**
@@ -35,13 +32,13 @@ export type InferrableClientTypes =
   | RouterLike
   | InitLike
   | RootConfigLike
-  | AnyClientRootTypes;
+  | AnyClientTypes;
 
 /**
  * Infer the root types from a InferrableClientTypes
  */
-export type inferRootTypes<TInferrable extends InferrableClientTypes> =
-  TInferrable extends AnyClientRootTypes
+export type inferClientTypes<TInferrable extends InferrableClientTypes> =
+  TInferrable extends AnyClientTypes
     ? TInferrable
     : TInferrable extends RootConfigLike
     ? TInferrable['$types']
@@ -50,6 +47,3 @@ export type inferRootTypes<TInferrable extends InferrableClientTypes> =
     : TInferrable extends RouterLike
     ? TInferrable['_def']['_config']['$types']
     : never;
-
-export type inferErrorShape<TInferrable extends InferrableClientTypes> =
-  inferRootTypes<TInferrable>['errorShape'];

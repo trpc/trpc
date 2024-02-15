@@ -1,3 +1,4 @@
+import type { inferObservableValue } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -227,7 +228,7 @@ export interface ProcedureBuilder<
     >,
   ): SubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
+    output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
   }>;
   /**
    * @internal

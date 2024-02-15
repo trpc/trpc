@@ -1,6 +1,5 @@
 {
   "name": "@examples/internal-types-export",
-  "version": "10.45.0",
   "private": true,
   "type": "module",
   "scripts": {
