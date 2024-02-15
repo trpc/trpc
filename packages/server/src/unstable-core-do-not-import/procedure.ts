@@ -70,6 +70,5 @@ export type inferProcedureInput<TProcedure extends AnyProcedure> =
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
-
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
