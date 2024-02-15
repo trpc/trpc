@@ -88,7 +88,7 @@ test('inferProcedureBuilderResolverOptions', async () => {
           id: z.string(),
         }),
       )
-      .query((opts) => {
+      .query(() => {
         return {};
       }),
     listPosts: publicProcedure
