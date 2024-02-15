@@ -82,14 +82,13 @@ test('inferProcedureBuilderResolverOptions', async () => {
   };
 
   const postRouter = t.router({
-    getPost: authedProcedure
+    getPost: publicProcedure
       .input(
         z.object({
           id: z.string(),
         }),
       )
       .query((opts) => {
-        authedProcedureHelperFn(opts);
         return {};
       }),
     listPosts: publicProcedure
@@ -100,6 +99,21 @@ test('inferProcedureBuilderResolverOptions', async () => {
       )
       .query(() => {
         return [];
+      }),
+
+    addPost: authedProcedure.mutation((opts) => {
+      authedProcedureHelperFn(opts);
+      return {};
+    }),
+    deletePost: authedProcedure
+      .input(
+        z.object({
+          id: z.string(),
+        }),
+      )
+      .mutation((opts) => {
+        authedProcedureHelperFn(opts);
+        return {};
       }),
   });
 
