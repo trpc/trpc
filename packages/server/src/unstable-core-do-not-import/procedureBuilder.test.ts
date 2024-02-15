@@ -3,7 +3,37 @@ import { TRPCError } from './error/TRPCError';
 import { initTRPC } from './initTRPC';
 import type { inferProcedureBuilderResolverOptions } from './procedureBuilder';
 
-test('inferProcedureBuilderResolverOptions', () => {
+type Constructor<T extends object = object> = new (...args: any[]) => T;
+
+// TODO: move to a test-utils package
+async function waitError<TError extends Error = Error>(
+  /**
+   * Function callback or promise that you expect will throw
+   */
+  fnOrPromise: Promise<unknown> | (() => unknown),
+  /**
+   * Force error constructor to be of specific type
+   * @default Error
+   **/
+  errorConstructor?: Constructor<TError>,
+): Promise<TError> {
+  try {
+    if (typeof fnOrPromise === 'function') {
+      await fnOrPromise();
+    } else {
+      await fnOrPromise;
+    }
+  } catch (cause) {
+    expect(cause).toBeInstanceOf(Error);
+    if (errorConstructor) {
+      expect((cause as Error).name).toBe(errorConstructor.name);
+    }
+    return cause as TError;
+  }
+  throw new Error('Function did not throw');
+}
+
+test('inferProcedureBuilderResolverOptions', async () => {
   type Organization = {
     id: string;
     name: string;
@@ -60,18 +90,24 @@ test('inferProcedureBuilderResolverOptions', () => {
       )
       .query((opts) => {
         authedProcedureHelperFn(opts);
-        return 'hi';
+        return {};
       }),
-    listPosts: authedProcedure
+    listPosts: publicProcedure
       .input(
         z.object({
           limit: z.number(),
         }),
       )
-      .query((opts) => {
-        authedProcedureHelperFn(opts);
-        return 'hi';
+      .query(() => {
+        return [];
       }),
+  });
+
+  const viewerRouter = t.router({
+    whoami: authedProcedure.query((opts) => {
+      authedProcedureHelperFn(opts);
+      return opts.ctx.user;
+    }),
   });
 
   // -------------------- Authed procedure with an organization --------------------
@@ -113,23 +149,69 @@ test('inferProcedureBuilderResolverOptions', () => {
   };
 
   const orgRouter = t.router({
-    getOrg: organizationProcedure
-      .input(
-        z.object({
-          id: z.string(),
-        }),
-      )
-      .query((opts) => {
-        // works with authed helper fn
-        authedProcedureHelperFn(opts);
-        // works with org helper fn
-        organizationProcedureHelperFn(opts);
-        return 'hi';
-      }),
+    getOrg: organizationProcedure.query((opts) => {
+      // works with authed helper fn
+      authedProcedureHelperFn(opts);
+      // works with org helper fn
+      organizationProcedureHelperFn(opts);
+      return opts.ctx.Organization;
+    }),
   });
 
-  t.router({
-    post: postRouter,
-    org: orgRouter,
-  });
+  const appRouter = t.mergeRouters(orgRouter, postRouter, viewerRouter);
+
+  const createCaller = t.createCallerFactory(appRouter);
+
+  {
+    // public caller
+    const caller = createCaller({
+      user: null,
+    });
+
+    const err = await waitError(
+      caller.getOrg({
+        organizationId: '1',
+      }),
+      TRPCError,
+    );
+
+    expect(err.code).toBe('UNAUTHORIZED');
+  }
+  {
+    // authed caller
+    const caller = createCaller({
+      user: {
+        id: '1',
+        memberships: [
+          {
+            role: 'ADMIN',
+            Organization: {
+              id: '1',
+              name: 'hi',
+            },
+          },
+        ],
+      },
+    });
+
+    const result = await caller.getOrg({
+      organizationId: '1',
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "id": "1",
+        "name": "hi",
+      }
+    `);
+
+    // access org they don't have access to
+    const err = await waitError(
+      caller.getOrg({
+        organizationId: '2',
+      }),
+      TRPCError,
+    );
+    expect(err.code).toBe('FORBIDDEN');
+  }
 });
