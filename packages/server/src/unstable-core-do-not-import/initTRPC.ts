@@ -77,19 +77,14 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       transformer: undefined extends TOptions['transformer'] ? false : true;
     }>;
 
-    const errorFormatter = opts?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
-      opts?.transformer ?? defaultTransformer,
-    );
-
     const config: RootConfig<$Root> = {
-      transformer,
+      transformer: getDataTransformer(opts?.transformer ?? defaultTransformer),
       isDev:
         opts?.isDev ??
         // eslint-disable-next-line @typescript-eslint/dot-notation
         globalThis.process?.env?.['NODE_ENV'] !== 'production',
       allowOutsideOfServer: opts?.allowOutsideOfServer ?? false,
-      errorFormatter,
+      errorFormatter: opts?.errorFormatter ?? defaultFormatter,
       isServer: opts?.isServer ?? isServerDefault,
       /**
        * These are just types, they can't be used at runtime
