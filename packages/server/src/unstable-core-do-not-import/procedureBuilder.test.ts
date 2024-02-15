@@ -187,7 +187,7 @@ test('inferProcedureBuilderResolverOptions', async () => {
             role: 'ADMIN',
             Organization: {
               id: '1',
-              name: 'hi',
+              name: 'My org',
             },
           },
         ],
@@ -201,7 +201,7 @@ test('inferProcedureBuilderResolverOptions', async () => {
     expect(result).toMatchInlineSnapshot(`
       Object {
         "id": "1",
-        "name": "hi",
+        "name": "My org",
       }
     `);
 
