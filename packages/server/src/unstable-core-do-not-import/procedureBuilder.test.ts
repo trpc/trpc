@@ -154,8 +154,8 @@ test('inferProcedureBuilderResolverOptions', async () => {
       [k: string]: unknown;
     }>();
     opts.input.organizationId;
-    // @ts-expect-error this doesn't exist
-    opts.input.meep;
+
+    expectTypeOf(opts.input['meep']).toEqualTypeOf<unknown>();
     // user is non-nullable
     expectTypeOf(opts.ctx.user).toEqualTypeOf<User>();
     // Organization is non-nullable
