@@ -6,25 +6,26 @@ import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import { observable } from '@trpc/server/observable';
 import type {
-  AnyRouter,
-  inferClientTypes,
+  AnyTRPCRouter,
   inferRouterContext,
-} from '@trpc/server/unstable-core-do-not-import';
+  inferTRPCClientTypes,
+} from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+// import type { inferRouterContext } from '@trpc/server/unstable-core-do-not-import';
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 
-type NextCacheLinkOptions<TRouter extends AnyRouter> = {
+type NextCacheLinkOptions<TRouter extends AnyTRPCRouter> = {
   router: TRouter;
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
-} & TransformerOptions<inferClientTypes<TRouter>>;
+} & TransformerOptions<inferTRPCClientTypes<TRouter>>;
 
 // ts-prune-ignore-next
-export function experimental_nextCacheLink<TRouter extends AnyRouter>(
+export function experimental_nextCacheLink<TRouter extends AnyTRPCRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);

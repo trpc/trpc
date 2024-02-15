@@ -43,7 +43,7 @@ function transformQueryOrMutationCacheErrors<
 
 export const ssrPrepass: TRPCPrepassHelper = (opts) => {
   const { parent, WithTRPC, AppOrPage } = opts;
-  type $PrepassProps = TRPCPrepassProps<AnyRouter, any>;
+  type $PrepassProps = TRPCPrepassProps<AnyTRPCRouter, any>;
 
   const transformer = getTransformer(
     (parent as CoercedTransformerParameters).transformer,

@@ -45,7 +45,7 @@ export interface CreateTRPCNextBase<
  * @internal
  */
 export type CreateTRPCNext<
-  TRouter extends AnyRouter,
+  TRouter extends AnyTRPCRouter,
   TSSRContext extends NextPageContext,
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
@@ -56,7 +56,7 @@ export type CreateTRPCNext<
 >;
 
 export function createTRPCNext<
-  TRouter extends AnyRouter,
+  TRouter extends AnyTRPCRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
