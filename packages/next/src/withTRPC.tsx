@@ -16,10 +16,9 @@ import type {
   CreateTRPCReactQueryClientConfig,
 } from '@trpc/react-query/shared';
 import { createRootHooks, getQueryClient } from '@trpc/react-query/shared';
+import type { AnyTRPCRouter, inferTRPCClientTypes } from '@trpc/server';
 import type {
-  AnyRouter,
   Dict,
-  inferClientTypes,
   ResponseMeta,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -31,23 +30,23 @@ import type {
 import type { NextRouter } from 'next/router';
 import React, { useState } from 'react';
 
-export type WithTRPCConfig<TRouter extends AnyRouter> =
+export type WithTRPCConfig<TRouter extends AnyTRPCRouter> =
   CreateTRPCClientOptions<TRouter> &
     CreateTRPCReactQueryClientConfig & {
       abortOnUnmount?: boolean;
     };
 
-type WithTRPCOptions<TRouter extends AnyRouter> =
+type WithTRPCOptions<TRouter extends AnyTRPCRouter> =
   CreateTRPCReactOptions<TRouter> & {
     config: (info: { ctx?: NextPageContext }) => WithTRPCConfig<TRouter>;
-  } & TransformerOptions<inferClientTypes<TRouter>>;
+  } & TransformerOptions<inferTRPCClientTypes<TRouter>>;
 
 export type TRPCPrepassHelper = (opts: {
-  parent: WithTRPCSSROptions<AnyRouter>;
+  parent: WithTRPCSSROptions<AnyTRPCRouter>;
   WithTRPC: NextComponentType<any, any, any>;
   AppOrPage: NextComponentType<any, any, any>;
 }) => void;
-export type WithTRPCSSROptions<TRouter extends AnyRouter> =
+export type WithTRPCSSROptions<TRouter extends AnyTRPCRouter> =
   WithTRPCOptions<TRouter> & {
     /**
      * If you enable this, you also need to add a `ssrPrepass`-prop
@@ -67,13 +66,13 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
     ssrPrepass: TRPCPrepassHelper;
   };
 
-export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
+export type WithTRPCNoSSROptions<TRouter extends AnyTRPCRouter> =
   WithTRPCOptions<TRouter> & {
     ssr?: false;
   };
 
 export type TRPCPrepassProps<
-  TRouter extends AnyRouter,
+  TRouter extends AnyTRPCRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 > = {
   config: WithTRPCConfig<TRouter>;
@@ -84,7 +83,7 @@ export type TRPCPrepassProps<
 };
 
 export function withTRPC<
-  TRouter extends AnyRouter,
+  TRouter extends AnyTRPCRouter,
   TSSRContext extends NextPageContext = NextPageContext,
 >(opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>) {
   const { config: getClientConfig } = opts;

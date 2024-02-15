@@ -9,11 +9,8 @@ import type { CoercedTransformerParameters } from '@trpc/client/unstable-interna
 import { getTransformer } from '@trpc/client/unstable-internals';
 import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import { getQueryClient } from '@trpc/react-query/shared';
-import type {
-  AnyRouter,
-  Dict,
-  Maybe,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { AnyTRPCRouter } from '@trpc/server';
+import type { Dict, Maybe } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AppContextType,
   NextPageContext,
@@ -166,7 +163,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
           .map((v) => v.state.error)
           .flatMap((err) =>
             err instanceof Error && err.name === 'TRPCClientError'
-              ? [err as TRPCClientError<AnyRouter>]
+              ? [err as TRPCClientError<AnyTRPCRouter>]
               : [],
           ),
       }) ?? {};

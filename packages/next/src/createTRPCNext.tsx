@@ -11,10 +11,8 @@ import {
   createReactQueryUtils,
   createRootHooks,
 } from '@trpc/react-query/shared';
-import type {
-  AnyRouter,
-  ProtectedIntersection,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { AnyTRPCRouter } from '@trpc/server';
+import type { ProtectedIntersection } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import type { NextPageContext } from 'next/types';
 import { useMemo } from 'react';
@@ -25,7 +23,7 @@ import { withTRPC } from './withTRPC';
  * @internal
  */
 export interface CreateTRPCNextBase<
-  TRouter extends AnyRouter,
+  TRouter extends AnyTRPCRouter,
   TSSRContext extends NextPageContext,
 > {
   /**
