@@ -68,18 +68,13 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       | ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>
       | undefined,
   ) {
-    type $Transformer = undefined extends TOptions['transformer']
-      ? false
-      : true;
-    type $ErrorShape = undefined extends TOptions['errorFormatter']
-      ? DefaultErrorShape
-      : inferErrorFormatterShape<TOptions['errorFormatter']>;
-
     type $Root = CreateRootTypes<{
       ctx: TContext;
       meta: TMeta;
-      errorShape: $ErrorShape;
-      transformer: $Transformer;
+      errorShape: undefined extends TOptions['errorFormatter']
+        ? DefaultErrorShape
+        : inferErrorFormatterShape<TOptions['errorFormatter']>;
+      transformer: undefined extends TOptions['transformer'] ? false : true;
     }>;
 
     const errorFormatter = opts?.errorFormatter ?? defaultFormatter;
