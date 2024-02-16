@@ -295,7 +295,7 @@ export async function resolveHTTPResponse<
       const input = inputs[index];
       try {
         const data = await callProcedure({
-          procedures: opts.router._def.procedures,
+          _def: router._def,
           path,
           getRawInput: async () => input,
           ctx,

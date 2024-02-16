@@ -6,6 +6,7 @@ import type { inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
+import { lazy } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 const t = initTRPC
@@ -263,5 +264,19 @@ test('subscriptions', async () => {
     expect(onCompleteMock).toBeCalledTimes(1);
   });
 
+  await close();
+});
+
+test('lazy', async () => {
+  const router = t.router({
+    inSomeOtherFile: lazy(async () => {
+      return t.router({
+        hello: procedure.query(() => 'world'),
+      });
+    }),
+  });
+
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.inSomeOtherFile.hello.query()).toBe('world');
   await close();
 });

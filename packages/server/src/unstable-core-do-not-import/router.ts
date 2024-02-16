@@ -275,19 +275,39 @@ function isProcedure(
 /**
  * @internal
  */
-export function callProcedure(
-  opts: ProcedureCallOptions & { procedures: RouterRecord },
+export async function callProcedure(
+  opts: ProcedureCallOptions & { _def: AnyRouter['_def'] },
 ) {
-  const { type, path } = opts;
-  const proc = opts.procedures[path];
-  if (!proc || !isProcedure(proc) || proc._def.type !== type) {
+  const { type, path, _def } = opts;
+
+  let procedure = _def.procedures[path];
+
+  while (!procedure) {
+    const key = Object.keys(_def.lazy).find((key) => path.startsWith(key));
+    // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
+
+    if (!key) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `No "query"-procedure on path "${path}"`,
+      });
+    }
+    // console.log('loading', key, '.......');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const lazyRouter = _def.lazy[key]!;
+    await lazyRouter.load();
+
+    procedure = _def.procedures[path];
+  }
+
+  if (procedure._def.type !== type) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `No "${type}"-procedure on path "${path}"`,
     });
   }
 
-  return proc(opts);
+  return procedure(opts);
 }
 
 function createCallerInner<
