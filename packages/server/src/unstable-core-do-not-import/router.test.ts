@@ -71,6 +71,18 @@ describe('lazy loading routers', () => {
 
     const caller = router.createCaller({});
 
+    expect(router._def.record).toMatchInlineSnapshot(`Object {}`);
     expect(await caller.child.grandchild.foo()).toBe('bar');
+
+    // (Maybe we should just delete `_.def.record`)
+    expect(router._def.record).toMatchInlineSnapshot(`
+      Object {
+        "child": Object {
+          "grandchild": Object {
+            "foo": [Function],
+          },
+        },
+      }
+    `);
   });
 });
