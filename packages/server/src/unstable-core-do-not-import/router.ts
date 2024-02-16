@@ -271,14 +271,8 @@ function isProcedure(
 ): value is AnyProcedure {
   return typeof value === 'function' && 'procedure' in value;
 }
-/**
- * @internal
- */
-export async function callProcedure(
-  opts: ProcedureCallOptions & { _def: AnyRouter['_def'] },
-) {
-  const { type, path, _def } = opts;
 
+async function getProcedureAtPath(_def: AnyRouter['_def'], path: string) {
   let procedure = _def.procedures[path];
 
   while (!procedure) {
@@ -298,6 +292,18 @@ export async function callProcedure(
 
     procedure = _def.procedures[path];
   }
+
+  return procedure;
+}
+/**
+ * @internal
+ */
+export async function callProcedure(
+  opts: ProcedureCallOptions & { _def: AnyRouter['_def'] },
+) {
+  const { type, path, _def } = opts;
+
+  const procedure = await getProcedureAtPath(_def, path);
 
   if (procedure._def.type !== type) {
     throw new TRPCError({
@@ -320,33 +326,8 @@ function createCallerInner<
       const fullPath = path.join('.');
 
       async function callProc(ctx: Context) {
-        let procedure = _def.procedures[fullPath];
-        let iterations = 0;
-        while (!procedure) {
-          iterations++;
-          if (iterations > 10) {
-            throw new Error('Too many iterations');
-          }
-          const key = Object.keys(_def.lazy).find((key) =>
-            fullPath.startsWith(key),
-          );
-          // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
+        const procedure = await getProcedureAtPath(_def, fullPath);
 
-          if (!key) {
-            throw new TRPCError({
-              code: 'NOT_FOUND',
-              message: `No procedure found for path "${fullPath}"`,
-            });
-          }
-          // console.log('loading', key, '.......');
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const lazyRouter = _def.lazy[key]!;
-          await lazyRouter.load();
-
-          procedure = _def.procedures[fullPath];
-        }
-
-        // console.log('calling', fullPath);
         return procedure({
           path: fullPath,
           getRawInput: async () => args[0],
