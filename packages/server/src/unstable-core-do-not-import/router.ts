@@ -184,40 +184,39 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     const procedures: Record<string, AnyProcedure> = omitPrototype({});
     const lazy: Record<string, LazyLoader<AnyRouter>> = omitPrototype({});
 
+    function createLazyLoader(opts: {
+      ref: Lazy<AnyRouter>;
+      lazyPath: string[];
+    }): LazyLoader<AnyRouter> {
+      return {
+        ref: opts.ref,
+        load: async () => {
+          const router = await opts.ref();
+          const lazyKey = opts.lazyPath.join('.');
+
+          step(router._def.record, opts.lazyPath);
+          //
+          delete lazy[lazyKey];
+
+          // add lazy loaders for nested routers
+          for (const [nestedKey, nestedItem] of Object.entries(
+            router._def.lazy,
+          )) {
+            const nestedRouterKey = [...opts.lazyPath, nestedKey].join('.');
+
+            // console.log('adding lazy', nestedRouterKey);
+            lazy[nestedRouterKey] = createLazyLoader({
+              ref: nestedItem.ref,
+              lazyPath: [...opts.lazyPath, nestedKey],
+            });
+          }
+        },
+      };
+    }
     function step(from: CreateRouterOptions, path: string[] = []) {
       const aggregate: RouterRecord = omitPrototype({});
       for (const [key, item] of Object.entries(from ?? {})) {
         if (isLazy(item)) {
-          function createLazyLoader(opts: {
-            ref: Lazy<AnyRouter>;
-            lazyPath: string[];
-          }): LazyLoader<AnyRouter> {
-            return {
-              ref: opts.ref,
-              load: async () => {
-                const router = await opts.ref();
-                const lazyKey = opts.lazyPath.join('.');
-
-                step(router._def.record, opts.lazyPath);
-                //
-                delete lazy[lazyKey];
-
-                // add lazy loaders for nested routers
-                for (const [nestedKey, nestedItem] of Object.entries(
-                  router._def.lazy,
-                )) {
-                  const nestedRouterKey = [...path, key, nestedKey].join('.');
-
-                  // console.log('adding lazy', nestedRouterKey);
-                  lazy[nestedRouterKey] = createLazyLoader({
-                    ref: nestedItem.ref,
-                    lazyPath: [...path, key, nestedKey],
-                  });
-                }
-              },
-            };
-          }
-
           lazy[[...path, key].join('.')] = createLazyLoader({
             lazyPath: [...path, key],
             ref: item,
