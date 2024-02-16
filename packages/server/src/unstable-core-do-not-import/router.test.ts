@@ -36,7 +36,7 @@ describe('router', () => {
   });
 });
 
-describe.only('lazy loading routers', () => {
+describe('lazy loading routers', () => {
   test('lazy child', async () => {
     const t = initTRPC.create();
 
