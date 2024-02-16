@@ -25,16 +25,16 @@ test('route meta types', async () => {
 
   type TMeta = inferRouterMeta<typeof router>;
   expectTypeOf<TMeta>().toMatchTypeOf(testMeta);
-  expect(router._def.procedures.query).not.toEqual({});
-  expect(router._def.procedures.query).toMatchInlineSnapshot(`[Function]`);
+  expect(router._def.procedures['query']).not.toEqual({});
+  expect(router._def.procedures['query']).toMatchInlineSnapshot(`[Function]`);
 
-  const queryMeta = router._def.procedures.query._def.meta;
+  const queryMeta = router._def.procedures['query']!._def.meta;
   expect(queryMeta).toEqual(testMeta);
 
-  const mutationMeta = router._def.procedures.mutation._def.meta;
+  const mutationMeta = router._def.procedures['mutation']!._def.meta;
   expect(mutationMeta).toEqual(testMeta);
 
-  const subscriptionMeta = router._def.procedures.subscription._def.meta;
+  const subscriptionMeta = router._def.procedures['subscription']!._def.meta;
   expect(subscriptionMeta).toEqual(testMeta);
 });
 
