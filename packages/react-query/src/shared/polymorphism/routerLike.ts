@@ -13,7 +13,7 @@ import type { QueryLike } from './queryLike';
  */
 export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
   TRouter['_def']['_config']['$types'],
-  TRouter['_def']['procedures']
+  TRouter['_def']['record']
 >;
 export type RouterLikeInner<
   TRoot extends AnyRootTypes,
