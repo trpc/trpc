@@ -68,33 +68,20 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       | ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>
       | undefined,
   ) {
-    type $Transformer = undefined extends TOptions['transformer']
-      ? false
-      : true;
-    type $ErrorShape = undefined extends TOptions['errorFormatter']
-      ? DefaultErrorShape
-      : inferErrorFormatterShape<TOptions['errorFormatter']>;
-
     type $Root = CreateRootTypes<{
       ctx: TContext;
       meta: TMeta;
-      errorShape: $ErrorShape;
-      transformer: $Transformer;
+      errorShape: undefined extends TOptions['errorFormatter']
+        ? DefaultErrorShape
+        : inferErrorFormatterShape<TOptions['errorFormatter']>;
+      transformer: undefined extends TOptions['transformer'] ? false : true;
     }>;
 
-    const errorFormatter = opts?.errorFormatter ?? defaultFormatter;
-    const transformer = getDataTransformer(
-      opts?.transformer ?? defaultTransformer,
-    );
-
     const config: RootConfig<$Root> = {
-      transformer,
-      isDev:
-        opts?.isDev ??
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        globalThis.process?.env?.['NODE_ENV'] !== 'production',
+      transformer: getDataTransformer(opts?.transformer ?? defaultTransformer),
+      isDev: opts?.isDev ?? globalThis.process?.env?.NODE_ENV !== 'production',
       allowOutsideOfServer: opts?.allowOutsideOfServer ?? false,
-      errorFormatter,
+      errorFormatter: opts?.errorFormatter ?? defaultFormatter,
       isServer: opts?.isServer ?? isServerDefault,
       /**
        * These are just types, they can't be used at runtime
