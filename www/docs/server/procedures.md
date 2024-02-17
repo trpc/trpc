@@ -90,3 +90,68 @@ export const appRouter = t.router({
   }),
 });
 ```
+
+## Infering the options type of a "Base Procedure"
+
+In addition to being able to [infer the input and output types](/docs/client/vanilla/infer-types#inferring-input--output-types) of a procedure, you can also infer the options type of a specific procedure builder (or base procedure) using `inferProcedureBuilderResolverOptions`.
+
+This type helper is useful for declaring a type to a function's parameters. Like for example, separating the procedure's handler (main execution code) from its definition at the router, or for creating a helper function that works with multiple procedures.
+
+<!-- prettier-ignore-start -->
+```ts twoslash
+// @target: esnext
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { inferProcedureBuilderResolverOptions } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const publicProcedure = t.procedure;
+
+export const authorizedProcedure = publicProcedure
+  .input(z.object({ townName: z.string() }))
+  .use(async (opts) => opts.next());
+
+// ---cut---
+
+const GiveFiftsToTownfolkInput = z.object({
+  gift: z.string().default('🎁'),
+});
+
+export const appRouter = t.router({
+  getTownInformation: authorizedProcedure.query(
+    async (opts) => await getTownInformationHandler(opts)
+  ),
+  giveGiftsToTownfolk: authorizedProcedure.input(GiveFiftsToTownfolkInput).mutation(
+    async (opts) => await giveGiftsToTownfolkHandler(opts)
+  )
+});
+
+type AuthorizedProcedureOptions = inferProcedureBuilderResolverOptions<typeof authorizedProcedure>;
+//   ^?
+
+const getTownInformationHandler = async (opts: AuthorizedProcedureOptions) => {
+  const { input, ctx } = opts; //input and ctx are now correctly typed! 
+  //       ^?
+
+  const townInfo = await getTownInfoHelper(opts);
+  return townInfo;
+};
+
+const giveGiftsToTownfolkHandler = async (opts: AuthorizedProcedureOptions & {
+  input: z.infer<typeof GiveFiftsToTownfolkInput>;
+}) => {
+  const { townsFavoriteGift } = await getTownInfoHelper(opts);
+  if (opts.input.gift !== townsFavoriteGift) {
+    return "We'll accept it...";
+  }
+
+  return "We thank you for your generosity";
+};
+
+function getTownInfoHelper({ input }: AuthorizedProcedureOptions) {
+  // ...get town info from api/database using input.townName
+  return { townsFavoriteGift: '🍓' };
+}
+```
+<!-- prettier-ignore-end -->
