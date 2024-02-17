@@ -95,7 +95,7 @@ export const appRouter = t.router({
 
 In addition to being able to [infer the input and output types](/docs/client/vanilla/infer-types#inferring-input--output-types) of a procedure, you can also infer the options type of a specific procedure builder (or base procedure) using `inferProcedureBuilderResolverOptions`.
 
-This type helper is useful for declaring a type to a function's parameters. Like in this example of separating the procedure's handler (main execution code) from its definition at the router:
+This type helper is useful for declaring a type to a function's parameters. Like for example, separating the procedure's handler (main execution code) from its definition at the router, or for creating a helper function that works with multiple procedures.
 
 <!-- prettier-ignore-start -->
 ```ts twoslash
