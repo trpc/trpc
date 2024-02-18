@@ -237,17 +237,11 @@ async function getMembersOfOrganization(
   });
 }
 export const appRouter = t.router({
-  listMembers: organizationProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-      }),
-    )
-    .query(async (opts) => {
-      // use helper function!
-      const members = await getMembersOfOrganization(opts);
+  listMembers: organizationProcedure.query(async (opts) => {
+    // use helper function!
+    const members = await getMembersOfOrganization(opts);
 
-      return members;
-    }),
+    return members;
+  }),
 });
 ```
