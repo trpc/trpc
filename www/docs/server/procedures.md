@@ -120,8 +120,9 @@ export const organizationProcedure = authedProcedure
 export const appRouter = t.router({
   whoami: authedProcedure.mutation(async (opts) => {
     // user is non-nullable here
-    return opts.ctx.user;
-    //               ^?
+    const { ctx } = opts;
+    //      ^?
+    return ctx.user;
   }),
   addMember: organizationProcedure
     .input(
@@ -134,7 +135,7 @@ export const appRouter = t.router({
       const { ctx } = opts;
       //       ^?
 
-      // input includes the validate email of the user being invited & thev alidated organizationId
+      // input includes the validate email of the user being invited & the validated organizationId
       const { input } = opts;
       //       ^?
 
@@ -221,7 +222,7 @@ export const organizationProcedure = authedProcedure
   });
 
 // ---cut---
-async function getMembersOfOrganzation(
+async function getMembersOfOrganization(
   opts: inferProcedureBuilderResolverOptions<typeof organizationProcedure>,
 ) {
   // input and ctx are now correctly typed!
@@ -244,7 +245,7 @@ export const appRouter = t.router({
     )
     .mutation(async (opts) => {
       // use helper function!
-      const members = await getMembersOfOrganzation(opts);
+      const members = await getMembersOfOrganization(opts);
 
       return '...';
     }),
