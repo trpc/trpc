@@ -34,3 +34,62 @@ describe('router', () => {
     ).toThrow('Duplicate key: foo..bar');
   });
 });
+
+describe('RouterCaller', () => {
+  describe('onError handler', () => {
+    const router = t.router({
+      thrower: t.procedure.query(() => {
+        throw new Error('error');
+      }),
+    });
+
+    const factoryHandler = vi.fn();
+    const callerHandler = vi.fn();
+    const ctx = {
+      foo: 'bar',
+    };
+
+    const caller = t.createCallerFactory(router, { onError: factoryHandler })(
+      ctx,
+      { onError: callerHandler },
+    );
+
+    test('should call the onError handler when an error is thrown, rethrowing the error aftwards', async () => {
+      await expect(caller.thrower()).rejects.toThrow('error');
+
+      expect(factoryHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            cause: expect.objectContaining({
+              message: 'error',
+            }),
+          }),
+          ctx,
+          path: 'thrower',
+          type: 'query',
+        }),
+      );
+
+      expect(callerHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            cause: expect.objectContaining({
+              message: 'error',
+            }),
+          }),
+          ctx,
+          path: 'thrower',
+          type: 'query',
+        }),
+      );
+    });
+
+    test('should not intercept errors thrown from the onError handler', async () => {
+      callerHandler.mockImplementationOnce(() => {
+        throw new Error('custom error');
+      });
+
+      await expect(caller.thrower()).rejects.toThrow('custom error');
+    });
+  });
+});

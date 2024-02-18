@@ -2,7 +2,11 @@ import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
-import type { AnyProcedure, inferProcedureInput } from './procedure';
+import type {
+  AnyProcedure,
+  inferProcedureInput,
+  ProcedureType,
+} from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
@@ -35,6 +39,18 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
 /**
  * @internal
  */
+
+export type RouterCallerErrorHandler<TContext> = (arg: {
+  error: TRPCError;
+  type: ProcedureType | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: TContext | undefined;
+}) => void | Promise<void>;
+
+/**
+ * @internal
+ */
 export type RouterCaller<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
@@ -45,6 +61,9 @@ export type RouterCaller<
    * e.g. wrapped in `React.cache` to avoid unnecessary computations
    */
   ctx: TRoot['ctx'] | (() => MaybePromise<TRoot['ctx']>),
+  options?: {
+    onError?: RouterCallerErrorHandler<TRoot['ctx']>;
+  },
 ) => DecorateRouterRecord<TRecord>;
 
 export interface Router<
@@ -238,11 +257,20 @@ export function callProcedure(
 export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRecord extends RouterRecord>(
     router: Router<TRoot, TRecord>,
+    options?: {
+      onError?: RouterCallerErrorHandler<TRoot['ctx']>;
+    },
   ): RouterCaller<TRoot, TRecord> {
     const _def = router._def;
+    const factoryOptions = options;
     type Context = TRoot['ctx'];
 
-    return function createCaller(maybeContext) {
+    return function createCaller(
+      maybeContext,
+      options?: {
+        onError?: RouterCallerErrorHandler<Context>;
+      },
+    ) {
       const proxy = createRecursiveProxy(({ path, args }) => {
         const fullPath = path.join('.');
 
@@ -254,6 +282,30 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
+          }).catch(async (error) => {
+            if (error instanceof TRPCError) {
+              if (factoryOptions?.onError) {
+                await factoryOptions?.onError({
+                  ctx,
+                  error,
+                  input: args[0],
+                  path: fullPath,
+                  type: procedure._def.type,
+                });
+              }
+
+              if (options?.onError) {
+                await options?.onError({
+                  ctx,
+                  error,
+                  input: args[0],
+                  path: fullPath,
+                  type: procedure._def.type,
+                });
+              }
+            }
+
+            throw error;
           });
 
         if (typeof maybeContext === 'function') {
