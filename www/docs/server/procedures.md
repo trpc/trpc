@@ -243,7 +243,7 @@ export const appRouter = t.router({
         email: z.string().email(),
       }),
     )
-    .mutation(async (opts) => {
+    .query(async (opts) => {
       // use helper function!
       const members = await getMembersOfOrganization(opts);
 
