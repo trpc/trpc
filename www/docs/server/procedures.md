@@ -237,7 +237,7 @@ async function getMembersOfOrganization(
   });
 }
 export const appRouter = t.router({
-  addMember: organizationProcedure
+  listMembers: organizationProcedure
     .input(
       z.object({
         email: z.string().email(),
@@ -247,7 +247,7 @@ export const appRouter = t.router({
       // use helper function!
       const members = await getMembersOfOrganization(opts);
 
-      return '...';
+      return members;
     }),
 });
 ```
