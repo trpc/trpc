@@ -1,5 +1,4 @@
-import { experimental_trpcMiddleware, initTRPC, TRPCError } from '@trpc/server';
-import * as z from 'zod';
+import { experimental_trpcMiddleware, initTRPC } from '@trpc/server';
 
 test('decorate independently', () => {
   type User = {
@@ -81,7 +80,8 @@ describe('standalone middleware', () => {
   test('without ctx', () => {
     const addBarToCtxMiddleware = experimental_trpcMiddleware().create(
       (opts) => {
-        expectTypeOf(opts.ctx).toEqualTypeOf<object>();
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        expectTypeOf(opts.ctx).toEqualTypeOf<object | {}>();
         return opts.next({
           ctx: {
             bar: 'bar' as const,

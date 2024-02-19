@@ -30,6 +30,12 @@ See [SSR docs](../client/nextjs/ssr.md)
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Added `inferProcedureBuilderResolverOptions<T>`-helper (non-breaking)
+
+Adds a helper to infer the options for a procedure builder resolver. This is useful if you want to create reusable functions for different procedures.
+
+See test [here](https://github.com/trpc/trpc/blob/743fa6aed8ac889d9c60f321c4b4ad060b56e791/packages/server/src/unstable-core-do-not-import/procedureBuilder.test.ts#L36-L231) for a reference on how to use it
+
 ### Transformers are moved to links (breaking)
 
 > TypeScript will guide you through this migration

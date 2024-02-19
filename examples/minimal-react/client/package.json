@@ -1,7 +1,6 @@
 {
   "name": "@examples/minimal-react-client",
   "private": true,
-  "version": "10.45.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,8 +20,8 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "@vitejs/plugin-react": "^3.1.0",
-    "eslint": "^8.40.0",
+    "eslint": "^8.56.0",
     "typescript": "^5.3.3",
-    "vite": "^4.1.2"
+    "vite": "^5.0.12"
   }
 }

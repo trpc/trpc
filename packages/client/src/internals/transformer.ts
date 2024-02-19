@@ -1,5 +1,5 @@
 import type {
-  AnyClientRootTypes,
+  AnyClientTypes,
   CombinedDataTransformer,
   DataTransformerOptions,
   TypeError,
@@ -35,7 +35,7 @@ type TransformerOptionNo = {
  * @internal
  */
 export type TransformerOptions<
-  TRoot extends Pick<AnyClientRootTypes, 'transformer'>,
+  TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = TRoot['transformer'] extends true
   ? TransformerOptionYes
   : TransformerOptionNo;

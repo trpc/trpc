@@ -3,7 +3,7 @@
   "extends": ["//"],
   "pipeline": {
     "codegen-entrypoints": {
-      "outputs": ["package.json", "server/**", "shared/**"]
+      "outputs": ["package.json", "dist/**", "server/**", "shared/**"]
     }
   }
 }
